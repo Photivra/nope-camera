@@ -79,6 +79,38 @@ user. The full design is in issue #1.
   data or metadata.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
+## Readable, documented code
+
+Code is written for the next person to read it, whether a human contributor or an agent.
+
+- **Clear before clever.**
+  - Descriptive names that say what a thing is or does. No abbreviations beyond common
+    platform ones (RAW, DNG, ISO, EXIF).
+  - Small types and functions with one job each.
+  - Early returns instead of deep nesting.
+  - No unexplained magic numbers: name them, and cite where each value comes from.
+- **Documentation comments on every type, and on every non-private function and property.**
+  These are DocC `///` comments, saying what it does, its parameters, what it returns or
+  throws, and any device or OS requirement.
+- **Comments explain why, not what.**
+  - Explain a decision, a platform quirk, or a privacy or honesty constraint.
+  - Link the Apple documentation or the specification section behind it (DNG, EXIF, C2PA).
+  - Delete comments that only restate the code.
+- **Privacy-relevant code says so.** Code that writes or removes metadata, signs, or touches
+  files carries a short comment naming the privacy rule it enforces, so reviewers and auditors
+  can find it.
+- **Human documentation lives in `docs/`,** created with the first app code. Keep it current
+  in the same pull request that changes behavior:
+  - `docs/ARCHITECTURE.md`: modules and data flow from capture to Photos.
+  - `docs/PRIVACY.md`: every metadata item and how it's handled.
+  - `docs/TESTING.md`: how to run the tests, and the on-device checks.
+
+  Write in plain English for a developer new to the project.
+- **Agent support.** `AGENTS.md` is the canonical agent instruction file, and `CLAUDE.md`
+  imports it. `llms.txt` is the index for language models, following the llms.txt format:
+  - Add every new document in `docs/` to `llms.txt` in the same pull request.
+  - The repository checks fail if a link in `llms.txt` points to a missing file.
+
 ## Pull requests and releases
 
 - Work on a branch and open a pull request; merge when CI is green and coverage holds.

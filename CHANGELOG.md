@@ -8,3 +8,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 - Repository setup: license documents, agent instructions, contribution and security policies, and repository checks.
+- `llms.txt` index for language models, and documentation and readability rules for code.
