@@ -35,6 +35,8 @@ jobs:
         run: xcodebuild -version && swift --version
       - name: Test the coverage gate
         run: scripts/test-check-coverage.sh
+      - name: Test the tag dumper's TIFF walker
+        run: scripts/test-dump-tags.sh
       - name: Build and test NopeKit
         run: >
           xcodebuild test
