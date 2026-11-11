@@ -1,4 +1,11 @@
 # Swift package and Gradle dependencies allowed in the app, one identity per line.
 # Adding a line is a reviewed decision: see AGENTS.md, "Security checks".
-c2pa-ios
+
+# The C2PA library (contentauth/c2pa-swift, MIT or Apache-2.0) is the only non-platform dependency.
+c2pa-swift
+# Apple's open-source Swift packages that c2pa-swift depends on (Apache-2.0); maintainer-approved 2026-11-11.
+swift-certificates
+swift-asn1
+swift-crypto
+# Android (planned): the C2PA Android binding.
 c2pa-android

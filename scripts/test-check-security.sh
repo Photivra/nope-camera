@@ -43,10 +43,13 @@ expect fail "Unsafe pointer outside the allowlist" "$d"
 d=$(new_tree); mkdir -p "$d/App"; printf 'let p: UnsafeRawPointer? = nil\n' >"$d/App/B.swift"; echo "App/B.swift" >>"$d/security/allowed-unsafe.txt"
 expect pass "Unsafe pointer in an allowlisted file" "$d"
 
-d=$(new_tree); printf '{"pins":[{"identity":"c2pa-ios"}]}\n' >"$d/Package.resolved"
+d=$(new_tree); printf '{"pins":[{"identity":"c2pa-swift"}]}\n' >"$d/Package.resolved"
 expect pass "allowlisted dependency" "$d"
 
-d=$(new_tree); printf '{"pins":[{"identity":"c2pa-ios"},{"identity":"some-analytics"}]}\n' >"$d/Package.resolved"
+d=$(new_tree); printf '{"pins":[{"identity":"c2pa-swift"},{"identity":"swift-certificates"},{"identity":"swift-asn1"},{"identity":"swift-crypto"}]}\n' >"$d/Package.resolved"
+expect pass "C2PA with its Apple dependencies" "$d"
+
+d=$(new_tree); printf '{"pins":[{"identity":"c2pa-swift"},{"identity":"some-analytics"}]}\n' >"$d/Package.resolved"
 expect fail "dependency not on the allowlist" "$d"
 
 d=$(new_tree); printf '<plist><dict><key>com.apple.developer.locked-camera-capture</key><true/></dict></plist>\n' >"$d/App.entitlements"
