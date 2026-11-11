@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest a change or a new capability.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What you are trying to do, and why the app does not support it today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Platform documentation, specifications, or measurements that support the proposal.
+  - type: checkboxes
+    id: values
+    attributes:
+      label: Project rules
+      description: Proposals must keep the rules in AGENTS.md.
+      options:
+        - label: Adds no network access, analytics or third-party SDK.
+          required: true
+        - label: Adds no image processing beyond what the device requires.
+          required: true
