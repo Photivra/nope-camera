@@ -70,25 +70,56 @@ the exposure tags (exposure time, ISO) still need confirming on a real image.
   This confirms the rule in `AGENTS.md`: build each file's metadata from the allowlist, never
   by deleting known tags.
 
-## Metadata plan (to be confirmed by the device tag check)
+## Metadata plan
 
-With "Remove private details" on (the default):
+**Rule:** every item that can be removed without breaking the photo is a switch the user
+controls. Items a file can't be opened or displayed correctly without are locked, and the app
+explains each one in plain words.
 
-| Item | Default | Status |
-|---|---|---|
-| Location, altitude and direction | Removed | Not written by the system; confirmed absent |
-| Time zone offset | Removed | Present in system output (`OffsetTime*`); dropped by the allowlist |
-| Phone and lens serial numbers | Removed | Not written by the system; confirmed absent |
-| Unique image ID | Removed | To be confirmed |
-| Maker notes | Removed | To be confirmed |
-| iOS version | Removed | To be confirmed |
-| Owner name and copyright | Removed | To be confirmed |
-| Date and time | Kept (own switch) | To be confirmed |
-| Camera make and model, lens model | Kept | To be confirmed |
-| Exposure settings | Kept | To be confirmed |
-| App name and version | Kept | To be confirmed |
-| C2PA signature | Kept; without a timestamp when the date is off | To be confirmed |
-| Data needed to open the RAW (color calibration, black and white levels, color pattern, as-shot white balance, DNG camera name, orientation, lens correction opcodes) | Locked | To be confirmed |
+**Master switch: "Remove all optional details", on by default.**
+- **When on,** every switch below is off, so files carry only the locked items, plus the
+  Content Credentials signature, which has its own switch outside the master.
+- **Turning on any single item** turns the master off, and the screen shows "Custom".
+- **Turning the master back on** turns every item off again.
+- **With the master off,** the user sets each item one by one.
+
+The "Default" column below is each item's setting when the user first turns the master off.
+
+### Switches (removing these never breaks the photo)
+
+| Item | Default | What turning it off costs (shown in the app) | Device tag check |
+|---|---|---|---|
+| Location, altitude and direction | Off | Nothing. Location is only added if you turn it on | Not written by the system |
+| Date and time taken | On | Photos sorts by the date you saved it instead | Present (`DateTime*`, XMP dates) |
+| Sub-second time | Off | Nothing visible | Present (`SubSecTime*`) |
+| Time zone | Off | The photo's local time can't be converted to other zones | Present (`OffsetTime*`) |
+| Camera make and model | On | Apps can't show which phone took it | Present (`Make`, `Model`, HEIF `HostComputer`) |
+| Lens make and model | On | Apps can't show which lens took it | Present (`LensMake`, `LensModel`) |
+| Exact camera model for RAW editors (`UniqueCameraModel`) | On | Some RAW editors can't choose their camera-specific color profile and use the file's own color data instead. The DNG standard requires this tag, so when it's off, nope. writes a generic value rather than none | Present |
+| Lens correction instructions (DNG opcodes) | On | Editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way | Present (`OpcodeList3`) |
+| Exposure settings (shutter, ISO, aperture, focal length) | On | You can't see later how the photo was taken | To confirm on an exposed image |
+| iOS version | Off | Nothing visible | Present (`Software`, XMP `CreatorTool`) |
+| Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
+| Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
+| App name and version (nope.) | On | Apps can't show what made the file | Written by nope. |
+| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes; without a timestamp when the date is off | Written by nope. |
+
+Serial numbers, unique image IDs and raw data IDs are never written, by the system or by nope.,
+so they have no switch.
+
+### Locked (the photo breaks without these)
+
+| Item | Why it can't be removed (shown in the app) |
+|---|---|
+| Image size, bit depth, compression and data layout | Without them the file can't be read at all |
+| Color filter pattern | Tells editors which pixels are red, green and blue; without it the RAW has no color |
+| Black and white levels | Without them shadows and highlights come out wrong |
+| Color matrices and as-shot white balance | Without them colors are wrong |
+| DNG version | Required by the DNG standard; editors refuse the file without it |
+| Orientation | Without it the photo shows sideways or upside down |
+| Color profile (HEIF and JPEG) | Without it colors look washed out or oversaturated |
+
+None of the locked items identify you or link your photos.
 
 This page will list the exact tags for each format and switch, with the metadata tests that
 assert them, as each part is built.
