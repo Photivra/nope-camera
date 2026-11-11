@@ -112,6 +112,11 @@ launched with the `-NopeTagCheck` launch argument.
    preset, `maxPhotoQualityPrioritization` and `photoQualityPrioritization` set to `.speed`,
    Apple ProRAW off, zoom 1.0, deferred delivery, constant color and distortion correction off,
    no flash. No location is requested and no GPS metadata is supplied.
+   Auto exposure, focus and white balance stay continuous, and a video data output keeps
+   frames flowing. Before the first capture with each lens, it waits at least 1 second and
+   until the session is running, at least 10 frames have arrived, and exposure, focus and white
+   balance have stopped adjusting, up to 5 seconds. The report records whether it settled or
+   timed out. (A fixed 1-second wait without a video output gave black frames on a device.)
 3. It captures, per lens:
    - `<lens>-raw.dng`: a Bayer RAW-only capture, written with `fileDataRepresentation()`;
    - `<lens>-raw-stripped.dng`: the same RAW photo written with
@@ -124,9 +129,10 @@ launched with the `-NopeTagCheck` launch argument.
    A lens without a Bayer RAW format gets only the processed photo, and its report says so.
 4. It writes `<lens>-report.json` for each lens (device model identifier, OS version, camera
    type and position, active format, RAW formats and whether each is Bayer, ISO, exposure and
-   aperture ranges, iOS 27 aperture values, `maxBracketedCapturePhotoCount`, the photo output's
-   processing switches, the requested and resolved photo settings, and `photo.metadata`), and a
-   `summary.json`.
+   aperture ranges, every supported maximum photo size, iOS 27 aperture values,
+   `maxBracketedCapturePhotoCount`, the photo output's processing switches, the settle result,
+   the exposure duration, ISO, aperture, focus and white balance at each capture, the requested
+   and resolved photo settings, and `photo.metadata`), and a `summary.json`.
 
 Lens names are `back-wide`, `back-ultrawide`, `back-telephoto`, `front-wide` and so on. Every
 file goes to the app's `Documents/TagCheck/` folder, with complete file protection; each run

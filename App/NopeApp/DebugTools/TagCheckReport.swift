@@ -47,6 +47,9 @@ enum TagCheckReport {
             "geometricDistortionCorrectionEnabled": device.isGeometricDistortionCorrectionSupported
                 ? device.isGeometricDistortionCorrectionEnabled : "unsupported",
             "activeFormat": formatInfo,
+            // Every entry, untruncated, also at the top level so it is easy to find.
+            "supportedMaxPhotoDimensions": format.supportedMaxPhotoDimensions.map(dimensions),
+            "supportedMaxPhotoDimensionsCount": format.supportedMaxPhotoDimensions.count,
             "rawFormats": output.availableRawPhotoPixelFormatTypes.map(rawFormat),
             "photoOutput": [
                 "maxPhotoQualityPrioritization": name(of: output.maxPhotoQualityPrioritization),
@@ -64,12 +67,35 @@ enum TagCheckReport {
         ]
     }
 
+    /// The camera's exposure state, read just before a capture: exposure duration (seconds),
+    /// ISO, aperture (f-number), exposure target offset (EV), lens position (0 to 1), white
+    /// balance gains and the auto modes.
+    /// - Parameter device: The camera.
+    static func exposureState(of device: AVCaptureDevice) -> [String: Any] {
+        let gains = device.deviceWhiteBalanceGains
+        return [
+            "exposureDurationSeconds": device.exposureDuration.seconds,
+            "iso": device.iso,
+            "lensAperture": device.lensAperture,
+            "exposureTargetOffset": device.exposureTargetOffset,
+            "lensPosition": device.lensPosition,
+            "whiteBalanceGains": ["red": gains.redGain, "green": gains.greenGain, "blue": gains.blueGain],
+            "exposureMode": device.exposureMode.rawValue,
+            "focusMode": device.focusMode.rawValue,
+            "whiteBalanceMode": device.whiteBalanceMode.rawValue,
+            "isAdjustingExposure": device.isAdjustingExposure,
+            "isAdjustingFocus": device.isAdjustingFocus,
+            "isAdjustingWhiteBalance": device.isAdjustingWhiteBalance,
+        ]
+    }
+
     /// Describes one capture: the requested settings, the resolved settings, and the photo's
     /// metadata dictionary exactly as AVFoundation reports it (`AVCapturePhoto.metadata`).
     /// - Parameter capture: A finished capture.
     static func describe(_ capture: PhotoCaptureWaiter) -> [String: Any] {
         let requested = capture.requestedSettings
         var entry: [String: Any] = [
+            "deviceStateAtCapture": capture.deviceStateAtCapture,
             "requestedSettings": [
                 // AVCaptureResolvedPhotoSettings has no photoQualityPrioritization, so the
                 // requested value is recorded; the resolved dimensions and timing are below.
