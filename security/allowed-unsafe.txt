@@ -1,0 +1,2 @@
+# Source files allowed to use Swift Unsafe* pointer APIs, one path per line.
+# Each must be isolated, documented and fuzz-tested: see AGENTS.md, "Code".

@@ -22,3 +22,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: scripts/check-repo.sh
+      - name: Test the security checks
+        run: scripts/test-check-security.sh
+      - name: Security checks
+        run: scripts/check-security.sh

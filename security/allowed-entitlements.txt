@@ -1,0 +1,3 @@
+# Entitlement keys the app and its extensions may request, one per line.
+# Adding a line is a reviewed decision: see AGENTS.md, "Security checks".
+com.apple.developer.locked-camera-capture

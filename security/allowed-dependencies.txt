@@ -1,0 +1,4 @@
+# Swift package and Gradle dependencies allowed in the app, one identity per line.
+# Adding a line is a reviewed decision: see AGENTS.md, "Security checks".
+c2pa-ios
+c2pa-android
