@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Rules for battery use and for Siri and Shortcuts control through App Intents.
 - Tag check results from the first device runs in `docs/PRIVACY.md`.
 - Metadata rule: allowlisted metadata only, verified on every save (fail closed), with tag checks on each new iOS release.
 - Debug-only tag check (`-NopeTagCheck`, Debug builds only, not compiled into Release): captures a Bayer RAW DNG, a metadata-stripped DNG and a HEIF with each physical camera, with a JSON report per lens, for the device metadata dump (issue #1, step 2).
