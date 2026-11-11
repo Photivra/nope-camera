@@ -14,7 +14,12 @@ Your interface depends on `NopeCore` only. It does three things:
    `permissionDenied`, `unavailable`, or `ready` with the device's `DeviceCapabilities`. The
    documentation of each case says how to present it.
 2. **Sends intents.** Call `CameraModel.send(_:)` with a `CameraIntent`: `.start` when your
-   interface appears, `.requestPermission` when the person presses your "Allow" button.
+   interface appears, `.requestPermission` when the person presses your "Allow" button,
+   `.selectLens(id)` when they pick a lens and `.capture` from your shutter. While it is
+   visible, also run `CameraModel.observeEvents()` so interruptions and heat are applied.
+   In the ready state, render `sessionStatus`, `captureStatus`, `selectedLensID` and
+   `captureFormat` (say plainly when it is the processed fallback), and enable the shutter only
+   when `canCapture` is true.
 3. **Holds no rules.** Don't decide privacy, formats, exposure or what the device supports. If
    you need a decision, it belongs in `NopeCore` as state or a capability value.
 
@@ -27,7 +32,9 @@ updates automatically.
 2. Write a root view that takes a `CameraModel` and switches over `state`.
 3. Send `.start` when it appears (`.task { await model.send(.start) }` in SwiftUI).
 4. In the app target, pass your root view the same `CameraModel` that `CameraScreen` gets today
-   (see `App/NopeApp/NopeApp.swift`).
+   (see `App/NopeApp/NopeApp.swift`). For the live viewfinder, the app gives your interface a
+   view for `CameraModel.previewSource` (`Viewfinder` in `App/NopeApp/Camera/`), because
+   `NopeCore` can't show video.
 5. Test it against `SimulatedCaptureBackend`, which can put the model in every state without a
    camera, and add a UI test with `performAccessibilityAudit()` for each state.
 

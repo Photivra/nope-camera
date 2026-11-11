@@ -28,7 +28,7 @@ struct BuildingAnInterfaceExampleTests {
         let backend = SimulatedCaptureBackend(
             permission: .notDetermined,
             permissionAfterRequest: .authorized,
-            capabilities: DeviceCapabilities(lenses: [Lens(id: "wide", kind: .wide, supportsBayerRAW: true)])
+            capabilities: DeviceCapabilities(lenses: [Lens(id: "wide", kind: .wide, bayerRAWFormat: "bgg4")])
         )
         let interface = TextInterface(model: CameraModel(backend: backend))
         #expect(interface.render() == "Starting")

@@ -1,23 +1,17 @@
+import AVKit
+import NopeCapture
 import NopeCore
 import NopeUI
 import SwiftUI
 
-/// The nope. app: wires a capture backend into `NopeCore` and hosts `NopeUI`.
+/// The nope. app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
 ///
-/// Until the AVFoundation adapter in `NopeCapture` is wired in, the app uses
-/// ``developmentBackend``, which shows no system prompt and reports one simulated lens.
+/// On a device it uses `AVFoundationCaptureBackend`. Debug builds launched by the UI tests with
+/// `-NopeSimulatedCamera <scenario>` use a simulated backend instead (``SimulatedCameraLaunch``).
 @main
 struct NopeApp: App {
-    /// A simulated backend for development builds: asking for access succeeds, and the device
-    /// reports one wide lens with RAW. No camera hardware is used.
-    static let developmentBackend = SimulatedCaptureBackend(
-        permission: .notDetermined,
-        permissionAfterRequest: .authorized,
-        capabilities: DeviceCapabilities(lenses: [Lens(id: "simulated-wide", kind: .wide, supportsBayerRAW: true)])
-    )
-
     /// The camera model shared by the app's single scene.
-    @State private var model = CameraModel(backend: developmentBackend)
+    @State private var model = CameraModel(backend: Self.makeBackend())
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -28,11 +22,35 @@ struct NopeApp: App {
             if TagCheckLaunch.isRequested {
                 TagCheckScreen()
             } else {
-                CameraScreen(model: model)
+                cameraScreen
             }
             #else
-            CameraScreen(model: model)
+            cameraScreen
             #endif
         }
+    }
+
+    /// The camera screen with the live viewfinder and the hardware shutter.
+    ///
+    /// The volume buttons and the Camera Control take a photo through `onCameraCaptureEvent`
+    /// (AVKit, iOS 18), on release of the button, as the system Camera app does. The system
+    /// delivers these events only while a capture session runs.
+    private var cameraScreen: some View {
+        CameraScreen(model: model) { source in
+            Viewfinder(source: source)
+        }
+        .onCameraCaptureEvent { event in
+            guard event.phase == .ended else { return }
+            Task { await model.send(.capture) }
+        }
+    }
+
+    /// The backend for this launch: the simulated one for a UI test scenario in Debug builds,
+    /// otherwise the device's cameras.
+    private static func makeBackend() -> any CaptureBackend {
+        #if DEBUG
+        if let backend = SimulatedCameraLaunch.backend() { return backend }
+        #endif
+        return AVFoundationCaptureBackend()
     }
 }

@@ -199,6 +199,72 @@
         }
       }
     },
+    "Captured (not saved yet: development build)": {
+      "comment": "Shown after a photo is taken. In this development version photos are kept in memory and not saved to Photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aufgenommen (noch nicht gesichert: Entwicklungsversion)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Capturada (aún no se guarda: versión de desarrollo)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photo prise (pas encore enregistrée : version de développement)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scattata (non ancora salvata: versione di sviluppo)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影済み（まだ保存されません：開発版）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "촬영됨(아직 저장되지 않음: 개발 빌드)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vastgelegd (nog niet bewaard: ontwikkelversie)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Capturada (ainda não salva: versão de desenvolvimento)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已拍摄（尚未保存：开发版本）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已拍攝（尚未儲存：開發版本）"
+          }
+        }
+      }
+    },
     "Front": {
       "comment": "Name of the front (selfie) camera.",
       "extractionState": "manual",
@@ -265,134 +331,68 @@
         }
       }
     },
-    "HEIF only": {
-      "comment": "Shown next to a lens that can't save RAW, only HEIF with some device processing. HEIF is a file format name.",
+    "Lens: %@. Format: %@.": {
+      "comment": "VoiceOver value of the viewfinder. The first value is a lens name such as Wide; the second is a format such as single-frame RAW.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Nur HEIF"
+            "value": "Objektiv: %1$@. Format: %2$@."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Solo HEIF"
+            "value": "Lente: %1$@. Formato: %2$@."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "HEIF uniquement"
+            "value": "Objectif : %1$@. Format : %2$@."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Solo HEIF"
+            "value": "Obiettivo: %1$@. Formato: %2$@."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "HEIF のみ"
+            "value": "レンズ：%1$@。フォーマット：%2$@。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "HEIF만"
+            "value": "렌즈: %1$@. 포맷: %2$@."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Alleen HEIF"
+            "value": "Lens: %1$@. Formaat: %2$@."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Somente HEIF"
+            "value": "Lente: %1$@. Formato: %2$@."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "仅 HEIF"
+            "value": "镜头：%1$@。格式：%2$@。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "僅限 HEIF"
-          }
-        }
-      }
-    },
-    "Lenses": {
-      "comment": "Heading above the list of the device's camera lenses.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Objektive"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Lentes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Objectifs"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Obiettivi"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "レンズ"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "렌즈"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Lenzen"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Lentes"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "镜头"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "鏡頭"
+            "value": "鏡頭：%1$@。格式：%2$@。"
           }
         }
       }
@@ -463,68 +463,68 @@
         }
       }
     },
-    "RAW": {
-      "comment": "Shown next to a lens that saves unprocessed RAW photos. RAW is a file format name; keep it unchanged unless your language writes it differently.",
+    "No photo was taken: the camera is paused.": {
+      "comment": "Shown when the shutter is pressed while the camera is paused.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "Es wurde kein Foto aufgenommen: Die Kamera ist pausiert."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "No se tomó ninguna foto: la cámara está en pausa."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "Aucune photo n’a été prise : l’appareil photo est en pause."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "Nessuna foto scattata: la fotocamera è in pausa."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "写真は撮影されませんでした：カメラが一時停止中です。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "사진이 찍히지 않았습니다. 카메라가 일시 정지 상태입니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "Er is geen foto gemaakt: de camera is gepauzeerd."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "Nenhuma foto foi tirada: a câmera está pausada."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "未拍摄照片：相机已暂停。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "RAW"
+            "value": "未拍攝照片：相機已暫停。"
           }
         }
       }
@@ -595,6 +595,138 @@
         }
       }
     },
+    "Take Photo": {
+      "comment": "VoiceOver and Voice Control name of the shutter button.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto aufnehmen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tomar foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prendre une photo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatta foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真を撮る"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 찍기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto maken"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tirar foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍照"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍照"
+          }
+        }
+      }
+    },
+    "Taking photo…": {
+      "comment": "Shown while a photo is being taken.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto wird aufgenommen …"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tomando foto…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise de la photo…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto in corso…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影中…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 찍는 중…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto maken…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tirando foto…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在拍照…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在拍照⋯"
+          }
+        }
+      }
+    },
     "Telephoto": {
       "comment": "Name of a rear telephoto camera lens.",
       "extractionState": "manual",
@@ -661,68 +793,398 @@
         }
       }
     },
-    "The viewfinder isn't built yet.": {
-      "comment": "Shown in development builds, before the live camera view exists.",
+    "The camera couldn't start. Try another lens.": {
+      "comment": "Shown over the viewfinder when the camera fails to start.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Der Sucher ist noch nicht verfügbar."
+            "value": "Die Kamera konnte nicht starten. Versuche ein anderes Objektiv."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "El visor aún no está disponible."
+            "value": "No se pudo iniciar la cámara. Prueba con otra lente."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Le viseur n’est pas encore disponible."
+            "value": "Impossible de démarrer l’appareil photo. Essayez un autre objectif."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Il mirino non è ancora disponibile."
+            "value": "Impossibile avviare la fotocamera. Prova un altro obiettivo."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "ビューファインダーはまだ作成されていません。"
+            "value": "カメラを起動できませんでした。別のレンズを試してください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "뷰파인더는 아직 만들어지지 않았습니다."
+            "value": "카메라를 시작할 수 없습니다. 다른 렌즈를 사용해 보세요."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "De zoeker is nog niet beschikbaar."
+            "value": "De camera kon niet starten. Probeer een andere lens."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "O visor ainda não está disponível."
+            "value": "Não foi possível iniciar a câmera. Tente outra lente."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "取景器尚未完成。"
+            "value": "无法启动相机。请试试其他镜头。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "觀景窗尚未完成。"
+            "value": "無法啟動相機。請試試其他鏡頭。"
+          }
+        }
+      }
+    },
+    "The camera is in use by another app or a call. It comes back when that ends.": {
+      "comment": "Shown over the viewfinder when another app or a phone or video call is using the camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera wird von einer anderen App oder einem Anruf verwendet. Sie ist wieder verfügbar, sobald dies endet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Otra app o una llamada está usando la cámara. Volverá cuando termine."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo est utilisé par une autre app ou un appel. Il reviendra à la fin."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera è in uso da un’altra app o da una chiamata. Tornerà disponibile al termine."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラはほかのアプリまたは通話で使用中です。終了すると再開します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "다른 앱이나 통화에서 카메라를 사용 중입니다. 끝나면 다시 사용할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera wordt gebruikt door een andere app of een gesprek. Hij komt terug zodra dat is afgelopen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Outro app ou uma ligação está usando a câmera. Ela volta quando isso terminar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机正被其他 App 或通话使用，结束后会恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機正由其他 App 或通話使用中，結束後會恢復。"
+          }
+        }
+      }
+    },
+    "The camera is paused by the system. It comes back by itself.": {
+      "comment": "Shown over the viewfinder when the system pauses the camera for another reason.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das System hat die Kamera pausiert. Sie kommt von selbst zurück."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El sistema ha pausado la cámara. Volverá por sí sola."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le système a mis l’appareil photo en pause. Il reviendra de lui-même."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il sistema ha messo in pausa la fotocamera. Riprenderà da sola."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "システムによりカメラが一時停止しています。自動的に再開します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "시스템이 카메라를 일시 정지했습니다. 자동으로 다시 시작됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Het systeem heeft de camera gepauzeerd. Hij komt vanzelf terug."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O sistema pausou a câmera. Ela volta sozinha."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "系统已暂停相机，稍后会自动恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "系統已暫停相機，稍後會自動恢復。"
+          }
+        }
+      }
+    },
+    "The camera is paused to let your device cool down.": {
+      "comment": "Shown over the viewfinder when the device is too hot to run the camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera ist pausiert, damit dein Gerät abkühlen kann."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara está en pausa para que el dispositivo se enfríe."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo est en pause pour laisser votre appareil refroidir."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera è in pausa per far raffreddare il dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "デバイスの温度を下げるため、カメラを一時停止しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "기기를 식히기 위해 카메라가 일시 정지되었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera is gepauzeerd zodat je apparaat kan afkoelen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera está pausada para o dispositivo esfriar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机已暂停，让设备降温。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機已暫停，讓裝置降溫。"
+          }
+        }
+      }
+    },
+    "The camera works only when nope. fills the screen.": {
+      "comment": "Shown on iPad in Split View, Slide Over or Stage Manager. Keep \"nope.\" unchanged: it is the app's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera funktioniert nur, wenn nope. den ganzen Bildschirm einnimmt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara solo funciona cuando nope. ocupa toda la pantalla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo ne fonctionne que lorsque nope. occupe tout l’écran."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera funziona solo quando nope. occupa tutto lo schermo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラは nope. が画面全体に表示されているときだけ使えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라는 nope.가 전체 화면일 때만 작동합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera werkt alleen als nope. het hele scherm vult."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera só funciona quando o nope. ocupa a tela inteira."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "只有在 nope. 占满整个屏幕时才能使用相机。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機只有在 nope. 佔滿整個螢幕時才能使用。"
+          }
+        }
+      }
+    },
+    "The photo wasn't taken. Try again.": {
+      "comment": "Shown when taking a photo failed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Foto wurde nicht aufgenommen. Versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se tomó la foto. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La photo n’a pas été prise. Réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La foto non è stata scattata. Riprova."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真を撮影できませんでした。もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진을 찍지 못했습니다. 다시 시도하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De foto is niet gemaakt. Probeer het opnieuw."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A foto não foi tirada. Tente novamente."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未能拍摄照片。请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未能拍攝照片。請再試一次。"
           }
         }
       }
@@ -921,6 +1383,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "超廣角"
+          }
+        }
+      }
+    },
+    "Viewfinder": {
+      "comment": "VoiceOver name of the live camera view.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sucher"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Visor"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Viseur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mirino"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ビューファインダー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "뷰파인더"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zoeker"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Visor"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取景器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "觀景窗"
           }
         }
       }

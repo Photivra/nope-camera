@@ -3,20 +3,36 @@ import SwiftUI
 
 /// The camera screen: renders a `CameraModel` and sends it intents.
 ///
-/// The screen holds no rules: it shows the model's `CameraState` and sends
-/// `CameraIntent` values (AGENTS.md, "One direction of flow"). It uses the dark
-/// appearance, because a camera is used in every light and a dark frame doesn't change how a
-/// scene looks; other screens follow the system appearance.
-public struct CameraScreen: View {
+/// The screen holds no rules: it shows the model's state and sends `CameraIntent` values
+/// (AGENTS.md, "One direction of flow"). It uses the dark appearance, because a camera is used
+/// in every light and a dark frame doesn't change how a scene looks; other screens follow the
+/// system appearance.
+///
+/// The live viewfinder comes from the app target: `NopeUI` can't show camera video, so the app
+/// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
+/// backed by `AVCaptureVideoPreviewLayer`).
+///
+/// ```swift
+/// CameraScreen(model: model) { source in
+///     MyPreviewView(source: source)
+/// }
+/// ```
+public struct CameraScreen<Viewfinder: View>: View {
     /// The model the screen renders.
     private let model: CameraModel
 
+    /// Makes the live viewfinder for the model's preview source.
+    private let viewfinder: (any CameraPreviewSource) -> Viewfinder
+
     /// Creates the camera screen.
     ///
-    /// - Parameter model: The model to render. The screen sends `CameraIntent.start`
-    ///   when it appears.
-    public init(model: CameraModel) {
+    /// - Parameters:
+    ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
+    ///     and runs `CameraModel.observeEvents()` while it is visible.
+    ///   - viewfinder: Makes the live viewfinder from the model's preview source.
+    public init(model: CameraModel, @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder) {
         self.model = model
+        self.viewfinder = viewfinder
     }
 
     /// The screen's content for the current state.
@@ -26,6 +42,7 @@ public struct CameraScreen: View {
             .background(.background)
             .preferredColorScheme(.dark)
             .task { await model.send(.start) }
+            .task { await model.observeEvents() }
     }
 
     /// The view for the model's current state.
@@ -58,8 +75,23 @@ public struct CameraScreen: View {
                 )
             )
         case .ready(let capabilities):
-            LensListView(lenses: capabilities.lenses)
+            CameraReadyView(model: model, lenses: capabilities.lenses) {
+                if let source = model.previewSource {
+                    viewfinder(source)
+                } else {
+                    Color.black
+                }
+            }
         }
+    }
+}
+
+extension CameraScreen where Viewfinder == Color {
+    /// Creates the camera screen with a plain black viewfinder, for tests and previews.
+    ///
+    /// - Parameter model: The model to render.
+    public init(model: CameraModel) {
+        self.init(model: model) { _ in Color.black }
     }
 }
 
@@ -93,67 +125,6 @@ struct PermissionRequestView: View {
             // fails the accessibility audit's contrast check (WCAG 2.2 AA, 4.5:1) in dark mode.
             .buttonStyle(.bordered)
             .controlSize(.large)
-        }
-    }
-}
-
-/// Lists the device's lenses and whether each one gives RAW.
-struct LensListView: View {
-    /// The lenses to list, in display order.
-    let lenses: [Lens]
-
-    /// Creates the lens list.
-    ///
-    /// - Parameter lenses: The lenses to list, in display order.
-    init(lenses: [Lens]) {
-        self.lenses = lenses
-    }
-
-    /// A list with one row per lens.
-    var body: some View {
-        List {
-            Section {
-                ForEach(lenses) { lens in
-                    LabeledContent {
-                        lens.supportsBayerRAW
-                            ? Text("RAW", bundle: .module, comment: "Shown next to a lens that saves unprocessed RAW photos. RAW is a file format name; keep it unchanged unless your language writes it differently.")
-                            : Text("HEIF only", bundle: .module, comment: "Shown next to a lens that can't save RAW, only HEIF with some device processing. HEIF is a file format name.")
-                    } label: {
-                        LensName(kind: lens.kind)
-                    }
-                }
-            } header: {
-                Text("Lenses", bundle: .module, comment: "Heading above the list of the device's camera lenses.")
-            } footer: {
-                Text("The viewfinder isn't built yet.", bundle: .module, comment: "Shown in development builds, before the live camera view exists.")
-            }
-        }
-    }
-}
-
-/// The localized name of a kind of lens.
-struct LensName: View {
-    /// The kind of lens to name.
-    let kind: Lens.Kind
-
-    /// Creates the lens name.
-    ///
-    /// - Parameter kind: The kind of lens to name.
-    init(kind: Lens.Kind) {
-        self.kind = kind
-    }
-
-    /// The lens name as text.
-    var body: some View {
-        switch kind {
-        case .ultraWide:
-            Text("Ultra Wide", bundle: .module, comment: "Name of the rear ultra wide camera lens.")
-        case .wide:
-            Text("Wide", bundle: .module, comment: "Name of the rear wide (main) camera lens.")
-        case .telephoto:
-            Text("Telephoto", bundle: .module, comment: "Name of a rear telephoto camera lens.")
-        case .front:
-            Text("Front", bundle: .module, comment: "Name of the front (selfie) camera.")
         }
     }
 }

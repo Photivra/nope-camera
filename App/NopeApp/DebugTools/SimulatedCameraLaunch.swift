@@ -1,0 +1,67 @@
+#if DEBUG
+// Debug-only: the simulated camera scenarios the UI tests launch with. Compiled only in the
+// Debug configuration; Release builds always use the device's cameras.
+
+import Foundation
+import NopeCore
+
+/// Chooses a ``SimulatedCaptureBackend`` scenario from the launch arguments, so the UI tests can
+/// drive every camera state on the Simulator, which has no camera.
+///
+/// Launch with `-NopeSimulatedCamera <scenario>`, where the scenario is a ``Scenario`` raw value.
+enum SimulatedCameraLaunch {
+    /// The launch argument: `-NopeSimulatedCamera`.
+    static let argument = "-NopeSimulatedCamera"
+
+    /// A simulated camera state.
+    enum Scenario: String, CaseIterable {
+        /// Permission not asked yet; allowing it gives four lenses, the telephoto without RAW.
+        case allow
+        /// Access already allowed; the camera then reports another app using it.
+        case interrupted
+        /// Access already allowed; the device then reports critical heat.
+        case hot
+        /// Access already allowed; every capture fails.
+        case captureFails
+        /// Access declined.
+        case denied
+        /// Access allowed, but no camera.
+        case noCamera
+    }
+
+    /// Four lenses like an iPhone Pro's: ultra wide, wide and front with Bayer RAW, and a 5×
+    /// telephoto without it, to show the labeled fallback.
+    static let lenses: [Lens] = [
+        Lens(id: "simulated-ultra-wide", kind: .ultraWide, bayerRAWFormat: "rgg4", magnification: 0.5),
+        Lens(id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1),
+        Lens(id: "simulated-telephoto", kind: .telephoto, bayerRAWFormat: nil, magnification: 5),
+        Lens(id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4"),
+    ]
+
+    /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
+    static func backend() -> SimulatedCaptureBackend? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count,
+            let scenario = Scenario(rawValue: arguments[index + 1])
+        else { return nil }
+        let capabilities = DeviceCapabilities(lenses: lenses)
+        switch scenario {
+        case .allow:
+            return SimulatedCaptureBackend(
+                permission: .notDetermined, permissionAfterRequest: .authorized, capabilities: capabilities)
+        case .interrupted:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: capabilities, eventsAfterStart: [.interrupted(.inUseElsewhere)])
+        case .hot:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: capabilities, eventsAfterStart: [.heat(.critical)])
+        case .captureFails:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .captureFailed)
+        case .denied:
+            return SimulatedCaptureBackend(permission: .denied)
+        case .noCamera:
+            return SimulatedCaptureBackend(permission: .authorized)
+        }
+    }
+}
+#endif

@@ -6,13 +6,18 @@
 // AGENTS.md). Files use complete file protection, and no location or GPS metadata is supplied.
 
 import AVFoundation
+import CoreImage
 import Foundation
+import NopeCapture
 import os
 
 /// Captures test files with every physical camera and writes them, with a JSON report per lens,
 /// to `Documents/TagCheck/`.
 ///
-/// Capture setup follows docs/research/capability-survey.md, item 12 ("Avoiding processing").
+/// Capture setup follows docs/research/capability-survey.md, item 12 ("Avoiding processing"),
+/// in the same order as the app's capture backend (`SystemCaptureHardware`), which fixes the
+/// black frames of the first device runs (docs/TESTING.md, "Black frames"). Each lens also gets
+/// a JPEG of one live video frame, and every file's decoded brightness is in the report.
 /// Not thread-safe: create it and call ``runAll()`` on one serial queue, off the main thread,
 /// because `AVCaptureSession.startRunning()` blocks.
 final class TagCheckCapturer {
@@ -35,6 +40,15 @@ final class TagCheckCapturer {
     /// How long to wait for one capture to finish, in seconds, before reporting a failure.
     private static let captureTimeoutSeconds = 30.0
 
+    /// The longest wait for `setPreparedPhotoSettingsArray` to finish, in seconds.
+    private static let prepareTimeoutSeconds = 5.0
+
+    /// The longest wait for the photo output's `captureReadiness` to be `.ready`, in seconds.
+    private static let readinessTimeoutSeconds = 2.0
+
+    /// The longest wait for a live video frame to be saved as a JPEG, in seconds.
+    private static let previewFrameTimeoutSeconds = 2.0
+
     /// The physical camera types the tag check uses. Virtual multi-camera devices (dual, triple,
     /// TrueDepth, LiDAR depth) are never used: they can fuse frames from several cameras.
     private static let physicalDeviceTypes: [AVCaptureDevice.DeviceType] = [
@@ -44,6 +58,9 @@ final class TagCheckCapturer {
     /// Receives one status line per step, for the screen.
     private let report: @Sendable (String) -> Void
 
+    /// Receives the running session to show in the screen's viewfinder, or `nil` between lenses.
+    private let showPreview: @Sendable (CaptureSessionPreviewSource?) -> Void
+
     /// The output folder, `Documents/TagCheck/`.
     private let folder: URL
 
@@ -51,9 +68,16 @@ final class TagCheckCapturer {
     private let logger = Logger(subsystem: "com.photivra.nope", category: "TagCheck")
 
     /// Creates a capturer.
-    /// - Parameter report: Called with each status line, from the capture queue.
-    init(report: @escaping @Sendable (String) -> Void) {
+    /// - Parameters:
+    ///   - report: Called with each status line, from the capture queue.
+    ///   - showPreview: Called with the running session for each lens, and `nil` after it, from
+    ///     the capture queue.
+    init(
+        report: @escaping @Sendable (String) -> Void,
+        showPreview: @escaping @Sendable (CaptureSessionPreviewSource?) -> Void
+    ) {
         self.report = report
+        self.showPreview = showPreview
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         folder = documents.appending(path: "TagCheck", directoryHint: .isDirectory)
     }
@@ -111,27 +135,35 @@ final class TagCheckCapturer {
             return outcome
         }
         session.startRunning()
-        defer { session.stopRunning() }
+        showPreview(CaptureSessionPreviewSource(session: session))
+        defer {
+            showPreview(nil)
+            session.stopRunning()
+        }
+        let bayerFormat = output.availableRawPhotoPixelFormatTypes.first { AVCapturePhotoOutput.isBayerRAWPixelFormat($0) }
+        let processedFormat = Self.processedFormat(for: output)
+        lensReport["prepared"] = prepare(
+            output: output,
+            settings: bayerFormat.map { rawSettings($0, output: output) }
+                ?? processedSettings(processedFormat.codec, output: output))
         let settle = waitUntilSettled(session: session, device: device, frameCounter: frameCounter)
         lensReport["settle"] = settle
         if settle["settled"] as? Bool != true {
             status("\(lensName): camera didn't settle in \(Self.settleTimeoutSeconds) s; capturing anyway")
         }
+        lensReport["previewFrame"] = savePreviewFrame(from: frameCounter, lensName: lensName, outcome: &outcome)
 
         lensReport.merge(TagCheckReport.describe(device: device, output: output)) { _, new in new }
         var captures: [String: Any] = [:]
 
-        if let bayerFormat = output.availableRawPhotoPixelFormatTypes.first(where: {
-            AVCapturePhotoOutput.isBayerRAWPixelFormat($0)
-        }) {
-            let raw = capture(
-                settings: Self.speedSettings(.init(rawPixelFormatType: bayerFormat)), output: output, device: device)
-            captures["raw"] = record(raw, lensName: lensName, suffix: "raw.dng", outcome: &outcome) {
+        if let bayerFormat {
+            let raw = capture(settings: rawSettings(bayerFormat, output: output), output: output, device: device)
+            captures["raw"] = record(raw, lensName: lensName, suffix: "raw.dng", isRAW: true, outcome: &outcome) {
                 $0.fileDataRepresentation()
             }
             let remover = PrivateMetadataRemover()
             captures["rawStripped"] = record(
-                raw, lensName: lensName, suffix: "raw-stripped.dng", outcome: &outcome
+                raw, lensName: lensName, suffix: "raw-stripped.dng", isRAW: true, outcome: &outcome
             ) {
                 $0.fileDataRepresentation(with: remover)
             }
@@ -144,12 +176,11 @@ final class TagCheckCapturer {
             outcome["raw"] = "no Bayer RAW format"
         }
 
-        let processedFormat = Self.processedFormat(for: output)
         let processed = capture(
-            settings: Self.speedSettings(.init(format: [AVVideoCodecKey: processedFormat.codec])), output: output,
-            device: device)
+            settings: processedSettings(processedFormat.codec, output: output), output: output, device: device)
         captures["speed"] = record(
-            processed, lensName: lensName, suffix: "speed.\(processedFormat.fileExtension)", outcome: &outcome
+            processed, lensName: lensName, suffix: "speed.\(processedFormat.fileExtension)", isRAW: false,
+            outcome: &outcome
         ) {
             $0.fileDataRepresentation()
         }
@@ -161,14 +192,19 @@ final class TagCheckCapturer {
     }
 
     /// Configures a photo session for one physical camera with as little processing as the
-    /// public API allows (capability survey, item 12).
+    /// public API allows (capability survey, item 12), in the order the app's backend uses.
     ///
-    /// A video data output feeding `frameCounter` is added too, so the camera streams frames and
-    /// auto exposure has something to measure before the first capture. Auto exposure, focus
-    /// and white balance stay continuous for this check.
+    /// 1. The `.photo` preset, the camera, the photo output and a video data output feeding
+    ///    `frameCounter` are committed, so the camera's active format is the photo format.
+    /// 2. The photo output's switches are committed before `startRunning()`, as
+    ///    `AVCapturePhotoOutput.h` recommends for settings that reconfigure the pipeline:
+    ///    `.speed`, no ProRAW, zero shutter lag and responsive capture off, no deferred delivery,
+    ///    constant color or content-aware distortion correction, and an explicit
+    ///    `maxPhotoDimensions` (the format's smallest supported size, the native 12 MP).
+    /// 3. The camera is locked to zoom 1.0, geometric distortion correction off and continuous
+    ///    auto exposure, focus and white balance.
     ///
-    /// - Throws: An error if the device can't be opened or added, or can't be locked to set
-    ///   zoom, distortion correction and the auto modes.
+    /// - Throws: An error if the device can't be opened or added, or can't be locked.
     private func configure(
         session: AVCaptureSession, device: AVCaptureDevice, output: AVCapturePhotoOutput,
         frameCounter: VideoFrameCounter
@@ -182,18 +218,30 @@ final class TagCheckCapturer {
         }
         session.addInput(input)
         session.addOutput(output)
+        let videoOutput = AVCaptureVideoDataOutput()
+        if session.canAddOutput(videoOutput) {
+            videoOutput.setSampleBufferDelegate(frameCounter, queue: frameCounter.queue)
+            session.addOutput(videoOutput)
+        }
+        session.commitConfiguration()
+
+        session.beginConfiguration()
         // ProRAW is demosaiced and may be multi-frame; only Bayer RAW is wanted (AGENTS.md).
         output.isAppleProRAWEnabled = false
         output.maxPhotoQualityPrioritization = .speed
+        // Responsive capture requires zero shutter lag, so it goes off first. Zero shutter lag
+        // (on by default since iOS 17) takes the photo from a buffer of earlier frames.
+        output.isResponsiveCaptureEnabled = false
+        output.isZeroShutterLagEnabled = false
         if output.isAutoDeferredPhotoDeliverySupported { output.isAutoDeferredPhotoDeliveryEnabled = false }
         if output.isConstantColorSupported { output.isConstantColorEnabled = false }
         if output.isContentAwareDistortionCorrectionSupported {
             output.isContentAwareDistortionCorrectionEnabled = false
         }
-        let videoOutput = AVCaptureVideoDataOutput()
-        if session.canAddOutput(videoOutput) {
-            videoOutput.setSampleBufferDelegate(frameCounter, queue: frameCounter.queue)
-            session.addOutput(videoOutput)
+        if let smallest = device.activeFormat.supportedMaxPhotoDimensions.min(by: {
+            Int($0.width) * Int($0.height) < Int($1.width) * Int($1.height)
+        }) {
+            output.maxPhotoDimensions = smallest
         }
         session.commitConfiguration()
 
@@ -207,6 +255,38 @@ final class TagCheckCapturer {
             device.whiteBalanceMode = .continuousAutoWhiteBalance
         }
         device.unlockForConfiguration()
+    }
+
+    /// Prepares the photo output for the first capture (`setPreparedPhotoSettingsArray`): RAW
+    /// captures need extra buffers, and unprepared captures allocate them on demand
+    /// (`AVCapturePhotoOutput.h`).
+    /// - Returns: For the report: whether it was prepared, any error, and whether it timed out.
+    private func prepare(output: AVCapturePhotoOutput, settings: AVCapturePhotoSettings) -> [String: Any] {
+        let done = DispatchSemaphore(value: 0)
+        let result = OSAllocatedUnfairLock(initialState: (prepared: false, error: ""))
+        output.setPreparedPhotoSettingsArray([settings]) { prepared, error in
+            result.withLock { $0 = (prepared, error?.localizedDescription ?? "") }
+            done.signal()
+        }
+        let timedOut = done.wait(timeout: .now() + Self.prepareTimeoutSeconds) == .timedOut
+        let (prepared, error) = result.withLock { $0 }
+        return ["prepared": prepared, "error": error, "timedOut": timedOut]
+    }
+
+    /// Saves one live video frame as `<lens>-preview.jpg` and measures it, to show whether the
+    /// camera itself sees an exposed scene.
+    /// - Returns: For the report: the file name and its luminance, or an error.
+    private func savePreviewFrame(
+        from frameCounter: VideoFrameCounter, lensName: String, outcome: inout [String: Any]
+    ) -> [String: Any] {
+        let fileName = "\(lensName)-preview.jpg"
+        guard let frame = frameCounter.snapshot(timeout: Self.previewFrameTimeoutSeconds) else {
+            outcome["preview.jpg"] = "failed: no video frame"
+            return ["error": "no video frame within \(Self.previewFrameTimeoutSeconds) s"]
+        }
+        write(data: frame.jpeg, to: fileName)
+        outcome["preview.jpg"] = "done"
+        return ["file": fileName, "luminance": frame.luminance]
     }
 
     /// Waits until the session is running, frames are arriving, and auto exposure, focus and
@@ -242,14 +322,33 @@ final class TagCheckCapturer {
 
     // MARK: - Capture
 
+    /// RAW-only settings written as DNG, with no processed image (capability survey, item 12).
+    private func rawSettings(_ pixelFormat: OSType, output: AVCapturePhotoOutput) -> AVCapturePhotoSettings {
+        speedSettings(
+            AVCapturePhotoSettings(
+                rawPixelFormatType: pixelFormat, rawFileType: .dng, processedFormat: nil, processedFileType: nil),
+            output: output)
+    }
+
+    /// Settings for one processed photo in its file container (HEIC or JPEG).
+    private func processedSettings(_ codec: AVVideoCodecType, output: AVCapturePhotoOutput) -> AVCapturePhotoSettings {
+        speedSettings(
+            AVCapturePhotoSettings(
+                rawPixelFormatType: 0, rawFileType: nil, processedFormat: [AVVideoCodecKey: codec],
+                processedFileType: codec == .hevc ? .heic : .jpg),
+            output: output)
+    }
+
     /// Applies the per-photo settings shared by every capture: speed prioritization (required
-    /// for Bayer RAW), no flash, no content-aware distortion correction, no constant color.
-    /// No location is set on the settings, so no GPS metadata is supplied.
-    private static func speedSettings(_ settings: AVCapturePhotoSettings) -> AVCapturePhotoSettings {
+    /// for Bayer RAW), no flash, no content-aware distortion correction, no constant color, and
+    /// the output's `maxPhotoDimensions`. No location is set on the settings, so no GPS
+    /// metadata is supplied.
+    private func speedSettings(_ settings: AVCapturePhotoSettings, output: AVCapturePhotoOutput) -> AVCapturePhotoSettings {
         settings.photoQualityPrioritization = .speed
         settings.flashMode = .off
         settings.isAutoContentAwareDistortionCorrectionEnabled = false
         settings.isConstantColorEnabled = false
+        settings.maxPhotoDimensions = output.maxPhotoDimensions
         return settings
     }
 
@@ -260,13 +359,20 @@ final class TagCheckCapturer {
         output.availablePhotoCodecTypes.contains(.hevc) ? (.hevc, "heic") : (.jpeg, "jpg")
     }
 
-    /// Captures one photo and waits for it, recording the camera's exposure state at the shutter.
+    /// Waits for the output to be ready, then captures one photo and waits for it, recording the
+    /// readiness and the camera's exposure state at the shutter.
     /// - Returns: The finished capture; its `photo` is `nil` on failure or timeout.
     private func capture(
         settings: AVCapturePhotoSettings, output: AVCapturePhotoOutput, device: AVCaptureDevice
     ) -> PhotoCaptureWaiter {
+        let start = Date()
+        while output.captureReadiness != .ready, Date().timeIntervalSince(start) < Self.readinessTimeoutSeconds {
+            Thread.sleep(forTimeInterval: Self.settlePollSeconds)
+        }
         let waiter = PhotoCaptureWaiter(requestedSettings: settings)
         waiter.deviceStateAtCapture = TagCheckReport.exposureState(of: device)
+        waiter.deviceStateAtCapture["captureReadiness"] = output.captureReadiness.rawValue
+        waiter.deviceStateAtCapture["readinessWaitSeconds"] = Date().timeIntervalSince(start)
         output.capturePhoto(with: settings, delegate: waiter)
         waiter.wait(seconds: Self.captureTimeoutSeconds)
         return waiter
@@ -277,11 +383,13 @@ final class TagCheckCapturer {
     ///   - capture: The finished capture.
     ///   - lensName: The file name prefix.
     ///   - suffix: The file name suffix, for example `raw.dng`.
+    ///   - isRAW: `true` for a DNG, which is decoded with `CIRAWFilter` for the luminance check.
     ///   - outcome: The lens summary; receives `done` or the failure for this file.
     ///   - fileData: Produces the file bytes from the photo.
-    /// - Returns: The file name, requested and resolved settings, and `photo.metadata`.
+    /// - Returns: The file name, requested and resolved settings, `photo.metadata`, and the
+    ///   decoded image's luminance.
     private func record(
-        _ capture: PhotoCaptureWaiter, lensName: String, suffix: String, outcome: inout [String: Any],
+        _ capture: PhotoCaptureWaiter, lensName: String, suffix: String, isRAW: Bool, outcome: inout [String: Any],
         fileData: (AVCapturePhoto) -> Data?
     ) -> [String: Any] {
         let fileName = "\(lensName)-\(suffix)"
@@ -295,8 +403,11 @@ final class TagCheckCapturer {
             return entry
         }
         write(data: data, to: fileName)
-        outcome[suffix] = "done"
-        status("\(fileName): done")
+        let luminance = ImageLuminance.measure(data: data, isRAW: isRAW)
+        entry["luminance"] = luminance
+        let black = luminance["looksBlack"] as? Bool == true || luminance["looksFlat"] as? Bool == true
+        outcome[suffix] = black ? "done, but the image looks black or flat" : "done"
+        status("\(fileName): \(outcome[suffix] ?? "")")
         return entry
     }
 
@@ -465,24 +576,73 @@ final class PrivateMetadataRemover: NSObject, AVCapturePhotoFileDataRepresentati
 #endif
 
 #if DEBUG
-/// Counts video frames, so the tag check can tell that the camera is streaming.
+/// Counts video frames, so the tag check can tell that the camera is streaming, and on request
+/// saves one frame as a JPEG.
 ///
-/// `@unchecked Sendable`: the count is protected by a lock; AVFoundation calls the delegate on
-/// ``queue`` while the capture queue reads ``count``.
+/// `@unchecked Sendable`: the state is protected by a lock; AVFoundation calls the delegate on
+/// ``queue`` while the capture queue reads ``count`` and calls ``snapshot(timeout:)``.
 final class VideoFrameCounter: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
+    /// One saved video frame.
+    struct Frame {
+        /// The frame as JPEG data.
+        let jpeg: Data
+        /// The frame's luminance, from ``ImageLuminance``.
+        let luminance: [String: Any]
+    }
+
+    /// The counter's state.
+    private struct State {
+        /// Frames delivered so far.
+        var count = 0
+        /// Whether the next frame should be saved.
+        var wantsSnapshot = false
+        /// The saved frame, once there is one.
+        var snapshot: Frame?
+    }
+
     /// The serial queue the video data output delivers frames on.
     let queue = DispatchQueue(label: "com.photivra.nope.tagcheck.frames")
-    /// The frame count, behind a lock.
-    private let frames = OSAllocatedUnfairLock(initialState: 0)
+    /// The state, behind a lock.
+    private let state = OSAllocatedUnfairLock(uncheckedState: State())
+    /// Encodes the saved frame.
+    private let context = CIContext(options: [.cacheIntermediates: false])
 
     /// Frames delivered so far.
-    var count: Int { frames.withLock { $0 } }
+    var count: Int { state.withLock { $0.count } }
 
-    /// Counts one frame. The frame itself is dropped immediately.
+    /// Saves the next frame as a JPEG and waits for it, polling.
+    /// - Parameter timeout: The longest wait, in seconds.
+    /// - Returns: The frame, or `nil` if none arrived in time.
+    func snapshot(timeout: Double) -> Frame? {
+        state.withLock {
+            $0.snapshot = nil
+            $0.wantsSnapshot = true
+        }
+        let start = Date()
+        while Date().timeIntervalSince(start) < timeout {
+            if let frame = state.withLockUnchecked({ $0.snapshot }) { return frame }
+            Thread.sleep(forTimeInterval: 0.02)
+        }
+        return nil
+    }
+
+    /// Counts one frame, and saves it if a snapshot was requested. Other frames are dropped
+    /// immediately.
     func captureOutput(
         _ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection
     ) {
-        frames.withLock { $0 += 1 }
+        let wantsSnapshot = state.withLock {
+            $0.count += 1
+            defer { $0.wantsSnapshot = false }
+            return $0.wantsSnapshot
+        }
+        guard wantsSnapshot, let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer),
+            let sRGB = CGColorSpace(name: CGColorSpace.sRGB)
+        else { return }
+        let image = CIImage(cvPixelBuffer: pixelBuffer)
+        guard let jpeg = context.jpegRepresentation(of: image, colorSpace: sRGB) else { return }
+        let frame = Frame(jpeg: jpeg, luminance: ImageLuminance.measure(image))
+        state.withLockUnchecked { $0.snapshot = frame }
     }
 }
 #endif

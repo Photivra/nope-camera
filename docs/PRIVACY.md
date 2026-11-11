@@ -1,7 +1,8 @@
 # Privacy
 
-How nope. handles every metadata item it writes or removes. Status: scaffold (0.1.0). nope.
-doesn't capture or save photos yet, so nothing is written. The list below is the plan from
+How nope. handles every metadata item it writes or removes. Status: capture core, in
+development. nope. captures photos into memory but doesn't save them yet, so no photo is
+written. The list below is the plan from
 issue #1, "Privacy"; every item is **to be confirmed by the device tag check** (issue #1, step 2):
 a dump of every tag in a real saved DNG and HEIF. Wording for any user-facing claim comes from
 [`docs/research/privacy-claims.md`](research/privacy-claims.md).
@@ -13,13 +14,18 @@ a dump of every tag in a real saved DNG and HEIF. Wording for any user-facing cl
 - **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains, no
   collected data types and no required-reason APIs.
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
-  Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The development
-  build uses a simulated backend and doesn't show a system prompt. No location permission is
-  requested.
+  Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
+  for camera access when the person presses "Allow Camera Access". No location permission is
+  requested, and no location is supplied to the camera.
+- **Photos:** a capture is held in memory only, until the next capture replaces it or the app
+  quits. It isn't written to a file or added to Photos; the screen says "Captured (not saved
+  yet: development build)". Saving comes with the metadata allowlist and read-back
+  verification.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files and log nothing. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
-  `-NopeTagCheck`; it isn't compiled into Release builds.
+  `-NopeTagCheck`; it isn't compiled into Release builds. It also saves one live video frame
+  per lens as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md), "Black frames").
 
 ## Tag check
 
@@ -41,8 +47,9 @@ never committed: they contain serial numbers.
 
 **Results (first device runs, 2026-11-11, an iPhone 16 Pro Max on iOS 27.2.1):** the metadata
 results below are consistent across two runs. The image data in those runs was dark: the debug
-capture setup produced empty frames. Fixing that is the first task of the capture core, so
-the exposure tags (exposure time, ISO) still need confirming on a real image.
+capture setup produced empty frames (a constant fill, not a sensor readout). The diagnosis and
+the fix are in [`TESTING.md`](TESTING.md), "Black frames"; the exposure tags (exposure time,
+ISO) still need confirming on a real image from the next run.
 
 - **Bayer RAW on every physical camera,** including the front camera. The wide and front
   cameras give `bgg4`, and the ultra wide and telephoto give `rgg4`. RAW is 12 MP

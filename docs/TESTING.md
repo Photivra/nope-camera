@@ -40,9 +40,13 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 | File | Why it can't run in a unit test | Verified by |
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
+| `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
 | `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave | On-device check |
 
-Each excluded file is a thin wrapper; its logic lives in a tested file. `NopeUI` is not part of
+Each excluded file is a thin wrapper; its logic lives in a tested file. For capture, the
+decisions are in `LensCatalog` (which cameras and formats), `CapturePolicy` (every processing
+switch), `PhotoSettingsFactory` (the photo settings) and `CaptureReadiness` (when to capture),
+and `AVFoundationCaptureBackend` is tested against a fake `CaptureHardware`. `NopeUI` is not part of
 the coverage gate: it is covered by UI tests and accessibility audits instead.
 
 ## UI tests and accessibility audits
@@ -52,8 +56,21 @@ xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' CODE_SIGNING_ALLOWED=NO
 ```
 
-`NopeAppUITests` launches the app, runs `performAccessibilityAudit()` on the permission screen,
-allows access, and audits the ready screen. Every new screen and state adds an audit.
+The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
+`-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
+swaps in `SimulatedCaptureBackend`. Release builds ignore the argument. The scenarios and what
+each test checks, with `performAccessibilityAudit()` in every state:
+
+| Scenario | Test |
+|---|---|
+| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Captured (not saved yet: development build)"; the telephoto (no RAW) shows the fallback badge |
+| `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
+| `hot` | The "cool down" message, shutter disabled |
+| `captureFails` | The capture failure message |
+| `denied`, `noCamera` | The access-off and no-camera screens |
+
+Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
+Every new screen and state adds an audit.
 
 ## Documentation
 
@@ -87,6 +104,11 @@ iPad:
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
 - a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`);
+- capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
+  viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
+  a photo and show "Captured (not saved yet: development build)"; a lens without Bayer RAW shows
+  the fallback badge; a phone call or another camera app shows the interruption message, and
+  the camera comes back afterwards; and the tag check (below) shows exposed frames;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size).
 
@@ -111,9 +133,15 @@ launched with the `-NopeTagCheck` launch argument.
    [`research/capability-survey.md`](research/capability-survey.md), item 12: the `.photo`
    preset, `maxPhotoQualityPrioritization` and `photoQualityPrioritization` set to `.speed`,
    Apple ProRAW off, zoom 1.0, deferred delivery, constant color and distortion correction off,
-   no flash. No location is requested and no GPS metadata is supplied.
+   no flash, and zero shutter lag and responsive capture off. The output's switches and an
+   explicit `maxPhotoDimensions` (the format's smallest size, 12 MP) are committed before the
+   session starts, and the photo output is prepared for the first capture
+   (`setPreparedPhotoSettingsArray`). Each capture waits for `captureReadiness` to be `.ready`.
+   RAW is requested as RAW-only DNG (`rawFileType: .dng`), the processed photo with its file
+   type (`.heic`). This is the same order as the app's backend; see "Black frames" below.
+   No location is requested and no GPS metadata is supplied.
    Auto exposure, focus and white balance stay continuous, and a video data output keeps
-   frames flowing. Before the first capture with each lens, it waits at least 1 second and
+   frames flowing. The screen shows the live view, so you can aim at a lit scene. Before the first capture with each lens, it waits at least 1 second and
    until the session is running, at least 10 frames have arrived, and exposure, focus and white
    balance have stopped adjusting, up to 5 seconds. The report records whether it settled or
    timed out. (A fixed 1-second wait without a video output gave black frames on a device.)
@@ -126,13 +154,17 @@ launched with the `-NopeTagCheck` launch argument.
    - `<lens>-speed.heic`: a processed HEVC photo at `.speed` (`<lens>-speed.jpg` if the device
      offers no HEVC).
 
+   - `<lens>-preview.jpg`: one live video frame, saved after the camera settles.
+
    A lens without a Bayer RAW format gets only the processed photo, and its report says so.
 4. It writes `<lens>-report.json` for each lens (device model identifier, OS version, camera
    type and position, active format, RAW formats and whether each is Bayer, ISO, exposure and
    aperture ranges, every supported maximum photo size, iOS 27 aperture values,
    `maxBracketedCapturePhotoCount`, the photo output's processing switches, the settle result,
    the exposure duration, ISO, aperture, focus and white balance at each capture, the requested
-   and resolved photo settings, and `photo.metadata`), and a `summary.json`.
+   and resolved photo settings, `photo.metadata`, whether the output was prepared, the capture
+   readiness before each capture, and the decoded `luminance` of every file and of the preview
+   frame), and a `summary.json`.
 
 Lens names are `back-wide`, `back-ultrawide`, `back-telephoto`, `front-wide` and so on. Every
 file goes to the app's `Documents/TagCheck/` folder, with complete file protection; each run
@@ -167,6 +199,67 @@ Release builds never write photos to the container: photos go from memory to Pho
    ```sh
    swift scripts/dump-tags.swift TagCheckOutput
    ```
+
+### Checking that frames are exposed
+
+Every file and the preview frame are decoded on the device (`CIRAWFilter` for DNGs, `CIImage`
+otherwise) and measured. In each `<lens>-report.json`, `captures.<file>.luminance` and
+`previewFrame.luminance` have:
+
+- `meanLuma`, `minLuma`, `maxLuma`: Rec. 709 luma of the sRGB-encoded image, 0 to 1;
+- `looksBlack`: the mean is below 0.01;
+- `looksFlat`: the whole image is within one 8-bit step, a constant fill.
+
+The status list and `summary.json` say "done, but the image looks black or flat" for such a
+file. For a lit scene, expect `looksBlack` and `looksFlat` to be `false` for the RAW, the HEIF
+and the preview, a `meanLuma` well above 0.01 and a `maxLuma` above `minLuma`. The HEIF's EXIF
+`ExposureTime` and `ISOSpeedRatings` should no longer be 0. Open `<lens>-preview.jpg` to see what
+the camera saw. The thresholds are tool settings, not platform values.
+
+### Black frames (first device runs)
+
+**Symptom.** The first two runs (iPhone 16 Pro Max, iOS 27.2.1) gave black files on every lens:
+the RAW DNGs and the 15 KB HEIFs, whose EXIF said `ExposureTime` 0 and ISO 0.
+
+**What the files show.** In every DNG, all 16 tiles have the same byte count and the
+lossless-JPEG data repeats a single byte value: a constant fill, not a sensor readout, which
+would contain noise. Decoded, every file has a mean of exactly 0. Meanwhile the front camera's
+auto exposure had settled on a lit scene (exposure target offset −0.03 EV at ISO 1607, 1/15 s),
+so the camera saw light while the still pipeline delivered a blank buffer. This rules out
+underexposure as the cause. (The rear cameras were at their highest ISO with an offset near
+−5 EV, so they were also pointed at something dark.)
+
+**Likely causes, from the code and Apple's documentation.** The capture setup departed from the
+documented flow in these ways; which one is responsible can only be shown on a device:
+
+1. **Zero shutter lag was on.** The report shows `isZeroShutterLagEnabled: true`: it is
+   "automatically enabled when supported" for apps built for iOS 17 or later, takes the photo
+   from a buffer of earlier frames, and is meant for `.balanced` and `.quality`
+   (`AVCapturePhotoOutput.h`, `zeroShutterLagEnabled`;
+   [documentation](https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/iszeroshutterlagenabled)).
+   nope. uses `.speed` and wants the frame exposed after the shutter, so it is now off.
+2. **The output was never prepared for RAW.** "Some types of photo capture, such as bracketed
+   captures and RAW captures, require the receiver to allocate additional buffers", and by
+   default only default settings are prepared (`setPreparedPhotoSettingsArray(_:completionHandler:)`,
+   [documentation](https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/setpreparedphotosettingsarray(_:completionhandler:))).
+3. **Captures weren't gated on readiness.** Apple's `captureReadiness` says when the output can
+   take a request in a timely manner
+   ([documentation](https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/capturereadiness)).
+   WebKit reported the first `AVCapturePhotoOutput` photo "often all black" and fixed it with
+   `AVCapturePhotoOutputReadinessCoordinator`
+   ([WebKit bug 313854](https://bugs.webkit.org/show_bug.cgi?id=313854)).
+4. **`maxPhotoDimensions` was implicit** (0 × 0 in the requested settings), and the RAW and
+   processed settings named no file type.
+5. **Pipeline switches were set in the same configuration as the input.** The header asks for
+   switches that reconfigure the pipeline (zero shutter lag, responsive capture,
+   `maxPhotoDimensions`) to be set before `startRunning()`.
+
+**Fix.** Both the app's backend (`SystemCaptureHardware`) and the tag check now: commit the
+preset, input and outputs first; then commit every output switch, with zero shutter lag and
+responsive capture off and an explicit `maxPhotoDimensions`; start the session; prepare the
+photo settings; and wait for `.ready` before each capture, with RAW-only DNG and HEIC settings
+that name their file types. The tag check also attaches a live preview layer, as the app does.
+The luminance check above proves the result on the next device run.
 
 ### The tag dumper
 
