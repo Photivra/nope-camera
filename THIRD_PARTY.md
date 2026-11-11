@@ -4,7 +4,7 @@ Every third-party component, dataset or specification used in this repository is
 
 | Component | Version | License | Source | Used for |
 |---|---|---|---|---|
-| *(none yet)* | | | | |
+| Inter | 4.x | SIL Open Font License 1.1 | [rsms/inter](https://github.com/rsms/inter) | The "nope." wordmark, converted to outlines (brand artwork only; not bundled) |
 
 The C2PA library is planned as the only non-platform dependency. It will be listed here when it's added.
 
