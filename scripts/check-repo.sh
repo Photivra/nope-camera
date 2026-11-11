@@ -3,7 +3,7 @@
 set -euo pipefail
 
 fail=0
-for f in LICENSE NOTICE TRADEMARKS.md CONTRIBUTING.md SECURITY.md THIRD_PARTY.md CHANGELOG.md AGENTS.md CLAUDE.md README.md; do
+for f in LICENSE NOTICE TRADEMARKS.md CONTRIBUTING.md SECURITY.md THIRD_PARTY.md CHANGELOG.md AGENTS.md CLAUDE.md README.md llms.txt; do
   if [[ ! -s "$f" ]]; then echo "missing or empty: $f"; fail=1; fi
 done
 
@@ -12,6 +12,11 @@ if ! head -n 3 LICENSE | grep -q "GNU GENERAL PUBLIC LICENSE" || ! head -n 3 LIC
 fi
 
 if ! grep -q "@AGENTS.md" CLAUDE.md; then echo "CLAUDE.md must import AGENTS.md"; fail=1; fi
+
+# llms.txt: every relative link must point to a file in the repository.
+while read -r target; do
+  if [[ ! -e "$target" ]]; then echo "llms.txt links to a missing file: $target"; fail=1; fi
+done < <(grep -oE '\]\([^)#]+\)' llms.txt | sed -E 's/^\]\((.*)\)$/\1/' | grep -vE '^[a-z]+://')
 
 # Sign-off: every commit in the range BASE..HEAD needs a Signed-off-by trailer.
 if [[ -n "${BASE_SHA:-}" && -n "${HEAD_SHA:-}" ]]; then
