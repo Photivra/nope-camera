@@ -39,8 +39,36 @@ The metadata plan below is confirmed by dumping every tag from real files captur
 How to run it is in [`TESTING.md`](TESTING.md), "Tag check". Captured files and reports are
 never committed: they contain serial numbers.
 
-**Results:** to be filled in after the first device run (device model, iOS version, tags found
-per format, and what the removal path removed).
+**Results (first device runs, 2026-11-11, an iPhone 16 Pro Max on iOS 27.2.1):** the metadata
+results below are consistent across two runs. The image data in those runs was dark: the debug
+capture setup produced empty frames. Fixing that is the first task of the capture core, so
+the exposure tags (exposure time, ISO) still need confirming on a real image.
+
+- **Bayer RAW on every physical camera,** including the front camera. The wide and front
+  cameras give `bgg4`, and the ultra wide and telephoto give `rgg4`. RAW is 12 MP
+  (4032 × 3024 within a 4224-wide active area) and 12-bit (black level 528, white level
+  4095), as lossless JPEG (TIFF compression 7) in DNG 1.3, with lens corrections stored in
+  `OpcodeList3`, not applied to the pixels.
+- **Already absent from every file:** GPS, body, lens and camera serial numbers,
+  `ImageUniqueID` and `RawDataUniqueID`. The system adds none of them unless the app
+  supplies them.
+- **Present in the system's RAW DNG, and able to identify or link photos:**
+  - **Apple maker note (`0x927C`, `{MakerApple}`):**
+    - key 3 is the time since the device last restarted, which links photos taken in one
+      session;
+    - keys 32 and 43 are per-photo UUIDs.
+  - **Software version:** `Software` (`0x0131`) and XMP `CreatorTool` (for example,
+    "27.2.1").
+  - **Time zone:** `OffsetTime`, `OffsetTimeOriginal` and `OffsetTimeDigitized`.
+  - **Sub-second timestamps:** `SubSecTimeOriginal` and `SubSecTimeDigitized`.
+  - **Exact model:** `Make`, `Model`, `UniqueCameraModel` (with the model identifier),
+    `LensMake` and `LensModel`.
+  - **XMP dates:** `CreateDate`, `ModifyDate` and `photoshop:DateCreated`.
+- **The system's HEIF adds:** `HostComputer` (the model), and a `LensModel` that includes
+  the focal length and aperture.
+- **The system removal path removed the maker note** when asked, but kept everything else.
+  This confirms the rule in `AGENTS.md`: build each file's metadata from the allowlist, never
+  by deleting known tags.
 
 ## Metadata plan (to be confirmed by the device tag check)
 
@@ -48,9 +76,9 @@ With "Remove private details" on (the default):
 
 | Item | Default | Status |
 |---|---|---|
-| Location, altitude and direction | Removed | To be confirmed |
-| Time zone offset | Removed | To be confirmed |
-| Phone and lens serial numbers | Removed | To be confirmed |
+| Location, altitude and direction | Removed | Not written by the system; confirmed absent |
+| Time zone offset | Removed | Present in system output (`OffsetTime*`); dropped by the allowlist |
+| Phone and lens serial numbers | Removed | Not written by the system; confirmed absent |
 | Unique image ID | Removed | To be confirmed |
 | Maker notes | Removed | To be confirmed |
 | iOS version | Removed | To be confirmed |
