@@ -15,4 +15,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Name and wordmark rules: "nope." when used alone, and the "nope." / "Photivra Nope Camera" lockup.
 - Architecture rules: the interface is a replaceable layer over interface-free logic modules, with import boundaries checked in CI.
 - Documentation rules: complete DocC documentation for every symbol, `NopeCore` documented as the interface contract, Markdown API export for agents, and documentation checks in CI.
-- Research: C2PA signing with offline, per-photo keys, and a device capability survey.
+- Research: C2PA signing with offline, per-photo keys, a device capability survey, and verified wording and sources for every privacy statement.
