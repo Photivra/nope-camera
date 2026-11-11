@@ -28,6 +28,18 @@ expect fail "URLSession is banned" "$d"
 d=$(new_tree); mkdir -p "$d/App"; printf 'import WebKit\n' >"$d/App/A.swift"
 expect fail "WebKit is banned" "$d"
 
+d=$(new_tree); mkdir -p "$d/App"; printf 'import AdjustSdk\n' >"$d/App/A.swift"
+expect fail "Adjust SDK import is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'Adjust.trackEvent(event)\n' >"$d/App/A.swift"
+expect fail "Adjust SDK call is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'import Segment\n' >"$d/App/A.swift"
+expect fail "Segment SDK import is banned" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'let busy = device.isAdjustingExposure || device.isAdjustingFocus\nlet t = AVSemanticSegmentationMatte.MatteType.hair\n' >"$d/App/A.swift"
+expect pass "camera APIs containing Adjust or Segment are allowed" "$d"
+
 d=$(new_tree); mkdir -p "$d/App"; printf 'print("exif")\n' >"$d/App/A.swift"
 expect fail "print is banned in app code" "$d"
 

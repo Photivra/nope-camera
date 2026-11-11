@@ -16,9 +16,21 @@ import os
 /// Not thread-safe: create it and call ``runAll()`` on one serial queue, off the main thread,
 /// because `AVCaptureSession.startRunning()` blocks.
 final class TagCheckCapturer {
-    /// How long to let auto exposure settle after the session starts, in seconds. A tool
-    /// setting, not a platform value: the files only need a plausible exposure.
-    private static let settleSeconds = 1.0
+    /// The shortest wait after the session starts, in seconds, before checking whether auto
+    /// exposure, focus and white balance have settled. Tool settings, not platform values: the
+    /// files only need a plausible exposure. The first device run captured black frames
+    /// (ExposureTime 0, ISO 0) after a fixed 1-second wait with no video output attached.
+    private static let minimumSettleSeconds = 1.0
+
+    /// The longest wait for the camera to settle, in seconds; the report records a timeout.
+    private static let settleTimeoutSeconds = 5.0
+
+    /// How often to check the settle conditions, in seconds.
+    private static let settlePollSeconds = 0.05
+
+    /// Video frames that must arrive before the camera counts as streaming. An assumption: a
+    /// few frames give auto exposure something to measure.
+    private static let minimumFrames = 10
 
     /// How long to wait for one capture to finish, in seconds, before reporting a failure.
     private static let captureTimeoutSeconds = 30.0
@@ -90,8 +102,9 @@ final class TagCheckCapturer {
 
         let session = AVCaptureSession()
         let output = AVCapturePhotoOutput()
+        let frameCounter = VideoFrameCounter()
         do {
-            try configure(session: session, device: device, output: output)
+            try configure(session: session, device: device, output: output, frameCounter: frameCounter)
         } catch {
             status("\(lensName): failed to configure (\(error.localizedDescription))")
             outcome["error"] = error.localizedDescription
@@ -99,7 +112,11 @@ final class TagCheckCapturer {
         }
         session.startRunning()
         defer { session.stopRunning() }
-        Thread.sleep(forTimeInterval: Self.settleSeconds)
+        let settle = waitUntilSettled(session: session, device: device, frameCounter: frameCounter)
+        lensReport["settle"] = settle
+        if settle["settled"] as? Bool != true {
+            status("\(lensName): camera didn't settle in \(Self.settleTimeoutSeconds) s; capturing anyway")
+        }
 
         lensReport.merge(TagCheckReport.describe(device: device, output: output)) { _, new in new }
         var captures: [String: Any] = [:]
@@ -107,7 +124,8 @@ final class TagCheckCapturer {
         if let bayerFormat = output.availableRawPhotoPixelFormatTypes.first(where: {
             AVCapturePhotoOutput.isBayerRAWPixelFormat($0)
         }) {
-            let raw = capture(settings: Self.speedSettings(.init(rawPixelFormatType: bayerFormat)), output: output)
+            let raw = capture(
+                settings: Self.speedSettings(.init(rawPixelFormatType: bayerFormat)), output: output, device: device)
             captures["raw"] = record(raw, lensName: lensName, suffix: "raw.dng", outcome: &outcome) {
                 $0.fileDataRepresentation()
             }
@@ -128,7 +146,8 @@ final class TagCheckCapturer {
 
         let processedFormat = Self.processedFormat(for: output)
         let processed = capture(
-            settings: Self.speedSettings(.init(format: [AVVideoCodecKey: processedFormat.codec])), output: output)
+            settings: Self.speedSettings(.init(format: [AVVideoCodecKey: processedFormat.codec])), output: output,
+            device: device)
         captures["speed"] = record(
             processed, lensName: lensName, suffix: "speed.\(processedFormat.fileExtension)", outcome: &outcome
         ) {
@@ -144,10 +163,15 @@ final class TagCheckCapturer {
     /// Configures a photo session for one physical camera with as little processing as the
     /// public API allows (capability survey, item 12).
     ///
+    /// A video data output feeding `frameCounter` is added too, so the camera streams frames and
+    /// auto exposure has something to measure before the first capture. Auto exposure, focus
+    /// and white balance stay continuous for this check.
+    ///
     /// - Throws: An error if the device can't be opened or added, or can't be locked to set
-    ///   zoom and distortion correction.
+    ///   zoom, distortion correction and the auto modes.
     private func configure(
-        session: AVCaptureSession, device: AVCaptureDevice, output: AVCapturePhotoOutput
+        session: AVCaptureSession, device: AVCaptureDevice, output: AVCapturePhotoOutput,
+        frameCounter: VideoFrameCounter
     ) throws {
         session.beginConfiguration()
         if session.canSetSessionPreset(.photo) { session.sessionPreset = .photo }
@@ -166,13 +190,54 @@ final class TagCheckCapturer {
         if output.isContentAwareDistortionCorrectionSupported {
             output.isContentAwareDistortionCorrectionEnabled = false
         }
+        let videoOutput = AVCaptureVideoDataOutput()
+        if session.canAddOutput(videoOutput) {
+            videoOutput.setSampleBufferDelegate(frameCounter, queue: frameCounter.queue)
+            session.addOutput(videoOutput)
+        }
         session.commitConfiguration()
 
         // Bayer RAW requires videoZoomFactor 1.0 (AVCapturePhotoOutput.h, "Bayer RAW rules").
         try device.lockForConfiguration()
         device.videoZoomFactor = 1.0
         if device.isGeometricDistortionCorrectionSupported { device.isGeometricDistortionCorrectionEnabled = false }
+        if device.isExposureModeSupported(.continuousAutoExposure) { device.exposureMode = .continuousAutoExposure }
+        if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
+        if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+            device.whiteBalanceMode = .continuousAutoWhiteBalance
+        }
         device.unlockForConfiguration()
+    }
+
+    /// Waits until the session is running, frames are arriving, and auto exposure, focus and
+    /// white balance have stopped adjusting; at least ``minimumSettleSeconds``, at most
+    /// ``settleTimeoutSeconds``.
+    /// - Returns: For the report: whether it settled, how long it took, and each condition.
+    private func waitUntilSettled(
+        session: AVCaptureSession, device: AVCaptureDevice, frameCounter: VideoFrameCounter
+    ) -> [String: Any] {
+        let start = Date()
+        Thread.sleep(forTimeInterval: Self.minimumSettleSeconds)
+        var settled = false
+        while Date().timeIntervalSince(start) < Self.settleTimeoutSeconds {
+            settled =
+                session.isRunning && frameCounter.count >= Self.minimumFrames && !device.isAdjustingExposure
+                && !device.isAdjustingFocus && !device.isAdjustingWhiteBalance
+            if settled { break }
+            Thread.sleep(forTimeInterval: Self.settlePollSeconds)
+        }
+        return [
+            "settled": settled,
+            "timedOut": !settled,
+            "waitedSeconds": Date().timeIntervalSince(start),
+            "minimumSettleSeconds": Self.minimumSettleSeconds,
+            "timeoutSeconds": Self.settleTimeoutSeconds,
+            "sessionRunning": session.isRunning,
+            "framesDelivered": frameCounter.count,
+            "isAdjustingExposure": device.isAdjustingExposure,
+            "isAdjustingFocus": device.isAdjustingFocus,
+            "isAdjustingWhiteBalance": device.isAdjustingWhiteBalance,
+        ]
     }
 
     // MARK: - Capture
@@ -195,10 +260,13 @@ final class TagCheckCapturer {
         output.availablePhotoCodecTypes.contains(.hevc) ? (.hevc, "heic") : (.jpeg, "jpg")
     }
 
-    /// Captures one photo and waits for it.
+    /// Captures one photo and waits for it, recording the camera's exposure state at the shutter.
     /// - Returns: The finished capture; its `photo` is `nil` on failure or timeout.
-    private func capture(settings: AVCapturePhotoSettings, output: AVCapturePhotoOutput) -> PhotoCaptureWaiter {
+    private func capture(
+        settings: AVCapturePhotoSettings, output: AVCapturePhotoOutput, device: AVCaptureDevice
+    ) -> PhotoCaptureWaiter {
         let waiter = PhotoCaptureWaiter(requestedSettings: settings)
+        waiter.deviceStateAtCapture = TagCheckReport.exposureState(of: device)
         output.capturePhoto(with: settings, delegate: waiter)
         waiter.wait(seconds: Self.captureTimeoutSeconds)
         return waiter
@@ -300,6 +368,9 @@ enum TagCheckError: LocalizedError {
 final class PhotoCaptureWaiter: NSObject, AVCapturePhotoCaptureDelegate, @unchecked Sendable {
     /// The settings passed to `capturePhoto(with:delegate:)`.
     let requestedSettings: AVCapturePhotoSettings
+    /// The camera's exposure, ISO, aperture, focus and white balance state just before the
+    /// capture was requested. Set on the capture queue before the capture starts.
+    var deviceStateAtCapture: [String: Any] = [:]
     /// The delivered photo, or `nil` on failure.
     private(set) var photo: AVCapturePhoto?
     /// The settings AVFoundation resolved for this capture.
@@ -389,6 +460,29 @@ final class PrivateMetadataRemover: NSObject, AVCapturePhotoFileDataRepresentati
     private static func matches(_ key: String) -> Bool {
         let lowered = key.lowercased()
         return removedKeyFragments.contains { lowered.contains($0) }
+    }
+}
+#endif
+
+#if DEBUG
+/// Counts video frames, so the tag check can tell that the camera is streaming.
+///
+/// `@unchecked Sendable`: the count is protected by a lock; AVFoundation calls the delegate on
+/// ``queue`` while the capture queue reads ``count``.
+final class VideoFrameCounter: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, @unchecked Sendable {
+    /// The serial queue the video data output delivers frames on.
+    let queue = DispatchQueue(label: "com.photivra.nope.tagcheck.frames")
+    /// The frame count, behind a lock.
+    private let frames = OSAllocatedUnfairLock(initialState: 0)
+
+    /// Frames delivered so far.
+    var count: Int { frames.withLock { $0 } }
+
+    /// Counts one frame. The frame itself is dropped immediately.
+    func captureOutput(
+        _ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection
+    ) {
+        frames.withLock { $0 += 1 }
     }
 }
 #endif

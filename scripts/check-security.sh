@@ -18,8 +18,9 @@ files() {
     grep -vE '(^|/)(Tests?|[A-Za-z]+Tests|test|androidTest|docs|scripts|security|\.github)/' || true
 }
 
-# 1. Banned code.
-banned='URLSession|NSURLConnection|NWConnection|NWPathMonitor|import Network\b|CFNetwork|CFStream|import WebKit|WKWebView|SFSafariViewController|android\.permission\.INTERNET|java\.net\.|HttpURLConnection|okhttp|retrofit|android\.webkit|Firebase|Crashlytics|Sentry|Amplitude|Mixpanel|Segment|AppsFlyer|Adjust|GoogleMobileAds|FBSDK|FacebookCore|TelemetryDeck|\bprint\(|\bNSLog\(|\bdebugPrint\('
+# 1. Banned code. The Adjust and Segment SDK names are matched as whole words, so camera APIs
+#    such as isAdjustingExposure and semantic segmentation mattes aren't flagged.
+banned='URLSession|NSURLConnection|NWConnection|NWPathMonitor|import Network\b|CFNetwork|CFStream|import WebKit|WKWebView|SFSafariViewController|android\.permission\.INTERNET|java\.net\.|HttpURLConnection|okhttp|retrofit|android\.webkit|Firebase|Crashlytics|Sentry|Amplitude|Mixpanel|\bSegment\b|AppsFlyer|\b(Adjust|AdjustSdk|ADJConfig)\b|GoogleMobileAds|FBSDK|FacebookCore|TelemetryDeck|\bprint\(|\bNSLog\(|\bdebugPrint\('
 while IFS= read -r f; do
   [[ -f "$f" ]] || continue
   if hits=$(grep -nE "$banned" "$f"); then
