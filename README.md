@@ -2,7 +2,7 @@
 
 A free, open-source camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, signs it with C2PA Content Credentials, and saves it to Photos. The app makes no network calls and has no analytics.
 
-**Status:** in planning. Nothing is built yet. The design is in issue #1.
+**Status:** in development (0.x). The project builds and tests, but it has no camera features yet. The design is in issue #1; the code layout is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and how to run the tests is in [`docs/TESTING.md`](docs/TESTING.md).
 
 ## License
 

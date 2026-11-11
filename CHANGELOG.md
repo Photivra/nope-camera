@@ -7,6 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- App scaffold, version 0.1.0: the `NopeKit` Swift package (`NopeCore`, `NopeCapture`, `NopeDevelop`, `NopeSigning`, `NopeUI`) and the universal iPhone and iPad app (iOS and iPadOS 18 and later), with no camera features yet.
+- `NopeCore` camera state machine, intents, device capabilities and the capture backend protocol, with a simulated backend for tests and development builds.
+- Camera permission screens in eleven languages (AI translations marked "needs review"), "nope." as the Home Screen name, a privacy manifest with no tracking and no collected data, and no entitlements.
+- Tests: Swift Testing unit tests with a 100% line and branch coverage gate for the logic modules, and a UI smoke test with accessibility audits.
+- CI on GitHub-hosted macOS runners: unit tests and coverage, UI tests, and a DocC build with warnings as errors, documentation coverage and a Markdown API export in `docs/api/`.
+- Localization checks for every String Catalog.
+- Documentation: architecture, testing, privacy and building-an-interface guides.
 - Repository setup: license documents, agent instructions, contribution and security policies, and repository checks.
 - `llms.txt` index for language models, and documentation and readability rules for code.
 - Security checks on every pull request: banned networking, web, SDK and logging APIs; dependency, entitlement and Unsafe allowlists; privacy manifest checks.

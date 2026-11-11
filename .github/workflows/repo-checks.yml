@@ -30,3 +30,7 @@ jobs:
         run: scripts/test-check-architecture.sh
       - name: Architecture checks
         run: scripts/check-architecture.sh
+      - name: Test the localization checks
+        run: scripts/test-check-localization.sh
+      - name: Localization checks
+        run: scripts/check-localization.sh
