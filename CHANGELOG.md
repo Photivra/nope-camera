@@ -11,13 +11,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `NopeCore`: lens selection, capture, session status (interruptions by calls, other apps and multitasking, a pause at critical heat, runtime error recovery), capture status, capture events and an opaque viewfinder handle (`CameraPreviewSource`).
 - Camera screen: live viewfinder (`AVCaptureVideoPreviewLayer`, supplied by the app target), RAW badge or no-RAW fallback badge, lens buttons with "No RAW" and the reason, a shutter that also works with the volume buttons and the Camera Control, and pause and capture messages, including "Captured (not saved yet: development build)". New strings in eleven languages (AI translations, needs review); honesty wording in `Honesty.xcstrings`.
 - UI tests for every camera state with accessibility audits, the largest text size and right-to-left layout, using simulated camera scenarios (`-NopeSimulatedCamera`, Debug builds only).
+- Tag check results from the first device runs in `docs/PRIVACY.md`.
 - Tag check: saves one live video frame per lens as a JPEG, records the decoded luminance of every file, shows the live view, and reports whether the output was prepared and ready before each capture.
-
-### Fixed
-- Black frames in the tag check: the capture setup now follows the documented order (switches and an explicit photo size committed before the session starts, zero shutter lag and responsive capture off, the output prepared for RAW, captures gated on `captureReadiness`, file types named). Both the app's backend and the tag check use it. To be confirmed on a device.
-
-### Changed
-- `Lens` describes its Bayer RAW format (`bayerRAWFormat`) instead of a flag, and carries its capabilities.
 - Metadata rule: allowlisted metadata only, verified on every save (fail closed), with tag checks on each new iOS release.
 - Debug-only tag check (`-NopeTagCheck`, Debug builds only, not compiled into Release): captures a Bayer RAW DNG, a metadata-stripped DNG and a HEIF with each physical camera, with a JSON report per lens, for the device metadata dump (issue #1, step 2).
 - Security check: the Adjust and Segment SDK names are matched as whole words, so camera APIs such as `isAdjustingExposure` are no longer flagged; new passing and failing cases.
@@ -41,3 +36,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Architecture rules: the interface is a replaceable layer over interface-free logic modules, with import boundaries checked in CI.
 - Documentation rules: complete DocC documentation for every symbol, `NopeCore` documented as the interface contract, Markdown API export for agents, and documentation checks in CI.
 - Research: C2PA signing with offline, per-photo keys, a device capability survey, and verified wording and sources for every privacy statement.
+
+### Changed
+- `Lens` describes its Bayer RAW format (`bayerRAWFormat`) instead of a flag, and carries its capabilities.
+
+### Fixed
+- Black frames in the tag check: the capture setup now follows the documented order (switches and an explicit photo size committed before the session starts, zero shutter lag and responsive capture off, the output prepared for RAW, captures gated on `captureReadiness`, file types named). Both the app's backend and the tag check use it. To be confirmed on a device.
