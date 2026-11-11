@@ -9,14 +9,23 @@ adapter is thin: conversions and rules live in small, fully tested types, and th
 hardware or a person's answer are isolated in files listed in `scripts/coverage-exclusions.txt`
 and verified on a device.
 
-The scaffold contains the camera permission adapter. Capture, RAW and PhotoKit adapters follow.
+``AVFoundationCaptureBackend`` is the real `CaptureBackend`: it finds the physical cameras,
+publishes their capabilities, and captures single-frame Bayer RAW, or the labeled processed
+fallback on a lens without it, in memory. Its decisions are in tested types; the calls that need
+a camera are in `SystemCaptureHardware.swift`. Saving to Photos follows in a later step.
 
 Related documentation: `docs/ARCHITECTURE.md`, `docs/TESTING.md` and `docs/PRIVACY.md` in the
 repository.
 
 ## Topics
 
+### Capture
+
+- ``AVFoundationCaptureBackend``
+- ``CaptureSessionPreviewSource``
+
 ### Permission
 
+- ``CameraAuthorizing``
 - ``SystemCameraAuthorization``
 - ``NopeCore/CameraPermission``

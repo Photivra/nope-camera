@@ -6,7 +6,7 @@ import NopeCore
 /// This is a hardware adapter: requesting access shows a system prompt that a unit test can't
 /// answer, so the file is listed in `scripts/coverage-exclusions.txt` and verified on a device.
 /// Its status conversion lives in `CameraPermission+AVFoundation.swift`, which is fully tested.
-public struct SystemCameraAuthorization: Sendable {
+public struct SystemCameraAuthorization: CameraAuthorizing {
     /// Creates the adapter. It holds no state.
     public init() {}
 

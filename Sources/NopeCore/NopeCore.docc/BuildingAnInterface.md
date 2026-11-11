@@ -37,8 +37,25 @@ struct TextInterface {
 ### Send intents, not commands
 
 Send ``CameraIntent/start`` once when the interface appears, and
-``CameraIntent/requestPermission`` only when the person presses a button. The model decides what
-happens next.
+``CameraIntent/requestPermission`` only when the person presses a button. Send
+``CameraIntent/selectLens(_:)`` when the person picks a lens and ``CameraIntent/capture`` from
+the shutter. The model decides what happens next.
+
+While the interface is visible, run ``CameraModel/observeEvents()`` (in SwiftUI, a second
+`.task`), so interruptions and heat reach ``CameraModel/sessionStatus``.
+
+### Show the camera
+
+In the ready state, render:
+
+- the lenses from the capabilities, with ``CameraModel/selectedLensID`` marked;
+- ``CameraModel/captureFormat``: say plainly when it is the processed fallback;
+- ``CameraModel/sessionStatus``: each case's documentation says what to show;
+- ``CameraModel/captureStatus``: announce each result;
+- a viewfinder for ``CameraModel/previewSource``. `NopeCore` can't show video, so the app target
+  gives your interface a view for the handle; the standard app uses `AVCaptureVideoPreviewLayer`.
+
+Enable the shutter only when ``CameraModel/canCapture`` is `true`.
 
 ### Test against a simulated backend
 
@@ -48,7 +65,7 @@ Create the model with a ``SimulatedCaptureBackend`` to drive every state without
 let backend = SimulatedCaptureBackend(
     permission: .notDetermined,
     permissionAfterRequest: .authorized,
-    capabilities: DeviceCapabilities(lenses: [Lens(id: "wide", kind: .wide, supportsBayerRAW: true)])
+    capabilities: DeviceCapabilities(lenses: [Lens(id: "wide", kind: .wide, bayerRAWFormat: "bgg4")])
 )
 let interface = TextInterface(model: CameraModel(backend: backend))
 ```

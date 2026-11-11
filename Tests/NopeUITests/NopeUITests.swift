@@ -21,6 +21,9 @@ struct LocalizationTests {
         let value = bundle.localizedString(forKey: "Allow Camera Access", value: "MISSING", table: nil)
         #expect(value != "MISSING")
         #expect(value != "Allow Camera Access")
+        let honesty = bundle.localizedString(forKey: "No RAW on This Lens", value: "MISSING", table: "Honesty")
+        #expect(honesty != "MISSING")
+        #expect(honesty != "No RAW on This Lens")
     }
 }
 

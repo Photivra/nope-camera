@@ -1,0 +1,468 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "HEIF with some device processing": {
+      "comment": "Spoken format name for the no-RAW fallback. HEIF is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF mit teilweiser Bearbeitung durch das Gerät"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF con cierto procesamiento del dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF avec un certain traitement de l’appareil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF con una certa elaborazione del dispositivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "デバイスによる処理が一部かかった HEIF"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "기기 처리가 일부 적용된 HEIF"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF met deels bewerking door het apparaat"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF com algum processamento do dispositivo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "经过部分设备处理的 HEIF"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "經過部分裝置處理的 HEIF"
+          }
+        }
+      }
+    },
+    "JPEG with some device processing": {
+      "comment": "Spoken format name for the no-RAW fallback. JPEG is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG mit teilweiser Bearbeitung durch das Gerät"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG con cierto procesamiento del dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG avec un certain traitement de l’appareil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG con una certa elaborazione del dispositivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "デバイスによる処理が一部かかった JPEG"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "기기 처리가 일부 적용된 JPEG"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG met deels bewerking door het apparaat"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG com algum processamento do dispositivo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "经过部分设备处理的 JPEG"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "經過部分裝置處理的 JPEG"
+          }
+        }
+      }
+    },
+    "No RAW": {
+      "comment": "Under a lens button: this lens can't save RAW. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kein RAW"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sin RAW"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pas de RAW"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niente RAW"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geen RAW"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sem RAW"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无 RAW"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "無 RAW"
+          }
+        }
+      }
+    },
+    "No RAW on This Lens": {
+      "comment": "Badge: the selected lens can't save RAW, so photos get device processing. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kein RAW mit diesem Objektiv"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sin RAW en esta lente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pas de RAW avec cet objectif"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessun RAW con questo obiettivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このレンズは RAW 非対応"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 렌즈는 RAW 미지원"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geen RAW met deze lens"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sem RAW nesta lente"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此镜头不支持 RAW"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此鏡頭不支援 RAW"
+          }
+        }
+      }
+    },
+    "RAW · Single frame": {
+      "comment": "Badge: the next photo is one unprocessed RAW frame from the sensor. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · Einzelbild"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · Un solo fotograma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · Une seule image"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · Singolo fotogramma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · 単一フレーム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · 단일 프레임"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · Eén beeld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · Quadro único"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · 单帧"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW · 單一影格"
+          }
+        }
+      }
+    },
+    "This lens can't save unprocessed RAW. Its photos have some device processing.": {
+      "comment": "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Objektiv kann kein unbearbeitetes RAW sichern. Seine Fotos werden vom Gerät teilweise bearbeitet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente no puede guardar RAW sin procesar. Sus fotos tienen cierto procesamiento del dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cet objectif ne peut pas enregistrer de RAW non traité. Ses photos subissent un certain traitement de l’appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questo obiettivo non può salvare RAW non elaborati. Le sue foto hanno una certa elaborazione del dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このレンズでは未処理の RAW を保存できません。写真にはデバイスによる処理が一部かかります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 렌즈는 처리되지 않은 RAW를 저장할 수 없습니다. 사진에 기기 처리가 일부 적용됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deze lens kan geen onbewerkte RAW bewaren. De foto’s ervan worden deels door het apparaat bewerkt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente não pode salvar RAW sem processamento. As fotos dela têm algum processamento do dispositivo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此镜头无法保存未经处理的 RAW。其照片会经过部分设备处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此鏡頭無法儲存未經處理的 RAW。其照片會經過部分裝置處理。"
+          }
+        }
+      }
+    },
+    "single-frame RAW": {
+      "comment": "Spoken format name in the viewfinder description. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Einzelbild-RAW"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW de un solo fotograma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW à image unique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW a singolo fotogramma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "単一フレームの RAW"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "단일 프레임 RAW"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW van één beeld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW de quadro único"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "单帧 RAW"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "單一影格 RAW"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

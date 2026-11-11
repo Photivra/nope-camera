@@ -5,5 +5,9 @@
 
 # Requesting camera access shows a system prompt a unit test can't answer.
 Sources/NopeCapture/SystemCameraAuthorization.swift
+# The AVFoundation session, camera input and photo output need camera hardware; the Simulator
+# has none. Its decisions are in LensCatalog, CapturePolicy, PhotoSettingsFactory and
+# CaptureReadiness, which are fully tested.
+Sources/NopeCapture/SystemCaptureHardware.swift
 # The Secure Enclave doesn't exist in the iOS Simulator.
 Sources/NopeSigning/SecureEnclaveSigningKey.swift

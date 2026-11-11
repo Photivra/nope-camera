@@ -3,6 +3,7 @@
 // Release builds contain none of this code. See docs/TESTING.md, "Tag check".
 
 import AVFoundation
+import NopeCapture
 import Observation
 import SwiftUI
 import os
@@ -41,6 +42,10 @@ final class TagCheckProgress {
     /// `true` once the tag check has finished, whether or not every lens succeeded.
     private(set) var isFinished = false
 
+    /// The running session of the lens being checked, for the viewfinder, or `nil` between
+    /// lenses.
+    var preview: CaptureSessionPreviewSource?
+
     /// Adds a status line.
     /// - Parameter text: The status text.
     func append(_ text: String) {
@@ -64,6 +69,28 @@ struct TagCheckScreen: View {
     /// A list of status lines under a title.
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+                // The live view lets the tester aim at a lit scene, and runs the session the
+                // same way the camera screen does.
+                Group {
+                    if let preview = progress.preview {
+                        CameraPreviewView(session: preview.session)
+                    } else {
+                        Color.black
+                    }
+                }
+                .frame(height: 240)
+                list
+            }
+            .navigationTitle(Text(verbatim: "Tag check (debug)"))
+        }
+        .task {
+            await TagCheckRunner.run(progress: progress)
+        }
+    }
+
+    /// The status lines.
+    private var list: some View {
             List {
                 ForEach(progress.lines) { line in
                     Text(verbatim: line.text)
@@ -76,11 +103,6 @@ struct TagCheckScreen: View {
                     }
                 }
             }
-            .navigationTitle(Text(verbatim: "Tag check (debug)"))
-        }
-        .task {
-            await TagCheckRunner.run(progress: progress)
-        }
     }
 }
 
@@ -110,9 +132,14 @@ enum TagCheckRunner {
                 MainActor.assumeIsolated { progress.append(text) }
             }
         }
+        let showPreview: @Sendable (CaptureSessionPreviewSource?) -> Void = { source in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { progress.preview = source }
+            }
+        }
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             queue.async {
-                TagCheckCapturer(report: report).runAll()
+                TagCheckCapturer(report: report, showPreview: showPreview).runAll()
                 DispatchQueue.main.async { continuation.resume() }
             }
         }

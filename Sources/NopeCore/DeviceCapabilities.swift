@@ -25,8 +25,22 @@ public struct DeviceCapabilities: Equatable, Sendable {
 
     /// Whether at least one lens delivers single-frame Bayer RAW.
     ///
-    /// When it's `false`, every photo uses the labeled HEIF fallback.
+    /// When it's `false`, every photo uses the labeled processed fallback.
     public var supportsBayerRAW: Bool {
         lenses.contains { $0.supportsBayerRAW }
+    }
+
+    /// The lens the camera starts with: the rear wide camera when there is one, otherwise the
+    /// first lens. `nil` when there are no lenses.
+    public var defaultLens: Lens? {
+        lenses.first { $0.kind == .wide } ?? lenses.first
+    }
+
+    /// Returns the lens with an identifier.
+    ///
+    /// - Parameter id: A ``Lens/id``.
+    /// - Returns: The lens, or `nil` if no lens has that identifier.
+    public func lens(withID id: Lens.ID) -> Lens? {
+        lenses.first { $0.id == id }
     }
 }
