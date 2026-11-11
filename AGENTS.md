@@ -150,6 +150,10 @@ Without Color Alone, Sufficient Contrast and Reduced Motion.
     License.
   - The wordmark is Inter (SIL OFL), converted to outlines, matching the Photivra logo.
   - Never use SF or other Apple system fonts in logos, the icon or marketing artwork.
+  - **No workarounds.** Never trace, redraw, vectorize or closely imitate the letterforms of a
+    font whose license doesn't allow the use, to get around that license. Converting text to
+    outlines is allowed only for a font whose license already allows the use, as with Inter.
+    Shapes drawn from scratch (like the icon's "n.") must not be copied from a restricted font.
   - Record every font and its license in `THIRD_PARTY.md`, and ship the license text with any
     bundled font.
 
