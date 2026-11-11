@@ -79,6 +79,18 @@ user. The full design is in issue #1.
   data or metadata.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
+## Name and wordmark
+
+- **Full name:** "Photivra Nope Camera", with capitals and no period. Use it in the store listing
+  and anywhere the full product name is needed.
+- **Standalone name:** when the name is used alone, it is always written "nope.", lowercase with
+  a period, even at the start of a sentence. That covers the home screen label
+  (`CFBundleDisplayName`), permission prompts, interface text and documentation.
+- **Wordmark lockup:** "nope." set large, with "Photivra Nope Camera" beneath it.
+- **The tagline is the exception:** in "Processing? Nope. Tracking? Nope. Network? Nope.",
+  "Nope" is an answer, not the name, so it keeps its capital.
+- Translations keep "nope." unchanged.
+
 ## Localization
 
 The app is localized from the first release in English (`en`, the development language),
