@@ -83,6 +83,17 @@ user. The full design is in issue #1.
 
 - Work on a branch and open a pull request; merge when CI is green and coverage holds.
 - Sign off commits (`git commit -s`).
+- **Versioning:** semantic versioning ([semver.org](https://semver.org)), `MAJOR.MINOR.PATCH`.
+  - MAJOR for changes that break what users rely on (formats, metadata defaults, signature
+    format). MINOR for new features. PATCH for fixes.
+  - The first public release is `1.0.0`; development before it uses `0.x.y`.
+  - A release is tagged `vMAJOR.MINOR.PATCH`, and every release has a `CHANGELOG.md` entry.
+  - The iOS marketing version (`CFBundleShortVersionString`) and the Android `versionName` are
+    the plain `MAJOR.MINOR.PATCH`.
+  - Pre-releases (for example `1.1.0-beta.1`) appear only in tags and TestFlight or test-track
+    notes, because store version fields don't accept them.
+  - The build number (`CFBundleVersion`, Android `versionCode`) is a separate integer that
+    increases with every uploaded build.
 - Contributions from anyone other than the maintainer are merged only after the contributor
   signs the project's contributor license agreement.
 - **Before any release, a full security audit must pass:**
