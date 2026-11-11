@@ -70,9 +70,3 @@ DerivedData/
 
 # Swift Package Manager workspace data created by Xcode
 .swiftpm/
-
-# Tag check output copied from a device, and the dumper's reports. Never commit captured files or
-# tag reports: they contain device serial numbers. See docs/TESTING.md, "Tag check".
-TagCheckOutput/
-tags-report.txt
-tags-report.json
