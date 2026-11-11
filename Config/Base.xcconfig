@@ -1,0 +1,43 @@
+// Shared build settings for the nope. app and its tests.
+// Signing: automatic, with the development team supplied by an untracked Local.xcconfig.
+// Copy Config/Local.xcconfig.example to Config/Local.xcconfig and set DEVELOPMENT_TEAM there.
+// Team IDs, certificates and profiles are never committed (AGENTS.md, "Keep the repository clean").
+
+// Version: semantic versioning, 0.x.y during development (AGENTS.md, "Versioning").
+MARKETING_VERSION = 0.1.0
+CURRENT_PROJECT_VERSION = 1
+
+NOPE_BUNDLE_IDENTIFIER = com.photivra.nope.dev
+PRODUCT_BUNDLE_IDENTIFIER = $(NOPE_BUNDLE_IDENTIFIER)
+CODE_SIGN_STYLE = Automatic
+DEVELOPMENT_TEAM =
+
+// Universal iPhone and iPad app, iOS and iPadOS 18 and later.
+SDKROOT = iphoneos
+SUPPORTED_PLATFORMS = iphoneos iphonesimulator
+SUPPORTS_MACCATALYST = NO
+SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO
+SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO
+IPHONEOS_DEPLOYMENT_TARGET = 18.0
+TARGETED_DEVICE_FAMILY = 1,2
+
+// Swift 6 language mode: strict concurrency checking. Warnings are errors.
+SWIFT_VERSION = 6.0
+SWIFT_STRICT_CONCURRENCY = complete
+SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
+SWIFT_EMIT_LOC_STRINGS = YES
+LOCALIZATION_PREFERS_STRING_CATALOGS = YES
+STRING_CATALOG_GENERATE_SYMBOLS = NO
+GENERATE_INFOPLIST_FILE = YES
+ENABLE_USER_SCRIPT_SANDBOXING = YES
+ENABLE_MODULE_VERIFIER = NO
+ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = NO
+CLANG_ENABLE_MODULES = YES
+CLANG_ENABLE_OBJC_ARC = YES
+ENABLE_STRICT_OBJC_MSGSEND = YES
+ENABLE_USER_SELECTED_FILES = NO
+DEAD_CODE_STRIPPING = YES
+
+// Optional, untracked: the developer's own team (DEVELOPMENT_TEAM) for device builds.
+#include? "Local.xcconfig"

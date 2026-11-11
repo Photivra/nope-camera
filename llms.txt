@@ -1,6 +1,6 @@
 # Photivra Nope Camera
 
-> A free, open-source (GPL-3.0-only) camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, signs it with C2PA Content Credentials, and saves it to Photos. It makes no network calls, has no analytics, and removes private metadata by default. Status: in planning; there is no app code yet.
+> A free, open-source (GPL-3.0-only) camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, signs it with C2PA Content Credentials, and saves it to Photos. It makes no network calls, has no analytics, and removes private metadata by default. Status: in development (0.x). The app is a buildable, tested scaffold with no camera features yet.
 
 The rules for contributors and coding agents are in AGENTS.md. Read it before changing anything.
 
@@ -16,6 +16,21 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [NOTICE](NOTICE): copyright, GPL-3.0-only grant, section 7(e) trademark terms
 - [TRADEMARKS.md](TRADEMARKS.md): names and brand assets not covered by the GPL
 - [THIRD_PARTY.md](THIRD_PARTY.md): third-party components and their licenses
+
+## Code and documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): modules, import rules and data flow
+- [docs/BUILDING-AN-INTERFACE.md](docs/BUILDING-AN-INTERFACE.md): how to replace the SwiftUI interface
+- [docs/TESTING.md](docs/TESTING.md): how to run the checks, unit tests, UI tests and documentation build; CI jobs
+- [docs/PRIVACY.md](docs/PRIVACY.md): what the app writes and removes, and the metadata plan
+
+## API (generated from DocC comments)
+
+- [docs/api/NopeCore.md](docs/api/NopeCore.md): state, intents, capabilities and the capture backend protocol (the interface contract)
+- [docs/api/NopeCapture.md](docs/api/NopeCapture.md): AVFoundation and PhotoKit adapters
+- [docs/api/NopeDevelop.md](docs/api/NopeDevelop.md): RAW development and encoding settings
+- [docs/api/NopeSigning.md](docs/api/NopeSigning.md): per-photo signing
+- [docs/api/NopeUI.md](docs/api/NopeUI.md): the SwiftUI interface
 
 ## Research
 

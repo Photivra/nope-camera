@@ -60,3 +60,13 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Local signing settings (development team). See Config/Local.xcconfig.example.
+Config/Local.xcconfig
+
+# Build output
+DerivedData/
+*.xcresult
+
+# Swift Package Manager workspace data created by Xcode
+.swiftpm/

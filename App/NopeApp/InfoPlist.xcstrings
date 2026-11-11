@@ -1,0 +1,222 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "CFBundleDisplayName": {
+      "comment": "The app's name on the Home Screen. Always \"nope.\", lowercase with a period, in every language.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nope."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope."
+          }
+        }
+      }
+    },
+    "NSCameraUsageDescription": {
+      "comment": "Camera permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. verwendet die Kamera, um die Fotos aufzunehmen, die du aufnehmen möchtest."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nope. uses the camera to take the photos you ask for."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. usa la cámara para tomar las fotos que pides."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. utilise l’appareil photo pour prendre les photos que vous demandez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. usa la fotocamera per scattare le foto che richiedi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. はカメラを使って、あなたが撮影を指示した写真を撮ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.는 카메라를 사용하여 사용자가 요청한 사진을 찍습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. gebruikt de camera om de foto’s te maken waar je om vraagt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. usa a câmera para tirar as fotos que você pedir."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 使用相机拍摄你要求的照片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 會使用相機拍攝你要求的照片。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryAddUsageDescription": {
+      "comment": "Photos add-only permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. fügt die Fotos, die du aufnimmst, deiner Mediathek hinzu. Es kann deine vorhandenen Fotos nicht sehen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nope. adds the photos you take to your photo library. It can't see your existing photos."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. añade a tu fototeca las fotos que tomas. No puede ver tus fotos existentes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. ajoute les photos que vous prenez à votre photothèque. Il ne peut pas voir vos photos existantes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. aggiunge le foto che scatti alla tua libreria foto. Non può vedere le foto esistenti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. は撮影した写真を写真ライブラリに追加します。既存の写真を見ることはできません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.는 촬영한 사진을 사진 보관함에 추가합니다. 기존 사진은 볼 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. voegt de foto’s die je maakt toe aan je fotobibliotheek. Het kan je bestaande foto’s niet zien."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. adiciona as fotos que você tira à sua fototeca. Ele não pode ver suas fotos existentes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 会将你拍摄的照片添加到照片图库，但无法查看你现有的照片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 會將你拍攝的照片加入照片圖庫，但無法查看你現有的照片。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

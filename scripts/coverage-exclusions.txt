@@ -1,0 +1,9 @@
+# Source files excluded from the 100% coverage gate, one path per line.
+# Only hardware adapters that can't run in a unit test belong here. Each one is a thin wrapper
+# behind a NopeCore protocol, its logic is moved into tested files, and it is verified on a
+# device before release (AGENTS.md, "Full test coverage"). Adding a line is a reviewed decision.
+
+# Requesting camera access shows a system prompt a unit test can't answer.
+Sources/NopeCapture/SystemCameraAuthorization.swift
+# The Secure Enclave doesn't exist in the iOS Simulator.
+Sources/NopeSigning/SecureEnclaveSigningKey.swift

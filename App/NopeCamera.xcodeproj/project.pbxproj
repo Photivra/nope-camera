@@ -1,0 +1,355 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000101 /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000201 /* NopeCore */; };
+		A10000000000000000000102 /* NopeUI in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000202 /* NopeUI */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A10000000000000000000301 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000401;
+			remoteInfo = NopeApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000501 /* nope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nope.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000502 /* NopeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000503 /* NopeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeApp.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000504 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = ../Config/Base.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		A10000000000000000000601 /* NopeApp */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeApp; sourceTree = "<group>"; };
+		A10000000000000000000602 /* NopeAppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeAppUITests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000701 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000101 /* NopeCore in Frameworks */,
+				A10000000000000000000102 /* NopeUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000702 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000801 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000504 /* Base.xcconfig */,
+				A10000000000000000000503 /* NopeApp.entitlements */,
+				A10000000000000000000601 /* NopeApp */,
+				A10000000000000000000602 /* NopeAppUITests */,
+				A10000000000000000000802 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A10000000000000000000802 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000501 /* nope.app */,
+				A10000000000000000000502 /* NopeAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000401 /* NopeApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000A02 /* Build configuration list for PBXNativeTarget "NopeApp" */;
+			buildPhases = (
+				A10000000000000000000901 /* Sources */,
+				A10000000000000000000701 /* Frameworks */,
+				A10000000000000000000903 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000601 /* NopeApp */,
+			);
+			name = NopeApp;
+			packageProductDependencies = (
+				A10000000000000000000201 /* NopeCore */,
+				A10000000000000000000202 /* NopeUI */,
+			);
+			productName = NopeApp;
+			productReference = A10000000000000000000501 /* nope.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000402 /* NopeAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000A03 /* Build configuration list for PBXNativeTarget "NopeAppUITests" */;
+			buildPhases = (
+				A10000000000000000000902 /* Sources */,
+				A10000000000000000000702 /* Frameworks */,
+				A10000000000000000000904 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000B01 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000602 /* NopeAppUITests */,
+			);
+			name = NopeAppUITests;
+			packageProductDependencies = (
+			);
+			productName = NopeAppUITests;
+			productReference = A10000000000000000000502 /* NopeAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
+				TargetAttributes = {
+					A10000000000000000000401 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					A10000000000000000000402 = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = A10000000000000000000401;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000A01 /* Build configuration list for PBXProject "NopeCamera" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				ja,
+				es,
+				fr,
+				de,
+				ko,
+				"zh-Hant",
+				"zh-Hans",
+				"pt-BR",
+				it,
+				nl,
+			);
+			mainGroup = A10000000000000000000801;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A10000000000000000000C01 /* XCLocalSwiftPackageReference ".." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A10000000000000000000802 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000401 /* NopeApp */,
+				A10000000000000000000402 /* NopeAppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000903 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000904 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000901 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000902 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000B01 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000401 /* NopeApp */;
+			targetProxy = A10000000000000000000301 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000D01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000504 /* Base.xcconfig */;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A10000000000000000000D02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A10000000000000000000504 /* Base.xcconfig */;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A10000000000000000000D03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
+				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = nope;
+			};
+			name = Debug;
+		};
+		A10000000000000000000D04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
+				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UIRequiresFullScreen = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_NAME = nope;
+			};
+			name = Release;
+		};
+		A10000000000000000000D05 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = NopeApp;
+			};
+			name = Debug;
+		};
+		A10000000000000000000D06 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).uitests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_TARGET_NAME = NopeApp;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000A01 /* Build configuration list for PBXProject "NopeCamera" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000D01 /* Debug */,
+				A10000000000000000000D02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000A02 /* Build configuration list for PBXNativeTarget "NopeApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000D03 /* Debug */,
+				A10000000000000000000D04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000A03 /* Build configuration list for PBXNativeTarget "NopeAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000D05 /* Debug */,
+				A10000000000000000000D06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A10000000000000000000C01 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000201 /* NopeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeCore;
+		};
+		A10000000000000000000202 /* NopeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeUI;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A10000000000000000000001 /* Project object */;
+}
