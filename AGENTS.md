@@ -79,6 +79,28 @@ user. The full design is in issue #1.
   data or metadata.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
+## Security checks
+
+Fast checks run on every pull request inside the required `repo-checks` job. They take seconds
+and need no build.
+- **`scripts/check-security.sh` fails the pull request** when app code:
+  - uses networking, web views, or analytics, crash-reporting or advertising SDKs;
+  - uses `print`, `NSLog` or `debugPrint` (use `Logger` with private values);
+  - uses `Unsafe` pointer APIs outside the files listed in `security/allowed-unsafe.txt`;
+  - adds a dependency not in `security/allowed-dependencies.txt`;
+  - adds an entitlement not in `security/allowed-entitlements.txt`;
+  - has a privacy manifest that declares tracking or tracking domains, or no privacy manifest
+    once an Xcode project exists.
+- **Allowlists are reviewed decisions.** A pull request that edits a file in `security/`
+  explains why in its description. Never work around a check; change the allowlist openly or
+  change the code.
+- **Changes to the checks are tested.** `scripts/test-check-security.sh` covers each one, and
+  a new check gets a passing and a failing case.
+- **Security self-check.** A pull request that touches privacy-relevant code (metadata,
+  signing, files, permissions) answers the self-check questions in the pull request template.
+- **Slower scans stay off the pull request path.** CodeQL code scanning for Swift runs weekly
+  once app code exists. The full security audit runs before each release.
+
 ## Readable, documented code
 
 Code is written for the next person to read it, whether a human contributor or an agent.
