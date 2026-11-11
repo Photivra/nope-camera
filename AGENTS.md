@@ -133,6 +133,39 @@ and need no build.
 - **Slower scans stay off the pull request path.** CodeQL code scanning for Swift runs weekly
   once app code exists. The full security audit runs before each release.
 
+## Architecture: interface separate from logic
+
+The interface is a replaceable layer. Anyone must be able to build a different interface
+(minimal, accessibility-first, iPad-specific, or experimental) without touching capture,
+privacy, signing or development code.
+
+- **Modules** (Swift packages under `Sources/`):
+
+  | Module | Holds | May import |
+  |---|---|---|
+  | `NopeCore` | Models, settings, camera state and the state machine, privacy and format policies, and the protocols for every capability | `Foundation` only |
+  | `NopeCapture` | AVFoundation and PhotoKit adapters that implement `NopeCore` protocols | `NopeCore`, AVFoundation, Photos |
+  | `NopeDevelop` | RAW development to HEIF and JPEG | `NopeCore`, Core Image, ImageIO |
+  | `NopeSigning` | C2PA signing with Secure Enclave keys | `NopeCore`, CryptoKit, the C2PA package |
+  | `NopeUI` | SwiftUI views | `NopeCore`, SwiftUI |
+  | App target | Wires the adapters into `NopeCore` and hosts `NopeUI` | Everything |
+
+- **One direction of flow.**
+  - The interface reads state from `NopeCore` (observable models) and sends it intents, such as
+    `capture()`, `setISO(_:)` or `selectLens(_:)`.
+  - It never calls AVFoundation, PhotoKit, signing or development code directly, and holds no
+    business rules: no privacy decisions, format choices, exposure maths or capability checks.
+- **Logic is interface-free.** `NopeCore`, `NopeCapture`, `NopeDevelop` and `NopeSigning`
+  never import SwiftUI, UIKit or AppKit.
+- **Capabilities are data.** What the device supports (lenses, RAW, control ranges, aperture
+  stops) is published by `NopeCore` as plain values. Any interface can render it without knowing
+  the hardware.
+- **Testability follows.** The logic modules are tested with fakes of the hardware protocols, to
+  full coverage. `NopeUI` is tested with UI tests and accessibility audits against a fake
+  `NopeCore`.
+- **Enforced in CI.** `scripts/check-architecture.sh` fails if a module imports something outside
+  its column. `docs/ARCHITECTURE.md` documents the public `NopeCore` API that interfaces use.
+
 ## Readable, documented code
 
 Code is written for the next person to read it, whether a human contributor or an agent.
