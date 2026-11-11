@@ -26,3 +26,7 @@ jobs:
         run: scripts/test-check-security.sh
       - name: Security checks
         run: scripts/check-security.sh
+      - name: Test the architecture checks
+        run: scripts/test-check-architecture.sh
+      - name: Architecture checks
+        run: scripts/check-architecture.sh

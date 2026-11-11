@@ -1,6 +1,6 @@
 # Trademarks
 
-"Photivra", "Nope Camera", "Photivra Nope Camera", the app icon, the logo and the wordmark are trademarks of Shackelford Creative, LLC.
+"Photivra", "Nope Camera", "Photivra Nope Camera", "nope." (the wordmark, lowercase with a period), the app icon and the logo are trademarks of Shackelford Creative, LLC.
 
 The GNU General Public License covers this repository's source code. It does not grant any right to use these trademarks (GPLv3 section 7(e); see `NOTICE`).
 
