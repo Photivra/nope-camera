@@ -176,9 +176,31 @@ Code is written for the next person to read it, whether a human contributor or a
   - Small types and functions with one job each.
   - Early returns instead of deep nesting.
   - No unexplained magic numbers: name them, and cite where each value comes from.
-- **Documentation comments on every type, and on every non-private function and property.**
-  These are DocC `///` comments, saying what it does, its parameters, what it returns or
-  throws, and any device or OS requirement.
+- **Complete API documentation.** Every public and internal symbol in every module has a DocC
+  `///` comment. The comment says:
+  - what the symbol does, and when to use it;
+  - each parameter and its units (ISO, seconds, EV, kelvin);
+  - the return value, the errors it throws, and when;
+  - side effects (files written, permissions requested), threading or actor isolation;
+  - any device or OS requirement.
+
+  A short example is included where usage isn't obvious.
+- **The `NopeCore` API is the interface contract.** It is what any new interface builds on, so
+  it is documented to the standard of a public framework:
+  - every state, intent and capability value;
+  - every error and how an interface should present it;
+  - a DocC article, "Building an interface", that walks through a minimal working interface.
+- **Each module has a DocC catalog** with an overview article, the module's role, and links to
+  the related `docs/` pages. Code examples in articles are compiled snippets, so they can't go
+  stale.
+- **Agent-readable output.** CI builds the DocC documentation and exports it as Markdown to
+  `docs/api/`, one file per module. Those files are indexed in `llms.txt`, so an agent can read
+  the whole API without building the project.
+- **Documentation is checked in CI,** once app code exists:
+  - the DocC build treats warnings as errors (missing or broken symbol links, undocumented
+    parameters);
+  - documentation coverage of public and internal symbols must stay at 100%;
+  - `docs/api/` must match the code.
 - **Comments explain why, not what.**
   - Explain a decision, a platform quirk, or a privacy or honesty constraint.
   - Link the Apple documentation or the specification section behind it (DNG, EXIF, C2PA).
@@ -191,6 +213,8 @@ Code is written for the next person to read it, whether a human contributor or a
   - `docs/ARCHITECTURE.md`: modules and data flow from capture to Photos.
   - `docs/PRIVACY.md`: every metadata item and how it's handled.
   - `docs/TESTING.md`: how to run the tests, and the on-device checks.
+  - `docs/BUILDING-AN-INTERFACE.md`: a plain-English guide to replacing `NopeUI`, linking the
+    DocC article.
 
   Write in plain English for a developer new to the project.
 - **Agent support.** `AGENTS.md` is the canonical agent instruction file, and `CLAUDE.md`
