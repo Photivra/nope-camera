@@ -97,11 +97,17 @@ Italian (`it`) and Dutch (`nl`).
   - right-to-left ready, with leading and trailing rather than left and right, even though no
     right-to-left language ships yet;
   - tested with the pseudo-language and right-to-left pseudo-language launch arguments.
-- **Wording is precise in every language.** Honesty, privacy and signature text must not claim
-  more in translation than the English does. Each language has a fluent human review of the
-  Honesty screen, privacy settings and store listing before it ships.
-- **A pull request that adds or changes a user-facing string** adds the translations or marks
-  them as needing review. A release ships no untranslated or unreviewed string.
+- **Translations may start as AI translations.** Mark every AI-translated string "needs review"
+  in its catalog, never "translated", until a fluent human has checked it.
+- **Honesty wording is kept apart.** The Honesty screen, privacy settings, signature and
+  processing claims go in their own catalog table, `Honesty.xcstrings`; store listings go in
+  `store/metadata/<locale>/`.
+  - These texts must not claim more in translation than the English does.
+  - Before a release, every string in `Honesty.xcstrings` and every store listing file in every
+    language must be reviewed by a fluent human.
+  - Other interface strings may ship AI-translated and are reviewed when a reviewer is available.
+- **A pull request that adds or changes a user-facing string** adds the translations (AI or
+  human) and marks them "needs review". No string ships untranslated.
 - **Store listings** (name, subtitle, description, keywords, screenshots) are localized for
   every app language.
 
