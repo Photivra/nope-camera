@@ -49,6 +49,17 @@ user. The full design is in issue #1.
   - CryptoKit with the Secure Enclave;
   - LockedCameraCapture, WidgetKit and App Intents for launch;
   - Accelerate for the histogram.
+- **Native interface elements:** use standard SwiftUI controls and system styling wherever one
+  exists:
+  - **Controls:** `Toggle`, `Picker`, `Slider`, `Stepper`, `Button`, `Menu`.
+  - **Structure:** `Form` and `List` for settings, `NavigationStack`, sheets, alerts and
+    confirmation dialogs.
+  - **Styling:** SF Symbols, system fonts with Dynamic Type, semantic system colors and
+    materials, and standard haptics (`sensoryFeedback`).
+  - **Custom drawing** is allowed only where no system element exists (the viewfinder overlays,
+    shutter button, histogram and focus peaking). It must still support VoiceOver, Dynamic Type,
+    Reduce Motion, Increase Contrast, and light and dark appearance.
+  - Brand color is applied only through `tint`. Don't restyle system controls.
 - **The only non-platform dependency is the C2PA library.** Adding a dependency needs the
   maintainer's approval, and it must be GPLv3-compatible.
 - **Progressive enhancement.** Detect each capability at run time; show a feature only where
