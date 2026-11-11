@@ -79,6 +79,58 @@ user. The full design is in issue #1.
   data or metadata.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
+## Accessibility
+
+Nope aims to be fully usable by everyone, including blind, low-vision, deaf, and motor- and
+cognitively-impaired photographers. The baseline is Apple's Human Interface Guidelines for
+accessibility and WCAG 2.2 AA. Nope must qualify for every App Store Accessibility Nutrition
+Label that applies to it: VoiceOver, Voice Control, Larger Text, Dark Interface, Differentiate
+Without Color Alone, Sufficient Contrast and Reduced Motion.
+
+- **VoiceOver.**
+  - Every element has a label, a value and a hint where needed, and controls are grouped
+    logically.
+  - The viewfinder announces the lens, the format (RAW or the HEIF fallback), and exposure
+    warnings.
+  - Capture results are announced: "Photo saved and signed", or what went wrong.
+  - Manual controls are adjustable elements (swipe up or down to change them).
+  - The Honesty screen and settings read in a sensible order.
+- **Taking photos without seeing the screen.**
+  - The shutter works with the volume buttons and the Camera Control button.
+  - Haptics confirm the shutter and signal a lens or mode change.
+  - A self-timer (off, 3 s, 10 s) is available.
+  - For selfies, optional on-device spoken framing guidance ("one face, slightly left") uses
+    Vision. It is analyzed in memory only: never stored, never written to the photo, and
+    disclosed on the Honesty screen.
+- **Voice Control, Switch Control and Full Keyboard Access.** Every action is reachable. Voice
+  Control names match the visible labels ("Take photo", "Settings"). App Intents provide "Take a
+  photo with Nope" for Siri and Shortcuts.
+- **Larger Text.**
+  - All text uses Dynamic Type, up to the largest accessibility sizes, with no clipping or
+    truncation of essential text.
+  - Camera controls reflow, or move into a scrolling panel, at accessibility sizes.
+  - The Large Content Viewer covers controls that can't grow.
+- **Vision settings.**
+  - Text and icons meet WCAG contrast (4.5:1 for text, 3:1 for icons and controls), including
+    over the viewfinder, where they get a solid backing.
+  - Respect Increase Contrast, Bold Text, Button Shapes, Reduce Transparency, Smart Invert
+    (the viewfinder and photos are excluded from inversion) and Differentiate Without Color.
+    Every status has text or a symbol, never color alone.
+- **Motion and timing.** Respect Reduce Motion (crossfades instead of slides, no animated
+  badges). Nothing important disappears on a timer; a confirmation stays until it has been
+  announced.
+- **Touch targets** are at least 44 × 44 points. The shutter is larger and reachable one-handed
+  in both orientations.
+- **Hearing.** No information is conveyed by sound alone. The shutter sound follows the system.
+- **Cognitive.** Plain language, a predictable layout, one primary action per screen, and no
+  surprise modes. Manual controls stay hidden unless turned on.
+- **Testing is part of full coverage.**
+  - UI tests run `performAccessibilityAudit()` on every screen and state.
+  - Tests cover VoiceOver labels, the largest accessibility text size and right-to-left layout.
+  - Before each release, a manual pass with VoiceOver, Voice Control, Switch Control and the
+    largest text size is part of the release audit.
+  - An accessibility failure is a release blocker.
+
 ## Localization
 
 The app is localized from the first release in English (`en`, the development language),
