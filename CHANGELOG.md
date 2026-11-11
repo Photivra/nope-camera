@@ -7,7 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
-- Metadata plan: every item that can be removed without breaking the photo is a user switch, including the exact camera model for RAW editors and lens correction instructions; required items are locked with plain explanations.
+- Metadata plan: every item that can be removed without breaking the photo is a user switch, including the exact camera model for RAW editors and lens correction instructions; required items are locked with plain explanations. A master switch, "Remove all optional details" (on by default), turns every optional item off at once; signing stays separate.
 - Tag check results from the first device runs in `docs/PRIVACY.md`.
 - Metadata rule: allowlisted metadata only, verified on every save (fail closed), with tag checks on each new iOS release.
 - Debug-only tag check (`-NopeTagCheck`, Debug builds only, not compiled into Release): captures a Bayer RAW DNG, a metadata-stripped DNG and a HEIF with each physical camera, with a JSON report per lens, for the device metadata dump (issue #1, step 2).

@@ -74,8 +74,16 @@ the exposure tags (exposure time, ISO) still need confirming on a real image.
 
 **Rule:** every item that can be removed without breaking the photo is a switch the user
 controls. Items a file can't be opened or displayed correctly without are locked, and the app
-explains each one in plain words. "Remove private details" (on by default) sets the switches
-below to their defaults; "Choose each item" shows them all.
+explains each one in plain words.
+
+**Master switch: "Remove all optional details", on by default.**
+- **When on,** every switch below is off, so files carry only the locked items, plus the
+  Content Credentials signature, which has its own switch outside the master.
+- **Turning on any single item** turns the master off, and the screen shows "Custom".
+- **Turning the master back on** turns every item off again.
+- **With the master off,** the user sets each item one by one.
+
+The "Default" column below is each item's setting when the user first turns the master off.
 
 ### Switches (removing these never breaks the photo)
 
@@ -94,7 +102,7 @@ below to their defaults; "Choose each item" shows them all.
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
 | App name and version (nope.) | On | Apps can't show what made the file | Written by nope. |
-| Content Credentials signature | On | The photo can't be checked for changes; without a timestamp when the date is off | Written by nope. |
+| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes; without a timestamp when the date is off | Written by nope. |
 
 Serial numbers, unique image IDs and raw data IDs are never written, by the system or by nope.,
 so they have no switch.
