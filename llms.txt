@@ -17,6 +17,11 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [TRADEMARKS.md](TRADEMARKS.md): names and brand assets not covered by the GPL
 - [THIRD_PARTY.md](THIRD_PARTY.md): third-party components and their licenses
 
+## Research
+
+- [docs/research/c2pa-signing.md](docs/research/c2pa-signing.md): offline, per-photo C2PA signing with Secure Enclave keys
+- [docs/research/capability-survey.md](docs/research/capability-survey.md): iPhone and iPad camera capabilities and the v1.0 plan
+
 ## Project history
 
 - [CHANGELOG.md](CHANGELOG.md): changes by version (semantic versioning)
