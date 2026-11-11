@@ -91,6 +91,18 @@ user. The full design is in issue #1.
 - **Photos never linger.** They go from memory to Photos. Any temporary file uses complete file
   protection and is deleted immediately. Logs mark every value private, and never contain photo
   data or metadata.
+- **Battery.**
+  - The camera session runs only while the camera screen is in use. Stop it in the background,
+    on interruptions and after an idle pause.
+  - No background modes, polling, timers that keep running, or work done ahead of need.
+  - Cap the preview frame rate. Run the histogram, zebras and focus peaking on reduced frames
+    at a reduced rate.
+  - Respect Low Power Mode and the thermal state.
+  - Release RAW buffers as soon as each photo is saved.
+  - Measure energy with Instruments on real devices before each release. No telemetry.
+- **Siri and Shortcuts.** Every user action is exposed as an App Intent, with App Shortcuts
+  phrases localized in all launch languages. Intents call `NopeCore` like any other interface,
+  and hold no business rules of their own.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
 ## Accessibility
