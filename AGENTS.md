@@ -83,8 +83,8 @@ user. The full design is in issue #1.
 
 The app is localized from the first release in English (`en`, the development language),
 Japanese (`ja`), Spanish (`es`), French (`fr`), German (`de`), Korean (`ko`), Chinese
-Traditional (`zh-Hant`), Chinese Simplified (`zh-Hans`), Portuguese (Brazil) (`pt-BR`) and
-Italian (`it`).
+Traditional (`zh-Hant`), Chinese Simplified (`zh-Hans`), Portuguese (Brazil) (`pt-BR`),
+Italian (`it`) and Dutch (`nl`).
 - **Every user-facing string** goes in a String Catalog (`Localizable.xcstrings`), with a comment
   that gives translators context. This includes accessibility labels, alerts, permission prompts
   (`InfoPlist.xcstrings`) and the lock-screen and Control Center controls. No hard-coded
