@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Metadata rule: allowlisted metadata only, verified on every save (fail closed), with tag checks on each new iOS release.
 - Debug-only tag check (`-NopeTagCheck`, Debug builds only, not compiled into Release): captures a Bayer RAW DNG, a metadata-stripped DNG and a HEIF with each physical camera, with a JSON report per lens, for the device metadata dump (issue #1, step 2).
 - `scripts/dump-tags.swift`: a Mac tag dumper listing every ImageIO property, XMP tag and TIFF/DNG tag in a file, with a tested TIFF walker and a redaction option.
 - App scaffold, version 0.1.0: the `NopeKit` Swift package (`NopeCore`, `NopeCapture`, `NopeDevelop`, `NopeSigning`, `NopeUI`) and the universal iPhone and iPad app (iOS and iPadOS 18 and later), with no camera features yet.
