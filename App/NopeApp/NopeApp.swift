@@ -17,11 +17,18 @@ struct NopeApp: App {
     var body: some Scene {
         WindowGroup {
             #if DEBUG
-            // Debug builds only: `-NopeTagCheck` runs the metadata tag check instead
-            // (docs/TESTING.md, "Tag check"). Release builds don't contain it.
-            if TagCheckLaunch.isRequested {
+            // Debug builds only: `-NopeTagCheck`, `-NopeCameraProbe` or an armed run replace the
+            // camera screen (docs/TESTING.md, "Tag check"). Release builds don't contain them.
+            switch DebugRunLaunch.decision {
+            case .perform(.tagCheck):
                 TagCheckScreen()
-            } else {
+            case .perform(.probe):
+                // Apple's sample capture pipeline (docs/TESTING.md, "Black frames").
+                CameraProbeScreen()
+            case .armed(let run):
+                Text(verbatim: "Debug run \(run.rawValue) armed. Close nope. and open it from the Home Screen.")
+                    .padding()
+            case .none:
                 cameraScreen
             }
             #else

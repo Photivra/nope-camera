@@ -261,6 +261,59 @@ photo settings; and wait for `.ready` before each capture, with RAW-only DNG and
 that name their file types. The tag check also attaches a live preview layer, as the app does.
 The luminance check above proves the result on the next device run.
 
+### Black frames: third run and status (open)
+
+**Third run.** With the fix above, a third run (iPhone 16 Pro Max, iOS 27.2.1, launched with
+`xcrun devicectl device process launch ... -NopeTagCheck`) was still black on every lens and
+every output: the Bayer DNGs (a constant fill), the 15 KB `.speed` HEIFs (no `ExposureTime`,
+`FNumber` or `ISOSpeedRatings` in `{Exif}` at all), and the live video data output frame
+(1760 × 1320, maximum luma exactly 0). At the same time the device reported the session
+running, 29 frames delivered, auto exposure settled (1/60 s, ISO 134, target offset −0.06 EV),
+`captureReadiness` `.ready`, zero shutter lag and responsive capture off, and the RAW buffers
+prepared. Because the video frames are zero too, the cause is upstream of the photo output,
+so none of the photo-output settings above explain it.
+
+**Normal launch works.** When the maintainer opened nope. from the Home Screen (no launch
+argument, not launched by `devicectl`), the camera screen showed a correct live viewfinder on
+the 1× lens with the RAW badge, and a capture completed. Every black run so far was launched
+by `devicectl` with `-NopeTagCheck`. Two differences remain, and only a device run can tell
+them apart:
+
+1. **(a) The launch.** A `devicectl` launch versus a launch the user starts from the Home
+   Screen. This is an assumption to test; no Apple documentation found so far says that a
+   remotely launched app receives blank camera frames.
+2. **(b) The tag check's pipeline.** The tag check adds an `AVCaptureVideoDataOutput` and
+   configures each physical camera itself; the camera screen uses `SystemCaptureHardware` with
+   only a preview layer and a photo output.
+
+**Tools for the next run (Debug builds only).**
+
+- `-NopeCameraProbe` runs the simplest pipeline from Apple's sample flow
+  ([Setting up a capture session](https://developer.apple.com/documentation/avfoundation/setting-up-a-capture-session),
+  [AVCam](https://developer.apple.com/documentation/avfoundation/avcam-building-a-camera-app)):
+  the `.photo` preset, `AVCaptureDevice.default(for: .video)`, a full-screen preview layer, a
+  video data output and one default HEVC photo. It writes `probe-report.json`,
+  `probe-frame.jpg` and `probe-photo.heic` to `Documents/TagCheck/`, with the app and scene
+  activation state, the authorization status, `isInterrupted` and every interruption or
+  runtime-error notification (with its reason), `isSuspended`, multitasking camera access,
+  the exposure state, the photo's `{Exif}` and the decoded luminance of the frame and photo.
+  `-NopeProbeNoVideoOutput` leaves out the video data output, as the camera screen does.
+- `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
+  launch from the Home Screen performs it once and clears it, so a run started by the user
+  can be compared with one started by `devicectl`.
+
+**Next device test, in order.** Copy `Documents/TagCheck/` after each step.
+
+1. `devicectl ... launch --terminate-existing com.photivra.nope.dev -NopeCameraProbe`.
+2. The same with `-NopeCameraProbe -NopeProbeNoVideoOutput`.
+3. `devicectl ... launch --terminate-existing com.photivra.nope.dev -NopeArmDebugRun probe`,
+   then swipe the app away and open nope. from the Home Screen.
+4. The same as step 3 with `tagcheck`.
+
+If steps 1 and 2 are black and step 3 is exposed, the cause is the `devicectl` launch (a). If
+step 3 is exposed and step 4 is black, the cause is in the tag check's pipeline (b), and the
+probe is bisected toward the tag check one change at a time.
+
 ### The tag dumper
 
 `scripts/dump-tags.swift` uses only Foundation and ImageIO; it reads local files and never
