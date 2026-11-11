@@ -74,6 +74,20 @@ user. The full design is in issue #1.
   - remove metadata through system APIs, never by editing bytes, and fuzz any byte-level code
     that can't be avoided;
   - strict concurrency, and no `unsafe` code outside tested, isolated spots.
+- **Metadata is allowlisted and verified, never blocklisted.**
+  - Every saved file carries only metadata on the documented allowlist (`docs/PRIVACY.md`):
+    the data required to open the RAW, plus the items the user's switches turn on. Anything
+    else is dropped by default, including tags a future iOS version adds.
+  - Build metadata from the allowlist rather than deleting known tags from what the system
+    wrote.
+  - **Fail closed:** after writing a file, read it back with the project's own tag reader. If
+    any tag, IFD or embedded block isn't on the allowlist, remove it. If it can't be removed
+    safely, don't save the photo, and tell the user plainly.
+  - Metadata tests assert the exact tag set of every format for each switch combination; any
+    unexpected tag fails the test.
+  - Rerun the on-device tag check (`docs/TESTING.md`) on each new iOS and iPadOS beta and major
+    release, and before every app release. Update the allowlist only by a reviewed pull
+    request.
 - **Photos never linger.** They go from memory to Photos. Any temporary file uses complete file
   protection and is deleted immediately. Logs mark every value private, and never contain photo
   data or metadata.

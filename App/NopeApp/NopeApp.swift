@@ -22,7 +22,17 @@ struct NopeApp: App {
     /// The app's single window, showing the camera screen.
     var body: some Scene {
         WindowGroup {
+            #if DEBUG
+            // Debug builds only: `-NopeTagCheck` runs the metadata tag check instead
+            // (docs/TESTING.md, "Tag check"). Release builds don't contain it.
+            if TagCheckLaunch.isRequested {
+                TagCheckScreen()
+            } else {
+                CameraScreen(model: model)
+            }
+            #else
             CameraScreen(model: model)
+            #endif
         }
     }
 }
