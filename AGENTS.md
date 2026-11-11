@@ -131,6 +131,42 @@ Without Color Alone, Sufficient Contrast and Reduced Motion.
     largest text size is part of the release audit.
   - An accessibility failure is a release blocker.
 
+## Third-party licenses
+
+Every third-party license is respected in full: code, packages, fonts, icons, images, sample
+files, data, specifications, documentation and tools.
+- **Check before use.** Read the actual license before adding anything. Use only what is free to
+  use for this project:
+  - anything bundled in the app must be compatible with GPL-3.0-only;
+  - nothing with fees, field-of-use limits, non-commercial terms or "no modification" terms
+    that would apply to us;
+  - if a license is unclear, don't use it, and ask the maintainer.
+- **Keep every notice.** Preserve copyright and license notices exactly. Ship the required
+  license texts in the app's Licenses screen, and record each item in `THIRD_PARTY.md` (name,
+  version, license, source, use).
+- **Follow each license's conditions,** including attribution, notice files, share-alike terms,
+  trademark limits and usage terms. Specifically:
+  - **Adobe DNG.** nope. writes DNG files, so it carries the notice required by Adobe's DNG
+    specification patent license: "This product includes DNG technology under license by
+    Adobe." It appears in `NOTICE`, the README and the Licenses screen.
+  - **SF Symbols and system fonts.** They are used only in the app's interface on Apple
+    platforms, as Apple's terms allow. Never in the icon, logos, the wordmark or marketing
+    artwork.
+  - **Apple design resources** (device frames, interface kits). Used only as their license
+    allows, for example in store screenshots and mockups.
+  - **Specifications** (C2PA, DNG, EXIF, XMP) are implemented from their published text. Quote
+    them only within their licenses, with a citation.
+- **No copying around a license.**
+  - Never copy code, text or images from sources without a compatible license. That includes
+    answers from forums or Q&A sites, unless their license is compatible and they're credited.
+  - Never strip, alter or hide license or copyright notices.
+  - Never trace, redraw or closely imitate restricted works.
+  - Write from documentation, not from someone else's code.
+- **Test files and samples** are our own captures or freely licensed, with their source and
+  license recorded. Never use other people's photos without permission.
+- **Reviewed with every dependency change.** A pull request that adds or updates a dependency
+  states its license and any license changes, and updates `THIRD_PARTY.md`.
+
 ## Name and wordmark
 
 - **Full name:** "Photivra Nope Camera", with capitals and no period. Use it in the store listing

@@ -11,3 +11,5 @@ The source code is licensed under the GNU General Public License, version 3 only
 The Photivra and Nope Camera names, the app icon, the logo and the wordmark are not covered by the license; see [`TRADEMARKS.md`](TRADEMARKS.md).
 
 Third-party material is listed in [`THIRD_PARTY.md`](THIRD_PARTY.md). To contribute, see [`CONTRIBUTING.md`](CONTRIBUTING.md). Coding agents start with [`AGENTS.md`](AGENTS.md); language models can use [`llms.txt`](llms.txt).
+
+This product includes DNG technology under license by Adobe.
