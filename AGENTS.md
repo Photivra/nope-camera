@@ -79,6 +79,32 @@ user. The full design is in issue #1.
   data or metadata.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
+## Localization
+
+The app is localized from the first release in English (`en`, the development language),
+Japanese (`ja`), Spanish (`es`), French (`fr`), German (`de`), Korean (`ko`), Chinese
+Traditional (`zh-Hant`), Chinese Simplified (`zh-Hans`), Portuguese (Brazil) (`pt-BR`) and
+Italian (`it`).
+- **Every user-facing string** goes in a String Catalog (`Localizable.xcstrings`), with a comment
+  that gives translators context. This includes accessibility labels, alerts, permission prompts
+  (`InfoPlist.xcstrings`) and the lock-screen and Control Center controls. No hard-coded
+  user-facing text.
+- **Use system formatting** for numbers, units, dates and plurals (`FormatStyle`, plural
+  variants in the catalog). Never concatenate translated fragments; use whole sentences with
+  placeholders.
+- **The layout adapts:**
+  - no fixed widths for text, and text expands for long languages;
+  - right-to-left ready, with leading and trailing rather than left and right, even though no
+    right-to-left language ships yet;
+  - tested with the pseudo-language and right-to-left pseudo-language launch arguments.
+- **Wording is precise in every language.** Honesty, privacy and signature text must not claim
+  more in translation than the English does. Each language has a fluent human review of the
+  Honesty screen, privacy settings and store listing before it ships.
+- **A pull request that adds or changes a user-facing string** adds the translations or marks
+  them as needing review. A release ships no untranslated or unreviewed string.
+- **Store listings** (name, subtitle, description, keywords, screenshots) are localized for
+  every app language.
+
 ## Security checks
 
 Fast checks run on every pull request inside the required `repo-checks` job. They take seconds
