@@ -142,6 +142,16 @@ Without Color Alone, Sufficient Contrast and Reduced Motion.
 - **The tagline is the exception:** in "Processing? Nope. Tracking? Nope. Network? Nope.",
   "Nope" is an answer, not the name, so it keeps its capital.
 - Translations keep "nope." unchanged.
+- **Fonts: only fonts that are free to use for everything we use them for.**
+  - Interface text uses the system font, rendered by iOS, which Apple's terms allow. It isn't
+    bundled.
+  - Any other font (the wordmark, store artwork, screenshots, docs) must be under a license
+    that allows commercial use, embedding and logos without fees, such as the SIL Open Font
+    License.
+  - The wordmark is Inter (SIL OFL), converted to outlines, matching the Photivra logo.
+  - Never use SF or other Apple system fonts in logos, the icon or marketing artwork.
+  - Record every font and its license in `THIRD_PARTY.md`, and ship the license text with any
+    bundled font.
 
 ## Localization
 
