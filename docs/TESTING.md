@@ -106,7 +106,9 @@ Two audit findings are set aside in landscape only (`auditInLandscape` in
   visibly enlarged, while the same view passes in portrait;
 - on the iPhone 18 Pro Simulator, the multitasking pause message over the viewfinder is reported
   as clipped when the audit enlarges the text, because the landscape viewfinder is too short for
-  it at accessibility sizes.
+  it at accessibility sizes (and the audit then fails to complete in time), so that
+  landscape audit leaves out the clipped-text and Dynamic Type checks; its portrait audit runs
+  every check.
 
 Both are on the manual accessibility pass list below.
 
