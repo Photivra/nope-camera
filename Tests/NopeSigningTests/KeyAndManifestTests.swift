@@ -49,7 +49,7 @@ struct ManifestTests {
     @Test(arguments: SignableFile.allCases)
     func formatFollowsTheContainer(file: SignableFile) {
         let manifest = ContentCredentialsManifest(file: file, generator: ClaimGenerator(version: "1"), instanceID: UUID())
-        #expect(manifest.format == file.container.mediaType)
+        #expect(manifest.format == file.mediaType)
     }
 
     @Test func descriptionsClaimNoMoreThanIsTrue() {
@@ -124,5 +124,23 @@ struct OfflineContextTests {
         #expect(throws: (any Error).self) {
             try Reader(context: context, format: "image/jpeg", stream: InMemoryStream.make(destination)).json()
         }
+    }
+}
+
+struct SignableFileTests {
+    @Test(arguments: SignableFile.allCases)
+    func roundTripsThroughPhotoFile(file: SignableFile) {
+        let photoFile = PhotoFile(format: file.format, data: Data(), isProcessedByDevice: file.isProcessedByDevice)
+        #expect(SignableFile(photoFile) == file)
+    }
+
+    @Test func aDNGIsAlwaysSingleFrameRAW() {
+        #expect(SignableFile(PhotoFile(format: .raw, data: Data(), isProcessedByDevice: true)) == .singleFrameRAW)
+    }
+
+    @Test func mediaTypes() {
+        #expect(SignableFile.singleFrameRAW.mediaType == "image/x-adobe-dng")
+        #expect(SignableFile.developedHEIF.mediaType == "image/heic")
+        #expect(SignableFile.deviceProcessedJPEG.mediaType == "image/jpeg")
     }
 }

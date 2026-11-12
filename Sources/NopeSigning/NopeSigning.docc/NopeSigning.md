@@ -23,7 +23,7 @@ files share a key.
 ```swift
 let signer = ContentCredentialsSigner(
     keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: "0.1.0"))
-let signed = try await signer.sign(dngBytes, as: .singleFrameRAW)
+let signed = try await signer.sign(PhotoFile(format: .raw, data: dngBytes))
 ```
 
 Related documentation in the repository: `docs/PRIVACY.md` ("Content Credentials": exactly what
@@ -36,6 +36,7 @@ a signature contains and what it adds to each format), `docs/ARCHITECTURE.md`,
 
 - ``ContentCredentialsSigner``
 - ``ClaimGenerator``
+- ``PhotoSigningError``
 
 ### Keys
 

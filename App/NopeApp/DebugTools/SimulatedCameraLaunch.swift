@@ -26,6 +26,14 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; every photo is blank, so the first capture leads to the
         /// "isn't sending a picture" state after one restart.
         case blankPicture
+        /// Access already allowed; every finished file fails the metadata read-back (a simulated
+        /// future system tag), so nothing is saved.
+        case metadataRejected
+        /// Access already allowed; adding to the photo library is not allowed.
+        case photosDenied
+        /// Access already allowed; signing fails, so photos are saved unsigned and the status
+        /// says so.
+        case signingFails
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -41,12 +49,28 @@ enum SimulatedCameraLaunch {
         Lens(id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4"),
     ]
 
+    /// The scenario in the launch arguments, or `nil` without one.
+    static var scenario: Scenario? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count else { return nil }
+        return Scenario(rawValue: arguments[index + 1])
+    }
+
+    /// The simulated save pipeline for the scenario in the launch arguments, or `nil` without
+    /// one. Nothing touches the Simulator's photo library.
+    ///
+    /// - Parameter appVersion: The app's version.
+    static func saver(appVersion: String) -> PhotoSaver? {
+        guard let scenario else { return nil }
+        return PhotoSaver(
+            developer: SimulatedDeveloper(), signer: SimulatedSigner(fails: scenario == .signingFails),
+            reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
+    }
+
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
     static func backend() -> SimulatedCaptureBackend? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count,
-            let scenario = Scenario(rawValue: arguments[index + 1])
-        else { return nil }
+        guard let scenario else { return nil }
         let capabilities = DeviceCapabilities(lenses: lenses)
         switch scenario {
         case .allow:
@@ -62,6 +86,8 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .captureFailed)
         case .blankPicture:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .blankPicture)
+        case .metadataRejected, .photosDenied, .signingFails:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:

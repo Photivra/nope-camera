@@ -83,7 +83,7 @@ let package = Package(
         .testTarget(
             name: "NopeSigningTests",
             dependencies: [
-                "NopeSigning", "NopeCore", "C2PA",
+                "NopeSigning", "NopeCore", "NopeDevelop", "C2PA",
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
             ],

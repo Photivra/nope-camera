@@ -18,7 +18,7 @@ func validate(_ data: Data, as file: SignableFile) throws -> [String: Any] {
         verify: VerifySettings(
             verifyAfterReading: true, verifyTrust: true, ocspFetch: false, remoteManifestFetch: false))
     let context = try C2PAContext(settings: C2PASettings(definition: settings))
-    let reader = try Reader(context: context, format: file.container.mediaType, stream: Stream(data: data))
+    let reader = try Reader(context: context, format: file.mediaType, stream: Stream(data: data))
     let json = try reader.json()
     return try #require(JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any])
 }
@@ -49,7 +49,7 @@ struct Report {
 
 /// The hash check the C2PA library runs for each container.
 func hashCode(for file: SignableFile) -> String {
-    file.container == .heif ? "assertion.bmffHash" : "assertion.dataHash"
+    file.format == .heif ? "assertion.bmffHash" : "assertion.dataHash"
 }
 
 /// A key provider that counts the keys it makes.
@@ -91,13 +91,33 @@ func flippingBit(of data: Data, at index: Int) -> Data {
 
 // A hang fails the test with its name instead of stalling the whole run.
 @Suite(.timeLimit(.minutes(1)))
+/// Where the C2PA specification 2.2 (appendix A) stores the manifest in each format.
+enum C2PAStore {
+    /// DNG: TIFF tag 52545 in IFD0.
+    static let dngTag: UInt16 = 0xCD41
+    /// JPEG: APP11 segments.
+    static let jpegMarker: UInt16 = 0xFFEB
+    /// HEIF: the extended type of the top-level `uuid` box.
+    static let heifBoxUUID = UUID(uuidString: "D8FEC3D6-1B0E-483C-9297-5828877EC481")!
+}
+
+extension ContentCredentialsSigner {
+    /// Signs bytes as one kind of file, through the `PhotoSigning` entry point.
+    func signData(_ data: Data, as file: SignableFile) async throws(PhotoSigningError) -> Data {
+        let signed = try await sign(PhotoFile(format: file.format, data: data, isProcessedByDevice: file.isProcessedByDevice))
+        #expect(signed.format == file.format)
+        #expect(signed.isProcessedByDevice == file.isProcessedByDevice)
+        return signed.data
+    }
+}
+
 struct ContentCredentialsSignerTests {
     let signer = ContentCredentialsSigner(
         keyProvider: SimulatorSoftwareKeyProvider(), generator: ClaimGenerator(version: "0.1.0"))
 
     @Test(arguments: SignableFile.allCases)
     func signedFileIsValidAndUntrusted(file: SignableFile) async throws {
-        let signed = try await signer.sign(SyntheticPhotos.data(for: file), as: file)
+        let signed = try await signer.signData(SyntheticPhotos.data(for: file), as: file)
         let report = Report(try validate(signed, as: file))
         #expect(report.state == "Valid")
         #expect(report.codes("success").contains("claimSignature.validated"))
@@ -108,7 +128,7 @@ struct ContentCredentialsSignerTests {
 
     @Test(arguments: SignableFile.allCases)
     func manifestSaysOnlyWhatNopeDid(file: SignableFile) async throws {
-        let signed = try await signer.sign(SyntheticPhotos.data(for: file), as: file)
+        let signed = try await signer.signData(SyntheticPhotos.data(for: file), as: file)
         let manifest = Report(try validate(signed, as: file)).manifest
         let generator = try #require((manifest["claim_generator_info"] as? [[String: Any]])?.first)
         #expect(generator["name"] as? String == "Photivra Nope Camera")
@@ -138,12 +158,12 @@ struct ContentCredentialsSignerTests {
 
     @Test(arguments: SignableFile.allCases)
     func oneBitChangeInTheImageFailsValidation(file: SignableFile) async throws {
-        let signed = try await signer.sign(SyntheticPhotos.data(for: file), as: file)
+        let signed = try await signer.signData(SyntheticPhotos.data(for: file), as: file)
         // A byte inside the image data: the DNG's pixel strip keeps its offset (182) after
         // signing; the HEIF's media data and the JPEG's scan data end the file.
         let index =
-            switch file.container {
-            case .dng: 200
+            switch file.format {
+            case .raw: 200
             case .heif: signed.count - 1
             case .jpeg: signed.count - 3
             }
@@ -154,7 +174,7 @@ struct ContentCredentialsSignerTests {
 
     @Test(arguments: SignableFile.allCases)
     func oneBitChangeInTheClaimFailsValidation(file: SignableFile) async throws {
-        let signed = try await signer.sign(SyntheticPhotos.data(for: file), as: file)
+        let signed = try await signer.signData(SyntheticPhotos.data(for: file), as: file)
         // The instance ID is written once, inside the signed claim.
         let instanceID = try #require(Report(try validate(signed, as: file)).manifest["instance_id"] as? String)
         let range = try #require(signed.range(of: Data(instanceID.utf8)))
@@ -168,8 +188,8 @@ struct ContentCredentialsSignerTests {
         let keys = CountingKeyProvider()
         let signer = ContentCredentialsSigner(keyProvider: keys, generator: ClaimGenerator(version: "0.1.0"))
         let photo = SyntheticPhotos.data(for: .developedJPEG)
-        let first = Report(try validate(try await signer.sign(photo, as: .developedJPEG), as: .developedJPEG))
-        let second = Report(try validate(try await signer.sign(photo, as: .developedJPEG), as: .developedJPEG))
+        let first = Report(try validate(try await signer.signData(photo, as: .developedJPEG), as: .developedJPEG))
+        let second = Report(try validate(try await signer.signData(photo, as: .developedJPEG), as: .developedJPEG))
         #expect(keys.count == 2)
         #expect(first.manifest["instance_id"] as? String != second.manifest["instance_id"] as? String)
         let firstSerial = (first.manifest["signature_info"] as? [String: Any])?["cert_serial_number"] as? String
@@ -181,7 +201,7 @@ struct ContentCredentialsSignerTests {
     @Test func missingKeyIsReported() async {
         let signer = ContentCredentialsSigner(keyProvider: FailingKeyProvider(), generator: ClaimGenerator(version: "0.1.0"))
         await #expect(throws: PhotoSigningError.keyCreationFailed) {
-            try await signer.sign(SyntheticPhotos.data(for: .singleFrameRAW), as: .singleFrameRAW)
+            try await signer.signData(SyntheticPhotos.data(for: .singleFrameRAW), as: .singleFrameRAW)
         }
     }
 
@@ -189,7 +209,7 @@ struct ContentCredentialsSignerTests {
         let signer = ContentCredentialsSigner(
             keyProvider: FailingClaimKeyProvider(), generator: ClaimGenerator(version: "0.1.0"))
         await #expect(throws: PhotoSigningError.signingFailed) {
-            try await signer.sign(SyntheticPhotos.data(for: .developedJPEG), as: .developedJPEG)
+            try await signer.signData(SyntheticPhotos.data(for: .developedJPEG), as: .developedJPEG)
         }
         #expect(throws: FailingClaimKey.Busy.self) { try FailingClaimKey().signatureDER(for: Data()) }
     }
@@ -197,35 +217,35 @@ struct ContentCredentialsSignerTests {
     @Test(arguments: SignableFile.allCases)
     func bytesThatArentThatKindOfFileAreReported(file: SignableFile) async {
         await #expect(throws: PhotoSigningError.signingFailed) {
-            try await signer.sign(Data("not a photo".utf8), as: file)
+            try await signer.signData(Data("not a photo".utf8), as: file)
         }
     }
 
     @Test func signingAddsOnlyTheContentCredentialsStore() async throws {
         // JPEG: exactly one new APP11 segment; every other segment is unchanged and in order.
         let jpeg = SyntheticPhotos.data(for: .developedJPEG)
-        let signedJPEG = try await signer.sign(jpeg, as: .developedJPEG)
+        let signedJPEG = try await signer.signData(jpeg, as: .developedJPEG)
         let before = JPEGSegments.markers(jpeg)
         let after = JPEGSegments.markers(signedJPEG)
-        #expect(after.filter { $0 != ContentCredentialsStore.jpegMarker } == before)
-        #expect(after.contains(ContentCredentialsStore.jpegMarker))
-        #expect(!before.contains(ContentCredentialsStore.jpegMarker))
+        #expect(after.filter { $0 != C2PAStore.jpegMarker } == before)
+        #expect(after.contains(C2PAStore.jpegMarker))
+        #expect(!before.contains(C2PAStore.jpegMarker))
 
         // HEIF: one new top-level uuid box with the C2PA UUID; the other boxes are unchanged.
         let heif = SyntheticPhotos.data(for: .developedHEIF)
-        let signedHEIF = try await signer.sign(heif, as: .developedHEIF)
+        let signedHEIF = try await signer.signData(heif, as: .developedHEIF)
         let heifBefore = HEIFBoxes.topLevel(heif)
         let heifAfter = HEIFBoxes.topLevel(signedHEIF)
         #expect(heifAfter.filter { $0 != "uuid" } == heifBefore)
         #expect(heifAfter.filter { $0 == "uuid" }.count == 1)
-        #expect(HEIFBoxes.uuids(signedHEIF) == [ContentCredentialsStore.heifBoxUUID])
+        #expect(HEIFBoxes.uuids(signedHEIF) == [C2PAStore.heifBoxUUID])
 
         // DNG: IFD0 gains exactly tag 52545, type UNDEFINED; every other tag is unchanged.
         let dng = SyntheticPhotos.data(for: .singleFrameRAW)
-        let signedDNG = try await signer.sign(dng, as: .singleFrameRAW)
+        let signedDNG = try await signer.signData(dng, as: .singleFrameRAW)
         let tagsBefore = TIFFTags.firstIFD(dng)
         let tagsAfter = TIFFTags.firstIFD(signedDNG)
-        #expect(tagsAfter.filter { $0.tag != ContentCredentialsStore.dngTag } == tagsBefore)
-        #expect(tagsAfter.filter { $0.tag == ContentCredentialsStore.dngTag }.map(\.type) == [7])
+        #expect(tagsAfter.filter { $0.tag != C2PAStore.dngTag } == tagsBefore)
+        #expect(tagsAfter.filter { $0.tag == C2PAStore.dngTag }.map(\.type) == [7])
     }
 }

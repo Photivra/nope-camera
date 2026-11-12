@@ -1,6 +1,8 @@
 import AVKit
 import NopeCapture
 import NopeCore
+import NopeDevelop
+import NopeSigning
 import NopeUI
 import SwiftUI
 
@@ -15,7 +17,7 @@ struct NopeApp: App {
     private static let backend = makeBackend()
 
     /// The camera model shared by the app's single scene.
-    @State private var model = CameraModel(backend: Self.backend)
+    @State private var model = CameraModel(backend: Self.backend, saver: Self.makeSaver())
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -57,6 +59,25 @@ struct NopeApp: App {
             guard event.phase == .ended else { return }
             Task { await model.send(.capture) }
         }
+    }
+
+    /// The save pipeline for this launch: simulated steps for a UI test scenario in Debug builds,
+    /// otherwise the RAW developer, the ImageIO read-back and add-only PhotoKit.
+    ///
+    /// Every file is signed with Content Credentials when the signature switch is on: a new
+    /// Secure Enclave key per file on a device (`platformKeyProvider()`), fully offline. If
+    /// signing fails, the photo is saved unsigned and the status says so.
+    private static func makeSaver() -> PhotoSaver {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        #if DEBUG
+        if let saver = SimulatedCameraLaunch.saver(appVersion: version) { return saver }
+        #endif
+        return PhotoSaver(
+            developer: RAWDeveloper(),
+            signer: ContentCredentialsSigner(
+                keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
+            reader: ImageIOReadBack(), library: PhotoKitLibrary(),
+            appVersion: version)
     }
 
     /// The backend for this launch: the simulated one for a UI test scenario in Debug builds,

@@ -63,8 +63,12 @@ actor ScriptedBackend: CaptureBackend {
         captureRequests.append(request)
         let error = captureErrors.isEmpty ? captureError : captureErrors.removeFirst()
         if let error { throw error }
+        // A file that is clean for the request's metadata plan, as the real backend writes it.
+        let isRAW = request.format.isBayerRAW
+        let allowlist = request.metadata.allowlist(for: isRAW ? .raw : .heif, signed: false)
         return CapturedPhoto(
-            data: Data([0x4E]), format: request.format, lensID: request.lens.id,
-            dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: 0.01, iso: 64)
+            data: isRAW ? CleanFiles.dng(for: allowlist) : FakeFiles.heif(for: allowlist), format: request.format,
+            lensID: request.lens.id, dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: 0.01, iso: 64,
+            rawImageData: isRAW ? Data(CleanFiles.rawImageData) : nil)
     }
 }

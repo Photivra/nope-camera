@@ -8,10 +8,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 - C2PA Content Credentials signing (`NopeSigning`): `ContentCredentialsSigner` signs a DNG, HEIF or JPEG with a new P-256 key for every file (Secure Enclave on a device; a software key compiled for the Simulator only), an anonymous self-issued certificate, and a manifest with one `c2pa.created` action and "Photivra Nope Camera" as the claim generator and in the certificate name. Fully offline: no timestamp authority, OCSP, remote manifest or trust list. Validators report the file as valid and the signer as untrusted, which is expected. Not yet called by the app: the save pipeline comes next.
-- `NopeCore` signing contract: `PhotoSigning`, `SignableFile`, `ContentCredentialsStore` (where each format keeps the manifest, for the read-back allowlist), `PhotoSigningError` and `SigningSettings` (signing on by default).
+- The app signs every saved file when the signature switch is on (`MetadataSettings.signsPhotos`, on by default): `ContentCredentialsSigner` implements the `PhotoSigning` hook, and signed files pass the same read-back as unsigned ones. If signing fails, the photo is saved unsigned and the status says so.
+- Debug builds: a `signingFails` simulated scenario (and a simulated signer for the others), with a UI test and accessibility audit for "Saved. Not signed: the signature couldn't be created."
 - Network-free C2PA library: c2pa-rs 0.92.0 built from source with every network feature off (`scripts/build-c2pa-lib.sh`, inputs pinned in `c2pa-lib/`, Rust 1.99.1), published as a checksummed release asset (`c2pa-lib-v0.92.0`); the c2pa-swift 0.1.0 wrapper vendored without its networking code (`Vendor/c2pa-swift`). CI rebuilds it on every pull request, checks its checksum against the pin, reviews every Rust crate's license with cargo-deny, and checks the library, a linked iOS binary and the app for networking code (`scripts/check-no-networking.sh`).
 - Dependencies: swift-certificates 1.21.1, swift-asn1 1.7.4 and swift-crypto 4.5.2, pinned exactly; listed in `THIRD_PARTY.md`.
 - Docs: `docs/PRIVACY.md`, "Content Credentials" (what a signature contains and what it adds to each format), and `docs/TESTING.md`, "Checking signatures".
+- Saving to Photos: each photo's metadata is built from the allowlist in `docs/PRIVACY.md` (never by deleting known tags), every file is read back with the project's own tag reader (TIFF/DNG, JPEG, HEIF, XMP) and ImageIO, and a file with any tag, block or value off the allowlist, or a changed RAW image, is not saved (fail closed). Add-only Photos access; a RAW and its HEIF are one Photos asset with the RAW as the original. Formats RAW, HEIF and JPEG, RAW plus HEIF by default.
+- `NopeCore` settings model: `SaveSettings` (formats) and `MetadataSettings` (the "Remove all optional details" master switch, one switch per optional item, name and copyright, and the signature switch).
+- DNG metadata written through AVFoundation's replacement metadata, so the sensor data isn't re-encoded; HEIF (10-bit) and JPEG developed from the RAW with Core Image (no noise reduction, sharpening or local tone mapping), in a Standard look (one global tone curve, the default) or a Flat look (no tone curve; `SaveSettings.developedLook`, `DevelopedLook`), and encoded with the system encoders. With the app name switch on, `Software` reads "Photivra Nope Camera" and the version.
+- A signing hook (`PhotoSigning`) before the read-back.
+- Capture status: "Saving…", "Saved and signed." or "Saved. Not signed:" with the reason, and plain messages when a photo isn't saved. New strings in eleven languages (AI translations, needs review); signature and privacy wording in `Honesty.xcstrings`.
+- Metadata tests for all 8,192 switch combinations in every format, fail-closed fuzz tests with a simulated future system tag, and UI tests for the rejected and Photos-denied states.
+
 - Stuck-camera detection: every RAW photo's pixel buffer is sampled (128 bytes), and a blank (zero-filled) photo is dropped. nope. restarts the camera once and retakes the photo; if it is still blank, the camera screen says "The camera isn't sending a picture." and disables the shutter. New strings in eleven languages (AI translations, needs review).
 - Debug builds: a `blankPicture` simulated camera scenario with UI tests and accessibility audits.
 - Capture core: `AVFoundationCaptureBackend` in `NopeCapture` finds the physical cameras only, publishes each lens's capabilities as plain values (Bayer RAW format, ISO and shutter ranges, aperture including the iOS 27 range, bracket count, photo sizes, magnification), and captures single-frame Bayer RAW (DNG), or the least-processed HEIF, labeled, on a lens without Bayer RAW. Photos are kept in memory only; nothing is saved yet.
@@ -46,8 +54,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Documentation rules: complete DocC documentation for every symbol, `NopeCore` documented as the interface contract, Markdown API export for agents, and documentation checks in CI.
 - Research: C2PA signing with offline, per-photo keys, a device capability survey, and verified wording and sources for every privacy statement.
 
+### Removed
+- The "Captured (not saved yet: development build)" status.
+
 ### Changed
-- `NopeSigning`: `PerPhotoSigner`, `SignedData` and `SigningError` are replaced by `ContentCredentialsSigner` and `NopeCore.PhotoSigningError`; `PerPhotoSigningKey` now provides the certificate key instead of a DER public key.
+- `NopeSigning`: `PerPhotoSigner`, `SignedData` and `SigningError` are replaced by `ContentCredentialsSigner` and `PhotoSigningError`; `PhotoFile` records whether the phone's camera processed it (`isProcessedByDevice`), so the manifest describes the fallback truthfully; `PerPhotoSigningKey` now provides the certificate key instead of a DER public key.
 - Architecture check: `NopeSigning` may also import `X509` and `SwiftASN1` (swift-certificates), to build each file's certificate.
 - `Lens` describes its Bayer RAW format (`bayerRAWFormat`) instead of a flag, and carries its capabilities.
 

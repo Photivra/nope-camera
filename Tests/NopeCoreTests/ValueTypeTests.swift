@@ -116,6 +116,19 @@ struct CaptureFormatTests {
         #expect(photo.dimensions == PhotoDimensions(width: 2, height: 1))
         #expect(photo.exposureDuration == 0.01)
         #expect(photo.iso == 200)
+        #expect(photo.rawImageData == nil)
+    }
+
+    @Test func savedPhotoAndFilesKeepTheirValues() {
+        let saved = SavedPhoto(formats: [.heif], isProcessedFallback: true, signature: .signed, metadata: [:])
+        #expect(saved.formats == [.heif])
+        #expect(saved.isProcessedFallback)
+        #expect(saved.signature == .signed)
+        #expect(SignatureStatus.UnsignedReason.allCases.count == 3)
+        let file = PhotoFile(format: .raw, data: Data([1]))
+        #expect(file.format == .raw && file.data == Data([1]))
+        let request = CaptureRequest(lens: Lens(id: "t", kind: .telephoto, bayerRAWFormat: nil), format: .processedFallback(.jpeg))
+        #expect(request.metadata == MetadataPlan())
     }
 }
 
@@ -132,7 +145,7 @@ struct StatusTests {
         ]
         #expect(statuses.filter(\.canCapture) == [.running])
         #expect(InterruptionReason.allCases.count == 5)
-        #expect(CaptureError.allCases.count == 4)
+        #expect(CaptureError.allCases.count == 9)
     }
 }
 

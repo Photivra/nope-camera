@@ -170,7 +170,8 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 @MainActor var canCapture: Bool { get }
 ```
 
-Whether the shutter should be enabled: the camera is running and no photo is being taken.
+Whether the shutter should be enabled: the camera is running and no photo is being taken
+or saved.
 
 ## `CameraModel/capabilities`
 
@@ -203,17 +204,20 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
-## `CameraModel/init(backend:)`
+## `CameraModel/init(backend:saver:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend)
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil)
 ```
 
 Creates a model in the ``CameraState/starting`` state.
 
-- Parameter backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
+- Parameters:
+  - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
+  - saver: The save pipeline. Without one, every photo ends in
+    ``CaptureError/savingUnavailable`` and nothing is saved.
 
 ## `CameraModel/observeEvents()`
 
@@ -235,6 +239,17 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The handle the app turns into the live viewfinder, or `nil` when there is no video.
+
+## `CameraModel/saveSettings`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var saveSettings: SaveSettings { get set }
+```
+
+The formats and metadata choices used for the next photo. A Settings screen changes them
+through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
 
 ## `CameraModel/selectedLens`
 
@@ -271,7 +286,8 @@ Handles one intent from the interface and updates the model's state.
 Side effects: ``CameraIntent/requestPermission`` may show the system camera prompt;
 ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
 ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
-``CameraIntent/capture`` takes a photo, held in memory only.
+``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
+it to Photos (which may show the add-only Photos prompt).
 
 ## `CameraModel/sessionStatus`
 
@@ -616,6 +632,33 @@ The selected lens couldn't be opened or configured.
 
 Say that the camera couldn't start, and offer to try another lens.
 
+## `CaptureError/developmentFailed`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case developmentFailed
+```
+
+A HEIF or JPEG couldn't be developed from the RAW, so nothing was saved.
+
+Say that the photo wasn't saved and that the person can try again.
+
+## `CaptureError/metadataNotAllowed`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case metadataNotAllowed
+```
+
+A finished file failed the read-back: it held a tag, block or value that isn't on the
+metadata allowlist, its RAW image data changed, or it couldn't be read. Nothing was
+saved (AGENTS.md, "Fail closed").
+
+Say plainly that the photo wasn't saved because its details couldn't be confirmed as
+only the ones the person chose.
+
 ## `CaptureError/notRunning`
 
 public, declared in `Sources/NopeCore/CaptureError.swift`
@@ -627,6 +670,43 @@ case notRunning
 The camera isn't running, for example during an interruption.
 
 Say that no photo was taken because the camera is paused.
+
+## `CaptureError/photosAccessDenied`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case photosAccessDenied
+```
+
+nope. has no permission to add photos.
+
+Say that the photo wasn't saved, and that adding photos can be allowed in Settings.
+
+## `CaptureError/saveFailed`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case saveFailed
+```
+
+Photos reported an error while adding the photo.
+
+Say that the photo wasn't saved and that the person can try again.
+
+## `CaptureError/savingUnavailable`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case savingUnavailable
+```
+
+This build of the app has no way to save photos (``CameraModel`` was created without a
+``PhotoSaver``, as in previews and some tests).
+
+Say that the photo wasn't saved.
 
 ## `CaptureEvent`
 
@@ -767,24 +847,12 @@ let format: CaptureFormat
 
 The format to capture.
 
-## `CaptureRequest/init(lens:)`
+## `CaptureRequest/init(lens:format:metadata:)`
 
 public, declared in `Sources/NopeCore/CaptureRequest.swift`
 
 ```swift
-init(lens: Lens)
-```
-
-Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
-
-- Parameter lens: The lens to use.
-
-## `CaptureRequest/init(lens:format:)`
-
-public, declared in `Sources/NopeCore/CaptureRequest.swift`
-
-```swift
-init(lens: Lens, format: CaptureFormat)
+init(lens: Lens, format: CaptureFormat, metadata: MetadataPlan = MetadataPlan())
 ```
 
 Creates a request for a lens with an explicit format.
@@ -796,6 +864,22 @@ has Bayer RAW, such as the Debug-only tag check (docs/TESTING.md, "Tag check").
 - Parameters:
   - lens: The lens to use.
   - format: The format to capture. A Bayer RAW format must be one the lens supports.
+  - metadata: The metadata plan. Defaults to the first-launch settings.
+
+## `CaptureRequest/init(lens:metadata:)`
+
+public, declared in `Sources/NopeCore/CaptureRequest.swift`
+
+```swift
+init(lens: Lens, metadata: MetadataPlan = MetadataPlan())
+```
+
+Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
+
+- Parameters:
+  - lens: The lens to use.
+  - metadata: The metadata plan. Defaults to the first-launch settings: every optional
+    detail removed.
 
 ## `CaptureRequest/lens`
 
@@ -806,6 +890,18 @@ let lens: Lens
 ```
 
 The lens to use.
+
+## `CaptureRequest/metadata`
+
+public, declared in `Sources/NopeCore/CaptureRequest.swift`
+
+```swift
+let metadata: MetadataPlan
+```
+
+The plan the photo's metadata is built from. The backend writes the file with
+``MetadataPlan/properties(for:from:orientation:)``, never with the system's full
+metadata.
 
 ## `CaptureStatus`
 
@@ -818,19 +914,6 @@ enum CaptureStatus
 The state of the most recent capture.
 
 ``CameraModel/captureStatus`` holds it. Each case says how an interface should present it.
-
-## `CaptureStatus/captured(_:)`
-
-public, declared in `Sources/NopeCore/CaptureStatus.swift`
-
-```swift
-case captured(CapturedPhoto)
-```
-
-A photo was taken and is held in memory only.
-
-In this development stage nothing is saved. Say so plainly: "Captured (not saved yet:
-development build)". Announce it to VoiceOver.
 
 ## `CaptureStatus/capturing`
 
@@ -850,7 +933,8 @@ public, declared in `Sources/NopeCore/CaptureStatus.swift`
 case failed(CaptureError)
 ```
 
-The photo wasn't taken. Present the error as its documentation says, and announce it.
+The photo wasn't taken or wasn't saved. Present the error as its documentation says, and
+announce it.
 
 ## `CaptureStatus/idle`
 
@@ -862,6 +946,31 @@ case idle
 
 No photo has been taken since the camera screen appeared. Show nothing.
 
+## `CaptureStatus/saved(_:)`
+
+public, declared in `Sources/NopeCore/CaptureStatus.swift`
+
+```swift
+case saved(SavedPhoto)
+```
+
+The photo passed the metadata read-back and was added to Photos.
+
+Say that it was saved, and whether it is signed: "Saved and signed", or "Saved to
+Photos. Not signed:" with the ``SignatureStatus/UnsignedReason``. Announce it to
+VoiceOver.
+
+## `CaptureStatus/saving`
+
+public, declared in `Sources/NopeCore/CaptureStatus.swift`
+
+```swift
+case saving
+```
+
+The photo was taken and its files are being built, checked and saved. Keep the shutter
+disabled until it finishes.
+
 ## `CapturedPhoto`
 
 public, declared in `Sources/NopeCore/CapturedPhoto.swift`
@@ -872,10 +981,8 @@ struct CapturedPhoto
 
 One finished capture, held in memory.
 
-Privacy: in this development stage the photo is never written to a file or saved to Photos.
-It stays in memory until the next capture replaces it. Saving comes with the metadata
-allowlist, read-back verification and signing (AGENTS.md, "Metadata is allowlisted and
-verified" and "Photos never linger").
+Privacy: the photo is never written to a file. ``PhotoSaver`` takes it from memory to Photos
+(AGENTS.md, "Photos never linger").
 
 ## `CapturedPhoto/data`
 
@@ -885,8 +992,9 @@ public, declared in `Sources/NopeCore/CapturedPhoto.swift`
 let data: Data
 ```
 
-The file bytes exactly as the system produced them: a DNG for Bayer RAW, or a HEIF or
-JPEG for the fallback. The metadata hasn't been through the allowlist yet.
+The file bytes: a DNG for Bayer RAW, or a HEIF or JPEG for the fallback. The capture
+backend writes them with metadata built from the request's ``CaptureRequest/metadata``
+plan; ``PhotoSaver`` reads them back before saving.
 
 ## `CapturedPhoto/dimensions`
 
@@ -919,12 +1027,12 @@ let format: CaptureFormat
 
 The format of ``data``.
 
-## `CapturedPhoto/init(data:format:lensID:dimensions:exposureDuration:iso:)`
+## `CapturedPhoto/init(data:format:lensID:dimensions:exposureDuration:iso:rawImageData:)`
 
 public, declared in `Sources/NopeCore/CapturedPhoto.swift`
 
 ```swift
-init(data: Data, format: CaptureFormat, lensID: Lens.ID, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?)
+init(data: Data, format: CaptureFormat, lensID: Lens.ID, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, rawImageData: Data? = nil)
 ```
 
 Creates a captured photo.
@@ -936,6 +1044,7 @@ Creates a captured photo.
   - dimensions: The photo's size, in pixels.
   - exposureDuration: The exposure duration in seconds, or `nil`.
   - iso: The ISO, or `nil`.
+  - rawImageData: The reference RAW image data, or `nil`.
 
 ## `CapturedPhoto/iso`
 
@@ -957,94 +1066,58 @@ let lensID: Lens.ID
 
 The lens that took the photo.
 
-## `ContentCredentialsStore`
+## `CapturedPhoto/rawImageData`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-enum ContentCredentialsStore
-```
-
-Where signing stores the Content Credentials manifest in each container.
-
-Signing adds exactly one item to a file, and nothing else: no XMP, no EXIF tag, no thumbnail.
-The metadata read-back allowlist must permit this item for signed files, and only this item
-(AGENTS.md, "Metadata is allowlisted and verified"). The locations come from the C2PA
-specification 2.2, appendix A, "Embedding manifests into assets", and were checked on files
-signed by `NopeSigning` (`Tests/NopeSigningTests`).
-
-## `ContentCredentialsStore/dng`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/CapturedPhoto.swift`
 
 ```swift
-case dng
+let rawImageData: Data?
 ```
 
-DNG: the manifest store in TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0.
+For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
+metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
+it, so a changed pixel rejects the photo.
 
-## `ContentCredentialsStore/dngTag`
+## `DevelopedLook`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/DevelopedLook.swift`
 
 ```swift
-static let dngTag: UInt16
+enum DevelopedLook
 ```
 
-The TIFF tag that holds the manifest store in a DNG: 52545 (`0xCD41`).
+How nope. develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itself is never
+affected.
 
-## `ContentCredentialsStore/heif`
+Both looks demosaic the sensor data and apply the file's own white balance and color
+matrices, with no noise reduction, sharpening, local contrast, local tone mapping or lens
+correction (`docs/PRIVACY.md`, "How each file's metadata is built and checked"; owner
+decision, 2026-11-12). They differ only in the tone curve.
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+``SaveSettings/developedLook`` holds the choice; a Settings screen shows it as a picker.
+
+## `DevelopedLook/flat`
+
+public, declared in `Sources/NopeCore/DevelopedLook.swift`
 
 ```swift
-case heif
+case flat
 ```
 
-HEIF: the manifest store in a top-level `uuid` box with the C2PA UUID
-``heifBoxUUID``.
+No tone curve: the image is linear to the scene, and only the output color space's
+standard transfer function is applied when it is encoded, so it looks flat and low in
+contrast. Meant for editing afterwards.
 
-## `ContentCredentialsStore/heifBoxUUID`
+## `DevelopedLook/standard`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/DevelopedLook.swift`
 
 ```swift
-static let heifBoxUUID: UUID
+case standard
 ```
 
-The extended type of the HEIF `uuid` box that holds the manifest store:
-`D8FEC3D6-1B0E-483C-9297-5828877EC481`.
-
-## `ContentCredentialsStore/jpeg`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-case jpeg
-```
-
-JPEG: the manifest store as JUMBF in one or more APP11 (`0xFFEB`) segments, each with
-the common identifier `JP`.
-
-## `ContentCredentialsStore/jpegMarker`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-static let jpegMarker: UInt16
-```
-
-The JPEG marker of the segments that hold the manifest store: APP11 (`0xFFEB`).
-
-## `ContentCredentialsStore/mediaType`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-var mediaType: String { get }
-```
-
-The media type the C2PA library is given for the container.
+One global tone curve, the RAW developer's default for the camera, so the photo looks
+like a normal photo. The default.
 
 ## `DeviceCapabilities`
 
@@ -1137,6 +1210,78 @@ Whether at least one lens delivers single-frame Bayer RAW.
 
 When it's `false`, every photo uses the labeled processed fallback.
 
+## `HEIFReader`
+
+internal, declared in `Sources/NopeCore/HEIFReader.swift`
+
+```swift
+struct HEIFReader
+```
+
+Lists every box, item, item property and item reference of a HEIF file, and reads the tags
+in its EXIF item and the properties in its XMP item.
+
+Read-only, bounds-checked and fuzz-tested, like ``TIFFReader``. Written from ISO/IEC 14496-12
+(ISOBMFF: box headers 4.2, `meta` 8.11.1, `iloc` 8.11.3, `iinf`/`infe` 8.11.6, `iref`
+8.11.12, `idat` 8.11.11) and ISO/IEC 23008-12 (HEIF: `iprp`/`ipco`/`ipma` 9.3, the `Exif`
+item and its TIFF header offset in annex A.2.1, XMP as a `mime` item in A.2.2).
+
+Block names:
+- `heif:box:<type>` for each top-level box;
+- `heif:meta:<type>` for each box inside `meta`;
+- `heif:item:<type>` for each item, and `heif:item:mime:<content type>` for a MIME item;
+- `heif:property:<type>` for each item property;
+- `heif:reference:<type>` for each item reference type.
+
+## `HEIFReader/integer(in:at:size:)`
+
+internal, declared in `Sources/NopeCore/HEIFReader.swift`
+
+```swift
+static func integer(in buffer: [UInt8], at position: Int, size: Int) -> Int?
+```
+
+A big-endian unsigned integer of 0 to 8 bytes in a buffer, or `nil` past the end or when
+it is larger than an eighth of `Int.max`, so sums of a few of them can't overflow.
+
+- Parameters:
+  - buffer: The bytes.
+  - position: The first byte.
+  - size: The number of bytes.
+
+## `HEIFReader/maximumBoxes`
+
+internal, declared in `Sources/NopeCore/HEIFReader.swift`
+
+```swift
+static let maximumBoxes: Int
+```
+
+The most boxes the reader reads before giving up.
+
+## `HEIFReader/read(_:)`
+
+internal, declared in `Sources/NopeCore/HEIFReader.swift`
+
+```swift
+static func read(_ bytes: [UInt8]) -> MetadataInventory
+```
+
+Reads a HEIF file.
+
+- Parameter bytes: The whole file.
+- Returns: Every block, the EXIF tags, the XMP properties, and any problem.
+
+## `HEIFReader/xmpContentType`
+
+internal, declared in `Sources/NopeCore/HEIFReader.swift`
+
+```swift
+static let xmpContentType: String
+```
+
+The XMP content type of a `mime` item.
+
 ## `HeatLevel`
 
 public, declared in `Sources/NopeCore/HeatLevel.swift`
@@ -1200,6 +1345,64 @@ case serious
 ```
 
 High; the system may reduce performance.
+
+## `ImageIOKey`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+struct ImageIOKey
+```
+
+Where ImageIO puts a value in a property dictionary: a sub-dictionary such as `{Exif}` and a
+key such as `ExposureTime`, or a top-level key.
+
+The strings are the values of ImageIO's `kCGImageProperty…` constants
+(`ImageIO/CGImageProperties.h`); `NopeDevelopTests` checks each one against the constant.
+
+## `ImageIOKey/description`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+var description: String { get }
+```
+
+The key as `{Exif}.ExposureTime`, or the bare key at the top level.
+
+## `ImageIOKey/dictionary`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let dictionary: String?
+```
+
+The sub-dictionary, such as `{Exif}`, or `nil` for a top-level key.
+
+## `ImageIOKey/init(_:_:)`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+init(_ dictionary: String?, _ key: String)
+```
+
+Creates a key.
+
+- Parameters:
+  - dictionary: The sub-dictionary, or `nil` for a top-level key.
+  - key: The key.
+
+## `ImageIOKey/key`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let key: String
+```
+
+The key.
 
 ## `InterruptionReason`
 
@@ -1272,6 +1475,135 @@ case systemPressure
 The device is too hot, or under other system pressure, to run the camera.
 
 Say that the camera is paused to let the device cool down.
+
+## `JPEGReader`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+enum JPEGReader
+```
+
+Lists every segment of a JPEG file and reads the tags in its EXIF segment.
+
+Read-only, bounds-checked and fuzz-tested, like ``TIFFReader``. Written from ITU-T T.81
+(JPEG, annex B: markers and segments), EXIF 3.0 section 4.5.4 (the `Exif\0\0` APP1 segment),
+ICC.1 annex B.4 (the `ICC_PROFILE` APP2 segment), XMP part 3 section 1.1.3 (the XMP APP1
+segment) and C2PA 2.1 section A.3.1 (JUMBF in APP11 segments).
+
+Each segment becomes a block named `jpeg:<marker>` with an identifier where the marker is
+shared, for example `jpeg:APP1:Exif` or `jpeg:APP2:ICC`. Entropy-coded data after a start of
+scan is skipped up to the next marker; anything after the end-of-image marker is reported as
+`jpeg:trailing-data`, because extra images (such as a multi-picture file) live there.
+
+## `JPEGReader/blockName(marker:payload:)`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static func blockName(marker: UInt8, payload: [UInt8]) -> String
+```
+
+The block name of a segment.
+
+- Parameters:
+  - marker: The marker's second byte.
+  - payload: The segment's bytes after its length.
+- Returns: A name such as `jpeg:SOF` or `jpeg:APP1:Exif`.
+
+## `JPEGReader/emptyIPTCSegment`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static let emptyIPTCSegment: [UInt8]
+```
+
+The APP13 segment ImageIO writes into every JPEG: "Photoshop 3.0", an empty IPTC record
+(image resource `0x0404`, length 0) and that record's MD5 digest (resource `0x0425`,
+the MD5 of no bytes). It holds no information; any other APP13 content is reported as
+`jpeg:APP13`. Observed with ImageIO on macOS 27 and the iOS 27 Simulator.
+
+## `JPEGReader/exifIdentifier`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static let exifIdentifier: [UInt8]
+```
+
+The identifier that starts an EXIF APP1 segment.
+
+## `JPEGReader/iccIdentifier`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static let iccIdentifier: [UInt8]
+```
+
+The identifier that starts an ICC profile APP2 segment.
+
+## `JPEGReader/jfifIdentifier`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static let jfifIdentifier: [UInt8]
+```
+
+The identifier that starts a JFIF APP0 segment.
+
+## `JPEGReader/maximumSegments`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static let maximumSegments: Int
+```
+
+The most segments a file may have before the reader gives up.
+
+## `JPEGReader/read(_:)`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static func read(_ bytes: [UInt8]) -> MetadataInventory
+```
+
+Reads a JPEG file.
+
+- Parameter bytes: The whole file.
+- Returns: Every segment as a block, the EXIF tags, and any problem.
+
+## `JPEGReader/skipEntropyCodedData(_:from:)`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static func skipEntropyCodedData(_ bytes: [UInt8], from start: Int) -> Int
+```
+
+Skips the entropy-coded data after a start-of-scan segment.
+
+Inside it, `0xFF 0x00` is a stuffed data byte and `0xFF 0xD0`–`0xD7` are restart
+markers (T.81 B.1.1.5 and B.2.1); any other `0xFF xx` is the next marker.
+
+- Parameters:
+  - bytes: The file.
+  - start: The first byte after the start-of-scan segment.
+- Returns: The position of the next marker, or the end of the file.
+
+## `JPEGReader/xmpIdentifier`
+
+internal, declared in `Sources/NopeCore/JPEGReader.swift`
+
+```swift
+static let xmpIdentifier: [UInt8]
+```
+
+The identifier that starts an XMP APP1 segment.
 
 ## `Lens`
 
@@ -1483,6 +1815,1899 @@ var supportsBayerRAW: Bool { get }
 
 Whether this lens delivers single-frame Bayer RAW.
 
+## `LockedMetadata`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+enum LockedMetadata
+```
+
+A metadata group the photo can't work without, so it has no switch.
+
+Each case is a row of the "Locked" table in `docs/PRIVACY.md`. None of them identifies the
+person or links their photos.
+
+## `LockedMetadata/colorCalibration`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case colorCalibration
+```
+
+Color matrices, calibration illuminants and the as-shot white balance. Without them
+colors are wrong.
+
+## `LockedMetadata/colorFilterPattern`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case colorFilterPattern
+```
+
+The color filter pattern: which sensor pixels are red, green and blue. Without it the RAW
+has no color.
+
+## `LockedMetadata/colorProfile`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case colorProfile
+```
+
+The color profile of a HEIF or JPEG. Without it colors look washed out or oversaturated.
+
+## `LockedMetadata/dngVersion`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case dngVersion
+```
+
+The DNG version. Editors refuse a DNG without it.
+
+## `LockedMetadata/imageStructure`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case imageStructure
+```
+
+Image size, bit depth, compression, data layout, crop and resolution. Without them the
+file can't be read at all.
+
+## `LockedMetadata/levels`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case levels
+```
+
+Black and white levels, baseline exposure and the sensor's noise profile. Without them
+shadows and highlights come out wrong.
+
+## `LockedMetadata/orientation`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case orientation
+```
+
+Orientation. Without it the photo shows sideways or upside down.
+
+## `MetadataAllowlist`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+struct MetadataAllowlist
+```
+
+Everything one file may carry: the exact tags, container blocks, XMP properties and ImageIO
+keys, for one format and one set of switches.
+
+``MetadataPlan/allowlist(for:signed:)`` builds it; ``MetadataVerifier`` checks a read-back
+file against it. Anything not listed fails the check (AGENTS.md, "Metadata is allowlisted
+and verified, never blocklisted").
+
+## `MetadataAllowlist/TagID`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+struct TagID
+```
+
+A tag by directory and number.
+
+## `MetadataAllowlist/TagID/description`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+var description: String { get }
+```
+
+The tag as `exif 0x829A`.
+
+## `MetadataAllowlist/TagID/directory`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let directory: TIFFDirectory
+```
+
+The directory.
+
+## `MetadataAllowlist/TagID/init(_:_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+init(_ directory: TIFFDirectory, _ tag: UInt16)
+```
+
+Creates a tag ID.
+
+- Parameters:
+  - directory: The directory.
+  - tag: The tag number.
+
+## `MetadataAllowlist/TagID/tag`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let tag: UInt16
+```
+
+The tag number.
+
+## `MetadataAllowlist/TextRule`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+enum TextRule
+```
+
+What an ASCII tag's value must be.
+
+## `MetadataAllowlist/TextRule/accepts(_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+func accepts(_ value: String?) -> Bool
+```
+
+Whether a value follows the rule.
+
+- Parameter value: The tag's text, or `nil` if it isn't ASCII.
+- Returns: `true` if it follows the rule.
+
+## `MetadataAllowlist/TextRule/any`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+case any
+```
+
+Any text: the value is the system's own (for example the system version).
+
+## `MetadataAllowlist/TextRule/exactly(_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+case exactly(String)
+```
+
+Exactly this text.
+
+## `MetadataAllowlist/TextRule/prefix(_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+case prefix(String)
+```
+
+Text that starts with this prefix.
+
+## `MetadataAllowlist/XMPName`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+struct XMPName
+```
+
+An XMP property by namespace URI and local name.
+
+## `MetadataAllowlist/XMPName/init(_:_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+init(_ namespace: String, _ name: String)
+```
+
+Creates an XMP name.
+
+- Parameters:
+  - namespace: The namespace URI.
+  - name: The local name.
+
+## `MetadataAllowlist/XMPName/name`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let name: String
+```
+
+The local name.
+
+## `MetadataAllowlist/XMPName/namespace`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let namespace: String
+```
+
+The namespace URI.
+
+## `MetadataAllowlist/allows(_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+func allows(_ id: TagID) -> Bool
+```
+
+Whether a tag may appear.
+
+- Parameter id: The tag.
+
+## `MetadataAllowlist/allows(_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+func allows(_ key: ImageIOKey) -> Bool
+```
+
+Whether an ImageIO key may appear.
+
+- Parameter key: The key.
+
+## `MetadataAllowlist/allowsSubSecondDates`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let allowsSubSecondDates: Bool
+```
+
+Whether XMP dates may carry a fraction of a second.
+
+## `MetadataAllowlist/allowsTimeZoneDates`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let allowsTimeZoneDates: Bool
+```
+
+Whether XMP dates may carry a time zone.
+
+## `MetadataAllowlist/blocks`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let blocks: Set<String>
+```
+
+The container blocks that may appear (see ``JPEGReader`` and ``HEIFReader`` for names).
+
+## `MetadataAllowlist/format`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let format: PhotoFormat
+```
+
+The format the allowlist is for.
+
+## `MetadataAllowlist/imageIOKeys`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let imageIOKeys: Set<ImageIOKey>
+```
+
+The ImageIO keys the read-back may report.
+
+## `MetadataAllowlist/init(format:tags:wildcardDirectories:blocks:xmpProperties:imageIOKeys:wildcardImageIODictionaries:requiredTags:textRules:xmpTextRules:allowsSubSecondDates:allowsTimeZoneDates:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+init(format: PhotoFormat, tags: Set<TagID>, wildcardDirectories: Set<TIFFDirectory>, blocks: Set<String>, xmpProperties: Set<XMPName>, imageIOKeys: Set<ImageIOKey>, wildcardImageIODictionaries: Set<String>, requiredTags: Set<TagID>, textRules: [TagID : TextRule], xmpTextRules: [XMPName : TextRule], allowsSubSecondDates: Bool, allowsTimeZoneDates: Bool)
+```
+
+Creates an allowlist. ``MetadataPlan`` is the only producer in the app.
+
+- Parameters:
+  - format: The format.
+  - tags: The allowed tags.
+  - wildcardDirectories: Directories allowed as a whole.
+  - blocks: The allowed container blocks.
+  - xmpProperties: The allowed XMP properties.
+  - imageIOKeys: The allowed ImageIO keys.
+  - wildcardImageIODictionaries: ImageIO dictionaries allowed as a whole.
+  - requiredTags: Tags that must be present.
+  - textRules: Required ASCII values.
+  - xmpTextRules: Required values for XMP properties that mirror a tag.
+  - allowsSubSecondDates: Whether XMP dates may have a fraction.
+  - allowsTimeZoneDates: Whether XMP dates may have a time zone.
+
+## `MetadataAllowlist/requiredTags`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let requiredTags: Set<TagID>
+```
+
+Tags that must be present: for a DNG, the tags the DNG standard requires to open a Bayer
+RAW at all (DNG 1.7, chapter 4: `DNGVersion`, `UniqueCameraModel`, `ColorMatrix1`, and the
+CFA pattern tags), so a file AVFoundation wrote without them is rejected too.
+
+## `MetadataAllowlist/tags`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let tags: Set<TagID>
+```
+
+The tags that may appear.
+
+## `MetadataAllowlist/textRules`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let textRules: [TagID : TextRule]
+```
+
+Required values for ASCII tags, such as the generic `UniqueCameraModel`.
+
+## `MetadataAllowlist/wildcardDirectories`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let wildcardDirectories: Set<TIFFDirectory>
+```
+
+Directories whose every tag may appear (the GPS directory when location is on).
+
+## `MetadataAllowlist/wildcardImageIODictionaries`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let wildcardImageIODictionaries: Set<String>
+```
+
+ImageIO sub-dictionaries whose every key may appear, such as `{GPS}` when location is on.
+
+## `MetadataAllowlist/xmpProperties`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let xmpProperties: Set<XMPName>
+```
+
+The XMP properties that may appear.
+
+## `MetadataAllowlist/xmpTextRules`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+let xmpTextRules: [XMPName : TextRule]
+```
+
+Required values for XMP properties that mirror a tag: `CreatorTool` mirrors `Software`,
+and `dc:creator` and `dc:rights` mirror the artist and copyright. Other allowed XMP
+properties are dates.
+
+## `MetadataField`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+struct MetadataField
+```
+
+One tag on the allowlist: where it lives in the file, its ImageIO names, which switch (or
+lock) controls it, and which formats may carry it.
+
+``MetadataField/catalog`` lists every one; nothing outside it is ever written or accepted.
+
+## `MetadataField/Group`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+enum Group
+```
+
+What controls a field.
+
+## `MetadataField/Group/locked(_:)`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case locked(LockedMetadata)
+```
+
+Always written where the format has it.
+
+## `MetadataField/Group/optional(_:)`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+case optional(Set<MetadataItem>)
+```
+
+Written when any of these optional items is on.
+
+## `MetadataField/artist`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let artist: MetadataField
+```
+
+The `Artist` tag (`0x013B`), which ImageIO also reports as IPTC `Byline`.
+
+## `MetadataField/catalog`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let catalog: [MetadataField]
+```
+
+Every field nope. may write, with its switch or lock and its formats. Built from the
+device tag check (`docs/PRIVACY.md`, "Tag check") and the TIFF 6.0, EXIF 3.0 and DNG 1.7
+tag tables. A tag that isn't here is never written and fails the read-back.
+
+## `MetadataField/copyright`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let copyright: MetadataField
+```
+
+The `Copyright` tag (`0x8298`), which ImageIO also reports as IPTC `CopyrightNotice`.
+
+## `MetadataField/directory`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let directory: TIFFDirectory
+```
+
+The TIFF directory the tag is in.
+
+## `MetadataField/dng`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let dng: String
+```
+
+ImageIO's DNG dictionary, `kCGImagePropertyDNGDictionary`.
+
+## `MetadataField/exif`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let exif: String
+```
+
+ImageIO's EXIF dictionary, `kCGImagePropertyExifDictionary`.
+
+## `MetadataField/exifAux`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let exifAux: String
+```
+
+ImageIO's auxiliary EXIF dictionary, `kCGImagePropertyExifAuxDictionary`.
+
+## `MetadataField/exifPointer`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let exifPointer: MetadataField
+```
+
+The EXIF directory pointer (`0x8769`).
+
+## `MetadataField/formats`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let formats: Set<PhotoFormat>
+```
+
+The formats that may carry the field.
+
+## `MetadataField/gps`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let gps: String
+```
+
+ImageIO's GPS dictionary, `kCGImagePropertyGPSDictionary`.
+
+## `MetadataField/gpsPointer`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let gpsPointer: MetadataField
+```
+
+The GPS directory pointer (`0x8825`). The GPS directory's own tags are allowed as a
+whole when location is on (``MetadataPlan``).
+
+## `MetadataField/group`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let group: Group
+```
+
+The switch or lock that controls the field.
+
+## `MetadataField/imageIOKeys`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let imageIOKeys: [ImageIOKey]
+```
+
+The tag's ImageIO keys. Values are copied from the system's metadata under each key that
+is present; the read-back accepts each one.
+
+## `MetadataField/init(_:_:_:_:_:_:)`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+init(_ name: String, _ directory: TIFFDirectory, _ tag: UInt16, _ imageIOKeys: [ImageIOKey], _ group: Group, _ formats: Set<PhotoFormat>)
+```
+
+Creates a field.
+
+- Parameters:
+  - name: The tag's name.
+  - directory: The TIFF directory.
+  - tag: The tag number.
+  - imageIOKeys: The ImageIO keys.
+  - group: The switch or lock.
+  - formats: The formats that may carry it.
+
+## `MetadataField/iptc`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let iptc: String
+```
+
+ImageIO's IPTC dictionary, `kCGImagePropertyIPTCDictionary`. ImageIO mirrors the artist
+and copyright into it when it writes a HEIF.
+
+## `MetadataField/makerApple`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let makerApple: String
+```
+
+ImageIO's Apple maker note dictionary, `kCGImagePropertyMakerAppleDictionary`.
+
+## `MetadataField/makerNote`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let makerNote: MetadataField
+```
+
+The maker note (`0x927C`). ImageIO shows Apple's as the `{MakerApple}` dictionary.
+
+## `MetadataField/name`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let name: String
+```
+
+The tag's name in its specification, such as `ExposureTime`.
+
+## `MetadataField/orientation`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let orientation: MetadataField
+```
+
+The `Orientation` tag (`0x0112`), also ImageIO's top-level `Orientation`.
+
+## `MetadataField/software`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let software: MetadataField
+```
+
+The `Software` tag (`0x0131`), shared by the system version and the app name switches.
+
+## `MetadataField/tag`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+let tag: UInt16
+```
+
+The tag number.
+
+## `MetadataField/tiff`
+
+internal, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let tiff: String
+```
+
+ImageIO's TIFF dictionary, `kCGImagePropertyTIFFDictionary`.
+
+## `MetadataField/uniqueCameraModel`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let uniqueCameraModel: MetadataField
+```
+
+The DNG `UniqueCameraModel` tag (`0xC614`). Required by DNG, so a DNG always carries it;
+its value is generic when ``MetadataItem/exactCameraModel`` is off.
+
+## `MetadataFileReader`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+enum MetadataFileReader
+```
+
+The project's own tag reader: reads a saved file's bytes back and lists everything
+metadata-like in it (AGENTS.md, "Fail closed").
+
+It dispatches on the file's format: the TIFF structure of a DNG (``TIFFReader``), the
+segments of a JPEG (``JPEGReader``) or the boxes and items of a HEIF (``HEIFReader``). Each
+reader lists every tag, block and property it meets, known or not, so a tag a future iOS adds
+is reported and rejected rather than missed. ``MetadataVerifier`` then compares the result
+with the allowlist.
+
+## `MetadataFileReader/Result`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+struct Result
+```
+
+What reading one file produced.
+
+## `MetadataFileReader/Result/init(inventory:rawImageData:)`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+init(inventory: MetadataInventory, rawImageData: Data?)
+```
+
+Creates a result.
+
+- Parameters:
+  - inventory: Everything found.
+  - rawImageData: The RAW image data, or `nil`.
+
+## `MetadataFileReader/Result/inventory`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+let inventory: MetadataInventory
+```
+
+Every tag, block and property, and any problem.
+
+## `MetadataFileReader/Result/rawImageData`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+let rawImageData: Data?
+```
+
+For a DNG, the RAW image data (IFD0's tiles or strips, concatenated); otherwise
+`nil`. Compared with the sensor data the camera returned to prove the pixels didn't
+change.
+
+## `MetadataFileReader/rawImageData(ofDNG:)`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+static func rawImageData(ofDNG data: Data) -> Data?
+```
+
+The RAW image data of a DNG: IFD0's tiles or strips, concatenated.
+
+The capture adapter uses it to keep a reference copy of the sensor data from the system's
+own DNG, before nope. writes its metadata.
+
+- Parameter data: The DNG's bytes.
+- Returns: The image data, or `nil` if the file has none that can be read.
+
+## `MetadataFileReader/read(_:format:)`
+
+public, declared in `Sources/NopeCore/MetadataFileReader.swift`
+
+```swift
+static func read(_ data: Data, format: PhotoFormat) -> Result
+```
+
+Reads a file.
+
+- Parameters:
+  - data: The file's bytes.
+  - format: The file's format.
+- Returns: Everything found, and the RAW image data for a DNG.
+
+## `MetadataInventory`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+struct MetadataInventory
+```
+
+Everything metadata-like that the read-back found in one file: every TIFF tag in every
+directory, every container block (JPEG segment, HEIF box, item and property), and every
+XMP property.
+
+``MetadataFileReader`` builds it from the file's bytes; ``MetadataVerifier`` compares it with
+the allowlist. Privacy: it holds the file's tag values only in memory, and a ``SavedPhoto``
+keeps it for the "What's in your last photo" screen (issue #1); it is never logged.
+
+## `MetadataInventory/Tag`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+struct Tag
+```
+
+One TIFF tag found in a directory.
+
+## `MetadataInventory/Tag/directory`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let directory: TIFFDirectory
+```
+
+The directory the tag is in.
+
+## `MetadataInventory/Tag/init(directory:tag:text:)`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+init(directory: TIFFDirectory, tag: UInt16, text: String? = nil)
+```
+
+Creates a tag record.
+
+- Parameters:
+  - directory: The directory the tag is in.
+  - tag: The tag number.
+  - text: The ASCII value, or `nil`.
+
+## `MetadataInventory/Tag/tag`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let tag: UInt16
+```
+
+The tag number.
+
+## `MetadataInventory/Tag/text`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let text: String?
+```
+
+The value of an ASCII tag, without the trailing NUL, or `nil` for other types.
+
+## `MetadataInventory/XMPProperty`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+struct XMPProperty
+```
+
+One top-level XMP property (a child of `rdf:Description`, or one of its attributes).
+
+## `MetadataInventory/XMPProperty/init(namespace:name:value:)`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+init(namespace: String, name: String, value: String)
+```
+
+Creates an XMP property record.
+
+- Parameters:
+  - namespace: The namespace URI.
+  - name: The local name.
+  - value: The text value.
+
+## `MetadataInventory/XMPProperty/name`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let name: String
+```
+
+The local name, such as `DateCreated`.
+
+## `MetadataInventory/XMPProperty/namespace`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let namespace: String
+```
+
+The namespace URI, such as `http://ns.adobe.com/photoshop/1.0/`.
+
+## `MetadataInventory/XMPProperty/value`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let value: String
+```
+
+The property's text, trimmed; empty for a structure.
+
+## `MetadataInventory/append(_:)`
+
+internal, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+mutating func append(_ other: MetadataInventory)
+```
+
+Adds everything from another inventory, such as the EXIF block inside a HEIF.
+
+- Parameter other: The inventory to add.
+
+## `MetadataInventory/blocks`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+var blocks: [String]
+```
+
+Every container block, named like `jpeg:APP1:Exif` or `heif:item:hvc1`, in file order.
+
+## `MetadataInventory/init(tags:blocks:xmpProperties:problems:)`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+init(tags: [Tag] = [], blocks: [String] = [], xmpProperties: [XMPProperty] = [], problems: [String] = [])
+```
+
+Creates an inventory.
+
+- Parameters:
+  - tags: The TIFF tags.
+  - blocks: The container blocks.
+  - xmpProperties: The XMP properties.
+  - problems: What couldn't be read.
+
+## `MetadataInventory/problems`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+var problems: [String]
+```
+
+Anything the reader couldn't read: a truncated directory, a loop, an unknown structure.
+The verifier rejects a file with any problem (fail closed).
+
+## `MetadataInventory/tags`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+var tags: [Tag]
+```
+
+Every TIFF tag, in file order.
+
+## `MetadataInventory/xmpProperties`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+var xmpProperties: [XMPProperty]
+```
+
+Every top-level XMP property, in file order.
+
+## `MetadataItem`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+enum MetadataItem
+```
+
+One optional metadata item a person can switch on or off.
+
+Each case is a row of the "Switches" table in `docs/PRIVACY.md` ("Metadata plan"). Removing
+any of them never breaks the photo. Items the photo can't work without are locked and have no
+case here (``MetadataField/Group/locked(_:)``). The Content Credentials signature has its own
+switch outside this list (``MetadataSettings/signsPhotos``).
+
+## `MetadataItem/appNameAndVersion`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case appNameAndVersion
+```
+
+The app's name and version ("Photivra Nope Camera" and its version number).
+
+## `MetadataItem/cameraMakeAndModel`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case cameraMakeAndModel
+```
+
+The camera's make and model, such as the phone model.
+
+## `MetadataItem/dateAndTime`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case dateAndTime
+```
+
+The date and time the photo was taken.
+
+## `MetadataItem/exactCameraModel`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case exactCameraModel
+```
+
+The exact camera model for RAW editors (DNG `UniqueCameraModel`). The DNG standard
+requires the tag, so when this item is off nope. writes
+``MetadataPlan/genericUniqueCameraModel`` instead of removing it.
+
+## `MetadataItem/exposureSettings`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case exposureSettings
+```
+
+The exposure settings: shutter speed, ISO, aperture, focal length and related EXIF tags.
+
+## `MetadataItem/isOnWhenCustomizing`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var isOnWhenCustomizing: Bool { get }
+```
+
+The item's setting when the person turns "Remove all optional details" off: the
+"Default" column of `docs/PRIVACY.md`.
+
+## `MetadataItem/lensCorrections`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case lensCorrections
+```
+
+The lens correction instructions in a DNG (opcode lists). The pixels are never corrected
+either way.
+
+## `MetadataItem/lensMakeAndModel`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case lensMakeAndModel
+```
+
+The lens's make and model, and its focal length and aperture range.
+
+## `MetadataItem/location`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case location
+```
+
+Location, altitude and direction (the EXIF GPS directory). nope. doesn't capture a
+location yet, so with this item on no location is written either.
+
+## `MetadataItem/makerNotes`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case makerNotes
+```
+
+The camera maker's private notes. Apple's hold the time since the device restarted and
+per-photo identifiers, which can link photos.
+
+## `MetadataItem/nameAndCopyright`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case nameAndCopyright
+```
+
+The photographer's name and copyright notice, written only when the person enters them
+(``MetadataSettings/ownerName`` and ``MetadataSettings/copyrightNotice``).
+
+## `MetadataItem/subSecondTime`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case subSecondTime
+```
+
+The fraction of a second of each timestamp.
+
+## `MetadataItem/systemVersion`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case systemVersion
+```
+
+The phone's system version, which the system writes as the software name.
+
+## `MetadataItem/timeZone`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+case timeZone
+```
+
+The time zone offset of each timestamp.
+
+## `MetadataPlan`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+struct MetadataPlan
+```
+
+Turns the person's ``MetadataSettings`` into each file's metadata: the allowlist a file is
+checked against, and the ImageIO property dictionary a file is written with.
+
+Privacy rule: a file's metadata is built from the allowlist, never by deleting known tags
+from what the system wrote (AGENTS.md, "Metadata is allowlisted and verified"). The builder
+starts from an empty dictionary and copies in only the values of fields in
+``MetadataField/catalog`` that the switches allow, so a tag a future iOS adds is never copied.
+
+## `MetadataPlan/allowlist(for:signed:)`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+func allowlist(for format: PhotoFormat, signed: Bool) -> MetadataAllowlist
+```
+
+The allowlist for one file.
+
+- Parameters:
+  - format: The file's format.
+  - signed: Whether the file carries a Content Credentials manifest, which adds the
+    manifest's tag or block.
+- Returns: Everything the file may carry.
+
+## `MetadataPlan/appName`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let appName: String
+```
+
+The app's name as written into `Software` when ``MetadataItem/appNameAndVersion`` is on:
+the full product name, as the owner decided (2026-11-12), so files say "Photivra Nope
+Camera 0.2.0", or "Photivra Nope Camera 0.2.0 (27.2.1)" with the system version.
+
+## `MetadataPlan/appSoftwareName`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+var appSoftwareName: String { get }
+```
+
+The `Software` value that names the app, such as `Photivra Nope Camera 0.2.0`.
+
+## `MetadataPlan/appVersion`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+let appVersion: String
+```
+
+The app's version, such as `0.2.0`, written with the app's name when
+``MetadataItem/appNameAndVersion`` is on.
+
+## `MetadataPlan/contentCredentialsHEIFBlock`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let contentCredentialsHEIFBlock: String
+```
+
+The HEIF box that holds a Content Credentials manifest.
+
+## `MetadataPlan/contentCredentialsJPEGBlock`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let contentCredentialsJPEGBlock: String
+```
+
+The JPEG segment that holds a Content Credentials manifest.
+
+## `MetadataPlan/contentCredentialsTag`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let contentCredentialsTag: MetadataAllowlist.TagID
+```
+
+Where a Content Credentials manifest lives in each format, allowed only in a signed file.
+From the C2PA 2.1 specification, appendix A ("Embedding manifests"): JUMBF in JPEG APP11
+segments (A.3.1), a top-level `uuid` box in ISOBMFF files such as HEIF (A.4), and TIFF
+tag 52545 (`0xCD41`) for TIFF and DNG (A.3.3). The signing module confirms these when it
+lands.
+
+## `MetadataPlan/derivedImageIOKeys`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let derivedImageIOKeys: [String]
+```
+
+ImageIO's top-level keys that describe the decoded image rather than a tag in the file.
+
+## `MetadataPlan/dublinCoreNamespace`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let dublinCoreNamespace: String
+```
+
+The Dublin Core namespace, used by ImageIO for `creator` and `rights` (XMP part 1, 8.3).
+
+## `MetadataPlan/genericUniqueCameraModel`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let genericUniqueCameraModel: String
+```
+
+The `UniqueCameraModel` a DNG carries when ``MetadataItem/exactCameraModel`` is off. The
+DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so nope. writes a value
+that names no device.
+
+## `MetadataPlan/heifBlocks`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let heifBlocks: Set<String>
+```
+
+The HEIF boxes, items, properties and references every HEIF may have: the image (one
+`hvc1` item, or a `grid` of them), the EXIF item, the color profile (`colr`) and the
+image's layout. No thumbnails (`thmb`) or auxiliary images (`auxl`).
+
+## `MetadataPlan/heifXMPBlock`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let heifXMPBlock: String
+```
+
+The HEIF block for the XMP item, allowed only when an XMP property is.
+
+## `MetadataPlan/init(settings:appVersion:)`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+init(settings: MetadataSettings = MetadataSettings(), appVersion: String = "")
+```
+
+Creates a plan.
+
+- Parameters:
+  - settings: The person's choices. Defaults to the first-launch settings: every optional
+    detail removed.
+  - appVersion: The app's version, from its bundle.
+
+## `MetadataPlan/jpegBlocks`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let jpegBlocks: Set<String>
+```
+
+The JPEG segments every JPEG may have: structure, the EXIF block, the color profile and
+ImageIO's empty IPTC record (``JPEGReader/emptyIPTCSegment``).
+
+## `MetadataPlan/photoshopNamespace`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let photoshopNamespace: String
+```
+
+The Photoshop namespace, used by ImageIO for `DateCreated` (XMP part 2, 3.2).
+
+## `MetadataPlan/properties(for:from:orientation:)`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+func properties(for format: PhotoFormat, from source: [String : Any], orientation: Int? = nil) -> [String : Any]
+```
+
+Builds the ImageIO property dictionary to write a file with, from the system's metadata.
+
+Privacy rule: the result starts empty, and only allowlisted values are copied in
+(AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
+and the person's name and copyright are written by nope.; everything else is the system's
+own value.
+
+- Parameters:
+  - format: The file's format.
+  - source: The system's metadata, as ImageIO property dictionaries (for example
+    `AVCapturePhoto.metadata`, or the properties of the DNG a HEIF is developed from).
+  - orientation: An orientation to write instead of the source's, such as 1 (up) for a
+    photo developed upright; `nil` keeps the source's.
+- Returns: The dictionary, keyed like `CGImageProperties.h`.
+
+## `MetadataPlan/put(_:at:in:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static func put(_ value: Any, at key: ImageIOKey, in dictionary: inout [String : Any])
+```
+
+Stores a value under an ImageIO key, creating the sub-dictionary if needed.
+
+- Parameters:
+  - value: The value.
+  - key: The key.
+  - dictionary: The property dictionary to change.
+
+## `MetadataPlan/requiredDNGTags`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let requiredDNGTags: Set<MetadataAllowlist.TagID>
+```
+
+The tags a DNG can't be opened without (DNG 1.7, chapter 4): `CFARepeatPatternDim`,
+`CFAPattern`, `DNGVersion`, `UniqueCameraModel` and `ColorMatrix1`.
+
+## `MetadataPlan/settings`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+let settings: MetadataSettings
+```
+
+The person's choices.
+
+## `MetadataPlan/softwareRule`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+var softwareRule: MetadataAllowlist.TextRule { get }
+```
+
+What `Software` (and XMP `CreatorTool`) must be: the app's name, the system's version, or
+both, as the switches say.
+
+## `MetadataPlan/softwareValue(systemSoftware:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+func softwareValue(systemSoftware: String?) -> String?
+```
+
+The `Software` value: the app's name, the system's version, both, or nothing.
+
+- Parameter systemSoftware: The system's `Software` value, if it wrote one.
+- Returns: The value to write, or `nil` to write none.
+
+## `MetadataPlan/value(of:in:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static func value(of key: ImageIOKey, in dictionary: [String : Any]) -> Any?
+```
+
+The value under an ImageIO key in a property dictionary.
+
+- Parameters:
+  - key: The key.
+  - dictionary: The property dictionary.
+- Returns: The value, or `nil` if absent.
+
+## `MetadataPlan/writes(_:in:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+func writes(_ field: MetadataField, in format: PhotoFormat) -> Bool
+```
+
+Whether a field is written to a file of a format.
+
+- Parameters:
+  - field: The field.
+  - format: The file's format.
+- Returns: `true` if the field's switch is on (or it is locked), and, for the name and
+  copyright, the person entered the text.
+
+## `MetadataPlan/xmpMirrors`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let xmpMirrors: [(field: MetadataField, name: MetadataAllowlist.XMPName)]
+```
+
+The XMP properties ImageIO writes into a HEIF to mirror a tag, with that tag.
+
+## `MetadataPlan/xmpNamespace`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let xmpNamespace: String
+```
+
+The XMP basic namespace (XMP part 1, 8.4).
+
+## `MetadataReadBack`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+struct MetadataReadBack
+```
+
+What the read-back found in one file: the project's own reader's result, plus the property
+keys ImageIO reports when it opens the file.
+
+## `MetadataReadBack/file`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let file: MetadataFileReader.Result
+```
+
+Every tag, block and property, and the RAW image data of a DNG.
+
+## `MetadataReadBack/imageIOKeys`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let imageIOKeys: [ImageIOKey]
+```
+
+Every key in ImageIO's property dictionaries for the image, as ``ImageIOKey`` values.
+
+## `MetadataReadBack/init(file:imageIOKeys:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey])
+```
+
+Creates a read-back result.
+
+- Parameters:
+  - file: The project reader's result.
+  - imageIOKeys: ImageIO's keys.
+
+## `MetadataReading`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+protocol MetadataReading : Sendable
+```
+
+Reads a finished file back, before it is saved (AGENTS.md, "Fail closed").
+
+`NopeDevelop` implements it with ``MetadataFileReader`` and ImageIO (`ImageIOReadBack`).
+
+## `MetadataReading/readBack(_:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+func readBack(_ file: PhotoFile) throws(CaptureError) -> MetadataReadBack
+```
+
+Reads a file back.
+
+- Parameter file: The finished file, after signing.
+- Returns: What the file holds.
+- Throws: ``CaptureError/metadataNotAllowed`` if the system can't open the file as one
+  image of its format, so its contents can't be confirmed.
+
+## `MetadataSettings`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+struct MetadataSettings
+```
+
+The person's metadata choices: the master switch, one switch per optional item, and the
+signature switch.
+
+This is the settings model the Settings screens are built on, and the only input the
+metadata allowlist takes (``MetadataPlan``). It holds the rules of `docs/PRIVACY.md`,
+"Metadata plan", so an interface only shows the values and calls the mutating methods:
+
+- "Remove all optional details" (``removesAllOptionalDetails``) is on by default, and then
+  every item is off.
+- Turning any item on turns the master off; the interface then shows "Custom" (``isCustom``).
+- Turning the master back on turns every item off again.
+- Turning the master off sets every item to its documented default
+  (``MetadataItem/isOnWhenCustomizing``).
+- Signing (``signsPhotos``) is outside the master switch and on by default.
+
+```swift
+var settings = MetadataSettings()          // master on, every item off
+settings.set(.location, isOn: true)        // master off ("Custom"), location on
+settings.setRemovesAllOptionalDetails(true) // every item off again
+```
+
+The type is `Codable`, so an interface can store it; nothing in `NopeCore` writes it to disk.
+
+## `MetadataSettings/copyrightNotice`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var copyrightNotice: String
+```
+
+The copyright notice written when ``MetadataItem/nameAndCopyright`` is on. Empty means
+nothing is written.
+
+## `MetadataSettings/enabledItems`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var enabledItems: Set<MetadataItem> { get }
+```
+
+The optional items that are on. Always empty while ``removesAllOptionalDetails`` is on.
+
+## `MetadataSettings/init()`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+init()
+```
+
+The settings on first launch: every optional detail removed, photos signed, and no name
+or copyright entered.
+
+## `MetadataSettings/isCustom`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var isCustom: Bool { get }
+```
+
+Whether the interface should show "Custom": the master switch is off.
+
+## `MetadataSettings/isOn(_:)`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+func isOn(_ item: MetadataItem) -> Bool
+```
+
+Whether an optional item is on.
+
+- Parameter item: The item.
+- Returns: `true` when the item will be written.
+
+## `MetadataSettings/ownerName`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var ownerName: String
+```
+
+The name written as the photo's artist when ``MetadataItem/nameAndCopyright`` is on.
+Empty means nothing is written.
+
+## `MetadataSettings/removesAllOptionalDetails`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var removesAllOptionalDetails: Bool { get }
+```
+
+Whether "Remove all optional details" is on. When it is, ``enabledItems`` is empty.
+
+## `MetadataSettings/set(_:isOn:)`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+mutating func set(_ item: MetadataItem, isOn: Bool)
+```
+
+Turns one optional item on or off. Turning an item on turns the master switch off.
+
+- Parameters:
+  - item: The item.
+  - isOn: Whether it is written.
+
+## `MetadataSettings/setRemovesAllOptionalDetails(_:)`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+mutating func setRemovesAllOptionalDetails(_ isOn: Bool)
+```
+
+Turns "Remove all optional details" on or off.
+
+- Parameter isOn: `true` turns every item off; `false` sets every item to its default
+  (``MetadataItem/isOnWhenCustomizing``).
+
+## `MetadataSettings/signsPhotos`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var signsPhotos: Bool
+```
+
+Whether each photo is signed with Content Credentials. Outside the master switch; on by
+default.
+
+## `MetadataVerifier`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+enum MetadataVerifier
+```
+
+Compares a read-back file with its allowlist (AGENTS.md, "Fail closed").
+
+A file passes only with no violation at all. The save pipeline (``PhotoSaver``) never adds a
+file that fails to Photos.
+
+## `MetadataVerifier/accepts(_:name:allowlist:)`
+
+internal, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+static func accepts(_ property: MetadataInventory.XMPProperty, name: MetadataAllowlist.XMPName, allowlist: MetadataAllowlist) -> Bool
+```
+
+Whether an allowed XMP property's value is allowed: a property that mirrors a tag follows
+that tag's rule, and a date carries a fraction of a second or a time zone only when those
+switches are on.
+
+- Parameters:
+  - property: The property.
+  - name: Its name.
+  - allowlist: The allowlist.
+- Returns: `true` if the value is allowed.
+
+## `MetadataVerifier/violations(in:allowlist:expectedRawImageData:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+static func violations(in readBack: MetadataReadBack, allowlist: MetadataAllowlist, expectedRawImageData: Data?) -> [MetadataViolation]
+```
+
+Lists every way a file breaks its allowlist.
+
+- Parameters:
+  - readBack: What the read-back found in the file.
+  - allowlist: What the file may carry.
+  - expectedRawImageData: For a DNG, the RAW image data the camera returned; ignored for
+    other formats.
+- Returns: The violations, in file order; empty means the file passes.
+
+## `MetadataViolation`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+enum MetadataViolation
+```
+
+One reason a read-back file fails the allowlist.
+
+## `MetadataViolation/missingTag(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case missingTag(MetadataAllowlist.TagID)
+```
+
+A tag the file can't be opened without is missing.
+
+## `MetadataViolation/rawImageDataChanged`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case rawImageDataChanged
+```
+
+The DNG's RAW image data isn't the data the camera returned.
+
+## `MetadataViolation/rawImageDataMissing`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case rawImageDataMissing
+```
+
+The DNG has no readable RAW image data, or there was no reference to compare it with.
+
+## `MetadataViolation/unexpectedBlock(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unexpectedBlock(String)
+```
+
+A container block that isn't on the allowlist, such as an XMP segment or a thumbnail.
+
+## `MetadataViolation/unexpectedImageIOKey(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unexpectedImageIOKey(ImageIOKey)
+```
+
+An ImageIO property that isn't on the allowlist.
+
+## `MetadataViolation/unexpectedTag(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unexpectedTag(MetadataAllowlist.TagID)
+```
+
+A tag that isn't on the allowlist.
+
+## `MetadataViolation/unexpectedValue(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unexpectedValue(MetadataAllowlist.TagID)
+```
+
+An allowed tag with a value nope. didn't write, such as an exact camera model when the
+generic one was asked for.
+
+## `MetadataViolation/unexpectedXMPProperty(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unexpectedXMPProperty(MetadataAllowlist.XMPName)
+```
+
+An XMP property that isn't on the allowlist.
+
+## `MetadataViolation/unexpectedXMPValue(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unexpectedXMPValue(MetadataAllowlist.XMPName)
+```
+
+An allowed XMP property with a value that isn't, such as a date with a time zone when the
+time zone is off.
+
+## `MetadataViolation/unreadable(_:)`
+
+public, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+case unreadable(String)
+```
+
+Part of the file couldn't be read, so it can't be shown to be clean.
+
+## `PhotoDeveloping`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+protocol PhotoDeveloping : Sendable
+```
+
+Develops a HEIF or JPEG from a RAW photo.
+
+`NopeDevelop` implements it with Core Image and the system encoders (`RAWDeveloper`).
+
+## `PhotoDeveloping/develop(_:to:look:metadata:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+func develop(_ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, metadata: MetadataPlan) async throws(CaptureError) -> PhotoFile
+```
+
+Develops a file from the RAW, with metadata built from the plan.
+
+- Parameters:
+  - raw: The DNG, with its metadata already built from the allowlist.
+  - format: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
+  - look: The tone of the developed file.
+  - metadata: The plan the new file's metadata is built from.
+- Returns: The developed file.
+- Throws: ``CaptureError/developmentFailed`` if the RAW can't be developed or encoded.
+
 ## `PhotoDimensions`
 
 public, declared in `Sources/NopeCore/PhotoDimensions.swift`
@@ -1537,6 +3762,67 @@ let width: Int
 
 The width, in pixels.
 
+## `PhotoFile`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+struct PhotoFile
+```
+
+One file of a photo, on its way to Photos: a DNG, or a HEIF or JPEG.
+
+Privacy: files live in memory only. They go from memory to Photos and are never written to
+disk by `NopeCore` (AGENTS.md, "Photos never linger").
+
+## `PhotoFile/data`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let data: Data
+```
+
+The file's bytes.
+
+## `PhotoFile/format`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let format: PhotoFormat
+```
+
+The file's format.
+
+## `PhotoFile/init(format:data:isProcessedByDevice:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false)
+```
+
+Creates a file.
+
+- Parameters:
+  - format: The file's format.
+  - data: The file's bytes.
+  - isProcessedByDevice: Whether the phone's camera processed it (the fallback of a lens
+    without Bayer RAW). Defaults to `false`.
+
+## `PhotoFile/isProcessedByDevice`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let isProcessedByDevice: Bool
+```
+
+Whether the phone's camera processed the file: the HEIF or JPEG of a lens without Bayer
+RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
+uses it to describe the file truthfully in its Content Credentials.
+
 ## `PhotoFormat`
 
 public, declared in `Sources/NopeCore/PhotoFormat.swift`
@@ -1546,6 +3832,8 @@ enum PhotoFormat
 ```
 
 A file format nope. can save.
+
+The raw values are stable, so settings that store a format can be saved and read back.
 
 The defaults follow issue #1, "Formats": RAW plus HEIF.
 
@@ -1601,86 +3889,215 @@ case raw
 
 Single-frame Bayer RAW, saved as DNG.
 
+## `PhotoLibrary`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+protocol PhotoLibrary : Sendable
+```
+
+Adds photos to the library with add-only access.
+
+`NopeCapture` implements it with PhotoKit (`PhotoKitLibrary`). Add-only access can't read
+the library, including nope.'s own photos.
+
+## `PhotoLibrary/add(_:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+func add(_ assets: [PhotoLibraryAsset]) async throws(CaptureError)
+```
+
+Asks for add-only access if needed, then adds every asset in one change.
+
+Side effects: may show the system's add-only Photos prompt (the localized
+`NSPhotoLibraryAddUsageDescription`); adds the assets to Photos.
+
+- Parameter assets: The assets to add.
+- Throws: ``CaptureError/photosAccessDenied`` without access, or
+  ``CaptureError/saveFailed`` if Photos reports an error.
+
+## `PhotoLibraryAsset`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+struct PhotoLibraryAsset
+```
+
+One Photos asset to create: one file, or a RAW with its processed version as a pair.
+
+## `PhotoLibraryAsset/alternate`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let alternate: PhotoFile?
+```
+
+The processed file paired with a RAW, or `nil`.
+
+## `PhotoLibraryAsset/assets(for:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+static func assets(for files: [PhotoFile]) -> [PhotoLibraryAsset]
+```
+
+Groups a photo's files into Photos assets.
+
+A RAW and one processed file (HEIF if there is one, otherwise JPEG) become one asset with
+the DNG as its main resource and the processed file as its alternate, as Apple documents
+for RAW plus processed captures ("Capturing Photos in RAW and Apple ProRAW Formats", "Save
+the photos to the photos library":
+https://developer.apple.com/documentation/avfoundation/capturing-photos-in-raw-and-apple-proraw-formats).
+Any other file is its own asset.
+
+- Parameter files: The photo's files.
+- Returns: The assets to create, in one change.
+
+## `PhotoLibraryAsset/init(primary:alternate:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+init(primary: PhotoFile, alternate: PhotoFile? = nil)
+```
+
+Creates an asset.
+
+- Parameters:
+  - primary: The main file.
+  - alternate: The paired processed file, or `nil`.
+
+## `PhotoLibraryAsset/primary`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let primary: PhotoFile
+```
+
+The asset's main file: the DNG of a RAW pair, otherwise the only file.
+
+## `PhotoSaver`
+
+public, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+struct PhotoSaver
+```
+
+Turns a captured photo into saved files: develops the selected formats, signs them, reads
+each one back against its allowlist, and adds only clean files to Photos.
+
+The order is fixed, and each step is a protocol so the whole pipeline is tested with fakes:
+
+1. Build the files. A Bayer RAW photo's DNG already has its metadata built from the
+   allowlist by the capture backend; HEIF and JPEG are developed from it
+   (``PhotoDeveloping``). A lens without RAW gives its processed fallback file.
+2. Sign each file (``PhotoSigning``), when signing is on and a signer exists.
+3. Read each file back (``MetadataReading``) and check it with ``MetadataVerifier``.
+   Any violation rejects the whole photo: nothing is saved (AGENTS.md, "Fail closed").
+4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
+   file as one asset (``PhotoLibraryAsset/assets(for:)``).
+
+## `PhotoSaver/appVersion`
+
+public, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+let appVersion: String
+```
+
+The app's version, written with its name when ``MetadataItem/appNameAndVersion`` is on.
+
+## `PhotoSaver/init(developer:signer:reader:library:appVersion:)`
+
+public, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String)
+```
+
+Creates a pipeline.
+
+- Parameters:
+  - developer: Develops HEIF and JPEG from the RAW.
+  - signer: Signs files, or `nil` to save them unsigned (the status says so).
+  - reader: Reads finished files back.
+  - library: Adds files to Photos.
+  - appVersion: The app's version, such as `0.2.0`.
+
+## `PhotoSaver/plan(for:)`
+
+public, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+func plan(for settings: MetadataSettings) -> MetadataPlan
+```
+
+The metadata plan for a set of choices, with this app's version.
+
+- Parameter settings: The person's metadata choices.
+- Returns: The plan.
+
+## `PhotoSaver/save(_:settings:)`
+
+public, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+func save(_ photo: CapturedPhoto, settings: SaveSettings) async throws(CaptureError) -> SavedPhoto
+```
+
+Saves one photo.
+
+Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+
+- Parameters:
+  - photo: The captured photo, with its metadata already built for the plan.
+  - settings: The formats and metadata choices.
+- Returns: What was saved.
+- Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
+  ``CaptureError/metadataNotAllowed`` if any file fails the read-back (nothing is saved),
+  or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
+
 ## `PhotoSigning`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/PhotoFile.swift`
 
 ```swift
 protocol PhotoSigning : Sendable
 ```
 
-Signs one finished file with Content Credentials (C2PA) and returns the signed file.
+The hook where Content Credentials signing plugs in: after the files are built and before
+they are read back and saved.
 
-The save pipeline calls the signer after the file's metadata has been built from the
-allowlist, and before the read-back check and the save to Photos:
+`NopeSigning` implements it with a fresh Secure Enclave key for every photo (AGENTS.md,
+"Every photo is signed, with a fresh key per photo"). ``PhotoSaver`` calls it for each file
+when ``MetadataSettings/signsPhotos`` is on. The signed file is then read back like any
+other: its manifest may add only the block the allowlist names for a signed file
+(``MetadataPlan/allowlist(for:signed:)``), and a DNG's RAW image data must not change.
 
-1. build the file's metadata from the allowlist;
-2. sign it with ``sign(_:as:)``, when ``SigningSettings/isEnabled`` is on;
-3. read the signed file back and check every tag and block against the allowlist, which
-   includes the Content Credentials store described by ``ContentCredentialsStore``;
-4. add the file to Photos.
+With no signer, files are saved unsigned and the status says so
+(``SignatureStatus/unsigned(_:)`` with ``SignatureStatus/UnsignedReason/unavailable``).
 
-Any change to the bytes after step 2 breaks the signature, so nothing may rewrite the file
-between signing and saving.
+## `PhotoSigning/sign(_:)`
 
-`NopeSigning` provides the implementation; tests and interfaces use fakes. Privacy rule:
-every call uses a new key that is discarded afterward, so no two files can be linked through
-their signatures (AGENTS.md, "Honesty").
+public, declared in `Sources/NopeCore/PhotoFile.swift`
 
 ```swift
-let signed = try await signer.sign(dngBytes, as: .singleFrameRAW)
-```
-
-## `PhotoSigning/sign(_:as:)`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-func sign(_ data: Data, as file: SignableFile) async throws(PhotoSigningError) -> Data
+func sign(_ file: PhotoFile) async throws -> PhotoFile
 ```
 
 Signs one file.
 
-- Parameters:
-  - data: The complete file, with its final metadata.
-  - file: What the file is, which decides its media type and the manifest's description.
-- Returns: The same file with a Content Credentials manifest embedded. The image data and
-  metadata are otherwise unchanged; ``ContentCredentialsStore`` lists what is added.
-- Throws: ``PhotoSigningError`` when the file can't be signed. The save pipeline must then
-  tell the person the photo is not signed; it never fails silently.
-
-## `PhotoSigningError`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-enum PhotoSigningError
-```
-
-Why a file couldn't be signed.
-
-An unsigned photo is never saved silently: the interface says the photo is not signed.
-
-## `PhotoSigningError/keyCreationFailed`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-case keyCreationFailed
-```
-
-A new key couldn't be created, for example because the Secure Enclave is unavailable.
-
-## `PhotoSigningError/signingFailed`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-case signingFailed
-```
-
-The key, the certificate or the C2PA library couldn't produce a signed file, for example
-because the file isn't a valid DNG, HEIF or JPEG.
+- Parameter file: The file to sign.
+- Returns: The same file with a Content Credentials manifest.
+- Throws: Any error; the file is then saved unsigned, and the status says signing failed.
 
 ## `ProcessedFallback`
 
@@ -1714,6 +4131,146 @@ case jpeg
 ```
 
 JPEG, for a lens that offers no HEIF encoding.
+
+## `SaveSettings`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+struct SaveSettings
+```
+
+What nope. saves for each photo: the file formats, the developed look and the metadata
+choices.
+
+``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,
+"Formats", lives here: RAW plus HEIF by default, any combination of RAW, HEIF and JPEG, and
+never none. A lens without Bayer RAW always saves its labeled processed fallback instead.
+
+## `SaveSettings/developedLook`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var developedLook: DevelopedLook
+```
+
+How HEIF and JPEG are developed from the RAW: ``DevelopedLook/standard`` (the default)
+or ``DevelopedLook/flat``. Never affects the RAW.
+
+## `SaveSettings/formats`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var formats: Set<PhotoFormat> { get }
+```
+
+The formats saved for a photo taken with a Bayer RAW lens. Never empty.
+
+## `SaveSettings/init()`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+init()
+```
+
+The settings on first launch: RAW plus HEIF, ``MetadataSettings/init()``, and the
+standard look.
+
+## `SaveSettings/metadata`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var metadata: MetadataSettings
+```
+
+The metadata choices, including the signature switch.
+
+## `SaveSettings/setFormat(_:isSelected:)`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+@discardableResult mutating func setFormat(_ format: PhotoFormat, isSelected: Bool) -> Bool
+```
+
+Selects or deselects a format. Deselecting the last selected format does nothing, so at
+least one format is always saved.
+
+- Parameters:
+  - format: The format.
+  - isSelected: Whether it is saved.
+- Returns: `false` if the change was refused because it would leave no format.
+
+## `SavedPhoto`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+struct SavedPhoto
+```
+
+A photo that passed the read-back and was added to Photos.
+
+## `SavedPhoto/formats`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let formats: [PhotoFormat]
+```
+
+The formats saved, in the order they were built.
+
+## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:)`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory])
+```
+
+Creates a saved-photo record.
+
+- Parameters:
+  - formats: The formats saved.
+  - isProcessedFallback: Whether it is the processed fallback.
+  - signature: The signature status.
+  - metadata: Each file's read-back inventory.
+
+## `SavedPhoto/isProcessedFallback`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let isProcessedFallback: Bool
+```
+
+Whether the photo is the processed fallback of a lens without Bayer RAW.
+
+## `SavedPhoto/metadata`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let metadata: [PhotoFormat : MetadataInventory]
+```
+
+Every tag, block and property of each saved file, for the "What's in your last photo"
+screen (issue #1). Kept in memory only, because add-only access can't read Photos.
+
+## `SavedPhoto/signature`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let signature: SignatureStatus
+```
+
+Whether the photo is signed.
 
 ## `SessionStatus`
 
@@ -1814,147 +4371,78 @@ case stopped
 
 The camera hasn't started yet. Show the viewfinder area empty, without a message.
 
-## `SignableFile`
+## `SignatureStatus`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-enum SignableFile
-```
-
-The kinds of file nope. signs, each with the honest description its manifest carries.
-
-## `SignableFile/container`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-var container: ContentCredentialsStore { get }
+enum SignatureStatus
 ```
 
-The file's container, which decides where the signature is stored.
+Whether a saved photo is signed, and if not, why.
 
-## `SignableFile/developedHEIF`
+An unsigned photo is never presented as signed: the interface shows the reason (issue #1,
+"never hidden: not signed").
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+## `SignatureStatus/UnsignedReason`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-case developedHEIF
+enum UnsignedReason
 ```
 
-HEIF developed by nope. from a single-frame RAW.
+Why a photo isn't signed.
 
-## `SignableFile/developedJPEG`
+## `SignatureStatus/UnsignedReason/failed`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-case developedJPEG
+case failed
 ```
 
-JPEG developed by nope. from a single-frame RAW.
+The signer failed for at least one file.
 
-## `SignableFile/deviceProcessedHEIF`
+## `SignatureStatus/UnsignedReason/turnedOff`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-case deviceProcessedHEIF
+case turnedOff
 ```
 
-HEIF processed by the phone's camera, for a lens without Bayer RAW.
+The person turned signing off (``MetadataSettings/signsPhotos``).
 
-## `SignableFile/deviceProcessedJPEG`
+## `SignatureStatus/UnsignedReason/unavailable`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-case deviceProcessedJPEG
+case unavailable
 ```
 
-JPEG processed by the phone's camera, for a lens without Bayer RAW or HEIF.
+This build has no signer (no ``PhotoSigning`` was supplied).
 
-## `SignableFile/init(developedFrom:)`
+## `SignatureStatus/signed`
 
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-init(developedFrom format: PhotoFormat)
+case signed
 ```
 
-The file nope. saves for a format it writes from a Bayer RAW capture.
+Every file carries a Content Credentials manifest.
 
-- Parameter format: The saved format: the DNG itself, or a file developed from it.
+## `SignatureStatus/unsigned(_:)`
 
-## `SignableFile/init(fallback:)`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-init(fallback: ProcessedFallback)
+case unsigned(UnsignedReason)
 ```
 
-The file nope. saves for a lens without Bayer RAW.
-
-- Parameter fallback: The processed format the lens gave.
-
-## `SignableFile/singleFrameRAW`
-
-public, declared in `Sources/NopeCore/PhotoSigning.swift`
-
-```swift
-case singleFrameRAW
-```
-
-Single-frame Bayer RAW, saved as DNG.
-
-## `SigningSettings`
-
-public, declared in `Sources/NopeCore/SigningSettings.swift`
-
-```swift
-struct SigningSettings
-```
-
-Whether nope. signs each saved file with Content Credentials (C2PA).
-
-Signing has its own switch in settings, outside the "Remove all optional details" master
-switch, and is on by default (docs/PRIVACY.md, "Metadata plan"). The settings screen edits this
-value; the save pipeline reads it and calls a ``PhotoSigning`` signer only when
-``isEnabled`` is `true`. When it is off, the file is saved unsigned and nothing about signing
-is written to it.
-
-## `SigningSettings/default`
-
-public, declared in `Sources/NopeCore/SigningSettings.swift`
-
-```swift
-static let `default`: SigningSettings
-```
-
-The settings when the app is first installed: signing on.
-
-## `SigningSettings/init(isEnabled:)`
-
-public, declared in `Sources/NopeCore/SigningSettings.swift`
-
-```swift
-init(isEnabled: Bool = true)
-```
-
-Creates signing settings.
-
-- Parameter isEnabled: Whether each saved file is signed. Defaults to `true`.
-
-## `SigningSettings/isEnabled`
-
-public, declared in `Sources/NopeCore/SigningSettings.swift`
-
-```swift
-var isEnabled: Bool
-```
-
-Whether each saved file is signed. `true` by default.
+At least one file has no manifest, for this reason.
 
 ## `SimulatedCaptureBackend`
 
@@ -2010,7 +4498,8 @@ Returns a placeholder photo for the request, or throws ``captureError``.
 
 - Parameter request: The lens and format of the photo.
 - Returns: ``placeholderPhotoData`` labeled with the request's format and lens, the
-  lens's largest photo size (or ``placeholderDimensions``), 1/60 s and ISO 100.
+  lens's largest photo size (or ``placeholderDimensions``), 1/60 s and ISO 100; for Bayer
+  RAW, ``placeholderPhotoData`` is also the reference RAW image data.
 - Throws: ``captureError``.
 
 ## `SimulatedCaptureBackend/currentPermission()`
@@ -2209,3 +4698,409 @@ init()
 ```
 
 Creates a simulated preview source.
+
+## `TIFFDirectory`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+enum TIFFDirectory
+```
+
+A directory (IFD) of a TIFF structure: a DNG file, or the EXIF block inside a HEIF or JPEG.
+
+Tag numbers are only meaningful within their directory (GPS tags reuse low numbers), so the
+allowlist and the read-back both name a tag by its directory and number. Directories follow
+TIFF 6.0 (section 2), EXIF 3.0 (section 4.6) and DNG 1.7 (chapter 3).
+
+## `TIFFDirectory/exif`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+case exif
+```
+
+The EXIF directory, reached through tag `0x8769`.
+
+## `TIFFDirectory/followingImage`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+case followingImage
+```
+
+A directory chained after IFD0 (IFD1 and later), such as an embedded thumbnail.
+
+## `TIFFDirectory/gps`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+case gps
+```
+
+The GPS directory, reached through tag `0x8825`.
+
+## `TIFFDirectory/interoperability`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+case interoperability
+```
+
+The interoperability directory, reached through tag `0xA005`.
+
+## `TIFFDirectory/primary`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+case primary
+```
+
+The first image directory (IFD0). In nope.'s DNG it holds the RAW image itself.
+
+## `TIFFDirectory/subImage`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+case subImage
+```
+
+A directory reached through `SubIFDs` (`0x014A`), such as a second image in a DNG.
+
+## `TIFFReader`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+struct TIFFReader
+```
+
+Lists every tag in every directory of a TIFF structure, and finds a DNG's RAW image data.
+
+This is the project's own tag reader for the read-back (AGENTS.md, "Fail closed"). It reads
+only; nothing here writes or edits bytes. It is written from TIFF 6.0 (section 2: header,
+IFDs and field types), EXIF 3.0 (section 4.6: the EXIF, GPS and interoperability pointers)
+and DNG 1.7 (SubIFDs and the RAW image directory). Every read is bounds-checked, every
+directory is visited once, and the number of directories and entries is capped, so a damaged
+or hostile file produces ``MetadataInventory/problems`` and never a crash. The fuzz tests in
+`NopeCoreTests` feed it random and mutated files.
+
+## `TIFFReader/Result`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+struct Result
+```
+
+The result of reading a TIFF structure.
+
+## `TIFFReader/Result/init()`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+init()
+```
+
+Creates an empty result: no tags, no problems and no image data.
+
+## `TIFFReader/Result/inventory`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+var inventory: MetadataInventory
+```
+
+Every tag found, and any problem.
+
+## `TIFFReader/Result/primaryImageData`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+var primaryImageData: Data?
+```
+
+The bytes of IFD0's image data (its tiles or strips, concatenated in order), or
+`nil` when IFD0 has none. For nope.'s DNG this is the compressed RAW sensor data.
+
+## `TIFFReader/Tag`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+enum Tag
+```
+
+Tag numbers this reader follows or uses.
+
+## `TIFFReader/Tag/exifPointer`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let exifPointer: UInt16
+```
+
+The EXIF directory pointer.
+
+## `TIFFReader/Tag/gpsPointer`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let gpsPointer: UInt16
+```
+
+The GPS directory pointer.
+
+## `TIFFReader/Tag/interoperabilityPointer`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let interoperabilityPointer: UInt16
+```
+
+The interoperability directory pointer (inside the EXIF directory).
+
+## `TIFFReader/Tag/stripByteCounts`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let stripByteCounts: UInt16
+```
+
+`StripByteCounts`.
+
+## `TIFFReader/Tag/stripOffsets`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let stripOffsets: UInt16
+```
+
+`StripOffsets`.
+
+## `TIFFReader/Tag/subIFDs`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let subIFDs: UInt16
+```
+
+`SubIFDs` (DNG and TIFF-EP).
+
+## `TIFFReader/Tag/tileByteCounts`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let tileByteCounts: UInt16
+```
+
+`TileByteCounts`.
+
+## `TIFFReader/Tag/tileOffsets`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let tileOffsets: UInt16
+```
+
+`TileOffsets`.
+
+## `TIFFReader/asciiType`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let asciiType: UInt16
+```
+
+The ASCII field type.
+
+## `TIFFReader/childDirectory(of:in:)`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static func childDirectory(of tag: UInt16, in directory: TIFFDirectory) -> TIFFDirectory?
+```
+
+The directory a pointer tag leads to, or `nil` if the tag isn't a pointer there.
+
+- Parameters:
+  - tag: The tag number.
+  - directory: The directory the tag is in.
+- Returns: The child directory.
+
+## `TIFFReader/fieldTypeSizes`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let fieldTypeSizes: [UInt16 : Int]
+```
+
+TIFF field types and their sizes in bytes (TIFF 6.0 section 2, and type 13, IFD, from
+TIFF Technical Note 1). Unknown types are recorded with no size.
+
+## `TIFFReader/maximumDirectories`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let maximumDirectories: Int
+```
+
+The most directories a file may have. nope.'s DNG has two (IFD0 and EXIF).
+
+## `TIFFReader/maximumEntriesPerDirectory`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let maximumEntriesPerDirectory: Int
+```
+
+The most entries one directory may have. nope.'s largest has about 40.
+
+## `TIFFReader/read(_:extractImageData:)`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static func read(_ bytes: [UInt8], extractImageData: Bool = false) -> Result
+```
+
+Reads a TIFF structure.
+
+- Parameters:
+  - bytes: The bytes, starting at the `II` or `MM` byte order mark.
+  - extractImageData: Whether to collect IFD0's image data (only for a DNG).
+- Returns: Every tag, the problems, and IFD0's image data if asked for.
+
+## `XMPDate`
+
+internal, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+struct XMPDate
+```
+
+What an XMP date (ISO 8601, XMP part 1, 8.2.1.1) carries beyond the date and time.
+
+## `XMPDate/hasFraction`
+
+internal, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+let hasFraction: Bool
+```
+
+Whether the seconds have a fraction, such as `.473`.
+
+## `XMPDate/hasZone`
+
+internal, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+let hasZone: Bool
+```
+
+Whether a time zone follows the time: `Z`, or `+hh:mm` / `-hh:mm`.
+
+## `XMPDate/init(_:)`
+
+internal, declared in `Sources/NopeCore/MetadataVerifier.swift`
+
+```swift
+init(_ text: String)
+```
+
+Reads a date such as `2026-11-12T00:11:51.473-05:00`.
+
+- Parameter text: The date text.
+
+## `XMPReader`
+
+internal, declared in `Sources/NopeCore/XMPReader.swift`
+
+```swift
+final class XMPReader
+```
+
+Lists the top-level properties of an XMP packet.
+
+Written from XMP part 1 (ISO 16684-1), section 7: properties are the children of each
+`rdf:Description` element, or its attributes other than `rdf:about` and namespace
+declarations. Nested structures count as their top-level property only. Uses Foundation's
+`XMLParser`, which doesn't fetch external entities unless asked
+(`shouldResolveExternalEntities` is `false` by default). A packet that isn't well-formed XML
+produces a problem, so the file is rejected.
+
+## `XMPReader/parser(_:didEndElement:namespaceURI:qualifiedName:)`
+
+internal, declared in `Sources/NopeCore/XMPReader.swift`
+
+```swift
+func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName: String?)
+```
+
+Ends an element, recording a finished top-level property.
+
+## `XMPReader/parser(_:didStartElement:namespaceURI:qualifiedName:attributes:)`
+
+internal, declared in `Sources/NopeCore/XMPReader.swift`
+
+```swift
+func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String : String] = [:])
+```
+
+Starts an element: a `rdf:Description`, or a property inside one.
+
+## `XMPReader/parser(_:foundCharacters:)`
+
+internal, declared in `Sources/NopeCore/XMPReader.swift`
+
+```swift
+func parser(_ parser: XMLParser, foundCharacters string: String)
+```
+
+Collects a property's text.
+
+## `XMPReader/rdfNamespace`
+
+internal, declared in `Sources/NopeCore/XMPReader.swift`
+
+```swift
+static let rdfNamespace: String
+```
+
+The RDF namespace URI.
+
+## `XMPReader/read(_:)`
+
+internal, declared in `Sources/NopeCore/XMPReader.swift`
+
+```swift
+static func read(_ bytes: [UInt8]) -> MetadataInventory
+```
+
+Reads an XMP packet.
+
+- Parameter bytes: The packet, as UTF-8 XML.
+- Returns: Every top-level property, or a problem if the packet can't be parsed.

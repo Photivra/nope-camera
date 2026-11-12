@@ -42,12 +42,48 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
 | `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
+| `Sources/NopeCapture/PhotoKitLibrary.swift` | Asking for add-only access shows a system prompt, and adding changes the person's library | On-device check |
+| `Sources/NopeDevelop/CoreImageRAWRenderer.swift` | Core Image's RAW filter needs a real Bayer DNG; ImageIO and Core Image don't decode a hand-built one | On-device check |
 
 Each excluded file is a thin wrapper; its logic lives in a tested file. For capture, the
 decisions are in `LensCatalog` (which cameras and formats), `CapturePolicy` (every processing
 switch), `PhotoSettingsFactory` (the photo settings) and `CaptureReadiness` (when to capture),
-and `AVFoundationCaptureBackend` is tested against a fake `CaptureHardware`. `NopeUI` is not part of
+and `AVFoundationCaptureBackend` is tested against a fake `CaptureHardware`. For saving, the
+decisions are in `PhotoKitMapping` (resource types and access), and `RAWDeveloper` and
+`PhotoEncoder` are tested with a fake renderer.
+
+### Metadata tests
+
+- `MetadataPlanTests` asserts the exact tags each format may carry for all 8,192 switch
+  combinations, signed and unsigned, against a hand-written table (`ExpectedTags`), and the
+  exact ImageIO dictionary each file is written with.
+- `MetadataReaderTests` covers the project's own tag reader: every TIFF directory in both byte
+  orders, JPEG segments, HEIF boxes, items, properties and references, XMP, and every malformed
+  case.
+- `MetadataFailClosedFuzzTests` injects a simulated future system tag (`0xC7FF`) into every
+  format and directory for random switch combinations, any tag off the allowlist, unexpected
+  segments and items, and thousands of randomly damaged and random files (seeded, so runs are
+  reproducible): every injected file is rejected and nothing crashes.
+- `PhotoSaverTests` runs the whole save pipeline with fakes: nothing that fails the read-back
+  reaches the library, and a signer that changes the RAW data is rejected.
+- `ImageIOReadBackTests` and `RAWDeveloperTests` (`NopeDevelop`) encode real HEIF and JPEG files
+  in the Simulator and read them back clean for the first-launch and all-on settings. `NopeUI` is not part of
 the coverage gate: it is covered by UI tests and accessibility audits instead.
+
+### Developed looks
+
+The RAW renderer can't run on a hand-built DNG, so one test needs a real DNG and is skipped
+unless it gets one. Never commit the file (`docs/TESTING.md`, "Tag check").
+
+```sh
+TEST_RUNNER_NOPE_TEST_DNG=/path/to/photo.dng xcodebuild test -scheme NopeKit-Package \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' -only-testing:NopeDevelopTests
+```
+
+`DevelopedLookTests.flatIsLinearAndStandardHasACurve` renders the DNG at 0 and +1 EV in linear
+Display P3: with the Flat look every mid-tone value doubles (no tone curve); with the Standard
+look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
+check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
 
 ## UI tests and accessibility audits
 
@@ -58,17 +94,23 @@ xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
 
 The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
 `-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
-swaps in `SimulatedCaptureBackend`. Release builds ignore the argument. The scenarios and what
+swaps in `SimulatedCaptureBackend` and simulated save steps (`SimulatedSaving.swift`; nothing
+touches the Simulator's photo library). Release builds ignore the argument. The scenarios and what
 each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Captured (not saved yet: development build)"; the telephoto (no RAW) shows the fallback badge |
+| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) shows the fallback badge |
+| `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
+| `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" message |
+| `signingFails` | The signer fails: the photo is saved unsigned, "Saved. Not signed: the signature couldn't be created.", shutter still enabled |
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure message |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off and no-camera screens |
+
+At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
 Every new screen and state adds an audit.
@@ -109,9 +151,14 @@ iPad:
   `signingCredential.untrusted` failing;
 - capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
   viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
-  a photo and show "Captured (not saved yet: development build)"; a lens without Bayer RAW shows
-  the fallback badge; a phone call or another camera app shows the interruption message, and
+  a photo and show "Saved and signed."; a lens
+  without Bayer RAW shows the fallback badge; a phone call or another camera app shows the interruption message, and
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
+- saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
+  prompt appears once and declining it shows the "isn't allowed to add photos" message; a RAW
+  plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
+  the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
+  `docs/PRIVACY.md`;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size).
 

@@ -451,7 +451,7 @@ struct ContentCredentialsSigner
 
 Signs each file with C2PA Content Credentials, using a new key for every file, fully offline.
 
-For each call to ``sign(_:as:)``:
+For each call to ``sign(_:)``:
 1. the key provider creates a new P-256 key (the Secure Enclave on a device);
 2. the key signs an anonymous, self-issued certificate for itself (``SelfIssuedCertificate``);
 3. the C2PA library embeds a manifest (``ContentCredentialsManifest``) and the key signs the
@@ -498,23 +498,21 @@ Creates a signer.
   - keyProvider: Creates one key per file. Pass ``platformKeyProvider()`` in the app.
   - generator: Photivra Nope Camera and its version, written into every manifest.
 
-## `ContentCredentialsSigner/sign(_:as:)`
+## `ContentCredentialsSigner/sign(_:)`
 
 public, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
 
 ```swift
-func sign(_ data: Data, as file: SignableFile) async throws(PhotoSigningError) -> Data
+func sign(_ file: PhotoFile) async throws(PhotoSigningError) -> PhotoFile
 ```
 
 Signs one file.
 
-- Parameters:
-  - data: The complete file, with its final metadata.
-  - file: What the file is.
-- Returns: The file with a Content Credentials manifest embedded where
-  `ContentCredentialsStore` says.
-- Throws: `PhotoSigningError.keyCreationFailed` if no key could be created, or
-  `PhotoSigningError.signingFailed` if the certificate, the claim signature or the
+- Parameter file: The complete file, with its final metadata.
+- Returns: The same file with a Content Credentials manifest embedded in the one place
+  its format allows (see `SignableFile.mediaType`); nothing else in the file changes.
+- Throws: ``PhotoSigningError/keyCreationFailed`` if no key could be created, or
+  ``PhotoSigningError/signingFailed`` if the certificate, the claim signature or the
   C2PA library failed, for example because the bytes aren't a valid file of that kind.
 
 ## `InMemoryFile`
@@ -837,6 +835,38 @@ The C2PA library's signer callback takes a DER-encoded ECDSA signature
 - Returns: The signature in DER form.
 - Throws: The key's error if signing fails, for example when the Secure Enclave is busy.
 
+## `PhotoSigningError`
+
+public, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+enum PhotoSigningError
+```
+
+Why a file couldn't be signed. `PhotoSaver` then saves the file unsigned and the status says
+signing failed.
+
+## `PhotoSigningError/keyCreationFailed`
+
+public, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case keyCreationFailed
+```
+
+A new key couldn't be created, for example because the Secure Enclave is unavailable.
+
+## `PhotoSigningError/signingFailed`
+
+public, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case signingFailed
+```
+
+The key, the certificate or the C2PA library couldn't produce a signed file, for example
+because the file isn't a valid DNG, HEIF or JPEG.
+
 ## `SecureEnclave/P256/Signing/PrivateKey/certificateKey`
 
 public, declared in `Sources/NopeSigning/SecureEnclaveSigningKey.swift`
@@ -989,6 +1019,113 @@ identifiers, which the C2PA library requires (c2pa-rs, `certificate_profile.rs`)
 - Returns: The certificate as a PEM string.
 - Throws: An error from swift-certificates if the key can't sign or the certificate can't
   be encoded.
+
+## `SignableFile`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+enum SignableFile
+```
+
+The kinds of file nope. signs, each with the honest description its manifest carries.
+
+Derived from a `PhotoFile`: its format, and whether the phone's camera processed it.
+
+## `SignableFile/developedHEIF`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case developedHEIF
+```
+
+HEIF developed by nope. from a single-frame RAW.
+
+## `SignableFile/developedJPEG`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case developedJPEG
+```
+
+JPEG developed by nope. from a single-frame RAW.
+
+## `SignableFile/deviceProcessedHEIF`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case deviceProcessedHEIF
+```
+
+HEIF processed by the phone's camera, for a lens without Bayer RAW.
+
+## `SignableFile/deviceProcessedJPEG`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case deviceProcessedJPEG
+```
+
+JPEG processed by the phone's camera, for a lens without Bayer RAW or HEIF.
+
+## `SignableFile/format`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+var format: PhotoFormat { get }
+```
+
+The file's format.
+
+## `SignableFile/init(_:)`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+init(_ file: PhotoFile)
+```
+
+The kind of a file on its way to Photos.
+
+- Parameter file: The file.
+
+## `SignableFile/isProcessedByDevice`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+var isProcessedByDevice: Bool { get }
+```
+
+Whether the phone's camera processed the file.
+
+## `SignableFile/mediaType`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+var mediaType: String { get }
+```
+
+The media type the C2PA library is given, which decides where the manifest is stored:
+DNG tag 52545 (`0xCD41`) in IFD0, a top-level HEIF `uuid` box with the C2PA UUID
+`D8FEC3D6-1B0E-483C-9297-5828877EC481`, or JPEG APP11 (`0xFFEB`) segments (C2PA 2.2,
+appendix A). `MetadataPlan.allowlist(for:signed:)` in `NopeCore` permits exactly these.
+
+## `SignableFile/singleFrameRAW`
+
+internal, declared in `Sources/NopeSigning/SignableFile.swift`
+
+```swift
+case singleFrameRAW
+```
+
+Single-frame Bayer RAW, saved as DNG.
 
 ## `SigningKeyProvider`
 

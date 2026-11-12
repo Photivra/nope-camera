@@ -1,6 +1,8 @@
 import Foundation
 import NopeCore
 
+@testable import NopeSigning
+
 /// Small synthetic files of every kind nope. signs. They are generated here, not captured, so
 /// the tests carry no one's photos (AGENTS.md, "Test files and samples").
 enum SyntheticPhotos {
@@ -9,8 +11,8 @@ enum SyntheticPhotos {
     /// - Parameter file: The kind of file.
     /// - Returns: The bytes.
     static func data(for file: SignableFile) -> Data {
-        switch file.container {
-        case .dng: dng()
+        switch file.format {
+        case .raw: dng()
         case .heif: heif
         case .jpeg: jpeg
         }

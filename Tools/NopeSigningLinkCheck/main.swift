@@ -10,8 +10,10 @@ let signer = ContentCredentialsSigner(keyProvider: platformKeyProvider(), genera
 let input = FileHandle.standardInput.readDataToEndOfFile()
 let semaphore = DispatchSemaphore(value: 0)
 Task {
-    for file in SignableFile.allCases {
-        _ = try? await signer.sign(input, as: file)
+    for format in PhotoFormat.allCases {
+        for isProcessedByDevice in [false, true] {
+            _ = try? await signer.sign(PhotoFile(format: format, data: input, isProcessedByDevice: isProcessedByDevice))
+        }
     }
     semaphore.signal()
 }

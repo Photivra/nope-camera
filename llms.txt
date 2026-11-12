@@ -26,9 +26,9 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 
 ## API (generated from DocC comments)
 
-- [docs/api/NopeCore.md](docs/api/NopeCore.md): state, intents, capabilities and the capture backend protocol (the interface contract)
+- [docs/api/NopeCore.md](docs/api/NopeCore.md): state, intents, capabilities, the capture backend protocol, settings, the metadata allowlist, read-back and save pipeline (the interface contract)
 - [docs/api/NopeCapture.md](docs/api/NopeCapture.md): AVFoundation and PhotoKit adapters
-- [docs/api/NopeDevelop.md](docs/api/NopeDevelop.md): RAW development and encoding settings
+- [docs/api/NopeDevelop.md](docs/api/NopeDevelop.md): RAW development, encoding settings and the ImageIO read-back
 - [docs/api/NopeSigning.md](docs/api/NopeSigning.md): C2PA Content Credentials with a new key for every file, offline
 - [docs/api/NopeUI.md](docs/api/NopeUI.md): the SwiftUI interface
 

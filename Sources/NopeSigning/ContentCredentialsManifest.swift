@@ -132,7 +132,7 @@ struct ContentCredentialsManifest: Encodable, Equatable {
     ///   - generator: Photivra Nope Camera and its version.
     ///   - instanceID: A UUID made for this file alone.
     init(file: SignableFile, generator: ClaimGenerator, instanceID: UUID) {
-        self.format = file.container.mediaType
+        self.format = file.mediaType
         self.instanceID = "xmp:iid:\(instanceID.uuidString.lowercased())"
         self.claimGeneratorInfo = [GeneratorInfo(name: generator.name, version: generator.version)]
         self.assertions = [

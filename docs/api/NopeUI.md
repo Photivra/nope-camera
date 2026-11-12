@@ -143,8 +143,10 @@ internal, declared in `Sources/NopeUI/CaptureStatusView.swift`
 
 The result of the last capture, in words, announced to VoiceOver when it changes.
 
-In this development stage a photo is held in memory and never saved, and the text says so
-plainly. It stays on screen until the next capture (AGENTS.md, "Motion and timing").
+It says whether the photo was saved and whether it is signed, or why it wasn't saved. A
+missing signature is always stated, never hidden (issue #1). The signature and privacy
+wording lives in `Honesty.xcstrings`. It stays on screen until the next capture (AGENTS.md,
+"Motion and timing").
 
 ## `CaptureStatusView/body`
 

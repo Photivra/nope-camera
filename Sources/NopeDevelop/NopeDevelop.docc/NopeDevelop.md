@@ -8,13 +8,20 @@ RAW development to HEIF and JPEG with Core Image and the system encoders.
 sharpening or local tone mapping, and never the phone's own pipeline. It encodes only with the
 system encoders through ImageIO.
 
-The scaffold contains the encoding settings for each developed format. The Core Image developer
-follows.
+``RAWDeveloper`` renders the DNG with `CoreImageRAWRenderer` and encodes it with the system
+encoders (``EncodingSettings``), writing only the metadata `MetadataPlan` built from the
+allowlist. ``ImageIOReadBack`` reads every finished file back for the fail-closed check: the
+project's own tag reader in `NopeCore`, plus every key ImageIO reports when it opens the file.
 
 Related documentation: `docs/ARCHITECTURE.md` and `docs/PRIVACY.md` in the repository.
 
 ## Topics
 
-### Encoding
+### Development
 
+- ``RAWDeveloper``
 - ``EncodingSettings``
+
+### Read-back
+
+- ``ImageIOReadBack``

@@ -4,7 +4,7 @@ import NopeCore
 
 /// Signs each file with C2PA Content Credentials, using a new key for every file, fully offline.
 ///
-/// For each call to ``sign(_:as:)``:
+/// For each call to ``sign(_:)``:
 /// 1. the key provider creates a new P-256 key (the Secure Enclave on a device);
 /// 2. the key signs an anonymous, self-issued certificate for itself (``SelfIssuedCertificate``);
 /// 3. the C2PA library embeds a manifest (``ContentCredentialsManifest``) and the key signs the
@@ -37,15 +37,14 @@ public struct ContentCredentialsSigner: PhotoSigning {
 
     /// Signs one file.
     ///
-    /// - Parameters:
-    ///   - data: The complete file, with its final metadata.
-    ///   - file: What the file is.
-    /// - Returns: The file with a Content Credentials manifest embedded where
-    ///   `ContentCredentialsStore` says.
-    /// - Throws: `PhotoSigningError.keyCreationFailed` if no key could be created, or
-    ///   `PhotoSigningError.signingFailed` if the certificate, the claim signature or the
+    /// - Parameter file: The complete file, with its final metadata.
+    /// - Returns: The same file with a Content Credentials manifest embedded in the one place
+    ///   its format allows (see `SignableFile.mediaType`); nothing else in the file changes.
+    /// - Throws: ``PhotoSigningError/keyCreationFailed`` if no key could be created, or
+    ///   ``PhotoSigningError/signingFailed`` if the certificate, the claim signature or the
     ///   C2PA library failed, for example because the bytes aren't a valid file of that kind.
-    public func sign(_ data: Data, as file: SignableFile) async throws(PhotoSigningError) -> Data {
+    public func sign(_ file: PhotoFile) async throws(PhotoSigningError) -> PhotoFile {
+        let kind = SignableFile(file)
         let key: any PerPhotoSigningKey
         do {
             key = try keyProvider.makeKey()
@@ -53,9 +52,9 @@ public struct ContentCredentialsSigner: PhotoSigning {
             throw .keyCreationFailed
         }
         do {
-            return try Self.embed(
-                data, as: file, manifest: ContentCredentialsManifest(file: file, generator: generator, instanceID: UUID()),
-                key: key)
+            let manifest = ContentCredentialsManifest(file: kind, generator: generator, instanceID: UUID())
+            let signed = try Self.embed(file.data, as: kind, manifest: manifest, key: key)
+            return PhotoFile(format: file.format, data: signed, isProcessedByDevice: file.isProcessedByDevice)
         } catch {
             throw .signingFailed
         }
@@ -81,7 +80,7 @@ public struct ContentCredentialsSigner: PhotoSigning {
         let source = InMemoryFile(data)
         let destination = InMemoryFile()
         try builder.sign(
-            format: file.container.mediaType, source: InMemoryStream.make(source),
+            format: file.mediaType, source: InMemoryStream.make(source),
             destination: InMemoryStream.make(destination), signer: signer)
         return destination.data
     }
