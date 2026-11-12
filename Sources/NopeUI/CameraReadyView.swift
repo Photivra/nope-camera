@@ -65,24 +65,32 @@ struct CameraReadyView<Viewfinder: View, TopBar: View, Controls: View>: View {
     /// The arrangement ``CameraLayout`` chooses for the available space.
     var body: some View {
         GeometryReader { proxy in
-            switch CameraLayout.arrangement(for: proxy.size, isAccessibilitySize: dynamicTypeSize.isAccessibilitySize) {
+            let content = CGSize(
+                width: max(proxy.size.width - 2 * Self.margin, 0), height: max(proxy.size.height - 2 * Self.margin, 0))
+            switch CameraLayout.arrangement(for: content, isAccessibilitySize: dynamicTypeSize.isAccessibilitySize) {
             case .stacked:
                 stacked
             case .sideBySide(let columnWidth):
                 sideBySide(columnWidth: columnWidth)
+                    .padding(Self.margin)
             }
         }
-        .padding()
     }
 
-    /// The stacked arrangement, scrolling at accessibility text sizes.
+    /// The margin around the screen's content, in points: the system's standard padding.
+    private static var margin: CGFloat { 16 }
+
+    /// The stacked arrangement, scrolling at accessibility text sizes. The margin is inside the
+    /// scroll view, so the content scrolls to the screen's edges.
     @ViewBuilder private var stacked: some View {
         if dynamicTypeSize.isAccessibilitySize {
             ScrollView {
                 stack(viewfinderHeight: Self.scrollingViewfinderHeight)
+                    .padding(Self.margin)
             }
         } else {
             stack(viewfinderHeight: nil)
+                .padding(Self.margin)
         }
     }
 
