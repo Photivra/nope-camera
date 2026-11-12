@@ -189,6 +189,8 @@ struct CleanViewButton: View {
             }
             .labelStyle(.iconOnly)
             .frame(minWidth: 44, minHeight: 44)
+            // Primary on the gray fill: the secondary tint fails the contrast audit.
+            .foregroundStyle(.primary)
         }
         .buttonStyle(.bordered)
         .tint(.secondary)

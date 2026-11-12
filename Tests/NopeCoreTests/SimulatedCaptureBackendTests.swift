@@ -75,6 +75,10 @@ struct SimulatedCaptureBackendTests {
         let photos = try await backend.captureBracket(CaptureRequest(lens: lens), frames: frames)
         #expect(photos.map(\.exposureDuration) == [0.01, 0.02])
         #expect(photos.allSatisfy { $0.dimensions == PhotoDimensions(width: 8, height: 6) })
+        #expect(photos.allSatisfy { $0.rawImageData == SimulatedCaptureBackend.placeholderPhotoData })
+        let heif = Lens(id: "tele", kind: .telephoto, bayerRAWFormat: nil)
+        let processed = try await backend.captureBracket(CaptureRequest(lens: heif), frames: frames)
+        #expect(processed.allSatisfy { $0.rawImageData == nil })
         let placeholder = try await backend.captureBracket(CaptureRequest(lens: Self.wide), frames: frames)
         #expect(placeholder.allSatisfy { $0.dimensions == SimulatedCaptureBackend.placeholderDimensions })
 

@@ -99,6 +99,8 @@ struct ManualControlsView: View {
             } icon: {
                 Image(systemName: "slider.horizontal.3")
             }
+            // Primary on the gray fill: the secondary tint fails the contrast audit.
+            .foregroundStyle(.primary)
         }
         .buttonStyle(.bordered)
         .tint(.secondary)

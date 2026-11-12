@@ -184,7 +184,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
                 lensID: request.lens.id,
                 dimensions: request.lens.photoDimensions.last ?? Self.placeholderDimensions,
                 exposureDuration: frame.exposureDuration,
-                iso: frame.iso
+                iso: frame.iso,
+                rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil
             )
         }
     }
