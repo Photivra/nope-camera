@@ -84,7 +84,7 @@ controls, which are merged but not yet device-checked. Add a sentence for each o
 - **Export compliance: No** (maintainer's decision, 2026-11-12). The app uses cryptography only
   to sign photos (authentication and integrity), through the operating system's CryptoKit and
   the C2PA library, and encrypts no data, so it is exempt. The app's Info.plist should set
-  `ITSAppUsesNonExemptEncryption` to `NO` (in progress in a separate pull request), so App Store Connect doesn't ask for
+  `ITSAppUsesNonExemptEncryption` to `NO`, so App Store Connect doesn't ask for
   each build.
   Recheck if any release adds encryption of data. See Apple's
   [export compliance overview](https://developer.apple.com/help/app-store-connect/manage-app-information/overview-of-export-compliance)

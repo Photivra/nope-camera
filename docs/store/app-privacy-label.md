@@ -42,7 +42,7 @@ tracking domains, no collected data types (audit check 6).
 
 Not part of App Privacy, but answered at the same time: **No** non-exempt encryption. The app
 uses cryptography only to sign photos, and Info.plist should set `ITSAppUsesNonExemptEncryption`
-to `NO` (in progress in a separate pull request) (see [`README.md`](README.md), "Other App Store Connect fields").
+to `NO` (see [`README.md`](README.md), "Other App Store Connect fields").
 
 ## Recheck before every release
 

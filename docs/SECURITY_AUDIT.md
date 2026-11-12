@@ -159,8 +159,8 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
   - No `UIBackgroundModes`, `CFBundleURLTypes` (URL schemes), `CFBundleDocumentTypes`,
     `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`, `NSAppTransportSecurity`
     exceptions, or `NSBonjourServices`.
-  - `ITSAppUsesNonExemptEncryption` is `NO` (being added in a separate pull request as of
-    2026-11-12; open until it merges). Export compliance answer: **No** non-exempt
+  - `ITSAppUsesNonExemptEncryption` is `NO` (set in the generated Info.plist since
+    2026-11-12). Export compliance answer: **No** non-exempt
     encryption (maintainer's decision, 2026-11-12): the app uses the operating system's
     cryptography only to sign photos (authentication and integrity) and encrypts no data. If the
     key is missing, that is a Minor finding (App Store Connect then asks for every build);
@@ -181,17 +181,16 @@ tracking, no tracking domains, no collected data and no required-reason APIs.
 
 **State as of 2026-11-12:** the manifest declares `NSPrivacyAccessedAPICategoryUserDefaults`
 with `CA92.1`, for the settings (`NopeSettings`, stored in the app's own `UserDefaults`).
-**In progress:** Release code also calls `ProcessInfo.systemUptime` to throttle exposure
-readings (`Sources/NopeCapture/SystemCaptureHardware.swift`), which needs
-`NSPrivacyAccessedAPICategorySystemBootTime` with `35F9.1`; that declaration is being added in a
-separate pull request. Until it merges, this check fails. Expected 1.0 use:
+It also declares `NSPrivacyAccessedAPICategorySystemBootTime` with `35F9.1`, because Release
+code calls `ProcessInfo.systemUptime` to throttle exposure readings
+(`Sources/NopeCapture/SystemCaptureHardware.swift`). Expected 1.0 use:
 
 | Category | Expected 1.0 use | Reason code (recheck on Apple's page before submission) |
 |---|---|---|
 | `NSPrivacyAccessedAPICategoryUserDefaults` | Settings: formats, the master switch and each metadata item, signing, manual controls, clean view (declared, `CA92.1`) | `CA92.1`: read and write data only the app itself uses |
 | `NSPrivacyAccessedAPICategoryDiskSpace` | Only if the app checks free space before saving or shows an out-of-space message | `E174.1`: check space before writing files |
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
-| `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declaration in progress); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
+| `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
 
 - **Run:**
