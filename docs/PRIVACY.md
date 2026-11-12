@@ -10,8 +10,9 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
 
 - **Network:** none. The app contains no networking code; `scripts/check-security.sh` fails a
   pull request that adds any.
-- **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains, no
-  collected data types and no required-reason APIs.
+- **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains and
+  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1`), for the
+  settings below.
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
   for camera access when the person presses "Allow Camera Access", and for add-only Photos access
@@ -30,6 +31,11 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
   runs before the read-back, so a signed file is checked like any other (see "Content
   Credentials").
+- **Settings:** the person's choices (formats, metadata switches, signing, the HEIF and JPEG
+  look, manual controls) are stored in the app's own `UserDefaults` on the device. They are
+  never synced or sent. The name and copyright fields of `SaveSettings` stay empty: Settings
+  has no text entry for them yet. The privacy manifest declares the `UserDefaults` required-reason API
+  with reason `CA92.1` (the app's own data).
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
   nothing. Debug builds include the
@@ -206,6 +212,13 @@ turning the master on clears every item, turning it off always starts from these
 
 Serial numbers, unique image IDs and raw data IDs are never written, by the system or by nope.,
 so they have no switch.
+
+**In the app:** Settings › Privacy shows the master switch, a switch for each item above with its
+"what turning it off costs" text, the signing switch, and the locked items, each with its
+reason (`NopeCore.MetadataSettings`, `NopeUI.PrivacySettingsView`). Location and "Your name and
+copyright" have no switch yet, because their flows (the location prompt, text entry) aren't
+built; they stay off. The app passes the settings to the save pipeline, which applies them to
+the next photo.
 
 ### Locked (the photo breaks without these)
 

@@ -199,6 +199,72 @@
         }
       }
     },
+    "About and Licenses": {
+      "comment": "Settings row and screen title: version, license and third-party notices.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Info und Lizenzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Información y licencias"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Informations et licences"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Info e licenze"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "情報とライセンス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "정보 및 라이선스"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Info en licenties"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sobre e licenças"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关于与许可证"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關於與授權條款"
+          }
+        }
+      }
+    },
     "All Auto": {
       "comment": "Button that returns every manual control to automatic in one tap.",
       "extractionState": "manual",
@@ -393,6 +459,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "光圈"
+          }
+        }
+      }
+    },
+    "At least one format is required.": {
+      "comment": "Explains why the last selected format can't be turned off.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mindestens ein Format ist erforderlich."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se necesita al menos un formato."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Au moins un format est requis."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "È necessario almeno un formato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "少なくとも1つのフォーマットが必要です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "최소 한 가지 포맷이 필요합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Er is minstens één formaat nodig."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "É necessário pelo menos um formato."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "至少需要一种格式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "至少需要一種格式。"
           }
         }
       }
@@ -657,6 +789,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "需要取用相機"
+          }
+        }
+      }
+    },
+    "Capture": {
+      "comment": "Settings section header for how photos are taken and saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aufnahme"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Captura"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise de vue"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "촬영"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opname"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Captura"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍摄"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍攝"
+          }
+        }
+      }
+    },
+    "Captured (not saved yet: development build)": {
+      "comment": "Shown after a photo is taken. In this development version photos are kept in memory and not saved to Photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aufgenommen (noch nicht gesichert: Entwicklungsversion)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Capturada (aún no se guarda: versión de desarrollo)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photo prise (pas encore enregistrée : version de développement)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scattata (non ancora salvata: versione di sviluppo)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影済み（まだ保存されません：開発版）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "촬영됨(아직 저장되지 않음: 개발 빌드)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vastgelegd (nog niet bewaard: ontwikkelversie)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Capturada (ainda não salva: versão de desenvolvimento)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已拍摄（尚未保存：开发版本）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已拍攝（尚未儲存：開發版本）"
           }
         }
       }
@@ -926,7 +1190,7 @@
       }
     },
     "Done": {
-      "comment": "Closes the Pro Tools sheet.",
+      "comment": "Button that closes a sheet, such as Settings or Pro Tools.",
       "extractionState": "manual",
       "localizations": {
         "de": {
@@ -1453,6 +1717,72 @@
         }
       }
     },
+    "Flat": {
+      "comment": "Developed look: no contrast curve, closest to the sensor.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flach"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Plano"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Plat"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Piatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フラット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "플랫"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vlak"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Plano"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "平淡"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "平淡"
+          }
+        }
+      }
+    },
     "Fluorescent": {
       "comment": "White balance preset for fluorescent light.",
       "extractionState": "manual",
@@ -1651,6 +1981,72 @@
         }
       }
     },
+    "Formats": {
+      "comment": "Settings row and screen title: the file formats each photo is saved in.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formate"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formatos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formats"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formati"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フォーマット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "포맷"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formaten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formatos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "格式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "格式"
+          }
+        }
+      }
+    },
     "Frames": {
       "comment": "Picker for how many photos one bracket takes.",
       "extractionState": "manual",
@@ -1845,6 +2241,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "全自動"
+          }
+        }
+      }
+    },
+    "GNU General Public License, version 3 only (GPL-3.0-only)": {
+      "comment": "Row that opens the full license text. GNU General Public License is the license's name; keep GPL-3.0-only unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License, nur Version 3 (GPL-3.0-only)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License, solo versión 3 (GPL-3.0-only)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License, version 3 uniquement (GPL-3.0-only)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License, solo versione 3 (GPL-3.0-only)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License バージョン3のみ（GPL-3.0-only）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License 버전 3 전용(GPL-3.0-only)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License, alleen versie 3 (GPL-3.0-only)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License, somente versão 3 (GPL-3.0-only)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License，仅限第 3 版（GPL-3.0-only）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GNU General Public License，僅限第 3 版（GPL-3.0-only）"
+          }
+        }
+      }
+    },
+    "HEIF and JPEG Look": {
+      "comment": "Picker label: how the HEIF and JPEG copies are developed from the RAW. HEIF and JPEG are file format names.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF- und JPEG-Look"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aspecto de HEIF y JPEG"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rendu HEIF et JPEG"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aspetto di HEIF e JPEG"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIFとJPEGの仕上がり"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 및 JPEG 룩"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF- en JPEG-weergave"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aparência de HEIF e JPEG"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 和 JPEG 风格"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 與 JPEG 風格"
           }
         }
       }
@@ -2179,6 +2707,72 @@
         }
       }
     },
+    "License": {
+      "comment": "Title of the screen showing the full license text.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lizenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licencia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licence"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licenza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライセンス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "라이선스"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licentie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licença"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "许可证"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "授權條款"
+          }
+        }
+      }
+    },
     "Manual": {
       "comment": "A control set by the person, not the camera. Also the M exposure mode.",
       "extractionState": "manual",
@@ -2241,6 +2835,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "手動"
+          }
+        }
+      }
+    },
+    "Manual Controls": {
+      "comment": "Switch that shows manual exposure controls on the camera screen.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manuelle Steuerung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Controles manuales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Commandes manuelles"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Controlli manuali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "マニュアル操作"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "수동 조작"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Handmatige bediening"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Controles manuais"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "手动控制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "手動控制"
           }
         }
       }
@@ -2773,6 +3433,72 @@
         }
       }
     },
+    "Not available on this device": {
+      "comment": "Shown under the RAW format on a device without RAW.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auf diesem Gerät nicht verfügbar"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No disponible en este dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non disponible sur cet appareil"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non disponibile su questo dispositivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このデバイスでは利用できません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 기기에서는 사용할 수 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet beschikbaar op dit apparaat"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Indisponível neste dispositivo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此设备不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此裝置無法使用"
+          }
+        }
+      }
+    },
     "Not available on this lens.": {
       "comment": "Explains that the selected lens can't set this control.",
       "extractionState": "manual",
@@ -3103,6 +3829,204 @@
         }
       }
     },
+    "Notices and Trademarks": {
+      "comment": "Row and screen title for the copyright, trademark and third-party notices.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hinweise und Marken"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avisos y marcas comerciales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mentions et marques"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Note e marchi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "表示と商標"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "고지 및 상표"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kennisgevingen en handelsmerken"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avisos e marcas registradas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "声明与商标"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "聲明與商標"
+          }
+        }
+      }
+    },
+    "Opens in your browser. nope. itself makes no network connections.": {
+      "comment": "Footer under the source code link. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wird in deinem Browser geöffnet. nope. selbst baut keine Netzwerkverbindungen auf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se abre en tu navegador. nope. en sí no establece ninguna conexión de red."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "S’ouvre dans votre navigateur. nope. lui-même n’établit aucune connexion réseau."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Si apre nel browser. nope. di per sé non effettua connessioni di rete."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ブラウザで開きます。nope. 自体はネットワーク接続を一切行いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "브라우저에서 열립니다. nope. 자체는 네트워크 연결을 하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wordt geopend in je browser. nope. zelf maakt geen netwerkverbindingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre no seu navegador. O nope. em si não faz conexões de rede."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "会在浏览器中打开。nope. 本身不会建立任何网络连接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "會在瀏覽器中開啟。nope. 本身不會建立任何網路連線。"
+          }
+        }
+      }
+    },
+    "Photivra, Nope Camera, the app icon and the wordmark are trademarks and aren't covered by the GPL.": {
+      "comment": "Trademark statement. Keep Photivra, Nope Camera and GPL unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, das App-Symbol und die Wortmarke sind Marken und fallen nicht unter die GPL."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, el icono de la app y el logotipo son marcas comerciales y no están cubiertos por la GPL."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, l’icône de l’app et le logotype sont des marques et ne sont pas couverts par la GPL."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, l’icona dell’app e il logotipo sono marchi e non sono coperti dalla GPL."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra、Nope Camera、アプリアイコンおよびワードマークは商標であり、GPLの対象外です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, 앱 아이콘 및 워드마크는 상표이며 GPL의 적용을 받지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, het app-symbool en het woordmerk zijn handelsmerken en vallen niet onder de GPL."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra, Nope Camera, o ícone do app e o logotipo são marcas registradas e não são cobertos pela GPL."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra、Nope Camera、App 图标和文字标志均为商标，不受 GPL 约束。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photivra、Nope Camera、App 圖像和文字標誌均為商標，不受 GPL 涵蓋。"
+          }
+        }
+      }
+    },
     "Photos": {
       "comment": "Picker for how many photos an interval series takes.",
       "extractionState": "manual",
@@ -3231,6 +4155,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "預設"
+          }
+        }
+      }
+    },
+    "Privacy": {
+      "comment": "Settings row and screen title: which details are saved in each photo, and signing.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Datenschutz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Privacidad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Confidentialité"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Privacy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プライバシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "개인정보 보호"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Privacy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Privacidade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "隐私"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "隱私權"
           }
         }
       }
@@ -3433,6 +4423,72 @@
         }
       }
     },
+    "Save Each Photo As": {
+      "comment": "Section header above the list of file formats.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto sichern als"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardar cada foto como"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrer chaque photo en"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva ogni foto come"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真の保存形式"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 사진 저장 형식"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto bewaren als"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvar cada foto como"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片存储为"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片儲存為"
+          }
+        }
+      }
+    },
     "Saving…": {
       "comment": "Shown while a photo that was just taken is being checked and added to the photo library.",
       "extractionState": "manual",
@@ -3495,6 +4551,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "正在儲存⋯"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "comment": "Title of the settings screen, and the camera button that opens it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Einstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Instellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定"
           }
         }
       }
@@ -3631,6 +4753,72 @@
         }
       }
     },
+    "Shows manual controls on the camera screen. Off by default.": {
+      "comment": "Explains the Manual Controls switch.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zeigt manuelle Steuerelemente auf dem Kamerabildschirm. Standardmäßig aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Muestra controles manuales en la pantalla de la cámara. Desactivado por omisión."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Affiche des commandes manuelles sur l’écran de l’appareil photo. Désactivé par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra i controlli manuali nella schermata della fotocamera. Disattivato per impostazione predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラ画面にマニュアル操作を表示します。初期設定はオフです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라 화면에 수동 조작을 표시합니다. 기본값은 끔입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toont handmatige bediening op het camerascherm. Standaard uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra controles manuais na tela da câmera. Desativado por padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相机屏幕上显示手动控制。默认关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相機畫面顯示手動控制。預設為關閉。"
+          }
+        }
+      }
+    },
     "Shutter": {
       "comment": "Name of the shutter speed (exposure time) control.",
       "extractionState": "manual",
@@ -3759,6 +4947,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "快門優先"
+          }
+        }
+      }
+    },
+    "Source Code": {
+      "comment": "Section header for where to find the app's source code.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Quellcode"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Código fuente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Code source"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Codice sorgente"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ソースコード"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "소스 코드"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Broncode"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Código-fonte"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "源代码"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "原始碼"
+          }
+        }
+      }
+    },
+    "Source code address": {
+      "comment": "VoiceOver name of the web address of the source code.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Adresse des Quellcodes"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dirección del código fuente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Adresse du code source"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Indirizzo del codice sorgente"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ソースコードのアドレス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "소스 코드 주소"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Adres van de broncode"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Endereço do código-fonte"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "源代码地址"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "原始碼網址"
           }
         }
       }
@@ -3901,6 +5221,72 @@
         }
       }
     },
+    "Standard": {
+      "comment": "Developed look: normal-looking HEIF and JPEG.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Estándar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "표준"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "标准"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準"
+          }
+        }
+      }
+    },
     "Start": {
       "comment": "Button that starts interval shooting.",
       "extractionState": "manual",
@@ -3963,6 +5349,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "開始"
+          }
+        }
+      }
+    },
+    "Start in Clean View": {
+      "comment": "Switch: the camera opens with only the viewfinder and the shutter.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In aufgeräumter Ansicht starten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Iniciar en vista limpia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Démarrer en vue épurée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avvia in vista pulita"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "クリーンビューで開始"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "클린 뷰로 시작"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Starten in rustige weergave"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Iniciar na visualização limpa"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "以简洁视图打开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "以簡潔檢視開啟"
           }
         }
       }
@@ -4825,6 +6277,72 @@
         }
       }
     },
+    "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.": {
+      "comment": "Explains the clean view switch.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera öffnet nur mit Sucher und Auslöser. Warnungen zum Foto werden immer angezeigt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara se abre solo con el visor y el obturador. Las advertencias sobre la foto siempre se muestran."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo s’ouvre avec seulement le viseur et le déclencheur. Les avertissements sur la photo restent toujours affichés."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera si apre solo con il mirino e il pulsante di scatto. Gli avvisi sulla foto vengono sempre mostrati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラはビューファインダーとシャッターだけの状態で開きます。写真に関する警告は常に表示されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 뷰파인더와 셔터만 있는 상태로 열립니다. 사진에 관한 경고는 항상 표시됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera opent met alleen de zoeker en de sluiterknop. Waarschuwingen over de foto worden altijd getoond."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera abre só com o visor e o obturador. Os avisos sobre a foto sempre aparecem."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机打开时只显示取景器和快门。关于照片的警告始终会显示。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機開啟時只顯示觀景窗和快門。關於照片的警告一律會顯示。"
+          }
+        }
+      }
+    },
     "The camera works only when nope. fills the screen.": {
       "comment": "Shown on iPad in Split View, Slide Over or Stage Manager. Keep \"nope.\" unchanged: it is the app's name.",
       "extractionState": "manual",
@@ -4953,6 +6471,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "未能拍攝照片。請再試一次。"
+          }
+        }
+      }
+    },
+    "Third-Party Notices": {
+      "comment": "Section header for notices required by other licenses.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hinweise Dritter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avisos de terceros"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mentions de tiers"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Note di terze parti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "サードパーティの表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "타사 고지"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kennisgevingen van derden"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avisos de terceiros"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "第三方声明"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "第三方聲明"
           }
         }
       }
@@ -5419,6 +7003,72 @@
         }
       }
     },
+    "Version": {
+      "comment": "Label for the app's version number.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Version"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Versión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Version"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Versione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バージョン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "버전"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Versie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Versão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "版本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "版本"
+          }
+        }
+      }
+    },
     "Viewfinder": {
       "comment": "VoiceOver name of the live camera view.",
       "extractionState": "manual",
@@ -5811,6 +7461,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "不適用"
+          }
+        }
+      }
+    },
+    "nope. is free software: you can redistribute it and modify it under the terms of this license.": {
+      "comment": "Plain summary of the GPL. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. ist freie Software: Du kannst sie unter den Bedingungen dieser Lizenz weitergeben und ändern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. es software libre: puedes redistribuirlo y modificarlo según los términos de esta licencia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. est un logiciel libre : vous pouvez le redistribuer et le modifier selon les termes de cette licence."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. è software libero: puoi ridistribuirlo e modificarlo secondo i termini di questa licenza."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. はフリーソフトウェアです。このライセンスの条件のもとで再配布や改変ができます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.는 자유 소프트웨어입니다. 이 라이선스의 조건에 따라 재배포하고 수정할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. is vrije software: je mag het verspreiden en aanpassen onder de voorwaarden van deze licentie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. é software livre: você pode redistribuí-lo e modificá-lo nos termos desta licença."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 是自由软件：你可以按照本许可证的条款重新分发和修改它。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 是自由軟體：你可以依本授權條款的條件重新散布及修改。"
           }
         }
       }

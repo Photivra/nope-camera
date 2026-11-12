@@ -65,7 +65,9 @@ user. The full design is in issue #1.
 - **Progressive enhancement.** Detect each capability at run time; show a feature only where
   the device supports it.
 - **Prevention first:**
-  - no web views, URL schemes, clipboard access or file import;
+  - no web views, custom URL schemes, clipboard access or file import; an `https` link may
+    open in the system browser only when the person taps it, and nope. itself makes no network
+    request;
   - no code loaded at run time;
   - no private APIs;
   - no background modes;
