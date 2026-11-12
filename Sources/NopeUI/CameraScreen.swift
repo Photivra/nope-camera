@@ -12,14 +12,23 @@ import SwiftUI
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
 /// backed by `AVCaptureVideoPreviewLayer`).
 ///
+/// A Settings button at the top opens ``SettingsScreen`` as a sheet, in every state, so settings
+/// and the Honesty screen are reachable before the camera is allowed.
+///
 /// ```swift
-/// CameraScreen(model: model) { source in
+/// CameraScreen(model: model, settings: settings) { source in
 ///     MyPreviewView(source: source)
 /// }
 /// ```
 public struct CameraScreen<Viewfinder: View>: View {
     /// The model the screen renders.
     private let model: CameraModel
+
+    /// The person's settings, shown and changed in the settings sheet.
+    private let settings: NopeSettings
+
+    /// Whether the settings sheet is open.
+    @State private var showsSettings = false
 
     /// Makes the live viewfinder for the model's preview source.
     private let viewfinder: (any CameraPreviewSource) -> Viewfinder
@@ -29,23 +38,59 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// - Parameters:
     ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     ///     and runs `CameraModel.observeEvents()` while it is visible.
+    ///   - settings: The person's settings, opened from the Settings button.
     ///   - viewfinder: Makes the live viewfinder from the model's preview source.
-    public init(model: CameraModel, @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder) {
+    public init(
+        model: CameraModel, settings: NopeSettings,
+        @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder
+    ) {
         self.model = model
+        self.settings = settings
         self.viewfinder = viewfinder
     }
 
     /// The screen's content for the current state.
     public var body: some View {
-        content
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.background)
+        // The Settings button sits above the content, not over it, so scrolling content at large
+        // text sizes never passes under it.
+        VStack(spacing: 0) {
+            settingsButton
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(.background)
+            .sheet(isPresented: $showsSettings) {
+                SettingsScreen(settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
+            }
             .preferredColorScheme(.dark)
             .task { await model.send(.start) }
             .task { await model.observeEvents() }
             .task { await model.manual.observeReadings() }
             // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
             .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
+    }
+
+    /// Opens the settings. Its name, "Settings", is what VoiceOver reads and what Voice Control
+    /// users say; the Large Content Viewer shows it at accessibility text sizes.
+    private var settingsButton: some View {
+        HStack {
+            Spacer()
+            Button {
+                showsSettings = true
+            } label: {
+                Label {
+                    Text("Settings", bundle: .module, comment: "Title of the settings screen, and the camera button that opens it.")
+                } icon: {
+                    Image(systemName: "gearshape")
+                }
+                .labelStyle(.iconOnly)
+                .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
+            .accessibilityShowsLargeContentViewer()
+        }
+        .padding(.horizontal)
     }
 
     /// The view for the model's current state.
@@ -92,9 +137,11 @@ public struct CameraScreen<Viewfinder: View>: View {
 extension CameraScreen where Viewfinder == Color {
     /// Creates the camera screen with a plain black viewfinder, for tests and previews.
     ///
-    /// - Parameter model: The model to render.
-    public init(model: CameraModel) {
-        self.init(model: model) { _ in Color.black }
+    /// - Parameters:
+    ///   - model: The model to render.
+    ///   - settings: The person's settings.
+    public init(model: CameraModel, settings: NopeSettings) {
+        self.init(model: model, settings: settings) { _ in Color.black }
     }
 }
 

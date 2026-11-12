@@ -46,8 +46,10 @@ and [platform version information](https://developer.apple.com/help/app-store-co
 
 The description describes the planned 1.0 app. As of 2026-11-12, saving to Photos with the
 metadata allowlist and fail-closed read-back, HEIF and JPEG development, and Content
-Credentials signing are merged and tested in the Simulator, **but not yet checked on a
-device**. There is no settings screen and no Honesty screen yet. **Every claim below must be
+Credentials signing, the settings screens (formats and Privacy) and the Honesty screen are
+merged and tested in the Simulator, **but not yet checked on a device**, and the Honesty and
+privacy wording still needs fluent human review. The Honesty screen doesn't yet show the last
+photo's details. **Every claim below must be
 shipped and verified, on a device where the table says so, before the listing is submitted;
 remove any sentence whose feature isn't in the release.**
 
@@ -58,11 +60,11 @@ remove any sentence whose feature isn't in the release.**
 | C3 | Optional HEIF or JPEG developed by nope. from the same RAW, with no noise reduction, sharpening or local tone mapping | `NopeDevelop` (merged; device check pending) | Development tests; output review |
 | C4 | No networking code, no network connections, no analytics, ads or accounts | Merged; the C2PA library is built without network features and CI checks the library and the linked app for networking code (`scripts/check-no-networking.sh`) | `docs/SECURITY_AUDIT.md` checks 3, 7 and 8 |
 | C5 | App Privacy Report lists no domains for nope. | C4 | Audit check 8 on a device, over 7 days |
-| C6 | Optional details removed by default; you choose what each photo keeps | Metadata allowlist and fail-closed read-back (merged; device check pending); the settings screen where you choose (not built) | Audit check 9 |
+| C6 | Optional details removed by default; you choose what each photo keeps | Metadata allowlist and fail-closed read-back (merged; device check pending); the Privacy settings screen where you choose (merged; device check pending) | Audit check 9 |
 | C7 | Location off by default | No location is supplied today, so none is written; the location switch has no effect yet (not built) | Audit checks 9 and 16 |
 | C8 | Add-only Photos access; can't see existing photos | Add-only saving (merged; device check pending) | Audit check 16 |
 | C9 | Every photo signed with a new key; signatures can't link photos | `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10 |
-| C10 | The Honesty screen lists the last photo's details, what the phone may still do, and what no app can remove | Honesty screen (not built) | UI tests; human review of `Honesty.xcstrings` |
+| C10 | The Honesty screen lists the last photo's details, what the phone may still do, and what no app can remove | Honesty screen (merged: what nope. never does, what iOS may still do, what no app can remove); the last photo's details on screen (not built) | UI tests; human review of `Honesty.xcstrings` |
 | C11 | VoiceOver, Voice Control, the largest text sizes; volume buttons as a shutter | Volume and Camera Control shutter (merged); every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md` |
 | C12 | Free and open source under GPL-3.0 | True today | `LICENSE` |
 
@@ -82,7 +84,7 @@ controls, which are merged but not yet device-checked. Add a sentence for each o
 - **Export compliance: No** (maintainer's decision, 2026-11-12). The app uses cryptography only
   to sign photos (authentication and integrity), through the operating system's CryptoKit and
   the C2PA library, and encrypts no data, so it is exempt. The app's Info.plist should set
-  `ITSAppUsesNonExemptEncryption` to `NO` (not set yet), so App Store Connect doesn't ask for
+  `ITSAppUsesNonExemptEncryption` to `NO` (in progress in a separate pull request), so App Store Connect doesn't ask for
   each build.
   Recheck if any release adds encryption of data. See Apple's
   [export compliance overview](https://developer.apple.com/help/app-store-connect/manage-app-information/overview-of-export-compliance)

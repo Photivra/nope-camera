@@ -9,7 +9,11 @@ holds no business rules, so it can be replaced: see `docs/BUILDING-AN-INTERFACE.
 repository and the "Building an interface" article in `NopeCore`.
 
 Every string is in the module's `Localizable.xcstrings`, in all eleven launch languages, except
-honesty claims (the RAW badge and the no-RAW fallback wording), which are in `Honesty.xcstrings`.
+honesty claims (the RAW badge, the no-RAW fallback wording, the privacy and signing settings and
+the Honesty screen), which are in `Honesty.xcstrings` and need a fluent human review before
+release. ``CameraScreen`` has a Settings button that opens ``SettingsScreen``: formats, the
+metadata switches and signing (`NopeSettings`), manual controls, the Honesty screen,
+and About with the license and notices.
 When the "Manual controls" option is on, the camera screen adds the manual controls: an EV
 meter, the exposure modes, a six-slot grid in a fixed order with one panel per control (native
 sliders and pickers), Pro Tools (metering, AE and AF locks, bracketing, interval shooting) and
@@ -27,3 +31,4 @@ is checked by the UI tests with `performAccessibilityAudit()`.
 ### Screens
 
 - ``CameraScreen``
+- ``SettingsScreen``
