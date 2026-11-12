@@ -60,19 +60,17 @@ jobs:
   ui-tests:
     name: ui-tests
     runs-on: xcode-27
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build the app and run the UI tests with accessibility audits on iPhone and iPad
+      - name: Build the app and run the UI tests with accessibility audits on iPhone
         run: >
           xcodebuild test
           -project App/NopeCamera.xcodeproj
           -scheme NopeApp
           -destination "$SIMULATOR"
-          -destination "$IPAD_SIMULATOR"
-          -disable-concurrent-destination-testing
           -derivedDataPath DerivedData
           -resultBundlePath ui-tests.xcresult
           CODE_SIGNING_ALLOWED=NO
@@ -82,6 +80,33 @@ jobs:
         with:
           name: ui-tests-xcresult
           path: ui-tests.xcresult
+          retention-days: 7
+
+  # The same UI tests on an iPad, in their own job: running both Simulators in one job stalled
+  # the test runner before the second destination's first test.
+  ui-tests-ipad:
+    name: ui-tests-ipad
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the app and run the UI tests with accessibility audits on iPad
+        run: >
+          xcodebuild test
+          -project App/NopeCamera.xcodeproj
+          -scheme NopeApp
+          -destination "$IPAD_SIMULATOR"
+          -derivedDataPath DerivedData
+          -resultBundlePath ui-tests-ipad.xcresult
+          CODE_SIGNING_ALLOWED=NO
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-ipad-xcresult
+          path: ui-tests-ipad.xcresult
           retention-days: 7
 
   docs:

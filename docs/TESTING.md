@@ -158,7 +158,8 @@ the local toolchain). Jobs:
 | Job | What it runs |
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator, the coverage gate |
-| `ui-tests` | App build and the UI tests with accessibility audits, on the iPhone 18 Pro and iPad Air 11-inch (M4) Simulators |
+| `ui-tests` | App build and the UI tests with accessibility audits on the iPhone 18 Pro Simulator |
+| `ui-tests-ipad` | The same UI tests on the iPad Air 11-inch (M4) Simulator, in a separate job |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
