@@ -235,8 +235,9 @@ final class NopeAppUITests: XCTestCase {
 
     /// Runs the accessibility audit in landscape.
     ///
-    /// Two findings are set aside, and listed as open in docs/TESTING.md; every other finding
-    /// fails the test:
+    /// A contrast issue is ignored for an element cut by the screen edge, as in
+    /// `auditScrollingScreen`. Two findings are set aside, and listed as open in docs/TESTING.md;
+    /// every other finding fails the test:
     /// - The lens buttons' "No RAW" caption is reported as "Dynamic Type font sizes are
     ///   partially unsupported" in landscape only, on the iPhone and iPad Simulators, even at the
     ///   largest text size where the caption is visibly enlarged. The same view passes in
@@ -253,7 +254,11 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     private func auditInLandscape(_ app: XCUIApplication, excluding excluded: XCUIAccessibilityAuditType = []) throws {
         try app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting(excluded)) { issue in
-            issue.auditType == .dynamicType && issue.element?.label == "No RAW"
+            guard let element = issue.element else { return false }
+            if issue.auditType == .dynamicType && element.label == "No RAW" { return true }
+            // As in `auditScrollingScreen`: contrast is ignored only for an element cut by the
+            // screen edge, where the audit measures the clipped edge.
+            return issue.auditType == .contrast && !app.frame.contains(element.frame)
         }
     }
 
@@ -310,9 +315,13 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(allow.waitForExistence(timeout: 10))
         rotate(app, to: .landscapeLeft)
         try auditInLandscape(app)
+        // At this size the permission screen scrolls in landscape on an iPhone and the button
+        // starts below the screen's edge, so it is pressed in portrait.
+        rotate(app, to: .portrait)
         allow.tap()
         let shutter = app.buttons["Take Photo"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        rotate(app, to: .landscapeLeft)
         assertSideBySide(app, lensesOnScreen: false)
         try auditInLandscape(app)
     }
