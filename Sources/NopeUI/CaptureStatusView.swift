@@ -41,6 +41,8 @@ struct CaptureStatusView: View {
             String(localized: "Saving…", bundle: .module, comment: "Shown while a photo that was just taken is being checked and added to the photo library.")
         case .saved(let photo):
             Self.message(for: photo.signature)
+        case .savedBracket(let photos):
+            Self.message(forBracket: photos)
         case .failed(.notRunning):
             String(localized: "No photo was taken: the camera is paused.", bundle: .module, comment: "Shown when the shutter is pressed while the camera is paused.")
         case .failed(.configurationFailed), .failed(.captureFailed):
@@ -58,6 +60,20 @@ struct CaptureStatusView: View {
         case .failed(.savingUnavailable):
             String(localized: "Not saved: this version of the app can't save photos.", bundle: .module, comment: "Shown when this build of the app has no way to save photos, for example in a preview.")
         }
+    }
+
+    /// The message for a saved exposure bracket: how many photos were saved and signed, or, when
+    /// one isn't signed, why, as for a single photo. A missing signature is never hidden.
+    ///
+    /// - Parameter photos: The saved photos.
+    /// - Returns: The message.
+    private static func message(forBracket photos: [SavedPhoto]) -> String {
+        if let unsigned = photos.first(where: { $0.signature != .signed }) {
+            return message(for: unsigned.signature)
+        }
+        return String(
+            localized: "\(photos.count) photos saved and signed.", table: "Honesty", bundle: .module,
+            comment: "Shown after an exposure bracket: each frame was added to the photo library as its own photo, each with a Content Credentials signature. The number is the count of photos, at least 3. Honesty wording: says only that they were saved and signed.")
     }
 
     /// The message for a saved photo: signed, or not signed with the reason.

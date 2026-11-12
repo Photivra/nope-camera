@@ -31,6 +31,11 @@ enum SimulatedCameraLaunch {
         case metadataRejected
         /// Access already allowed; adding to the photo library is not allowed.
         case photosDenied
+        /// Access already allowed; lenses with manual controls: the wide lens has every control,
+        /// including a variable aperture and S and I modes; the ultra wide has a fixed aperture
+        /// and only P and M; the front camera has no manual focus. Pair it with
+        /// `-manualControlsEnabled YES` to show the controls.
+        case manual
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -64,6 +69,40 @@ enum SimulatedCameraLaunch {
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
             library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
     }
+    /// Every manual control, as on a recent rear wide camera with iOS 27.
+    static let fullManual = ManualCapabilities(
+        supportsManualExposure: true, supportsShutterPriority: true, supportsISOPriority: true,
+        supportsAperturePriority: true, exposureCompensationRange: -8...8, supportsExposureLock: true,
+        supportsAutoFocus: true, supportsFocusLock: true, supportsManualFocus: true, supportsManualWhiteBalance: true,
+        meteringModes: [.center, .spot, .wholeFrame])
+
+    /// Manual exposure without priority modes, as before iOS 27.
+    static let basicManual = ManualCapabilities(
+        supportsManualExposure: true, supportsShutterPriority: false, supportsISOPriority: false,
+        supportsAperturePriority: false, exposureCompensationRange: -8...8, supportsExposureLock: true,
+        supportsAutoFocus: true, supportsFocusLock: true, supportsManualFocus: true, supportsManualWhiteBalance: true,
+        meteringModes: [.center])
+
+    /// The lenses of the `manual` scenario.
+    static let manualLenses: [Lens] = [
+        Lens(
+            id: "simulated-ultra-wide", kind: .ultraWide, bayerRAWFormat: "rgg4", magnification: 0.5,
+            isoRange: 15...3600, exposureDurationRange: 0.000_014...1, aperture: .fixed(2.2), maxBracketedPhotoCount: 3,
+            manualControls: basicManual),
+        Lens(
+            id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1, isoRange: 54...12_096,
+            exposureDurationRange: 0.000_014...1,
+            aperture: ApertureRange(minimumFNumber: 1.48, maximumFNumber: 4, recommendedStops: [1.48, 1.8, 2.8, 4]),
+            maxBracketedPhotoCount: 8, manualControls: fullManual),
+        Lens(
+            id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4", isoRange: 20...1920,
+            exposureDurationRange: 0.000_014...0.5, aperture: .fixed(1.9),
+            manualControls: ManualCapabilities(
+                supportsManualExposure: true, supportsShutterPriority: false, supportsISOPriority: false,
+                supportsAperturePriority: false, exposureCompensationRange: -8...8, supportsExposureLock: true,
+                supportsAutoFocus: false, supportsFocusLock: false, supportsManualFocus: false,
+                supportsManualWhiteBalance: true, meteringModes: [.center])),
+    ]
 
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
     static func backend() -> SimulatedCaptureBackend? {
@@ -85,6 +124,9 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .blankPicture)
         case .metadataRejected, .photosDenied:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
+        case .manual:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:

@@ -47,7 +47,8 @@ enum LensCatalog {
             exposureDurationRange: device.exposureDurationRange,
             aperture: device.aperture,
             maxBracketedPhotoCount: device.maxBracketedPhotoCount,
-            photoDimensions: device.photoDimensions.sorted { $0.pixelCount < $1.pixelCount }
+            photoDimensions: device.photoDimensions.sorted { $0.pixelCount < $1.pixelCount },
+            manualControls: device.manualControls.capabilities
         )
     }
 
