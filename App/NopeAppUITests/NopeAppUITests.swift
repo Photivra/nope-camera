@@ -138,6 +138,15 @@ final class NopeAppUITests: XCTestCase {
 
     // MARK: - Manual controls
 
+    /// Waits up to 5 seconds for an element's accessibility value to start with a prefix; intents
+    /// are applied asynchronously.
+    @MainActor
+    private func hasValue(_ element: XCUIElement, startingWith prefix: String) -> Bool {
+        let predicate = NSPredicate(format: "value BEGINSWITH %@", prefix)
+        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 5)
+            == .completed
+    }
+
     /// The launch arguments that turn the "Manual controls" option on.
     private static let manualOn = ["-manualControlsEnabled", "YES"]
 
@@ -159,7 +168,7 @@ final class NopeAppUITests: XCTestCase {
         for name in ["Exposure Compensation", "Shutter", "Aperture", "Focus", "White Balance"] {
             XCTAssertTrue(app.buttons[name].exists, name)
         }
-        XCTAssertTrue((iso.value as? String)?.hasPrefix("Auto") ?? false)
+        XCTAssertTrue(hasValue(iso, startingWith: "Auto"))
         XCTAssertFalse(app.buttons["All Auto"].exists)
         try app.performAccessibilityAudit()
 
@@ -169,13 +178,13 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Wide"].exists)
         app.segmentedControls["panel-mode"].buttons["Manual"].tap()
         XCTAssertTrue(app.buttons["All Auto"].waitForExistence(timeout: 5))
-        XCTAssertTrue((iso.value as? String)?.hasPrefix("Manual") ?? false)
+        XCTAssertTrue(hasValue(iso, startingWith: "Manual"))
         try app.performAccessibilityAudit()
 
         app.buttons["All Auto"].tap()
         XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["All Auto"].exists)
-        XCTAssertTrue((iso.value as? String)?.hasPrefix("Auto") ?? false)
+        XCTAssertTrue(hasValue(iso, startingWith: "Auto"))
         try app.performAccessibilityAudit()
     }
 
@@ -185,7 +194,7 @@ final class NopeAppUITests: XCTestCase {
         let manual = app.segmentedControls["exposure-mode"].buttons["Manual"]
         XCTAssertTrue(manual.waitForExistence(timeout: 10))
         manual.tap()
-        XCTAssertTrue((app.buttons["Shutter"].value as? String)?.hasPrefix("Manual") ?? false)
+        XCTAssertTrue(hasValue(app.buttons["Shutter"], startingWith: "Manual"))
         app.buttons["Exposure Compensation"].tap()
         XCTAssertTrue(element(app, containing: "works only while ISO or the shutter is on Auto").waitForExistence(timeout: 5))
         try app.performAccessibilityAudit()
@@ -194,7 +203,7 @@ final class NopeAppUITests: XCTestCase {
         app.buttons["Ultra Wide"].tap()
         let aperture = app.buttons["Aperture"]
         XCTAssertTrue(aperture.waitForExistence(timeout: 5))
-        XCTAssertTrue((aperture.value as? String)?.hasPrefix("Fixed") ?? false)
+        XCTAssertTrue(hasValue(aperture, startingWith: "Fixed"))
         aperture.tap()
         XCTAssertTrue(app.staticTexts["This lens has a fixed aperture."].waitForExistence(timeout: 5))
         try app.performAccessibilityAudit()
