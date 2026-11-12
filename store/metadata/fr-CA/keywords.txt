@@ -1,0 +1,1 @@
+raw,dng,confidentialité,métadonnées,exif,c2pa,signature,photo,sans pistage,hors ligne,code ouvert

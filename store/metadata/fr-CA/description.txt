@@ -1,0 +1,25 @@
+nope. prend des photos avec le moins de traitement que votre téléphone permet, signe chacune d'elles et ne garde rien qui vous piste. Ouvrez l'app et prenez la photo : il n'y a rien à configurer.
+
+LE MOINS DE TRAITEMENT QUE VOTRE TÉLÉPHONE PERMET
+• Chaque photo est un RAW Bayer à image unique (DNG). nope. n'utilise jamais ProRAW et ne fusionne jamais d'images.
+• Si un objectif ne peut pas enregistrer de RAW non traité, nope. vous le dit avant la prise de vue et l'indique sur la photo.
+• Vous pouvez aussi enregistrer en HEIF ou JPEG, développés par nope. à partir du même RAW, sans réduction du bruit, accentuation ni mappage local des tons.
+
+RIEN NE VOUS PISTE
+• nope. ne contient aucun code réseau et n'établit aucune connexion réseau. Ni analyse, ni publicité, ni compte.
+• Vérifiez par vous-même avec le Rapport de confidentialité des apps dans Réglages : nope. ne devrait afficher aucun domaine.
+• Les détails facultatifs, comme le fuseau horaire, la version d'iOS et les notes du fabricant, sont retirés par défaut. Vous choisissez ce que garde chaque photo.
+• La localisation est désactivée par défaut.
+• nope. peut seulement ajouter des photos à votre photothèque. iOS ne lui permet pas de voir vos photos existantes.
+
+SIGNÉ
+• Chaque photo porte des Content Credentials, signés avec une nouvelle clé à chaque fois, pour que les signatures ne puissent pas relier vos photos entre elles.
+• La signature indique si le fichier a été modifié depuis que nope. l'a enregistré. Elle ne prouve pas qui a pris la photo.
+
+HONNÊTE SUR SES LIMITES
+• L'écran Transparence (ⓘ) liste chaque détail de votre dernière photo, ce que votre téléphone peut encore faire hors du contrôle de nope., et ce qu'aucune app ne peut retirer, comme le léger motif de bruit du capteur.
+
+POUR TOUT LE MONDE
+• Fonctionne avec VoiceOver, Contrôle vocal et les plus grandes tailles de texte. Les boutons de volume servent de déclencheur.
+
+Gratuit et à code source ouvert, sous licence GNU GPL, version 3.

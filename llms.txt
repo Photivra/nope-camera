@@ -28,22 +28,23 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 ## Store and privacy policy (drafts, need human review)
 
 - [docs/store/README.md](docs/store/README.md): App Store listing drafts, field limits, and the features each claim depends on
-- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in 11 locales, one file per field, and its review status
+- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in 13 App Store locales (11 languages), one file per field, and its review status
 - [docs/store/app-privacy-label.md](docs/store/app-privacy-label.md): App Store privacy label answers ("Data Not Collected")
 - [docs/store/accessibility-label.md](docs/store/accessibility-label.md): Accessibility Nutrition Label answers and the evidence each needs
 - [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy draft, for the maintainer to publish
 
 ## API (generated from DocC comments)
 
-- [docs/api/NopeCore.md](docs/api/NopeCore.md): state, intents, capabilities and the capture backend protocol (the interface contract)
+- [docs/api/NopeCore.md](docs/api/NopeCore.md): state, intents, capabilities, the capture backend protocol, settings, the metadata allowlist, read-back and save pipeline (the interface contract)
 - [docs/api/NopeCapture.md](docs/api/NopeCapture.md): AVFoundation and PhotoKit adapters
-- [docs/api/NopeDevelop.md](docs/api/NopeDevelop.md): RAW development and encoding settings
-- [docs/api/NopeSigning.md](docs/api/NopeSigning.md): per-photo signing
+- [docs/api/NopeDevelop.md](docs/api/NopeDevelop.md): RAW development, encoding settings and the ImageIO read-back
+- [docs/api/NopeSigning.md](docs/api/NopeSigning.md): C2PA Content Credentials with a new key for every file, offline
 - [docs/api/NopeUI.md](docs/api/NopeUI.md): the SwiftUI interface
 
 ## Research
 
 - [docs/research/c2pa-signing.md](docs/research/c2pa-signing.md): offline, per-photo C2PA signing with Secure Enclave keys
+- [c2pa-lib/README.md](c2pa-lib/README.md): the C2PA library built from source with no networking code, and how it is checked
 - [docs/research/capability-survey.md](docs/research/capability-survey.md): iPhone and iPad camera capabilities and the v1.0 plan
 - [docs/research/privacy-claims.md](docs/research/privacy-claims.md): every privacy statement, its verified wording and its sources
 

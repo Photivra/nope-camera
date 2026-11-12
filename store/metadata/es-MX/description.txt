@@ -1,0 +1,25 @@
+nope. toma fotos con el mínimo procesamiento que permite tu celular, firma cada una y no guarda nada que te rastree. Ábrela y toma la foto: no hay nada que configurar.
+
+EL MÍNIMO PROCESAMIENTO QUE PERMITE TU CELULAR
+• Cada foto es un RAW Bayer de un solo fotograma (DNG). nope. nunca usa ProRAW ni combina fotogramas.
+• Si una lente no puede guardar RAW sin procesar, nope. te lo indica antes de disparar y etiqueta la foto.
+• También puedes guardar HEIF o JPEG, revelados por nope. a partir del mismo RAW, sin reducción de ruido, enfoque ni mapeo de tonos local.
+
+NADA TE RASTREA
+• nope. no contiene código de red y no establece conexiones de red. Sin analíticas, sin anuncios, sin cuentas.
+• Compruébalo tú mismo con el Reporte de privacidad de apps en Configuración: nope. no debería mostrar ningún dominio.
+• Los datos opcionales, como la zona horaria, la versión de iOS y las notas del fabricante, se eliminan de forma predeterminada. Tú eliges qué conserva cada foto.
+• La ubicación está desactivada de forma predeterminada.
+• nope. solo puede agregar fotos a tu biblioteca. iOS no le permite ver tus fotos existentes.
+
+FIRMADAS
+• Cada foto lleva Content Credentials, firmadas con una clave nueva cada vez, para que las firmas no puedan vincular tus fotos entre sí.
+• La firma muestra si el archivo ha cambiado desde que nope. lo guardó. No demuestra quién tomó la foto.
+
+HONESTA SOBRE SUS LÍMITES
+• La pantalla de transparencia (ⓘ) muestra cada dato de tu última foto, lo que tu celular aún puede hacer fuera del control de nope. y lo que ninguna app puede eliminar, como el tenue patrón de ruido del sensor.
+
+PARA TODOS
+• Funciona con VoiceOver, Control por voz y los tamaños de texto más grandes. Los botones de volumen funcionan como obturador.
+
+Gratis y de código abierto bajo la GNU GPL, versión 3.

@@ -41,13 +41,49 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
-| `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave | On-device check |
+| `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
+| `Sources/NopeCapture/PhotoKitLibrary.swift` | Asking for add-only access shows a system prompt, and adding changes the person's library | On-device check |
+| `Sources/NopeDevelop/CoreImageRAWRenderer.swift` | Core Image's RAW filter needs a real Bayer DNG; ImageIO and Core Image don't decode a hand-built one | On-device check |
 
 Each excluded file is a thin wrapper; its logic lives in a tested file. For capture, the
 decisions are in `LensCatalog` (which cameras and formats), `CapturePolicy` (every processing
 switch), `PhotoSettingsFactory` (the photo settings) and `CaptureReadiness` (when to capture),
-and `AVFoundationCaptureBackend` is tested against a fake `CaptureHardware`. `NopeUI` is not part of
+and `AVFoundationCaptureBackend` is tested against a fake `CaptureHardware`. For saving, the
+decisions are in `PhotoKitMapping` (resource types and access), and `RAWDeveloper` and
+`PhotoEncoder` are tested with a fake renderer.
+
+### Metadata tests
+
+- `MetadataPlanTests` asserts the exact tags each format may carry for all 8,192 switch
+  combinations, signed and unsigned, against a hand-written table (`ExpectedTags`), and the
+  exact ImageIO dictionary each file is written with.
+- `MetadataReaderTests` covers the project's own tag reader: every TIFF directory in both byte
+  orders, JPEG segments, HEIF boxes, items, properties and references, XMP, and every malformed
+  case.
+- `MetadataFailClosedFuzzTests` injects a simulated future system tag (`0xC7FF`) into every
+  format and directory for random switch combinations, any tag off the allowlist, unexpected
+  segments and items, and thousands of randomly damaged and random files (seeded, so runs are
+  reproducible): every injected file is rejected and nothing crashes.
+- `PhotoSaverTests` runs the whole save pipeline with fakes: nothing that fails the read-back
+  reaches the library, and a signer that changes the RAW data is rejected.
+- `ImageIOReadBackTests` and `RAWDeveloperTests` (`NopeDevelop`) encode real HEIF and JPEG files
+  in the Simulator and read them back clean for the first-launch and all-on settings. `NopeUI` is not part of
 the coverage gate: it is covered by UI tests and accessibility audits instead.
+
+### Developed looks
+
+The RAW renderer can't run on a hand-built DNG, so one test needs a real DNG and is skipped
+unless it gets one. Never commit the file (`docs/TESTING.md`, "Tag check").
+
+```sh
+TEST_RUNNER_NOPE_TEST_DNG=/path/to/photo.dng xcodebuild test -scheme NopeKit-Package \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' -only-testing:NopeDevelopTests
+```
+
+`DevelopedLookTests.flatIsLinearAndStandardHasACurve` renders the DNG at 0 and +1 EV in linear
+Display P3: with the Flat look every mid-tone value doubles (no tone curve); with the Standard
+look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
+check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
 
 ## UI tests and accessibility audits
 
@@ -58,17 +94,25 @@ xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
 
 The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
 `-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
-swaps in `SimulatedCaptureBackend`. Release builds ignore the argument. The scenarios and what
+swaps in `SimulatedCaptureBackend` and simulated save steps (`SimulatedSaving.swift`; nothing
+touches the Simulator's photo library). Release builds ignore the argument. The scenarios and what
 each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Captured (not saved yet: development build)"; the telephoto (no RAW) shows the fallback badge |
+| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) shows the fallback badge |
+| `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
+| `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" message |
+| `signingFails` | The signer fails: the photo is saved unsigned, "Saved. Not signed: the signature couldn't be created.", shutter still enabled |
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure message |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off and no-camera screens |
+| `manual` (with `-manualControlsEnabled YES`) | Manual controls: hidden without the option; the six slots; a panel with the lens's range; Manual and "All Auto"; P/S/I/M; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; interval progress and Stop; clean view; the list at the largest text size; right-to-left |
+| `allow` (clean view) | The no-RAW badge stays visible in clean view |
+
+At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
 Every new screen and state adds an audit.
@@ -104,16 +148,98 @@ iPad:
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
-- a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`);
+- a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`), and a DNG, HEIF and JPEG
+  saved on the device validate with c2patool (below) as `Valid` with only
+  `signingCredential.untrusted` failing;
 - capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
   viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
-  a photo and show "Captured (not saved yet: development build)"; a lens without Bayer RAW shows
-  the fallback badge; a phone call or another camera app shows the interruption message, and
+  a photo and show "Saved and signed."; a lens
+  without Bayer RAW shows the fallback badge; a phone call or another camera app shows the interruption message, and
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
+- saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
+  prompt appears once and declining it shows the "isn't allowed to add photos" message; a RAW
+  plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
+  the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
+  `docs/PRIVACY.md`;
+- manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
+  controls turned on: see "Manual controls on a device" below;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size).
 
+### Manual controls on a device
+
+The rules are unit-tested against a scripted backend; these checks cover the hardware calls.
+Do each on every lens (ultra wide, wide, telephoto, front) of each test device, in RAW and, on a
+lens without RAW, in the fallback:
+
+- the grid shows only what the lens supports: "n/a" or "Fixed" where the lens can't, the
+  aperture adjustable only on a variable-aperture lens (iOS 27), S and I only on iOS 27;
+- ISO and shutter at both ends of the lens's range, and a long exposure (1 s where offered):
+  the viewfinder changes and the DNG's `ExposureTime` and `ISOSpeedRatings` match the set
+  values (`.speed` keeps them, `AVCaptureDevice.h`);
+- S and I: the camera adjusts the other value and the meter stays near 0;
+- exposure compensation in P, S and I changes brightness; blocked in M;
+- manual focus from Closest to Far moves the focus, and autofocus comes back with Auto; AF-L
+  holds focus;
+- white balance: each preset, 2500 K and 10,000 K, and tint ±150 are accepted without an
+  exception (gains limited to `maxWhiteBalanceGain`), and the DNG's as-shot neutral changes;
+- metering: spot and whole frame (iOS 26) change the exposure of a high-contrast scene;
+- AE-L holds exposure when the phone points elsewhere;
+- a bracket of 3 (and 5 or 7 where `maxBracketedCapturePhotoCount` allows) returns that many
+  separate DNGs with the planned exposures, and no frame is blank;
+- interval shooting: 3 photos 5 s apart; Stop ends it; leaving the camera screen ends it;
+- switching lenses and an interruption: the manual settings are applied again afterwards;
+- "All Auto" and turning the option off return the camera to continuous auto;
+- readings: the meter and the Auto values update while manual controls are on, and nothing is
+  observed while they are off (Instruments: no key-value observation callbacks);
+- with VoiceOver: each slot adjusts by swiping up and down, and the eyes-free shutter (volume
+  buttons, Camera Control) still works with manual controls on and in clean view.
+
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
+
+## The C2PA library and the networking check
+
+`NopeSigning` links the C2PA library built from source with every network feature off
+(`c2pa-lib/README.md`). SwiftPM downloads the published, checksummed build. To build it yourself
+and test against your build, which is what CI does on every pull request:
+
+```sh
+scripts/build-c2pa-lib.sh build/c2pa-lib-work      # needs rustup; prints the checksum
+mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../c2pa-lib-work/C2PAC.xcframework.zip)
+export NOPE_C2PA_LIB_FROM_SOURCE=1                  # then run any xcodebuild command below
+scripts/check-c2pa-lib-licenses.sh build/c2pa-lib-work
+scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
+```
+
+CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
+and runs `scripts/check-no-networking.sh` on both, with no exceptions.
+
+## Checking signatures
+
+The unit tests in `Tests/NopeSigningTests` sign synthetic DNG, HEIF and JPEG files with a
+software key and validate them with the C2PA library's reader, offline: the hash binding and
+claim signature are valid, the only failure is `signingCredential.untrusted`, and a one-bit
+change in the image data or in the claim makes the file invalid. They also check that signing
+adds only the Content Credentials store (`docs/PRIVACY.md`, "Content Credentials").
+
+To check a signed file by hand, use [c2patool](https://github.com/contentauth/c2patool) on a Mac
+(a local tool only; it isn't a project dependency):
+
+```sh
+c2patool photo.dng             # the manifest and its validation report
+c2patool photo.dng --detailed  # also the claim and the hash exclusions
+```
+
+Expect `"validation_state": "Valid"`, with `signingCredential.untrusted` as the only failure.
+The anonymous per-photo certificate isn't on any trust list; that is by design.
+
+The software key is compiled only for the Simulator. To confirm it isn't in a device build:
+
+```sh
+xcodebuild build -scheme NopeKit-Package -destination 'generic/platform=iOS' \
+  -configuration Release -derivedDataPath DerivedData-device CODE_SIGNING_ALLOWED=NO
+nm "$(find DerivedData-device/Build/Products/Release-iphoneos -name NopeSigning.o)" | grep -c Simulator   # 0
+```
 
 ## Tag check (metadata dump from a real device)
 

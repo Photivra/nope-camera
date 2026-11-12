@@ -109,16 +109,23 @@ archive (`Products/Applications/NopeApp.app`).
   - `codesign -dv --verbose=4 NopeApp.app` and `codesign --verify --deep --strict NopeApp.app`.
 - **Pass:** no secrets; no absolute build paths that name a person; no Debug-only tool strings;
   no networking symbols or frameworks in the app binary **or in any binary it links, including
-  `C2PAC.xcframework`**; the signature verifies.
+  the C2PA library**; the signature verifies.
 - **No networking code at all (maintainer's rule).** The shipped app must not link networking
   code, even code that is never called. There is no exception path: a networking symbol in any
   linked binary is a Blocker, and a dynamic proof (check 8) that it never runs doesn't replace
-  this check. The C2PA core is a prebuilt Rust library, and c2pa-rs has optional features that
-  fetch remote manifests, OCSP responses and timestamps over HTTP. Inspect the linked binary,
-  not just the source: `nm -u` and `nm -gU` on the framework binary for socket, DNS, TLS and HTTP
-  symbols (`socket`, `connect`, `getaddrinfo`, `SSL_`, `nw_`, `CFHTTP`, `URLSession`), and
-  `otool -L` for networking frameworks. If any are present, the library must be built without
-  those features before it can ship.
+  this check. c2pa-rs has optional features that fetch remote manifests, OCSP responses and
+  timestamps over HTTP; nope. builds it from source with every network feature off
+  (`scripts/build-c2pa-lib.sh`, inputs pinned in `c2pa-lib/`) and vendors the Swift wrapper
+  without its networking code (`Vendor/c2pa-swift`). Inspect the linked binary, not just the
+  source:
+  - `scripts/check-no-networking.sh NopeApp.app/NopeApp` on the release app binary (without
+    `--allow-rust-std`), and on every other binary in the app bundle. It checks for Rust
+    networking crates, socket imports and Apple's networking APIs, and fails on a linked
+    CFNetwork or Network framework.
+  - By hand as a cross-check: `xcrun nm --no-llvm-bc -u` on the app binary for `socket`,
+    `connect`, `getaddrinfo`, `SSL_`, `nw_`, `CFHTTP` and `URLSession`, and `otool -L`.
+  - Confirm the C2PA library checksum matches the pin, so the shipped library is the
+    network-free build CI checked.
 
 ### 4. Entitlements
 
@@ -169,16 +176,20 @@ app and for each third-party SDK it bundles
 [Describing use of required reason API](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api)).
 
 **Does nope. need one?** Yes. `App/NopeApp/PrivacyInfo.xcprivacy` exists and declares no
-tracking, no tracking domains, no collected data and, today, no required-reason APIs. That is
-correct for the current Release code: the only `UserDefaults` use is in Debug-only tools
-(`App/NopeApp/DebugTools/`, compiled only with `DEBUG`). It will change as 1.0 features land:
+tracking, no tracking domains, no collected data and no required-reason APIs.
+
+**Known gap (as of 2026-11-12), to fix before release:** Release code now uses two
+required-reason APIs that the manifest doesn't declare: `@AppStorage` (`UserDefaults`) for the
+manual controls setting in `App/NopeApp/NopeApp.swift`, and `ProcessInfo.systemUptime` to
+throttle exposure readings in `Sources/NopeCapture/SystemCaptureHardware.swift`. The manifest
+needs `CA92.1` and `35F9.1` (recheck the codes on Apple's page). Expected 1.0 use:
 
 | Category | Expected 1.0 use | Reason code (recheck on Apple's page before submission) |
 |---|---|---|
-| `NSPrivacyAccessedAPICategoryUserDefaults` | Settings (switches, formats, master switch) | `CA92.1`: read and write data only the app itself uses |
+| `NSPrivacyAccessedAPICategoryUserDefaults` | Settings (manual controls today; switches, formats, master switch) | `CA92.1`: read and write data only the app itself uses |
 | `NSPrivacyAccessedAPICategoryDiskSpace` | Only if the app checks free space before saving or shows an out-of-space message | `E174.1`: check space before writing files |
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
-| `NSPrivacyAccessedAPICategorySystemBootTime` | Only if code calls `ProcessInfo.systemUptime` or `mach_absolute_time()` (for example an idle timer) | `35F9.1`: measure elapsed time inside the app |
+| `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle today; any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
 
 - **Run:**
@@ -271,7 +282,8 @@ MASVS-CRYPTO-1, MASVS-CRYPTO-2, MASVS-PRIVACY-2. Design: `docs/research/c2pa-sig
     `SecureEnclave.P256.Signing.PrivateKey()` with no persistence. Confirm there is no call to
     `dataRepresentation` that is stored or written, no Keychain API (`SecItemAdd`,
     `SecKeyCreateRandomKey` with a permanent tag), and no software (non-Secure Enclave) key
-    path in Release.
+    path in a device build (the software key is compiled for the Simulator only; confirm the
+    condition in the source and that the device binary has no software key path).
   - **Never exported:** the only data that leaves the signing code is the public key and the
     signature (`SignedData`). Grep for `dataRepresentation`, `rawRepresentation`,
     `x963Representation` on private keys: no hits.

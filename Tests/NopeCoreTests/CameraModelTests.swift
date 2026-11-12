@@ -9,9 +9,15 @@ struct CameraModelTests {
     static let oneLens = DeviceCapabilities(lenses: [wideRAW])
     static let twoLenses = DeviceCapabilities(lenses: [wideRAW, teleHEIF])
 
-    /// A model that is ready and running with two lenses.
-    static func runningModel(_ backend: ScriptedBackend) async -> CameraModel {
-        let model = CameraModel(backend: backend)
+    /// A save pipeline with fakes: clean developed files, the project reader, and a library
+    /// that records what is added.
+    static func saver(library: FakeLibrary = FakeLibrary(), developer: FakeDeveloper = FakeDeveloper()) -> PhotoSaver {
+        PhotoSaver(developer: developer, signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
+    }
+
+    /// A model that is ready and running.
+    static func runningModel(_ backend: ScriptedBackend, saver: PhotoSaver? = saver()) async -> CameraModel {
+        let model = CameraModel(backend: backend, saver: saver)
         await model.send(.start)
         return model
     }
@@ -107,16 +113,58 @@ struct CameraModelTests {
         #expect(await backend.startRequests.isEmpty)
     }
 
-    @Test func captureKeepsThePhotoInMemory() async {
-        let model = await Self.runningModel(ScriptedBackend(capabilities: Self.oneLens))
+    @Test func captureSavesThePhotoAfterTheReadBack() async {
+        let library = FakeLibrary()
+        let model = await Self.runningModel(ScriptedBackend(capabilities: Self.oneLens), saver: Self.saver(library: library))
         await model.send(.capture)
-        guard case .captured(let photo) = model.captureStatus else {
-            Issue.record("expected a captured photo, got \(model.captureStatus)")
+        guard case .saved(let photo) = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
-        #expect(photo.lensID == "wide")
-        #expect(photo.format == .bayerRAW(pixelFormat: "bgg4"))
+        #expect(photo.formats == [.raw, .heif])
+        #expect(photo.signature == .unsigned(.unavailable))
         #expect(model.canCapture)
+        #expect(await library.added.count == 1)
+    }
+
+    @Test func captureUsesTheCurrentMetadataSettings() async {
+        let backend = ScriptedBackend(capabilities: Self.oneLens)
+        let model = await Self.runningModel(backend)
+        model.saveSettings.metadata.set(.location, isOn: true)
+        await model.send(.capture)
+        let request = await backend.captureRequests.first
+        #expect(request?.metadata == MetadataPlan(settings: model.saveSettings.metadata, appVersion: "0.2.0"))
+        guard case .saved = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
+            return
+        }
+    }
+
+    @Test func withoutASaverNothingIsSaved() async {
+        let backend = ScriptedBackend(capabilities: Self.oneLens)
+        let model = await Self.runningModel(backend, saver: nil)
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.savingUnavailable))
+        #expect(await backend.captureRequests.first?.metadata == MetadataPlan())
+    }
+
+    @Test func aSaveFailureIsReported() async {
+        let model = await Self.runningModel(
+            ScriptedBackend(capabilities: Self.oneLens), saver: Self.saver(library: FakeLibrary(error: .photosAccessDenied)))
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.photosAccessDenied))
+        #expect(model.canCapture)
+    }
+
+    @Test func theShutterIsDisabledWhileSaving() async {
+        let backend = ScriptedBackend(capabilities: Self.oneLens)
+        let model = await Self.runningModel(backend, saver: Self.saver(library: FakeLibrary(), developer: FakeDeveloper(delay: true)))
+        let capture = Task { await model.send(.capture) }
+        while model.captureStatus != .saving { await Task.yield() }
+        #expect(!model.canCapture)
+        await model.send(.capture)
+        #expect(await backend.captureRequests.count == 1)
+        await capture.value
     }
 
     @Test func captureFailureIsReported() async {
@@ -129,11 +177,11 @@ struct CameraModelTests {
         let backend = ScriptedBackend(capabilities: Self.oneLens, captureErrors: [.blankPicture, nil])
         let model = await Self.runningModel(backend)
         await model.send(.capture)
-        guard case .captured(let photo) = model.captureStatus else {
-            Issue.record("expected a captured photo, got \(model.captureStatus)")
+        guard case .saved(let photo) = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
-        #expect(photo.lensID == "wide")
+        #expect(photo.formats == [.raw, .heif])
         #expect(model.sessionStatus == .running)
         #expect(await backend.stopCount == 1)
         #expect(await backend.startRequests.count == 2)
@@ -165,8 +213,8 @@ struct CameraModelTests {
         await model.send(.selectLens("tele"))
         #expect(model.sessionStatus == .running)
         await model.send(.capture)
-        guard case .captured = model.captureStatus else {
-            Issue.record("expected a captured photo, got \(model.captureStatus)")
+        guard case .saved = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
     }

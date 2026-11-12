@@ -108,6 +108,9 @@ struct CameraDeviceDescription: Equatable, Sendable {
     /// The active format's horizontal field of view, in degrees (`videoFieldOfView`).
     let fieldOfViewDegrees: Double
 
+    /// The camera's answers about manual control.
+    let manualControls: ManualControlSupport
+
     /// Creates a camera description.
     ///
     /// - Parameters:
@@ -123,11 +126,12 @@ struct CameraDeviceDescription: Equatable, Sendable {
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture.
     ///   - photoDimensions: The supported maximum photo sizes, as reported.
     ///   - fieldOfViewDegrees: The horizontal field of view, in degrees.
+    ///   - manualControls: The camera's answers about manual control. Defaults to none.
     init(
         uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool,
         rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>,
         exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int,
-        photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double
+        photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none
     ) {
         self.uniqueID = uniqueID
         self.deviceType = deviceType
@@ -141,5 +145,6 @@ struct CameraDeviceDescription: Equatable, Sendable {
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
         self.fieldOfViewDegrees = fieldOfViewDegrees
+        self.manualControls = manualControls
     }
 }

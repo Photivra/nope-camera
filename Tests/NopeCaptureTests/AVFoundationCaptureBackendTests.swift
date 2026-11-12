@@ -7,6 +7,8 @@ import Testing
 /// A fake camera that records configurations and returns scripted photos.
 actor FakeHardware: CaptureHardware {
     nonisolated let events: AsyncStream<CaptureEvent>
+    nonisolated let exposureReadings: AsyncStream<ExposureReading>
+    nonisolated let readingContinuation: AsyncStream<ExposureReading>.Continuation
     nonisolated let previewSource: any CameraPreviewSource = SimulatedPreviewSource()
     nonisolated let continuation: AsyncStream<CaptureEvent>.Continuation
     let cameras: [CameraDeviceDescription]
@@ -15,7 +17,13 @@ actor FakeHardware: CaptureHardware {
     let pixelSample: [UInt8]?
     private(set) var configurations: [SessionConfiguration] = []
     private(set) var plans: [PhotoSettingsPlan] = []
+    private(set) var metadataPlans: [MetadataPlan] = []
     private(set) var stopCount = 0
+    private(set) var appliedControls: [DeviceControls] = []
+    private(set) var readingSwitches: [Bool] = []
+    private(set) var bracketFrames: [[BracketFrame]] = []
+    var applyError: CaptureError?
+    var bracketPhotoCount: Int?
 
     init(
         cameras: [CameraDeviceDescription], configureError: CaptureError? = nil, captureError: CaptureError? = nil,
@@ -26,6 +34,32 @@ actor FakeHardware: CaptureHardware {
         self.configureError = configureError
         self.captureError = captureError
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
+        (exposureReadings, readingContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
+    }
+
+    func setApplyError(_ error: CaptureError?) { applyError = error }
+    func setBracketPhotoCount(_ count: Int?) { bracketPhotoCount = count }
+
+    func apply(_ controls: DeviceControls) async throws(CaptureError) {
+        appliedControls.append(controls)
+        if let applyError { throw applyError }
+    }
+
+    func setReadingsEnabled(_ enabled: Bool) async { readingSwitches.append(enabled) }
+
+    func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
+        async throws(CaptureError) -> [HardwarePhoto]
+    {
+        plans.append(plan)
+        metadataPlans.append(metadata)
+        bracketFrames.append(frames)
+        if let captureError { throw captureError }
+        return (0..<(bracketPhotoCount ?? frames.count)).map { index in
+            HardwarePhoto(
+                data: Data([UInt8(index)]), dimensions: PhotoDimensions(width: 4032, height: 3024),
+                exposureDuration: frames[min(index, frames.count - 1)].exposureDuration,
+                iso: frames[min(index, frames.count - 1)].iso, pixelSample: pixelSample, rawImageData: Data([7]))
+        }
     }
 
     func discoverCameras() async -> [CameraDeviceDescription] { cameras }
@@ -37,12 +71,13 @@ actor FakeHardware: CaptureHardware {
 
     func stop() async { stopCount += 1 }
 
-    func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto {
+    func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto {
         plans.append(plan)
+        metadataPlans.append(metadata)
         if let captureError { throw captureError }
         return HardwarePhoto(
             data: Data([0x49, 0x49]), dimensions: PhotoDimensions(width: 4032, height: 3024),
-            exposureDuration: 1.0 / 30.0, iso: 400, pixelSample: pixelSample)
+            exposureDuration: 1.0 / 30.0, iso: 400, pixelSample: pixelSample, rawImageData: Data([7]))
     }
 }
 
@@ -128,10 +163,15 @@ struct AVFoundationCaptureBackendTests {
         let hardware = FakeHardware(cameras: Self.cameras)
         let backend = Self.makeBackend(hardware)
         let tele = try await Self.lens(backend, "tele")
-        let request = CaptureRequest(lens: tele)
-        try await backend.startSession(request)
+        var settings = MetadataSettings()
+        settings.set(.location, isOn: true)
+        let plan = MetadataPlan(settings: settings, appVersion: "0.2.0")
+        let request = CaptureRequest(lens: tele, metadata: plan)
+        try await backend.startSession(CaptureRequest(lens: tele))
         let photo = try await backend.capturePhoto(request)
         #expect(photo.data == Data([0x49, 0x49]))
+        #expect(photo.rawImageData == Data([7]))
+        #expect(await hardware.metadataPlans == [plan])
         #expect(photo.format == .processedFallback(.heif))
         #expect(photo.lensID == "tele")
         #expect(photo.dimensions == PhotoDimensions(width: 4032, height: 3024))
@@ -241,3 +281,90 @@ struct PictureCheckTests {
         #expect(!PictureCheck.isBlank(Array(repeating: 0, count: PictureCheck.minimumSampleCount - 1)))
     }
 }
+
+struct ManualCaptureBackendTests {
+    static let manualCamera = CameraDeviceDescription(
+        uniqueID: "wide", deviceType: .wideAngle, position: .back, isVirtual: false,
+        rawPixelFormats: [.init(code: 0x6267_6734, isBayer: true)], supportsHEVC: true, isoRange: 50...6400,
+        exposureDurationRange: 0.0001...1, aperture: .fixed(1.8), maxBracketedPhotoCount: 3,
+        photoDimensions: [PhotoDimensions(width: 4032, height: 3024)], fieldOfViewDegrees: 70)
+
+    static let frames = [
+        BracketFrame(iso: 100, exposureDuration: 0.005), BracketFrame(iso: 100, exposureDuration: 0.01),
+        BracketFrame(iso: 100, exposureDuration: 0.02),
+    ]
+
+    func started(_ hardware: FakeHardware) async throws -> (AVFoundationCaptureBackend, CaptureRequest) {
+        let backend = AVFoundationCaptureBackendTests.makeBackend(hardware)
+        let lens = try await AVFoundationCaptureBackendTests.lens(backend, "wide")
+        let request = CaptureRequest(lens: lens)
+        try await backend.startSession(request)
+        return (backend, request)
+    }
+
+    @Test func controlsNeedARunningSession() async throws {
+        let hardware = FakeHardware(cameras: [Self.manualCamera])
+        let backend = AVFoundationCaptureBackendTests.makeBackend(hardware)
+        await #expect(throws: CaptureError.notRunning) { try await backend.applyControls(.automatic) }
+        let (running, _) = try await started(hardware)
+        try await running.applyControls(.automatic)
+        #expect(await hardware.appliedControls == [.automatic])
+        await hardware.setApplyError(.configurationFailed)
+        await #expect(throws: CaptureError.configurationFailed) { try await running.applyControls(.automatic) }
+    }
+
+    @Test func readingsPassThrough() async {
+        let hardware = FakeHardware(cameras: [])
+        let backend = AVFoundationCaptureBackendTests.makeBackend(hardware)
+        await backend.setExposureReadingsEnabled(true)
+        #expect(await hardware.readingSwitches == [true])
+        let reading = ExposureReading(
+            iso: 100, exposureDuration: 0.01, exposureOffset: 0, lensPosition: 0.5, aperture: 1.8, whiteBalance: nil)
+        hardware.readingContinuation.yield(reading)
+        hardware.readingContinuation.finish()
+        var received: [ExposureReading] = []
+        for await value in backend.exposureReadings { received.append(value) }
+        #expect(received == [reading])
+    }
+
+    @Test func bracketReturnsOnePhotoPerFrame() async throws {
+        let hardware = FakeHardware(cameras: [Self.manualCamera])
+        let (backend, request) = try await started(hardware)
+        let photos = try await backend.captureBracket(request, frames: Self.frames)
+        #expect(photos.map(\.exposureDuration) == [0.005, 0.01, 0.02])
+        #expect(photos.allSatisfy { $0.lensID == "wide" && $0.format == request.format })
+        #expect(photos.allSatisfy { $0.rawImageData == Data([7]) })
+        #expect(await hardware.metadataPlans == [request.metadata])
+        #expect(await hardware.bracketFrames == [Self.frames])
+    }
+
+    @Test func bracketChecksTheSessionAndFrameCount() async throws {
+        let hardware = FakeHardware(cameras: [Self.manualCamera])
+        let backend = AVFoundationCaptureBackendTests.makeBackend(hardware)
+        let lens = try await AVFoundationCaptureBackendTests.lens(backend, "wide")
+        await #expect(throws: CaptureError.notRunning) {
+            try await backend.captureBracket(CaptureRequest(lens: lens), frames: Self.frames)
+        }
+        let (running, request) = try await started(hardware)
+        let other = CaptureRequest(lens: lens, format: .processedFallback(.heif))
+        await #expect(throws: CaptureError.notRunning) { try await running.captureBracket(other, frames: Self.frames) }
+        await #expect(throws: CaptureError.captureFailed) { try await running.captureBracket(request, frames: []) }
+        await #expect(throws: CaptureError.captureFailed) {
+            try await running.captureBracket(request, frames: Self.frames + Self.frames)
+        }
+        await hardware.setBracketPhotoCount(2)
+        await #expect(throws: CaptureError.captureFailed) { try await running.captureBracket(request, frames: Self.frames) }
+    }
+
+    @Test func blankOrFailedBracketsAreDropped() async throws {
+        let blank = FakeHardware(cameras: [Self.manualCamera], pixelSample: Array(repeating: 0, count: 128))
+        let (backend, request) = try await started(blank)
+        await #expect(throws: CaptureError.blankPicture) { try await backend.captureBracket(request, frames: Self.frames) }
+        let failing = FakeHardware(cameras: [Self.manualCamera], captureError: .captureFailed)
+        let (failingBackend, failingRequest) = try await started(failing)
+        await #expect(throws: CaptureError.captureFailed) {
+            try await failingBackend.captureBracket(failingRequest, frames: Self.frames)
+        }
+    }
+}
+

@@ -51,11 +51,34 @@ In the ready state, render:
 - the lenses from the capabilities, with ``CameraModel/selectedLensID`` marked;
 - ``CameraModel/captureFormat``: say plainly when it is the processed fallback;
 - ``CameraModel/sessionStatus``: each case's documentation says what to show;
-- ``CameraModel/captureStatus``: announce each result;
+- ``CameraModel/captureStatus``: announce each result. A saved photo's
+  ``SavedPhoto/signature`` must be shown: never present an unsigned photo as signed;
 - a viewfinder for ``CameraModel/previewSource``. `NopeCore` can't show video, so the app target
   gives your interface a view for the handle; the standard app uses `AVCaptureVideoPreviewLayer`.
 
 Enable the shutter only when ``CameraModel/canCapture`` is `true`.
+
+### Offer manual controls
+
+Manual controls are off by default and stay hidden until the person turns on the "Manual
+controls" option (stored under ``ManualControlsSetting/userDefaultsKey``; send
+``ManualControlIntent/setEnabled(_:)`` when it changes). While ``ManualControlsModel/isEnabled``
+is `true`, read ``CameraModel/manual``:
+
+- show every ``ManualControl`` in the same order, with ``ManualControlsModel/availability(of:)``
+  for each: adjustable, fixed (such as a fixed aperture), blocked, or not available;
+- show ``ManualControlsModel/value(of:)``, marked Manual or Auto with
+  ``ManualSettings/isManual(_:)``;
+- draw sliders over ``ManualControlsModel/scale(for:)``, and make each control a VoiceOver
+  adjustable element that sends ``ManualControlIntent/step(_:by:)``;
+- offer ``ManualControlsModel/exposureModes`` and send ``ManualControlIntent/setExposureMode(_:)``;
+- offer "All Auto" (``ManualControlIntent/allAuto``) whenever ``ManualSettings/isAutomatic`` is
+  `false`.
+
+Run ``ManualControlsModel/observeReadings()`` in another `.task`, so the values the camera is
+using reach the interface. Clean view is ``CameraModel/isCleanView``, set with
+``CameraIntent/setCleanView(_:)``; it never hides a warning that changes what the photo is, such
+as the no-RAW badge.
 
 ### Test against a simulated backend
 

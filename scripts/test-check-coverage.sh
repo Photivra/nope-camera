@@ -12,7 +12,7 @@ expect() { # expect pass|fail "name" file lines-covered lines-total regions-cove
   cp "$here/scripts/coverage-exclusions.txt" "$d/scripts/"
   mkdir -p "$d/Sources/NopeCapture" "$d/Sources/NopeSigning"
   # Every listed exclusion must exist, so create each one.
-  grep -vE '^\s*(#|$)' "$here/scripts/coverage-exclusions.txt" | while IFS= read -r excluded; do touch "$d/$excluded"; done
+  grep -vE '^\s*(#|$)' "$here/scripts/coverage-exclusions.txt" | while IFS= read -r excluded; do mkdir -p "$d/$(dirname "$excluded")"; touch "$d/$excluded"; done
   mkdir -p "$d/$(dirname "$file")"; touch "$d/$file"
   json=$(printf '{"data":[{"files":[{"filename":"%s","summary":{"lines":{"covered":%s,"count":%s},"regions":{"covered":%s,"count":%s},"branches":{"covered":0,"count":0}}}]}]}' \
     "$d/$file" "$4" "$5" "$6" "$7")

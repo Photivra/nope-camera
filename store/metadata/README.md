@@ -1,6 +1,6 @@
 # App Store listing text
 
-One folder per App Store locale, one file per App Store Connect field (`name.txt`,
+One folder per App Store locale (13: the 11 launch languages, with Spanish and French each in two regions), one file per App Store Connect field (`name.txt`,
 `subtitle.txt`, `promotional_text.txt`, `description.txt`, `keywords.txt`), in the layout
 fastlane `deliver` reads. The files hold only the field text, so this page records their review
 status.
@@ -19,7 +19,9 @@ maintainer removes any sentence whose feature isn't in the release.
 | `en-US` | English (U.S.) | Written by the project | Draft, needs human review |
 | `ja` | Japanese | AI translation of `en-US` | Draft, needs human review |
 | `es-ES` | Spanish (Spain) | AI translation of `en-US` | Draft, needs human review |
-| `fr-FR` | French | AI translation of `en-US` | Draft, needs human review |
+| `es-MX` | Spanish (Mexico) | AI adaptation of `es-ES` for Mexican wording | Draft, needs human review |
+| `fr-FR` | French (France) | AI translation of `en-US` | Draft, needs human review |
+| `fr-CA` | French (Canada) | AI adaptation of `fr-FR` for Canadian wording | Draft, needs human review |
 | `de-DE` | German | AI translation of `en-US` | Draft, needs human review |
 | `ko` | Korean | AI translation of `en-US` | Draft, needs human review |
 | `zh-Hant` | Chinese (Traditional) | AI translation of `en-US` | Draft, needs human review |
@@ -28,8 +30,10 @@ maintainer removes any sentence whose feature isn't in the release.
 | `it` | Italian | AI translation of `en-US` | Draft, needs human review |
 | `nl-NL` | Dutch | AI translation of `en-US` | Draft, needs human review |
 
-The app's `es` and `fr` localizations map to the App Store's `es-ES` and `fr-FR`. Whether to add
-`es-MX` and `fr-CA` copies is open.
+The app's `es` and `fr` localizations are listed in both App Store regions: `es-ES` and `es-MX`,
+`fr-FR` and `fr-CA` (maintainer's decision, 2026-11-12). The regional copies change only
+wording (for example "celular", "Configuración" and "agregar" in Mexico; "code source ouvert"
+in Canada) and claim nothing the English doesn't.
 
 ## Notes for reviewers
 

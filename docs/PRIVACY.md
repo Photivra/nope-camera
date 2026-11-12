@@ -1,10 +1,9 @@
 # Privacy
 
-How nope. handles every metadata item it writes or removes. Status: capture core, in
-development. nope. captures photos into memory but doesn't save them yet, so no photo is
-written. The list below is the plan from
-issue #1, "Privacy"; every item is **to be confirmed by the device tag check** (issue #1, step 2):
-a dump of every tag in a real saved DNG and HEIF. Wording for any user-facing claim comes from
+How nope. handles every metadata item it writes or removes. Status: in development. nope. saves
+photos to Photos with metadata built from the allowlist below and checked by reading each file
+back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved files are
+**still to be confirmed by the device tag check** (issue #1, step 2; "Device checks" below). Wording for any user-facing claim comes from
 [`docs/research/privacy-claims.md`](research/privacy-claims.md).
 
 ## What the app does today
@@ -15,18 +14,103 @@ a dump of every tag in a real saved DNG and HEIF. Wording for any user-facing cl
   collected data types and no required-reason APIs.
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
-  for camera access when the person presses "Allow Camera Access". No location permission is
-  requested, and no location is supplied to the camera.
-- **Photos:** a capture is held in memory only, until the next capture replaces it or the app
-  quits. It isn't written to a file or added to Photos; the screen says "Captured (not saved
-  yet: development build)". Saving comes with the metadata allowlist and read-back
-  verification.
+  for camera access when the person presses "Allow Camera Access", and for add-only Photos access
+  the first time it saves a photo (`PHPhotoLibrary.requestAuthorization(for: .addOnly)`). Add-only
+  access can't read the library. No location permission is requested, and no location is
+  supplied to the camera.
+- **Photos:** each photo's files are built in memory with metadata from the allowlist (below),
+  read back and checked, and added to Photos with add-only access. A RAW and its HEIF (or JPEG)
+  are one Photos asset: the DNG is the main resource and the processed file the alternate, as
+  Apple documents ("Capturing Photos in RAW and Apple ProRAW Formats"). The formats are RAW plus
+  HEIF by default (`SaveSettings`); a lens without RAW saves its labeled processed fallback. If a
+  file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
+  that the photo holds only the details you chose." Files are never written to disk.
+- **Signing:** every file is signed with Content Credentials when the signature switch is on
+  (the default), and the screen says "Saved and signed." If signing fails, the photo is saved
+  unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
+  runs before the read-back, so a signed file is checked like any other (see "Content
+  Credentials").
 - **Entitlements:** none.
-- **Files and logs:** Release builds write no files and log nothing. Debug builds include the
+- **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
+  nothing. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
   `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
+
+## Content Credentials (signing)
+
+nope. signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials
+(`ContentCredentialsSigner` in `NopeSigning`, called by `PhotoSaver` before the read-back).
+Signing has its own switch (`MetadataSettings.signsPhotos`), on by default, outside the "Remove
+all optional details" master switch. If signing fails, the photo is saved unsigned and the
+screen says so.
+
+**What it proves.** The signature proves the file hasn't changed since nope. signed it. It
+doesn't prove who took the photo or on which device. Each file is signed with a new key and a
+certificate the key issues to itself, not one chained to a trusted certificate authority, so
+validators report the signer as untrusted (`signingCredential.untrusted`, C2PA 2.2, §15.7) and
+the file as valid. That is expected.
+
+**How each file is signed.**
+
+1. A new P-256 key is created for that file. On a device it is created in the Secure Enclave
+   (CryptoKit `SecureEnclave.P256.Signing.PrivateKey`), with no keychain entry, and is released
+   after the file is signed; it is never stored or used again. The Simulator has no Secure
+   Enclave, so Simulator builds use a software key; that code is compiled only for the Simulator
+   (`#if targetEnvironment(simulator)`) and isn't in any device build. A device whose Secure
+   Enclave can't create a key gets no signature and a "not signed" message, never a software key.
+2. The key signs a certificate for itself (below).
+3. The C2PA library embeds a manifest and the key signs it (ES256). There is no timestamp
+   authority, no certificate status check (OCSP), no remote manifest and no trust list. The
+   library nope. links is built from source with every network feature off, and contains no
+   networking code at all; CI checks the library and a linked iOS binary for networking symbols
+   on every pull request (`c2pa-lib/README.md`). Its settings also turn every fetch off and allow
+   no network host. No App Attest.
+
+**What the signature contains.** Nothing in it identifies the person or the device, and nothing
+links two files: every field is either the same for everyone running that version of nope., or
+random and made for that file alone.
+
+| Item | Value | Same for everyone, or per file |
+|---|---|---|
+| Claim generator | "Photivra Nope Camera" and the app version (for example `0.1.0`); the C2PA library adds its own name and version (`org.contentauth.c2pa_rs`) | Same for everyone on that version |
+| Action | One `c2pa.created` action, digital source type `digitalCapture` (IPTC), and a fixed description (below) | Same for every file of that kind |
+| Instance ID | `xmp:iid:` and a random UUID | Random, per file |
+| Hash binding | A SHA-256 hash of the file's bytes, excluding the manifest itself (`c2pa.hash.data` for DNG and JPEG, `c2pa.hash.bmff.v3` for HEIF) | Depends only on the file |
+| Signature | ES256 by the file's own key | Per file |
+| Certificate subject and issuer | Common name "Photivra Nope Camera anonymous signer" only: no organization, email, location or device | Same for everyone |
+| Certificate validity | 2000-01-01 to 2099-12-31 | Same for everyone, so it doesn't reveal the capture time |
+| Certificate serial number | 20 random bytes | Random, per file |
+| Certificate public key and key identifiers | The file's one-use public key and its SHA-1 hash | Per file |
+
+Not written: no time (`when`) on the action, no timestamp, no title, no thumbnail, no ingredient,
+no creator, no location, no device model, no operating system, no device ID, no stable key.
+
+Descriptions (written into the file in English; owner-approved wording pending):
+
+- DNG: "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the
+  phone allows."
+- HEIF or JPEG developed from the RAW: "Developed by Photivra Nope Camera on the phone from a single frame of
+  RAW sensor data."
+- HEIF or JPEG from a lens without Bayer RAW: "Captured by Photivra Nope Camera and processed by the phone's
+  camera, because this lens can't save RAW."
+
+**What signing adds to each file.** Exactly one item, checked by the tests on synthetic files
+and with c2patool 0.28.6; the metadata read-back allowlist permits it for signed files only
+(`MetadataPlan.allowlist(for:signed:)`), and `ReadBackTests` checks that a signed file passes the
+read-back exactly as its unsigned original does:
+
+| Format | Added | Notes |
+|---|---|---|
+| DNG | TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0 | The C2PA library writes a new IFD0 (the old tags plus this one) at the end of the file and points the header at it. The original IFD0 bytes stay in the file, unreferenced; they hold the same allowlisted tags. The hash excludes the manifest and the 4-byte offset of tag 52545 |
+| HEIF | One top-level `uuid` box, UUID `D8FEC3D6-1B0E-483C-9297-5828877EC481`, after `ftyp` | No other box changes type or order. The hash excludes `/uuid`, `/ftyp`, `/mfra`, `/free` and `/skip`, the C2PA default exclusions for this format |
+| JPEG | APP11 (`0xFFEB`) segments with JUMBF (common identifier `JP`), after APP0 | No other segment changes. The hash excludes only the APP11 segments |
+
+ImageIO reports no new property for the signed HEIF and JPEG (only the file size changes).
+
+**Signing must be the last change.** Any later change to the bytes (an edit in Photos, export,
+re-encoding by a sharing app) breaks the signature or removes it.
 
 ## Tag check
 
@@ -88,6 +172,9 @@ exposure tags.
 controls. Items a file can't be opened or displayed correctly without are locked, and the app
 explains each one in plain words.
 
+The settings model is `MetadataSettings` in `NopeCore`; `MetadataPlan` turns it into each file's
+allowlist and metadata.
+
 **Master switch: "Remove all optional details", on by default.**
 - **When on,** every switch below is off, so files carry only the locked items, plus the
   Content Credentials signature, which has its own switch outside the master.
@@ -95,7 +182,8 @@ explains each one in plain words.
 - **Turning the master back on** turns every item off again.
 - **With the master off,** the user sets each item one by one.
 
-The "Default" column below is each item's setting when the user first turns the master off.
+The "Default" column below is each item's setting when the user turns the master off. Because
+turning the master on clears every item, turning it off always starts from these defaults.
 
 ### Switches (removing these never breaks the photo)
 
@@ -113,8 +201,8 @@ The "Default" column below is each item's setting when the user first turns the 
 | iOS version | Off | Nothing visible | Present (`Software`, XMP `CreatorTool`) |
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
-| App name and version (nope.) | On | Apps can't show what made the file | Written by nope. |
-| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes; without a timestamp when the date is off | Written by nope. |
+| App name and version ("Photivra Nope Camera" and its version) | On | Apps can't show what made the file | Written by nope. |
+| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by nope. |
 
 Serial numbers, unique image IDs and raw data IDs are never written, by the system or by nope.,
 so they have no switch.
@@ -133,5 +221,104 @@ so they have no switch.
 
 None of the locked items identify you or link your photos.
 
-This page will list the exact tags for each format and switch, with the metadata tests that
-assert them, as each part is built.
+## How each file's metadata is built and checked
+
+**Built from the allowlist, never by deleting.** `MetadataPlan.properties(for:from:)` starts
+from an empty dictionary and copies in only the values of the tags below that the switches
+allow, from the system's metadata. A tag the system adds that isn't listed here is never copied.
+
+- **DNG:** written by AVFoundation with that dictionary as the replacement metadata
+  (`AVCapturePhotoFileDataRepresentationCustomizer.replacementMetadata(for:)`;
+  `AVCapturePhotoOutput.h`: "To replace metadata, pass a replacement dictionary"). ImageIO can't
+  write DNG, and AVFoundation writes the RAW image data itself, so the sensor data is never
+  re-encoded by nope. (`docs/ARCHITECTURE.md`, "From capture to Photos").
+- **HEIF and JPEG developed from the RAW:** encoded by ImageIO from a rendered image that has no
+  metadata, with the dictionary built from the DNG's (already allowlisted) metadata, orientation
+  "up", and no embedded thumbnail. Both looks (`SaveSettings.developedLook`, owner decision
+  2026-11-12) demosaic the sensor data and apply the file's white balance and color matrices,
+  with no noise reduction, sharpening, local contrast, local tone mapping or lens correction:
+  - **Standard** (default): one global tone curve, Core Image's default for the camera, so the
+    photo looks like a normal photo.
+  - **Flat:** no tone curve; the image stays linear to the scene, and only Display P3's
+    standard transfer function is applied when it is encoded. It looks flat and low in
+    contrast, for editing afterwards.
+
+  The look never changes the RAW. (`CoreImageRAWRenderer`; on-screen appearance is a device
+  check.)
+- **Processed fallback (a lens without RAW):** written by AVFoundation with the replacement
+  dictionary, like the DNG.
+
+**Read back before saving (fail closed).** Every finished file, after signing, is read back by
+the project's own reader (`MetadataFileReader`): every tag in every TIFF directory (IFD0, EXIF,
+GPS, interoperability, SubIFDs, and any chained IFD such as a thumbnail), every JPEG segment,
+every HEIF box, item, item property and reference, and every XMP property. ImageIO then opens the
+file as Photos would: it must be exactly one image of its format, and every key it reports must
+be allowed. `MetadataVerifier` rejects the whole photo, and nothing is saved, if:
+
+- any tag, block, XMP property or ImageIO key isn't on the allowlist, including one a future iOS
+  adds;
+- an allowed text has a value nope. didn't write (for example the exact camera model when the
+  generic one was asked for, or a date with a time zone when the time zone is off);
+- a tag a DNG can't be opened without is missing (`DNGVersion`, `UniqueCameraModel`,
+  `ColorMatrix1`, `CFARepeatPatternDim`, `CFAPattern`);
+- the DNG's RAW image data (IFD0's tiles or strips) isn't byte-for-byte the data of the system's
+  own DNG for the same capture;
+- anything can't be read.
+
+The fuzz and property tests (`MetadataFailClosedFuzzTests`) inject random tags, a simulated
+future system tag (`0xC7FF`) in every format and directory, unexpected segments and items
+(XMP, multi-picture, thumbnails, gain maps), and random byte damage, and check that every such
+file is rejected and no input crashes the reader.
+
+### Exact tags by format
+
+Written by the system or by nope. only when listed here. `MetadataPlanTests` asserts these sets
+for all 8,192 switch combinations in every format.
+
+| Group | DNG | HEIF and JPEG |
+|---|---|---|
+| Locked: image structure | IFD0 `NewSubfileType`, `ImageWidth`, `ImageLength`, `BitsPerSample`, `Compression`, `PhotometricInterpretation`, `StripOffsets`, `SamplesPerPixel`, `RowsPerStrip`, `StripByteCounts`, `PlanarConfiguration`, `TileWidth`, `TileLength`, `TileOffsets`, `TileByteCounts`, `DefaultCropOrigin`, `DefaultCropSize`, `ActiveArea`; EXIF `ExifVersion`, `PixelXDimension`, `PixelYDimension` | IFD0 `XResolution`, `YResolution`, `ResolutionUnit`, `YCbCrPositioning` (HEIF also `TileWidth`, `TileLength`); EXIF `ExifVersion`, `ComponentsConfiguration`, `FlashpixVersion`, `PixelXDimension`, `PixelYDimension` |
+| Locked: color filter pattern | `CFARepeatPatternDim`, `CFAPattern`, `CFAPlaneColor`, `CFALayout` | — |
+| Locked: levels | `BlackLevelRepeatDim`, `BlackLevel`, `WhiteLevel`, `BaselineExposure`, `NoiseProfile`, `NoiseReductionApplied` | — |
+| Locked: color calibration | `ColorMatrix1`, `ColorMatrix2`, `AsShotNeutral`, `CalibrationIlluminant1`, `CalibrationIlluminant2` | — |
+| Locked: DNG version | `DNGVersion`, `DNGBackwardVersion` | — |
+| Locked: orientation | `Orientation` | `Orientation` |
+| Locked: color profile | — | EXIF `ColorSpace`; the ICC profile (JPEG `APP2`, HEIF `colr`) |
+| Exact camera model for RAW editors | `UniqueCameraModel`, always present; "Generic camera" when off | — |
+| Location | the GPS directory and its pointer (nope. supplies no location yet, so none is written) | same |
+| Date and time taken | `DateTime`, `DateTimeOriginal`, `DateTimeDigitized` | same, plus HEIF XMP `photoshop:DateCreated`, `xmp:CreateDate`, `xmp:ModifyDate` (no fraction or zone unless those switches are on) |
+| Sub-second time | `SubSecTime`, `SubSecTimeOriginal`, `SubSecTimeDigitized` | same |
+| Time zone | `OffsetTime`, `OffsetTimeOriginal`, `OffsetTimeDigitized` | same |
+| Camera make and model | `Make`, `Model`, `HostComputer` | same |
+| Lens make and model | EXIF `LensMake`, `LensModel`, `LensSpecification`; DNG `LensInfo` | EXIF `LensMake`, `LensModel`, `LensSpecification` |
+| Lens correction instructions | `OpcodeList1`, `OpcodeList2`, `OpcodeList3` | — |
+| Exposure settings | EXIF `ExposureTime`, `FNumber`, `ExposureProgram`, `PhotographicSensitivity`, `SensitivityType`, `ShutterSpeedValue`, `ApertureValue`, `BrightnessValue`, `ExposureBiasValue`, `MaxApertureValue`, `MeteringMode`, `Flash`, `FocalLength`, `SubjectArea`, `SensingMethod`, `SceneType`, `ExposureMode`, `WhiteBalance`, `FocalLengthIn35mmFilm`, `SceneCaptureType` | same |
+| iOS version / app name and version | `Software`: "Photivra Nope Camera 0.x.y" (app), the system's version (iOS), or "Photivra Nope Camera 0.x.y (27.2.1)" (both) | same, plus HEIF XMP `xmp:CreatorTool` with the same value |
+| Maker notes | EXIF `MakerNote` | same |
+| Your name and copyright | `Artist`, `Copyright`, only when entered | same, plus HEIF XMP `dc:creator`, `dc:rights` with the same values |
+| Content Credentials (signed files only) | IFD0 tag `0xCD41` | JPEG `APP11`; HEIF top-level `uuid` box (C2PA 2.1, appendix A; to be confirmed by the signing work) |
+
+**Containers.** A JPEG may hold only `APP0` (JFIF), `APP1` (EXIF), `APP2` (ICC profile), the
+empty IPTC record ImageIO always writes in `APP13` (no fields; checked byte for byte), and the
+image's structure segments; no XMP segment, comments, other `APPn` segments or data after the
+end of the image. A HEIF may hold only the image (`hvc1` items, or a `grid` of them), its `Exif`
+item, the XMP item when an XMP property above is on, and the image's layout properties; no
+thumbnails (`thmb`) or auxiliary images (`auxl`, such as depth or gain maps).
+
+### Device checks
+
+The checks above run on every saved file. These still need a real device, because the
+Simulator has no camera and no real DNG can be made in a unit test:
+
+- the saved DNG passes the read-back for the default settings, all switches on, and a few
+  combinations in between, on each lens (AVFoundation adds nothing beyond the replacement
+  metadata, and keeps the required DNG tags);
+- the reference RAW image data matches the saved DNG's (the two flattenings give identical
+  sensor data);
+- AVFoundation writes the lens correction opcodes and the maker note only when they are in the
+  replacement dictionary;
+- the developed HEIF (10-bit) and JPEG look right and pass the read-back;
+- the processed fallback HEIF passes the read-back;
+- the add-only prompt appears once, and a RAW plus HEIF shows as one photo in Photos with the RAW
+  as the original;
+- an exiftool dump of each saved file matches the tables above.

@@ -2,14 +2,18 @@ import Foundation
 
 /// One finished capture, held in memory.
 ///
-/// Privacy: in this development stage the photo is never written to a file or saved to Photos.
-/// It stays in memory until the next capture replaces it. Saving comes with the metadata
-/// allowlist, read-back verification and signing (AGENTS.md, "Metadata is allowlisted and
-/// verified" and "Photos never linger").
+/// Privacy: the photo is never written to a file. ``PhotoSaver`` takes it from memory to Photos
+/// (AGENTS.md, "Photos never linger").
 public struct CapturedPhoto: Equatable, Sendable {
-    /// The file bytes exactly as the system produced them: a DNG for Bayer RAW, or a HEIF or
-    /// JPEG for the fallback. The metadata hasn't been through the allowlist yet.
+    /// The file bytes: a DNG for Bayer RAW, or a HEIF or JPEG for the fallback. The capture
+    /// backend writes them with metadata built from the request's ``CaptureRequest/metadata``
+    /// plan; ``PhotoSaver`` reads them back before saving.
     public let data: Data
+
+    /// For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
+    /// metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
+    /// it, so a changed pixel rejects the photo.
+    public let rawImageData: Data?
 
     /// The format of ``data``.
     public let format: CaptureFormat
@@ -36,11 +40,13 @@ public struct CapturedPhoto: Equatable, Sendable {
     ///   - dimensions: The photo's size, in pixels.
     ///   - exposureDuration: The exposure duration in seconds, or `nil`.
     ///   - iso: The ISO, or `nil`.
+    ///   - rawImageData: The reference RAW image data, or `nil`.
     public init(
         data: Data, format: CaptureFormat, lensID: Lens.ID, dimensions: PhotoDimensions,
-        exposureDuration: Double?, iso: Double?
+        exposureDuration: Double?, iso: Double?, rawImageData: Data? = nil
     ) {
         self.data = data
+        self.rawImageData = rawImageData
         self.format = format
         self.lensID = lensID
         self.dimensions = dimensions

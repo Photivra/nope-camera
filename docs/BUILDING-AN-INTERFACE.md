@@ -18,7 +18,8 @@ Your interface depends on `NopeCore` only. It does three things:
    `.selectLens(id)` when they pick a lens and `.capture` from your shutter. While it is
    visible, also run `CameraModel.observeEvents()` so interruptions and heat are applied.
    In the ready state, render `sessionStatus`, `captureStatus`, `selectedLensID` and
-   `captureFormat` (say plainly when it is the processed fallback), and enable the shutter only
+   `captureFormat` (say plainly when it is the processed fallback; when `captureStatus` is
+   `.saved`, always say whether the photo is signed), and enable the shutter only
    when `canCapture` is true.
 3. **Holds no rules.** Don't decide privacy, formats, exposure or what the device supports. If
    you need a decision, it belongs in `NopeCore` as state or a capability value.
@@ -37,6 +38,18 @@ updates automatically.
    `NopeCore` can't show video.
 5. Test it against `SimulatedCaptureBackend`, which can put the model in every state without a
    camera, and add a UI test with `performAccessibilityAudit()` for each state.
+
+## Manual controls
+
+Manual controls are off by default; the "Manual controls" option in Settings turns them on, and
+the app target sends `.manual(.setEnabled(_:))` when it changes. Everything about them is in
+`CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
+(`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
+exposure modes, bracketing and interval shooting. Send `.manual(...)` intents to change them; the
+model keeps the combination valid for the lens. Offer "All Auto" whenever
+`manual.settings.isAutomatic` is false. Run `manual.observeReadings()` in a second `.task` so the
+values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
+a warning that changes what the photo is.
 
 ## Rules that still apply
 
