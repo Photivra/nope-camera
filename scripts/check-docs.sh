@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Documentation checks (AGENTS.md, "Documentation is checked in CI").
 # Usage: scripts/check-docs.sh <derived-data-path> [--write]
-# 1. Builds the DocC documentation for every NopeKit module, with warnings as errors and
-#    internal symbols included.
+# 1. Builds the DocC documentation for every NopeKit module, with internal symbols included,
+#    and fails on any documentation warning in a NopeKit module. Warnings in third-party
+#    packages' own documentation (the C2PA library and Apple's Swift packages) aren't ours to fix,
+#    so DocC's global --warnings-as-errors isn't used; the warnings are filtered by path instead.
 # 2. Fails if any public or internal symbol lacks its own DocC comment.
 # 3. Exports the API as Markdown to docs/api/ and fails if it differs from the committed copy.
 #    Pass --write to update docs/api/ instead of failing.
@@ -14,12 +16,18 @@ here="$(cd "$(dirname "$0")/.." && pwd)"
 modules=(NopeCore NopeCapture NopeDevelop NopeSigning NopeUI)
 cd "$here"
 
-xcodebuild -quiet docbuild \
+build_log=$(mktemp)
+if ! xcodebuild -quiet docbuild \
   -scheme NopeKit-Package \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath "$derived" \
-  OTHER_DOCC_FLAGS="--warnings-as-errors" \
-  OTHER_SWIFT_FLAGS='$(inherited) -symbol-graph-minimum-access-level internal'
+  OTHER_SWIFT_FLAGS='$(inherited) -symbol-graph-minimum-access-level internal' 2>&1 | tee "$build_log"; then
+  echo "docs: the DocC build failed"; exit 1
+fi
+if grep -E "/(Sources|Tests)/Nope[A-Za-z]+/.*: (warning|error):" "$build_log"; then
+  echo "docs: documentation warnings in NopeKit modules (listed above)"; exit 1
+fi
+rm -f "$build_log"
 
 graphs=$(mktemp -d)
 trap 'rm -rf "$graphs"' EXIT

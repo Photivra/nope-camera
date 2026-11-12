@@ -1,0 +1,12 @@
+diff --git a/c2pa_c_ffi/Cargo.toml b/c2pa_c_ffi/Cargo.toml
+index 45cd13d..aa2ddab 100644
+--- a/c2pa_c_ffi/Cargo.toml
++++ b/c2pa_c_ffi/Cargo.toml
+@@ -29,7 +29,6 @@ add_thumbnails = ["c2pa/add_thumbnails"]
+ 
+ [dependencies]
+ c2pa = { workspace = true, features = [
+-    "fetch_remote_manifests",
+     "file_io",
+     "pdf",
+ ] }

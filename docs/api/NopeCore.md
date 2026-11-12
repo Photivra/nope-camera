@@ -5904,12 +5904,12 @@ let format: PhotoFormat
 
 The file's format.
 
-## `PhotoFile/init(format:data:)`
+## `PhotoFile/init(format:data:isProcessedByDevice:)`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
 
 ```swift
-init(format: PhotoFormat, data: Data)
+init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false)
 ```
 
 Creates a file.
@@ -5917,6 +5917,20 @@ Creates a file.
 - Parameters:
   - format: The file's format.
   - data: The file's bytes.
+  - isProcessedByDevice: Whether the phone's camera processed it (the fallback of a lens
+    without Bayer RAW). Defaults to `false`.
+
+## `PhotoFile/isProcessedByDevice`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let isProcessedByDevice: Bool
+```
+
+Whether the phone's camera processed the file: the HEIF or JPEG of a lens without Bayer
+RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
+uses it to describe the file truthfully in its Content Credentials.
 
 ## `PhotoFormat`
 

@@ -87,7 +87,7 @@ struct CaptureStatusView: View {
         case .unsigned(.turnedOff):
             String(localized: "Saved. Not signed: signing is off in Settings.", table: "Honesty", bundle: .module, comment: "Shown after a photo was saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply the photo is signed.")
         case .unsigned(.unavailable):
-            String(localized: "Saved. Not signed: this development version can't sign photos yet.", table: "Honesty", bundle: .module, comment: "Shown after a photo was saved without a Content Credentials signature because signing isn't built into this development version yet. Honesty wording: never imply the photo is signed.")
+            String(localized: "Saved. Not signed: this version of the app can't sign photos.", table: "Honesty", bundle: .module, comment: "Shown after a photo was saved without a Content Credentials signature because this build of the app has no signer, for example a preview or a different interface built on NopeCore. Honesty wording: never imply the photo is signed.")
         case .unsigned(.failed):
             String(localized: "Saved. Not signed: the signature couldn't be created.", table: "Honesty", bundle: .module, comment: "Shown after a photo was saved without a Content Credentials signature because creating the signature failed. Honesty wording: never imply the photo is signed.")
         }

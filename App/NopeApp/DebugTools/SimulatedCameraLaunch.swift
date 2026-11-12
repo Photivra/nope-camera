@@ -31,6 +31,9 @@ enum SimulatedCameraLaunch {
         case metadataRejected
         /// Access already allowed; adding to the photo library is not allowed.
         case photosDenied
+        /// Access already allowed; signing fails, so photos are saved unsigned and the status
+        /// says so.
+        case signingFails
         /// Access already allowed; lenses with manual controls: the wide lens has every control,
         /// including a variable aperture and S and I modes; the ultra wide has a fixed aperture
         /// and only P and M; the front camera has no manual focus. Pair it with
@@ -65,7 +68,7 @@ enum SimulatedCameraLaunch {
     static func saver(appVersion: String) -> PhotoSaver? {
         guard let scenario else { return nil }
         return PhotoSaver(
-            developer: SimulatedDeveloper(), signer: nil,
+            developer: SimulatedDeveloper(), signer: SimulatedSigner(fails: scenario == .signingFails),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
             library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
     }
@@ -122,7 +125,7 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .captureFailed)
         case .blankPicture:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .blankPicture)
-        case .metadataRejected, .photosDenied:
+        case .metadataRejected, .photosDenied, .signingFails:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:
             return SimulatedCaptureBackend(

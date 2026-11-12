@@ -42,6 +42,24 @@ struct SimulatedReadBack: MetadataReading {
     }
 }
 
+/// Stands in for the signer: returns each file unchanged, so the status shows "Saved and
+/// signed.", or fails, so it shows the signing-failed message. The simulated backend's
+/// placeholder bytes aren't an image the real signer can sign; `NopeSigningTests` cover real
+/// signing.
+struct SimulatedSigner: PhotoSigning {
+    /// Why the simulated signer failed.
+    struct Failure: Error {}
+
+    /// Whether every file fails to sign.
+    let fails: Bool
+
+    /// Returns the file, or throws ``Failure``.
+    func sign(_ file: PhotoFile) async throws -> PhotoFile {
+        if fails { throw Failure() }
+        return file
+    }
+}
+
 /// Accepts or refuses every add, without touching the Simulator's photo library.
 struct SimulatedPhotoLibrary: PhotoLibrary {
     /// Whether adding is allowed.

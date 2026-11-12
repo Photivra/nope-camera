@@ -98,7 +98,7 @@ public struct PhotoSaver: Sendable {
     ) async throws(CaptureError) -> [PhotoFile] {
         switch photo.format {
         case .processedFallback(let fallback):
-            return [PhotoFile(format: fallback == .heif ? .heif : .jpeg, data: photo.data)]
+            return [PhotoFile(format: fallback == .heif ? .heif : .jpeg, data: photo.data, isProcessedByDevice: true)]
         case .bayerRAW:
             let raw = PhotoFile(format: .raw, data: photo.data)
             var files = settings.formats.contains(.raw) ? [raw] : []

@@ -9,15 +9,22 @@ public struct PhotoFile: Equatable, Sendable {
     public let format: PhotoFormat
     /// The file's bytes.
     public let data: Data
+    /// Whether the phone's camera processed the file: the HEIF or JPEG of a lens without Bayer
+    /// RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
+    /// uses it to describe the file truthfully in its Content Credentials.
+    public let isProcessedByDevice: Bool
 
     /// Creates a file.
     ///
     /// - Parameters:
     ///   - format: The file's format.
     ///   - data: The file's bytes.
-    public init(format: PhotoFormat, data: Data) {
+    ///   - isProcessedByDevice: Whether the phone's camera processed it (the fallback of a lens
+    ///     without Bayer RAW). Defaults to `false`.
+    public init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false) {
         self.format = format
         self.data = data
+        self.isProcessedByDevice = isProcessedByDevice
     }
 }
 
