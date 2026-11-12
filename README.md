@@ -2,7 +2,7 @@
 
 A free, open-source camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, signs it with C2PA Content Credentials, and saves it to Photos. The app makes no network calls and has no analytics.
 
-**Status:** in development (0.x). The project builds and tests, but it has no camera features yet. The design is in issue #1; the code layout is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and how to run the tests is in [`docs/TESTING.md`](docs/TESTING.md).
+**Status:** in development (0.x). The camera captures single-frame Bayer RAW (DNG) and saves it to Photos with only the metadata you allow, checked by reading each file back; photos are not signed yet. HEIF and JPEG are developed from the same RAW with no noise reduction, sharpening or local tone mapping, and either one global tone curve (Standard, the default) or none (Flat). The design is in issue #1; the code layout is in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and how to run the tests is in [`docs/TESTING.md`](docs/TESTING.md).
 
 ## License
 

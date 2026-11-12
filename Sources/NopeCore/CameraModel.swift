@@ -26,6 +26,13 @@ public final class CameraModel {
     /// The state of the most recent capture.
     public private(set) var captureStatus: CaptureStatus = .idle
 
+    /// The formats and metadata choices used for the next photo. A Settings screen changes them
+    /// through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
+    public var saveSettings = SaveSettings()
+
+    /// Builds, checks and saves each photo, or `nil` when this model can't save (previews).
+    private let saver: PhotoSaver?
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -34,9 +41,13 @@ public final class CameraModel {
 
     /// Creates a model in the ``CameraState/starting`` state.
     ///
-    /// - Parameter backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
-    public init(backend: any CaptureBackend) {
+    /// - Parameters:
+    ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
+    ///   - saver: The save pipeline. Without one, every photo ends in
+    ///     ``CaptureError/savingUnavailable`` and nothing is saved.
+    public init(backend: any CaptureBackend, saver: PhotoSaver? = nil) {
         self.backend = backend
+        self.saver = saver
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -62,9 +73,10 @@ public final class CameraModel {
         selectedLens.map(CaptureFormat.init(for:))
     }
 
-    /// Whether the shutter should be enabled: the camera is running and no photo is being taken.
+    /// Whether the shutter should be enabled: the camera is running and no photo is being taken
+    /// or saved.
     public var canCapture: Bool {
-        sessionStatus.canCapture && captureStatus != .capturing
+        sessionStatus.canCapture && captureStatus != .capturing && captureStatus != .saving
     }
 
     /// Handles one intent from the interface and updates the model's state.
@@ -74,7 +86,8 @@ public final class CameraModel {
     /// Side effects: ``CameraIntent/requestPermission`` may show the system camera prompt;
     /// ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
     /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
-    /// ``CameraIntent/capture`` takes a photo, held in memory only.
+    /// ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
+    /// it to Photos (which may show the add-only Photos prompt).
     public func send(_ intent: CameraIntent) async {
         switch intent {
         case .start:
@@ -186,11 +199,33 @@ public final class CameraModel {
     private func capture() async {
         guard canCapture, let lens = selectedLens else { return }
         captureStatus = .capturing
-        let request = CaptureRequest(lens: lens)
+        let settings = saveSettings
+        let plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
+        let request = CaptureRequest(lens: lens, metadata: plan)
         do {
-            captureStatus = .captured(try await backend.capturePhoto(request))
+            await save(try await backend.capturePhoto(request), settings: settings)
         } catch .blankPicture {
-            await recoverFromBlankPicture(request)
+            await recoverFromBlankPicture(request, settings: settings)
+        } catch {
+            captureStatus = .failed(error)
+        }
+    }
+
+    /// Saves a captured photo through the ``PhotoSaver``, and records the result.
+    ///
+    /// Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+    ///
+    /// - Parameters:
+    ///   - photo: The captured photo.
+    ///   - settings: The settings the photo was taken with.
+    private func save(_ photo: CapturedPhoto, settings: SaveSettings) async {
+        guard let saver else {
+            captureStatus = .failed(.savingUnavailable)
+            return
+        }
+        captureStatus = .saving
+        do {
+            captureStatus = .saved(try await saver.save(photo, settings: settings))
         } catch {
             captureStatus = .failed(error)
         }
@@ -206,8 +241,10 @@ public final class CameraModel {
     ///
     /// Side effects: stops and restarts the camera, and takes a second photo if it comes back.
     ///
-    /// - Parameter request: The request whose photo was blank.
-    private func recoverFromBlankPicture(_ request: CaptureRequest) async {
+    /// - Parameters:
+    ///   - request: The request whose photo was blank.
+    ///   - settings: The settings the photo is taken with.
+    private func recoverFromBlankPicture(_ request: CaptureRequest, settings: SaveSettings) async {
         await backend.stopSession()
         await startSession()
         guard sessionStatus == .running else {
@@ -215,7 +252,7 @@ public final class CameraModel {
             return
         }
         do {
-            captureStatus = .captured(try await backend.capturePhoto(request))
+            await save(try await backend.capturePhoto(request), settings: settings)
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)

@@ -2,8 +2,9 @@
 
 nope. is split into a replaceable interface and interface-free logic. The rules are in
 [`AGENTS.md`](../AGENTS.md), "Architecture: interface separate from logic"; this page describes
-how the code follows them. Status: capture core, in development. The camera runs and
-captures in memory; nothing is saved yet.
+how the code follows them. Status: in development. The camera captures, each photo's metadata is
+built from the allowlist and checked by reading the file back, and clean photos are saved to
+Photos. Signing is not built yet, so photos are saved unsigned and the app says so.
 
 ## Repository layout
 
@@ -21,12 +22,12 @@ captures in memory; nothing is saved yet.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, and `SimulatedCaptureBackend` | Foundation |
-| `NopeCapture` | AVFoundation and PhotoKit adapters. Now: `AVFoundationCaptureBackend` and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
-| `NopeDevelop` | RAW development and encoding. Now: `EncodingSettings` for HEIF and JPEG | `NopeCore`, Core Image, ImageIO |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`) | Foundation |
+| `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
+| `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `PerPhotoSigner`, which uses a fresh key for every photo | `NopeCore`, CryptoKit, C2PA |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status; stacked or side by side) and `CameraCommands` (the Camera menu) | `NopeCore`, SwiftUI |
-| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` into `NopeCore`, supplies the preview view, the hardware shutter and the Camera menu, and hosts `NopeUI` | Everything |
+| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, no signer yet) into `NopeCore`, supplies the preview view, the hardware shutter and the Camera menu, and hosts `NopeUI` | Everything |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -51,8 +52,11 @@ captures in memory; nothing is saved yet.
 4. The model chooses the `CaptureFormat` for the lens (Bayer RAW, or the processed fallback when
    the lens has none) and asks the backend to start with a `CaptureRequest`. `sessionStatus`
    goes from `.starting` to `.running`.
-5. `.selectLens` reconfigures the backend for another lens. `.capture` asks the backend for one
-   photo; the result is `captureStatus = .captured(photo)`, held in memory only.
+5. `.selectLens` reconfigures the backend for another lens. `.capture` builds a `MetadataPlan`
+   from `saveSettings` and asks the backend for one photo, whose file is written with that
+   plan's metadata. `PhotoSaver` then develops, signs (when a signer exists), reads back,
+   checks and saves it (below). The result is `captureStatus = .saved(photo)` or
+   `.failed(error)`.
 6. Backend events (`CaptureEvent`) update `sessionStatus`: interruptions (calls, other apps,
    multitasking), critical heat (the model stops the camera and restarts it when the device
    cools), and runtime errors (the model restarts the camera).
@@ -118,11 +122,49 @@ adds it only if users ask (issue #1, "iPad").
 
 ### From capture to Photos
 
-Today a photo stops in memory: the app shows "Captured (not saved yet: development build)". The
-next steps, in later pull requests (issue #1): build the file's metadata from the allowlist and
-verify it by reading the file back, develop HEIF and JPEG from the same RAW (`NopeDevelop`),
-sign each file with a fresh key (`NopeSigning`), and add it to Photos with add-only access
-(`NopeCapture`). Photos go from memory to Photos and never linger on disk.
+```
+ CameraModel.capture ── MetadataPlan(saveSettings.metadata) ──► CaptureRequest
+   │
+   ▼
+ AVFoundationCaptureBackend / SystemCaptureHardware
+   │  AVCapturePhoto.fileDataRepresentation(with: MetadataCustomizer)
+   │    replacementMetadata(for:) = MetadataPlan.properties(for:from:)   (built from the allowlist)
+   │  RAW only: the system's own DNG is flattened once to copy its RAW image data (reference)
+   ▼
+ PhotoSaver (NopeCore)
+   1. files: the DNG, plus HEIF/JPEG from RAWDeveloper (NopeDevelop), as SaveSettings.formats
+      say; a lens without RAW gives its processed fallback file
+   2. PhotoSigning hook (NopeSigning, not built yet: files are saved unsigned, status says so)
+   3. read-back of every file: ImageIOReadBack = MetadataFileReader (every tag, block and XMP
+      property) + ImageIO's keys; MetadataVerifier against MetadataPlan.allowlist(for:signed:);
+      for the DNG, its RAW image data must equal the reference. Any violation: nothing is saved
+   4. PhotoKitLibrary (NopeCapture): add-only access, one PHAssetCreationRequest per asset;
+      the DNG as `.photo` and its HEIF (or JPEG) as `.alternatePhoto`
+```
+
+**Why the DNG's metadata is written by AVFoundation.** ImageIO can't write DNG: on macOS 27 and
+the iOS 27 Simulator, `CGImageDestinationCopyTypeIdentifiers()` doesn't list
+`com.adobe.raw-image`, and `CGImageDestinationCreateWithData` returns `nil` for it (asserted by
+`ImageIOReadBackTests.imageIOCantWriteDNG`; to be confirmed on a device), so `CGImageDestinationCopyImageSource`
+(which `CGImageDestination.h` describes as a lossless copy that "will not modify" the image data)
+isn't available for DNG. AVFoundation's own path is documented for this:
+`AVCapturePhotoFileDataRepresentationCustomizer.replacementMetadata(for:)` in
+`AVCapturePhotoOutput.h` returns "a dictionary of keys and values from
+<ImageIO/CGImageProperties.h> … To replace metadata, pass a replacement dictionary." AVFoundation
+then flattens the in-memory photo itself, so nope. never re-encodes or touches the sensor data,
+and never edits file bytes (AGENTS.md, "remove metadata through system APIs"). The read-back
+proves the result: every tag of the saved DNG must be on the allowlist, and its RAW image data
+(IFD0's tiles or strips) must equal the data of the system's own DNG. Whether AVFoundation adds
+anything beyond the replacement dictionary is a device check (docs/TESTING.md).
+
+**HEIF and JPEG** developed from the RAW are written with `CGImageDestinationAddImage` from a
+rendered image that carries no metadata, with only the allowlisted property dictionary, and no
+embedded thumbnail. ImageIO adds a few things that describe the image (resolution, color space,
+for HEIF a mirrored XMP packet for dates, name and copyright, and for JPEG an empty IPTC record);
+each is on the allowlist only where it holds nothing beyond what the switches allow
+(docs/PRIVACY.md).
+
+Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
 
 ## The simulated backend
 

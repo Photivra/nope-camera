@@ -2,8 +2,10 @@ import Foundation
 
 /// A file format nope. can save.
 ///
+/// The raw values are stable, so settings that store a format can be saved and read back.
+///
 /// The defaults follow issue #1, "Formats": RAW plus HEIF.
-public enum PhotoFormat: Equatable, Hashable, Sendable, CaseIterable {
+public enum PhotoFormat: String, Equatable, Hashable, Sendable, CaseIterable, Codable {
     /// Single-frame Bayer RAW, saved as DNG.
     case raw
     /// HEIF developed by nope. from the RAW, 10 bits per channel.

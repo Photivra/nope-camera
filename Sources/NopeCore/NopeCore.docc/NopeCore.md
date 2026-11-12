@@ -14,6 +14,11 @@ and sends ``CameraIntent`` values through ``CameraModel/send(_:)``. It never cal
 it holds no business rules. The hardware sits behind ``CaptureBackend``; tests, previews and
 development builds use ``SimulatedCaptureBackend``.
 
+Each photo is saved by ``PhotoSaver``: its files' metadata is built from the allowlist
+(``MetadataPlan``, from the person's ``MetadataSettings``), every file is read back with the
+project's own reader (``MetadataFileReader``) and checked by ``MetadataVerifier``, and only clean
+files reach Photos. A file with anything off the allowlist is never saved (fail closed).
+
 Related documentation in the repository:
 
 - `docs/ARCHITECTURE.md`: the modules and the flow from capture to Photos.
@@ -52,6 +57,39 @@ Related documentation in the repository:
 - ``CaptureFormat``
 - ``CaptureRequest``
 - ``CapturedPhoto``
+
+### Settings
+
+- ``SaveSettings``
+- ``DevelopedLook``
+- ``MetadataSettings``
+- ``MetadataItem``
+
+### Saving
+
+- ``PhotoSaver``
+- ``SavedPhoto``
+- ``SignatureStatus``
+- ``PhotoFile``
+- ``PhotoDeveloping``
+- ``PhotoSigning``
+- ``MetadataReading``
+- ``MetadataReadBack``
+- ``PhotoLibrary``
+- ``PhotoLibraryAsset``
+
+### Metadata allowlist and read-back
+
+- ``MetadataPlan``
+- ``MetadataAllowlist``
+- ``MetadataField``
+- ``LockedMetadata``
+- ``ImageIOKey``
+- ``TIFFDirectory``
+- ``MetadataFileReader``
+- ``MetadataInventory``
+- ``MetadataVerifier``
+- ``MetadataViolation``
 
 ### Hardware
 

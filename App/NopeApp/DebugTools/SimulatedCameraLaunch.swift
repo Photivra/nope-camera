@@ -32,6 +32,11 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; no lens has Bayer RAW, like an iPad without RAW, so every
         /// photo is the labeled fallback.
         case noRAW
+        /// Access already allowed; every finished file fails the metadata read-back (a simulated
+        /// future system tag), so nothing is saved.
+        case metadataRejected
+        /// Access already allowed; adding to the photo library is not allowed.
+        case photosDenied
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -53,12 +58,28 @@ enum SimulatedCameraLaunch {
         Lens(id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil),
     ]
 
+    /// The scenario in the launch arguments, or `nil` without one.
+    static var scenario: Scenario? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count else { return nil }
+        return Scenario(rawValue: arguments[index + 1])
+    }
+
+    /// The simulated save pipeline for the scenario in the launch arguments, or `nil` without
+    /// one. Nothing touches the Simulator's photo library.
+    ///
+    /// - Parameter appVersion: The app's version.
+    static func saver(appVersion: String) -> PhotoSaver? {
+        guard let scenario else { return nil }
+        return PhotoSaver(
+            developer: SimulatedDeveloper(), signer: nil,
+            reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
+    }
+
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
     static func backend() -> SimulatedCaptureBackend? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count,
-            let scenario = Scenario(rawValue: arguments[index + 1])
-        else { return nil }
+        guard let scenario else { return nil }
         let capabilities = DeviceCapabilities(lenses: lenses)
         switch scenario {
         case .allow:
@@ -80,6 +101,8 @@ enum SimulatedCameraLaunch {
         case .noRAW:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: lensesWithoutRAW))
+        case .metadataRejected, .photosDenied:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:
