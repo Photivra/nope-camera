@@ -232,6 +232,9 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The arrangement ``CameraLayout`` chooses for the available space.
 
+The size is measured with `onGeometryChange` rather than a `GeometryReader` around the
+content, so the stacked arrangement is laid out exactly as a plain stack.
+
 ## `CameraReadyView/controls`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`

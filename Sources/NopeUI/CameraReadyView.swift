@@ -62,11 +62,16 @@ struct CameraReadyView<Viewfinder: View, TopBar: View, Controls: View>: View {
         self.controls = controls()
     }
 
+    /// The size of the space the view has, in points, measured as it changes.
+    @State private var size: CGSize = .zero
+
     /// The arrangement ``CameraLayout`` chooses for the available space.
+    ///
+    /// The size is measured with `onGeometryChange` rather than a `GeometryReader` around the
+    /// content, so the stacked arrangement is laid out exactly as a plain stack.
     var body: some View {
-        GeometryReader { proxy in
-            let content = CGSize(
-                width: max(proxy.size.width - 2 * Self.margin, 0), height: max(proxy.size.height - 2 * Self.margin, 0))
+        Group {
+            let content = CGSize(width: max(size.width - 2 * Self.margin, 0), height: max(size.height - 2 * Self.margin, 0))
             switch CameraLayout.arrangement(for: content, isAccessibilitySize: dynamicTypeSize.isAccessibilitySize) {
             case .stacked:
                 stacked
@@ -75,6 +80,8 @@ struct CameraReadyView<Viewfinder: View, TopBar: View, Controls: View>: View {
                     .padding(Self.margin)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
     }
 
     /// The margin around the screen's content, in points: the system's standard padding.
