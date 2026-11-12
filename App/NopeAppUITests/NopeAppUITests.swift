@@ -379,9 +379,6 @@ final class NopeAppUITests: XCTestCase {
         try app.performAccessibilityAudit()
     }
 
-    /// The largest accessibility text size.
-    private static let largestTextSize = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
-
     /// Opens Settings from the camera screen and audits every settings screen: Settings,
     /// Formats, Privacy, Honesty, About and the license text.
     @MainActor

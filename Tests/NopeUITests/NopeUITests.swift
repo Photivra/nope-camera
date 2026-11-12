@@ -78,6 +78,8 @@ struct CameraLayoutTests {
         #expect(CameraLayout.rows(of: [1, 2, 3], perRow: 2) == [[1, 2], [3]])
         #expect(CameraLayout.rows(of: [Int](), perRow: 2).isEmpty)
         #expect(CameraLayout.rows(of: [1, 2], perRow: 0) == [[1], [2]])
+    }
+}
 
 @MainActor
 struct AboutScreenTests {
