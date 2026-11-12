@@ -26,6 +26,12 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; every photo is blank, so the first capture leads to the
         /// "isn't sending a picture" state after one restart.
         case blankPicture
+        /// Access already allowed; the camera then reports iPad multitasking (Split View, Slide
+        /// Over or Stage Manager).
+        case multitasking
+        /// Access already allowed; no lens has Bayer RAW, like an iPad without RAW, so every
+        /// photo is the labeled fallback.
+        case noRAW
         /// Access already allowed; every finished file fails the metadata read-back (a simulated
         /// future system tag), so nothing is saved.
         case metadataRejected
@@ -54,6 +60,11 @@ enum SimulatedCameraLaunch {
         Lens(id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4"),
     ]
 
+    /// Two lenses like an iPad's without RAW: a wide and a front camera, neither with Bayer RAW.
+    static let lensesWithoutRAW: [Lens] = [
+        Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1),
+        Lens(id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil),
+    ]
     /// The `UserDefaults` suite that holds settings during UI tests.
     static let settingsSuiteName = "NopeUITestSettings"
 
@@ -138,6 +149,12 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .captureFailed)
         case .blankPicture:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .blankPicture)
+        case .multitasking:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: capabilities, eventsAfterStart: [.interrupted(.multitasking)])
+        case .noRAW:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: lensesWithoutRAW))
         case .metadataRejected, .photosDenied, .signingFails:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:

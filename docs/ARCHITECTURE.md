@@ -26,8 +26,8 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
-| `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status, Settings button) and `SettingsScreen` (formats, privacy and signing, manual controls, Honesty, About and licenses) | `NopeCore`, SwiftUI |
-| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
+| `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status, Settings button; stacked or side by side), `CameraCommands` (the Camera menu) and `SettingsScreen` (formats, privacy and signing, manual controls, Honesty, About and licenses) | `NopeCore`, SwiftUI |
+| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view, the hardware shutter and the Camera menu, and hosts `NopeUI` | Everything |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -72,7 +72,8 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
    └─ CaptureHardware protocol
         └─ SystemCaptureHardware (AVCaptureSession on a serial queue; device-only, excluded
            from the coverage gate): applies the plan, prepares the output, waits for
-           captureReadiness, captures, and reports interruptions and thermal state
+           captureReadiness, captures, and reports interruptions and thermal state;
+           PreviewRotation (device-only, excluded) keeps the preview and photos upright
 ```
 
 ### Manual controls
@@ -122,7 +123,42 @@ preview crosses the layers as an opaque `CameraPreviewSource`. The AVFoundation 
 is a `CaptureSessionPreviewSource`; the app target's `Viewfinder` view turns it into an
 `AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:settings:viewfinder:)`. The app also
 attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control take a
-photo.
+photo, and adds `CameraCommands`, so Space on a hardware keyboard does too.
+
+The app hands its layer to `CaptureSessionPreviewSource.connect(_:)`. That is the one rotation
+hook: `PreviewRotation` in `NopeCapture` makes an `AVCaptureDevice.RotationCoordinator` (iOS 17)
+for the camera in use and the layer, applies its preview angle to the layer's connection as the
+device turns, and `SystemCaptureHardware` applies its capture angle to the photo output's
+connection before each photo. The photo output records that angle as the photo's Orientation
+tag and doesn't rotate pixels (`AVCaptureSession.h`, `videoRotationAngle`); Orientation is a
+locked metadata item (docs/PRIVACY.md).
+
+### Layout
+
+`CameraLayout` (in `NopeUI`) picks the arrangement from the screen's shape alone, so it works on
+iPhone and iPad, in every orientation and window size:
+
+- **Stacked**, when the space is at least as tall as it is wide: top bar, format badge,
+  viewfinder, status, controls, lens buttons and shutter, top to bottom.
+- **Side by side**, when it is wider than tall: the viewfinder at full height with the format
+  badge on its top edge (so the RAW or no-RAW statement never scrolls away), and everything else
+  in a column on the trailing edge, at least 300 points wide (360 at accessibility text sizes)
+  and at most 45% of the width. The lens buttons are two to a row at every text size. The
+  shutter stays at the bottom of the column; the top bar, controls, status and lens buttons
+  above it scroll when they don't fit, starting scrolled to the bottom.
+
+The camera screen has two slots for more controls: `topBar` (first in the stack, or at the top
+of the column) and `controls` (between the status and the lens buttons, or above the status in
+the column's scrolling part). They are the `topBar:` and `controls:` closures where `CameraScreen` creates
+`CameraReadyView`; an empty slot takes no space.
+
+On iPad, Split View, Slide Over and Stage Manager interrupt the session
+(`videoDeviceNotAvailableWithMultipleForegroundApps`), and the viewfinder says "The camera works
+only when nope. fills the screen." nope. doesn't turn on multitasking camera access: Apple
+documents it for video conferencing apps and apps with the
+`com.apple.developer.avfoundation.multitasking-camera-access` entitlement (`AVCaptureSession.h`,
+`multitaskingCameraAccessSupported`; "Accessing the camera while multitasking"), and the epic
+adds it only if users ask (issue #1, "iPad").
 
 ### From capture to Photos
 

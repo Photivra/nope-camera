@@ -24,47 +24,49 @@ struct Viewfinder: View {
     /// The preview layer, or a placeholder when there is no video.
     var body: some View {
         if let capture = source as? CaptureSessionPreviewSource {
-            CameraPreviewView(session: capture.session)
+            CameraPreviewView(source: capture)
         } else {
             Color(white: 0.12)
         }
     }
 }
 
-/// Shows an `AVCaptureSession` with `AVCaptureVideoPreviewLayer`.
+/// Shows an `AVCaptureSession` with `AVCaptureVideoPreviewLayer`, upright in every orientation.
 ///
 /// The whole frame is shown (`resizeAspect`), so what is framed is what the 4:3 photo
 /// contains. The layer mirrors the front camera's preview by default
 /// (`AVCaptureConnection.automaticallyAdjustsVideoMirroring`); saved photos aren't mirrored.
+/// `CaptureSessionPreviewSource.connect(_:)` attaches the session and rotates the layer with
+/// `AVCaptureDevice.RotationCoordinator`.
 struct CameraPreviewView: UIViewRepresentable {
-    /// The session to show.
-    let session: AVCaptureSession
+    /// The preview handle whose session to show.
+    let source: CaptureSessionPreviewSource
 
     /// Creates the preview view.
     ///
-    /// - Parameter session: The session to show.
-    init(session: AVCaptureSession) {
-        self.session = session
+    /// - Parameter source: The preview handle whose session to show.
+    init(source: CaptureSessionPreviewSource) {
+        self.source = source
     }
 
-    /// Creates the layer-backed view and attaches the session.
+    /// Creates the layer-backed view and connects it to the session.
     ///
     /// - Parameter context: The representable context.
     func makeUIView(context: Context) -> PreviewLayerView {
         let view = PreviewLayerView()
-        view.previewLayer.session = session
         view.previewLayer.videoGravity = .resizeAspect
         view.backgroundColor = .black
+        source.connect(view.previewLayer)
         return view
     }
 
-    /// Reattaches the session if it changed.
+    /// Reconnects the layer if the session changed.
     ///
     /// - Parameters:
     ///   - view: The view.
     ///   - context: The representable context.
     func updateUIView(_ view: PreviewLayerView, context: Context) {
-        if view.previewLayer.session !== session { view.previewLayer.session = session }
+        if view.previewLayer.session !== source.session { source.connect(view.previewLayer) }
     }
 }
 

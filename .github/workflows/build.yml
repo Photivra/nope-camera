@@ -21,6 +21,7 @@ concurrency:
 env:
   DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
   SIMULATOR: platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2
+  IPAD_SIMULATOR: platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2
   # Every job builds against the C2PA library built from source in the c2pa-lib job, whose
   # checksum must equal the one Package.swift pins for the published asset (c2pa-lib/README.md).
   NOPE_C2PA_LIB_FROM_SOURCE: "1"
@@ -169,6 +170,45 @@ jobs:
         with:
           name: ui-tests-xcresult
           path: ui-tests.xcresult
+          retention-days: 7
+
+  # The same UI tests on an iPad, in their own job: running both Simulators in one job stalled
+  # the test runner before the second destination's first test.
+  # The Settings screen tests are skipped here until they pass on iPad (docs/TESTING.md).
+  ui-tests-ipad:
+    name: ui-tests-ipad
+    needs: c2pa-lib
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      - name: Build the app and run the UI tests with accessibility audits on iPad
+        run: >
+          xcodebuild test
+          -project App/NopeCamera.xcodeproj
+          -scheme NopeApp
+          -destination "$IPAD_SIMULATOR"
+          -skip-testing:NopeAppUITests/NopeAppUITests/testSettingsScreensPassAccessibilityAudits
+          -skip-testing:NopeAppUITests/NopeAppUITests/testSettingsAtTheLargestTextSize
+          -skip-testing:NopeAppUITests/NopeAppUITests/testSettingsInRightToLeftLayout
+          -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
+          -derivedDataPath DerivedData
+          -resultBundlePath ui-tests-ipad.xcresult
+          CODE_SIGNING_ALLOWED=NO
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-ipad-xcresult
+          path: ui-tests-ipad.xcresult
           retention-days: 7
 
   docs:

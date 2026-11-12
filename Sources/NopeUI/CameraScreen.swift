@@ -52,9 +52,14 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// The screen's content for the current state.
     public var body: some View {
         // The Settings button sits above the content, not over it, so scrolling content at large
-        // text sizes never passes under it.
+        // text sizes never passes under it. On the ready camera it is in the camera layout's top
+        // bar instead, so in landscape it sits in the controls column and the viewfinder keeps
+        // the full height.
         VStack(spacing: 0) {
-            settingsButton
+            if !isReady {
+                settingsButton
+                    .padding(.horizontal)
+            }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -90,7 +95,11 @@ public struct CameraScreen<Viewfinder: View>: View {
             .buttonBorderShape(.circle)
             .accessibilityShowsLargeContentViewer()
         }
-        .padding(.horizontal)
+    }
+
+    /// Whether the camera is ready, so the Settings button is in the camera layout's top bar.
+    private var isReady: Bool {
+        if case .ready = model.state { true } else { false }
     }
 
     /// The view for the model's current state.
@@ -129,6 +138,10 @@ public struct CameraScreen<Viewfinder: View>: View {
                 } else {
                     Color.black
                 }
+            } topBar: {
+                settingsButton
+            } controls: {
+                // Slot: extra controls beside the shutter, such as manual controls (CameraReadyView).
             }
         }
     }
@@ -170,6 +183,9 @@ struct PermissionRequestView: View {
         ) {
             Button(action: requestAccess) {
                 Text("Allow Camera Access", bundle: .module, comment: "Button that shows the system camera permission prompt.")
+                    // Wraps instead of clipping at large text sizes; the audit reported clipping
+                    // on the iPhone 18 Pro Max Simulator.
+                    .fixedSize(horizontal: false, vertical: true)
             }
             // The bordered style, not the prominent one: white text on the system blue fill
             // fails the accessibility audit's contrast check (WCAG 2.2 AA, 4.5:1) in dark mode.

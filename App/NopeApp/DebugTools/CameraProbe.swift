@@ -17,6 +17,7 @@
 
 @preconcurrency import AVFoundation
 import CoreImage
+import NopeCapture
 import SwiftUI
 import UIKit
 import os
@@ -40,7 +41,8 @@ struct CameraProbeScreen: View {
     /// The full-screen preview and the status line.
     var body: some View {
         ZStack(alignment: .top) {
-            CameraPreviewView(session: probe.session)
+            // The probe has its own session and no rotation: the handle only shows it.
+            CameraPreviewView(source: CaptureSessionPreviewSource(session: probe.session))
                 .ignoresSafeArea()
             Text(verbatim: probe.status)
                 .padding()

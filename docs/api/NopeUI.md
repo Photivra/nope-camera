@@ -192,25 +192,235 @@ internal, declared in `Sources/NopeUI/ControlPanel.swift`
 
 The camera model.
 
+## `CameraCommands`
+
+public, declared in `Sources/NopeUI/CameraCommands.swift`
+
+```swift
+@MainActor struct CameraCommands
+```
+
+The Camera menu: "Take Photo" with the Space bar, for a hardware keyboard on iPad or iPhone.
+
+Menu commands appear in the iPadOS menu bar and in the keyboard shortcuts overlay (hold
+Command), so the shortcut can be discovered there. Return is not a shortcut: a bare Return
+key command, in the menu or on the shutter button, didn't fire in the iOS 27.2 Simulator's
+UI tests, so only Space is offered until a device check shows otherwise. The command sends `CameraIntent.capture`, which the model
+ignores when a photo can't be taken, and it is disabled whenever the shutter is.
+
+Full Keyboard Access keeps the Space bar for the focused control: a key command without
+`wantsPriorityOverSystemBehavior` yields to system behavior (UIKit, `UIKeyCommand`).
+
+Add it to the app's scene:
+
+```swift
+WindowGroup { CameraScreen(model: model) }
+    .commands { CameraCommands(model: model) }
+```
+
+## `CameraCommands/body`
+
+public, declared in `Sources/NopeUI/CameraCommands.swift`
+
+```swift
+@MainActor var body: some Commands { get }
+```
+
+The menu with its one command.
+
+## `CameraCommands/init(model:)`
+
+public, declared in `Sources/NopeUI/CameraCommands.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the Camera menu.
+
+- Parameter model: The model that takes the photo; the same one the camera screen shows.
+
+## `CameraLayout`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+enum CameraLayout
+```
+
+How the camera screen arranges the viewfinder and its controls in the space it has.
+
+The rule depends only on the screen's shape, so it covers iPhone and iPad in every
+orientation and any window size: taller than wide stacks the controls above and below the
+viewfinder; wider than tall puts the viewfinder at full height with the controls in a column
+beside it, as native camera apps do in landscape (issue #1, "iPad": "a wide layout with
+controls beside the viewfinder").
+
+Measured on an iPhone 16 Pro Max in landscape, the stacked layout left the viewfinder an
+800 × 155 pt strip; the side-by-side layout gives it the full height.
+
+## `CameraLayout/accessibilityMinimumColumnWidth`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var accessibilityMinimumColumnWidth: CGFloat { get }
+```
+
+The narrowest controls column at accessibility text sizes, in points, so enlarged text
+wraps onto fewer lines. The column scrolls if it still doesn't fit.
+
+## `CameraLayout/arrangement(for:isAccessibilitySize:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func arrangement(for size: CGSize, isAccessibilitySize: Bool) -> CameraLayout
+```
+
+Chooses the arrangement for the space the screen's content has.
+
+In the side-by-side arrangement the column takes the width a full-height 4:3 viewfinder
+leaves free, kept between the minimum column width and ``maximumColumnFraction`` of the
+width. When the window is too narrow for both limits, the maximum wins, so the viewfinder
+never gets less than its share.
+
+- Parameters:
+  - size: The content's size, in points, inside the safe area and padding.
+  - isAccessibilitySize: Whether the text size is one of the accessibility sizes.
+- Returns: ``stacked`` when the space is at least as tall as it is wide, otherwise
+  ``sideBySide(columnWidth:)``.
+
+## `CameraLayout/lensesPerColumnRow`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var lensesPerColumnRow: Int { get }
+```
+
+The lens buttons per row in the controls column, at every text size.
+
+## `CameraLayout/maximumColumnFraction`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var maximumColumnFraction: CGFloat { get }
+```
+
+The largest share of the width the controls column may take, so the viewfinder always
+keeps more than half the screen.
+
+## `CameraLayout/minimumColumnWidth`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var minimumColumnWidth: CGFloat { get }
+```
+
+The narrowest controls column, in points: two lens buttons side by side with room for
+larger text, so four lenses take two rows above the shutter. One lens per row was taller
+than an iPhone 18 Pro Max's landscape height in the Simulator, and a narrower column
+clipped the buttons' text at larger sizes.
+
+## `CameraLayout/photoAspectRatio`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var photoAspectRatio: CGFloat { get }
+```
+
+The photo's width divided by its height in landscape. The `.photo` session preset
+delivers 4:3 photos, and the viewfinder shows the whole frame (`resizeAspect`).
+
+## `CameraLayout/rows(of:perRow:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func rows<Item>(of items: [Item], perRow: Int) -> [[Item]]
+```
+
+Splits items into rows of a fixed length, keeping their order; the last row is shorter
+when the count doesn't divide evenly.
+
+- Parameters:
+  - items: The items, in display order.
+  - perRow: The number of items per row; values below 1 count as 1.
+- Returns: The rows, or no rows for no items.
+
+## `CameraLayout/sideBySide(columnWidth:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+case sideBySide(columnWidth: CGFloat)
+```
+
+The viewfinder fills the height, with the controls in a column on the trailing edge.
+
+- Parameter columnWidth: The width of the controls column, in points.
+
+## `CameraLayout/spacing`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var spacing: CGFloat { get }
+```
+
+The space between the viewfinder and the controls, in points.
+
+## `CameraLayout/stacked`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+case stacked
+```
+
+Controls above and below the viewfinder: portrait iPhone and iPad.
+
 ## `CameraReadyView`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor struct CameraReadyView<Viewfinder> where Viewfinder : View
+@MainActor struct CameraReadyView<Viewfinder, TopBar, Controls> where Viewfinder : View, TopBar : View, Controls : View
 ```
 
 The camera when it is ready: the format badge, the viewfinder with any pause message, the
 last capture's status, the manual controls when they are on, the lens buttons and the
-shutter.
+shutter, plus two slots for more controls.
+
+``CameraLayout`` picks the arrangement from the screen's shape:
+- **Stacked** (taller than wide): top bar, badge, viewfinder, interval progress, status,
+  manual controls, controls slot, lenses and shutter, top to bottom. At accessibility text
+  sizes the whole screen scrolls with a fixed-height viewfinder, so no control is clipped
+  (AGENTS.md, "Larger Text").
+- **Side by side** (wider than tall): the viewfinder fills the height with the format badge
+  on its top edge, and everything else is in a column on the trailing edge; the shutter
+  stays at its bottom and the rest scrolls when it doesn't fit.
 
 Clean view hides everything but the viewfinder, the shutter and the button that brings the
 controls back; the no-RAW badge, a running interval series and capture results stay. Hidden
 controls stay reachable: the shutter offers "Show Controls" as a VoiceOver action, and Voice
 Control can say it.
 
-At accessibility text sizes the whole screen scrolls, so no control is clipped (AGENTS.md,
-"Larger Text").
+Slots, for controls added to the camera screen:
+- `topBar`: buttons at the top, such as Settings. Stacked: first, above the badge, across the
+  screen's width. Side by side: first, at the top of the column. Supply your own `HStack`,
+  and hide it in clean view (`CameraModel.isCleanView`) if it should be hidden: the slot is
+  always in the layout, because an `if` around an empty slot adds the stack's spacing.
+- `controls`: extra controls, hidden in clean view with the manual controls. Stacked: after
+  the manual controls, above the lens buttons. Side by side: the same order, in the column's
+  scrolling part. Lay them out to fit a
+  300-point column (for example with `ViewThatFits`).
+
+An empty slot takes no space.
 
 ## `CameraReadyView/body`
 
@@ -220,14 +430,27 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor var body: some View { get }
 ```
 
-The badge, viewfinder and controls, scrolling at accessibility text sizes.
+The arrangement ``CameraLayout`` chooses for the available space.
 
-## `CameraReadyView/init(model:lenses:viewfinder:)`
+The size is measured with `onGeometryChange` rather than a `GeometryReader` around the
+content, so the stacked arrangement is laid out exactly as a plain stack.
+
+## `CameraReadyView/controls`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor init(model: CameraModel, lenses: [Lens], @ViewBuilder viewfinder: () -> Viewfinder)
+@MainActor let controls: Controls
+```
+
+The extra controls slot.
+
+## `CameraReadyView/init(model:lenses:viewfinder:topBar:controls:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+@MainActor init(model: CameraModel, lenses: [Lens], @ViewBuilder viewfinder: () -> Viewfinder, @ViewBuilder topBar: () -> TopBar, @ViewBuilder controls: () -> Controls)
 ```
 
 Creates the ready view.
@@ -236,6 +459,8 @@ Creates the ready view.
   - model: The model to render.
   - lenses: The lenses, in display order.
   - viewfinder: Makes the live viewfinder.
+  - topBar: Makes the top bar slot's content.
+  - controls: Makes the extra controls slot's content.
 
 ## `CameraReadyView/lenses`
 
@@ -256,6 +481,16 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 The model to render and send intents to.
+
+## `CameraReadyView/topBar`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+@MainActor let topBar: TopBar
+```
+
+The top bar slot.
 
 ## `CameraReadyView/viewfinder`
 
@@ -1381,14 +1616,19 @@ internal, declared in `Sources/NopeUI/LensPicker.swift`
 @MainActor var body: some View { get }
 ```
 
-The buttons in a row that wraps onto more rows when the text is large.
+The buttons in rows of ``perRow``, or in a row that becomes a column when the text is
+large.
 
-## `LensPicker/init(lenses:selectedID:select:)`
+The landscape column keeps the same rows at every text size: a layout that changes with
+the text size replaces the buttons, and the accessibility audit then reports their text
+as not following Dynamic Type.
+
+## `LensPicker/init(lenses:selectedID:perRow:select:)`
 
 internal, declared in `Sources/NopeUI/LensPicker.swift`
 
 ```swift
-@MainActor init(lenses: [Lens], selectedID: Lens.ID?, select: @escaping (Lens.ID) -> Void)
+@MainActor init(lenses: [Lens], selectedID: Lens.ID?, perRow: Int? = nil, select: @escaping (Lens.ID) -> Void)
 ```
 
 Creates the lens buttons.
@@ -1396,6 +1636,8 @@ Creates the lens buttons.
 - Parameters:
   - lenses: The lenses, in display order.
   - selectedID: The selected lens's identifier.
+  - perRow: A fixed number of buttons per row at every text size, or `nil` for one row
+    that becomes one column when the text is too large to fit.
   - select: Called with a lens's identifier when it is pressed.
 
 ## `LensPicker/lenses`
@@ -1407,6 +1649,17 @@ internal, declared in `Sources/NopeUI/LensPicker.swift`
 ```
 
 The lenses, in display order.
+
+## `LensPicker/perRow`
+
+internal, declared in `Sources/NopeUI/LensPicker.swift`
+
+```swift
+@MainActor let perRow: Int?
+```
+
+A fixed number of buttons per row, as in the landscape controls column, or `nil` to
+choose by fit.
 
 ## `LensPicker/select`
 
@@ -1973,7 +2226,10 @@ The shutter: a large round button, drawn because no system control exists for it
 
 It is 76 points across, larger than the 44-point minimum (AGENTS.md, "Touch targets"), and
 supports VoiceOver, Voice Control ("Take Photo") and the Large Content Viewer. A haptic
-confirms each press. The volume buttons and Camera Control are wired by the app target.
+confirms each press. The volume buttons and Camera Control are wired by the app target, and
+the Space bar by ``CameraCommands``. On iPad it shows a round pointer highlight. It stays at
+the bottom of the screen in portrait and of the controls column in landscape, in reach of the
+thumb in both orientations.
 
 ## `ShutterButton/action`
 

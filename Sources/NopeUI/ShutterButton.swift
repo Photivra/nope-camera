@@ -4,7 +4,10 @@ import SwiftUI
 ///
 /// It is 76 points across, larger than the 44-point minimum (AGENTS.md, "Touch targets"), and
 /// supports VoiceOver, Voice Control ("Take Photo") and the Large Content Viewer. A haptic
-/// confirms each press. The volume buttons and Camera Control are wired by the app target.
+/// confirms each press. The volume buttons and Camera Control are wired by the app target, and
+/// the Space bar by ``CameraCommands``. On iPad it shows a round pointer highlight. It stays at
+/// the bottom of the screen in portrait and of the controls column in landscape, in reach of the
+/// thumb in both orientations.
 struct ShutterButton: View {
     /// Whether a photo can be taken now.
     let isEnabled: Bool
@@ -42,6 +45,9 @@ struct ShutterButton: View {
             .opacity(isEnabled ? 1 : 0.4)
         }
         .buttonStyle(.plain)
+        // A round highlight under the iPad pointer, matching the drawn shape.
+        .contentShape(.hoverEffect, Circle())
+        .hoverEffect(.highlight)
         .disabled(!isEnabled)
         .sensoryFeedback(.impact, trigger: presses)
         .accessibilityLabel(Text("Take Photo", bundle: .module, comment: "VoiceOver and Voice Control name of the shutter button."))

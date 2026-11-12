@@ -881,13 +881,30 @@ final class CaptureSessionPreviewSource
 ```
 
 The AVFoundation backend's preview handle: the capture session, for an
-`AVCaptureVideoPreviewLayer` in the app target.
+`AVCaptureVideoPreviewLayer` in the app target, and the rotation that keeps the viewfinder
+and photos upright.
 
-`NopeCapture` can't import UIKit, so the app creates the preview view and assigns
-``session`` to its layer on the main thread, as Apple's AVCam sample does.
+`NopeCapture` can't import UIKit, so the app creates the preview view and passes its layer to
+``connect(_:)`` on the main thread, as Apple's AVCam sample does.
 
 `@unchecked Sendable`: the session is only handed to a preview layer; all configuration
-happens on ``SystemCaptureHardware``'s serial queue.
+happens on ``SystemCaptureHardware``'s serial queue. ``rotation`` is main-actor isolated.
+
+## `CaptureSessionPreviewSource/connect(_:)`
+
+public, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
+
+```swift
+@MainActor func connect(_ previewLayer: AVCaptureVideoPreviewLayer)
+```
+
+Shows the session in a preview layer and keeps the layer upright in every orientation.
+
+Call it once for each new layer, on the main actor; a later layer replaces the earlier
+one for rotation. The rotation comes from `AVCaptureDevice.RotationCoordinator` (iOS 17),
+which also gives the angle written to each photo's orientation.
+
+- Parameter previewLayer: The app's preview layer.
 
 ## `CaptureSessionPreviewSource/init(session:)`
 
@@ -900,6 +917,17 @@ init(session: AVCaptureSession)
 Creates a preview handle.
 
 - Parameter session: The capture session.
+
+## `CaptureSessionPreviewSource/rotation`
+
+internal, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
+
+```swift
+let rotation: PreviewRotation
+```
+
+Turns the preview and the photos upright for the camera in use; ``SystemCaptureHardware``
+tells it which camera that is.
 
 ## `CaptureSessionPreviewSource/session`
 
@@ -1856,6 +1884,79 @@ static let samplePlaces: Int
 How many places in the buffer are sampled. An assumption, not a platform value: 64
 places spread over the whole buffer can't all land in one flat region of a real scene
 with sensor noise.
+
+## `PreviewRotation`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+@MainActor final class PreviewRotation
+```
+
+Keeps the live viewfinder and captured photos upright in every orientation, with
+`AVCaptureDevice.RotationCoordinator` (iOS 17 and later).
+
+The coordinator reports two angles for the camera in use, relative to gravity
+(`AVCaptureDevice.h`): one for the preview layer, applied to the layer's connection as it
+changes, and one for capture, which ``SystemCaptureHardware`` applies to the photo output's
+connection before each photo. The two can differ for some combinations of device and
+interface orientation, so they are kept apart. Each camera may need a different angle, for
+example a front camera on the landscape edge of an iPad, so a new coordinator is made for each
+camera.
+
+Privacy: setting the photo connection's angle changes no pixels. "In the
+AVCapturePhotoOutput, orientation is handled using Exif tags" (`AVCaptureSession.h`,
+`videoRotationAngle`), so the angle becomes the photo's Orientation, a locked metadata item
+(docs/PRIVACY.md, "Locked").
+
+The coordinator delivers its updates on the main queue, so the class is main-actor isolated;
+only ``captureAngle`` is read from the capture queue, through a lock.
+
+## `PreviewRotation/captureAngle`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+nonisolated var captureAngle: CGFloat? { get }
+```
+
+The angle, in degrees, to apply to the photo output's connection for an upright photo,
+or `nil` when no camera is configured yet. Safe to read from any thread.
+
+## `PreviewRotation/connect(_:)`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+@MainActor func connect(_ previewLayer: AVCaptureVideoPreviewLayer)
+```
+
+Uses a new preview layer.
+
+- Parameter previewLayer: The app's preview layer.
+
+## `PreviewRotation/init()`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+nonisolated init()
+```
+
+Creates a rotation helper with no camera and no layer.
+
+## `PreviewRotation/use(deviceID:)`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+@MainActor func use(deviceID: String)
+```
+
+Follows a newly configured camera. Call it after the camera's input is in the session,
+so the preview layer's connection exists.
+
+- Parameter deviceID: The camera's `AVCaptureDevice.uniqueID`.
 
 ## `ProcessingSwitches`
 
