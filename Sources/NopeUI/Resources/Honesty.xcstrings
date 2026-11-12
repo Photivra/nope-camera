@@ -1,6 +1,72 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%lld photos saved and signed.": {
+      "comment": "Shown after an exposure bracket: each frame was added to the photo library as its own photo, each with a Content Credentials signature. The number is the count of photos, at least 3. Honesty wording: says only that they were saved and signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld Fotos gesichert und signiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld fotos guardadas y firmadas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld photos enregistrées et signées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld foto salvate e firmate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 枚の写真を保存し、署名しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 %lld장을 저장하고 서명했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld foto’s bewaard en ondertekend."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld fotos salvas e assinadas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已保存并签名 %lld 张照片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存並簽署 %lld 張照片。"
+          }
+        }
+      }
+    },
     "Each frame is a separate single-frame photo. Nothing is merged.": {
       "comment": "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.",
       "extractionState": "manual",
@@ -397,6 +463,72 @@
         }
       }
     },
+    "Not saved: nope. couldn't confirm that the photo holds only the details you chose.": {
+      "comment": "Shown when a finished photo file contained a metadata detail that is not on the privacy list, or couldn't be checked, so the app saved nothing. Honesty and privacy wording. Keep the name nope. unchanged, lowercase with its period.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert: nope. konnte nicht bestätigen, dass das Foto nur die von dir gewählten Angaben enthält."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guardó: nope. no pudo confirmar que la foto contiene solo los datos que elegiste."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrée : nope. n’a pas pu confirmer que la photo ne contient que les informations que vous avez choisies."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvata: nope. non è riuscito a confermare che la foto contenga solo i dati che hai scelto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存されませんでした：写真に選択した情報だけが含まれていることを nope. が確認できませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장되지 않음: 사진에 선택한 정보만 포함되어 있는지 nope.가 확인할 수 없었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard: nope. kon niet bevestigen dat de foto alleen de gegevens bevat die je hebt gekozen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não salva: nope. não conseguiu confirmar que a foto contém só os dados que você escolheu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未存储：nope. 无法确认照片只包含你选择的信息。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未儲存：nope. 無法確認照片只包含你選擇的資料。"
+          }
+        }
+      }
+    },
     "RAW · Single frame": {
       "comment": "Badge: the next photo is one unprocessed RAW frame from the sensor. RAW is a file format name.",
       "extractionState": "manual",
@@ -459,6 +591,270 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "RAW · 單一影格"
+          }
+        }
+      }
+    },
+    "Saved and signed.": {
+      "comment": "Shown after a photo was added to the photo library with a Content Credentials signature in every file. Honesty wording: says only that it was saved and signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichert und signiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardada y firmada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrée et signée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvata e firmata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存して署名しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 및 서명됨."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaard en ondertekend."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva e assinada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已存储并签名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存並簽署。"
+          }
+        }
+      }
+    },
+    "Saved. Not signed: signing is off in Settings.": {
+      "comment": "Shown after a photo was saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply the photo is signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichert. Nicht signiert: Das Signieren ist in den Einstellungen deaktiviert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardada. Sin firmar: la firma está desactivada en Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrée. Non signée : la signature est désactivée dans les réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvata. Non firmata: la firma è disattivata nelle impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存しました。署名なし：設定で署名がオフになっています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장됨. 서명되지 않음: 설정에서 서명이 꺼져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaard. Niet ondertekend: ondertekenen staat uit in de instellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva. Não assinada: a assinatura está desativada nos Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已存储。未签名：设置中已关闭签名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存。未簽署：設定中已關閉簽署。"
+          }
+        }
+      }
+    },
+    "Saved. Not signed: the signature couldn't be created.": {
+      "comment": "Shown after a photo was saved without a Content Credentials signature because creating the signature failed. Honesty wording: never imply the photo is signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichert. Nicht signiert: Die Signatur konnte nicht erstellt werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardada. Sin firmar: no se pudo crear la firma."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrée. Non signée : la signature n’a pas pu être créée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvata. Non firmata: non è stato possibile creare la firma."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存しました。署名なし：署名を作成できませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장됨. 서명되지 않음: 서명을 만들 수 없었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaard. Niet ondertekend: de handtekening kon niet worden gemaakt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva. Não assinada: não foi possível criar a assinatura."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已存储。未签名：无法创建签名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存。未簽署：無法建立簽署。"
+          }
+        }
+      }
+    },
+    "Saved. Not signed: this development version can't sign photos yet.": {
+      "comment": "Shown after a photo was saved without a Content Credentials signature because signing isn't built into this development version yet. Honesty wording: never imply the photo is signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichert. Nicht signiert: Diese Entwicklungsversion kann Fotos noch nicht signieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardada. Sin firmar: esta versión de desarrollo aún no puede firmar fotos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrée. Non signée : cette version de développement ne peut pas encore signer les photos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvata. Non firmata: questa versione di sviluppo non può ancora firmare le foto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存しました。署名なし：この開発版はまだ写真に署名できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장됨. 서명되지 않음: 이 개발 버전은 아직 사진에 서명할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaard. Niet ondertekend: deze ontwikkelversie kan nog geen foto’s ondertekenen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva. Não assinada: esta versão de desenvolvimento ainda não pode assinar fotos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已存储。未签名：此开发版本尚无法为照片签名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存。未簽署：此開發版本尚無法簽署照片。"
           }
         }
       }

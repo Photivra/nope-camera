@@ -14,7 +14,7 @@ struct ManualControlsModelTests {
         bracketError: CaptureError? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { _ in }
     ) async -> (CameraModel, ScriptedManualBackend) {
         let backend = ScriptedManualBackend(lenses: lenses, applyErrors: applyErrors, bracketError: bracketError)
-        let model = CameraModel(backend: backend, sleep: sleep)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), sleep: sleep)
         await model.send(.start)
         if enabled { await model.send(.manual(.setEnabled(true))) }
         return (model, backend)
@@ -390,11 +390,12 @@ struct ManualControlsModelTests {
         let frames = try #require(await backend.brackets.first)
         #expect(frames.map(\.exposureDuration) == [0.005, 0.01, 0.02])
         #expect(frames.map(\.iso) == [200, 200, 200])
-        guard case .capturedBracket(let photos) = model.captureStatus else {
-            Issue.record("expected a bracket")
+        guard case .savedBracket(let photos) = model.captureStatus else {
+            Issue.record("expected a saved bracket")
             return
         }
-        #expect(photos.map(\.iso) == [200, 200, 200])
+        #expect(photos.count == 3)
+        #expect(photos.allSatisfy { $0.signature == .unsigned(.unavailable) })
     }
 
     @Test func bracketInShutterPriorityChangesISO() async throws {
@@ -425,9 +426,30 @@ struct ManualControlsModelTests {
         #expect(model.sessionStatus == .running)
     }
 
+    @Test func aBracketWithoutASaverIsNotSaved() async {
+        let backend = ScriptedManualBackend(lenses: [Fixtures.wide])
+        let model = CameraModel(backend: backend)
+        await model.send(.start)
+        await send(model, .setEnabled(true), .setValue(.iso, 100), .setValue(.shutter, 0.01))
+        await send(model, .setBracket(BracketSettings(frameCount: 3, step: 1)))
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.savingUnavailable))
+    }
+
+    @Test func aBracketStopsAtTheFirstFrameThatIsNotSaved() async {
+        let backend = ScriptedManualBackend(lenses: [Fixtures.wide])
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(library: FakeLibrary(error: .saveFailed)))
+        await model.send(.start)
+        await send(model, .setEnabled(true), .setValue(.iso, 100), .setValue(.shutter, 0.01))
+        await send(model, .setBracket(BracketSettings(frameCount: 3, step: 1)))
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.saveFailed))
+    }
+
     @Test func aBackendWithoutBracketsTakesASinglePhoto() async {
         let backend = ScriptedBackend(capabilities: DeviceCapabilities(lenses: [Fixtures.wide]))
-        let model = CameraModel(backend: backend)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
         await model.send(.start)
         await model.send(.manual(.setEnabled(true)))
         await model.send(.manual(.setValue(.iso, 100)))
@@ -435,8 +457,8 @@ struct ManualControlsModelTests {
         await model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
         await model.send(.capture)
         #expect(await backend.captureRequests.count == 1)
-        guard case .captured = model.captureStatus else {
-            Issue.record("expected one photo")
+        guard case .saved = model.captureStatus else {
+            Issue.record("expected one saved photo")
             return
         }
     }
@@ -493,7 +515,7 @@ struct ManualControlsModelTests {
 
     @Test func theDefaultSleepWaitsBetweenPhotos() async {
         let backend = ScriptedManualBackend(lenses: [Fixtures.wide])
-        let model = CameraModel(backend: backend)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
         await model.send(.start)
         await send(model, .setEnabled(true), .setInterval(IntervalSettings(interval: 1, count: 2)), .startInterval)
         let start = ContinuousClock.now

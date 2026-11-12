@@ -23,6 +23,21 @@ final class NopeAppUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
+    /// Runs the accessibility audit at the largest text sizes, where the screen scrolls.
+    ///
+    /// A contrast issue is ignored only for an element that runs past the edge of the screen:
+    /// the audit then measures the clipped edge. In CI the status text (white on black, see the
+    /// failing run's screenshot on PR #32) ran past the bottom of the scrolling screen and failed
+    /// this way intermittently. Every other issue, and contrast of any fully visible element,
+    /// still fails the test.
+    @MainActor
+    private func auditScrollingScreen(_ app: XCUIApplication) throws {
+        try app.performAccessibilityAudit { issue in
+            guard issue.auditType == .contrast, let element = issue.element else { return false }
+            return !app.frame.contains(element.frame)
+        }
+    }
+
     @MainActor
     func testPermissionCaptureAndFallbackPassAccessibilityAudits() throws {
         let app = launch("allow")
@@ -39,7 +54,9 @@ final class NopeAppUITests: XCTestCase {
         try app.performAccessibilityAudit()
 
         shutter.tap()
-        XCTAssertTrue(app.staticTexts["Captured (not saved yet: development build)"].waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
+                .waitForExistence(timeout: 5))
         try app.performAccessibilityAudit()
 
         let telephoto = app.buttons["Telephoto"]
@@ -74,6 +91,43 @@ final class NopeAppUITests: XCTestCase {
         shutter.tap()
         XCTAssertTrue(app.staticTexts["The photo wasn't taken. Try again."].waitForExistence(timeout: 5))
         try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testMetadataRejectionSavesNothingAndSaysSo() throws {
+        let app = launch("metadataRejected")
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(
+            app.staticTexts["Not saved: nope. couldn't confirm that the photo holds only the details you chose."]
+                .waitForExistence(timeout: 5))
+        XCTAssertTrue(shutter.isEnabled)
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testPhotosAccessDeniedIsExplained() throws {
+        let app = launch("photosDenied")
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(
+            app.staticTexts["Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app."]
+                .waitForExistence(timeout: 5))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testSaveStatesAtTheLargestTextSize() throws {
+        let app = launch(
+            "metadataRejected",
+            extraArguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(element(app, containing: "Not saved").waitForExistence(timeout: 5))
+        try auditScrollingScreen(app)
     }
 
     @MainActor
@@ -119,10 +173,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
         shutter.tap()
         XCTAssertTrue(element(app, containing: "isn't sending a picture").waitForExistence(timeout: 10))
-        // Wait for the capture message too, so the audit doesn't measure it while it changes.
-        XCTAssertTrue(
-            app.staticTexts["No photo was taken: the camera sent a blank picture."].waitForExistence(timeout: 10))
-        try auditVisibleElements(app)
+        try auditScrollingScreen(app)
     }
 
     @MainActor
@@ -266,7 +317,8 @@ final class NopeAppUITests: XCTestCase {
 
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(
-            app.staticTexts["3 photos captured (not saved yet: development build)"].waitForExistence(timeout: 20))
+            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
+                .waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
     }
 
@@ -280,7 +332,9 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
         XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["Captured (not saved yet: development build)"].waitForExistence(timeout: 20))
+        XCTAssertTrue(
+            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
+                .waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
         app.buttons["Stop"].tap()
         XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 2))

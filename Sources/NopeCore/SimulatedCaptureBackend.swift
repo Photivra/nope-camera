@@ -137,7 +137,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     ///
     /// - Parameter request: The lens and format of the photo.
     /// - Returns: ``placeholderPhotoData`` labeled with the request's format and lens, the
-    ///   lens's largest photo size (or ``placeholderDimensions``), 1/60 s and ISO 100.
+    ///   lens's largest photo size (or ``placeholderDimensions``), 1/60 s and ISO 100; for Bayer
+    ///   RAW, ``placeholderPhotoData`` is also the reference RAW image data.
     /// - Throws: ``captureError``.
     public func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
         if let captureError { throw captureError }
@@ -147,7 +148,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
             lensID: request.lens.id,
             dimensions: request.lens.photoDimensions.last ?? Self.placeholderDimensions,
             exposureDuration: 1.0 / 60.0,
-            iso: 100
+            iso: 100,
+            rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil
         )
     }
 

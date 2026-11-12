@@ -44,9 +44,18 @@ actor ScriptedManualBackend: ManualCaptureBackend {
 
     func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
         captureCount += 1
+        return Self.photo(for: request, exposureDuration: 0.01, iso: 100)
+    }
+
+    /// A photo whose file is clean for the request's metadata plan, as the real backend writes
+    /// it (the same files `ScriptedBackend` returns).
+    static func photo(for request: CaptureRequest, exposureDuration: Double, iso: Double) -> CapturedPhoto {
+        let isRAW = request.format.isBayerRAW
+        let allowlist = request.metadata.allowlist(for: isRAW ? .raw : .heif, signed: false)
         return CapturedPhoto(
-            data: Data([1]), format: request.format, lensID: request.lens.id,
-            dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: 0.01, iso: 100)
+            data: isRAW ? CleanFiles.dng(for: allowlist) : FakeFiles.heif(for: allowlist), format: request.format,
+            lensID: request.lens.id, dimensions: PhotoDimensions(width: 4, height: 3),
+            exposureDuration: exposureDuration, iso: iso, rawImageData: isRAW ? Data(CleanFiles.rawImageData) : nil)
     }
 
     func applyControls(_ controls: DeviceControls) async throws(CaptureError) {
@@ -64,11 +73,7 @@ actor ScriptedManualBackend: ManualCaptureBackend {
     {
         brackets.append(frames)
         if let bracketError { throw bracketError }
-        return frames.map {
-            CapturedPhoto(
-                data: Data([2]), format: request.format, lensID: request.lens.id,
-                dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: $0.exposureDuration, iso: $0.iso)
-        }
+        return frames.map { Self.photo(for: request, exposureDuration: $0.exposureDuration, iso: $0.iso) }
     }
 }
 

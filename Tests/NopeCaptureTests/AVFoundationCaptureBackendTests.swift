@@ -17,6 +17,7 @@ actor FakeHardware: CaptureHardware {
     let pixelSample: [UInt8]?
     private(set) var configurations: [SessionConfiguration] = []
     private(set) var plans: [PhotoSettingsPlan] = []
+    private(set) var metadataPlans: [MetadataPlan] = []
     private(set) var stopCount = 0
     private(set) var appliedControls: [DeviceControls] = []
     private(set) var readingSwitches: [Bool] = []
@@ -46,17 +47,18 @@ actor FakeHardware: CaptureHardware {
 
     func setReadingsEnabled(_ enabled: Bool) async { readingSwitches.append(enabled) }
 
-    func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError)
-        -> [HardwarePhoto]
+    func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
+        async throws(CaptureError) -> [HardwarePhoto]
     {
         plans.append(plan)
+        metadataPlans.append(metadata)
         bracketFrames.append(frames)
         if let captureError { throw captureError }
         return (0..<(bracketPhotoCount ?? frames.count)).map { index in
             HardwarePhoto(
                 data: Data([UInt8(index)]), dimensions: PhotoDimensions(width: 4032, height: 3024),
                 exposureDuration: frames[min(index, frames.count - 1)].exposureDuration,
-                iso: frames[min(index, frames.count - 1)].iso, pixelSample: pixelSample)
+                iso: frames[min(index, frames.count - 1)].iso, pixelSample: pixelSample, rawImageData: Data([7]))
         }
     }
 
@@ -69,12 +71,13 @@ actor FakeHardware: CaptureHardware {
 
     func stop() async { stopCount += 1 }
 
-    func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto {
+    func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto {
         plans.append(plan)
+        metadataPlans.append(metadata)
         if let captureError { throw captureError }
         return HardwarePhoto(
             data: Data([0x49, 0x49]), dimensions: PhotoDimensions(width: 4032, height: 3024),
-            exposureDuration: 1.0 / 30.0, iso: 400, pixelSample: pixelSample)
+            exposureDuration: 1.0 / 30.0, iso: 400, pixelSample: pixelSample, rawImageData: Data([7]))
     }
 }
 
@@ -160,10 +163,15 @@ struct AVFoundationCaptureBackendTests {
         let hardware = FakeHardware(cameras: Self.cameras)
         let backend = Self.makeBackend(hardware)
         let tele = try await Self.lens(backend, "tele")
-        let request = CaptureRequest(lens: tele)
-        try await backend.startSession(request)
+        var settings = MetadataSettings()
+        settings.set(.location, isOn: true)
+        let plan = MetadataPlan(settings: settings, appVersion: "0.2.0")
+        let request = CaptureRequest(lens: tele, metadata: plan)
+        try await backend.startSession(CaptureRequest(lens: tele))
         let photo = try await backend.capturePhoto(request)
         #expect(photo.data == Data([0x49, 0x49]))
+        #expect(photo.rawImageData == Data([7]))
+        #expect(await hardware.metadataPlans == [plan])
         #expect(photo.format == .processedFallback(.heif))
         #expect(photo.lensID == "tele")
         #expect(photo.dimensions == PhotoDimensions(width: 4032, height: 3024))
@@ -325,6 +333,8 @@ struct ManualCaptureBackendTests {
         let photos = try await backend.captureBracket(request, frames: Self.frames)
         #expect(photos.map(\.exposureDuration) == [0.005, 0.01, 0.02])
         #expect(photos.allSatisfy { $0.lensID == "wide" && $0.format == request.format })
+        #expect(photos.allSatisfy { $0.rawImageData == Data([7]) })
+        #expect(await hardware.metadataPlans == [request.metadata])
         #expect(await hardware.bracketFrames == [Self.frames])
     }
 

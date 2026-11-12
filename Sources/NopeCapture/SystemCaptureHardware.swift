@@ -158,14 +158,14 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     }
 
     /// Waits until the output is ready, then takes one photo.
-    func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto {
+    func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto {
         _ = try await CaptureReadiness.waitUntilReady(
             timeout: Self.readinessTimeoutSeconds, interval: Self.readinessPollSeconds
         ) {
             await self.perform { CaptureReadiness(self.photoOutput.captureReadiness) }
         }
         let result: Result<HardwarePhoto, CaptureError> = await withCheckedContinuation { continuation in
-            queue.async { self.startCapture(plan) { continuation.resume(returning: $0) } }
+            queue.async { self.startCapture(plan, metadata: metadata) { continuation.resume(returning: $0) } }
         }
         return try result.get()
     }
@@ -185,7 +185,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     }
 
     /// Waits until the output is ready, then takes a manual exposure bracket.
-    func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError)
+    func captureBracket(
+        _ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan
+    ) async throws(CaptureError)
         -> [HardwarePhoto]
     {
         _ = try await CaptureReadiness.waitUntilReady(
@@ -201,7 +203,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                 }
                 let settings = PhotoSettingsFactory.makeBracketSettings(
                     for: plan, frames: frames, maxPhotoDimensions: self.appliedMaxDimensions)
-                self.startCapture(settings, device: device) { continuation.resume(returning: $0) }
+                self.startCapture(settings, device: device, plan: plan, metadata: metadata) {
+                    continuation.resume(returning: $0)
+                }
             }
         }
         return try result.get()
@@ -666,16 +670,17 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - plan: The photo settings.
+    ///   - metadata: The plan the file's metadata is built from.
     ///   - completion: Called once with the photo or the error.
     private func startCapture(
-        _ plan: PhotoSettingsPlan, completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
+        _ plan: PhotoSettingsPlan, metadata: MetadataPlan, completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
     ) {
         guard session.isRunning, let device = currentInput?.device else {
             completion(.failure(.notRunning))
             return
         }
         let settings = PhotoSettingsFactory.makeSettings(for: plan, maxPhotoDimensions: appliedMaxDimensions)
-        startCapture(settings, device: device) { result in
+        startCapture(settings, device: device, plan: plan, metadata: metadata) { result in
             completion(result.flatMap { photos in photos.first.map { .success($0) } ?? .failure(.captureFailed) })
         }
     }
@@ -686,14 +691,17 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// - Parameters:
     ///   - settings: The photo or bracket settings.
     ///   - device: The attached camera.
+    ///   - plan: The photo settings plan, which gives the file format.
+    ///   - metadata: The plan each file's metadata is built from.
     ///   - completion: Called once with the photos or the error.
     private func startCapture(
-        _ settings: AVCapturePhotoSettings, device: AVCaptureDevice,
+        _ settings: AVCapturePhotoSettings, device: AVCaptureDevice, plan: PhotoSettingsPlan, metadata: MetadataPlan,
         completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void
     ) {
         let id = settings.uniqueID
         let delegate = PhotoCaptureDelegate(
-            exposureDuration: device.exposureDuration.seconds, iso: Double(device.iso)
+            exposureDuration: device.exposureDuration.seconds, iso: Double(device.iso), metadata: metadata,
+            format: CapturePolicy.fileFormat(of: plan)
         ) { result in
             self.queue.async { self.captureDelegates[id] = nil }
             completion(result)
@@ -725,19 +733,22 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     }
 }
 
-/// Receives one capture's callbacks (one photo, or every frame of a bracket) and reports the
-/// photos once the capture finishes.
+/// Receives one capture's callbacks (one photo, or every frame of a bracket) and reports the photo once the capture finishes.
 ///
 /// `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
-/// capture, and `photos` and `failed` are only touched in them.
+/// capture, and `result` is only touched in them.
 final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unchecked Sendable {
     /// The camera's exposure duration just before the capture, in seconds.
     private let exposureDuration: Double
     /// The camera's ISO just before the capture.
     private let iso: Double
+    /// The plan the file's metadata is built from.
+    private let metadata: MetadataPlan
+    /// The format of the file, which chooses its allowlist.
+    private let format: PhotoFormat
     /// Called once with the result.
     private let completion: @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void
-    /// The photos delivered so far.
+    /// The photos delivered so far: one, or one per bracket frame.
     private var photos: [HardwarePhoto] = []
     /// Whether any photo failed.
     private var failed = false
@@ -747,32 +758,45 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
     /// - Parameters:
     ///   - exposureDuration: The exposure duration before the capture, in seconds.
     ///   - iso: The ISO before the capture.
+    ///   - metadata: The plan the file's metadata is built from.
+    ///   - format: The file's format.
     ///   - completion: Called once with the result.
     init(
-        exposureDuration: Double, iso: Double,
+        exposureDuration: Double, iso: Double, metadata: MetadataPlan, format: PhotoFormat,
         completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void
     ) {
         self.exposureDuration = exposureDuration
         self.iso = iso
+        self.metadata = metadata
+        self.format = format
         self.completion = completion
     }
 
-    /// Keeps the photo's file bytes, or records the failure. Privacy: the bytes stay in memory.
-    /// A bracket frame reports the exposure it was asked for; a single photo the exposure read
-    /// before the capture.
+    /// Writes the photo's file with metadata built from the allowlist, keeps the reference RAW
+    /// image data, or records the failure.
+    ///
+    /// Privacy rule: the file is flattened with ``MetadataCustomizer``, so its metadata is the
+    /// dictionary `MetadataPlan` built from the allowlist, never the system's full metadata
+    /// with known tags deleted (AGENTS.md, "Build metadata from the allowlist"). For RAW, the
+    /// system's own DNG is flattened too, only to copy its RAW image data as the reference the
+    /// read-back compares with; that DNG is dropped at once. The bytes stay in memory. A bracket
+    /// frame reports the exposure it was asked for; a single photo the exposure read before the
+    /// capture.
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?) {
-        guard error == nil, let data = photo.fileDataRepresentation() else {
+        let customizer = MetadataCustomizer(properties: metadata.properties(for: format, from: photo.metadata))
+        guard error == nil, let data = photo.fileDataRepresentation(with: customizer) else {
             failed = true
             return
         }
+        let rawImageData = photo.isRawPhoto ? photo.fileDataRepresentation().flatMap(MetadataFileReader.rawImageData(ofDNG:)) : nil
         let size = photo.isRawPhoto ? photo.resolvedSettings.rawPhotoDimensions : photo.resolvedSettings.photoDimensions
         let frame = photo.bracketSettings as? AVCaptureManualExposureBracketedStillImageSettings
         photos.append(
             HardwarePhoto(
                 data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
                 exposureDuration: frame.map { $0.exposureDuration.seconds } ?? exposureDuration,
-                iso: frame.map { Double($0.iso) } ?? iso,
-                pixelSample: photo.pixelBuffer.flatMap(Self.sample)))
+                iso: frame.map { Double($0.iso) } ?? iso, pixelSample: photo.pixelBuffer.flatMap(Self.sample),
+                rawImageData: rawImageData))
     }
 
     /// Reads the bytes at ``PictureCheck/sampleOffsets(byteCount:)`` from the buffer's first
@@ -804,5 +828,29 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
         error: (any Error)?
     ) {
         completion(error == nil && !failed && !photos.isEmpty ? .success(photos) : .failure(.captureFailed))
+    }
+}
+
+/// Supplies the metadata a photo's file is written with.
+///
+/// `AVCapturePhotoOutput.h` documents `replacementMetadata(for:)`: "To replace metadata, pass a
+/// replacement dictionary", and the dictionary takes keys from `ImageIO/CGImageProperties.h`.
+/// The dictionary is `MetadataPlan.properties(for:from:orientation:)`, built from the
+/// allowlist. Whether AVFoundation adds anything beyond it is checked on every file by the
+/// read-back, and on a device by the tag check (docs/TESTING.md).
+final class MetadataCustomizer: NSObject, AVCapturePhotoFileDataRepresentationCustomizer {
+    /// The replacement metadata. Built once and never mutated.
+    private let properties: [String: Any]
+
+    /// Creates a customizer.
+    ///
+    /// - Parameter properties: The metadata to write.
+    init(properties: [String: Any]) {
+        self.properties = properties
+    }
+
+    /// Returns the allowlisted metadata, which replaces the photo's own.
+    func replacementMetadata(for photo: AVCapturePhoto) -> [String: Any]? {
+        properties
     }
 }

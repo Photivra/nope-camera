@@ -133,72 +133,6 @@
         }
       }
     },
-    "%lld photos captured (not saved yet: development build)": {
-      "comment": "Shown after an exposure bracket is taken: the number of separate photos. In this development version photos are kept in memory and not saved to Photos.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld Fotos aufgenommen (noch nicht gesichert: Entwicklungsversion)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld fotos capturadas (aún no se guardan: versión de desarrollo)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld photos prises (pas encore enregistrées : version de développement)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld foto scattate (non ancora salvate: versione di sviluppo)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld 枚撮影済み（まだ保存されません：開発版）"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld장 촬영됨(아직 저장되지 않음: 개발 빌드)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld foto’s vastgelegd (nog niet bewaard: ontwikkelversie)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "%lld fotos capturadas (ainda não salvas: versão de desenvolvimento)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已拍摄 %lld 张（尚未保存：开发版本）"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已拍攝 %lld 張（尚未儲存：開發版本）"
-          }
-        }
-      }
-    },
     "%lld set manually": {
       "comment": "How many manual controls the person has set. The number is a count of controls.",
       "extractionState": "manual",
@@ -723,72 +657,6 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "需要取用相機"
-          }
-        }
-      }
-    },
-    "Captured (not saved yet: development build)": {
-      "comment": "Shown after a photo is taken. In this development version photos are kept in memory and not saved to Photos.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Aufgenommen (noch nicht gesichert: Entwicklungsversion)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Capturada (aún no se guarda: versión de desarrollo)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Photo prise (pas encore enregistrée : version de développement)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Scattata (non ancora salvata: versione di sviluppo)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "撮影済み（まだ保存されません：開発版）"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "촬영됨(아직 저장되지 않음: 개발 빌드)"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Vastgelegd (nog niet bewaard: ontwikkelversie)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Capturada (ainda não salva: versão de desenvolvimento)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已拍摄（尚未保存：开发版本）"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已拍攝（尚未儲存：開發版本）"
           }
         }
       }
@@ -2971,6 +2839,270 @@
         }
       }
     },
+    "Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app.": {
+      "comment": "Shown when the person hasn't allowed the app to add photos to their photo library. Keep the name nope. unchanged, lowercase with its period.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert: nope. darf keine Fotos hinzufügen. Du kannst es in der App „Einstellungen“ erlauben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guardó: nope. no tiene permiso para añadir fotos. Puedes permitirlo en la app Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrée : nope. n’est pas autorisé à ajouter des photos. Vous pouvez l’autoriser dans l’app Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvata: nope. non ha il permesso di aggiungere foto. Puoi consentirlo nell’app Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存されませんでした：nope. には写真を追加する許可がありません。「設定」アプリで許可できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장되지 않음: nope.에 사진 추가 권한이 없습니다. 설정 앱에서 허용할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard: nope. mag geen foto’s toevoegen. Je kunt dit toestaan in de app Instellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não salva: nope. não tem permissão para adicionar fotos. Você pode permitir no app Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未存储：nope. 没有添加照片的权限。你可以在“设置”App 中允许。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未儲存：nope. 沒有加入照片的權限。你可以在「設定」App 中允許。"
+          }
+        }
+      }
+    },
+    "Not saved: the photo couldn't be developed. Try again.": {
+      "comment": "Shown when the app couldn't turn the RAW photo into a HEIF or JPEG file, so nothing was saved. HEIF and JPEG are not mentioned to keep it short.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert: Das Foto konnte nicht entwickelt werden. Versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guardó: no se pudo revelar la foto. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrée : la photo n’a pas pu être développée. Réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvata: non è stato possibile sviluppare la foto. Riprova."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存されませんでした：写真を現像できませんでした。もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장되지 않음: 사진을 현상할 수 없었습니다. 다시 시도하십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard: de foto kon niet worden ontwikkeld. Probeer het opnieuw."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não salva: não foi possível revelar a foto. Tente novamente."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未存储：无法冲洗照片。请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未儲存：無法沖洗照片。請再試一次。"
+          }
+        }
+      }
+    },
+    "Not saved: the photo library couldn't add the photo. Try again.": {
+      "comment": "Shown when the system photo library reported an error while adding the photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert: Die Fotomediathek konnte das Foto nicht hinzufügen. Versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guardó: la fototeca no pudo añadir la foto. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrée : la photothèque n’a pas pu ajouter la photo. Réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvata: la libreria foto non è riuscita ad aggiungere la foto. Riprova."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存されませんでした：写真ライブラリに写真を追加できませんでした。もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장되지 않음: 사진 보관함에 사진을 추가할 수 없었습니다. 다시 시도하십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard: de fotobibliotheek kon de foto niet toevoegen. Probeer het opnieuw."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não salva: a fototeca não conseguiu adicionar a foto. Tente novamente."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未存储：照片图库无法添加照片。请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未儲存：照片圖庫無法加入照片。請再試一次。"
+          }
+        }
+      }
+    },
+    "Not saved: this version of the app can't save photos.": {
+      "comment": "Shown when this build of the app has no way to save photos, for example in a preview.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert: Diese Version der App kann keine Fotos sichern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guardó: esta versión de la app no puede guardar fotos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrée : cette version de l’app ne peut pas enregistrer de photos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvata: questa versione dell’app non può salvare foto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存されませんでした：このバージョンのアプリでは写真を保存できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장되지 않음: 이 버전의 앱은 사진을 저장할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard: deze versie van de app kan geen foto’s bewaren."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não salva: esta versão do app não pode salvar fotos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未存储：此版本的 App 无法存储照片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未儲存：此版本的 App 無法儲存照片。"
+          }
+        }
+      }
+    },
     "Photos": {
       "comment": "Picker for how many photos an interval series takes.",
       "extractionState": "manual",
@@ -3297,6 +3429,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "重設"
+          }
+        }
+      }
+    },
+    "Saving…": {
+      "comment": "Shown while a photo that was just taken is being checked and added to the photo library.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wird gesichert …"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardando…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrement…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvataggio…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存中…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 중…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaren…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvando…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在存储…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在儲存⋯"
           }
         }
       }

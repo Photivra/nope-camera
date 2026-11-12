@@ -26,6 +26,11 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; every photo is blank, so the first capture leads to the
         /// "isn't sending a picture" state after one restart.
         case blankPicture
+        /// Access already allowed; every finished file fails the metadata read-back (a simulated
+        /// future system tag), so nothing is saved.
+        case metadataRejected
+        /// Access already allowed; adding to the photo library is not allowed.
+        case photosDenied
         /// Access already allowed; lenses with manual controls: the wide lens has every control,
         /// including a variable aperture and S and I modes; the ultra wide has a fixed aperture
         /// and only P and M; the front camera has no manual focus. Pair it with
@@ -46,6 +51,24 @@ enum SimulatedCameraLaunch {
         Lens(id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4"),
     ]
 
+    /// The scenario in the launch arguments, or `nil` without one.
+    static var scenario: Scenario? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count else { return nil }
+        return Scenario(rawValue: arguments[index + 1])
+    }
+
+    /// The simulated save pipeline for the scenario in the launch arguments, or `nil` without
+    /// one. Nothing touches the Simulator's photo library.
+    ///
+    /// - Parameter appVersion: The app's version.
+    static func saver(appVersion: String) -> PhotoSaver? {
+        guard let scenario else { return nil }
+        return PhotoSaver(
+            developer: SimulatedDeveloper(), signer: nil,
+            reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
+    }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
     static let fullManual = ManualCapabilities(
         supportsManualExposure: true, supportsShutterPriority: true, supportsISOPriority: true,
@@ -83,10 +106,7 @@ enum SimulatedCameraLaunch {
 
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
     static func backend() -> SimulatedCaptureBackend? {
-        let arguments = ProcessInfo.processInfo.arguments
-        guard let index = arguments.firstIndex(of: argument), index + 1 < arguments.count,
-            let scenario = Scenario(rawValue: arguments[index + 1])
-        else { return nil }
+        guard let scenario else { return nil }
         let capabilities = DeviceCapabilities(lenses: lenses)
         switch scenario {
         case .allow:
@@ -102,6 +122,8 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .captureFailed)
         case .blankPicture:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .blankPicture)
+        case .metadataRejected, .photosDenied:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))

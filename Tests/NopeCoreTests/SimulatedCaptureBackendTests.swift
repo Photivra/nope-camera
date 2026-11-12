@@ -44,11 +44,13 @@ struct SimulatedCaptureBackendTests {
         #expect(photo.lensID == "wide")
         #expect(photo.dimensions == SimulatedCaptureBackend.placeholderDimensions)
         #expect(photo.iso == 100)
+        #expect(photo.rawImageData == SimulatedCaptureBackend.placeholderPhotoData)
 
         let small = PhotoDimensions(width: 4, height: 3)
         let big = PhotoDimensions(width: 8, height: 6)
         let lens = Lens(id: "t", kind: .telephoto, bayerRAWFormat: nil, photoDimensions: [small, big])
         #expect(try await backend.capturePhoto(CaptureRequest(lens: lens)).dimensions == big)
+        #expect(try await backend.capturePhoto(CaptureRequest(lens: lens)).rawImageData == nil)
     }
 
     @Test func captureCanFail() async {

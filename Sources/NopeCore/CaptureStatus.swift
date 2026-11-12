@@ -10,19 +10,25 @@ public enum CaptureStatus: Equatable, Sendable {
     /// A photo is being taken. Keep the shutter disabled until it finishes.
     case capturing
 
-    /// A photo was taken and is held in memory only.
-    ///
-    /// In this development stage nothing is saved. Say so plainly: "Captured (not saved yet:
-    /// development build)". Announce it to VoiceOver.
-    case captured(CapturedPhoto)
+    /// The photo was taken and its files are being built, checked and saved. Keep the shutter
+    /// disabled until it finishes.
+    case saving
 
-    /// An exposure bracket was taken: separate single-frame photos, nothing merged, held in
-    /// memory only, darkest first.
+    /// The photo passed the metadata read-back and was added to Photos.
     ///
-    /// Say how many photos were taken, with the same development-build wording as
-    /// ``captured(_:)``, and announce it.
-    case capturedBracket([CapturedPhoto])
+    /// Say that it was saved, and whether it is signed: "Saved and signed", or "Saved to
+    /// Photos. Not signed:" with the ``SignatureStatus/UnsignedReason``. Announce it to
+    /// VoiceOver.
+    case saved(SavedPhoto)
 
-    /// The photo wasn't taken. Present the error as its documentation says, and announce it.
+    /// An exposure bracket was taken and every frame was saved as its own photo: separate
+    /// single-frame photos, nothing merged, darkest first.
+    ///
+    /// Say how many photos were saved, and whether all of them are signed; when one isn't,
+    /// say why, as for ``saved(_:)``. Announce it to VoiceOver.
+    case savedBracket([SavedPhoto])
+
+    /// The photo wasn't taken or wasn't saved. Present the error as its documentation says, and
+    /// announce it.
     case failed(CaptureError)
 }

@@ -152,6 +152,15 @@ enum CapturePolicy {
         )
     }
 
+    /// The format of the file a plan produces: DNG for RAW, otherwise the processed format.
+    ///
+    /// - Parameter plan: The photo plan.
+    /// - Returns: The file's format, which chooses its metadata allowlist.
+    static func fileFormat(of plan: PhotoSettingsPlan) -> PhotoFormat {
+        guard plan.rawPixelFormat == nil else { return .raw }
+        return plan.processedFormat == .jpeg ? .jpeg : .heif
+    }
+
     /// The photo settings for a format: a RAW-only capture with no processed image for Bayer
     /// RAW (capability survey, item 12), or one processed image for the fallback.
     ///

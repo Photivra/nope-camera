@@ -51,7 +51,8 @@ In the ready state, render:
 - the lenses from the capabilities, with ``CameraModel/selectedLensID`` marked;
 - ``CameraModel/captureFormat``: say plainly when it is the processed fallback;
 - ``CameraModel/sessionStatus``: each case's documentation says what to show;
-- ``CameraModel/captureStatus``: announce each result;
+- ``CameraModel/captureStatus``: announce each result. A saved photo's
+  ``SavedPhoto/signature`` must be shown: never present an unsigned photo as signed;
 - a viewfinder for ``CameraModel/previewSource``. `NopeCore` can't show video, so the app target
   gives your interface a view for the handle; the standard app uses `AVCaptureVideoPreviewLayer`.
 

@@ -14,7 +14,8 @@ The real `CaptureBackend`: the device's cameras through AVFoundation.
 
 It discovers physical cameras only, publishes their capabilities as plain values, and
 captures single-frame Bayer RAW, or the labeled processed fallback on a lens without Bayer
-RAW. Photos are returned in memory; nothing is written to a file or saved.
+RAW. Each photo's file is written with metadata built from the request's allowlist plan and
+returned in memory; nothing is written to disk or saved here (`PhotoSaver` saves it).
 
 The decisions live here and in ``LensCatalog`` and ``CapturePolicy``, all tested with fakes.
 The calls that need a camera are in ``SystemCaptureHardware``, which is excluded from the
@@ -611,35 +612,47 @@ Sets exposure, focus, white balance and metering on the attached camera.
 - Throws: `CaptureError.notRunning` if no camera is attached, or
   `CaptureError.configurationFailed` if the camera can't be locked for configuration.
 
-## `CaptureHardware/capture(_:)`
+## `CaptureHardware/capture(_:metadata:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 
 ```swift
-func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto
 ```
 
-Takes one photo.
+Takes one photo and writes its file with metadata built from the allowlist.
 
-- Parameter plan: The photo settings to use.
-- Returns: The file bytes, a few bytes sampled from the photo's pixel buffer, and capture
-  details.
+The file is flattened with `AVCapturePhoto.fileDataRepresentation(with:)` and a
+customizer whose `replacementMetadata(for:)` returns
+`MetadataPlan.properties(for:from:orientation:)` for the system's metadata: the header
+says the returned dictionary replaces the photo's metadata (`AVCapturePhotoOutput.h`,
+`AVCapturePhotoFileDataRepresentationCustomizer`). AVFoundation itself writes the RAW
+image data, so the sensor data isn't re-encoded by nope. For a RAW photo the system's
+own DNG is also flattened once, only to keep its RAW image data as a reference.
+
+- Parameters:
+  - plan: The photo settings to use.
+  - metadata: The plan the file's metadata is built from.
+- Returns: The file bytes, the reference RAW image data, a few bytes sampled from the
+  photo's pixel buffer, and capture details.
 - Throws: `CaptureError.notRunning` if the session isn't running, or
   `CaptureError.captureFailed` if the system reports an error or no file.
 
-## `CaptureHardware/captureBracket(_:frames:)`
+## `CaptureHardware/captureBracket(_:frames:metadata:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 
 ```swift
-func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError) -> [HardwarePhoto]
+func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan) async throws(CaptureError) -> [HardwarePhoto]
 ```
 
-Takes a manual exposure bracket: one photo per frame.
+Takes a manual exposure bracket: one photo per frame, each file written with metadata
+built from the plan, as for ``capture(_:metadata:)``.
 
 - Parameters:
   - plan: The photo settings each frame uses.
   - frames: Each frame's ISO and exposure duration.
+  - metadata: The plan each file's metadata is built from.
 - Returns: The photos, in the order the system delivered them.
 - Throws: `CaptureError.notRunning` if the session isn't running, or
   `CaptureError.captureFailed` if the system reports an error.
@@ -738,6 +751,19 @@ enum CapturePolicy
 ```
 
 Turns a `NopeCore` capture request into hardware settings.
+
+## `CapturePolicy/fileFormat(of:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+static func fileFormat(of plan: PhotoSettingsPlan) -> PhotoFormat
+```
+
+The format of the file a plan produces: DNG for RAW, otherwise the processed format.
+
+- Parameter plan: The photo plan.
+- Returns: The file's format, which chooses its metadata allowlist.
 
 ## `CapturePolicy/photoSettings(for:)`
 
@@ -942,7 +968,8 @@ internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 let data: Data
 ```
 
-The file bytes from `AVCapturePhoto.fileDataRepresentation()`.
+The file bytes from `AVCapturePhoto.fileDataRepresentation(with:)`, with metadata built
+from the allowlist.
 
 ## `HardwarePhoto/dimensions`
 
@@ -964,12 +991,12 @@ let exposureDuration: Double?
 
 The exposure duration read just before the capture, in seconds.
 
-## `HardwarePhoto/init(data:dimensions:exposureDuration:iso:pixelSample:)`
+## `HardwarePhoto/init(data:dimensions:exposureDuration:iso:pixelSample:rawImageData:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 
 ```swift
-init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?)
+init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?, rawImageData: Data? = nil)
 ```
 
 Creates a photo result.
@@ -980,6 +1007,7 @@ Creates a photo result.
   - exposureDuration: The exposure duration before the capture, in seconds.
   - iso: The ISO before the capture.
   - pixelSample: The sampled pixel buffer bytes, or `nil`.
+  - rawImageData: The reference RAW image data, or `nil`.
 
 ## `HardwarePhoto/iso`
 
@@ -1002,6 +1030,17 @@ let pixelSample: [UInt8]?
 The bytes at ``PictureCheck/sampleOffsets(byteCount:)`` of the photo's pixel buffer, or
 `nil` when the photo has none (a compressed HEIF or JPEG). Used only to detect a blank
 buffer; never stored or logged.
+
+## `HardwarePhoto/rawImageData`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+let rawImageData: Data?
+```
+
+For RAW, the RAW image data of the system's own DNG (`MetadataFileReader.rawImageData(ofDNG:)`);
+`nil` for a processed photo.
 
 ## `HeatLevel/init(_:)`
 
@@ -1256,6 +1295,44 @@ let shutterPriority: Bool
 
 iOS 27: `supportsExposureModeCustom(lensAperture: autoLensAperture, duration: currentExposureDuration, iso: autoISO)`.
 
+## `MetadataCustomizer`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+final class MetadataCustomizer
+```
+
+Supplies the metadata a photo's file is written with.
+
+`AVCapturePhotoOutput.h` documents `replacementMetadata(for:)`: "To replace metadata, pass a
+replacement dictionary", and the dictionary takes keys from `ImageIO/CGImageProperties.h`.
+The dictionary is `MetadataPlan.properties(for:from:orientation:)`, built from the
+allowlist. Whether AVFoundation adds anything beyond it is checked on every file by the
+read-back, and on a device by the tag check (docs/TESTING.md).
+
+## `MetadataCustomizer/init(properties:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+init(properties: [String : Any])
+```
+
+Creates a customizer.
+
+- Parameter properties: The metadata to write.
+
+## `MetadataCustomizer/replacementMetadata(for:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func replacementMetadata(for photo: AVCapturePhoto) -> [String : Any]?
+```
+
+Returns the allowlisted metadata, which replaces the photo's own.
+
 ## `MeteringRegion`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
@@ -1350,18 +1427,17 @@ internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 final class PhotoCaptureDelegate
 ```
 
-Receives one capture's callbacks (one photo, or every frame of a bracket) and reports the
-photos once the capture finishes.
+Receives one capture's callbacks (one photo, or every frame of a bracket) and reports the photo once the capture finishes.
 
 `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
-capture, and `photos` and `failed` are only touched in them.
+capture, and `result` is only touched in them.
 
-## `PhotoCaptureDelegate/init(exposureDuration:iso:completion:)`
+## `PhotoCaptureDelegate/init(exposureDuration:iso:metadata:format:completion:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 
 ```swift
-init(exposureDuration: Double, iso: Double, completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void)
+init(exposureDuration: Double, iso: Double, metadata: MetadataPlan, format: PhotoFormat, completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void)
 ```
 
 Creates a delegate for one capture.
@@ -1369,6 +1445,8 @@ Creates a delegate for one capture.
 - Parameters:
   - exposureDuration: The exposure duration before the capture, in seconds.
   - iso: The ISO before the capture.
+  - metadata: The plan the file's metadata is built from.
+  - format: The file's format.
   - completion: Called once with the result.
 
 ## `PhotoCaptureDelegate/photoOutput(_:didFinishCaptureFor:error:)`
@@ -1390,9 +1468,174 @@ internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?)
 ```
 
-Keeps the photo's file bytes, or records the failure. Privacy: the bytes stay in memory.
-A bracket frame reports the exposure it was asked for; a single photo the exposure read
-before the capture.
+Writes the photo's file with metadata built from the allowlist, keeps the reference RAW
+image data, or records the failure.
+
+Privacy rule: the file is flattened with ``MetadataCustomizer``, so its metadata is the
+dictionary `MetadataPlan` built from the allowlist, never the system's full metadata
+with known tags deleted (AGENTS.md, "Build metadata from the allowlist"). For RAW, the
+system's own DNG is flattened too, only to copy its RAW image data as the reference the
+read-back compares with; that DNG is dropped at once. The bytes stay in memory. A bracket
+frame reports the exposure it was asked for; a single photo the exposure read before the
+capture.
+
+## `PhotoKitLibrary`
+
+public, declared in `Sources/NopeCapture/PhotoKitLibrary.swift`
+
+```swift
+struct PhotoKitLibrary
+```
+
+Adds photos to the photo library with add-only access (PhotoKit).
+
+Thin adapter: asking for access shows a system prompt and adding changes the person's
+library, so a unit test can't run it. It is excluded from the coverage gate and verified on a
+device (docs/TESTING.md); its decisions are in ``PhotoKitMapping``.
+
+- Access: `PHPhotoLibrary.requestAuthorization(for: .addOnly)`, which uses the localized
+  `NSPhotoLibraryAddUsageDescription`. Add-only access can't read the library.
+- Adding: one `PHPhotoLibrary.performChanges` call; each `PhotoLibraryAsset` becomes one
+  `PHAssetCreationRequest` with its files added from memory
+  (`addResource(with:data:options:)`), so no temporary file is written. No location or
+  creation date is set on the asset.
+
+## `PhotoKitLibrary/add(_:)`
+
+public, declared in `Sources/NopeCapture/PhotoKitLibrary.swift`
+
+```swift
+func add(_ assets: [PhotoLibraryAsset]) async throws(CaptureError)
+```
+
+Asks for add-only access if it hasn't been asked yet, then adds every asset in one change.
+
+- Parameter assets: The assets to add.
+- Throws: `CaptureError.photosAccessDenied` without access, or `CaptureError.saveFailed`
+  if PhotoKit reports an error.
+
+## `PhotoKitLibrary/init()`
+
+public, declared in `Sources/NopeCapture/PhotoKitLibrary.swift`
+
+```swift
+init()
+```
+
+Creates the library adapter.
+
+## `PhotoKitMapping`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+enum PhotoKitMapping
+```
+
+The PhotoKit decisions behind ``PhotoKitLibrary``, as plain functions so they are tested
+without a photo library.
+
+## `PhotoKitMapping/Resource`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+struct Resource
+```
+
+One resource to add to a new asset.
+
+## `PhotoKitMapping/Resource/file`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let file: PhotoFile
+```
+
+The file.
+
+## `PhotoKitMapping/Resource/init(type:file:typeIdentifier:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+init(type: PHAssetResourceType, file: PhotoFile, typeIdentifier: String)
+```
+
+Creates a resource.
+
+- Parameters:
+  - type: The resource type.
+  - file: The file.
+  - typeIdentifier: The file's uniform type identifier.
+
+## `PhotoKitMapping/Resource/type`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let type: PHAssetResourceType
+```
+
+The resource type: `.photo` for the asset's main file, `.alternatePhoto` for the
+processed file paired with a RAW.
+
+## `PhotoKitMapping/Resource/typeIdentifier`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let typeIdentifier: String
+```
+
+The file's uniform type identifier, passed as
+`PHAssetResourceCreationOptions.uniformTypeIdentifier`.
+
+## `PhotoKitMapping/canAdd(_:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func canAdd(_ status: PHAuthorizationStatus) -> Bool
+```
+
+Whether an add-only authorization status lets nope. add photos.
+
+`PHAuthorizationStatus.limited` is reported only for read-write access, so for add-only
+access `.authorized` is the only status that allows adding (`PHPhotoLibrary.h`); both are
+accepted here to stay correct if that changes.
+
+- Parameter status: The status for `PHAccessLevel.addOnly`.
+- Returns: `true` if photos can be added.
+
+## `PhotoKitMapping/resources(for:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func resources(for asset: PhotoLibraryAsset) -> [Resource]
+```
+
+The resources of one asset: the main file as `.photo`, and a paired processed file as
+`.alternatePhoto`, as Apple's RAW capture article does ("Capturing Photos in RAW and
+Apple ProRAW Formats", "Save the photos to the photos library").
+
+- Parameter asset: The asset.
+- Returns: The resources, main file first.
+
+## `PhotoKitMapping/typeIdentifier(for:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func typeIdentifier(for format: PhotoFormat) -> String
+```
+
+The uniform type identifier of a format's file.
+
+- Parameter format: The format.
+- Returns: `com.adobe.raw-image` for DNG, `public.heic` or `public.jpeg`.
 
 ## `PhotoSettingsFactory`
 
@@ -1967,22 +2210,22 @@ func apply(_ controls: DeviceControls) async throws(CaptureError)
 
 Sets exposure, focus, white balance and metering on the attached camera, on `queue`.
 
-## `SystemCaptureHardware/capture(_:)`
+## `SystemCaptureHardware/capture(_:metadata:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 
 ```swift
-func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto
 ```
 
 Waits until the output is ready, then takes one photo.
 
-## `SystemCaptureHardware/captureBracket(_:frames:)`
+## `SystemCaptureHardware/captureBracket(_:frames:metadata:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 
 ```swift
-func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError) -> [HardwarePhoto]
+func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan) async throws(CaptureError) -> [HardwarePhoto]
 ```
 
 Waits until the output is ready, then takes a manual exposure bracket.

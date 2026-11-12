@@ -18,7 +18,8 @@ Your interface depends on `NopeCore` only. It does three things:
    `.selectLens(id)` when they pick a lens and `.capture` from your shutter. While it is
    visible, also run `CameraModel.observeEvents()` so interruptions and heat are applied.
    In the ready state, render `sessionStatus`, `captureStatus`, `selectedLensID` and
-   `captureFormat` (say plainly when it is the processed fallback), and enable the shutter only
+   `captureFormat` (say plainly when it is the processed fallback; when `captureStatus` is
+   `.saved`, always say whether the photo is signed), and enable the shutter only
    when `canCapture` is true.
 3. **Holds no rules.** Don't decide privacy, formats, exposure or what the device supports. If
    you need a decision, it belongs in `NopeCore` as state or a capability value.
