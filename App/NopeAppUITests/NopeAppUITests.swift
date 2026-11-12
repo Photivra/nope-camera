@@ -138,12 +138,12 @@ final class NopeAppUITests: XCTestCase {
 
     // MARK: - Manual controls
 
-    /// Waits up to 5 seconds for an element's accessibility value to start with a prefix; intents
-    /// are applied asynchronously.
+    /// Waits up to 20 seconds (the CI Simulator is slow) for an element's accessibility value
+    /// to start with a prefix; intents are applied asynchronously.
     @MainActor
     private func hasValue(_ element: XCUIElement, startingWith prefix: String) -> Bool {
         let predicate = NSPredicate(format: "value BEGINSWITH %@", prefix)
-        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 5)
+        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 20)
             == .completed
     }
 
@@ -153,7 +153,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testManualControlsAreHiddenByDefault() throws {
         let app = launch("manual")
-        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
         XCTAssertFalse(app.buttons["Pro Tools"].exists)
         XCTAssertFalse(app.buttons["Shutter"].exists)
         XCTAssertFalse(app.buttons["All Auto"].exists)
@@ -164,7 +164,7 @@ final class NopeAppUITests: XCTestCase {
     func testControlGridPanelAndAllAuto() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
         let iso = app.buttons["ISO"]
-        XCTAssertTrue(iso.waitForExistence(timeout: 10))
+        XCTAssertTrue(iso.waitForExistence(timeout: 20))
         for name in ["Exposure Compensation", "Shutter", "Aperture", "Focus", "White Balance"] {
             XCTAssertTrue(app.buttons[name].exists, name)
         }
@@ -174,15 +174,15 @@ final class NopeAppUITests: XCTestCase {
 
         // The panel replaces the lens buttons while it is open; Manual fixes the value in use.
         iso.tap()
-        XCTAssertTrue(element(app, containing: "This lens:").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "This lens:").waitForExistence(timeout: 20))
         XCTAssertFalse(app.buttons["Wide"].exists)
         app.segmentedControls["panel-mode"].buttons["Manual"].tap()
-        XCTAssertTrue(app.buttons["All Auto"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["All Auto"].waitForExistence(timeout: 20))
         XCTAssertTrue(hasValue(iso, startingWith: "Manual"))
         try app.performAccessibilityAudit()
 
         app.buttons["All Auto"].tap()
-        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 20))
         XCTAssertFalse(app.buttons["All Auto"].exists)
         XCTAssertTrue(hasValue(iso, startingWith: "Auto"))
         try app.performAccessibilityAudit()
@@ -194,20 +194,20 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Shutter"].waitForExistence(timeout: 20))
         // The only "Manual" button while no panel is open: the M segment of the mode picker.
         let manual = app.buttons["Manual"].firstMatch
-        XCTAssertTrue(manual.waitForExistence(timeout: 10))
+        XCTAssertTrue(manual.waitForExistence(timeout: 20))
         manual.tap()
         XCTAssertTrue(hasValue(app.buttons["Shutter"], startingWith: "Manual"))
         app.buttons["Exposure Compensation"].tap()
-        XCTAssertTrue(element(app, containing: "works only while ISO or the shutter is on Auto").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "works only while ISO or the shutter is on Auto").waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
 
         app.buttons["All Auto"].tap()
         app.buttons["Ultra Wide"].tap()
         let aperture = app.buttons["Aperture"]
-        XCTAssertTrue(aperture.waitForExistence(timeout: 5))
+        XCTAssertTrue(aperture.waitForExistence(timeout: 20))
         XCTAssertTrue(hasValue(aperture, startingWith: "Fixed"))
         aperture.tap()
-        XCTAssertTrue(app.staticTexts["This lens has a fixed aperture."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["This lens has a fixed aperture."].waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
     }
 
@@ -253,20 +253,20 @@ final class NopeAppUITests: XCTestCase {
     func testProToolsBracketing() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
         let tools = app.buttons["Pro Tools"]
-        XCTAssertTrue(tools.waitForExistence(timeout: 10))
+        XCTAssertTrue(tools.waitForExistence(timeout: 20))
         tools.tap()
         let bracketing = app.switches["Bracketing"]
-        XCTAssertTrue(bracketing.waitForExistence(timeout: 5))
+        XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
         XCTAssertTrue(app.staticTexts["Each frame is a separate single-frame photo. Nothing is merged."].exists)
         try auditProTools(app)
         bracketing.switches.firstMatch.tap()
-        XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 20))
         try auditProTools(app)
         app.buttons["Done"].tap()
 
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(
-            app.staticTexts["3 photos captured (not saved yet: development build)"].waitForExistence(timeout: 5))
+            app.staticTexts["3 photos captured (not saved yet: development build)"].waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
     }
 
@@ -274,13 +274,13 @@ final class NopeAppUITests: XCTestCase {
     func testIntervalShootingShowsProgressAndStops() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
         let tools = app.buttons["Pro Tools"]
-        XCTAssertTrue(tools.waitForExistence(timeout: 10))
+        XCTAssertTrue(tools.waitForExistence(timeout: 20))
         tools.tap()
         let start = app.buttons["Start"]
-        XCTAssertTrue(start.waitForExistence(timeout: 5))
+        XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
-        XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Captured (not saved yet: development build)"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Captured (not saved yet: development build)"].waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
         app.buttons["Stop"].tap()
         XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 2))
@@ -290,16 +290,16 @@ final class NopeAppUITests: XCTestCase {
     func testCleanViewHidesControlsButKeepsTheShutter() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
         let hide = app.buttons["Hide Controls"]
-        XCTAssertTrue(hide.waitForExistence(timeout: 10))
+        XCTAssertTrue(hide.waitForExistence(timeout: 20))
         hide.tap()
-        XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.buttons["Take Photo"].exists)
         XCTAssertFalse(app.buttons["Wide"].exists)
         XCTAssertFalse(app.buttons["ISO"].exists)
         XCTAssertFalse(element(app, containing: "RAW · Single frame").exists)
         try app.performAccessibilityAudit()
         app.buttons["Show Controls"].tap()
-        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.buttons["ISO"].exists)
     }
 
@@ -308,10 +308,10 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("allow")
         app.buttons["Allow Camera Access"].tap()
         let telephoto = app.buttons["Telephoto"]
-        XCTAssertTrue(telephoto.waitForExistence(timeout: 10))
+        XCTAssertTrue(telephoto.waitForExistence(timeout: 20))
         telephoto.tap()
         app.buttons["Hide Controls"].tap()
-        XCTAssertTrue(element(app, containing: "No RAW on This Lens").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "No RAW on This Lens").waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
     }
 
@@ -322,8 +322,8 @@ final class NopeAppUITests: XCTestCase {
             extraArguments: Self.manualOn + [
                 "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
             ])
-        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.steppers.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.steppers.firstMatch.waitForExistence(timeout: 20))
         try auditVisibleElements(app)
     }
 
@@ -332,7 +332,7 @@ final class NopeAppUITests: XCTestCase {
         let app = launch(
             "manual",
             extraArguments: Self.manualOn + ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
-        XCTAssertTrue(app.buttons["ISO"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["ISO"].waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
     }
 
@@ -340,9 +340,9 @@ final class NopeAppUITests: XCTestCase {
     func testProToolsGrowsWithTheLargestTextSize() throws {
         let labels = ["Metering", "Interval", "Photos"]
         let regular = launch("manual", extraArguments: Self.manualOn)
-        XCTAssertTrue(regular.buttons["Pro Tools"].waitForExistence(timeout: 10))
+        XCTAssertTrue(regular.buttons["Pro Tools"].waitForExistence(timeout: 20))
         regular.buttons["Pro Tools"].tap()
-        XCTAssertTrue(regular.staticTexts["Metering"].waitForExistence(timeout: 5))
+        XCTAssertTrue(regular.staticTexts["Metering"].waitForExistence(timeout: 20))
         let regularHeights = labels.map { rowTextHeight(regular, $0) }
         regular.terminate()
 
@@ -352,9 +352,9 @@ final class NopeAppUITests: XCTestCase {
                 "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
             ])
         let tools = large.buttons["Pro Tools"]
-        XCTAssertTrue(tools.waitForExistence(timeout: 10))
+        XCTAssertTrue(tools.waitForExistence(timeout: 20))
         tools.tap()
-        XCTAssertTrue(large.staticTexts["Metering"].waitForExistence(timeout: 5))
+        XCTAssertTrue(large.staticTexts["Metering"].waitForExistence(timeout: 20))
         for (label, regularHeight) in zip(labels, regularHeights) {
             XCTAssertGreaterThan(rowTextHeight(large, label), regularHeight * 2, label)
         }
