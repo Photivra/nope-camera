@@ -77,6 +77,19 @@ final class NopeAppUITests: XCTestCase {
     }
 
     @MainActor
+    func testBlankPictureExplainsRestartingTheDevice() throws {
+        let app = launch("blankPicture")
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(element(app, containing: "isn't sending a picture").waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, containing: "The camera isn't sending a picture").exists)
+        XCTAssertTrue(app.staticTexts["No photo was taken: the camera sent a blank picture."].exists)
+        XCTAssertFalse(shutter.isEnabled)
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
     func testDeniedAndNoCameraStates() throws {
         let denied = launch("denied")
         XCTAssertTrue(denied.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
@@ -94,6 +107,18 @@ final class NopeAppUITests: XCTestCase {
             "interrupted",
             extraArguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         XCTAssertTrue(element(app, containing: "in use by another app or a call").waitForExistence(timeout: 10))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testBlankPictureAtTheLargestTextSize() throws {
+        let app = launch(
+            "blankPicture",
+            extraArguments: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(element(app, containing: "isn't sending a picture").waitForExistence(timeout: 10))
         try app.performAccessibilityAudit()
     }
 

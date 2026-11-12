@@ -67,6 +67,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure message |
+| `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off and no-camera screens |
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
@@ -123,53 +124,49 @@ on a Mac.
 
 ### What the capture mode does
 
-The code is in `App/NopeApp/DebugTools/`, wrapped in `#if DEBUG`. It is compiled only in the
-Debug configuration, and Release builds contain none of it. It runs only when the app is
-launched with the `-NopeTagCheck` launch argument.
+The code is in `App/NopeApp/DebugTools/` (`TagCheckScreen.swift`, `TagCheckRunner.swift`,
+`TagCheckReport.swift`), wrapped in `#if DEBUG`. It is compiled only in the Debug
+configuration, and Release builds contain none of it. It runs only when the app is launched
+with the `-NopeTagCheck` launch argument, or from an armed run (below).
 
-1. It asks for camera access (tap Allow once).
-2. For each physical camera (rear wide, ultra wide, telephoto, and front; never a virtual
-   multi-camera device) it configures a photo session as in
-   [`research/capability-survey.md`](research/capability-survey.md), item 12: the `.photo`
-   preset, `maxPhotoQualityPrioritization` and `photoQualityPrioritization` set to `.speed`,
-   Apple ProRAW off, zoom 1.0, deferred delivery, constant color and distortion correction off,
-   no flash, and zero shutter lag and responsive capture off. The output's switches and an
-   explicit `maxPhotoDimensions` (the format's smallest size, 12 MP) are committed before the
-   session starts, and the photo output is prepared for the first capture
-   (`setPreparedPhotoSettingsArray`). Each capture waits for `captureReadiness` to be `.ready`.
-   RAW is requested as RAW-only DNG (`rawFileType: .dng`), the processed photo with its file
-   type (`.heic`). This is the same order as the app's backend; see "Black frames" below.
-   No location is requested and no GPS metadata is supplied.
-   Auto exposure, focus and white balance stay continuous, and a video data output keeps
-   frames flowing. The screen shows the live view, so you can aim at a lit scene. Before the first capture with each lens, it waits at least 1 second and
-   until the session is running, at least 10 frames have arrived, and exposure, focus and white
-   balance have stopped adjusting, up to 5 seconds. The report records whether it settled or
-   timed out. (A fixed 1-second wait without a video output gave black frames on a device.)
-3. It captures, per lens:
-   - `<lens>-raw.dng`: a Bayer RAW-only capture, written with `fileDataRepresentation()`;
-   - `<lens>-raw-stripped.dng`: the same RAW photo written with
-     `fileDataRepresentation(with:)` and a customizer whose `replacementMetadata` removes
-     `{MakerApple}`, `{GPS}` and every key whose name contains "SerialNumber" or "UniqueID"
-     (the planned native removal path);
-   - `<lens>-speed.heic`: a processed HEVC photo at `.speed` (`<lens>-speed.jpg` if the device
-     offers no HEVC).
+The tag check drives the app's own capture backend (`AVFoundationCaptureBackend`) through the
+`CaptureBackend` API only, the same instance the camera screen would use. It creates no capture
+session, input or output of its own, and adds no video data output: the one session belongs to
+`SystemCaptureHardware` in `NopeCapture`. So the files are exactly what the app captures, with
+the backend's processing switches (`CapturePolicy`), photo settings (`PhotoSettingsFactory`),
+setup order and blank-picture check.
 
-   - `<lens>-preview.jpg`: one live video frame, saved after the camera settles.
+1. It asks for camera access if it hasn't been decided (tap Allow once).
+2. It asks the backend for the lenses (`deviceCapabilities()`): every physical camera, never a
+   virtual multi-camera device.
+3. For each lens, through the backend:
+   - `startSession` with a Bayer RAW request switches to the lens (the backend replaces the
+     camera input inside one configuration on the same session); after 2 seconds, so
+     continuous auto exposure, focus and white balance can converge, `capturePhoto` takes a
+     RAW-only DNG;
+   - `startSession` with `CaptureRequest(lens:format:)` and the lens's processed fallback
+     re-prepares the photo output for HEIF on the same running camera; after 0.5 seconds,
+     `capturePhoto` takes the `.speed` HEIF (JPEG if the lens has no HEVC).
 
    A lens without a Bayer RAW format gets only the processed photo, and its report says so.
-4. It writes `<lens>-report.json` for each lens (device model identifier, OS version, camera
-   type and position, active format, RAW formats and whether each is Bayer, ISO, exposure and
-   aperture ranges, every supported maximum photo size, iOS 27 aperture values,
-   `maxBracketedCapturePhotoCount`, the photo output's processing switches, the settle result,
-   the exposure duration, ISO, aperture, focus and white balance at each capture, the requested
-   and resolved photo settings, `photo.metadata`, whether the output was prepared, the capture
-   readiness before each capture, and the decoded `luminance` of every file and of the preview
-   frame), and a `summary.json`.
+   The screen shows the backend's own viewfinder (its preview layer) while the lenses run.
+4. At the end it calls `stopSession()`, which stops the session and tears it down in order
+   (below) before the summary is written.
+5. It writes, per lens, `<lens>-raw.dng`, `<lens>-speed.heic` and `<lens>-report.json` (device
+   model identifier, OS version, the lens's published capabilities, and for each file the
+   format, size, dimensions, the exposure duration and ISO read before the capture, every
+   ImageIO property dictionary of the file and its decoded `luminance`), and a `summary.json`.
+   A capture the backend rejected as blank is reported as `failed: blankPicture`.
+
+Earlier versions also wrote a metadata-stripped DNG (`fileDataRepresentation(with:)`), one live
+video frame per lens and `AVCapturePhoto.metadata`. They needed their own session per lens
+with an extra video data output, which is what left the camera service stuck (see "Black
+frames"), so they were removed. The tag dumper reads the same metadata from the files.
 
 Lens names are `back-wide`, `back-ultrawide`, `back-telephoto`, `front-wide` and so on. Every
 file goes to the app's `Documents/TagCheck/` folder, with complete file protection; each run
 replaces the folder. The screen lists each step, and the same lines are logged with `Logger`
-as private values.
+as private values. No location is requested and no GPS metadata is supplied.
 
 Writing photos to the app's container is acceptable here only because this is a debug tool.
 Release builds never write photos to the container: photos go from memory to Photos (AGENTS.md,
@@ -177,17 +174,24 @@ Release builds never write photos to the container: photos go from memory to Pho
 
 ### Running it
 
+**Check first that no Mac is viewing the phone's screen** (no viewing icon in the Dynamic
+Island): while one is, every app other than Apple's Camera gets blank frames (see "Black
+frames").
+
 1. Copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set your own team ID.
-2. In Xcode, choose the `NopeApp` scheme and your device. In Product › Scheme › Edit Scheme ›
-   Run, keep the Build Configuration at Debug, and under Arguments add `-NopeTagCheck` to
-   "Arguments Passed On Launch". Run.
-   From the command line, after installing a Debug build:
+2. Install a Debug build. Open nope. normally from the Home Screen once and check that the
+   viewfinder shows the scene.
+3. Launch the tag check. In Xcode: Product › Scheme › Edit Scheme › Run, keep the Build
+   Configuration at Debug, add `-NopeTagCheck` to "Arguments Passed On Launch", and run. From the
+   command line:
    ```sh
-   xcrun devicectl device process launch --device <device-id> com.photivra.nope.dev -NopeTagCheck
+   xcrun devicectl device process launch --device <device-id> --terminate-existing \
+     com.photivra.nope.dev -- -NopeTagCheck
    ```
-3. Tap Allow, point the phone at a well-lit scene, and keep it still until the list says
-   "Finished".
-4. Keep the device unlocked (the files use complete file protection) and copy the folder to the
+   Arguments after the bundle ID must follow `--`; without it `devicectl` parses `-Nope...` as
+   its own options and does not launch the app.
+4. Point the phone at a well-lit scene, and keep it still until the list says "Finished".
+5. Keep the device unlocked (the files use complete file protection) and copy the folder to the
    Mac:
    ```sh
    xcrun devicectl device copy from --device <device-id> \
@@ -195,71 +199,111 @@ Release builds never write photos to the container: photos go from memory to Pho
      --source Documents/TagCheck --destination TagCheckOutput
    ```
    `xcrun devicectl list devices` shows the device identifier.
-5. Dump the tags:
+6. Open nope. normally again and check that the viewfinder still shows the scene.
+7. Dump the tags:
    ```sh
    swift scripts/dump-tags.swift TagCheckOutput
    ```
 
 ### Checking that frames are exposed
 
-Every file and the preview frame are decoded on the device (`CIRAWFilter` for DNGs, `CIImage`
-otherwise) and measured. In each `<lens>-report.json`, `captures.<file>.luminance` and
-`previewFrame.luminance` have:
+Every file is decoded on the device (`CIRAWFilter` for DNGs, `CIImage` otherwise) and
+measured. In each `<lens>-report.json`, `captures.<file>.luminance` has:
 
 - `meanLuma`, `minLuma`, `maxLuma`: Rec. 709 luma of the sRGB-encoded image, 0 to 1;
 - `looksBlack`: the mean is below 0.01;
-- `looksFlat`: the whole image is within one 8-bit step, a constant fill.
+- `looksFlat`: the whole image is within one 8-bit step, a constant fill;
+- `maxRed`, `maxBlue` and `looksZeroFilled`: a zero-filled YCbCr buffer decodes as a green
+  field with no red or blue anywhere, which can pass the mean test.
 
 The status list and `summary.json` say "done, but the image looks black or flat" for such a
-file. For a lit scene, expect `looksBlack` and `looksFlat` to be `false` for the RAW, the HEIF
-and the preview, a `meanLuma` well above 0.01 and a `maxLuma` above `minLuma`. The HEIF's EXIF
-`ExposureTime` and `ISOSpeedRatings` should no longer be 0. Open `<lens>-preview.jpg` to see what
-the camera saw. The thresholds are tool settings, not platform values.
+file. For a lit scene, expect all three flags to be `false`, a `meanLuma` well above 0.01 and a
+`maxLuma` above `minLuma`, and the HEIF's `{Exif}` `ExposureTime` and `ISOSpeedRatings` not 0.
+The thresholds are tool settings, not platform values.
 
-### Black frames (first device runs)
+### Black frames
 
-**Symptom.** The first two runs (iPhone 16 Pro Max, iOS 27.2.1) gave black files on every lens:
-the RAW DNGs and the 15 KB HEIFs, whose EXIF said `ExposureTime` 0 and ISO 0.
+**Symptom.** On an iPhone 16 Pro Max (iOS 27.2.1), every tag check run produced zero-filled
+buffers on every lens and output: the Bayer DNGs were a constant fill (all 16 tiles identical,
+the lossless-JPEG data one repeated byte, decoded mean exactly 0), the 15 KB `.speed` HEIFs
+decoded to a green field (a zero YCbCr buffer) with no `ExposureTime` or ISO, and every
+sampled luma byte of the video data output frames was 0. At the same time the session reported
+running, frames arrived at the exposure's rate, `captureReadiness` was `.ready`, and auto
+exposure metered the room normally (for example 1/60 s, ISO 134, −0.06 EV).
 
-**What the files show.** In every DNG, all 16 tiles have the same byte count and the
-lossless-JPEG data repeats a single byte value: a constant fill, not a sensor readout, which
-would contain noise. Decoded, every file has a mean of exactly 0. Meanwhile the front camera's
-auto exposure had settled on a lit scene (exposure target offset −0.03 EV at ISO 1607, 1/15 s),
-so the camera saw light while the still pipeline delivered a blank buffer. This rules out
-underexposure as the cause. (The rear cameras were at their highest ISO with an offset near
-−5 EV, so they were also pointed at something dark.)
+**Cause (confirmed 2026-11-12).** A Mac was viewing and controlling the phone's screen. While
+such a session runs, the Dynamic Island shows a purple screen-and-person icon, and Settings
+shows "“MacBook Pro” is viewing and controlling this iPhone" with a **Stop Session** button.
+During the session, every app other than Apple's Camera got blank frames, including other
+camera apps from the App Store, while the session ran normally and auto exposure followed
+the room. Tapping **Stop Session** brought nope.'s live viewfinder back at once, with no code
+change and no restart, and the next tag check produced real images on every lens. The session
+started while the phone was connected to the Mac for development builds; which Mac feature
+starts it has not been isolated. No Apple documentation found describes the blanking.
 
-**Likely causes, from the code and Apple's documentation.** The capture setup departed from the
-documented flow in these ways; which one is responsible can only be shown on a device:
+**Before any camera test on a device:** check that the Dynamic Island shows no viewing icon.
+If it does, tap it, then **Stop Session**. Stopping it also unpairs the Mac; plug the phone in
+again and tap **Trust** to install builds.
 
-1. **Zero shutter lag was on.** The report shows `isZeroShutterLagEnabled: true`: it is
-   "automatically enabled when supported" for apps built for iOS 17 or later, takes the photo
-   from a buffer of earlier frames, and is meant for `.balanced` and `.quality`
-   (`AVCapturePhotoOutput.h`, `zeroShutterLagEnabled`;
-   [documentation](https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/iszeroshutterlagenabled)).
-   nope. uses `.speed` and wants the frame exposed after the shutter, so it is now off.
-2. **The output was never prepared for RAW.** "Some types of photo capture, such as bracketed
-   captures and RAW captures, require the receiver to allocate additional buffers", and by
-   default only default settings are prepared (`setPreparedPhotoSettingsArray(_:completionHandler:)`,
-   [documentation](https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/setpreparedphotosettingsarray(_:completionhandler:))).
-3. **Captures weren't gated on readiness.** Apple's `captureReadiness` says when the output can
-   take a request in a timely manner
-   ([documentation](https://developer.apple.com/documentation/avfoundation/avcapturephotooutput/capturereadiness)).
-   WebKit reported the first `AVCapturePhotoOutput` photo "often all black" and fixed it with
-   `AVCapturePhotoOutputReadinessCoordinator`
-   ([WebKit bug 313854](https://bugs.webkit.org/show_bug.cgi?id=313854)).
-4. **`maxPhotoDimensions` was implicit** (0 × 0 in the requested settings), and the RAW and
-   processed settings named no file type.
-5. **Pipeline switches were set in the same configuration as the input.** The header asks for
-   switches that reconfigure the pipeline (zero shutter lag, responsive capture,
-   `maxPhotoDimensions`) to be set before `startRunning()`.
+**Earlier diagnosis, now superseded.** Before the cause was found, the blank frames were blamed
+on the old tag check's pipeline (a separate `AVCaptureSession` per lens, an extra
+`AVCaptureVideoDataOutput`, and a bare `stopRunning()`), because a phone restart sometimes
+seemed to clear them. That was not confirmed: after a restart, the main-branch build, a fresh
+bundle identifier and a session with none of nope.'s settings were all blank while the viewing
+session ran. The changes below are kept because they are simpler and safer, not because they
+fixed the blank frames.
 
-**Fix.** Both the app's backend (`SystemCaptureHardware`) and the tag check now: commit the
-preset, input and outputs first; then commit every output switch, with zero shutter lag and
-responsive capture off and an explicit `maxPhotoDimensions`; start the session; prepare the
-photo settings; and wait for `.ready` before each capture, with RAW-only DNG and HEIC settings
-that name their file types. The tag check also attaches a live preview layer, as the app does.
-The luminance check above proves the result on the next device run.
+**Changes kept from the earlier diagnosis.**
+
+- The tag check now uses the app's backend and its single session (above). It builds no
+  sessions and no video data output.
+- Teardown is strictly sequential everywhere a session stops: `SystemCaptureHardware.stop()`
+  and the probe call `stopRunning()` on the session's own serial queue, which "is synchronous
+  and blocks until the receiver has completely stopped running" (`AVCaptureSession.h`), then
+  remove every input and output in one configuration, and only then return. The backend's
+  `stopSession()` awaits that, so nothing configures or starts the session while it is
+  stopping. The backend never creates a second session.
+- **Stuck-camera detection** in the real backend. After every capture, `SystemCaptureHardware`
+  reads 128 bytes (two adjacent bytes at 64 evenly spaced places) from the photo's pixel
+  buffer, and `PictureCheck` (tested) calls it blank when they are all equal: a sensor readout
+  always has noise, a zero or constant fill never does. `AVFoundationCaptureBackend` then
+  drops the photo and throws `CaptureError.blankPicture`. `CameraModel` stops and restarts the
+  session once and retakes the photo; if that is blank too, it moves to
+  `SessionStatus.noPicture`, which the camera screen shows as "The camera isn't sending a
+  picture." with the shutter disabled (another lens
+  tries again). The check runs on the photo, not on preview frames: the backend has no video
+  data output, and adding one to the pipeline under suspicion, and processing frames ahead of
+  need, was ruled out. `AVCapturePhoto.pixelBuffer` is documented as `nil` for compressed
+  formats, so a HEIF or JPEG photo (a lens without Bayer RAW) isn't checked and counts as a
+  picture. That the RAW-only DNG capture does carry its pixel buffer is an assumption from the
+  documentation, not yet confirmed on a device; if it is `nil`, the check is skipped, never
+  falsely triggered. The restart-and-retry logic and the message are unit- and UI-tested
+  (`CameraModelTests`, the `blankPicture` scenario); the trigger itself can only be seen on a
+  phone that delivers blank frames.
+
+### Debug runs for diagnosis
+
+These Debug-only tools stay for future diagnosis. **Before a run, check that no Mac is viewing
+the phone's screen** (above), and open nope. normally first to check the viewfinder: a run while
+the camera picture is blanked gives blank frames whatever the pipeline, and proves nothing.
+
+- `-NopeCameraProbe` runs the simplest pipeline from Apple's sample flow
+  ([Setting up a capture session](https://developer.apple.com/documentation/avfoundation/setting-up-a-capture-session),
+  [AVCam](https://developer.apple.com/documentation/avfoundation/avcam-building-a-camera-app)):
+  its own session with the `.photo` preset, `AVCaptureDevice.default(for: .video)`, a
+  full-screen preview layer, a video data output and one default HEVC photo, then the same
+  sequential teardown. The app's backend never starts in that launch. It writes
+  `probe-report.json`, `probe-frame.jpg` and `probe-photo.heic` to `Documents/TagCheck/`, with
+  the app and scene activation state, authorization, `isInterrupted`, every interruption or
+  runtime-error notification, `isSuspended`, multitasking camera access, the exposure state,
+  the photo's `{Exif}`, the decoded luminance and the raw luma-plane bytes of the frame.
+  `-NopeProbeNoVideoOutput` leaves out the video data output; `-NopeProbeFront` uses the front
+  camera.
+- `-NopeArmDebugRun tagcheck` (or `probe`) only stores the run and shows a message. The next
+  launch from the Home Screen performs it once and clears it.
+
+Pass every argument after `--`, for example
+`xcrun devicectl device process launch --device <device-id> --terminate-existing com.photivra.nope.dev -- -NopeCameraProbe -NopeProbeFront`.
 
 ### The tag dumper
 

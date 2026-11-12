@@ -30,12 +30,13 @@ public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
 func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto
 ```
 
-Takes one photo, in memory only.
+Takes one photo, in memory only, and rejects it if its pixel buffer is blank.
 
 - Parameter request: The lens and format; must match the last ``startSession(_:)``.
 - Returns: The photo.
 - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
-  or the hardware's error.
+  `CaptureError.blankPicture` if ``PictureCheck`` finds the photo's buffer zero-filled
+  (the photo is dropped), or the hardware's error.
 
 ## `AVFoundationCaptureBackend/currentPermission()`
 
@@ -137,7 +138,8 @@ public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
 func stopSession() async
 ```
 
-Stops the session.
+Stops the session and tears it down; returns once the hardware has finished
+(``CaptureHardware/stop()``).
 
 ## `CameraAuthorizing`
 
@@ -539,7 +541,8 @@ func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePh
 Takes one photo.
 
 - Parameter plan: The photo settings to use.
-- Returns: The file bytes and capture details.
+- Returns: The file bytes, a few bytes sampled from the photo's pixel buffer, and capture
+  details.
 - Throws: `CaptureError.notRunning` if the session isn't running, or
   `CaptureError.captureFailed` if the system reports an error or no file.
 
@@ -600,7 +603,10 @@ internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 func stop() async
 ```
 
-Stops the session.
+Stops the session and tears it down, in order: `stopRunning()` on the session queue,
+which returns only once the session has completely stopped, then the camera input and
+the photo output are removed in one configuration. The next ``configure(_:)`` rebuilds
+the session from scratch. Returns after the teardown has finished.
 
 ## `CapturePolicy`
 
@@ -837,12 +843,12 @@ let exposureDuration: Double?
 
 The exposure duration read just before the capture, in seconds.
 
-## `HardwarePhoto/init(data:dimensions:exposureDuration:iso:)`
+## `HardwarePhoto/init(data:dimensions:exposureDuration:iso:pixelSample:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 
 ```swift
-init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?)
+init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?)
 ```
 
 Creates a photo result.
@@ -852,6 +858,7 @@ Creates a photo result.
   - dimensions: The resolved photo size, in pixels.
   - exposureDuration: The exposure duration before the capture, in seconds.
   - iso: The ISO before the capture.
+  - pixelSample: The sampled pixel buffer bytes, or `nil`.
 
 ## `HardwarePhoto/iso`
 
@@ -862,6 +869,18 @@ let iso: Double?
 ```
 
 The ISO read just before the capture.
+
+## `HardwarePhoto/pixelSample`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+let pixelSample: [UInt8]?
+```
+
+The bytes at ``PictureCheck/sampleOffsets(byteCount:)`` of the photo's pixel buffer, or
+`nil` when the photo has none (a compressed HEIF or JPEG). Used only to detect a blank
+buffer; never stored or logged.
 
 ## `HeatLevel/init(_:)`
 
@@ -1101,6 +1120,81 @@ let switches: ProcessingSwitches
 ```
 
 The processing switches.
+
+## `PictureCheck`
+
+internal, declared in `Sources/NopeCapture/PictureCheck.swift`
+
+```swift
+enum PictureCheck
+```
+
+Tells a blank photo buffer from a picture, cheaply, from a few sampled bytes.
+
+On an iPhone 16 Pro Max (iOS 27.2.1) the camera service got stuck in a state where the
+session ran, frames arrived and auto exposure metered normally, but every delivered buffer
+was zero-filled: the RAW DNGs were a constant fill and the video frames' luma bytes were all
+0, until the phone was restarted (docs/TESTING.md, "Black frames"). A sensor readout always
+carries noise, so a real picture never has every sampled byte equal; a zero or constant fill
+always does.
+
+The hardware adapter reads the bytes at ``sampleOffsets(byteCount:)`` from the photo's pixel
+buffer and ``AVFoundationCaptureBackend`` asks ``isBlank(_:)``. Reading 128 bytes costs
+nothing next to a capture, so it runs on every photo.
+
+## `PictureCheck/isBlank(_:)`
+
+internal, declared in `Sources/NopeCapture/PictureCheck.swift`
+
+```swift
+static func isBlank(_ sample: [UInt8]?) -> Bool
+```
+
+Whether sampled bytes come from a blank (zero-filled or constant-filled) buffer.
+
+- Parameter sample: The bytes read at ``sampleOffsets(byteCount:)``, or `nil` when the
+  photo had no pixel buffer to read (a compressed HEIF or JPEG; Apple's
+  `AVCapturePhoto.pixelBuffer` is `nil` for those).
+- Returns: `true` only when there are at least ``minimumSampleCount`` bytes and they are
+  all equal. `nil` or too few bytes give `false`: unknown is treated as a picture.
+
+## `PictureCheck/minimumSampleCount`
+
+internal, declared in `Sources/NopeCapture/PictureCheck.swift`
+
+```swift
+static let minimumSampleCount: Int
+```
+
+The fewest sampled bytes needed for a verdict; with fewer, the photo counts as a
+picture, so a tiny or unreadable buffer never blocks the camera.
+
+## `PictureCheck/sampleOffsets(byteCount:)`
+
+internal, declared in `Sources/NopeCapture/PictureCheck.swift`
+
+```swift
+static func sampleOffsets(byteCount: Int) -> [Int]
+```
+
+The byte offsets to read: two adjacent bytes at each of ``samplePlaces`` evenly spaced
+places, so both bytes of a 16-bit RAW sample are read (the low byte carries the noise).
+
+- Parameter byteCount: The size of the buffer, in bytes.
+- Returns: Increasing offsets, each less than `byteCount`; empty when `byteCount` is 0
+  or less.
+
+## `PictureCheck/samplePlaces`
+
+internal, declared in `Sources/NopeCapture/PictureCheck.swift`
+
+```swift
+static let samplePlaces: Int
+```
+
+How many places in the buffer are sampled. An assumption, not a platform value: 64
+places spread over the whole buffer can't all land in one flat region of a real scene
+with sensor noise.
 
 ## `ProcessingSwitches`
 
@@ -1383,8 +1477,13 @@ final class SystemCaptureHardware
 The AVFoundation implementation of ``CaptureHardware``: one `AVCaptureSession` with one
 camera input and one photo output, configured on a private serial queue.
 
-Setup order, which fixes the black frames of the first tag check runs (docs/TESTING.md,
-"Black frames"): the `.photo` preset, camera input and photo output are committed first, so
+It owns the app's only capture session: lens switches replace the camera input inside one
+configuration transaction on the same session, and ``stop()`` tears the session down in a
+fixed order before anything else may configure it (docs/TESTING.md, "Black frames": after
+the earlier Debug tag check built its own session per lens, the camera service delivered
+blank frames to every app session until the phone was restarted).
+
+Setup order: the `.photo` preset, camera input and photo output are committed first, so
 the camera's active format is the photo format; then the output's processing switches and
 an explicit `maxPhotoDimensions` from that format are committed before `startRunning()`, as
 `AVCapturePhotoOutput.h` recommends for settings that reconfigure the pipeline; then the
@@ -1463,4 +1562,13 @@ internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 func stop() async
 ```
 
-Stops the session.
+Stops the session and tears it down, strictly in order, on `queue`.
+
+1. `stopRunning()`, which "is synchronous and blocks until the receiver has completely
+   stopped running" (`AVCaptureSession.h`), so nothing below overlaps a running session.
+2. The camera input and the photo output are removed in one configuration transaction.
+
+The method returns only after both steps, because the caller awaits `perform`. The next
+``configure(_:)`` re-adds the input and output with the full setup order. This is the
+only way a session is taken down: nope. never creates a second session, and never
+starts one while another is still stopping (docs/TESTING.md, "Black frames").

@@ -91,6 +91,14 @@ struct CaptureFormatTests {
         #expect(request.lens.id == "wide")
     }
 
+    @Test func explicitFormatOverridesTheLensChoice() {
+        let lens = Lens(id: "wide", kind: .wide, bayerRAWFormat: "bgg4")
+        let request = CaptureRequest(lens: lens, format: .processedFallback(.heif))
+        #expect(request.lens == lens)
+        #expect(request.format == .processedFallback(.heif))
+        #expect(request != CaptureRequest(lens: lens))
+    }
+
     @Test(arguments: ProcessedFallback.allCases)
     func lensWithoutRAWGivesItsFallback(fallback: ProcessedFallback) {
         let format = CaptureFormat(for: Lens(id: "t", kind: .telephoto, bayerRAWFormat: nil, processedFallback: fallback))
@@ -120,10 +128,11 @@ struct StatusTests {
     @Test func onlyRunningCanCapture() {
         let statuses: [SessionStatus] = [
             .stopped, .starting, .running, .interrupted(.other), .pausedForHeat, .failed(.configurationFailed),
+            .noPicture,
         ]
         #expect(statuses.filter(\.canCapture) == [.running])
         #expect(InterruptionReason.allCases.count == 5)
-        #expect(CaptureError.allCases.count == 3)
+        #expect(CaptureError.allCases.count == 4)
     }
 }
 

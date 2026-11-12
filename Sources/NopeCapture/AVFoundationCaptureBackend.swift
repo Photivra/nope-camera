@@ -78,23 +78,26 @@ public actor AVFoundationCaptureBackend: CaptureBackend {
         activeConfiguration = configuration
     }
 
-    /// Stops the session.
+    /// Stops the session and tears it down; returns once the hardware has finished
+    /// (``CaptureHardware/stop()``).
     public func stopSession() async {
         activeConfiguration = nil
         await hardware.stop()
     }
 
-    /// Takes one photo, in memory only.
+    /// Takes one photo, in memory only, and rejects it if its pixel buffer is blank.
     ///
     /// - Parameter request: The lens and format; must match the last ``startSession(_:)``.
     /// - Returns: The photo.
     /// - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
-    ///   or the hardware's error.
+    ///   `CaptureError.blankPicture` if ``PictureCheck`` finds the photo's buffer zero-filled
+    ///   (the photo is dropped), or the hardware's error.
     public func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
         guard let configuration = activeConfiguration,
             configuration == CapturePolicy.sessionConfiguration(for: request)
         else { throw .notRunning }
         let photo = try await hardware.capture(configuration.photoSettings)
+        guard !PictureCheck.isBlank(photo.pixelSample) else { throw .blankPicture }
         return CapturedPhoto(
             data: photo.data,
             format: request.format,

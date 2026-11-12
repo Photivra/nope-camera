@@ -577,6 +577,21 @@ Why the camera couldn't start or couldn't take a photo.
 Each case says how an interface should present it. None of them is the person's fault, and
 none asks them to change a setting.
 
+## `CaptureError/blankPicture`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case blankPicture
+```
+
+The camera delivered a photo whose pixels are all one value (a zero-filled buffer): it
+is running and sending frames, but no picture. The photo is discarded.
+
+``CameraModel`` restarts the camera once and retries; if the retry is blank too, it moves
+to ``SessionStatus/noPicture``. Say that no photo was taken because the camera sent a
+blank picture.
+
 ## `CaptureError/captureFailed`
 
 public, declared in `Sources/NopeCore/CaptureError.swift`
@@ -763,6 +778,24 @@ init(lens: Lens)
 Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
 
 - Parameter lens: The lens to use.
+
+## `CaptureRequest/init(lens:format:)`
+
+public, declared in `Sources/NopeCore/CaptureRequest.swift`
+
+```swift
+init(lens: Lens, format: CaptureFormat)
+```
+
+Creates a request for a lens with an explicit format.
+
+``CameraModel`` never uses it: it always lets ``CaptureFormat/init(for:)`` decide. It
+exists for diagnostics that must capture a lens's processed fallback even though the lens
+has Bayer RAW, such as the Debug-only tag check (docs/TESTING.md, "Tag check").
+
+- Parameters:
+  - lens: The lens to use.
+  - format: The format to capture. A Bayer RAW format must be one the lens supports.
 
 ## `CaptureRequest/lens`
 
@@ -1554,6 +1587,21 @@ case interrupted(InterruptionReason)
 ```
 
 The system paused the camera. Show the reason's message; it comes back by itself.
+
+## `SessionStatus/noPicture`
+
+public, declared in `Sources/NopeCore/SessionStatus.swift`
+
+```swift
+case noPicture
+```
+
+The camera runs and delivers frames, but they are blank (zero-filled), even after
+nope. restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
+screen (docs/TESTING.md, "Black frames").
+
+Say: "The camera isn't sending a picture."
+Keep the shutter disabled. Selecting another lens tries again.
 
 ## `SessionStatus/pausedForHeat`
 

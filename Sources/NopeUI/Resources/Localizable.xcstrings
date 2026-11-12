@@ -529,6 +529,72 @@
         }
       }
     },
+    "No photo was taken: the camera sent a blank picture.": {
+      "comment": "Shown when the camera delivered a completely blank picture, so the app discarded it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Es wurde kein Foto aufgenommen: Die Kamera hat ein leeres Bild geliefert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se tomó ninguna foto: la cámara envió una imagen vacía."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucune photo n’a été prise : l’appareil photo a envoyé une image vide."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuna foto scattata: la fotocamera ha inviato un’immagine vuota."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真は撮影されませんでした：カメラから空の画像が届きました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진을 찍지 않았습니다. 카메라가 빈 화면을 보냈습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Er is geen foto gemaakt: de camera stuurde een leeg beeld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nenhuma foto foi tirada: a câmera enviou uma imagem em branco."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未拍摄照片：相机传送了空白画面。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未拍攝照片：相機傳送了空白畫面。"
+          }
+        }
+      }
+    },
     "Starting the camera…": {
       "comment": "Shown briefly while the app checks camera access.",
       "extractionState": "manual",
@@ -1053,6 +1119,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "相機已暫停，讓裝置降溫。"
+          }
+        }
+      }
+    },
+    "The camera isn't sending a picture.": {
+      "comment": "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera liefert kein Bild."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara no está enviando imagen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo n’envoie pas d’image."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera non invia alcuna immagine."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラから映像が届いていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 화면을 보내지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera stuurt geen beeld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera não está enviando imagem."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机没有传送画面。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機沒有傳送畫面。"
           }
         }
       }

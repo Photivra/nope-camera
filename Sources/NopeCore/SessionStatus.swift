@@ -24,6 +24,14 @@ public enum SessionStatus: Equatable, Sendable {
     /// The camera couldn't start or stopped with an error. Show the error's message.
     case failed(CaptureError)
 
+    /// The camera runs and delivers frames, but they are blank (zero-filled), even after
+    /// nope. restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
+    /// screen (docs/TESTING.md, "Black frames").
+    ///
+    /// Say: "The camera isn't sending a picture."
+    /// Keep the shutter disabled. Selecting another lens tries again.
+    case noPicture
+
     /// Whether a photo can be taken now: `true` only while ``running``.
     public var canCapture: Bool {
         self == .running

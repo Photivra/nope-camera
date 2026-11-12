@@ -1,11 +1,13 @@
 #if DEBUG
-// Debug-only metadata tag check (issue #1, step 2): the JSON report contents.
+// Debug-only metadata tag check (issue #1, step 2) and camera probe: the JSON report contents.
 // Records no device name, user name or location: only the model identifier, the OS version and
 // camera properties.
 
 import AVFoundation
 import CoreMedia
 import Foundation
+import ImageIO
+import NopeCore
 
 /// Builds the JSON dictionaries in the tag check reports.
 enum TagCheckReport {
@@ -17,54 +19,44 @@ enum TagCheckReport {
         ]
     }
 
-    /// Describes a configured camera and photo output: type, position, active format, RAW
-    /// formats, exposure and aperture ranges, and the output's processing switches.
-    /// - Parameters:
-    ///   - device: The camera, after the session is configured.
-    ///   - output: The photo output attached to it.
-    static func describe(device: AVCaptureDevice, output: AVCapturePhotoOutput) -> [String: Any] {
-        let format = device.activeFormat
-        var formatInfo: [String: Any] = [
-            "dimensions": dimensions(CMVideoFormatDescriptionGetDimensions(format.formatDescription)),
-            "supportedMaxPhotoDimensions": format.supportedMaxPhotoDimensions.map(dimensions),
-            "minISO": format.minISO,
-            "maxISO": format.maxISO,
-            "minExposureDurationSeconds": format.minExposureDuration.seconds,
-            "maxExposureDurationSeconds": format.maxExposureDuration.seconds,
+    /// Describes a lens as the app's backend published it (`NopeCore.Lens`): kind, Bayer RAW
+    /// format, fallback, magnification, ISO, exposure and aperture ranges, bracket count and
+    /// photo sizes. The lens identifier is the camera's `uniqueID`, which names the camera
+    /// type and position, not the device.
+    /// - Parameter lens: A lens from `deviceCapabilities()`.
+    static func describe(_ lens: Lens) -> [String: Any] {
+        var entry: [String: Any] = [
+            "id": lens.id,
+            "kind": "\(lens.kind)",
+            "bayerRAWFormat": lens.bayerRAWFormat ?? "none",
+            "processedFallback": "\(lens.processedFallback)",
+            "maxBracketedPhotoCount": lens.maxBracketedPhotoCount,
+            "photoDimensions": lens.photoDimensions.map { ["width": $0.width, "height": $0.height] },
         ]
-        if #available(iOS 27.0, *) {
-            formatInfo["minLensAperture"] = format.minLensAperture
-            formatInfo["maxLensAperture"] = format.maxLensAperture
-            formatInfo["defaultLensAperture"] = format.defaultLensAperture
-            formatInfo["recommendedLensApertureStops"] = format.recommendedLensApertureStops
+        entry["magnification"] = lens.magnification
+        if let iso = lens.isoRange { entry["isoRange"] = [iso.lowerBound, iso.upperBound] }
+        if let exposure = lens.exposureDurationRange {
+            entry["exposureDurationRangeSeconds"] = [exposure.lowerBound, exposure.upperBound]
         }
-        return [
-            "deviceType": device.deviceType.rawValue,
-            "position": device.position == .front ? "front" : "back",
-            "isVirtualDevice": device.isVirtualDevice,
-            "videoZoomFactor": device.videoZoomFactor,
-            "lensAperture": device.lensAperture,
-            "geometricDistortionCorrectionEnabled": device.isGeometricDistortionCorrectionSupported
-                ? device.isGeometricDistortionCorrectionEnabled : "unsupported",
-            "activeFormat": formatInfo,
-            // Every entry, untruncated, also at the top level so it is easy to find.
-            "supportedMaxPhotoDimensions": format.supportedMaxPhotoDimensions.map(dimensions),
-            "supportedMaxPhotoDimensionsCount": format.supportedMaxPhotoDimensions.count,
-            "rawFormats": output.availableRawPhotoPixelFormatTypes.map(rawFormat),
-            "photoOutput": [
-                "maxPhotoQualityPrioritization": name(of: output.maxPhotoQualityPrioritization),
-                "maxPhotoDimensions": dimensions(output.maxPhotoDimensions),
-                "maxBracketedCapturePhotoCount": output.maxBracketedCapturePhotoCount,
-                "isAppleProRAWEnabled": output.isAppleProRAWEnabled,
-                "isAutoDeferredPhotoDeliveryEnabled": output.isAutoDeferredPhotoDeliveryEnabled,
-                "isConstantColorEnabled": output.isConstantColorEnabled,
-                "isContentAwareDistortionCorrectionEnabled": output.isContentAwareDistortionCorrectionEnabled,
-                "isZeroShutterLagEnabled": output.isZeroShutterLagEnabled,
-                "isResponsiveCaptureEnabled": output.isResponsiveCaptureEnabled,
-                "isFastCapturePrioritizationEnabled": output.isFastCapturePrioritizationEnabled,
-                "availablePhotoCodecTypes": output.availablePhotoCodecTypes.map(\.rawValue),
-            ] as [String: Any],
-        ]
+        if let aperture = lens.aperture {
+            entry["aperture"] = [
+                "minimumFNumber": aperture.minimumFNumber, "maximumFNumber": aperture.maximumFNumber,
+                "recommendedStops": aperture.recommendedStops,
+            ]
+        }
+        return entry
+    }
+
+    /// Every ImageIO property dictionary of a file (`CGImageSourceCopyPropertiesAtIndex`), as
+    /// the tag dumper reads them on the Mac: `{Exif}`, `{TIFF}`, `{DNG}`, `{MakerApple}` and the
+    /// rest. Replaces `AVCapturePhoto.metadata`, which the backend doesn't hand out.
+    /// - Parameter data: The file bytes.
+    /// - Returns: The properties of the first image, or an `error` entry.
+    static func imageProperties(of data: Data) -> [String: Any] {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+            let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any]
+        else { return ["error": "ImageIO could not read the file"] }
+        return properties
     }
 
     /// The camera's exposure state, read just before a capture: exposure duration (seconds),
@@ -172,18 +164,8 @@ enum TagCheckReport {
         ["width": value.width, "height": value.height]
     }
 
-    /// One RAW pixel format, with whether it is Bayer RAW or Apple ProRAW.
-    private static func rawFormat(_ type: OSType) -> [String: Any] {
-        [
-            "fourCC": fourCharacterCode(type),
-            "code": type,
-            "isBayerRAW": AVCapturePhotoOutput.isBayerRAWPixelFormat(type),
-            "isAppleProRAW": AVCapturePhotoOutput.isAppleProRAWPixelFormat(type),
-        ]
-    }
-
     /// A pixel format code as its four characters where printable, else as hex.
-    private static func fourCharacterCode(_ code: OSType) -> String {
+    static func fourCharacterCode(_ code: OSType) -> String {
         let bytes = [24, 16, 8, 0].map { UInt8(truncatingIfNeeded: code >> $0) }
         guard bytes.allSatisfy({ $0 >= 0x20 && $0 < 0x7F }) else { return String(format: "0x%08x", code) }
         return String(decoding: bytes, as: UTF8.self)

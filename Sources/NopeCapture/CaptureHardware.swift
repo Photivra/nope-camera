@@ -29,13 +29,17 @@ protocol CaptureHardware: Sendable {
     ///   added or locked, or the session doesn't start.
     func configure(_ configuration: SessionConfiguration) async throws(CaptureError)
 
-    /// Stops the session.
+    /// Stops the session and tears it down, in order: `stopRunning()` on the session queue,
+    /// which returns only once the session has completely stopped, then the camera input and
+    /// the photo output are removed in one configuration. The next ``configure(_:)`` rebuilds
+    /// the session from scratch. Returns after the teardown has finished.
     func stop() async
 
     /// Takes one photo.
     ///
     /// - Parameter plan: The photo settings to use.
-    /// - Returns: The file bytes and capture details.
+    /// - Returns: The file bytes, a few bytes sampled from the photo's pixel buffer, and capture
+    ///   details.
     /// - Throws: `CaptureError.notRunning` if the session isn't running, or
     ///   `CaptureError.captureFailed` if the system reports an error or no file.
     func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
@@ -51,6 +55,10 @@ struct HardwarePhoto: Equatable, Sendable {
     let exposureDuration: Double?
     /// The ISO read just before the capture.
     let iso: Double?
+    /// The bytes at ``PictureCheck/sampleOffsets(byteCount:)`` of the photo's pixel buffer, or
+    /// `nil` when the photo has none (a compressed HEIF or JPEG). Used only to detect a blank
+    /// buffer; never stored or logged.
+    let pixelSample: [UInt8]?
 
     /// Creates a photo result.
     ///
@@ -59,10 +67,12 @@ struct HardwarePhoto: Equatable, Sendable {
     ///   - dimensions: The resolved photo size, in pixels.
     ///   - exposureDuration: The exposure duration before the capture, in seconds.
     ///   - iso: The ISO before the capture.
-    init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?) {
+    ///   - pixelSample: The sampled pixel buffer bytes, or `nil`.
+    init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?) {
         self.data = data
         self.dimensions = dimensions
         self.exposureDuration = exposureDuration
         self.iso = iso
+        self.pixelSample = pixelSample
     }
 }

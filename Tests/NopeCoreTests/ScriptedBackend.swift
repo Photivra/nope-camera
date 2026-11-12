@@ -11,19 +11,22 @@ actor ScriptedBackend: CaptureBackend {
     let capabilities: DeviceCapabilities
     private var startErrors: [CaptureError?]
     private let captureError: CaptureError?
+    private var captureErrors: [CaptureError?]
     private var onStart: (@Sendable () async -> Void)?
 
     private(set) var startRequests: [CaptureRequest] = []
     private(set) var stopCount = 0
+    private(set) var captureRequests: [CaptureRequest] = []
 
     init(
         permission: CameraPermission = .authorized, capabilities: DeviceCapabilities,
-        startErrors: [CaptureError?] = [], captureError: CaptureError? = nil
+        startErrors: [CaptureError?] = [], captureError: CaptureError? = nil, captureErrors: [CaptureError?] = []
     ) {
         self.permission = permission
         self.capabilities = capabilities
         self.startErrors = startErrors
         self.captureError = captureError
+        self.captureErrors = captureErrors
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
     }
 
@@ -57,7 +60,9 @@ actor ScriptedBackend: CaptureBackend {
     }
 
     func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
-        if let captureError { throw captureError }
+        captureRequests.append(request)
+        let error = captureErrors.isEmpty ? captureError : captureErrors.removeFirst()
+        if let error { throw error }
         return CapturedPhoto(
             data: Data([0x4E]), format: request.format, lensID: request.lens.id,
             dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: 0.01, iso: 64)
