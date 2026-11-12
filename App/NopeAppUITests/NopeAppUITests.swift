@@ -35,14 +35,20 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Waits until the app's window has the expected shape, then for the animation to end.
+    ///
+    /// It polls the window's frame directly instead of using an `XCTWaiter` expectation: a
+    /// predicate that queries the app from inside the waiter stalled the test runner on CI.
     @MainActor
-    private func waitForRotation(_ app: XCUIApplication, landscape: Bool) {
+    private func waitForRotation(_ app: XCUIApplication, landscape: Bool, file: StaticString = #filePath, line: UInt = #line) {
         let window = app.windows.firstMatch
-        let shaped = expectation(for: NSPredicate { _, _ in
+        let deadline = Date().addingTimeInterval(10)
+        var shaped = false
+        while !shaped && Date() < deadline {
             let frame = window.frame
-            return frame.width > 0 && (frame.width > frame.height) == landscape
-        }, evaluatedWith: nil)
-        wait(for: [shaped], timeout: 10)
+            shaped = frame.width > 0 && (frame.width > frame.height) == landscape
+            if !shaped { Thread.sleep(forTimeInterval: 0.2) }
+        }
+        XCTAssertTrue(shaped, "the window didn't rotate", file: file, line: line)
         // UIKit's rotation animation takes about 0.4 s; wait it out before reading frames.
         Thread.sleep(forTimeInterval: 1)
     }

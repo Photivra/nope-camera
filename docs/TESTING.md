@@ -55,10 +55,12 @@ the coverage gate: it is covered by UI tests and accessibility audits instead.
 ```sh
 xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
-  -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' CODE_SIGNING_ALLOWED=NO
+  -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' \
+  -disable-concurrent-destination-testing CODE_SIGNING_ALLOWED=NO
 ```
 
-The same tests run on an iPhone and an iPad Simulator, in portrait and landscape
+The same tests run on an iPhone and an iPad Simulator, one after the other (running both at
+once stalled the test runner on the CI runner), in portrait and landscape
 (`XCUIDevice.orientation`; each test waits for the rotation to finish before auditing).
 One audit finding is set aside in landscape only: the lens buttons' "No RAW" caption is
 reported as "Dynamic Type font sizes are partially unsupported" on both Simulators, even at the
