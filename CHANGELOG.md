@@ -7,6 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Saving to Photos: each photo's metadata is built from the allowlist in `docs/PRIVACY.md` (never by deleting known tags), every file is read back with the project's own tag reader (TIFF/DNG, JPEG, HEIF, XMP) and ImageIO, and a file with any tag, block or value off the allowlist, or a changed RAW image, is not saved (fail closed). Add-only Photos access; a RAW and its HEIF are one Photos asset with the RAW as the original. Formats RAW, HEIF and JPEG, RAW plus HEIF by default.
+- `NopeCore` settings model: `SaveSettings` (formats) and `MetadataSettings` (the "Remove all optional details" master switch, one switch per optional item, name and copyright, and the signature switch).
+- DNG metadata written through AVFoundation's replacement metadata, so the sensor data isn't re-encoded; HEIF (10-bit) and JPEG developed from the RAW with Core Image (no noise reduction, sharpening or local tone mapping), in a Standard look (one global tone curve, the default) or a Flat look (no tone curve; `SaveSettings.developedLook`, `DevelopedLook`), and encoded with the system encoders. With the app name switch on, `Software` reads "Photivra Nope Camera" and the version.
+- A signing hook (`PhotoSigning`) before the read-back. No signer is built yet, so photos are saved unsigned and the capture status says so.
+- Capture status: "Saving…", "Saved and signed." or "Saved. Not signed:" with the reason, and plain messages when a photo isn't saved. New strings in eleven languages (AI translations, needs review); signature and privacy wording in `Honesty.xcstrings`.
+- Metadata tests for all 8,192 switch combinations in every format, fail-closed fuzz tests with a simulated future system tag, and UI tests for the rejected and Photos-denied states.
+
 - Stuck-camera detection: every RAW photo's pixel buffer is sampled (128 bytes), and a blank (zero-filled) photo is dropped. nope. restarts the camera once and retakes the photo; if it is still blank, the camera screen says "The camera isn't sending a picture." and disables the shutter. New strings in eleven languages (AI translations, needs review).
 - Debug builds: a `blankPicture` simulated camera scenario with UI tests and accessibility audits.
 - Capture core: `AVFoundationCaptureBackend` in `NopeCapture` finds the physical cameras only, publishes each lens's capabilities as plain values (Bayer RAW format, ISO and shutter ranges, aperture including the iOS 27 range, bracket count, photo sizes, magnification), and captures single-frame Bayer RAW (DNG), or the least-processed HEIF, labeled, on a lens without Bayer RAW. Photos are kept in memory only; nothing is saved yet.
@@ -40,6 +47,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Architecture rules: the interface is a replaceable layer over interface-free logic modules, with import boundaries checked in CI.
 - Documentation rules: complete DocC documentation for every symbol, `NopeCore` documented as the interface contract, Markdown API export for agents, and documentation checks in CI.
 - Research: C2PA signing with offline, per-photo keys, a device capability survey, and verified wording and sources for every privacy statement.
+
+### Removed
+- The "Captured (not saved yet: development build)" status.
 
 ### Changed
 - `Lens` describes its Bayer RAW format (`bayerRAWFormat`) instead of a flag, and carries its capabilities.

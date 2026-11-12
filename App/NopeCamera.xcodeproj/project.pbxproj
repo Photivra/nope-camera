@@ -10,6 +10,7 @@
 		A10000000000000000000101 /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000201 /* NopeCore */; };
 		A10000000000000000000102 /* NopeUI in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000202 /* NopeUI */; };
 		A10000000000000000000103 /* NopeCapture in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000203 /* NopeCapture */; };
+		A10000000000000000000106 /* NopeDevelop in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000206 /* NopeDevelop */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +43,7 @@
 				A10000000000000000000101 /* NopeCore in Frameworks */,
 				A10000000000000000000102 /* NopeUI in Frameworks */,
 				A10000000000000000000103 /* NopeCapture in Frameworks */,
+				A10000000000000000000106 /* NopeDevelop in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +100,7 @@
 				A10000000000000000000201 /* NopeCore */,
 				A10000000000000000000202 /* NopeUI */,
 				A10000000000000000000203 /* NopeCapture */,
+				A10000000000000000000206 /* NopeDevelop */,
 			);
 			productName = NopeApp;
 			productReference = A10000000000000000000501 /* nope.app */;
@@ -355,6 +358,10 @@
 		A10000000000000000000203 /* NopeCapture */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NopeCapture;
+		};
+		A10000000000000000000206 /* NopeDevelop */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeDevelop;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

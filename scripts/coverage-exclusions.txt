@@ -11,3 +11,10 @@ Sources/NopeCapture/SystemCameraAuthorization.swift
 Sources/NopeCapture/SystemCaptureHardware.swift
 # The Secure Enclave doesn't exist in the iOS Simulator.
 Sources/NopeSigning/SecureEnclaveSigningKey.swift
+# Adding to the photo library shows the add-only Photos prompt and changes the person's library;
+# a unit test can do neither. Its decisions are in PhotoKitMapping, which is fully tested.
+Sources/NopeCapture/PhotoKitLibrary.swift
+# Core Image's RAW filter needs a real Bayer DNG, which can't be built in a unit test (ImageIO
+# and Core Image don't decode a hand-built DNG). RAWDeveloper and PhotoEncoder are fully tested
+# with a fake renderer.
+Sources/NopeDevelop/CoreImageRAWRenderer.swift
