@@ -1,2 +1,5 @@
 # Source files allowed to use Swift Unsafe* pointer APIs, one path per line.
 # Each must be isolated, documented and fuzz-tested: see AGENTS.md, "Code".
+# Copies bytes between the C2PA library's stream callbacks and an in-memory file, so photos are
+# signed in memory without temporary files. Fuzz-tested in Tests/NopeSigningTests/InMemoryStreamTests.swift.
+Sources/NopeSigning/InMemoryStream.swift

@@ -53,6 +53,14 @@ Related documentation in the repository:
 - ``CaptureRequest``
 - ``CapturedPhoto``
 
+### Signing
+
+- ``PhotoSigning``
+- ``SignableFile``
+- ``ContentCredentialsStore``
+- ``PhotoSigningError``
+- ``SigningSettings``
+
 ### Hardware
 
 - ``CaptureBackend``

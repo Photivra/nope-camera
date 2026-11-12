@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- C2PA Content Credentials signing (`NopeSigning`): `ContentCredentialsSigner` signs a DNG, HEIF or JPEG with a new P-256 key for every file (Secure Enclave on a device; a software key compiled for the Simulator only), an anonymous self-issued certificate, and a manifest with one `c2pa.created` action and nope. as the claim generator. Fully offline: no timestamp authority, OCSP, remote manifest or trust list, and the library's HTTP resolver refuses every request. Validators report the file as valid and the signer as untrusted, which is expected. Not yet called by the app: the save pipeline comes next.
+- `NopeCore` signing contract: `PhotoSigning`, `SignableFile`, `ContentCredentialsStore` (where each format keeps the manifest, for the read-back allowlist), `PhotoSigningError` and `SigningSettings` (signing on by default).
+- Dependencies: c2pa-swift 0.0.16, swift-certificates 1.21.1 and swift-asn1 1.7.4, pinned exactly (swift-crypto 4.5.2 through `Package.resolved`); listed in `THIRD_PARTY.md`.
+- Docs: `docs/PRIVACY.md`, "Content Credentials" (what a signature contains and what it adds to each format), and `docs/TESTING.md`, "Checking signatures".
 - Stuck-camera detection: every RAW photo's pixel buffer is sampled (128 bytes), and a blank (zero-filled) photo is dropped. nope. restarts the camera once and retakes the photo; if it is still blank, the camera screen says "The camera isn't sending a picture." and disables the shutter. New strings in eleven languages (AI translations, needs review).
 - Debug builds: a `blankPicture` simulated camera scenario with UI tests and accessibility audits.
 - Capture core: `AVFoundationCaptureBackend` in `NopeCapture` finds the physical cameras only, publishes each lens's capabilities as plain values (Bayer RAW format, ISO and shutter ranges, aperture including the iOS 27 range, bracket count, photo sizes, magnification), and captures single-frame Bayer RAW (DNG), or the least-processed HEIF, labeled, on a lens without Bayer RAW. Photos are kept in memory only; nothing is saved yet.
@@ -42,6 +46,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Research: C2PA signing with offline, per-photo keys, a device capability survey, and verified wording and sources for every privacy statement.
 
 ### Changed
+- `NopeSigning`: `PerPhotoSigner`, `SignedData` and `SigningError` are replaced by `ContentCredentialsSigner` and `NopeCore.PhotoSigningError`; `PerPhotoSigningKey` now provides the certificate key instead of a DER public key.
+- Architecture check: `NopeSigning` may also import `X509` and `SwiftASN1` (swift-certificates), to build each file's certificate.
 - `Lens` describes its Bayer RAW format (`bayerRAWFormat`) instead of a flag, and carries its capabilities.
 
 ### Fixed

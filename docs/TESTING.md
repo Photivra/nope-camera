@@ -41,7 +41,7 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
-| `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave | On-device check |
+| `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
 
 Each excluded file is a thin wrapper; its logic lives in a tested file. For capture, the
 decisions are in `LensCatalog` (which cameras and formats), `CapturePolicy` (every processing
@@ -104,7 +104,9 @@ iPad:
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
-- a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`);
+- a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`), and a DNG, HEIF and JPEG
+  saved on the device validate with c2patool (below) as `Valid` with only
+  `signingCredential.untrusted` failing;
 - capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
   viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
   a photo and show "Captured (not saved yet: development build)"; a lens without Bayer RAW shows
@@ -114,6 +116,33 @@ iPad:
   largest text size).
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
+
+## Checking signatures
+
+The unit tests in `Tests/NopeSigningTests` sign synthetic DNG, HEIF and JPEG files with a
+software key and validate them with the C2PA library's reader, offline: the hash binding and
+claim signature are valid, the only failure is `signingCredential.untrusted`, and a one-bit
+change in the image data or in the claim makes the file invalid. They also check that signing
+adds only the Content Credentials store (`docs/PRIVACY.md`, "Content Credentials").
+
+To check a signed file by hand, use [c2patool](https://github.com/contentauth/c2patool) on a Mac
+(a local tool only; it isn't a project dependency):
+
+```sh
+c2patool photo.dng             # the manifest and its validation report
+c2patool photo.dng --detailed  # also the claim and the hash exclusions
+```
+
+Expect `"validation_state": "Valid"`, with `signingCredential.untrusted` as the only failure.
+The anonymous per-photo certificate isn't on any trust list; that is by design.
+
+The software key is compiled only for the Simulator. To confirm it isn't in a device build:
+
+```sh
+xcodebuild build -scheme NopeKit-Package -destination 'generic/platform=iOS' \
+  -configuration Release -derivedDataPath DerivedData-device CODE_SIGNING_ALLOWED=NO
+nm "$(find DerivedData-device/Build/Products/Release-iphoneos -name NopeSigning.o)" | grep -c Simulator   # 0
+```
 
 ## Tag check (metadata dump from a real device)
 

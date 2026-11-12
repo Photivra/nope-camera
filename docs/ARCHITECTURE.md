@@ -24,7 +24,7 @@ captures in memory; nothing is saved yet.
 | `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, and `SimulatedCaptureBackend` | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters. Now: `AVFoundationCaptureBackend` and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding. Now: `EncodingSettings` for HEIF and JPEG | `NopeCore`, Core Image, ImageIO |
-| `NopeSigning` | C2PA signing. Now: `PerPhotoSigner`, which uses a fresh key for every photo | `NopeCore`, CryptoKit, C2PA |
+| `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
 
@@ -87,6 +87,27 @@ next steps, in later pull requests (issue #1): build the file's metadata from th
 verify it by reading the file back, develop HEIF and JPEG from the same RAW (`NopeDevelop`),
 sign each file with a fresh key (`NopeSigning`), and add it to Photos with add-only access
 (`NopeCapture`). Photos go from memory to Photos and never linger on disk.
+
+### Signing
+
+`NopeCore` defines the signing contract: `PhotoSigning`, `SignableFile` (what a file is, which
+decides its media type and manifest description), `ContentCredentialsStore` (where each
+container keeps the manifest, for the read-back allowlist), `PhotoSigningError` and
+`SigningSettings` (the on/off switch). The save pipeline builds the file's metadata, then, when
+signing is on, calls `PhotoSigning.sign(_:as:)`, then reads the signed file back against the
+allowlist, then saves it. `NopeSigning` implements the contract:
+
+```
+ ContentCredentialsSigner (PhotoSigning)
+   ├─ SigningKeyProvider: SecureEnclaveKeyProvider on a device (excluded from the coverage gate),
+   │                      SimulatorSoftwareKeyProvider in the Simulator only
+   ├─ SelfIssuedCertificate (swift-certificates): anonymous, non-CA, C2PA EKU, fixed validity
+   ├─ ContentCredentialsManifest: one c2pa.created action, nope. as claim generator
+   ├─ OfflineC2PAContext: every fetch off, no network host, an HTTP resolver that refuses all
+   └─ InMemoryFile and InMemoryStream: the C2PA library reads and writes memory, never a file
+```
+
+Details and the exact contents are in [`PRIVACY.md`](PRIVACY.md), "Content Credentials".
 
 ## The simulated backend
 

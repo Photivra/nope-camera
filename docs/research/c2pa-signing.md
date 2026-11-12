@@ -92,6 +92,18 @@ For each photo:
 - Binary size is unmeasured.
 - If self-signed leaves are restricted later, fall back to option 2.
 
+## Implementation findings (2026-11-12)
+
+Checked while building `NopeSigning` with c2pa-swift 0.0.16 (c2pa-rs 0.91.7), on synthetic files, with the library's reader and c2patool 0.28.6:
+
+- **Confirmed:** the signer callback accepts a DER-encoded ES256 signature from CryptoKit.
+- **Confirmed:** a self-issued, non-CA leaf works, but c2pa-rs also requires an authority key identifier on it (`certificate_profile.rs`); without one, signing fails with "the certificate is invalid". The leaf carries subject and authority key identifiers derived from its own one-use key.
+- **Confirmed:** validators report `Valid` with `signingCredential.untrusted` as the only failure, for DNG, HEIF and JPEG; a one-bit change in the image data gives `assertion.dataHash.mismatch` (DNG, JPEG) or `assertion.bmffHash.mismatch` (HEIF).
+- **Confirmed:** c2pa-rs adds no time to the `c2pa.created` action when none is given, and no timestamp when timestamping is off.
+- **Confirmed:** c2pa-rs appends its own entry (`org.contentauth.c2pa_rs` and its version) to the claim generator information.
+- **Confirmed:** the prebuilt `C2PAC.xcframework` contains an HTTP client (reqwest) for remote manifests, OCSP and timestamps. nope. turns every fetch off, allows no network host, and gives the library an HTTP resolver that refuses every request; a test makes the library attempt a fetch and checks the resolver is called and refuses it. The client code is still linked into the binary.
+- **To measure:** the app size it adds once the app links `NopeSigning`. The static archive for one device architecture is about 250 MB unstripped (71 MB stripped); the linker keeps only what is used.
+
 ## Sources
 
 - [contentauth/c2pa-swift](https://github.com/contentauth/c2pa-swift): README, `Package.swift`, `Signer.swift`, `SecureEnclaveSigner.swift`, `CertificateManager.swift`, release v0.0.16

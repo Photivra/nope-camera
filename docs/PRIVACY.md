@@ -28,6 +28,77 @@ a dump of every tag in a real saved DNG and HEIF. Wording for any user-facing cl
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
 
+## Content Credentials (signing)
+
+nope. can sign each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials. Status: the
+signer (`NopeSigning`) is built and tested; the save pipeline that calls it comes next, so no
+saved photo is signed yet. Signing has its own switch (`SigningSettings`), on by default, outside
+the "Remove all optional details" master switch.
+
+**What it proves.** The signature proves the file hasn't changed since nope. signed it. It
+doesn't prove who took the photo or on which device. Each file is signed with a new key and a
+certificate the key issues to itself, not one chained to a trusted certificate authority, so
+validators report the signer as untrusted (`signingCredential.untrusted`, C2PA 2.2, §15.7) and
+the file as valid. That is expected.
+
+**How each file is signed.**
+
+1. A new P-256 key is created for that file. On a device it is created in the Secure Enclave
+   (CryptoKit `SecureEnclave.P256.Signing.PrivateKey`), with no keychain entry, and is released
+   after the file is signed; it is never stored or used again. The Simulator has no Secure
+   Enclave, so Simulator builds use a software key; that code is compiled only for the Simulator
+   (`#if targetEnvironment(simulator)`) and isn't in any device build. A device whose Secure
+   Enclave can't create a key gets no signature and a "not signed" message, never a software key.
+2. The key signs a certificate for itself (below).
+3. The C2PA library embeds a manifest and the key signs it (ES256). There is no timestamp
+   authority, no certificate status check (OCSP), no remote manifest and no trust list: the
+   library's settings turn every fetch off and allow no network host, and its HTTP resolver
+   refuses every request without sending it. A test makes the library attempt a fetch and checks
+   the resolver refuses it. No App Attest.
+
+**What the signature contains.** Nothing in it identifies the person or the device, and nothing
+links two files: every field is either the same for everyone running that version of nope., or
+random and made for that file alone.
+
+| Item | Value | Same for everyone, or per file |
+|---|---|---|
+| Claim generator | `nope.` and the app version (for example `0.1.0`); the C2PA library adds its own name and version (`org.contentauth.c2pa_rs`) | Same for everyone on that version |
+| Action | One `c2pa.created` action, digital source type `digitalCapture` (IPTC), and a fixed description (below) | Same for every file of that kind |
+| Instance ID | `xmp:iid:` and a random UUID | Random, per file |
+| Hash binding | A SHA-256 hash of the file's bytes, excluding the manifest itself (`c2pa.hash.data` for DNG and JPEG, `c2pa.hash.bmff.v3` for HEIF) | Depends only on the file |
+| Signature | ES256 by the file's own key | Per file |
+| Certificate subject and issuer | Common name "nope. anonymous signer" only: no organization, email, location or device | Same for everyone |
+| Certificate validity | 2000-01-01 to 2099-12-31 | Same for everyone, so it doesn't reveal the capture time |
+| Certificate serial number | 20 random bytes | Random, per file |
+| Certificate public key and key identifiers | The file's one-use public key and its SHA-1 hash | Per file |
+
+Not written: no time (`when`) on the action, no timestamp, no title, no thumbnail, no ingredient,
+no creator, no location, no device model, no operating system, no device ID, no stable key.
+
+Descriptions (written into the file in English; owner-approved wording pending):
+
+- DNG: "Captured by nope. as a single frame of RAW sensor data, with as little processing as the
+  phone allows."
+- HEIF or JPEG developed from the RAW: "Developed by nope. on the phone from a single frame of
+  RAW sensor data."
+- HEIF or JPEG from a lens without Bayer RAW: "Captured by nope. and processed by the phone's
+  camera, because this lens can't save RAW."
+
+**What signing adds to each file.** Exactly one item, checked by the tests on synthetic files
+and with c2patool 0.28.6; the metadata read-back allowlist must permit it for signed files
+(`ContentCredentialsStore` in `NopeCore`):
+
+| Format | Added | Notes |
+|---|---|---|
+| DNG | TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0 | The C2PA library writes a new IFD0 (the old tags plus this one) at the end of the file and points the header at it. The original IFD0 bytes stay in the file, unreferenced; they hold the same allowlisted tags. The hash excludes the manifest and the 4-byte offset of tag 52545 |
+| HEIF | One top-level `uuid` box, UUID `D8FEC3D6-1B0E-483C-9297-5828877EC481`, after `ftyp` | No other box changes type or order. The hash excludes `/uuid`, `/ftyp`, `/mfra`, `/free` and `/skip`, the C2PA default exclusions for this format |
+| JPEG | APP11 (`0xFFEB`) segments with JUMBF (common identifier `JP`), after APP0 | No other segment changes. The hash excludes only the APP11 segments |
+
+ImageIO reports no new property for the signed HEIF and JPEG (only the file size changes).
+
+**Signing must be the last change.** Any later change to the bytes (an edit in Photos, export,
+re-encoding by a sharing app) breaks the signature or removes it.
+
 ## Tag check
 
 The metadata plan below is confirmed by dumping every tag from real files captured on a device.
@@ -114,7 +185,7 @@ The "Default" column below is each item's setting when the user first turns the 
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
 | App name and version (nope.) | On | Apps can't show what made the file | Written by nope. |
-| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes; without a timestamp when the date is off | Written by nope. |
+| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by nope. |
 
 Serial numbers, unique image IDs and raw data IDs are never written, by the system or by nope.,
 so they have no switch.

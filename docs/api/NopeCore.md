@@ -957,6 +957,95 @@ let lensID: Lens.ID
 
 The lens that took the photo.
 
+## `ContentCredentialsStore`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+enum ContentCredentialsStore
+```
+
+Where signing stores the Content Credentials manifest in each container.
+
+Signing adds exactly one item to a file, and nothing else: no XMP, no EXIF tag, no thumbnail.
+The metadata read-back allowlist must permit this item for signed files, and only this item
+(AGENTS.md, "Metadata is allowlisted and verified"). The locations come from the C2PA
+specification 2.2, appendix A, "Embedding manifests into assets", and were checked on files
+signed by `NopeSigning` (`Tests/NopeSigningTests`).
+
+## `ContentCredentialsStore/dng`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case dng
+```
+
+DNG: the manifest store in TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0.
+
+## `ContentCredentialsStore/dngTag`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+static let dngTag: UInt16
+```
+
+The TIFF tag that holds the manifest store in a DNG: 52545 (`0xCD41`).
+
+## `ContentCredentialsStore/heif`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case heif
+```
+
+HEIF: the manifest store in a top-level `uuid` box with the C2PA UUID
+``heifBoxUUID``.
+
+## `ContentCredentialsStore/heifBoxUUID`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+static let heifBoxUUID: UUID
+```
+
+The extended type of the HEIF `uuid` box that holds the manifest store:
+`D8FEC3D6-1B0E-483C-9297-5828877EC481`.
+
+## `ContentCredentialsStore/jpeg`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case jpeg
+```
+
+JPEG: the manifest store as JUMBF in one or more APP11 (`0xFFEB`) segments, each with
+the common identifier `JP`.
+
+## `ContentCredentialsStore/jpegMarker`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+static let jpegMarker: UInt16
+```
+
+The JPEG marker of the segments that hold the manifest store: APP11 (`0xFFEB`).
+
+## `ContentCredentialsStore/mediaType`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+var mediaType: String { get }
+```
+
+The media type the C2PA library is given for the container.
+
 ## `DeviceCapabilities`
 
 public, declared in `Sources/NopeCore/DeviceCapabilities.swift`
@@ -1512,6 +1601,87 @@ case raw
 
 Single-frame Bayer RAW, saved as DNG.
 
+## `PhotoSigning`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+protocol PhotoSigning : Sendable
+```
+
+Signs one finished file with Content Credentials (C2PA) and returns the signed file.
+
+The save pipeline calls the signer after the file's metadata has been built from the
+allowlist, and before the read-back check and the save to Photos:
+
+1. build the file's metadata from the allowlist;
+2. sign it with ``sign(_:as:)``, when ``SigningSettings/isEnabled`` is on;
+3. read the signed file back and check every tag and block against the allowlist, which
+   includes the Content Credentials store described by ``ContentCredentialsStore``;
+4. add the file to Photos.
+
+Any change to the bytes after step 2 breaks the signature, so nothing may rewrite the file
+between signing and saving.
+
+`NopeSigning` provides the implementation; tests and interfaces use fakes. Privacy rule:
+every call uses a new key that is discarded afterward, so no two files can be linked through
+their signatures (AGENTS.md, "Honesty").
+
+```swift
+let signed = try await signer.sign(dngBytes, as: .singleFrameRAW)
+```
+
+## `PhotoSigning/sign(_:as:)`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+func sign(_ data: Data, as file: SignableFile) async throws(PhotoSigningError) -> Data
+```
+
+Signs one file.
+
+- Parameters:
+  - data: The complete file, with its final metadata.
+  - file: What the file is, which decides its media type and the manifest's description.
+- Returns: The same file with a Content Credentials manifest embedded. The image data and
+  metadata are otherwise unchanged; ``ContentCredentialsStore`` lists what is added.
+- Throws: ``PhotoSigningError`` when the file can't be signed. The save pipeline must then
+  tell the person the photo is not signed; it never fails silently.
+
+## `PhotoSigningError`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+enum PhotoSigningError
+```
+
+Why a file couldn't be signed.
+
+An unsigned photo is never saved silently: the interface says the photo is not signed.
+
+## `PhotoSigningError/keyCreationFailed`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case keyCreationFailed
+```
+
+A new key couldn't be created, for example because the Secure Enclave is unavailable.
+
+## `PhotoSigningError/signingFailed`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case signingFailed
+```
+
+The key, the certificate or the C2PA library couldn't produce a signed file, for example
+because the file isn't a valid DNG, HEIF or JPEG.
+
 ## `ProcessedFallback`
 
 public, declared in `Sources/NopeCore/ProcessedFallback.swift`
@@ -1643,6 +1813,148 @@ case stopped
 ```
 
 The camera hasn't started yet. Show the viewfinder area empty, without a message.
+
+## `SignableFile`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+enum SignableFile
+```
+
+The kinds of file nope. signs, each with the honest description its manifest carries.
+
+## `SignableFile/container`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+var container: ContentCredentialsStore { get }
+```
+
+The file's container, which decides where the signature is stored.
+
+## `SignableFile/developedHEIF`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case developedHEIF
+```
+
+HEIF developed by nope. from a single-frame RAW.
+
+## `SignableFile/developedJPEG`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case developedJPEG
+```
+
+JPEG developed by nope. from a single-frame RAW.
+
+## `SignableFile/deviceProcessedHEIF`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case deviceProcessedHEIF
+```
+
+HEIF processed by the phone's camera, for a lens without Bayer RAW.
+
+## `SignableFile/deviceProcessedJPEG`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case deviceProcessedJPEG
+```
+
+JPEG processed by the phone's camera, for a lens without Bayer RAW or HEIF.
+
+## `SignableFile/init(developedFrom:)`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+init(developedFrom format: PhotoFormat)
+```
+
+The file nope. saves for a format it writes from a Bayer RAW capture.
+
+- Parameter format: The saved format: the DNG itself, or a file developed from it.
+
+## `SignableFile/init(fallback:)`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+init(fallback: ProcessedFallback)
+```
+
+The file nope. saves for a lens without Bayer RAW.
+
+- Parameter fallback: The processed format the lens gave.
+
+## `SignableFile/singleFrameRAW`
+
+public, declared in `Sources/NopeCore/PhotoSigning.swift`
+
+```swift
+case singleFrameRAW
+```
+
+Single-frame Bayer RAW, saved as DNG.
+
+## `SigningSettings`
+
+public, declared in `Sources/NopeCore/SigningSettings.swift`
+
+```swift
+struct SigningSettings
+```
+
+Whether nope. signs each saved file with Content Credentials (C2PA).
+
+Signing has its own switch in settings, outside the "Remove all optional details" master
+switch, and is on by default (docs/PRIVACY.md, "Metadata plan"). The settings screen edits this
+value; the save pipeline reads it and calls a ``PhotoSigning`` signer only when
+``isEnabled`` is `true`. When it is off, the file is saved unsigned and nothing about signing
+is written to it.
+
+## `SigningSettings/default`
+
+public, declared in `Sources/NopeCore/SigningSettings.swift`
+
+```swift
+static let `default`: SigningSettings
+```
+
+The settings when the app is first installed: signing on.
+
+## `SigningSettings/init(isEnabled:)`
+
+public, declared in `Sources/NopeCore/SigningSettings.swift`
+
+```swift
+init(isEnabled: Bool = true)
+```
+
+Creates signing settings.
+
+- Parameter isEnabled: Whether each saved file is signed. Defaults to `true`.
+
+## `SigningSettings/isEnabled`
+
+public, declared in `Sources/NopeCore/SigningSettings.swift`
+
+```swift
+var isEnabled: Bool
+```
+
+Whether each saved file is signed. `true` by default.
 
 ## `SimulatedCaptureBackend`
 

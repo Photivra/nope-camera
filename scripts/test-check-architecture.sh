@@ -26,6 +26,9 @@ case_tree fail "attributed import is checked" Sources/NopeCore/A.swift "@preconc
 case_tree fail "symbol import is checked" Sources/NopeDevelop/A.swift "import struct SwiftUI.Color"
 case_tree pass "signing imports C2PA and CryptoKit" Sources/NopeSigning/S.swift "import C2PA
 import CryptoKit"
+case_tree pass "signing imports the certificate packages" Sources/NopeSigning/S.swift "import X509
+import SwiftASN1"
+case_tree fail "signing imports UIKit" Sources/NopeSigning/S.swift "import UIKit"
 case_tree pass "app target is unrestricted" Sources/NopeApp/App.swift "import SwiftUI
 import AVFoundation"
 
