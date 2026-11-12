@@ -43,6 +43,33 @@ protocol CaptureHardware: Sendable {
     /// - Throws: `CaptureError.notRunning` if the session isn't running, or
     ///   `CaptureError.captureFailed` if the system reports an error or no file.
     func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+
+    /// What the camera is using now, at most one reading per ``ReadingThrottle/interval``,
+    /// while readings are on.
+    var exposureReadings: AsyncStream<ExposureReading> { get }
+
+    /// Sets exposure, focus, white balance and metering on the attached camera.
+    ///
+    /// - Parameter controls: The controls, already checked against the lens by `NopeCore`.
+    /// - Throws: `CaptureError.notRunning` if no camera is attached, or
+    ///   `CaptureError.configurationFailed` if the camera can't be locked for configuration.
+    func apply(_ controls: DeviceControls) async throws(CaptureError)
+
+    /// Starts or stops observing the attached camera's exposure, focus and white balance.
+    ///
+    /// - Parameter enabled: Whether to send readings.
+    func setReadingsEnabled(_ enabled: Bool) async
+
+    /// Takes a manual exposure bracket: one photo per frame.
+    ///
+    /// - Parameters:
+    ///   - plan: The photo settings each frame uses.
+    ///   - frames: Each frame's ISO and exposure duration.
+    /// - Returns: The photos, in the order the system delivered them.
+    /// - Throws: `CaptureError.notRunning` if the session isn't running, or
+    ///   `CaptureError.captureFailed` if the system reports an error.
+    func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError)
+        -> [HardwarePhoto]
 }
 
 /// One photo as the hardware returned it.

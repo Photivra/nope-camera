@@ -14,6 +14,10 @@ publishes their capabilities, and captures single-frame Bayer RAW, or the labele
 fallback on a lens without it, in memory. Its decisions are in tested types; the calls that need
 a camera are in `SystemCaptureHardware.swift`. Saving to Photos follows in a later step.
 
+As a `ManualCaptureBackend`, it also sets exposure, focus, white balance and metering on the
+camera within each lens's real ranges, reports the values in use at a reduced rate, and takes
+manual exposure brackets as separate single-frame photos.
+
 Related documentation: `docs/ARCHITECTURE.md`, `docs/TESTING.md` and `docs/PRIVACY.md` in the
 repository.
 

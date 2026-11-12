@@ -53,9 +53,31 @@ Related documentation in the repository:
 - ``CaptureRequest``
 - ``CapturedPhoto``
 
+### Manual controls
+
+- ``ManualControlsModel``
+- ``ManualControlIntent``
+- ``ManualControlsSetting``
+- ``ManualControl``
+- ``ControlAvailability``
+- ``ControlScale``
+- ``ManualSettings``
+- ``ManualCapabilities``
+- ``ExposureMode``
+- ``MeteringMode``
+- ``ExposureReading``
+- ``WhiteBalance``
+- ``WhiteBalancePreset``
+- ``BracketSettings``
+- ``BracketFrame``
+- ``IntervalSettings``
+- ``IntervalProgress``
+
 ### Hardware
 
 - ``CaptureBackend``
+- ``ManualCaptureBackend``
+- ``DeviceControls``
 - ``CaptureEvent``
 - ``CameraPreviewSource``
 - ``SimulatedCaptureBackend``

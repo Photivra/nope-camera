@@ -26,6 +26,13 @@ public final class CameraModel {
     /// The state of the most recent capture.
     public private(set) var captureStatus: CaptureStatus = .idle
 
+    /// Whether clean view is on: the interface hides every control that isn't essential. Off by
+    /// default. Warnings that change what the photo is are never hidden.
+    public private(set) var isCleanView = false
+
+    /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
+    public let manual: ManualControlsModel
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -34,9 +41,16 @@ public final class CameraModel {
 
     /// Creates a model in the ``CameraState/starting`` state.
     ///
-    /// - Parameter backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
-    public init(backend: any CaptureBackend) {
+    /// - Parameters:
+    ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews. A
+    ///     ``ManualCaptureBackend`` also gets manual controls.
+    ///   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+    public init(
+        backend: any CaptureBackend,
+        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
+    ) {
         self.backend = backend
+        manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -85,6 +99,10 @@ public final class CameraModel {
             await selectLens(id)
         case .capture:
             await capture()
+        case .manual(let intent):
+            await manual.handle(intent) { [weak self] in await self?.capture() }
+        case .setCleanView(let isOn):
+            isCleanView = isOn
         }
     }
 
@@ -170,10 +188,13 @@ public final class CameraModel {
             return
         }
         sessionStatus = .starting
+        manual.lensWillStart(lens)
         do {
             try await backend.startSession(CaptureRequest(lens: lens))
             // An interruption or heat event may have arrived while starting; it wins.
             if sessionStatus == .starting { sessionStatus = .running }
+            // Starting the camera returns its controls to automatic; apply the manual ones again.
+            await manual.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
         }
@@ -187,6 +208,10 @@ public final class CameraModel {
         guard canCapture, let lens = selectedLens else { return }
         captureStatus = .capturing
         let request = CaptureRequest(lens: lens)
+        if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
+            await captureBracket(request, frames: frames, backend: bracketBackend)
+            return
+        }
         do {
             captureStatus = .captured(try await backend.capturePhoto(request))
         } catch .blankPicture {
@@ -219,6 +244,23 @@ public final class CameraModel {
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)
+        } catch {
+            captureStatus = .failed(error)
+        }
+    }
+
+    /// Takes an exposure bracket: separate single-frame photos, nothing merged. A failed or
+    /// blank bracket isn't retried; the person can press the shutter again.
+    ///
+    /// - Parameters:
+    ///   - request: The lens and format.
+    ///   - frames: Each frame's ISO and exposure duration.
+    ///   - backend: The backend, which supports brackets.
+    private func captureBracket(
+        _ request: CaptureRequest, frames: [BracketFrame], backend: any ManualCaptureBackend
+    ) async {
+        do {
+            captureStatus = .capturedBracket(try await backend.captureBracket(request, frames: frames))
         } catch {
             captureStatus = .failed(error)
         }

@@ -23,4 +23,12 @@ public enum CameraIntent: Equatable, Sendable {
     /// shutter button, the volume buttons or the Camera Control. Ignored while the camera isn't
     /// running or a photo is already being taken.
     case capture
+
+    /// Change a manual or pro control: see ``ManualControlIntent``. Ignored while manual
+    /// controls are off, except ``ManualControlIntent/setEnabled(_:)``.
+    case manual(ManualControlIntent)
+
+    /// Turn clean view on or off. Clean view hides every control that isn't essential, leaving
+    /// the viewfinder and the shutter; it never changes a setting.
+    case setCleanView(Bool)
 }

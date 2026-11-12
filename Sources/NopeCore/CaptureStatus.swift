@@ -16,6 +16,13 @@ public enum CaptureStatus: Equatable, Sendable {
     /// development build)". Announce it to VoiceOver.
     case captured(CapturedPhoto)
 
+    /// An exposure bracket was taken: separate single-frame photos, nothing merged, held in
+    /// memory only, darkest first.
+    ///
+    /// Say how many photos were taken, with the same development-build wording as
+    /// ``captured(_:)``, and announce it.
+    case capturedBracket([CapturedPhoto])
+
     /// The photo wasn't taken. Present the error as its documentation says, and announce it.
     case failed(CaptureError)
 }

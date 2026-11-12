@@ -57,4 +57,28 @@ struct SimulatedCaptureBackendTests {
             try await backend.capturePhoto(CaptureRequest(lens: Self.wide))
         }
     }
+
+    @Test func manualControlsAreAcceptedAndBracketsReturnOnePhotoPerFrame() async throws {
+        let lens = Lens(id: "wide", kind: .wide, bayerRAWFormat: "bgg4", photoDimensions: [PhotoDimensions(width: 8, height: 6)])
+        let backend = SimulatedCaptureBackend(permission: .authorized)
+        try await backend.applyControls(.automatic)
+        await backend.setExposureReadingsEnabled(false)
+        await backend.setExposureReadingsEnabled(true)
+        backend.finishEvents()
+        var readings: [ExposureReading] = []
+        for await reading in backend.exposureReadings { readings.append(reading) }
+        #expect(readings == [SimulatedCaptureBackend.placeholderReading])
+
+        let frames = [BracketFrame(iso: 100, exposureDuration: 0.01), BracketFrame(iso: 100, exposureDuration: 0.02)]
+        let photos = try await backend.captureBracket(CaptureRequest(lens: lens), frames: frames)
+        #expect(photos.map(\.exposureDuration) == [0.01, 0.02])
+        #expect(photos.allSatisfy { $0.dimensions == PhotoDimensions(width: 8, height: 6) })
+        let placeholder = try await backend.captureBracket(CaptureRequest(lens: Self.wide), frames: frames)
+        #expect(placeholder.allSatisfy { $0.dimensions == SimulatedCaptureBackend.placeholderDimensions })
+
+        let failing = SimulatedCaptureBackend(permission: .authorized, captureError: .captureFailed)
+        await #expect(throws: CaptureError.captureFailed) {
+            try await failing.captureBracket(CaptureRequest(lens: Self.wide), frames: frames)
+        }
+    }
 }

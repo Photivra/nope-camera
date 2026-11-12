@@ -1,6 +1,138 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Each frame is a separate single-frame photo. Nothing is merged.": {
+      "comment": "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Bild ist ein eigenes Einzelbildfoto. Nichts wird zusammengeführt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada fotograma es una foto independiente de un solo fotograma. No se combina nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque image est une photo distincte à image unique. Rien n’est fusionné."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni fotogramma è una foto separata a fotogramma singolo. Nulla viene unito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各フレームは個別の単一フレーム写真です。合成は行いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 프레임은 별도의 단일 프레임 사진입니다. 합치지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elk beeld is een aparte foto van één beeld. Er wordt niets samengevoegd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada quadro é uma foto separada de quadro único. Nada é mesclado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每一帧都是独立的单帧照片，不会合并。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每一幀都是獨立的單幀照片，不會合併。"
+          }
+        }
+      }
+    },
+    "Each photo is separate. Nothing is combined. Keep nope. open while the series runs.": {
+      "comment": "Explains interval shooting. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto ist eigenständig. Nichts wird kombiniert. Lass nope. geöffnet, solange die Serie läuft."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto es independiente. No se combina nada. Mantén nope. abierta mientras dure la serie."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque photo est distincte. Rien n’est combiné. Gardez nope. ouverte pendant la série."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni foto è separata. Nulla viene combinato. Tieni nope. aperta mentre la serie è in corso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真は個別です。合成は行いません。撮影中は nope. を開いたままにしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 사진은 별개입니다. 합치지 않습니다. 촬영이 끝날 때까지 nope.를 열어 두십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto is apart. Er wordt niets gecombineerd. Houd nope. open zolang de reeks loopt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto é separada. Nada é combinado. Mantenha o nope. aberto enquanto a série durar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片都是独立的，不会合并。拍摄期间请保持 nope. 打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片都是獨立的，不會合併。拍攝期間請保持 nope. 開啟。"
+          }
+        }
+      }
+    },
     "HEIF with some device processing": {
       "comment": "Spoken format name for the no-RAW fallback. HEIF is a file format name.",
       "extractionState": "manual",

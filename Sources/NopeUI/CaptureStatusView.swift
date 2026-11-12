@@ -37,6 +37,8 @@ struct CaptureStatusView: View {
             String(localized: "Taking photo…", bundle: .module, comment: "Shown while a photo is being taken.")
         case .captured:
             String(localized: "Captured (not saved yet: development build)", bundle: .module, comment: "Shown after a photo is taken. In this development version photos are kept in memory and not saved to Photos.")
+        case .capturedBracket(let photos):
+            String(localized: "\(photos.count) photos captured (not saved yet: development build)", bundle: .module, comment: "Shown after an exposure bracket is taken: the number of separate photos. In this development version photos are kept in memory and not saved to Photos.")
         case .failed(.notRunning):
             String(localized: "No photo was taken: the camera is paused.", bundle: .module, comment: "Shown when the shutter is pressed while the camera is paused.")
         case .failed(.configurationFailed), .failed(.captureFailed):

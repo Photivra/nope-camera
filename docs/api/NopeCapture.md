@@ -22,6 +22,40 @@ coverage gate and verified on a device (docs/TESTING.md).
 
 Create it with ``init()`` in the app target.
 
+## `AVFoundationCaptureBackend/applyControls(_:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func applyControls(_ controls: DeviceControls) async throws(CaptureError)
+```
+
+Sets exposure, focus, white balance and metering on the running camera.
+
+- Parameter controls: The controls, already checked against the lens.
+- Throws: `CaptureError.notRunning` if the session isn't configured, or the hardware's
+  error.
+
+## `AVFoundationCaptureBackend/captureBracket(_:frames:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func captureBracket(_ request: CaptureRequest, frames: [BracketFrame]) async throws(CaptureError) -> [CapturedPhoto]
+```
+
+Takes a manual exposure bracket, in memory only, and rejects it if any frame is blank.
+
+- Parameters:
+  - request: The lens and format; must match the last ``startSession(_:)``.
+  - frames: Each frame's ISO and exposure duration, from 1 to the lens's
+    `maxBracketedPhotoCount`.
+- Returns: One photo per frame, in order, each a separate single-frame photo.
+- Throws: `CaptureError.notRunning` if the session isn't configured for this request,
+  `CaptureError.captureFailed` for an invalid frame count or a missing photo,
+  `CaptureError.blankPicture` if any frame is blank (all are dropped), or the hardware's
+  error.
+
 ## `AVFoundationCaptureBackend/capturePhoto(_:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -72,6 +106,16 @@ nonisolated let events: AsyncStream<CaptureEvent>
 
 Interruptions, heat changes and runtime errors from the hardware.
 
+## `AVFoundationCaptureBackend/exposureReadings`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+nonisolated let exposureReadings: AsyncStream<ExposureReading>
+```
+
+What the camera is using now, while readings are on.
+
 ## `AVFoundationCaptureBackend/init()`
 
 public, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -115,6 +159,18 @@ func requestPermission() async -> CameraPermission
 ```
 
 Asks for camera access. Side effect: may show the system prompt.
+
+## `AVFoundationCaptureBackend/setExposureReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func setExposureReadingsEnabled(_ enabled: Bool) async
+```
+
+Turns the camera's readings on or off.
+
+- Parameter enabled: Whether to send readings.
 
 ## `AVFoundationCaptureBackend/startSession(_:)`
 
@@ -393,12 +449,12 @@ let fieldOfViewDegrees: Double
 
 The active format's horizontal field of view, in degrees (`videoFieldOfView`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:)`
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:)`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double)
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none)
 ```
 
 Creates a camera description.
@@ -416,6 +472,7 @@ Creates a camera description.
   - maxBracketedPhotoCount: The most frames in one bracketed capture.
   - photoDimensions: The supported maximum photo sizes, as reported.
   - fieldOfViewDegrees: The horizontal field of view, in degrees.
+  - manualControls: The camera's answers about manual control. Defaults to none.
 
 ## `CameraDeviceDescription/isVirtual`
 
@@ -437,6 +494,16 @@ let isoRange: ClosedRange<Double>
 ```
 
 The ISO range of the active photo format.
+
+## `CameraDeviceDescription/manualControls`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let manualControls: ManualControlSupport
+```
+
+The camera's answers about manual control.
 
 ## `CameraDeviceDescription/maxBracketedPhotoCount`
 
@@ -530,6 +597,20 @@ can be tested with a fake (AGENTS.md, "Full test coverage").
 Every decision (which lens, which format, which processing switches) is made before a call
 reaches the hardware, in ``CapturePolicy``.
 
+## `CaptureHardware/apply(_:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func apply(_ controls: DeviceControls) async throws(CaptureError)
+```
+
+Sets exposure, focus, white balance and metering on the attached camera.
+
+- Parameter controls: The controls, already checked against the lens by `NopeCore`.
+- Throws: `CaptureError.notRunning` if no camera is attached, or
+  `CaptureError.configurationFailed` if the camera can't be locked for configuration.
+
 ## `CaptureHardware/capture(_:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
@@ -545,6 +626,23 @@ Takes one photo.
   details.
 - Throws: `CaptureError.notRunning` if the session isn't running, or
   `CaptureError.captureFailed` if the system reports an error or no file.
+
+## `CaptureHardware/captureBracket(_:frames:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError) -> [HardwarePhoto]
+```
+
+Takes a manual exposure bracket: one photo per frame.
+
+- Parameters:
+  - plan: The photo settings each frame uses.
+  - frames: Each frame's ISO and exposure duration.
+- Returns: The photos, in the order the system delivered them.
+- Throws: `CaptureError.notRunning` if the session isn't running, or
+  `CaptureError.captureFailed` if the system reports an error.
 
 ## `CaptureHardware/configure(_:)`
 
@@ -585,6 +683,17 @@ var events: AsyncStream<CaptureEvent> { get }
 
 Interruptions, heat changes and runtime errors.
 
+## `CaptureHardware/exposureReadings`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+var exposureReadings: AsyncStream<ExposureReading> { get }
+```
+
+What the camera is using now, at most one reading per ``ReadingThrottle/interval``,
+while readings are on.
+
 ## `CaptureHardware/previewSource`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
@@ -594,6 +703,18 @@ var previewSource: any CameraPreviewSource { get }
 ```
 
 The handle the app turns into the live viewfinder.
+
+## `CaptureHardware/setReadingsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func setReadingsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops observing the attached camera's exposure, focus and white balance.
+
+- Parameter enabled: Whether to send readings.
 
 ## `CaptureHardware/stop()`
 
@@ -957,6 +1078,270 @@ the nearest 0.5 from 1× up (for example 0.5×, 1×, 2.5×, 5×).
   - reference: The rear wide camera's horizontal field of view, in degrees.
 - Returns: The magnification, or `nil` if either angle isn't between 0 and 180 degrees.
 
+## `ManualControlSupport`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+struct ManualControlSupport
+```
+
+One camera's answers about manual control, copied from `AVCaptureDevice` and its active
+format into plain values, so ``LensCatalog`` can turn them into `NopeCore`'s
+`ManualCapabilities` without a camera.
+
+## `ManualControlSupport/aperturePriority`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let aperturePriority: Bool
+```
+
+iOS 27, variable aperture only: `supportsExposureModeCustom(lensAperture: currentLensAperture, duration: autoExposureDuration, iso: autoISO)`.
+
+## `ManualControlSupport/capabilities`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+var capabilities: ManualCapabilities { get }
+```
+
+The `NopeCore` capabilities. Metering modes need auto exposure; spot and whole frame
+also need the exposure region of interest. Exposure compensation needs auto exposure and
+a bias range wider than 0.
+
+## `ManualControlSupport/continuousAutoExposure`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let continuousAutoExposure: Bool
+```
+
+`isExposureModeSupported(.continuousAutoExposure)`.
+
+## `ManualControlSupport/continuousAutoFocus`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let continuousAutoFocus: Bool
+```
+
+`isFocusModeSupported(.continuousAutoFocus)`.
+
+## `ManualControlSupport/customExposure`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let customExposure: Bool
+```
+
+`isExposureModeSupported(.custom)`.
+
+## `ManualControlSupport/customWhiteBalance`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let customWhiteBalance: Bool
+```
+
+`isLockingWhiteBalanceWithCustomDeviceGainsSupported`.
+
+## `ManualControlSupport/exposureBiasRange`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let exposureBiasRange: ClosedRange<Double>
+```
+
+`minExposureTargetBias` to `maxExposureTargetBias`, in EV.
+
+## `ManualControlSupport/exposureRegion`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let exposureRegion: Bool
+```
+
+iOS 26: `isExposureRectOfInterestSupported`.
+
+## `ManualControlSupport/init(customExposure:continuousAutoExposure:lockedExposure:shutterPriority:isoPriority:aperturePriority:exposureBiasRange:continuousAutoFocus:lockedFocus:lensPositionFocus:customWhiteBalance:exposureRegion:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+init(customExposure: Bool, continuousAutoExposure: Bool, lockedExposure: Bool, shutterPriority: Bool, isoPriority: Bool, aperturePriority: Bool, exposureBiasRange: ClosedRange<Double>, continuousAutoFocus: Bool, lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool)
+```
+
+Creates a description; each parameter is the AVFoundation answer of the same name above.
+
+- Parameters:
+  - customExposure: Custom exposure.
+  - continuousAutoExposure: Continuous auto exposure.
+  - lockedExposure: Locked exposure.
+  - shutterPriority: Shutter priority.
+  - isoPriority: ISO priority.
+  - aperturePriority: Aperture priority.
+  - exposureBiasRange: The exposure bias range, in EV.
+  - continuousAutoFocus: Continuous autofocus.
+  - lockedFocus: Locked focus.
+  - lensPositionFocus: Focus locked at a lens position.
+  - customWhiteBalance: White balance locked with custom gains.
+  - exposureRegion: The exposure region of interest.
+
+## `ManualControlSupport/isoPriority`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let isoPriority: Bool
+```
+
+iOS 27: `supportsExposureModeCustom(lensAperture: autoLensAperture, duration: autoExposureDuration, iso: currentISO)`.
+
+## `ManualControlSupport/lensPositionFocus`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let lensPositionFocus: Bool
+```
+
+`isLockingFocusWithCustomLensPositionSupported`.
+
+## `ManualControlSupport/lockedExposure`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let lockedExposure: Bool
+```
+
+`isExposureModeSupported(.locked)`.
+
+## `ManualControlSupport/lockedFocus`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let lockedFocus: Bool
+```
+
+`isFocusModeSupported(.locked)`.
+
+## `ManualControlSupport/none`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+static let none: ManualControlSupport
+```
+
+A camera with no manual control.
+
+## `ManualControlSupport/shutterPriority`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let shutterPriority: Bool
+```
+
+iOS 27: `supportsExposureModeCustom(lensAperture: autoLensAperture, duration: currentExposureDuration, iso: autoISO)`.
+
+## `MeteringRegion`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+struct MeteringRegion
+```
+
+The exposure region for a metering mode, in the camera's normalized coordinates (0 to 1,
+landscape, as `exposureRectOfInterest` uses).
+
+## `MeteringRegion/height`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let height: Double
+```
+
+The height.
+
+## `MeteringRegion/init(x:y:width:height:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+init(x: Double, y: Double, width: Double, height: Double)
+```
+
+Creates a region.
+
+- Parameters:
+  - x: The left edge.
+  - y: The top edge.
+  - width: The width.
+  - height: The height.
+
+## `MeteringRegion/region(for:minimumWidth:minimumHeight:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+static func region(for mode: MeteringMode, minimumWidth: Double, minimumHeight: Double) -> MeteringRegion?
+```
+
+The region for a metering mode, or `nil` for `MeteringMode.center`, which the hardware
+sets by resetting the exposure point to the center (that also resets the region to its
+default size, `AVCaptureDevice.exposureRectOfInterest`).
+
+- Parameters:
+  - mode: The metering mode.
+  - minimumWidth: The lens's `minExposureRectOfInterestSize.width`.
+  - minimumHeight: The lens's `minExposureRectOfInterestSize.height`.
+- Returns: The whole frame for `MeteringMode.wholeFrame`; the smallest region the lens
+  allows, centered, for `MeteringMode.spot`.
+
+## `MeteringRegion/width`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let width: Double
+```
+
+The width.
+
+## `MeteringRegion/x`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let x: Double
+```
+
+The left edge.
+
+## `MeteringRegion/y`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let y: Double
+```
+
+The top edge.
+
 ## `PhotoCaptureDelegate`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -965,17 +1350,18 @@ internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 final class PhotoCaptureDelegate
 ```
 
-Receives one capture's callbacks and reports the photo once the capture finishes.
+Receives one capture's callbacks (one photo, or every frame of a bracket) and reports the
+photos once the capture finishes.
 
 `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
-capture, and `result` is only touched in them.
+capture, and `photos` and `failed` are only touched in them.
 
 ## `PhotoCaptureDelegate/init(exposureDuration:iso:completion:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 
 ```swift
-init(exposureDuration: Double, iso: Double, completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void)
+init(exposureDuration: Double, iso: Double, completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void)
 ```
 
 Creates a delegate for one capture.
@@ -993,7 +1379,8 @@ internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
 func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: (any Error)?)
 ```
 
-Reports the result when the whole capture has finished.
+Reports the result when the whole capture has finished: every photo, or a failure if any
+photo failed or none arrived.
 
 ## `PhotoCaptureDelegate/photoOutput(_:didFinishProcessingPhoto:error:)`
 
@@ -1004,6 +1391,8 @@ func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo:
 ```
 
 Keeps the photo's file bytes, or records the failure. Privacy: the bytes stay in memory.
+A bracket frame reports the exposure it was asked for; a single photo the exposure read
+before the capture.
 
 ## `PhotoSettingsFactory`
 
@@ -1030,6 +1419,16 @@ The codec for a processed format: HEVC for HEIF, JPEG for JPEG.
 
 - Parameter format: The processed format.
 
+## `PhotoSettingsFactory/durationTimescale`
+
+internal, declared in `Sources/NopeCapture/PhotoSettingsFactory.swift`
+
+```swift
+static let durationTimescale: CMTimeScale
+```
+
+The timescale for exposure durations: nanoseconds, finer than any shutter speed.
+
 ## `PhotoSettingsFactory/fileType(for:)`
 
 internal, declared in `Sources/NopeCapture/PhotoSettingsFactory.swift`
@@ -1041,6 +1440,25 @@ static func fileType(for format: ProcessedFallback) -> AVFileType
 The file container for a processed format: HEIC for HEIF, JPEG for JPEG.
 
 - Parameter format: The processed format.
+
+## `PhotoSettingsFactory/makeBracketSettings(for:frames:maxPhotoDimensions:)`
+
+internal, declared in `Sources/NopeCapture/PhotoSettingsFactory.swift`
+
+```swift
+static func makeBracketSettings(for plan: PhotoSettingsPlan, frames: [BracketFrame], maxPhotoDimensions: PhotoDimensions?) -> AVCapturePhotoBracketSettings
+```
+
+Creates settings for a manual exposure bracket: the same format as ``makeSettings(for:maxPhotoDimensions:)``,
+with one `AVCaptureManualExposureBracketedStillImageSettings` per frame. Each frame is
+delivered as its own photo; nothing is merged. Lens stabilization during the bracket
+stays at its default, off (`AVCapturePhotoBracketSettings.isLensStabilizationEnabled`).
+
+- Parameters:
+  - plan: What each frame captures.
+  - frames: Each frame's ISO and exposure duration, at least one.
+  - maxPhotoDimensions: The photo output's `maxPhotoDimensions`, or `nil`.
+- Returns: New bracket settings.
 
 ## `PhotoSettingsFactory/makeSettings(for:maxPhotoDimensions:)`
 
@@ -1347,6 +1765,52 @@ the frame exposed after the shutter, and because it is meant for `.balanced` and
 `.quality` (`AVCapturePhotoOutput.isZeroShutterLagEnabled`). It is on by default for
 apps built for iOS 17 or later.
 
+## `ReadingThrottle`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+struct ReadingThrottle
+```
+
+Lets through at most one reading per interval, so the camera's readings reach the interface
+at a reduced rate (AGENTS.md, "Battery").
+
+## `ReadingThrottle/init()`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+init()
+```
+
+Creates a throttle that lets the first reading through.
+
+## `ReadingThrottle/interval`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+static let interval: Double
+```
+
+The shortest time between two readings, in seconds: four readings a second, enough for
+a meter that a person reads.
+
+## `ReadingThrottle/shouldSend(at:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+mutating func shouldSend(at time: Double) -> Bool
+```
+
+Whether a reading at a time should be sent, and records it if so.
+
+- Parameter time: The time of the reading, in seconds on any steady clock.
+- Returns: `true` for the first reading and for each one at least ``interval`` after the
+  last one let through.
+
 ## `SessionConfiguration`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
@@ -1493,6 +1957,16 @@ extra buffers; and each capture waits for `captureReadiness` to be `.ready`.
 `@unchecked Sendable`: every mutable property and every session call is confined to
 `queue`.
 
+## `SystemCaptureHardware/apply(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func apply(_ controls: DeviceControls) async throws(CaptureError)
+```
+
+Sets exposure, focus, white balance and metering on the attached camera, on `queue`.
+
 ## `SystemCaptureHardware/capture(_:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -1502,6 +1976,16 @@ func capture(_ plan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePh
 ```
 
 Waits until the output is ready, then takes one photo.
+
+## `SystemCaptureHardware/captureBracket(_:frames:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame]) async throws(CaptureError) -> [HardwarePhoto]
+```
+
+Waits until the output is ready, then takes a manual exposure bracket.
 
 ## `SystemCaptureHardware/configure(_:)`
 
@@ -1533,6 +2017,16 @@ let events: AsyncStream<CaptureEvent>
 
 Interruptions, heat changes and runtime errors.
 
+## `SystemCaptureHardware/exposureReadings`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+let exposureReadings: AsyncStream<ExposureReading>
+```
+
+What the camera is using now, while readings are on.
+
 ## `SystemCaptureHardware/init()`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -1554,6 +2048,16 @@ let previewSource: any CameraPreviewSource
 
 The session, for the app's preview layer.
 
+## `SystemCaptureHardware/setReadingsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func setReadingsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops the readings, on `queue`.
+
 ## `SystemCaptureHardware/stop()`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -1572,3 +2076,73 @@ The method returns only after both steps, because the caller awaits `perform`. T
 ``configure(_:)`` re-adds the input and output with the full setup order. This is the
 only way a session is taken down: nope. never creates a second session, and never
 starts one while another is still stopping (docs/TESTING.md, "Black frames").
+
+## `WhiteBalanceGains`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+struct WhiteBalanceGains
+```
+
+The camera's white balance gains, kept inside the range the camera accepts.
+
+## `WhiteBalanceGains/blue`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let blue: Double
+```
+
+The blue gain.
+
+## `WhiteBalanceGains/green`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let green: Double
+```
+
+The green gain.
+
+## `WhiteBalanceGains/init(red:green:blue:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+init(red: Double, green: Double, blue: Double)
+```
+
+Creates gains.
+
+- Parameters:
+  - red: The red gain.
+  - green: The green gain.
+  - blue: The blue gain.
+
+## `WhiteBalanceGains/limited(toMaximum:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+func limited(toMaximum maximum: Double) -> WhiteBalanceGains
+```
+
+The gains with each channel between 1 and the camera's maximum. A gain outside that range
+makes `setWhiteBalanceModeLocked(with:)` throw (`AVCaptureDevice.h`), which happens for
+temperatures and tints the sensor can't reach.
+
+- Parameter maximum: The camera's `maxWhiteBalanceGain`.
+- Returns: The limited gains.
+
+## `WhiteBalanceGains/red`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let red: Double
+```
+
+The red gain.
