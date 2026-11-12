@@ -14,7 +14,7 @@ allowed_for() {
     NopeCore)    echo "Foundation" ;;
     NopeCapture) echo "NopeCore Foundation AVFoundation Photos CoreMedia CoreVideo" ;;
     NopeDevelop) echo "NopeCore Foundation CoreImage ImageIO CoreGraphics UniformTypeIdentifiers" ;;
-    NopeSigning) echo "NopeCore Foundation CryptoKit Security C2PA" ;;
+    NopeSigning) echo "NopeCore Foundation CryptoKit Security C2PA X509 SwiftASN1" ;;
     NopeUI)      echo "NopeCore Foundation SwiftUI" ;;
     *)           echo "*" ;;
   esac

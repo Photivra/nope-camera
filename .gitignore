@@ -76,3 +76,6 @@ DerivedData/
 TagCheckOutput/
 tags-report.txt
 tags-report.json
+
+# Local build of the network-free C2PA library (scripts/build-c2pa-lib.sh; c2pa-lib/README.md).
+build/

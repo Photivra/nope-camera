@@ -22,16 +22,99 @@ env:
   DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
   SIMULATOR: platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2
   IPAD_SIMULATOR: platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2
+  # Every job builds against the C2PA library built from source in the c2pa-lib job, whose
+  # checksum must equal the one Package.swift pins for the published asset (c2pa-lib/README.md).
+  NOPE_C2PA_LIB_FROM_SOURCE: "1"
 
 jobs:
+  c2pa-lib:
+    name: c2pa-lib
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Reuse the library when its inputs are unchanged
+        id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: c2pa-lib-work/C2PAC.xcframework.zip
+          key: c2pa-lib-${{ hashFiles('c2pa-lib/**', 'scripts/build-c2pa-lib.sh', 'scripts/check-c2pa-lib-licenses.sh') }}
+      - name: Install Rust (official rustup installer; toolchain pinned in c2pa-lib/rust-toolchain.toml)
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none --no-modify-path
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - name: Install cargo-deny 0.20.2
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal
+          cargo +1.99.1 install --locked cargo-deny@0.20.2
+      - name: Build C2PAC.xcframework from c2pa-rs source, network features off
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: scripts/build-c2pa-lib.sh c2pa-lib-work
+      - name: License review of every compiled Rust crate
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: scripts/check-c2pa-lib-licenses.sh c2pa-lib-work
+      - name: Checksum matches the pin in Package.swift
+        run: |
+          actual=$(swift package compute-checksum c2pa-lib-work/C2PAC.xcframework.zip)
+          pinned=$(grep -oE 'checksum: "[0-9a-f]{64}"' Package.swift | grep -oE '[0-9a-f]{64}')
+          echo "built:  $actual"; echo "pinned: $pinned"
+          [[ "$actual" == "$pinned" ]]
+      - name: Upload the build for inspection when its checksum differs from the pin
+        if: failure() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: C2PAC.xcframework-unverified
+          path: c2pa-lib-work/C2PAC.xcframework.zip
+          retention-days: 7
+      - name: No networking code in the library
+        run: |
+          mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../c2pa-lib-work/C2PAC.xcframework.zip)
+          scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
+      - name: No networking code in an iOS binary that links NopeSigning (Release, dead-code stripped)
+        run: |
+          xcodebuild build -quiet -scheme NopeSigningLinkCheck -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath DerivedData-link \
+            CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
+          scripts/check-no-networking.sh DerivedData-link/Build/Products/Release-iphoneos/NopeSigningLinkCheck
+      - name: No networking code in the app (Release, device)
+        run: |
+          xcodebuild build -quiet -project App/NopeCamera.xcodeproj -scheme NopeApp -configuration Release \
+            -destination 'generic/platform=iOS' -derivedDataPath DerivedData-app \
+            CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
+          scripts/check-no-networking.sh DerivedData-app/Build/Products/Release-iphoneos/nope.app/nope
+      - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
+        env:
+          NOPE_C2PA_LIB_FROM_SOURCE: ""
+        run: |
+          xcodebuild build -quiet -scheme NopeSigning -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData-published CODE_SIGNING_ALLOWED=NO
+          find DerivedData-published/SourcePackages/artifacts -name C2PAC.xcframework -maxdepth 4 | grep -q .
+      - name: Upload the library
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: C2PAC.xcframework
+          path: c2pa-lib-work/C2PAC.xcframework.zip
+          retention-days: 30
+
   unit-tests:
     name: unit-tests
+    needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
       - name: Show toolchain
         run: xcodebuild -version && swift --version
       - name: Test the coverage gate
@@ -59,13 +142,20 @@ jobs:
 
   ui-tests:
     name: ui-tests
+    needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build the app and run the UI tests with accessibility audits on iPhone
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      - name: Build the app and run the UI smoke test with accessibility audits
         run: >
           xcodebuild test
           -project App/NopeCamera.xcodeproj
@@ -86,12 +176,19 @@ jobs:
   # the test runner before the second destination's first test.
   ui-tests-ipad:
     name: ui-tests-ipad
+    needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
       - name: Build the app and run the UI tests with accessibility audits on iPad
         run: >
           xcodebuild test
@@ -111,11 +208,18 @@ jobs:
 
   docs:
     name: docs
+    needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
       - name: DocC build (warnings as errors), documentation coverage and docs/api check
         run: scripts/check-docs.sh DerivedData

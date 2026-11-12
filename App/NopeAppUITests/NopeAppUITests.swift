@@ -94,8 +94,7 @@ final class NopeAppUITests: XCTestCase {
 
         shutter.tap()
         XCTAssertTrue(
-            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
-                .waitForExistence(timeout: 5))
+            app.staticTexts["Saved and signed."].waitForExistence(timeout: 5))
         try app.performAccessibilityAudit()
 
         let telephoto = app.buttons["Telephoto"]
@@ -154,6 +153,18 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(
             app.staticTexts["Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app."]
                 .waitForExistence(timeout: 5))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testSigningFailureSavesUnsignedAndSaysSo() throws {
+        let app = launch("signingFails")
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(
+            app.staticTexts["Saved. Not signed: the signature couldn't be created."].waitForExistence(timeout: 5))
+        XCTAssertTrue(shutter.isEnabled)
         try app.performAccessibilityAudit()
     }
 
@@ -274,7 +285,7 @@ final class NopeAppUITests: XCTestCase {
         try auditInLandscape(app)
 
         shutter.tap()
-        XCTAssertTrue(app.staticTexts["Saved. Not signed: this development version can't sign photos yet."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Saved and signed."].waitForExistence(timeout: 5))
         app.buttons["Telephoto"].tap()
         XCTAssertTrue(element(app, containing: "No RAW on This Lens").waitForExistence(timeout: 5))
         try auditInLandscape(app)
@@ -347,7 +358,7 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("noRAW")
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         app.typeKey(" ", modifierFlags: [])
-        XCTAssertTrue(app.staticTexts["Saved. Not signed: this development version can't sign photos yet."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Saved and signed."].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -497,9 +508,7 @@ final class NopeAppUITests: XCTestCase {
         app.buttons["Done"].tap()
 
         app.buttons["Take Photo"].tap()
-        XCTAssertTrue(
-            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
-                .waitForExistence(timeout: 20))
+        XCTAssertTrue(element(app, containing: "photos saved and signed.").waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
     }
 
@@ -513,9 +522,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
         XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
-        XCTAssertTrue(
-            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
-                .waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Saved and signed."].waitForExistence(timeout: 20))
         try app.performAccessibilityAudit()
         app.buttons["Stop"].tap()
         XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 2))

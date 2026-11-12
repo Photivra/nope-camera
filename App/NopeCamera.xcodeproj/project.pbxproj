@@ -11,6 +11,7 @@
 		A10000000000000000000102 /* NopeUI in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000202 /* NopeUI */; };
 		A10000000000000000000103 /* NopeCapture in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000203 /* NopeCapture */; };
 		A10000000000000000000106 /* NopeDevelop in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000206 /* NopeDevelop */; };
+		A10000000000000000000107 /* NopeSigning in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000207 /* NopeSigning */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +45,7 @@
 				A10000000000000000000102 /* NopeUI in Frameworks */,
 				A10000000000000000000103 /* NopeCapture in Frameworks */,
 				A10000000000000000000106 /* NopeDevelop in Frameworks */,
+				A10000000000000000000107 /* NopeSigning in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -101,6 +103,7 @@
 				A10000000000000000000202 /* NopeUI */,
 				A10000000000000000000203 /* NopeCapture */,
 				A10000000000000000000206 /* NopeDevelop */,
+				A10000000000000000000207 /* NopeSigning */,
 			);
 			productName = NopeApp;
 			productReference = A10000000000000000000501 /* nope.app */;
@@ -362,6 +365,10 @@
 		A10000000000000000000206 /* NopeDevelop */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NopeDevelop;
+		};
+		A10000000000000000000207 /* NopeSigning */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeSigning;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
