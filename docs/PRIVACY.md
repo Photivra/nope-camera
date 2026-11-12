@@ -49,12 +49,12 @@ The metadata plan below is confirmed by dumping every tag from real files captur
 How to run it is in [`TESTING.md`](TESTING.md), "Tag check". Captured files and reports are
 never committed: they contain serial numbers.
 
-**Results (first device runs, 2026-11-11, an iPhone 16 Pro Max on iOS 27.2.1):** the metadata
-results below are consistent across two runs. The image data in those runs was dark: the debug
-capture setup produced empty frames (a constant fill, not a sensor readout): its own
-per-lens sessions left the camera service stuck until the phone restarted. The diagnosis and
-the fix are in [`TESTING.md`](TESTING.md), "Black frames"; the exposure tags (exposure time,
-ISO) still need confirming on a real image from the next run.
+**Results (device runs on 2026-11-11 and 2026-11-12, an iPhone 16 Pro Max on iOS 27.2.1):** the
+metadata results below are consistent across three runs. In the first two runs every image was
+blank: a Mac was viewing and controlling the phone's screen, which blanks the camera picture for
+apps other than Apple's own (see [`TESTING.md`](TESTING.md), "Black frames"). The third run,
+with that session stopped, produced real images on every lens (RAW and HEIF), and confirmed the
+exposure tags.
 
 - **Bayer RAW on every physical camera,** including the front camera. The wide and front
   cameras give `bgg4`, and the ultra wide and telephoto give `rgg4`. RAW is 12 MP
@@ -109,7 +109,7 @@ The "Default" column below is each item's setting when the user first turns the 
 | Lens make and model | On | Apps can't show which lens took it | Present (`LensMake`, `LensModel`) |
 | Exact camera model for RAW editors (`UniqueCameraModel`) | On | Some RAW editors can't choose their camera-specific color profile and use the file's own color data instead. The DNG standard requires this tag, so when it's off, nope. writes a generic value rather than none | Present |
 | Lens correction instructions (DNG opcodes) | On | Editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way | Present (`OpcodeList3`) |
-| Exposure settings (shutter, ISO, aperture, focal length) | On | You can't see later how the photo was taken | To confirm on an exposed image |
+| Exposure settings (shutter, ISO, aperture, focal length) | On | You can't see later how the photo was taken | Present (`ExposureTime`, `ISOSpeedRatings`, `FNumber`, `FocalLength` and related EXIF tags, in RAW and HEIF) |
 | iOS version | Off | Nothing visible | Present (`Software`, XMP `CreatorTool`) |
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |

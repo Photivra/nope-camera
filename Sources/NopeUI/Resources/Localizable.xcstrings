@@ -1123,68 +1123,68 @@
         }
       }
     },
-    "The camera isn't sending a picture. Restarting your iPhone usually fixes this.": {
-      "comment": "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera. Restarting the phone clears it.",
+    "The camera isn't sending a picture.": {
+      "comment": "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Die Kamera liefert kein Bild. Ein Neustart deines iPhone behebt das meistens."
+            "value": "Die Kamera liefert kein Bild."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "La cámara no está enviando imagen. Reiniciar el iPhone suele solucionarlo."
+            "value": "La cámara no está enviando imagen."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "L’appareil photo n’envoie pas d’image. Redémarrer votre iPhone règle généralement le problème."
+            "value": "L’appareil photo n’envoie pas d’image."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "La fotocamera non invia alcuna immagine. Di solito riavviare l’iPhone risolve il problema."
+            "value": "La fotocamera non invia alcuna immagine."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "カメラから映像が届いていません。通常はiPhoneを再起動すると直ります。"
+            "value": "カメラから映像が届いていません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "카메라가 화면을 보내지 않습니다. 보통 iPhone을 재시동하면 해결됩니다."
+            "value": "카메라가 화면을 보내지 않습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "De camera stuurt geen beeld. Je iPhone opnieuw opstarten lost dit meestal op."
+            "value": "De camera stuurt geen beeld."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "A câmera não está enviando imagem. Reiniciar o iPhone geralmente resolve isso."
+            "value": "A câmera não está enviando imagem."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "相机没有传送画面。重新启动 iPhone 通常可以解决此问题。"
+            "value": "相机没有传送画面。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "相機沒有傳送畫面。重新啟動 iPhone 通常可以解決此問題。"
+            "value": "相機沒有傳送畫面。"
           }
         }
       }

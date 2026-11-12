@@ -62,7 +62,7 @@ struct SessionStatusView: View {
         case .failed:
             Text("The camera couldn't start. Try another lens.", bundle: .module, comment: "Shown over the viewfinder when the camera fails to start.")
         case .noPicture:
-            Text("The camera isn't sending a picture. Restarting your iPhone usually fixes this.", bundle: .module, comment: "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera. Restarting the phone clears it.")
+            Text("The camera isn't sending a picture.", bundle: .module, comment: "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera.")
         }
     }
 }

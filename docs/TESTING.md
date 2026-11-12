@@ -67,7 +67,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure message |
-| `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture. Restarting your iPhone usually fixes this.", the blank-picture capture message, shutter disabled |
+| `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off and no-camera screens |
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
@@ -174,9 +174,9 @@ Release builds never write photos to the container: photos go from memory to Pho
 
 ### Running it
 
-**Restart the phone first** if any camera run since the last restart showed a black or flat
-picture: once the camera service is stuck, every session gets blank frames until a restart
-(see "Black frames").
+**Check first that no Mac is viewing the phone's screen** (no viewing icon in the Dynamic
+Island): while one is, every app other than Apple's Camera gets blank frames (see "Black
+frames").
 
 1. Copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set your own team ID.
 2. Install a Debug build. Open nope. normally from the Home Screen once and check that the
@@ -231,25 +231,29 @@ sampled luma byte of the video data output frames was 0. At the same time the se
 running, frames arrived at the exposure's rate, `captureReadiness` was `.ready`, and auto
 exposure metered the room normally (for example 1/60 s, ISO 134, −0.06 EV).
 
-**Diagnosis.** The tag check's own pipeline wedged the camera service; a phone restart clears
-it. The evidence:
+**Cause (confirmed 2026-11-12).** A Mac was viewing and controlling the phone's screen. While
+such a session runs, the Dynamic Island shows a purple screen-and-person icon, and Settings
+shows "“MacBook Pro” is viewing and controlling this iPhone" with a **Stop Session** button.
+During the session, every app other than Apple's Camera got blank frames, including other
+camera apps from the App Store, while the session ran normally and auto exposure followed
+the room. Tapping **Stop Session** brought nope.'s live viewfinder back at once, with no code
+change and no restart, and the next tag check produced real images on every lens. The session
+started while the phone was connected to the Mac for development builds; which Mac feature
+starts it has not been isolated. No Apple documentation found describes the blanking.
 
-- After a phone restart, the app's normal camera screen (the real backend: one session, lens
-  switching on that session) showed a correct live viewfinder.
-- The owner then launched the old tag check from the Home Screen right after a restart (an
-  armed run, no `devicectl` camera launch, the green camera indicator on). It still produced
-  zero-filled buffers on every lens and output.
-- Afterwards the normal camera screen was black too, until the phone was restarted again.
+**Before any camera test on a device:** check that the Dynamic Island shows no viewing icon.
+If it does, tap it, then **Stop Session**. Stopping it also unpairs the Mac; plug the phone in
+again and tap **Trust** to install builds.
 
-So the `devicectl` launch was not the cause. The old tag check differed from the camera screen
-in building a separate `AVCaptureSession` for each lens in quick succession, each with an extra
-`AVCaptureVideoDataOutput`, prepared RAW settings, and stopping each session with a bare
-`stopRunning()` while its inputs and outputs stayed attached. Which of these wedges the service
-has not been isolated; no Apple documentation found describes it. The `-NopeCameraProbe` runs
-recorded earlier were all made after the service was already stuck, so they prove nothing
-either way.
+**Earlier diagnosis, now superseded.** Before the cause was found, the blank frames were blamed
+on the old tag check's pipeline (a separate `AVCaptureSession` per lens, an extra
+`AVCaptureVideoDataOutput`, and a bare `stopRunning()`), because a phone restart sometimes
+seemed to clear them. That was not confirmed: after a restart, the main-branch build, a fresh
+bundle identifier and a session with none of nope.'s settings were all blank while the viewing
+session ran. The changes below are kept because they are simpler and safer, not because they
+fixed the blank frames.
 
-**Fix.**
+**Changes kept from the earlier diagnosis.**
 
 - The tag check now uses the app's backend and its single session (above). It builds no
   sessions and no video data output.
@@ -266,7 +270,7 @@ either way.
   drops the photo and throws `CaptureError.blankPicture`. `CameraModel` stops and restarts the
   session once and retakes the photo; if that is blank too, it moves to
   `SessionStatus.noPicture`, which the camera screen shows as "The camera isn't sending a
-  picture. Restarting your iPhone usually fixes this." with the shutter disabled (another lens
+  picture." with the shutter disabled (another lens
   tries again). The check runs on the photo, not on preview frames: the backend has no video
   data output, and adding one to the pipeline under suspicion, and processing frames ahead of
   need, was ruled out. `AVCapturePhoto.pixelBuffer` is documented as `nil` for compressed
@@ -275,13 +279,13 @@ either way.
   documentation, not yet confirmed on a device; if it is `nil`, the check is skipped, never
   falsely triggered. The restart-and-retry logic and the message are unit- and UI-tested
   (`CameraModelTests`, the `blankPicture` scenario); the trigger itself can only be seen on a
-  phone whose camera service is stuck.
+  phone that delivers blank frames.
 
 ### Debug runs for diagnosis
 
-These Debug-only tools stay for future diagnosis. **Run them only on a freshly restarted
-phone**, and open nope. normally first to check the viewfinder: a run on a phone whose camera
-service is already stuck gives blank frames whatever the pipeline, and proves nothing.
+These Debug-only tools stay for future diagnosis. **Before a run, check that no Mac is viewing
+the phone's screen** (above), and open nope. normally first to check the viewfinder: a run while
+the camera picture is blanked gives blank frames whatever the pipeline, and proves nothing.
 
 - `-NopeCameraProbe` runs the simplest pipeline from Apple's sample flow
   ([Setting up a capture session](https://developer.apple.com/documentation/avfoundation/setting-up-a-capture-session),

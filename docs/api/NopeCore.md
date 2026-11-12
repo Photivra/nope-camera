@@ -1597,10 +1597,10 @@ case noPicture
 ```
 
 The camera runs and delivers frames, but they are blank (zero-filled), even after
-nope. restarted it once. Seen on iOS when the system camera service is stuck; restarting
-the device clears it (docs/TESTING.md, "Black frames").
+nope. restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
+screen (docs/TESTING.md, "Black frames").
 
-Say: "The camera isn't sending a picture. Restarting your iPhone usually fixes this."
+Say: "The camera isn't sending a picture."
 Keep the shutter disabled. Selecting another lens tries again.
 
 ## `SessionStatus/pausedForHeat`

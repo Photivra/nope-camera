@@ -83,7 +83,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
         shutter.tap()
         XCTAssertTrue(element(app, containing: "isn't sending a picture").waitForExistence(timeout: 10))
-        XCTAssertTrue(element(app, containing: "Restarting your iPhone usually fixes this").exists)
+        XCTAssertTrue(element(app, containing: "The camera isn't sending a picture").exists)
         XCTAssertTrue(app.staticTexts["No photo was taken: the camera sent a blank picture."].exists)
         XCTAssertFalse(shutter.isEnabled)
         try app.performAccessibilityAudit()
