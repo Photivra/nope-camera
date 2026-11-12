@@ -28,6 +28,9 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// The manual control whose panel is open, or `nil`.
     @State private var openControl: ManualControl?
 
+    /// Whether Pro Tools is shown.
+    @State private var showsProTools = false
+
     /// The shortest vertical swipe on the viewfinder that toggles clean view, in points.
     private static var cleanViewSwipeDistance: CGFloat { 60 }
 
@@ -49,12 +52,20 @@ struct CameraReadyView<Viewfinder: View>: View {
 
     /// The badge, viewfinder and controls, scrolling at accessibility text sizes.
     var body: some View {
-        if dynamicTypeSize.isAccessibilitySize {
-            ScrollView {
-                stack(viewfinderHeight: Self.scrollingViewfinderHeight)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                ScrollView {
+                    stack(viewfinderHeight: Self.scrollingViewfinderHeight)
+                }
+            } else {
+                stack(viewfinderHeight: nil)
             }
-        } else {
-            stack(viewfinderHeight: nil)
+        }
+        // While Pro Tools covers the screen, the camera controls under it are hidden from
+        // assistive technologies, so VoiceOver reads only the form.
+        .accessibilityHidden(showsProTools)
+        .fullScreenCover(isPresented: $showsProTools) {
+            ProToolsSheet(model: model)
         }
     }
 
@@ -78,7 +89,7 @@ struct CameraReadyView<Viewfinder: View>: View {
             CaptureStatusView(status: model.captureStatus)
             if !model.isCleanView {
                 if model.manual.isEnabled {
-                    ManualControlsView(model: model, openControl: $openControl)
+                    ManualControlsView(model: model, openControl: $openControl, showsProTools: $showsProTools)
                 }
                 // The lens buttons make room while a control's panel is open.
                 if openControl == nil || !model.manual.isEnabled {

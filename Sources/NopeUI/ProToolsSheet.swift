@@ -9,6 +9,9 @@ struct ProToolsSheet: View {
     /// The intervals offered, in seconds: 1 second to 1 hour.
     static let intervals: [Double] = [1, 2, 3, 5, 10, 15, 20, 30, 60, 120, 300, 600, 900, 1800, 3600]
 
+    /// The photo counts offered for a series, from 2 to the 999 nope. allows.
+    static let photoCounts = [2, 3, 5, 10, 20, 30, 50, 100, 200, 500, 999]
+
     /// The camera model.
     let model: CameraModel
 
@@ -39,11 +42,9 @@ struct ProToolsSheet: View {
                     bracketSection
                 }
                 intervalSection
-            }
-            .navigationTitle(Text("Pro Tools", bundle: .module, comment: "Button that opens metering, locks, bracketing and interval shooting."))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                // Done is a row of the form, not a bar button: the accessibility audit can't
+                // measure the contrast of the glass bar button.
+                Section {
                     Button {
                         dismiss()
                     } label: {
@@ -51,6 +52,8 @@ struct ProToolsSheet: View {
                     }
                 }
             }
+            .navigationTitle(Text("Pro Tools", bundle: .module, comment: "Button that opens metering, locks, bracketing and interval shooting."))
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -141,6 +144,9 @@ struct ProToolsSheet: View {
     /// The interval, photo count, and start or stop.
     private var intervalSection: some View {
         Section {
+            Text("Interval Shooting", bundle: .module, comment: "Section title: a series of photos taken at a fixed interval.")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
             Picker(
                 selection: Binding(
                     get: { manual.interval.interval },
@@ -153,13 +159,16 @@ struct ProToolsSheet: View {
             } label: {
                 Text("Interval", bundle: .module, comment: "Picker for the time between photos in interval shooting.")
             }
-            Stepper(
-                value: Binding(
+            Picker(
+                selection: Binding(
                     get: { manual.interval.count },
-                    set: { send(.setInterval(IntervalSettings(interval: manual.interval.interval, count: $0))) }),
-                in: IntervalSettings.countRange
+                    set: { send(.setInterval(IntervalSettings(interval: manual.interval.interval, count: $0))) })
             ) {
-                Text("Photos: \(manual.interval.count)", bundle: .module, comment: "How many photos an interval series takes. The number is a count of photos.")
+                ForEach(Self.photoCounts, id: \.self) { count in
+                    Text(verbatim: count.formatted()).tag(count)
+                }
+            } label: {
+                Text("Photos", bundle: .module, comment: "Picker for how many photos an interval series takes.")
             }
             if manual.intervalProgress == nil {
                 Button {
@@ -176,8 +185,6 @@ struct ProToolsSheet: View {
                     Text("Stop", bundle: .module, comment: "Button that stops interval shooting.")
                 }
             }
-        } header: {
-            Text("Interval Shooting", bundle: .module, comment: "Section title: a series of photos taken at a fixed interval.")
         } footer: {
             Text(
                 "Each photo is separate. Nothing is combined. Keep nope. open while the series runs.", tableName: "Honesty",

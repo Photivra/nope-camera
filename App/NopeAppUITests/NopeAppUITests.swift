@@ -197,6 +197,44 @@ final class NopeAppUITests: XCTestCase {
         try app.performAccessibilityAudit()
     }
 
+    /// Audits the elements inside the window. In a scrolling screen the audit also measures
+    /// elements scrolled out of the window, against whatever is drawn there (a blank
+    /// screenshot), so issues on an element outside the window are skipped.
+    ///
+    /// - Parameter skipDynamicType: Also skips Dynamic Type reports. Pro Tools needs it: the audit
+    ///   reports a different `Form` row of the interval section on each run, which it pushes out
+    ///   of the window while enlarging the text; `testProToolsGrowsWithTheLargestTextSize`
+    ///   measures that those rows do grow.
+    @MainActor
+    private func auditVisibleElements(_ app: XCUIApplication, skipDynamicType: Bool = false) throws {
+        let window = app.windows.firstMatch.frame
+        try app.performAccessibilityAudit { issue in
+            if skipDynamicType, issue.auditType == .dynamicType { return true }
+            guard let element = issue.element else { return false }
+            return !window.contains(element.frame)
+        }
+    }
+
+    /// Audits Pro Tools (see ``auditVisibleElements(_:skipDynamicType:)``).
+    @MainActor
+    private func auditProTools(_ app: XCUIApplication) throws {
+        try auditVisibleElements(app, skipDynamicType: true)
+    }
+
+    /// The height of a Pro Tools row's text, scrolling down to it if needed.
+    @MainActor
+    private func rowTextHeight(_ app: XCUIApplication, _ label: String) -> CGFloat {
+        let text = app.staticTexts[label]
+        var swipes = 0
+        let window = app.windows.firstMatch.frame
+        while !(text.exists && window.contains(text.frame)), swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(text.exists, label)
+        return text.frame.height
+    }
+
     @MainActor
     func testProToolsBracketing() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
@@ -206,10 +244,10 @@ final class NopeAppUITests: XCTestCase {
         let bracketing = app.switches["Bracketing"]
         XCTAssertTrue(bracketing.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Each frame is a separate single-frame photo. Nothing is merged."].exists)
-        try app.performAccessibilityAudit()
+        try auditProTools(app)
         bracketing.switches.firstMatch.tap()
         XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 5))
-        try app.performAccessibilityAudit()
+        try auditProTools(app)
         app.buttons["Done"].tap()
 
         app.buttons["Take Photo"].tap()
@@ -272,7 +310,7 @@ final class NopeAppUITests: XCTestCase {
             ])
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.steppers.firstMatch.waitForExistence(timeout: 5))
-        try app.performAccessibilityAudit()
+        try auditVisibleElements(app)
     }
 
     @MainActor
@@ -283,5 +321,29 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(app.buttons["ISO"].waitForExistence(timeout: 10))
         try app.performAccessibilityAudit()
     }
-}
 
+    @MainActor
+    func testProToolsGrowsWithTheLargestTextSize() throws {
+        let labels = ["Metering", "Interval", "Photos"]
+        let regular = launch("manual", extraArguments: Self.manualOn)
+        XCTAssertTrue(regular.buttons["Pro Tools"].waitForExistence(timeout: 10))
+        regular.buttons["Pro Tools"].tap()
+        XCTAssertTrue(regular.staticTexts["Metering"].waitForExistence(timeout: 5))
+        let regularHeights = labels.map { rowTextHeight(regular, $0) }
+        regular.terminate()
+
+        let large = launch(
+            "manual",
+            extraArguments: Self.manualOn + [
+                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+            ])
+        let tools = large.buttons["Pro Tools"]
+        XCTAssertTrue(tools.waitForExistence(timeout: 10))
+        tools.tap()
+        XCTAssertTrue(large.staticTexts["Metering"].waitForExistence(timeout: 5))
+        for (label, regularHeight) in zip(labels, regularHeights) {
+            XCTAssertGreaterThan(rowTextHeight(large, label), regularHeight * 2, label)
+        }
+        try auditProTools(large)
+    }
+}

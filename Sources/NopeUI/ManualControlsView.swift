@@ -14,8 +14,8 @@ struct ManualControlsView: View {
     /// The control whose panel is open, or `nil`.
     @Binding var openControl: ManualControl?
 
-    /// Whether the Pro Tools sheet is shown.
-    @State private var showsProTools = false
+    /// Whether Pro Tools is shown; the camera screen presents it.
+    @Binding var showsProTools: Bool
 
     /// Counts "All Auto" presses, to trigger the haptic.
     @State private var allAutoPresses = 0
@@ -28,9 +28,11 @@ struct ManualControlsView: View {
     /// - Parameters:
     ///   - model: The camera model.
     ///   - openControl: The control whose panel is open.
-    init(model: CameraModel, openControl: Binding<ManualControl?>) {
+    ///   - showsProTools: Whether Pro Tools is shown.
+    init(model: CameraModel, openControl: Binding<ManualControl?>, showsProTools: Binding<Bool>) {
         self.model = model
         _openControl = openControl
+        _showsProTools = showsProTools
     }
 
     /// The manual controls model.
@@ -53,9 +55,6 @@ struct ManualControlsView: View {
             }
         }
         .sensoryFeedback(.success, trigger: allAutoPresses)
-        .sheet(isPresented: $showsProTools) {
-            ProToolsSheet(model: model)
-        }
     }
 
     /// The EV meter, the exposure mode picker and the Pro Tools button.
@@ -197,6 +196,10 @@ struct ControlSlot: View {
                     .minimumScaleFactor(0.7)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
+            // Primary text on the slot's fill: the secondary tint's gray fails the contrast
+            // audit at this small size. The open slot is told apart by its lighter fill and the
+            // selected trait.
+            .foregroundStyle(.primary)
         }
         .buttonStyle(.bordered)
         .tint(isOpen ? .primary : .secondary)

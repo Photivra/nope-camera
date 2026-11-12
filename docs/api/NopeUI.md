@@ -1055,12 +1055,12 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 
 The header, the panel and the grid, or the list at accessibility sizes.
 
-## `ManualControlsView/init(model:openControl:)`
+## `ManualControlsView/init(model:openControl:showsProTools:)`
 
 internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 
 ```swift
-@MainActor init(model: CameraModel, openControl: Binding<ManualControl?>)
+@MainActor init(model: CameraModel, openControl: Binding<ManualControl?>, showsProTools: Binding<Bool>)
 ```
 
 Creates the manual controls.
@@ -1068,6 +1068,7 @@ Creates the manual controls.
 - Parameters:
   - model: The camera model.
   - openControl: The control whose panel is open.
+  - showsProTools: Whether Pro Tools is shown.
 
 ## `ManualControlsView/model`
 
@@ -1088,6 +1089,16 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 ```
 
 The control whose panel is open, or `nil`.
+
+## `ManualControlsView/showsProTools`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@Binding @MainActor var showsProTools: Bool { get nonmutating set }
+```
+
+Whether Pro Tools is shown; the camera screen presents it.
 
 ## `PermissionRequestView`
 
@@ -1185,6 +1196,16 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 The camera model.
+
+## `ProToolsSheet/photoCounts`
+
+internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
+
+```swift
+@MainActor static let photoCounts: [Int]
+```
+
+The photo counts offered for a series, from 2 to the 999 nope. allows.
 
 ## `ScaleSlider`
 

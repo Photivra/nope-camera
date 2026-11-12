@@ -2971,68 +2971,68 @@
         }
       }
     },
-    "Photos: %lld": {
-      "comment": "How many photos an interval series takes. The number is a count of photos.",
+    "Photos": {
+      "comment": "Picker for how many photos an interval series takes.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Fotos: %lld"
+            "value": "Fotos"
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Fotos: %lld"
+            "value": "Fotos"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Photos : %lld"
+            "value": "Photos"
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Foto: %lld"
+            "value": "Foto"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "枚数: %lld"
+            "value": "枚数"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "사진: %lld장"
+            "value": "사진"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Foto’s: %lld"
+            "value": "Foto’s"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Fotos: %lld"
+            "value": "Fotos"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "照片：%lld 张"
+            "value": "照片"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "照片：%lld 張"
+            "value": "照片"
           }
         }
       }
