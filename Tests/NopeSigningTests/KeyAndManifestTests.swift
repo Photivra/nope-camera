@@ -7,6 +7,8 @@ import X509
 
 @testable import NopeSigning
 
+// A hang fails the test with its name instead of stalling the whole run.
+@Suite(.timeLimit(.minutes(1)))
 struct KeyProviderTests {
     @Test func simulatorUsesTheSoftwareKeyOnly() {
         // On a device, platformKeyProvider() returns SecureEnclaveKeyProvider and the software
@@ -31,6 +33,8 @@ struct KeyProviderTests {
     }
 }
 
+// A hang fails the test with its name instead of stalling the whole run.
+@Suite(.timeLimit(.minutes(1)))
 struct ManifestTests {
     @Test func jsonIsExactlyTheManifest() {
         let manifest = ContentCredentialsManifest(
@@ -74,6 +78,8 @@ struct ManifestTests {
     }
 }
 
+// A hang fails the test with its name instead of stalling the whole run.
+@Suite(.timeLimit(.minutes(1)))
 struct OfflineContextTests {
     @Test func everyNetworkPathIsOff() {
         let settings = OfflineC2PAContext.settings

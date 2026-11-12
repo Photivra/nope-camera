@@ -89,6 +89,8 @@ func flippingBit(of data: Data, at index: Int) -> Data {
     return copy
 }
 
+// A hang fails the test with its name instead of stalling the whole run.
+@Suite(.timeLimit(.minutes(1)))
 struct ContentCredentialsSignerTests {
     let signer = ContentCredentialsSigner(
         keyProvider: SimulatorSoftwareKeyProvider(), generator: ClaimGenerator(version: "0.1.0"))

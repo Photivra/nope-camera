@@ -6,6 +6,8 @@ import X509
 
 @testable import NopeSigning
 
+// A hang fails the test with its name instead of stalling the whole run.
+@Suite(.timeLimit(.minutes(1)))
 struct SelfIssuedCertificateTests {
     let key = SimulatorSoftwareSigningKey()
 

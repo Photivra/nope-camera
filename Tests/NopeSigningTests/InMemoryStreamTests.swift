@@ -49,6 +49,8 @@ struct ReferenceFile {
     }
 }
 
+// A hang fails the test with its name instead of stalling the whole run.
+@Suite(.timeLimit(.minutes(1)))
 struct InMemoryStreamTests {
     /// Random reads, writes and seeks through the pointer callbacks, compared with the reference.
     @Test(arguments: 1...20)

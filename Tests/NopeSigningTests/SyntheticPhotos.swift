@@ -1,8 +1,5 @@
-import CoreGraphics
 import Foundation
-import ImageIO
 import NopeCore
-import UniformTypeIdentifiers
 
 /// Small synthetic files of every kind nope. signs. They are generated here, not captured, so
 /// the tests carry no one's photos (AGENTS.md, "Test files and samples").
@@ -14,39 +11,44 @@ enum SyntheticPhotos {
     static func data(for file: SignableFile) -> Data {
         switch file.container {
         case .dng: dng()
-        case .heif: encoded(UTType.heic)
-        case .jpeg: encoded(UTType.jpeg)
+        case .heif: heif
+        case .jpeg: jpeg
         }
     }
 
-    /// A 16 × 16 gradient.
-    static func image() -> CGImage {
-        let width = 16
-        let height = 16
-        var pixels = [UInt8](repeating: 0, count: width * height * 4)
-        for y in 0..<height {
-            for x in 0..<width {
-                let i = (y * width + x) * 4
-                pixels[i] = UInt8(x * 16)
-                pixels[i + 1] = UInt8(y * 16)
-                pixels[i + 2] = 128
-                pixels[i + 3] = 255
-            }
-        }
-        let context = CGContext(
-            data: &pixels, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
-            space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-        return context.makeImage()!
-    }
+    /// A 16 × 16 gradient as HEIF, encoded once with ImageIO (the system HEVC encoder) on a Mac
+    /// and stored here. Encoding at test time would need the hardware HEVC encoder, which a virtual
+    /// CI runner may not have.
+    static let heif = Data(
+        base64Encoded: [
+            "AAAAJGZ0eXBoZWljAAAAAG1pZjFNaVBybWlhZk1pSEJoZWljAAABjG1ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAHBp",
+            "Y3QAAAAAAAAAAAAAAAAAAAAAJGRpbmYAAAAcZHJlZgAAAAAAAAABAAAADHVybCAAAAABAAAADnBpdG0AAAAAAAEA",
+            "AAAjaWluZgAAAAAAAQAAABVpbmZlAgAAAAABAABodmMxAAAAAOxpcHJwAAAAy2lwY28AAAATY29scm5jbHgAAgAC",
+            "AAaAAAAADGNsbGkAywBAAAAAFGlzcGUAAAAAAAAAEAAAABAAAAAJaXJvdAAAAAAQcGl4aQAAAAADCAgIAAAAd2h2",
+            "Y0MBAWAAAACwAAAAAAAe8AD8/fj4AAAPA6AAAQAXQAEMAf//AWAAAAMAsAAAAwAAAwAeLAmhAAEAIUIBAQFgAAAD",
+            "ALAAAAMAAAMAHqCIRZy5JEpJcTcCAgYAgKIAAQARRAHAYRJMBOkRESRJEkSRKkAAAAAZaXBtYQAAAAAAAAABAAEG",
+            "gQIDBYaEAAAAHmlsb2MAAAAARAAAAQABAAAAAQAAAcAAAAAuAAAAAW1kYXQAAAAAAAAAPgAAAComAa3A8PnoggHF",
+            "Mnap2C+R0dUvUOva3dnG8O8Ua7Z/B5/G3TbAg8zrxPA=",
+        ].joined())!
 
-    /// The gradient encoded by ImageIO.
-    static func encoded(_ type: UTType) -> Data {
-        let output = NSMutableData()
-        let destination = CGImageDestinationCreateWithData(output, type.identifier as CFString, 1, nil)!
-        CGImageDestinationAddImage(destination, image(), nil)
-        precondition(CGImageDestinationFinalize(destination))
-        return output as Data
-    }
+    /// The same gradient as JPEG, encoded once with ImageIO and stored here, so every run signs
+    /// identical bytes.
+    static let jpeg = Data(
+        base64Encoded: [
+            "/9j/4AAQSkZJRgABAQAASABIAAD/4QBMRXhpZgAATU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMA",
+            "AAABAAEAAKACAAQAAAABAAAAEKADAAQAAAABAAAAEAAAAAD/wAARCAAQABADASIAAhEBAxEB/8QAHwAAAQUB",
+            "AQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJx",
+            "FDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlq",
+            "c3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi",
+            "4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQD",
+            "BAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2",
+            "Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmq",
+            "srO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9sAQwACAgICAgIDAgIDBQMD",
+            "AwUGBQUFBQYIBgYGBgYICggICAgICAoKCgoKCgoKDAwMDAwMDg4ODg4PDw8PDw8PDw8P/9sAQwECAgIEBAQH",
+            "BAQHEAsJCxAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ/90ABAAB",
+            "/9oADAMBAAIRAxEAPwD4A8KfCr7n7n9K+mfCfwp+5+5/SvpPwn8Kvufuf0r6a8KfCn7n7n07V6HGPjBv74vo",
+            "2+PX8P8Aedj/2Q==",
+        ].joined())!
 
     /// A minimal little-endian DNG: one IFD holding a 4 × 4, 16-bit Bayer (CFA) image.
     ///
