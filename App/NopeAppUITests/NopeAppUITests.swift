@@ -119,7 +119,10 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
         shutter.tap()
         XCTAssertTrue(element(app, containing: "isn't sending a picture").waitForExistence(timeout: 10))
-        try app.performAccessibilityAudit()
+        // Wait for the capture message too, so the audit doesn't measure it while it changes.
+        XCTAssertTrue(
+            app.staticTexts["No photo was taken: the camera sent a blank picture."].waitForExistence(timeout: 10))
+        try auditVisibleElements(app)
     }
 
     @MainActor
