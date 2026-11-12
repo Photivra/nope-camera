@@ -61,6 +61,22 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// Feeds ``events``.
     private let continuation: AsyncStream<CaptureEvent>.Continuation
 
+    /// What the camera is using now, while readings are on.
+    let exposureReadings: AsyncStream<ExposureReading>
+
+    /// Feeds ``exposureReadings``.
+    private let readingsContinuation: AsyncStream<ExposureReading>.Continuation
+
+    /// Whether readings are on. Queue-confined.
+    private var readingsEnabled = false
+
+    /// The key-value observations of the attached camera while readings are on. Queue-confined.
+    private var readingObservations: [NSKeyValueObservation] = []
+
+    /// Limits readings to four a second. Touched from key-value observation callbacks, which
+    /// may arrive on any thread, so it is locked.
+    private let throttle = OSAllocatedUnfairLock(initialState: ReadingThrottle())
+
     /// The capture session.
     private let session = AVCaptureSession()
 
@@ -90,6 +106,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// thermal state.
     init() {
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
+        (exposureReadings, readingsContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
         preview = CaptureSessionPreviewSource(session: session)
         previewSource = preview
         observeNotifications()
@@ -98,7 +115,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
 
     deinit {
         observers.forEach(NotificationCenter.default.removeObserver)
+        readingObservations.forEach { $0.invalidate() }
         continuation.finish()
+        readingsContinuation.finish()
     }
 
     // MARK: - CaptureHardware
@@ -155,6 +174,47 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         return try result.get()
     }
 
+    /// Sets exposure, focus, white balance and metering on the attached camera, on `queue`.
+    func apply(_ controls: DeviceControls) async throws(CaptureError) {
+        let result: Result<Void, CaptureError> = await perform { self.applyControls(controls) }
+        try result.get()
+    }
+
+    /// Starts or stops the readings, on `queue`.
+    func setReadingsEnabled(_ enabled: Bool) async {
+        await perform {
+            self.readingsEnabled = enabled
+            self.observeReadings()
+        }
+    }
+
+    /// Waits until the output is ready, then takes a manual exposure bracket.
+    func captureBracket(
+        _ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan
+    ) async throws(CaptureError)
+        -> [HardwarePhoto]
+    {
+        _ = try await CaptureReadiness.waitUntilReady(
+            timeout: Self.readinessTimeoutSeconds, interval: Self.readinessPollSeconds
+        ) {
+            await self.perform { CaptureReadiness(self.photoOutput.captureReadiness) }
+        }
+        let result: Result<[HardwarePhoto], CaptureError> = await withCheckedContinuation { continuation in
+            queue.async {
+                guard self.session.isRunning, let device = self.currentInput?.device else {
+                    continuation.resume(returning: .failure(.notRunning))
+                    return
+                }
+                let settings = PhotoSettingsFactory.makeBracketSettings(
+                    for: plan, frames: frames, maxPhotoDimensions: self.appliedMaxDimensions)
+                self.startCapture(settings, device: device, plan: plan, metadata: metadata) {
+                    continuation.resume(returning: $0)
+                }
+            }
+        }
+        return try result.get()
+    }
+
     // MARK: - Queue-confined work
 
     /// Stops the session, waits for it to stop, then removes every input and output. Call only
@@ -167,6 +227,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         session.commitConfiguration()
         currentInput = nil
         appliedMaxDimensions = nil
+        observeReadings()
     }
 
     /// Runs work on `queue` and returns its result.
@@ -199,6 +260,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         }
         session.addInput(input)
         currentInput = input
+        observeReadings()
         if !session.outputs.contains(photoOutput) {
             guard session.canAddOutput(photoOutput) else { return false }
             session.addOutput(photoOutput)
@@ -232,9 +294,275 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             photoDimensions: format.supportedMaxPhotoDimensions.map {
                 PhotoDimensions(width: Int($0.width), height: Int($0.height))
             },
-            fieldOfViewDegrees: Double(format.videoFieldOfView)
+            fieldOfViewDegrees: Double(format.videoFieldOfView),
+            manualControls: Self.manualSupport(of: device)
         )
     }
+
+    /// The camera's answers about manual control, for its active (photo) format.
+    ///
+    /// - Parameter device: An attached camera.
+    private static func manualSupport(of device: AVCaptureDevice) -> ManualControlSupport {
+        var shutterPriority = false
+        var isoPriority = false
+        var aperturePriority = false
+        if #available(iOS 27.0, *) {
+            let format = device.activeFormat
+            shutterPriority = format.supportsExposureModeCustom(
+                lensAperture: AVCaptureDevice.autoLensAperture, duration: AVCaptureDevice.currentExposureDuration,
+                iso: AVCaptureDevice.autoISO)
+            isoPriority = format.supportsExposureModeCustom(
+                lensAperture: AVCaptureDevice.autoLensAperture, duration: AVCaptureDevice.autoExposureDuration,
+                iso: AVCaptureDevice.currentISO)
+            aperturePriority =
+                format.maxLensAperture > format.minLensAperture
+                && format.supportsExposureModeCustom(
+                    lensAperture: AVCaptureDevice.currentLensAperture, duration: AVCaptureDevice.autoExposureDuration,
+                    iso: AVCaptureDevice.autoISO)
+        }
+        var exposureRegion = false
+        if #available(iOS 26.0, *) { exposureRegion = device.isExposureRectOfInterestSupported }
+        return ManualControlSupport(
+            customExposure: device.isExposureModeSupported(.custom),
+            continuousAutoExposure: device.isExposureModeSupported(.continuousAutoExposure),
+            lockedExposure: device.isExposureModeSupported(.locked),
+            shutterPriority: shutterPriority,
+            isoPriority: isoPriority,
+            aperturePriority: aperturePriority,
+            exposureBiasRange: Double(device.minExposureTargetBias)...Double(
+                max(device.minExposureTargetBias, device.maxExposureTargetBias)),
+            continuousAutoFocus: device.isFocusModeSupported(.continuousAutoFocus),
+            lockedFocus: device.isFocusModeSupported(.locked),
+            lensPositionFocus: device.isLockingFocusWithCustomLensPositionSupported,
+            customWhiteBalance: device.isLockingWhiteBalanceWithCustomDeviceGainsSupported,
+            exposureRegion: exposureRegion)
+    }
+
+    /// Applies controls to the attached camera. Call only on `queue`.
+    ///
+    /// Every value was checked against the lens in `NopeCore`; each is limited again to the
+    /// active format's own range here, because an out-of-range value raises an Objective-C
+    /// exception (`AVCaptureDevice.h`), and a priority combination is set only when the format
+    /// reports it supported.
+    ///
+    /// - Parameter controls: The controls.
+    /// - Returns: `.notRunning` without a camera, `.configurationFailed` if it can't be locked.
+    private func applyControls(_ controls: DeviceControls) -> Result<Void, CaptureError> {
+        guard let device = currentInput?.device else { return .failure(.notRunning) }
+        do {
+            try device.lockForConfiguration()
+        } catch {
+            logger.error("Capture: the camera could not be locked for manual controls")
+            return .failure(.configurationFailed)
+        }
+        defer { device.unlockForConfiguration() }
+        applyMetering(controls.metering, to: device)
+        applyExposure(controls.exposure, to: device)
+        applyFocus(controls.focus, to: device)
+        applyWhiteBalance(controls.whiteBalance, to: device)
+        return .success(())
+    }
+
+    /// Sets the metering region. Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - metering: The metering mode.
+    ///   - device: The camera.
+    private func applyMetering(_ metering: MeteringMode, to device: AVCaptureDevice) {
+        if #available(iOS 26.0, *), device.isExposureRectOfInterestSupported {
+            let minimum = device.minExposureRectOfInterestSize
+            if let region = MeteringRegion.region(
+                for: metering, minimumWidth: Double(minimum.width), minimumHeight: Double(minimum.height))
+            {
+                device.exposureRectOfInterest = CGRect(
+                    x: region.x, y: region.y, width: region.width, height: region.height)
+                return
+            }
+        }
+        // Setting the point resets the region to its default size (AVCaptureDevice.h).
+        if device.isExposurePointOfInterestSupported {
+            device.exposurePointOfInterest = CGPoint(x: 0.5, y: 0.5)
+        }
+    }
+
+    /// Sets the exposure. Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - exposure: The exposure.
+    ///   - device: The camera.
+    private func applyExposure(_ exposure: DeviceControls.Exposure, to device: AVCaptureDevice) {
+        switch exposure {
+        case .automatic(let compensation):
+            if device.isExposureModeSupported(.continuousAutoExposure) { device.exposureMode = .continuousAutoExposure }
+            setBias(compensation, on: device)
+        case .locked:
+            if device.isExposureModeSupported(.locked) { device.exposureMode = .locked }
+        case .custom(let iso, let duration, let aperture, let compensation):
+            guard device.isExposureModeSupported(.custom) else { return }
+            let format = device.activeFormat
+            if #available(iOS 27.0, *) {
+                let isoValue = Self.iso(iso, format: format)
+                let durationValue = Self.duration(duration, format: format)
+                let apertureValue = Self.aperture(aperture, format: format)
+                guard format.supportsExposureModeCustom(lensAperture: apertureValue, duration: durationValue, iso: isoValue)
+                else {
+                    logger.error("Capture: the camera does not support this exposure combination")
+                    return
+                }
+                device.setExposureModeCustom(
+                    lensAperture: apertureValue, duration: durationValue, iso: isoValue, completionHandler: nil)
+                setBias(compensation, on: device)
+            } else if case .value = iso, case .value = duration {
+                // Before iOS 27 only fixed ISO and duration exist; NopeCore asks for nothing else.
+                device.setExposureModeCustom(
+                    duration: Self.duration(duration, format: format), iso: Self.iso(iso, format: format),
+                    completionHandler: nil)
+            }
+        }
+    }
+
+    /// Sets the exposure bias, limited to the camera's range.
+    ///
+    /// - Parameters:
+    ///   - compensation: The bias, in EV.
+    ///   - device: The camera, locked.
+    private func setBias(_ compensation: Double, on device: AVCaptureDevice) {
+        let bias = min(max(Float(compensation), device.minExposureTargetBias), device.maxExposureTargetBias)
+        device.setExposureTargetBias(bias, completionHandler: nil)
+    }
+
+    /// The ISO argument for a parameter, limited to the format's range.
+    ///
+    /// - Parameters:
+    ///   - parameter: The ISO parameter.
+    ///   - format: The active format.
+    private static func iso(_ parameter: DeviceControls.Parameter, format: AVCaptureDevice.Format) -> Float {
+        switch parameter {
+        case .value(let iso): return min(max(Float(iso), format.minISO), format.maxISO)
+        case .current: return AVCaptureDevice.currentISO
+        case .auto:
+            if #available(iOS 27.0, *) { return AVCaptureDevice.autoISO }
+            return AVCaptureDevice.currentISO
+        }
+    }
+
+    /// The duration argument for a parameter, limited to the format's range.
+    ///
+    /// - Parameters:
+    ///   - parameter: The duration parameter, in seconds.
+    ///   - format: The active format.
+    private static func duration(_ parameter: DeviceControls.Parameter, format: AVCaptureDevice.Format) -> CMTime {
+        switch parameter {
+        case .value(let seconds):
+            let time = CMTime(seconds: seconds, preferredTimescale: PhotoSettingsFactory.durationTimescale)
+            return CMTimeClampToRange(
+                time, range: CMTimeRange(start: format.minExposureDuration, end: format.maxExposureDuration))
+        case .current: return AVCaptureDevice.currentExposureDuration
+        case .auto:
+            if #available(iOS 27.0, *) { return AVCaptureDevice.autoExposureDuration }
+            return AVCaptureDevice.currentExposureDuration
+        }
+    }
+
+    /// The aperture argument for a parameter, limited to the format's range (iOS 27).
+    ///
+    /// - Parameters:
+    ///   - parameter: The aperture parameter, as an f-number.
+    ///   - format: The active format.
+    @available(iOS 27.0, *)
+    private static func aperture(_ parameter: DeviceControls.Parameter, format: AVCaptureDevice.Format) -> Float {
+        switch parameter {
+        case .value(let fNumber): min(max(Float(fNumber), format.minLensAperture), format.maxLensAperture)
+        case .current: AVCaptureDevice.currentLensAperture
+        case .auto: AVCaptureDevice.autoLensAperture
+        }
+    }
+
+    /// Sets the focus. Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - focus: The focus.
+    ///   - device: The camera.
+    private func applyFocus(_ focus: DeviceControls.Focus, to device: AVCaptureDevice) {
+        switch focus {
+        case .automatic:
+            if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
+        case .locked:
+            if device.isFocusModeSupported(.locked) { device.focusMode = .locked }
+        case .lensPosition(let position):
+            guard device.isLockingFocusWithCustomLensPositionSupported else { return }
+            device.setFocusModeLocked(lensPosition: Float(min(max(position, 0), 1)), completionHandler: nil)
+        }
+    }
+
+    /// Sets the white balance. Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - whiteBalance: The white balance.
+    ///   - device: The camera.
+    private func applyWhiteBalance(_ whiteBalance: DeviceControls.WhiteBalanceControl, to device: AVCaptureDevice) {
+        switch whiteBalance {
+        case .automatic:
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+        case .fixed(let balance):
+            guard device.isLockingWhiteBalanceWithCustomDeviceGainsSupported else { return }
+            let gains = device.deviceWhiteBalanceGains(
+                for: AVCaptureDevice.WhiteBalanceTemperatureAndTintValues(
+                    temperature: Float(balance.temperature), tint: Float(balance.tint)))
+            let limited = WhiteBalanceGains(
+                red: Double(gains.redGain), green: Double(gains.greenGain), blue: Double(gains.blueGain)
+            ).limited(toMaximum: Double(device.maxWhiteBalanceGain))
+            device.setWhiteBalanceModeLocked(
+                with: AVCaptureDevice.WhiteBalanceGains(
+                    redGain: Float(limited.red), greenGain: Float(limited.green), blueGain: Float(limited.blue)),
+                completionHandler: nil)
+        }
+    }
+
+    /// Observes the attached camera while readings are on, and stops observing otherwise. Call
+    /// only on `queue`.
+    ///
+    /// The exposure offset changes as the meter updates, and the lens position as the lens
+    /// moves; either triggers a reading of every value, sent at most four times a second
+    /// (``ReadingThrottle``). Nothing is observed while readings are off.
+    private func observeReadings() {
+        readingObservations.forEach { $0.invalidate() }
+        readingObservations = []
+        guard readingsEnabled, let device = currentInput?.device else { return }
+        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation] device in
+            let now = ProcessInfo.processInfo.systemUptime
+            guard throttle.withLock({ $0.shouldSend(at: now) }) else { return }
+            readingsContinuation.yield(Self.reading(of: device))
+        }
+        readingObservations = [
+            device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in send(device) },
+            device.observe(\.lensPosition) { device, _ in send(device) },
+        ]
+    }
+
+    /// What a camera is using now.
+    ///
+    /// - Parameter device: The camera.
+    /// - Returns: The reading.
+    private static func reading(of device: AVCaptureDevice) -> ExposureReading {
+        let gains = WhiteBalanceGains(
+            red: Double(device.deviceWhiteBalanceGains.redGain), green: Double(device.deviceWhiteBalanceGains.greenGain),
+            blue: Double(device.deviceWhiteBalanceGains.blueGain))
+        // Converting gains outside 1...maxWhiteBalanceGain raises an exception (AVCaptureDevice.h).
+        let inRange = gains == gains.limited(toMaximum: Double(device.maxWhiteBalanceGain))
+        var whiteBalance: WhiteBalance?
+        if inRange {
+            let values = device.temperatureAndTintValues(for: device.deviceWhiteBalanceGains)
+            whiteBalance = WhiteBalance(temperature: Double(values.temperature), tint: Double(values.tint))
+        }
+        return ExposureReading(
+            iso: Double(device.iso), exposureDuration: device.exposureDuration.seconds,
+            exposureOffset: Double(device.exposureTargetOffset), lensPosition: Double(device.lensPosition),
+            aperture: Double(device.lensAperture), whiteBalance: whiteBalance)
+    }
+
 
     /// The camera's aperture: the iOS 27 range and recommended stops where available,
     /// otherwise the fixed `lensAperture`.
@@ -356,8 +684,25 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             completion(.failure(.notRunning))
             return
         }
-        applyCaptureRotation()
         let settings = PhotoSettingsFactory.makeSettings(for: plan, maxPhotoDimensions: appliedMaxDimensions)
+        startCapture(settings, device: device, plan: plan, metadata: metadata) { result in
+            completion(result.flatMap { photos in photos.first.map { .success($0) } ?? .failure(.captureFailed) })
+        }
+    }
+
+    /// Starts a capture with prepared settings (one photo, or a bracket) and reports every photo
+    /// it delivers. Call only on `queue`.
+    ///
+    /// - Parameters:
+    ///   - settings: The photo or bracket settings.
+    ///   - device: The attached camera.
+    ///   - plan: The photo settings plan, which gives the file format.
+    ///   - metadata: The plan each file's metadata is built from.
+    ///   - completion: Called once with the photos or the error.
+    private func startCapture(
+        _ settings: AVCapturePhotoSettings, device: AVCaptureDevice, plan: PhotoSettingsPlan, metadata: MetadataPlan,
+        completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void
+    ) {
         let id = settings.uniqueID
         let delegate = PhotoCaptureDelegate(
             exposureDuration: device.exposureDuration.seconds, iso: Double(device.iso), metadata: metadata,
@@ -367,6 +712,8 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             completion(result)
         }
         captureDelegates[id] = delegate
+        // Every photo, single or bracketed, gets the current capture angle.
+        applyCaptureRotation()
         photoOutput.capturePhoto(with: settings, delegate: delegate)
     }
 
@@ -415,7 +762,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     }
 }
 
-/// Receives one capture's callbacks and reports the photo once the capture finishes.
+/// Receives one capture's callbacks (one photo, or every frame of a bracket) and reports the photo once the capture finishes.
 ///
 /// `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
 /// capture, and `result` is only touched in them.
@@ -429,9 +776,11 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
     /// The format of the file, which chooses its allowlist.
     private let format: PhotoFormat
     /// Called once with the result.
-    private let completion: @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
-    /// The result so far; a failure until a photo with file data arrives.
-    private var result: Result<HardwarePhoto, CaptureError> = .failure(.captureFailed)
+    private let completion: @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void
+    /// The photos delivered so far: one, or one per bracket frame.
+    private var photos: [HardwarePhoto] = []
+    /// Whether any photo failed.
+    private var failed = false
 
     /// Creates a delegate for one capture.
     ///
@@ -443,7 +792,7 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
     ///   - completion: Called once with the result.
     init(
         exposureDuration: Double, iso: Double, metadata: MetadataPlan, format: PhotoFormat,
-        completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
+        completion: @escaping @Sendable (Result<[HardwarePhoto], CaptureError>) -> Void
     ) {
         self.exposureDuration = exposureDuration
         self.iso = iso
@@ -459,19 +808,23 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
     /// dictionary `MetadataPlan` built from the allowlist, never the system's full metadata
     /// with known tags deleted (AGENTS.md, "Build metadata from the allowlist"). For RAW, the
     /// system's own DNG is flattened too, only to copy its RAW image data as the reference the
-    /// read-back compares with; that DNG is dropped at once. The bytes stay in memory.
+    /// read-back compares with; that DNG is dropped at once. The bytes stay in memory. A bracket
+    /// frame reports the exposure it was asked for; a single photo the exposure read before the
+    /// capture.
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?) {
         let customizer = MetadataCustomizer(properties: metadata.properties(for: format, from: photo.metadata))
         guard error == nil, let data = photo.fileDataRepresentation(with: customizer) else {
-            result = .failure(.captureFailed)
+            failed = true
             return
         }
         let rawImageData = photo.isRawPhoto ? photo.fileDataRepresentation().flatMap(MetadataFileReader.rawImageData(ofDNG:)) : nil
         let size = photo.isRawPhoto ? photo.resolvedSettings.rawPhotoDimensions : photo.resolvedSettings.photoDimensions
-        result = .success(
+        let frame = photo.bracketSettings as? AVCaptureManualExposureBracketedStillImageSettings
+        photos.append(
             HardwarePhoto(
                 data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
-                exposureDuration: exposureDuration, iso: iso, pixelSample: photo.pixelBuffer.flatMap(Self.sample),
+                exposureDuration: frame.map { $0.exposureDuration.seconds } ?? exposureDuration,
+                iso: frame.map { Double($0.iso) } ?? iso, pixelSample: photo.pixelBuffer.flatMap(Self.sample),
                 rawImageData: rawImageData))
     }
 
@@ -497,13 +850,13 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
         return PictureCheck.sampleOffsets(byteCount: byteCount).map { base.load(fromByteOffset: $0, as: UInt8.self) }
     }
 
-    /// Reports the result when the whole capture has finished.
+    /// Reports the result when the whole capture has finished: every photo, or a failure if any
+    /// photo failed or none arrived.
     func photoOutput(
         _ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings,
         error: (any Error)?
     ) {
-        if error != nil { result = .failure(.captureFailed) }
-        completion(result)
+        completion(error == nil && !failed && !photos.isEmpty ? .success(photos) : .failure(.captureFailed))
     }
 }
 

@@ -129,6 +129,8 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `allow`, in landscape | Side-by-side layout: the viewfinder fills the height and the shutter is beside it, in both landscape orientations; capture and the telephoto fallback badge; also at the largest accessibility text size |
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "No RAW on This Lens" badge and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled, portrait and landscape |
+| `manual` (with `-manualControlsEnabled YES`) | Manual controls: hidden without the option; the six slots; a panel with the lens's range; Manual and "All Auto"; P/S/I/M; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; interval progress and Stop; clean view; the list at the largest text size; right-to-left |
+| `allow` (clean view) | The no-RAW badge stays visible in clean view |
 
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
@@ -184,9 +186,40 @@ iPad:
   plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
+- manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
+  controls turned on: see "Manual controls on a device" below;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size), including the lens buttons' "No RAW" caption and the pause messages over
   the viewfinder in landscape.
+
+### Manual controls on a device
+
+The rules are unit-tested against a scripted backend; these checks cover the hardware calls.
+Do each on every lens (ultra wide, wide, telephoto, front) of each test device, in RAW and, on a
+lens without RAW, in the fallback:
+
+- the grid shows only what the lens supports: "n/a" or "Fixed" where the lens can't, the
+  aperture adjustable only on a variable-aperture lens (iOS 27), S and I only on iOS 27;
+- ISO and shutter at both ends of the lens's range, and a long exposure (1 s where offered):
+  the viewfinder changes and the DNG's `ExposureTime` and `ISOSpeedRatings` match the set
+  values (`.speed` keeps them, `AVCaptureDevice.h`);
+- S and I: the camera adjusts the other value and the meter stays near 0;
+- exposure compensation in P, S and I changes brightness; blocked in M;
+- manual focus from Closest to Far moves the focus, and autofocus comes back with Auto; AF-L
+  holds focus;
+- white balance: each preset, 2500 K and 10,000 K, and tint ±150 are accepted without an
+  exception (gains limited to `maxWhiteBalanceGain`), and the DNG's as-shot neutral changes;
+- metering: spot and whole frame (iOS 26) change the exposure of a high-contrast scene;
+- AE-L holds exposure when the phone points elsewhere;
+- a bracket of 3 (and 5 or 7 where `maxBracketedCapturePhotoCount` allows) returns that many
+  separate DNGs with the planned exposures, and no frame is blank;
+- interval shooting: 3 photos 5 s apart; Stop ends it; leaving the camera screen ends it;
+- switching lenses and an interruption: the manual settings are applied again afterwards;
+- "All Auto" and turning the option off return the camera to continuous auto;
+- readings: the meter and the Auto values update while manual controls are on, and nothing is
+  observed while they are off (Instruments: no key-value observation callbacks);
+- with VoiceOver: each slot adjusts by swiping up and down, and the eyes-free shutter (volume
+  buttons, Camera Control) still works with manual controls on and in clean view.
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 

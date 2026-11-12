@@ -33,6 +33,13 @@ public final class CameraModel {
     /// Builds, checks and saves each photo, or `nil` when this model can't save (previews).
     private let saver: PhotoSaver?
 
+    /// Whether clean view is on: the interface hides every control that isn't essential. Off by
+    /// default. Warnings that change what the photo is are never hidden.
+    public private(set) var isCleanView = false
+
+    /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
+    public let manual: ManualControlsModel
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -45,9 +52,16 @@ public final class CameraModel {
     ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
     ///   - saver: The save pipeline. Without one, every photo ends in
     ///     ``CaptureError/savingUnavailable`` and nothing is saved.
-    public init(backend: any CaptureBackend, saver: PhotoSaver? = nil) {
+    ///   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+    ///
+    /// A ``ManualCaptureBackend`` also gets manual controls (``manual``).
+    public init(
+        backend: any CaptureBackend, saver: PhotoSaver? = nil,
+        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
+    ) {
         self.backend = backend
         self.saver = saver
+        manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -98,6 +112,10 @@ public final class CameraModel {
             await selectLens(id)
         case .capture:
             await capture()
+        case .manual(let intent):
+            await manual.handle(intent) { [weak self] in await self?.capture() }
+        case .setCleanView(let isOn):
+            isCleanView = isOn
         }
     }
 
@@ -183,10 +201,13 @@ public final class CameraModel {
             return
         }
         sessionStatus = .starting
+        manual.lensWillStart(lens)
         do {
             try await backend.startSession(CaptureRequest(lens: lens))
             // An interruption or heat event may have arrived while starting; it wins.
             if sessionStatus == .starting { sessionStatus = .running }
+            // Starting the camera returns its controls to automatic; apply the manual ones again.
+            await manual.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
         }
@@ -202,6 +223,10 @@ public final class CameraModel {
         let settings = saveSettings
         let plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
         let request = CaptureRequest(lens: lens, metadata: plan)
+        if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
+            await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
+            return
+        }
         do {
             await save(try await backend.capturePhoto(request), settings: settings)
         } catch .blankPicture {
@@ -256,6 +281,37 @@ public final class CameraModel {
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)
+        } catch {
+            captureStatus = .failed(error)
+        }
+    }
+
+    /// Takes an exposure bracket and saves each frame as its own photo: separate single-frame
+    /// photos, nothing merged. Saving stops at the first frame that fails, and a failed or
+    /// blank bracket isn't retried; the person can press the shutter again.
+    ///
+    /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
+    ///
+    /// - Parameters:
+    ///   - request: The lens, format and metadata plan.
+    ///   - frames: Each frame's ISO and exposure duration.
+    ///   - backend: The backend, which supports brackets.
+    ///   - settings: The settings the photos are taken with.
+    private func captureBracket(
+        _ request: CaptureRequest, frames: [BracketFrame], backend: any ManualCaptureBackend, settings: SaveSettings
+    ) async {
+        do {
+            let photos = try await backend.captureBracket(request, frames: frames)
+            guard let saver else {
+                captureStatus = .failed(.savingUnavailable)
+                return
+            }
+            captureStatus = .saving
+            var saved: [SavedPhoto] = []
+            for photo in photos {
+                saved.append(try await saver.save(photo, settings: settings))
+            }
+            captureStatus = .savedBracket(saved)
         } catch {
             captureStatus = .failed(error)
         }

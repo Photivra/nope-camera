@@ -43,6 +43,9 @@ public struct CameraScreen<Viewfinder: View>: View {
             .preferredColorScheme(.dark)
             .task { await model.send(.start) }
             .task { await model.observeEvents() }
+            .task { await model.manual.observeReadings() }
+            // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
+            .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
     }
 
     /// The view for the model's current state.

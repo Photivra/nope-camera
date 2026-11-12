@@ -18,6 +18,10 @@ struct NopeApp: App {
     /// The camera model shared by the app's single scene.
     @State private var model = CameraModel(backend: Self.backend, saver: Self.makeSaver())
 
+    /// The "Manual controls" option from Settings; off by default.
+    @AppStorage(ManualControlsSetting.userDefaultsKey) private var manualControlsEnabled =
+        ManualControlsSetting.defaultValue
+
     /// The app's single window, showing the camera screen.
     var body: some Scene {
         WindowGroup {
@@ -60,6 +64,9 @@ struct NopeApp: App {
         .onCameraCaptureEvent { event in
             guard event.phase == .ended else { return }
             Task { await model.send(.capture) }
+        }
+        .task(id: manualControlsEnabled) {
+            await model.send(.manual(.setEnabled(manualControlsEnabled)))
         }
     }
 

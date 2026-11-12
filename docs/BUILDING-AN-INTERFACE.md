@@ -43,6 +43,18 @@ updates automatically.
 5. Test it against `SimulatedCaptureBackend`, which can put the model in every state without a
    camera, and add a UI test with `performAccessibilityAudit()` for each state.
 
+## Manual controls
+
+Manual controls are off by default; the "Manual controls" option in Settings turns them on, and
+the app target sends `.manual(.setEnabled(_:))` when it changes. Everything about them is in
+`CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
+(`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
+exposure modes, bracketing and interval shooting. Send `.manual(...)` intents to change them; the
+model keeps the combination valid for the lens. Offer "All Auto" whenever
+`manual.settings.isAutomatic` is false. Run `manual.observeReadings()` in a second `.task` so the
+values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
+a warning that changes what the photo is.
+
 ## Rules that still apply
 
 Your interface follows AGENTS.md like the standard one: native controls, Dynamic Type, VoiceOver

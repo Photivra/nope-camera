@@ -61,6 +61,9 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// The photo sizes the lens's format supports, smallest first.
     public let photoDimensions: [PhotoDimensions]
 
+    /// The manual controls the lens supports. ``ManualCapabilities/none`` when unknown.
+    public let manualControls: ManualCapabilities
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -75,6 +78,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - aperture: The aperture range, or `nil` when unknown.
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
     ///   - photoDimensions: The supported photo sizes, smallest first.
+    ///   - manualControls: The manual controls the lens supports. Defaults to none.
     public init(
         id: String,
         kind: Kind,
@@ -85,7 +89,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
         exposureDurationRange: ClosedRange<Double>? = nil,
         aperture: ApertureRange? = nil,
         maxBracketedPhotoCount: Int = 0,
-        photoDimensions: [PhotoDimensions] = []
+        photoDimensions: [PhotoDimensions] = [],
+        manualControls: ManualCapabilities = .none
     ) {
         self.id = id
         self.kind = kind
@@ -97,6 +102,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.aperture = aperture
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
+        self.manualControls = manualControls
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

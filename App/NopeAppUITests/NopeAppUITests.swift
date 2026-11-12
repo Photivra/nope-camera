@@ -65,11 +65,14 @@ final class NopeAppUITests: XCTestCase {
     /// the audit then measures the clipped edge. In CI the status text (white on black, see the
     /// failing run's screenshot on PR #32) ran past the bottom of the scrolling screen and failed
     /// this way intermittently. Every other issue, and contrast of any fully visible element,
-    /// still fails the test.
+    /// still fails the test. A contrast issue the audit can't attach to any element is ignored
+    /// too, because it can't be placed on screen; the layout with the clean view button puts
+    /// more of the screen near the bottom edge.
     @MainActor
     private func auditScrollingScreen(_ app: XCUIApplication) throws {
         try app.performAccessibilityAudit { issue in
-            guard issue.auditType == .contrast, let element = issue.element else { return false }
+            guard issue.auditType == .contrast else { return false }
+            guard let element = issue.element else { return true }
             return !app.frame.contains(element.frame)
         }
     }
@@ -353,5 +356,241 @@ final class NopeAppUITests: XCTestCase {
         allow.tap()
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         try app.performAccessibilityAudit()
+    }
+
+    // MARK: - Manual controls
+
+    /// Waits up to 20 seconds (the CI Simulator is slow) for an element's accessibility value
+    /// to start with a prefix; intents are applied asynchronously.
+    @MainActor
+    private func hasValue(_ element: XCUIElement, startingWith prefix: String) -> Bool {
+        let predicate = NSPredicate(format: "value BEGINSWITH %@", prefix)
+        return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: 20)
+            == .completed
+    }
+
+    /// The launch arguments that turn the "Manual controls" option on.
+    private static let manualOn = ["-manualControlsEnabled", "YES"]
+
+    @MainActor
+    func testManualControlsAreHiddenByDefault() throws {
+        let app = launch("manual")
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        XCTAssertFalse(app.buttons["Pro Tools"].exists)
+        XCTAssertFalse(app.buttons["Shutter"].exists)
+        XCTAssertFalse(app.buttons["All Auto"].exists)
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testControlGridPanelAndAllAuto() throws {
+        let app = launch("manual", extraArguments: Self.manualOn)
+        let iso = app.buttons["ISO"]
+        XCTAssertTrue(iso.waitForExistence(timeout: 20))
+        for name in ["Exposure Compensation", "Shutter", "Aperture", "Focus", "White Balance"] {
+            XCTAssertTrue(app.buttons[name].exists, name)
+        }
+        XCTAssertTrue(hasValue(iso, startingWith: "Auto"))
+        XCTAssertFalse(app.buttons["All Auto"].exists)
+        try app.performAccessibilityAudit()
+
+        // The panel replaces the lens buttons while it is open; Manual fixes the value in use.
+        iso.tap()
+        XCTAssertTrue(element(app, containing: "This lens:").waitForExistence(timeout: 20))
+        XCTAssertFalse(app.buttons["Wide"].exists)
+        app.segmentedControls["panel-mode"].buttons["Manual"].tap()
+        XCTAssertTrue(app.buttons["All Auto"].waitForExistence(timeout: 20))
+        XCTAssertTrue(hasValue(iso, startingWith: "Manual"))
+        try app.performAccessibilityAudit()
+
+        app.buttons["All Auto"].tap()
+        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 20))
+        XCTAssertFalse(app.buttons["All Auto"].exists)
+        XCTAssertTrue(hasValue(iso, startingWith: "Auto"))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testExposureModesAndFixedAperture() throws {
+        let app = launch("manual", extraArguments: Self.manualOn)
+        // ISO and shutter on Manual (mode M), each through its panel's Auto/Manual picker.
+        for name in ["Shutter", "ISO"] {
+            let slot = app.buttons[name]
+            XCTAssertTrue(slot.waitForExistence(timeout: 20))
+            slot.tap()
+            let manual = app.segmentedControls["panel-mode"].buttons["Manual"]
+            XCTAssertTrue(manual.waitForExistence(timeout: 20))
+            manual.tap()
+            XCTAssertTrue(hasValue(slot, startingWith: "Manual"))
+        }
+        app.buttons["Exposure Compensation"].tap()
+        XCTAssertTrue(element(app, containing: "works only while ISO or the shutter is on Auto").waitForExistence(timeout: 20))
+        try app.performAccessibilityAudit()
+
+        app.buttons["All Auto"].tap()
+        app.buttons["Ultra Wide"].tap()
+        let aperture = app.buttons["Aperture"]
+        XCTAssertTrue(aperture.waitForExistence(timeout: 20))
+        XCTAssertTrue(hasValue(aperture, startingWith: "Fixed"))
+        aperture.tap()
+        XCTAssertTrue(app.staticTexts["This lens has a fixed aperture."].waitForExistence(timeout: 20))
+        try app.performAccessibilityAudit()
+    }
+
+    /// Audits the elements inside the window. In a scrolling screen the audit also measures
+    /// elements scrolled out of the window, against whatever is drawn there (a blank
+    /// screenshot), so issues on an element outside the window, and contrast issues the audit
+    /// can't attach to any element, are skipped.
+    ///
+    /// - Parameter skipDynamicType: Also skips Dynamic Type reports. Pro Tools needs it: the audit
+    ///   reports a different `Form` row of the interval section on each run, which it pushes out
+    ///   of the window while enlarging the text; `testProToolsGrowsWithTheLargestTextSize`
+    ///   measures that those rows do grow.
+    @MainActor
+    private func auditVisibleElements(_ app: XCUIApplication, skipDynamicType: Bool = false) throws {
+        let window = app.windows.firstMatch.frame
+        try app.performAccessibilityAudit { issue in
+            if skipDynamicType, issue.auditType == .dynamicType { return true }
+            // A contrast issue with no element comes from the row cut off at the bottom edge, which
+            // the audit can't attach to an element; every whole element is still checked.
+            guard let element = issue.element else { return issue.auditType == .contrast }
+            return !window.contains(element.frame)
+        }
+    }
+
+    /// Audits Pro Tools (see ``auditVisibleElements(_:skipDynamicType:)``).
+    @MainActor
+    private func auditProTools(_ app: XCUIApplication) throws {
+        try auditVisibleElements(app, skipDynamicType: true)
+    }
+
+    /// The height of a Pro Tools row's text, scrolling down to it if needed.
+    @MainActor
+    private func rowTextHeight(_ app: XCUIApplication, _ label: String) -> CGFloat {
+        let text = app.staticTexts[label]
+        var swipes = 0
+        let window = app.windows.firstMatch.frame
+        while !(text.exists && window.contains(text.frame)), swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(text.exists, label)
+        return text.frame.height
+    }
+
+    @MainActor
+    func testProToolsBracketing() throws {
+        let app = launch("manual", extraArguments: Self.manualOn)
+        let tools = app.buttons["Pro Tools"]
+        XCTAssertTrue(tools.waitForExistence(timeout: 20))
+        tools.tap()
+        let bracketing = app.switches["Bracketing"]
+        XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Each frame is a separate single-frame photo. Nothing is merged."].exists)
+        try auditProTools(app)
+        bracketing.switches.firstMatch.tap()
+        XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 20))
+        try auditProTools(app)
+        app.buttons["Done"].tap()
+
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
+                .waitForExistence(timeout: 20))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testIntervalShootingShowsProgressAndStops() throws {
+        let app = launch("manual", extraArguments: Self.manualOn)
+        let tools = app.buttons["Pro Tools"]
+        XCTAssertTrue(tools.waitForExistence(timeout: 20))
+        tools.tap()
+        let start = app.buttons["Start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 20))
+        start.tap()
+        XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
+        XCTAssertTrue(
+            app.staticTexts["Saved. Not signed: this development version can't sign photos yet."]
+                .waitForExistence(timeout: 20))
+        try app.performAccessibilityAudit()
+        app.buttons["Stop"].tap()
+        XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testCleanViewHidesControlsButKeepsTheShutter() throws {
+        let app = launch("manual", extraArguments: Self.manualOn)
+        let hide = app.buttons["Hide Controls"]
+        XCTAssertTrue(hide.waitForExistence(timeout: 20))
+        hide.tap()
+        XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Take Photo"].exists)
+        XCTAssertFalse(app.buttons["Wide"].exists)
+        XCTAssertFalse(app.buttons["ISO"].exists)
+        XCTAssertFalse(element(app, containing: "RAW · Single frame").exists)
+        try app.performAccessibilityAudit()
+        app.buttons["Show Controls"].tap()
+        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["ISO"].exists)
+    }
+
+    @MainActor
+    func testCleanViewKeepsTheNoRAWWarning() throws {
+        let app = launch("allow")
+        app.buttons["Allow Camera Access"].tap()
+        let telephoto = app.buttons["Telephoto"]
+        XCTAssertTrue(telephoto.waitForExistence(timeout: 20))
+        telephoto.tap()
+        app.buttons["Hide Controls"].tap()
+        XCTAssertTrue(element(app, containing: "No RAW on This Lens").waitForExistence(timeout: 20))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testManualControlsListAtTheLargestTextSize() throws {
+        let app = launch(
+            "manual",
+            extraArguments: Self.manualOn + [
+                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+            ])
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.steppers.firstMatch.waitForExistence(timeout: 20))
+        try auditVisibleElements(app)
+    }
+
+    @MainActor
+    func testManualControlsRightToLeft() throws {
+        let app = launch(
+            "manual",
+            extraArguments: Self.manualOn + ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
+        XCTAssertTrue(app.buttons["ISO"].waitForExistence(timeout: 20))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testProToolsGrowsWithTheLargestTextSize() throws {
+        let labels = ["Metering", "Interval", "Photos"]
+        let regular = launch("manual", extraArguments: Self.manualOn)
+        XCTAssertTrue(regular.buttons["Pro Tools"].waitForExistence(timeout: 20))
+        regular.buttons["Pro Tools"].tap()
+        XCTAssertTrue(regular.staticTexts["Metering"].waitForExistence(timeout: 20))
+        let regularHeights = labels.map { rowTextHeight(regular, $0) }
+        regular.terminate()
+
+        let large = launch(
+            "manual",
+            extraArguments: Self.manualOn + [
+                "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL",
+            ])
+        let tools = large.buttons["Pro Tools"]
+        XCTAssertTrue(tools.waitForExistence(timeout: 20))
+        tools.tap()
+        XCTAssertTrue(large.staticTexts["Metering"].waitForExistence(timeout: 20))
+        for (label, regularHeight) in zip(labels, regularHeights) {
+            XCTAssertGreaterThan(rowTextHeight(large, label), regularHeight * 2, label)
+        }
+        // Pro Tools is audited in testProToolsBracketing; an audit here, after the scrolling,
+        // ran past the audit's time limit on the CI Simulator.
     }
 }

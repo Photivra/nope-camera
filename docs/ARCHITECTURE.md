@@ -22,7 +22,7 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`) | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `PerPhotoSigner`, which uses a fresh key for every photo | `NopeCore`, CryptoKit, C2PA |
@@ -75,6 +75,45 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
            captureReadiness, captures, and reports interruptions and thermal state;
            PreviewRotation (device-only, excluded) keeps the preview and photos upright
 ```
+
+### Manual controls
+
+Manual controls are off by default. The "Manual controls" option is stored in `UserDefaults`
+under `ManualControlsSetting.userDefaultsKey`; the app target sends
+`.manual(.setEnabled(_:))` when it changes.
+
+```
+ NopeUI ── .manual(ManualControlIntent) ──▶ CameraModel.manual (ManualControlsModel)
+                                              │ rules: availability, scales, P/S/I/M,
+                                              │ locks, bracket plan, interval timer
+                                              ▼
+                                   DeviceControls(settings:lens:)  (checked against the lens)
+                                              │
+ ManualCaptureBackend.applyControls ◀─────────┘      exposureReadings ──▶ ManualControlsModel.reading
+   └─ SystemCaptureHardware: lockForConfiguration, setExposureModeCustom (iOS 27 priority
+      constants where the format supports them), setFocusModeLocked(lensPosition:),
+      setWhiteBalanceModeLocked(with:), exposureRectOfInterest (iOS 26), each value limited
+      again to the active format
+```
+
+- **Capabilities are data.** `SystemCaptureHardware` copies each camera's answers
+  (`isExposureModeSupported`, `supportsExposureModeCustom(lensAperture:duration:iso:)`,
+  `isLockingFocusWithCustomLensPositionSupported`, `isLockingWhiteBalanceWithCustomDeviceGainsSupported`,
+  `isExposureRectOfInterestSupported`, the bias range) into `ManualControlSupport`, which
+  `LensCatalog` turns into `Lens.manualControls`. The interface shows only what the lens offers.
+- **Starting the camera resets its controls** to continuous auto, so `CameraModel` asks
+  `ManualControlsModel` to apply its settings again after every start and lens switch.
+- **Readings** (exposure offset, ISO, shutter, focus position, aperture, white balance) come from
+  key-value observation of the camera, at most four a second, only while manual controls are on.
+  No video data output is added, so there is no live histogram; the meter is the camera's own
+  exposure offset.
+- **Bracketing** uses `AVCapturePhotoBracketSettings` with
+  `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
+  photo, and each is saved through the same pipeline as a single photo
+  (`CaptureStatus.savedBracket`). Bayer RAW rules still apply: `.speed`, zoom 1.0, no
+  multi-frame processing.
+- **Interval shooting** calls the same capture path as the shutter; its timer exists only while a
+  series runs, and the camera screen stops it when it disappears.
 
 ### The viewfinder
 
