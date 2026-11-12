@@ -11,8 +11,13 @@ and verified on a device.
 
 ``AVFoundationCaptureBackend`` is the real `CaptureBackend`: it finds the physical cameras,
 publishes their capabilities, and captures single-frame Bayer RAW, or the labeled processed
-fallback on a lens without it, in memory. Its decisions are in tested types; the calls that need
-a camera are in `SystemCaptureHardware.swift`. Saving to Photos follows in a later step.
+fallback on a lens without it, in memory. Each file is flattened with metadata built from the
+allowlist (`AVCapturePhotoFileDataRepresentationCustomizer.replacementMetadata(for:)`), and for
+RAW the system's own RAW image data is kept as the reference the read-back compares with. Its
+decisions are in tested types; the calls that need a camera are in `SystemCaptureHardware.swift`.
+
+``PhotoKitLibrary`` adds checked photos to Photos with add-only access, a RAW and its processed
+file as one asset. Its decisions are in the tested `PhotoKitMapping`.
 
 Related documentation: `docs/ARCHITECTURE.md`, `docs/TESTING.md` and `docs/PRIVACY.md` in the
 repository.
@@ -23,6 +28,10 @@ repository.
 
 - ``AVFoundationCaptureBackend``
 - ``CaptureSessionPreviewSource``
+
+### Photos
+
+- ``PhotoKitLibrary``
 
 ### Permission
 

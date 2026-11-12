@@ -40,6 +40,13 @@ struct CapturePolicyTests {
         #expect(configuration.photoSettings.processedFormat == .jpeg)
     }
 
+    @Test func fileFormatFollowsThePlan() throws {
+        let raw = try #require(CapturePolicy.photoSettings(for: .bayerRAW(pixelFormat: "bgg4")))
+        #expect(CapturePolicy.fileFormat(of: raw) == .raw)
+        #expect(CapturePolicy.fileFormat(of: try #require(CapturePolicy.photoSettings(for: .processedFallback(.heif)))) == .heif)
+        #expect(CapturePolicy.fileFormat(of: try #require(CapturePolicy.photoSettings(for: .processedFallback(.jpeg)))) == .jpeg)
+    }
+
     @Test func invalidRAWCodeHasNoConfiguration() {
         let lens = Lens(id: "bad", kind: .wide, bayerRAWFormat: "not a code")
         #expect(CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: lens)) == nil)
