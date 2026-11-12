@@ -255,6 +255,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -275,6 +276,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
