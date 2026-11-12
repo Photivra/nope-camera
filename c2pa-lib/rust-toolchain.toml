@@ -1,0 +1,6 @@
+# The Rust toolchain that builds the C2PA library, pinned exactly (scripts/build-c2pa-lib.sh copies
+# this file into the c2pa-rs checkout). Update only in a reviewed pull request.
+[toolchain]
+channel = "1.99.1"
+profile = "minimal"
+targets = ["aarch64-apple-ios", "aarch64-apple-ios-sim", "x86_64-apple-ios"]

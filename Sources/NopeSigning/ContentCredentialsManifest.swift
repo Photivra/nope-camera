@@ -7,7 +7,7 @@ import NopeCore
 /// - one `c2pa.created` action, with the IPTC digital source type `digitalCapture` (the image
 ///   was captured from real life by a digital camera) and a plain description of what happened
 ///   to the file;
-/// - who generated the claim: ``ClaimGenerator`` (nope. and its version).
+/// - who generated the claim: ``ClaimGenerator`` (Photivra Nope Camera and its version).
 ///
 /// Privacy rule: no time (`when`), creator, location, device, title, thumbnail or ingredient is
 /// written, and the instance ID is a random UUID made for this file alone
@@ -105,7 +105,7 @@ struct ContentCredentialsManifest: Encodable, Equatable {
     /// A random instance ID for this file alone, `xmp:iid:` followed by a UUID.
     let instanceID: String
 
-    /// nope. and its version.
+    /// Photivra Nope Camera and its version.
     let claimGeneratorInfo: [GeneratorInfo]
 
     /// The single actions assertion.
@@ -129,7 +129,7 @@ struct ContentCredentialsManifest: Encodable, Equatable {
     ///
     /// - Parameters:
     ///   - file: What the file is.
-    ///   - generator: nope. and its version.
+    ///   - generator: Photivra Nope Camera and its version.
     ///   - instanceID: A UUID made for this file alone.
     init(file: SignableFile, generator: ClaimGenerator, instanceID: UUID) {
         self.format = file.container.mediaType
@@ -157,13 +157,13 @@ struct ContentCredentialsManifest: Encodable, Equatable {
     static func description(of file: SignableFile) -> String {
         switch file {
         case .singleFrameRAW:
-            "Captured by nope. as a single frame of RAW sensor data, with as little processing as "
-                + "the phone allows."
+            "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little "
+                + "processing as the phone allows."
         case .developedHEIF, .developedJPEG:
-            "Developed by nope. on the phone from a single frame of RAW sensor data."
+            "Developed by Photivra Nope Camera on the phone from a single frame of RAW sensor data."
         case .deviceProcessedHEIF, .deviceProcessedJPEG:
-            "Captured by nope. and processed by the phone's camera, because this lens can't save "
-                + "RAW."
+            "Captured by Photivra Nope Camera and processed by the phone's camera, because this lens "
+                + "can't save RAW."
         }
     }
 

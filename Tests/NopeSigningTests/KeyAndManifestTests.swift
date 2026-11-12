@@ -42,7 +42,7 @@ struct ManifestTests {
             instanceID: UUID(uuidString: "00000000-0000-4000-8000-000000000001")!)
         #expect(
             manifest.json()
-                == #"{"assertions":[{"data":{"actions":[{"action":"c2pa.created","description":"Captured by nope. as a single frame of RAW sensor data, with as little processing as the phone allows.","digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"}]},"label":"c2pa.actions.v2"}],"claim_generator_info":[{"name":"nope.","version":"1.2.3"}],"claim_version":2,"format":"image/x-adobe-dng","instance_id":"xmp:iid:00000000-0000-4000-8000-000000000001"}"#
+                == #"{"assertions":[{"data":{"actions":[{"action":"c2pa.created","description":"Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the phone allows.","digitalSourceType":"http://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"}]},"label":"c2pa.actions.v2"}],"claim_generator_info":[{"name":"Photivra Nope Camera","version":"1.2.3"}],"claim_version":2,"format":"image/x-adobe-dng","instance_id":"xmp:iid:00000000-0000-4000-8000-000000000001"}"#
         )
     }
 
@@ -55,16 +55,16 @@ struct ManifestTests {
     @Test func descriptionsClaimNoMoreThanIsTrue() {
         #expect(
             ContentCredentialsManifest.description(of: .singleFrameRAW)
-                == "Captured by nope. as a single frame of RAW sensor data, with as little processing as the phone allows.")
+                == "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the phone allows.")
         for file in [SignableFile.developedHEIF, .developedJPEG] {
             #expect(
                 ContentCredentialsManifest.description(of: file)
-                    == "Developed by nope. on the phone from a single frame of RAW sensor data.")
+                    == "Developed by Photivra Nope Camera on the phone from a single frame of RAW sensor data.")
         }
         for file in [SignableFile.deviceProcessedHEIF, .deviceProcessedJPEG] {
             #expect(
                 ContentCredentialsManifest.description(of: file)
-                    == "Captured by nope. and processed by the phone's camera, because this lens can't save RAW.")
+                    == "Captured by Photivra Nope Camera and processed by the phone's camera, because this lens can't save RAW.")
         }
         for file in SignableFile.allCases {
             #expect(!ContentCredentialsManifest.description(of: file).localizedCaseInsensitiveContains("zero processing"))
@@ -73,7 +73,7 @@ struct ManifestTests {
 
     @Test func claimGeneratorIsNope() {
         let generator = ClaimGenerator(version: "0.1.0")
-        #expect(generator.name == "nope.")
+        #expect(generator.name == "Photivra Nope Camera")
         #expect(generator.version == "0.1.0")
     }
 }
@@ -93,19 +93,13 @@ struct OfflineContextTests {
         #expect(settings.builder?.certificateStatusFetch == nil)
     }
 
-    @Test func resolverRefusesEveryRequest() {
-        #expect(throws: OfflineC2PAContext.NetworkRefused.networkIsNeverUsed) {
-            try OfflineC2PAContext.refuse(URL(string: "https://example.com")!)
-        }
-    }
-
     @Test func contextIsCreated() throws {
         _ = try OfflineC2PAContext.make()
     }
 
-    /// Even when settings let the library fetch a remote manifest, the resolver refuses the
-    /// request, so nothing is sent.
-    @Test func libraryFetchIsRefusedByTheResolver() throws {
+    /// Even when settings let the library fetch a remote manifest, it can't: the library nope.
+    /// links has no network code, so reading a file whose manifest is remote fails.
+    @Test func remoteManifestIsNeverFetched() throws {
         let photo = SyntheticPhotos.data(for: .developedJPEG)
         let builder = try Builder(
             context: OfflineC2PAContext.make(),
@@ -126,7 +120,7 @@ struct OfflineContextTests {
         var fetching = OfflineC2PAContext.settings
         fetching.core = CoreSettings()
         fetching.verify = VerifySettings(remoteManifestFetch: true)
-        let context = try OfflineC2PAContext.make(fetching)
+        let context = try C2PAContext(settings: C2PASettings(definition: fetching))
         #expect(throws: (any Error).self) {
             try Reader(context: context, format: "image/jpeg", stream: InMemoryStream.make(destination)).json()
         }

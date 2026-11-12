@@ -17,7 +17,7 @@ struct SelfIssuedCertificateTests {
 
     @Test func subjectAndIssuerAreOnlyTheGenericName() throws {
         let certificate = try certificate()
-        let expected = try DistinguishedName { CommonName("nope. anonymous signer") }
+        let expected = try DistinguishedName { CommonName("Photivra Nope Camera anonymous signer") }
         #expect(certificate.subject == expected)
         #expect(certificate.issuer == expected)
         #expect(certificate.version == .v3)

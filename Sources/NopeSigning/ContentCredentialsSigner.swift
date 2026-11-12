@@ -22,14 +22,14 @@ public struct ContentCredentialsSigner: PhotoSigning {
     /// Creates each file's key.
     private let keyProvider: any SigningKeyProvider
 
-    /// nope. and its version, written into every manifest.
+    /// Photivra Nope Camera and its version, written into every manifest.
     private let generator: ClaimGenerator
 
     /// Creates a signer.
     ///
     /// - Parameters:
     ///   - keyProvider: Creates one key per file. Pass ``platformKeyProvider()`` in the app.
-    ///   - generator: nope. and its version, written into every manifest.
+    ///   - generator: Photivra Nope Camera and its version, written into every manifest.
     public init(keyProvider: any SigningKeyProvider, generator: ClaimGenerator) {
         self.keyProvider = keyProvider
         self.generator = generator

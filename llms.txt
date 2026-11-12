@@ -35,6 +35,7 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 ## Research
 
 - [docs/research/c2pa-signing.md](docs/research/c2pa-signing.md): offline, per-photo C2PA signing with Secure Enclave keys
+- [c2pa-lib/README.md](c2pa-lib/README.md): the C2PA library built from source with no networking code, and how it is checked
 - [docs/research/capability-survey.md](docs/research/capability-survey.md): iPhone and iPad camera capabilities and the v1.0 plan
 - [docs/research/privacy-claims.md](docs/research/privacy-claims.md): every privacy statement, its verified wording and its sources
 

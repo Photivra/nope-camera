@@ -103,11 +103,14 @@ allowlist, then saves it. `NopeSigning` implements the contract:
    │                      SimulatorSoftwareKeyProvider in the Simulator only
    ├─ SelfIssuedCertificate (swift-certificates): anonymous, non-CA, C2PA EKU, fixed validity
    ├─ ContentCredentialsManifest: one c2pa.created action, nope. as claim generator
-   ├─ OfflineC2PAContext: every fetch off, no network host, an HTTP resolver that refuses all
+   ├─ OfflineC2PAContext: every fetch off, no network host
    └─ InMemoryFile and InMemoryStream: the C2PA library reads and writes memory, never a file
 ```
 
-Details and the exact contents are in [`PRIVACY.md`](PRIVACY.md), "Content Credentials".
+The C2PA library is c2pa-rs built from source with every network feature off
+(`c2pa-lib/README.md`), and its Swift wrapper is vendored without its networking code
+(`Vendor/c2pa-swift`). Details and the exact contents are in [`PRIVACY.md`](PRIVACY.md),
+"Content Credentials".
 
 ## The simulated backend
 

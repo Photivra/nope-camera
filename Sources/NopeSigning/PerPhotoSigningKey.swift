@@ -10,7 +10,7 @@ import X509
 ///
 /// Privacy rule: a key is created for one file and never stored, so no two files can be linked
 /// through their signatures (AGENTS.md, "Honesty").
-public protocol PerPhotoSigningKey {
+public protocol PerPhotoSigningKey: Sendable {
     /// The key in the form swift-certificates uses to sign the self-issued certificate. Its
     /// public key goes into the certificate.
     var certificateKey: Certificate.PrivateKey { get }

@@ -1,15 +1,6 @@
 {
-  "originHash" : "867f08cacc54fcbfa2923f5d74d36bbe29f880141fc662e9b93088c05aca6c40",
+  "originHash" : "f5e157ff9160af507ec931f6a0b94ee01ef9ef5ca47cdd6e3ef3ee516b9e8b82",
   "pins" : [
-    {
-      "identity" : "c2pa-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/contentauth/c2pa-swift.git",
-      "state" : {
-        "revision" : "cbc23123d5a76ac621aa35fcf288fbb06e67b832",
-        "version" : "0.0.16"
-      }
-    },
     {
       "identity" : "swift-asn1",
       "kind" : "remoteSourceControl",

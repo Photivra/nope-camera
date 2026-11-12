@@ -3,3 +3,13 @@
 # Copies bytes between the C2PA library's stream callbacks and an in-memory file, so photos are
 # signed in memory without temporary files. Fuzz-tested in Tests/NopeSigningTests/InMemoryStreamTests.swift.
 Sources/NopeSigning/InMemoryStream.swift
+# The vendored C2PA Swift wrapper (Vendor/c2pa-swift, c2pa-swift v0.1.0): it passes buffers and
+# callbacks to the C2PA C library. Third-party code, kept as published apart from the removals
+# listed in Vendor/c2pa-swift/README.md; exercised by the NopeSigning tests.
+Vendor/c2pa-swift/Sources/C2PA/Builder.swift
+Vendor/c2pa-swift/Sources/C2PA/C2PAContext.swift
+Vendor/c2pa-swift/Sources/C2PA/C2PASettings.swift
+Vendor/c2pa-swift/Sources/C2PA/Helpers.swift
+Vendor/c2pa-swift/Sources/C2PA/Reader.swift
+Vendor/c2pa-swift/Sources/C2PA/Signer.swift
+Vendor/c2pa-swift/Sources/C2PA/Stream.swift

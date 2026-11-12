@@ -9,6 +9,20 @@ let strictSettings: [SwiftSetting] = [
     .treatAllWarnings(as: .error),
 ]
 
+/// The network-free C2PA library (`C2PAC`), built from c2pa-rs source by
+/// `scripts/build-c2pa-lib.sh` with every network feature off, and published as a release asset
+/// of this repository (`c2pa-lib/README.md`). Pinned by its SwiftPM checksum.
+///
+/// Set `NOPE_C2PA_LIB_FROM_SOURCE=1` to use a local build in `build/c2pa-lib/` instead, for example
+/// to test a change to `c2pa-lib/` before it is published.
+let c2paLibrary: Target =
+    Context.environment["NOPE_C2PA_LIB_FROM_SOURCE"] == "1"
+    ? .binaryTarget(name: "C2PAC", path: "build/c2pa-lib/C2PAC.xcframework")
+    : .binaryTarget(
+        name: "C2PAC",
+        url: "https://github.com/Photivra/nope-camera/releases/download/c2pa-lib-v0.92.0/C2PAC.xcframework.zip",
+        checksum: "b30f1902d84d34ece70644959f3d6837b5cce4b0b4ae9f8669c446063fc1adb8")
+
 let package = Package(
     name: "NopeKit",
     defaultLocalization: "en",
@@ -21,22 +35,39 @@ let package = Package(
         .library(name: "NopeUI", targets: ["NopeUI"]),
     ],
     dependencies: [
-        // The C2PA library, the only non-platform dependency (AGENTS.md, "Code";
-        // security/allowed-dependencies.txt). Pinned exactly; its own dependencies (swift-certificates,
-        // swift-asn1, swift-crypto) are pinned by Package.resolved.
-        .package(url: "https://github.com/contentauth/c2pa-swift.git", exact: "0.0.16"),
-        // Used directly to build each photo's self-issued certificate; also c2pa-swift's own
-        // dependencies, so pinned to the same versions Package.resolved records.
+        // The C2PA library's Swift wrapper is vendored in Vendor/c2pa-swift (without its
+        // networking code) and its C library is c2paLibrary above. These are the wrapper's own
+        // dependencies, from Apple, pinned exactly (security/allowed-dependencies.txt).
+        // NopeSigning also uses swift-certificates and swift-asn1 to build each photo's certificate.
         .package(url: "https://github.com/apple/swift-certificates.git", exact: "1.21.1"),
         .package(url: "https://github.com/apple/swift-asn1.git", exact: "1.7.4"),
+        .package(url: "https://github.com/apple/swift-crypto.git", exact: "4.5.2"),
     ],
     targets: [
+        c2paLibrary,
+        // c2pa-swift v0.1.0, vendored and trimmed (Vendor/c2pa-swift/README.md). Third-party code
+        // keeps its own Swift 5 language mode and isn't held to the warnings-as-errors setting.
+        .target(
+            name: "C2PA",
+            dependencies: [
+                "C2PAC",
+                .product(name: "X509", package: "swift-certificates"),
+                .product(name: "SwiftASN1", package: "swift-asn1"),
+                .product(name: "Crypto", package: "swift-crypto"),
+            ],
+            path: "Vendor/c2pa-swift/Sources/C2PA",
+            swiftSettings: [.swiftLanguageMode(.v5)]),
         .target(name: "NopeCore", swiftSettings: strictSettings),
+        // Links NopeSigning into an iOS executable for scripts/check-no-networking.sh only; never
+        // shipped (Tools/NopeSigningLinkCheck/main.swift).
+        .executableTarget(
+            name: "NopeSigningLinkCheck", dependencies: ["NopeSigning", "NopeCore"],
+            path: "Tools/NopeSigningLinkCheck", swiftSettings: strictSettings),
         .target(name: "NopeCapture", dependencies: ["NopeCore"], swiftSettings: strictSettings),
         .target(name: "NopeDevelop", dependencies: ["NopeCore"], swiftSettings: strictSettings),
         .target(
             name: "NopeSigning", dependencies: [
-                "NopeCore", .product(name: "C2PA", package: "c2pa-swift"),
+                "NopeCore", "C2PA",
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
             ],
@@ -52,7 +83,7 @@ let package = Package(
         .testTarget(
             name: "NopeSigningTests",
             dependencies: [
-                "NopeSigning", "NopeCore", .product(name: "C2PA", package: "c2pa-swift"),
+                "NopeSigning", "NopeCore", "C2PA",
                 .product(name: "X509", package: "swift-certificates"),
                 .product(name: "SwiftASN1", package: "swift-asn1"),
             ],

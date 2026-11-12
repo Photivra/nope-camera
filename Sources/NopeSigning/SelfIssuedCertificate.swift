@@ -19,7 +19,7 @@ import X509
 /// - there is no email address, location, organization or device detail.
 enum SelfIssuedCertificate {
     /// The certificate's subject and issuer common name, the same for every file.
-    static let commonName = "nope. anonymous signer"
+    static let commonName = "Photivra Nope Camera anonymous signer"
 
     /// The start of the fixed validity range: 2000-01-01 00:00:00 UTC.
     ///

@@ -117,6 +117,23 @@ iPad:
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 
+## The C2PA library and the networking check
+
+`NopeSigning` links the C2PA library built from source with every network feature off
+(`c2pa-lib/README.md`). SwiftPM downloads the published, checksummed build. To build it yourself
+and test against your build, which is what CI does on every pull request:
+
+```sh
+scripts/build-c2pa-lib.sh build/c2pa-lib-work      # needs rustup; prints the checksum
+mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../c2pa-lib-work/C2PAC.xcframework.zip)
+export NOPE_C2PA_LIB_FROM_SOURCE=1                  # then run any xcodebuild command below
+scripts/check-c2pa-lib-licenses.sh build/c2pa-lib-work
+scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
+```
+
+CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
+and runs `scripts/check-no-networking.sh` on both, with no exceptions.
+
 ## Checking signatures
 
 The unit tests in `Tests/NopeSigningTests` sign synthetic DNG, HEIF and JPEG files with a

@@ -10,7 +10,7 @@ public, declared in `Sources/NopeSigning/ClaimGenerator.swift`
 struct ClaimGenerator
 ```
 
-The software named in each manifest as the claim generator: nope. and its version.
+The software named in each manifest as the claim generator: Photivra Nope Camera and its version.
 
 The C2PA specification requires `claim_generator_info.name` (C2PA 2.2, §10.2). Privacy rule:
 the name and version are the same for everyone running that version of nope.; no device,
@@ -24,7 +24,7 @@ public, declared in `Sources/NopeSigning/ClaimGenerator.swift`
 static let appName: String
 ```
 
-The name every manifest gives: "nope.".
+The name every manifest gives: the full product name, "Photivra Nope Camera".
 
 ## `ClaimGenerator/init(version:)`
 
@@ -73,7 +73,7 @@ It says only what nope. knows to be true (AGENTS.md, "Honesty"; issue #1, "Signi
 - one `c2pa.created` action, with the IPTC digital source type `digitalCapture` (the image
   was captured from real life by a digital camera) and a plain description of what happened
   to the file;
-- who generated the claim: ``ClaimGenerator`` (nope. and its version).
+- who generated the claim: ``ClaimGenerator`` (Photivra Nope Camera and its version).
 
 Privacy rule: no time (`when`), creator, location, device, title, thumbnail or ingredient is
 written, and the instance ID is a random UUID made for this file alone
@@ -342,7 +342,7 @@ internal, declared in `Sources/NopeSigning/ContentCredentialsManifest.swift`
 let claimGeneratorInfo: [GeneratorInfo]
 ```
 
-nope. and its version.
+Photivra Nope Camera and its version.
 
 ## `ContentCredentialsManifest/claimVersion`
 
@@ -416,7 +416,7 @@ Creates the manifest for one file.
 
 - Parameters:
   - file: What the file is.
-  - generator: nope. and its version.
+  - generator: Photivra Nope Camera and its version.
   - instanceID: A UUID made for this file alone.
 
 ## `ContentCredentialsManifest/instanceID`
@@ -496,7 +496,7 @@ Creates a signer.
 
 - Parameters:
   - keyProvider: Creates one key per file. Pass ``platformKeyProvider()`` in the app.
-  - generator: nope. and its version, written into every manifest.
+  - generator: Photivra Nope Camera and its version, written into every manifest.
 
 ## `ContentCredentialsSigner/sign(_:as:)`
 
@@ -755,65 +755,24 @@ enum OfflineC2PAContext
 
 Builds the C2PA library context nope. signs with: fully offline, no thumbnail, no timestamp.
 
-Privacy and network rule: nope. makes no network calls (AGENTS.md, "No network, no
-analytics"). The C2PA library can fetch remote manifests, certificate status (OCSP) and
-timestamps, so the context shuts every path off twice:
-- the settings turn off each fetch and allow no network host at all
-  (`core.allowed_network_hosts` set to an empty list blocks all traffic);
-- the context's HTTP resolver, which the library calls for every request, refuses every
-  request without sending it.
+Privacy and network rule: nope. makes no network calls and links no networking code
+(AGENTS.md, "No network, no analytics"). The C2PA library nope. links is built without any
+network feature (`c2pa-lib/README.md`), so it has no HTTP client to call. The settings also
+turn off every fetch and allow no network host (`core.allowed_network_hosts` set to an empty
+list blocks all traffic), so the library never asks for one.
 
-## `OfflineC2PAContext/NetworkRefused`
+## `OfflineC2PAContext/make()`
 
 internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
 
 ```swift
-enum NetworkRefused
+static func make() throws -> C2PAContext
 ```
 
-Why the HTTP resolver refused a request.
+Creates a new context with ``settings``.
 
-## `OfflineC2PAContext/NetworkRefused/networkIsNeverUsed`
-
-internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
-
-```swift
-case networkIsNeverUsed
-```
-
-nope. never makes a network request.
-
-## `OfflineC2PAContext/make(_:)`
-
-internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
-
-```swift
-static func make(_ definition: C2PASettingsDefinition = settings) throws -> C2PAContext
-```
-
-Creates a new context whose HTTP resolver refuses every request.
-
-- Parameter definition: The settings. Signing always uses ``settings``; the tests pass
-  settings that let the library try a fetch, to prove the resolver refuses it.
 - Returns: The context.
 - Throws: `C2PAError` if the library rejects the settings.
-
-## `OfflineC2PAContext/refuse(_:)`
-
-internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
-
-```swift
-@Sendable static func refuse<Request>(_ request: Request) throws -> HTTPResponse
-```
-
-Refuses a network request without sending it.
-
-Generic over the request type so the tests can call it: the library's `HTTPRequest` has no
-public initializer. The context passes it as its `HTTPRequest` resolver.
-
-- Parameter request: The request the library asked for. It is ignored.
-- Returns: Never returns.
-- Throws: ``NetworkRefused/networkIsNeverUsed``, always.
 
 ## `OfflineC2PAContext/settings`
 
@@ -837,7 +796,7 @@ The settings: offline, no automatic timestamp, no thumbnail, no OCSP.
 public, declared in `Sources/NopeSigning/PerPhotoSigningKey.swift`
 
 ```swift
-protocol PerPhotoSigningKey
+protocol PerPhotoSigningKey : Sendable
 ```
 
 A P-256 private key that signs one file and is then discarded.

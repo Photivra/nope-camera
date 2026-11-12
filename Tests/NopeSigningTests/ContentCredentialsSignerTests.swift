@@ -111,7 +111,7 @@ struct ContentCredentialsSignerTests {
         let signed = try await signer.sign(SyntheticPhotos.data(for: file), as: file)
         let manifest = Report(try validate(signed, as: file)).manifest
         let generator = try #require((manifest["claim_generator_info"] as? [[String: Any]])?.first)
-        #expect(generator["name"] as? String == "nope.")
+        #expect(generator["name"] as? String == "Photivra Nope Camera")
         #expect(generator["version"] as? String == "0.1.0")
         let assertions = try #require(manifest["assertions"] as? [[String: Any]])
         // Besides the hash binding the library adds (the reader lists the HEIF one), the only
