@@ -31,7 +31,8 @@ enum ImageLuminance {
     ///   - data: The file bytes.
     ///   - isRAW: `true` for a DNG.
     /// - Returns: `meanLuma`, `minLuma`, `maxLuma` (sRGB-encoded Rec. 709 luma, 0 to 1),
-    ///   `width`, `height`, `looksFlat` and `looksBlack`, or an `error` entry.
+    ///   `width`, `height`, `looksFlat`, `looksBlack`, `maxRed`, `maxBlue` and
+    ///   `looksZeroFilled`, or an `error` entry.
     static func measure(data: Data, isRAW: Bool) -> [String: Any] {
         let image: CIImage?
         if isRAW {
@@ -80,6 +81,11 @@ enum ImageLuminance {
             "height": Int(extent.height),
             "looksFlat": maxLuma - minLuma < flatSpread,
             "looksBlack": meanLuma < blackMean,
+            "maxRed": Double(minMax[4]),
+            "maxBlue": Double(minMax[6]),
+            // A zero-filled YCbCr buffer decodes as a pure green field (no red or blue anywhere),
+            // which can pass the mean test above once the ISP applies gain and lens shading.
+            "looksZeroFilled": Double(max(minMax[4], minMax[6])) < flatSpread,
         ]
     }
 

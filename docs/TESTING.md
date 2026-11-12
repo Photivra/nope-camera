@@ -302,6 +302,25 @@ them apart:
   launch from the Home Screen performs it once and clears it, so a run started by the user
   can be compared with one started by `devicectl`.
 
+**Probe results (devicectl launches, iPhone 16 Pro Max, iOS 27.2.1).** The simplest pipeline is
+blank too, so the tag check's settings are not the cause:
+
+- Video data output (`420f`): every sampled byte of the luma plane is 0, on the back and the
+  front camera, while frames arrive at the exposure's rate and auto exposure follows the room
+  (front camera ISO 1920 at −2 EV in the dark, ISO 418 at −0.06 EV after a light came on).
+- Default HEVC photo: decodes to a smooth green field with a radial falloff and no red or blue
+  anywhere. That is what a zero-filled YCbCr buffer looks like after gain and lens shading, not
+  a scene; its mean luma (0.19 to 0.40) passed the old black test. The luminance report now
+  also gives `maxRed`, `maxBlue` and `looksZeroFilled`, and the video frame report gives the
+  raw luma-plane bytes (`plane0Min`, `plane0Max`, `plane0Mean`).
+- The app's camera screen, launched by `devicectl`, shows a flat preview. The system Camera
+  app, launched by `devicectl` a few seconds later at the same scene, shows a dim but real
+  image.
+
+Arguments after the bundle ID must follow `--` (`... com.photivra.nope.dev -- -NopeCameraProbe
+-NopeProbeFront`); without it `devicectl` parses `-NopeProbe...` as its own options and does
+not launch the app.
+
 **Next device test, in order.** Copy `Documents/TagCheck/` after each step.
 
 1. `devicectl ... launch --terminate-existing com.photivra.nope.dev -NopeCameraProbe`.

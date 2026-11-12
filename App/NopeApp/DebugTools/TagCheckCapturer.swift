@@ -405,7 +405,7 @@ final class TagCheckCapturer {
         write(data: data, to: fileName)
         let luminance = ImageLuminance.measure(data: data, isRAW: isRAW)
         entry["luminance"] = luminance
-        let black = luminance["looksBlack"] as? Bool == true || luminance["looksFlat"] as? Bool == true
+        let black = ["looksBlack", "looksFlat", "looksZeroFilled"].contains { luminance[$0] as? Bool == true }
         outcome[suffix] = black ? "done, but the image looks black or flat" : "done"
         status("\(fileName): \(outcome[suffix] ?? "")")
         return entry
@@ -586,7 +586,9 @@ final class VideoFrameCounter: NSObject, AVCaptureVideoDataOutputSampleBufferDel
     struct Frame {
         /// The frame as JPEG data.
         let jpeg: Data
-        /// The frame's luminance, from ``ImageLuminance``.
+        /// The frame's luminance, from ``ImageLuminance``, plus `pixelFormat` and the raw
+        /// first-plane byte statistics (`plane0Min`, `plane0Max`, `plane0Mean`), read straight
+        /// from the pixel buffer without any color conversion.
         let luminance: [String: Any]
     }
 
@@ -641,8 +643,42 @@ final class VideoFrameCounter: NSObject, AVCaptureVideoDataOutputSampleBufferDel
         else { return }
         let image = CIImage(cvPixelBuffer: pixelBuffer)
         guard let jpeg = context.jpegRepresentation(of: image, colorSpace: sRGB) else { return }
-        let frame = Frame(jpeg: jpeg, luminance: ImageLuminance.measure(image))
+        var luminance = ImageLuminance.measure(image)
+        luminance.merge(Self.planeStatistics(pixelBuffer)) { _, new in new }
+        let frame = Frame(jpeg: jpeg, luminance: luminance)
         state.withLockUnchecked { $0.snapshot = frame }
+    }
+
+    /// The pixel format and the minimum, maximum and mean byte of the buffer's first plane (the
+    /// luma plane of a 4:2:0 biplanar buffer), sampled every 16th byte. For a 32-bit BGRA
+    /// buffer the bytes mix the channels, which is enough to tell zeros from an image.
+    private static func planeStatistics(_ pixelBuffer: CVPixelBuffer) -> [String: Any] {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let isPlanar = CVPixelBufferIsPlanar(pixelBuffer)
+        guard
+            let base = isPlanar
+                ? CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) : CVPixelBufferGetBaseAddress(pixelBuffer)
+        else { return ["plane0Error": "no base address"] }
+        let rowBytes = isPlanar ? CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0) : CVPixelBufferGetBytesPerRow(pixelBuffer)
+        let height = isPlanar ? CVPixelBufferGetHeightOfPlane(pixelBuffer, 0) : CVPixelBufferGetHeight(pixelBuffer)
+        let bytes = Data(bytes: base, count: rowBytes * height)
+        var minimum = UInt8.max
+        var maximum = UInt8.min
+        var total = 0
+        var samples = 0
+        for index in stride(from: 0, to: bytes.count, by: 16) {
+            let value = bytes[index]
+            minimum = min(minimum, value)
+            maximum = max(maximum, value)
+            total += Int(value)
+            samples += 1
+        }
+        return [
+            "pixelFormat": TagCheckReport.fourCharacterCode(CVPixelBufferGetPixelFormatType(pixelBuffer)),
+            "plane0Min": Int(minimum), "plane0Max": Int(maximum),
+            "plane0Mean": samples > 0 ? Double(total) / Double(samples) : 0,
+        ]
     }
 }
 #endif

@@ -173,6 +173,11 @@ final class ProbePipeline: @unchecked Sendable {
     /// The longest wait for the photo, in seconds.
     static let captureTimeoutSeconds = 10.0
 
+    /// `-NopeProbeFront`: use the front wide camera instead of the default camera.
+    static var usesFrontCamera: Bool {
+        ProcessInfo.processInfo.arguments.contains("-NopeProbeFront")
+    }
+
     /// `-NopeProbeNoVideoOutput`: leave out the video data output, as the camera screen does,
     /// to tell whether attaching one changes the photo.
     static var omitsVideoOutput: Bool {
@@ -217,7 +222,11 @@ final class ProbePipeline: @unchecked Sendable {
         session.beginConfiguration()
         defer { session.commitConfiguration() }
         session.sessionPreset = .photo
-        guard let device = AVCaptureDevice.default(for: .video) else {
+        let device =
+            usesFrontCamera
+            ? AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
+            : AVCaptureDevice.default(for: .video)
+        guard let device else {
             result["error"] = "no default video device"
             return result
         }

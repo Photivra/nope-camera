@@ -183,7 +183,7 @@ enum TagCheckReport {
     }
 
     /// A pixel format code as its four characters where printable, else as hex.
-    private static func fourCharacterCode(_ code: OSType) -> String {
+    static func fourCharacterCode(_ code: OSType) -> String {
         let bytes = [24, 16, 8, 0].map { UInt8(truncatingIfNeeded: code >> $0) }
         guard bytes.allSatisfy({ $0 >= 0x20 && $0 < 0x7F }) else { return String(format: "0x%08x", code) }
         return String(decoding: bytes, as: UTF8.self)
