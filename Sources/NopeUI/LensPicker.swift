@@ -14,32 +14,61 @@ struct LensPicker: View {
     /// Called with a lens's identifier when it is pressed.
     let select: (Lens.ID) -> Void
 
+    /// A fixed number of buttons per row, as in the landscape controls column, or `nil` to
+    /// choose by fit.
+    let perRow: Int?
+
     /// Creates the lens buttons.
     ///
     /// - Parameters:
     ///   - lenses: The lenses, in display order.
     ///   - selectedID: The selected lens's identifier.
+    ///   - perRow: A fixed number of buttons per row at every text size, or `nil` for one row
+    ///     that becomes one column when the text is too large to fit.
     ///   - select: Called with a lens's identifier when it is pressed.
-    init(lenses: [Lens], selectedID: Lens.ID?, select: @escaping (Lens.ID) -> Void) {
+    init(lenses: [Lens], selectedID: Lens.ID?, perRow: Int? = nil, select: @escaping (Lens.ID) -> Void) {
         self.lenses = lenses
         self.selectedID = selectedID
+        self.perRow = perRow
         self.select = select
     }
 
-    /// The buttons in a row that wraps onto more rows when the text is large.
+    /// The buttons in rows of ``perRow``, or in a row that becomes a column when the text is
+    /// large.
+    ///
+    /// The landscape column keeps the same rows at every text size: a layout that changes with
+    /// the text size replaces the buttons, and the accessibility audit then reports their text
+    /// as not following Dynamic Type.
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { buttons }
-            VStack(spacing: 8) { buttons }
+        Group {
+            if let perRow {
+                Grid(horizontalSpacing: 8, verticalSpacing: 8) {
+                    ForEach(Array(CameraLayout.rows(of: lenses, perRow: perRow).enumerated()), id: \.offset) { _, row in
+                        GridRow {
+                            ForEach(row) { lens in button(for: lens) }
+                        }
+                    }
+                }
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) { buttons }
+                    VStack(spacing: 8) { buttons }
+                }
+            }
         }
         .sensoryFeedback(.selection, trigger: selectedID)
     }
 
     /// One button per lens.
     private var buttons: some View {
-        ForEach(lenses) { lens in
-            LensButton(lens: lens, isSelected: lens.id == selectedID) { select(lens.id) }
-        }
+        ForEach(lenses) { lens in button(for: lens) }
+    }
+
+    /// The button for one lens.
+    ///
+    /// - Parameter lens: The lens.
+    private func button(for lens: Lens) -> some View {
+        LensButton(lens: lens, isSelected: lens.id == selectedID) { select(lens.id) }
     }
 }
 

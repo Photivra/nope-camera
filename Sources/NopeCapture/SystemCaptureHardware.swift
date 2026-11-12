@@ -55,6 +55,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// The session, for the app's preview layer.
     let previewSource: any CameraPreviewSource
 
+    /// The same preview source, typed, for its rotation.
+    private let preview: CaptureSessionPreviewSource
+
     /// Feeds ``events``.
     private let continuation: AsyncStream<CaptureEvent>.Continuation
 
@@ -87,7 +90,8 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// thermal state.
     init() {
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
-        previewSource = CaptureSessionPreviewSource(session: session)
+        preview = CaptureSessionPreviewSource(session: session)
+        previewSource = preview
         observeNotifications()
         continuation.yield(.heat(HeatLevel(ProcessInfo.processInfo.thermalState)))
     }
@@ -261,6 +265,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             logger.error("Capture: the camera could not be attached")
             throw .configurationFailed
         }
+        followRotation(of: device)
         let switches = configuration.switches
         session.beginConfiguration()
         photoOutput.isAppleProRAWEnabled = switches.appleProRAW && photoOutput.isAppleProRAWSupported
@@ -350,6 +355,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             completion(.failure(.notRunning))
             return
         }
+        applyCaptureRotation()
         let settings = PhotoSettingsFactory.makeSettings(for: plan, maxPhotoDimensions: appliedMaxDimensions)
         let id = settings.uniqueID
         let delegate = PhotoCaptureDelegate(
@@ -360,6 +366,27 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         }
         captureDelegates[id] = delegate
         photoOutput.capturePhoto(with: settings, delegate: delegate)
+    }
+
+    /// Points the preview rotation at the camera now in the session, on the main queue, in the
+    /// order cameras are configured.
+    ///
+    /// - Parameter device: The attached camera.
+    private func followRotation(of device: AVCaptureDevice) {
+        let deviceID = device.uniqueID
+        let rotation = preview.rotation
+        DispatchQueue.main.async { MainActor.assumeIsolated { rotation.use(deviceID: deviceID) } }
+    }
+
+    /// Sets the photo output's rotation to the coordinator's capture angle, so the photo is
+    /// upright. Privacy: the photo output records the angle as the Exif orientation and doesn't
+    /// rotate pixels (`AVCaptureSession.h`, `videoRotationAngle`); Orientation is a locked
+    /// metadata item (docs/PRIVACY.md). Call only on `queue`.
+    private func applyCaptureRotation() {
+        guard let angle = preview.rotation.captureAngle, let connection = photoOutput.connection(with: .video),
+            connection.isVideoRotationAngleSupported(angle)
+        else { return }
+        connection.videoRotationAngle = angle
     }
 
     /// Reports interruptions, their end, runtime errors and thermal state changes as events.

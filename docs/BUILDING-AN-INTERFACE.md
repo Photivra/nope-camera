@@ -35,6 +35,10 @@ updates automatically.
    (see `App/NopeApp/NopeApp.swift`). For the live viewfinder, the app gives your interface a
    view for `CameraModel.previewSource` (`Viewfinder` in `App/NopeApp/Camera/`), because
    `NopeCore` can't show video.
+   Its viewfinder view connects its `AVCaptureVideoPreviewLayer` with
+   `CaptureSessionPreviewSource.connect(_:)`, which also keeps the preview and the photos
+   upright as the device turns. A keyboard shortcut for the shutter can reuse `CameraCommands`
+   from `NopeUI` or send `.capture` from your own command.
 5. Test it against `SimulatedCaptureBackend`, which can put the model in every state without a
    camera, and add a UI test with `performAccessibilityAudit()` for each state.
 

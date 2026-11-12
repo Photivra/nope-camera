@@ -41,6 +41,7 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
+| `Sources/NopeCapture/PreviewRotation.swift` | `AVCaptureDevice.RotationCoordinator` needs a camera device | On-device check |
 | `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave | On-device check |
 
 Each excluded file is a thin wrapper; its logic lives in a tested file. For capture, the
@@ -53,8 +54,17 @@ the coverage gate: it is covered by UI tests and accessibility audits instead.
 
 ```sh
 xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' CODE_SIGNING_ALLOWED=NO
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
+  -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' CODE_SIGNING_ALLOWED=NO
 ```
+
+The same tests run on an iPhone and an iPad Simulator, in portrait and landscape
+(`XCUIDevice.orientation`; each test waits for the rotation to finish before auditing).
+One audit finding is set aside in landscape only: the lens buttons' "No RAW" caption is
+reported as "Dynamic Type font sizes are partially unsupported" on both Simulators, even at the
+largest text size where it is visibly enlarged, while the same view passes in portrait
+(`auditInLandscape` in `NopeAppUITests.swift`). It is on the manual accessibility pass list
+below until it is explained.
 
 The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
 `-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
@@ -69,6 +79,9 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `captureFails` | The capture failure message |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off and no-camera screens |
+| `allow`, in landscape | Side-by-side layout: the viewfinder fills the height and the shutter is beside it, in both landscape orientations; capture and the telephoto fallback badge; also at the largest accessibility text size |
+| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "No RAW on This Lens" badge and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
+| `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled, portrait and landscape |
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
 Every new screen and state adds an audit.
@@ -92,7 +105,7 @@ the local toolchain). Jobs:
 | Job | What it runs |
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator, the coverage gate |
-| `ui-tests` | App build and the UI smoke test with accessibility audits |
+| `ui-tests` | App build and the UI tests with accessibility audits, on the iPhone 18 Pro and iPad Air 11-inch (M4) Simulators |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
@@ -110,8 +123,14 @@ iPad:
   a photo and show "Captured (not saved yet: development build)"; a lens without Bayer RAW shows
   the fallback badge; a phone call or another camera app shows the interruption message, and
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
+- rotation (`PreviewRotation`): on an iPhone in both landscape orientations and on an iPad in
+  all four, with the rear and front cameras, the viewfinder is upright and not stretched, the
+  layout switches between stacked and side by side without a stall, and each captured photo's
+  Orientation tag (read with `scripts/dump-tags.swift`) shows it upright; on an iPad, Split
+  View or Stage Manager shows the multitasking message, and a hardware keyboard's Space bar
+  takes a photo;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
-  largest text size).
+  largest text size), including the lens buttons' "No RAW" caption in landscape.
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 

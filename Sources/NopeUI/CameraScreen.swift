@@ -81,6 +81,10 @@ public struct CameraScreen<Viewfinder: View>: View {
                 } else {
                     Color.black
                 }
+            } topBar: {
+                // Slot: buttons at the top of the screen, such as Settings (CameraReadyView).
+            } controls: {
+                // Slot: extra controls beside the shutter, such as manual controls (CameraReadyView).
             }
         }
     }
@@ -120,6 +124,9 @@ struct PermissionRequestView: View {
         ) {
             Button(action: requestAccess) {
                 Text("Allow Camera Access", bundle: .module, comment: "Button that shows the system camera permission prompt.")
+                    // Wraps instead of clipping at large text sizes; the audit reported clipping
+                    // on the iPhone 18 Pro Max Simulator.
+                    .fixedSize(horizontal: false, vertical: true)
             }
             // The bordered style, not the prominent one: white text on the system blue fill
             // fails the accessibility audit's contrast check (WCAG 2.2 AA, 4.5:1) in dark mode.

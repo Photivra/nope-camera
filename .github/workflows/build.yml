@@ -21,6 +21,7 @@ concurrency:
 env:
   DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
   SIMULATOR: platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2
+  IPAD_SIMULATOR: platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2
 
 jobs:
   unit-tests:
@@ -64,12 +65,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Build the app and run the UI smoke test with accessibility audits
+      - name: Build the app and run the UI tests with accessibility audits on iPhone and iPad
         run: >
           xcodebuild test
           -project App/NopeCamera.xcodeproj
           -scheme NopeApp
           -destination "$SIMULATOR"
+          -destination "$IPAD_SIMULATOR"
           -derivedDataPath DerivedData
           -resultBundlePath ui-tests.xcresult
           CODE_SIGNING_ALLOWED=NO

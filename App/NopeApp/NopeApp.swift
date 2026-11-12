@@ -42,6 +42,9 @@ struct NopeApp: App {
             cameraScreen
             #endif
         }
+        // The Camera menu: Space takes a photo from a hardware keyboard, listed in the iPad
+        // menu bar and keyboard shortcuts overlay.
+        .commands { CameraCommands(model: model) }
     }
 
     /// The camera screen with the live viewfinder and the hardware shutter.
