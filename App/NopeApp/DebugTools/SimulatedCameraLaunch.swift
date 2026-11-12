@@ -23,6 +23,9 @@ enum SimulatedCameraLaunch {
         case hot
         /// Access already allowed; every capture fails.
         case captureFails
+        /// Access already allowed; every photo is blank, so the first capture leads to the
+        /// "isn't sending a picture" state after one restart.
+        case blankPicture
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -57,6 +60,8 @@ enum SimulatedCameraLaunch {
                 permission: .authorized, capabilities: capabilities, eventsAfterStart: [.heat(.critical)])
         case .captureFails:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .captureFailed)
+        case .blankPicture:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureError: .blankPicture)
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:

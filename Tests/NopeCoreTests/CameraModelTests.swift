@@ -125,6 +125,70 @@ struct CameraModelTests {
         #expect(model.captureStatus == .failed(.captureFailed))
     }
 
+    @Test func blankPictureRestartsTheCameraOnceAndRetries() async {
+        let backend = ScriptedBackend(capabilities: Self.oneLens, captureErrors: [.blankPicture, nil])
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        guard case .captured(let photo) = model.captureStatus else {
+            Issue.record("expected a captured photo, got \(model.captureStatus)")
+            return
+        }
+        #expect(photo.lensID == "wide")
+        #expect(model.sessionStatus == .running)
+        #expect(await backend.stopCount == 1)
+        #expect(await backend.startRequests.count == 2)
+        #expect(await backend.captureRequests.count == 2)
+    }
+
+    @Test func blankPictureAfterTheRestartMeansNoPicture() async {
+        let backend = ScriptedBackend(capabilities: Self.oneLens, captureError: .blankPicture)
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        #expect(model.sessionStatus == .noPicture)
+        #expect(model.captureStatus == .failed(.blankPicture))
+        #expect(!model.canCapture)
+        #expect(await backend.stopCount == 1)
+        #expect(await backend.startRequests.count == 2)
+        #expect(await backend.captureRequests.count == 2)
+
+        // The shutter is disabled: no further restarts or captures.
+        await model.send(.capture)
+        #expect(await backend.captureRequests.count == 2)
+        #expect(await backend.stopCount == 1)
+    }
+
+    @Test func anotherLensTriesAgainAfterNoPicture() async {
+        let backend = ScriptedBackend(capabilities: Self.twoLenses, captureErrors: [.blankPicture, .blankPicture])
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        #expect(model.sessionStatus == .noPicture)
+        await model.send(.selectLens("tele"))
+        #expect(model.sessionStatus == .running)
+        await model.send(.capture)
+        guard case .captured = model.captureStatus else {
+            Issue.record("expected a captured photo, got \(model.captureStatus)")
+            return
+        }
+    }
+
+    @Test func blankPictureWithAFailedRestartReportsTheStartFailure() async {
+        let backend = ScriptedBackend(
+            capabilities: Self.oneLens, startErrors: [nil, .configurationFailed], captureErrors: [.blankPicture])
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        #expect(model.sessionStatus == .failed(.configurationFailed))
+        #expect(model.captureStatus == .failed(.blankPicture))
+        #expect(await backend.captureRequests.count == 1)
+    }
+
+    @Test func blankPictureThenAnotherErrorReportsThatError() async {
+        let backend = ScriptedBackend(capabilities: Self.oneLens, captureErrors: [.blankPicture, .captureFailed])
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        #expect(model.sessionStatus == .running)
+        #expect(model.captureStatus == .failed(.captureFailed))
+    }
+
     @Test func captureIsIgnoredWhenNotRunning() async {
         let model = CameraModel(backend: ScriptedBackend(capabilities: Self.oneLens))
         await model.send(.capture)

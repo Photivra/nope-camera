@@ -10,6 +10,10 @@
 //
 // Privacy: like the tag check, it writes one photo and one video frame to the app container in
 // Debug builds only, with complete file protection and no location.
+//
+// Run it only on a freshly restarted phone. Once the camera service is delivering blank frames
+// (docs/TESTING.md, "Black frames"), every session, this one included, gets them until the
+// phone restarts, so a probe run on a stuck phone proves nothing.
 
 @preconcurrency import AVFoundation
 import CoreImage
@@ -207,8 +211,21 @@ final class ProbePipeline: @unchecked Sendable {
         let captured = Self.captureFrameAndPhoto(
             session: session, photoOutput: photoOutput, frames: frames, folder: Self.folder())
         report.merge(captured) { _, new in new }
-        session.stopRunning()
+        Self.tearDown(session)
+        report["afterTeardown"] = Self.sessionState(session)
         return ProbeReport(report)
+    }
+
+    /// Stops the session and removes its inputs and outputs, in that order, on the probe's
+    /// queue: `stopRunning()` blocks until the session has completely stopped
+    /// (`AVCaptureSession.h`), then one configuration removes everything. The same order as
+    /// the app's backend (`SystemCaptureHardware.stop()`).
+    static func tearDown(_ session: AVCaptureSession) {
+        if session.isRunning { session.stopRunning() }
+        session.beginConfiguration()
+        session.inputs.forEach(session.removeInput)
+        session.outputs.forEach(session.removeOutput)
+        session.commitConfiguration()
     }
 
     // MARK: - Pipeline

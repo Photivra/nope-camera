@@ -10,8 +10,12 @@ import SwiftUI
 /// `-NopeSimulatedCamera <scenario>` use a simulated backend instead (``SimulatedCameraLaunch``).
 @main
 struct NopeApp: App {
+    /// The capture backend for this launch, created once. The camera screen and, in Debug
+    /// builds, the tag check share it, so the app never owns more than one capture session.
+    private static let backend = makeBackend()
+
     /// The camera model shared by the app's single scene.
-    @State private var model = CameraModel(backend: Self.makeBackend())
+    @State private var model = CameraModel(backend: Self.backend)
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -21,9 +25,12 @@ struct NopeApp: App {
             // camera screen (docs/TESTING.md, "Tag check"). Release builds don't contain them.
             switch DebugRunLaunch.decision {
             case .perform(.tagCheck):
-                TagCheckScreen()
+                // Drives the app's own backend: no second capture session.
+                TagCheckScreen(backend: Self.backend)
             case .perform(.probe):
-                // Apple's sample capture pipeline (docs/TESTING.md, "Black frames").
+                // Apple's sample capture pipeline with its own session; the app's backend never
+                // starts in this launch. Run it only on a freshly restarted phone
+                // (docs/TESTING.md, "Black frames").
                 CameraProbeScreen()
             case .armed(let run):
                 Text(verbatim: "Debug run \(run.rawValue) armed. Close nope. and open it from the Home Screen.")

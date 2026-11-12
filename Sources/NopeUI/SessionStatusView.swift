@@ -41,6 +41,7 @@ struct SessionStatusView: View {
         switch status {
         case .pausedForHeat, .interrupted(.systemPressure): "thermometer.high"
         case .failed: "exclamationmark.triangle"
+        case .noPicture: "video.slash"
         default: "pause.circle"
         }
     }
@@ -60,6 +61,8 @@ struct SessionStatusView: View {
             Text("The camera is paused by the system. It comes back by itself.", bundle: .module, comment: "Shown over the viewfinder when the system pauses the camera for another reason.")
         case .failed:
             Text("The camera couldn't start. Try another lens.", bundle: .module, comment: "Shown over the viewfinder when the camera fails to start.")
+        case .noPicture:
+            Text("The camera isn't sending a picture. Restarting your iPhone usually fixes this.", bundle: .module, comment: "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera. Restarting the phone clears it.")
         }
     }
 }

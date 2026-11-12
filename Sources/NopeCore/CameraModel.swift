@@ -180,12 +180,45 @@ public final class CameraModel {
     }
 
     /// Takes one photo with the selected lens, if the camera can capture now.
+    ///
+    /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
+    /// camera once and takes the photo again (``recoverFromBlankPicture(_:)``).
     private func capture() async {
         guard canCapture, let lens = selectedLens else { return }
         captureStatus = .capturing
+        let request = CaptureRequest(lens: lens)
         do {
-            let photo = try await backend.capturePhoto(CaptureRequest(lens: lens))
-            captureStatus = .captured(photo)
+            captureStatus = .captured(try await backend.capturePhoto(request))
+        } catch .blankPicture {
+            await recoverFromBlankPicture(request)
+        } catch {
+            captureStatus = .failed(error)
+        }
+    }
+
+    /// Handles a blank photo: stops the camera, starts it again, and retries the photo once.
+    ///
+    /// On a device, a camera that runs and sends frames whose buffers are all zero stayed that
+    /// way until the device was restarted (docs/TESTING.md, "Black frames"). One restart of the
+    /// session is the cheap fix to try first; if the retry is blank too, the model moves to
+    /// ``SessionStatus/noPicture`` and stops retrying, so the person is told to restart the
+    /// device instead of pressing the shutter again and again.
+    ///
+    /// Side effects: stops and restarts the camera, and takes a second photo if it comes back.
+    ///
+    /// - Parameter request: The request whose photo was blank.
+    private func recoverFromBlankPicture(_ request: CaptureRequest) async {
+        await backend.stopSession()
+        await startSession()
+        guard sessionStatus == .running else {
+            captureStatus = .failed(.blankPicture)
+            return
+        }
+        do {
+            captureStatus = .captured(try await backend.capturePhoto(request))
+        } catch .blankPicture {
+            sessionStatus = .noPicture
+            captureStatus = .failed(.blankPicture)
         } catch {
             captureStatus = .failed(error)
         }

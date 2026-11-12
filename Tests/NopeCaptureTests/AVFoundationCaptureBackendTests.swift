@@ -12,12 +12,17 @@ actor FakeHardware: CaptureHardware {
     let cameras: [CameraDeviceDescription]
     let configureError: CaptureError?
     let captureError: CaptureError?
+    let pixelSample: [UInt8]?
     private(set) var configurations: [SessionConfiguration] = []
     private(set) var plans: [PhotoSettingsPlan] = []
     private(set) var stopCount = 0
 
-    init(cameras: [CameraDeviceDescription], configureError: CaptureError? = nil, captureError: CaptureError? = nil) {
+    init(
+        cameras: [CameraDeviceDescription], configureError: CaptureError? = nil, captureError: CaptureError? = nil,
+        pixelSample: [UInt8]? = Array(0..<128)
+    ) {
         self.cameras = cameras
+        self.pixelSample = pixelSample
         self.configureError = configureError
         self.captureError = captureError
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
@@ -37,7 +42,7 @@ actor FakeHardware: CaptureHardware {
         if let captureError { throw captureError }
         return HardwarePhoto(
             data: Data([0x49, 0x49]), dimensions: PhotoDimensions(width: 4032, height: 3024),
-            exposureDuration: 1.0 / 30.0, iso: 400)
+            exposureDuration: 1.0 / 30.0, iso: 400, pixelSample: pixelSample)
     }
 }
 
@@ -163,5 +168,76 @@ struct AVFoundationCaptureBackendTests {
         await #expect(throws: CaptureError.captureFailed) {
             try await backend.capturePhoto(CaptureRequest(lens: wide))
         }
+    }
+
+    @Test func blankPhotoIsRejected() async throws {
+        let hardware = FakeHardware(cameras: Self.cameras, pixelSample: Array(repeating: 0, count: 128))
+        let backend = Self.makeBackend(hardware)
+        let wide = try await Self.lens(backend, "wide")
+        try await backend.startSession(CaptureRequest(lens: wide))
+        await #expect(throws: CaptureError.blankPicture) {
+            try await backend.capturePhoto(CaptureRequest(lens: wide))
+        }
+    }
+
+    @Test func photoWithoutAPixelBufferIsKept() async throws {
+        let hardware = FakeHardware(cameras: Self.cameras, pixelSample: nil)
+        let backend = Self.makeBackend(hardware)
+        let tele = try await Self.lens(backend, "tele")
+        try await backend.startSession(CaptureRequest(lens: tele))
+        let photo = try await backend.capturePhoto(CaptureRequest(lens: tele))
+        #expect(photo.lensID == "tele")
+    }
+
+    @Test func explicitProcessedFormatOnARAWLensIsConfigured() async throws {
+        let hardware = FakeHardware(cameras: Self.cameras)
+        let backend = Self.makeBackend(hardware)
+        let wide = try await Self.lens(backend, "wide")
+        let request = CaptureRequest(lens: wide, format: .processedFallback(.heif))
+        try await backend.startSession(request)
+        let photo = try await backend.capturePhoto(request)
+        #expect(photo.format == .processedFallback(.heif))
+        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))])
+        await #expect(throws: CaptureError.notRunning) {
+            try await backend.capturePhoto(CaptureRequest(lens: wide))
+        }
+    }
+}
+
+struct PictureCheckTests {
+    @Test func offsetsSpreadOverTheWholeBuffer() {
+        let offsets = PictureCheck.sampleOffsets(byteCount: 6400)
+        #expect(offsets.count == 2 * PictureCheck.samplePlaces)
+        #expect(offsets.first == 0)
+        #expect(offsets[1] == 1)
+        #expect(offsets.last == 6301)
+        #expect(offsets == offsets.sorted())
+        #expect(Set(offsets).count == offsets.count)
+    }
+
+    @Test func offsetsStayInsideSmallBuffers() {
+        #expect(PictureCheck.sampleOffsets(byteCount: 0).isEmpty)
+        #expect(PictureCheck.sampleOffsets(byteCount: -4).isEmpty)
+        #expect(PictureCheck.sampleOffsets(byteCount: 1) == [0])
+        #expect(PictureCheck.sampleOffsets(byteCount: 3) == [0, 1, 2])
+        #expect(PictureCheck.sampleOffsets(byteCount: 100).allSatisfy { $0 < 100 })
+    }
+
+    @Test func constantFillsAreBlank() {
+        #expect(PictureCheck.isBlank(Array(repeating: 0, count: 128)))
+        #expect(PictureCheck.isBlank(Array(repeating: 0x10, count: PictureCheck.minimumSampleCount)))
+    }
+
+    @Test func noiseIsAPicture() {
+        var almostZero = [UInt8](repeating: 0, count: 128)
+        almostZero[77] = 1
+        #expect(!PictureCheck.isBlank(almostZero))
+        #expect(!PictureCheck.isBlank(Array(0..<128)))
+    }
+
+    @Test func unknownOrTooSmallIsAPicture() {
+        #expect(!PictureCheck.isBlank(nil))
+        #expect(!PictureCheck.isBlank([]))
+        #expect(!PictureCheck.isBlank(Array(repeating: 0, count: PictureCheck.minimumSampleCount - 1)))
     }
 }

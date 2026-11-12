@@ -19,4 +19,12 @@ public enum CaptureError: Error, Equatable, Sendable, CaseIterable {
     ///
     /// Say that the photo wasn't taken and that the person can try again.
     case captureFailed
+
+    /// The camera delivered a photo whose pixels are all one value (a zero-filled buffer): it
+    /// is running and sending frames, but no picture. The photo is discarded.
+    ///
+    /// ``CameraModel`` restarts the camera once and retries; if the retry is blank too, it moves
+    /// to ``SessionStatus/noPicture``. Say that no photo was taken because the camera sent a
+    /// blank picture.
+    case blankPicture
 }

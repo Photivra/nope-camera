@@ -17,8 +17,13 @@ extension AVFoundationCaptureBackend {
 /// The AVFoundation implementation of ``CaptureHardware``: one `AVCaptureSession` with one
 /// camera input and one photo output, configured on a private serial queue.
 ///
-/// Setup order, which fixes the black frames of the first tag check runs (docs/TESTING.md,
-/// "Black frames"): the `.photo` preset, camera input and photo output are committed first, so
+/// It owns the app's only capture session: lens switches replace the camera input inside one
+/// configuration transaction on the same session, and ``stop()`` tears the session down in a
+/// fixed order before anything else may configure it (docs/TESTING.md, "Black frames": after
+/// the earlier Debug tag check built its own session per lens, the camera service delivered
+/// blank frames to every app session until the phone was restarted).
+///
+/// Setup order: the `.photo` preset, camera input and photo output are committed first, so
 /// the camera's active format is the photo format; then the output's processing switches and
 /// an explicit `maxPhotoDimensions` from that format are committed before `startRunning()`, as
 /// `AVCapturePhotoOutput.h` recommends for settings that reconfigure the pipeline; then the
@@ -119,11 +124,18 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         try result.get()
     }
 
-    /// Stops the session.
+    /// Stops the session and tears it down, strictly in order, on `queue`.
+    ///
+    /// 1. `stopRunning()`, which "is synchronous and blocks until the receiver has completely
+    ///    stopped running" (`AVCaptureSession.h`), so nothing below overlaps a running session.
+    /// 2. The camera input and the photo output are removed in one configuration transaction.
+    ///
+    /// The method returns only after both steps, because the caller awaits `perform`. The next
+    /// ``configure(_:)`` re-adds the input and output with the full setup order. This is the
+    /// only way a session is taken down: nope. never creates a second session, and never
+    /// starts one while another is still stopping (docs/TESTING.md, "Black frames").
     func stop() async {
-        await perform {
-            if self.session.isRunning { self.session.stopRunning() }
-        }
+        await perform { self.tearDown() }
     }
 
     /// Waits until the output is ready, then takes one photo.
@@ -140,6 +152,18 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     }
 
     // MARK: - Queue-confined work
+
+    /// Stops the session, waits for it to stop, then removes every input and output. Call only
+    /// on `queue`.
+    private func tearDown() {
+        if session.isRunning { session.stopRunning() }
+        session.beginConfiguration()
+        session.inputs.forEach(session.removeInput)
+        session.outputs.forEach(session.removeOutput)
+        session.commitConfiguration()
+        currentInput = nil
+        appliedMaxDimensions = nil
+    }
 
     /// Runs work on `queue` and returns its result.
     ///
@@ -400,7 +424,29 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
         result = .success(
             HardwarePhoto(
                 data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
-                exposureDuration: exposureDuration, iso: iso))
+                exposureDuration: exposureDuration, iso: iso, pixelSample: photo.pixelBuffer.flatMap(Self.sample)))
+    }
+
+    /// Reads the bytes at ``PictureCheck/sampleOffsets(byteCount:)`` from the buffer's first
+    /// plane (the whole buffer for RAW), for the blank-picture check. `AVCapturePhoto.pixelBuffer`
+    /// holds the RAW samples of a RAW photo and is `nil` for a compressed one.
+    ///
+    /// Privacy: the 128 bytes stay in memory for one comparison and are never stored or logged.
+    ///
+    /// - Parameter pixelBuffer: The photo's pixel buffer.
+    /// - Returns: The sampled bytes, or `nil` if the buffer has no base address.
+    private static func sample(_ pixelBuffer: CVPixelBuffer) -> [UInt8]? {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let isPlanar = CVPixelBufferIsPlanar(pixelBuffer)
+        let base = isPlanar ? CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0) : CVPixelBufferGetBaseAddress(pixelBuffer)
+        guard let base else { return nil }
+        let byteCount =
+            isPlanar
+            ? CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0) * CVPixelBufferGetHeightOfPlane(pixelBuffer, 0)
+            : CVPixelBufferGetBytesPerRow(pixelBuffer) * CVPixelBufferGetHeight(pixelBuffer)
+        // Every offset is below byteCount (PictureCheck, tested), so each read is in bounds.
+        return PictureCheck.sampleOffsets(byteCount: byteCount).map { base.load(fromByteOffset: $0, as: UInt8.self) }
     }
 
     /// Reports the result when the whole capture has finished.

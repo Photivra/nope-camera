@@ -41,6 +41,8 @@ struct CaptureStatusView: View {
             String(localized: "No photo was taken: the camera is paused.", bundle: .module, comment: "Shown when the shutter is pressed while the camera is paused.")
         case .failed(.configurationFailed), .failed(.captureFailed):
             String(localized: "The photo wasn't taken. Try again.", bundle: .module, comment: "Shown when taking a photo failed.")
+        case .failed(.blankPicture):
+            String(localized: "No photo was taken: the camera sent a blank picture.", bundle: .module, comment: "Shown when the camera delivered a completely blank picture, so the app discarded it.")
         }
     }
 }

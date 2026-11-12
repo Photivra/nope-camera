@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Stuck-camera detection: every RAW photo's pixel buffer is sampled (128 bytes), and a blank (zero-filled) photo is dropped. nope. restarts the camera once and retakes the photo; if it is still blank, the camera screen says "The camera isn't sending a picture. Restarting your iPhone usually fixes this." and disables the shutter. New strings in eleven languages (AI translations, needs review).
+- Debug builds: a `blankPicture` simulated camera scenario with UI tests and accessibility audits.
 - Capture core: `AVFoundationCaptureBackend` in `NopeCapture` finds the physical cameras only, publishes each lens's capabilities as plain values (Bayer RAW format, ISO and shutter ranges, aperture including the iOS 27 range, bracket count, photo sizes, magnification), and captures single-frame Bayer RAW (DNG), or the least-processed HEIF, labeled, on a lens without Bayer RAW. Photos are kept in memory only; nothing is saved yet.
 - `NopeCore`: lens selection, capture, session status (interruptions by calls, other apps and multitasking, a pause at critical heat, runtime error recovery), capture status, capture events and an opaque viewfinder handle (`CameraPreviewSource`).
 - Camera screen: live viewfinder (`AVCaptureVideoPreviewLayer`, supplied by the app target), RAW badge or no-RAW fallback badge, lens buttons with "No RAW" and the reason, a shutter that also works with the volume buttons and the Camera Control, and pause and capture messages, including "Captured (not saved yet: development build)". New strings in eleven languages (AI translations, needs review); honesty wording in `Honesty.xcstrings`.
@@ -43,4 +45,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `Lens` describes its Bayer RAW format (`bayerRAWFormat`) instead of a flag, and carries its capabilities.
 
 ### Fixed
+- Black frames that persisted until a phone restart: the Debug tag check now captures through the app's own capture backend and its single session, switching lenses through the backend, with no session or video data output of its own. It no longer writes a metadata-stripped DNG or a preview frame. Its earlier per-lens sessions left the camera service sending blank frames until the phone was restarted.
+- Stopping the camera now tears the session down in order: `stopRunning()` on the session queue, then every input and output removed, before anything can start it again. The camera probe does the same.
 - Black frames in the tag check: the capture setup now follows the documented order (switches and an explicit photo size committed before the session starts, zero shutter lag and responsive capture off, the output prepared for RAW, captures gated on `captureReadiness`, file types named). Both the app's backend and the tag check use it. To be confirmed on a device.
