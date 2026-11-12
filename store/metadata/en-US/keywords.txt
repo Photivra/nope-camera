@@ -1,0 +1,1 @@
+raw,dng,privacy,metadata,exif,c2pa,signed,photo,no tracking,offline,open source,natural

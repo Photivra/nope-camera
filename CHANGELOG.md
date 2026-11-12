@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ## [Unreleased]
 
 ### Added
+- Launch preparation (drafts, need human review): a security audit plan with a threat model, every pre-release check and a sign-off checklist (`docs/SECURITY_AUDIT.md`); App Store listing drafts in eleven languages (`store/metadata/`), the App Store privacy and Accessibility Nutrition Label answers, and a privacy policy draft (`docs/store/`).
 - Stuck-camera detection: every RAW photo's pixel buffer is sampled (128 bytes), and a blank (zero-filled) photo is dropped. nope. restarts the camera once and retakes the photo; if it is still blank, the camera screen says "The camera isn't sending a picture." and disables the shutter. New strings in eleven languages (AI translations, needs review).
 - Debug builds: a `blankPicture` simulated camera scenario with UI tests and accessibility audits.
 - Capture core: `AVFoundationCaptureBackend` in `NopeCapture` finds the physical cameras only, publishes each lens's capabilities as plain values (Bayer RAW format, ISO and shutter ranges, aperture including the iOS 27 range, bracket count, photo sizes, magnification), and captures single-frame Bayer RAW (DNG), or the least-processed HEIF, labeled, on a lens without Bayer RAW. Photos are kept in memory only; nothing is saved yet.
