@@ -85,6 +85,13 @@ jobs:
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-app \
             CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
           scripts/check-no-networking.sh DerivedData-app/Build/Products/Release-iphoneos/nope.app/nope
+      - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
+        env:
+          NOPE_C2PA_LIB_FROM_SOURCE: ""
+        run: |
+          xcodebuild build -quiet -scheme NopeSigning -destination 'generic/platform=iOS' \
+            -derivedDataPath DerivedData-published CODE_SIGNING_ALLOWED=NO
+          find DerivedData-published/SourcePackages/artifacts -name C2PAC.xcframework -maxdepth 4 | grep -q .
       - name: Upload the library
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

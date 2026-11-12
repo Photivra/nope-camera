@@ -72,6 +72,14 @@ Licenses screen.
 
 ## Publishing
 
+Published: [`c2pa-lib-v0.92.0`](https://github.com/Photivra/nope-camera/releases/tag/c2pa-lib-v0.92.0),
+asset `C2PAC.xcframework.zip` from CI run 43290394956 (head `394e6a6`), SHA-256
+`9e2ddfe541ac320f0108c217d9850bad83c217e7004d789ce1ac5985cef60bb9`, the checksum `Package.swift`
+pins. The `c2pa-lib` CI job also builds `NopeSigning` without `NOPE_C2PA_LIB_FROM_SOURCE`, so
+SwiftPM downloads that asset and verifies the checksum.
+
+To publish a new version:
+
 The library is published as a release asset of this repository, under its own tag namespace
 (`c2pa-lib-v<c2pa-rs version>`, not the app's `v*` tags):
 

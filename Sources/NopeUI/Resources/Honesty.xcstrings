@@ -1,6 +1,204 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%lld photos saved and signed.": {
+      "comment": "Shown after an exposure bracket: each frame was added to the photo library as its own photo, each with a Content Credentials signature. The number is the count of photos, at least 3. Honesty wording: says only that they were saved and signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld Fotos gesichert und signiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld fotos guardadas y firmadas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld photos enregistrées et signées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld foto salvate e firmate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld 枚の写真を保存し、署名しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 %lld장을 저장하고 서명했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld foto’s bewaard en ondertekend."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld fotos salvas e assinadas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已保存并签名 %lld 张照片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存並簽署 %lld 張照片。"
+          }
+        }
+      }
+    },
+    "Each frame is a separate single-frame photo. Nothing is merged.": {
+      "comment": "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Bild ist ein eigenes Einzelbildfoto. Nichts wird zusammengeführt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada fotograma es una foto independiente de un solo fotograma. No se combina nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque image est une photo distincte à image unique. Rien n’est fusionné."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni fotogramma è una foto separata a fotogramma singolo. Nulla viene unito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各フレームは個別の単一フレーム写真です。合成は行いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 프레임은 별도의 단일 프레임 사진입니다. 합치지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elk beeld is een aparte foto van één beeld. Er wordt niets samengevoegd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada quadro é uma foto separada de quadro único. Nada é mesclado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每一帧都是独立的单帧照片，不会合并。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每一幀都是獨立的單幀照片，不會合併。"
+          }
+        }
+      }
+    },
+    "Each photo is separate. Nothing is combined. Keep nope. open while the series runs.": {
+      "comment": "Explains interval shooting. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto ist eigenständig. Nichts wird kombiniert. Lass nope. geöffnet, solange die Serie läuft."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto es independiente. No se combina nada. Mantén nope. abierta mientras dure la serie."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque photo est distincte. Rien n’est combiné. Gardez nope. ouverte pendant la série."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni foto è separata. Nulla viene combinato. Tieni nope. aperta mentre la serie è in corso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真は個別です。合成は行いません。撮影中は nope. を開いたままにしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 사진은 별개입니다. 합치지 않습니다. 촬영이 끝날 때까지 nope.를 열어 두십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto is apart. Er wordt niets gecombineerd. Houd nope. open zolang de reeks loopt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto é separada. Nada é combinado. Mantenha o nope. aberto enquanto a série durar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片都是独立的，不会合并。拍摄期间请保持 nope. 打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片都是獨立的，不會合併。拍攝期間請保持 nope. 開啟。"
+          }
+        }
+      }
+    },
     "HEIF with some device processing": {
       "comment": "Spoken format name for the no-RAW fallback. HEIF is a file format name.",
       "extractionState": "manual",
@@ -595,68 +793,68 @@
         }
       }
     },
-    "Saved. Not signed: this development version can't sign photos yet.": {
-      "comment": "Shown after a photo was saved without a Content Credentials signature because signing isn't built into this development version yet. Honesty wording: never imply the photo is signed.",
+    "Saved. Not signed: this version of the app can't sign photos.": {
+      "comment": "Shown after a photo was saved without a Content Credentials signature because this build of the app has no signer, for example a preview or a different interface built on NopeCore. Honesty wording: never imply the photo is signed.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Gesichert. Nicht signiert: Diese Entwicklungsversion kann Fotos noch nicht signieren."
+            "value": "Gesichert. Nicht signiert: Diese Version der App kann keine Fotos signieren."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Guardada. Sin firmar: esta versión de desarrollo aún no puede firmar fotos."
+            "value": "Guardada. Sin firmar: esta versión de la app no puede firmar fotos."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Enregistrée. Non signée : cette version de développement ne peut pas encore signer les photos."
+            "value": "Enregistrée. Non signée : cette version de l’app ne peut pas signer les photos."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Salvata. Non firmata: questa versione di sviluppo non può ancora firmare le foto."
+            "value": "Salvata. Non firmata: questa versione dell’app non può firmare le foto."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "保存しました。署名なし：この開発版はまだ写真に署名できません。"
+            "value": "保存しました。署名なし：このバージョンのアプリは写真に署名できません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "저장됨. 서명되지 않음: 이 개발 버전은 아직 사진에 서명할 수 없습니다."
+            "value": "저장됨. 서명되지 않음: 이 버전의 앱은 사진에 서명할 수 없습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Bewaard. Niet ondertekend: deze ontwikkelversie kan nog geen foto’s ondertekenen."
+            "value": "Bewaard. Niet ondertekend: deze versie van de app kan geen foto’s ondertekenen."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Salva. Não assinada: esta versão de desenvolvimento ainda não pode assinar fotos."
+            "value": "Salva. Não assinada: esta versão do app não pode assinar fotos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "已存储。未签名：此开发版本尚无法为照片签名。"
+            "value": "已存储。未签名：此版本的 App 无法为照片签名。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "已儲存。未簽署：此開發版本尚無法簽署照片。"
+            "value": "已儲存。未簽署：此版本的 App 無法簽署照片。"
           }
         }
       }

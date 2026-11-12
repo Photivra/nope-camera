@@ -84,6 +84,168 @@ let recommendedStops: [Double]
 
 The f-numbers the system recommends offering, widest first.
 
+## `BracketFrame`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketFrame
+```
+
+One frame of a bracket, with the exact exposure the camera is asked for.
+
+## `BracketFrame/exposureDuration`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let exposureDuration: Double
+```
+
+The exposure duration, in seconds.
+
+## `BracketFrame/init(iso:exposureDuration:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(iso: Double, exposureDuration: Double)
+```
+
+Creates a frame.
+
+- Parameters:
+  - iso: The ISO.
+  - exposureDuration: The exposure duration, in seconds.
+
+## `BracketFrame/iso`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let iso: Double
+```
+
+The ISO.
+
+## `BracketFrame/plan(offsets:base:shutterFirst:isoRange:durationRange:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static func plan(offsets: [Double], base: BracketFrame, shutterFirst: Bool, isoRange: ClosedRange<Double>, durationRange: ClosedRange<Double>) -> [BracketFrame]
+```
+
+Plans the frames of a bracket around a base exposure, within the lens's ranges.
+
+Each frame changes the exposure by its offset: first by changing the parameter the person
+didn't set (the shutter when ISO is set, otherwise ISO when the shutter is set, otherwise
+the shutter), then by the other parameter for whatever the first can't reach. A frame
+beyond both limits gets the nearest exposure the lens can give.
+
+- Parameters:
+  - offsets: Each frame's offset in EV (``BracketSettings/offsets``).
+  - base: The base ISO and exposure duration.
+  - shutterFirst: Whether to change the shutter before ISO.
+  - isoRange: The lens's ISO range.
+  - durationRange: The lens's exposure duration range, in seconds.
+- Returns: One frame per offset, in the same order.
+
+## `BracketSettings`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketSettings
+```
+
+Exposure bracketing: several photos at different exposures from one press of the shutter.
+
+Every frame is a separate single-frame photo; nothing is merged (AGENTS.md, "Honesty"). The
+frames are taken with the system's manual exposure bracket
+(`AVCapturePhotoBracketSettings` with `AVCaptureManualExposureBracketedStillImageSettings`),
+so each frame's ISO and shutter are set exactly.
+
+## `BracketSettings/frameCount`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let frameCount: Int
+```
+
+The number of frames.
+
+## `BracketSettings/frameCounts`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let frameCounts: [Int]
+```
+
+The frame counts nope. offers: 3, 5 or 7, each up to the lens's
+``Lens/maxBracketedPhotoCount``.
+
+## `BracketSettings/frameCounts(for:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static func frameCounts(for lens: Lens) -> [Int]
+```
+
+The frame counts a lens can take.
+
+- Parameter lens: The lens.
+- Returns: The members of ``frameCounts`` up to the lens's limit; empty when it can't
+  bracket.
+
+## `BracketSettings/init(frameCount:step:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(frameCount: Int, step: Double)
+```
+
+Creates bracket settings.
+
+- Parameters:
+  - frameCount: The number of frames, one of ``frameCounts``.
+  - step: The difference between neighboring frames in EV, one of ``steps``.
+
+## `BracketSettings/offsets`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var offsets: [Double] { get }
+```
+
+Each frame's exposure relative to the metered one, in EV, darkest first and centered on
+0: for 3 frames 1 EV apart, −1, 0 and +1.
+
+## `BracketSettings/step`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let step: Double
+```
+
+The exposure difference between neighboring frames, in EV.
+
+## `BracketSettings/steps`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let steps: [Double]
+```
+
+The steps between frames nope. offers, in EV: 1/3, 2/3, 1 and 2 stops.
+
 ## `CameraIntent`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -109,6 +271,17 @@ Take one photo with the selected lens, in the format the model chose. Send it fr
 shutter button, the volume buttons or the Camera Control. Ignored while the camera isn't
 running or a photo is already being taken.
 
+## `CameraIntent/manual(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case manual(ManualControlIntent)
+```
+
+Change a manual or pro control: see ``ManualControlIntent``. Ignored while manual
+controls are off, except ``ManualControlIntent/setEnabled(_:)``.
+
 ## `CameraIntent/requestPermission`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -132,6 +305,17 @@ Switch to another lens. Send it when the person picks a lens.
 
 - Parameter id: The ``Lens/id`` of a lens in the ready state's capabilities. An unknown
   identifier, or the lens already selected, is ignored.
+
+## `CameraIntent/setCleanView(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case setCleanView(Bool)
+```
+
+Turn clean view on or off. Clean view hides every control that isn't essential, leaving
+the viewfinder and the shutter; it never changes a setting.
 
 ## `CameraIntent/start`
 
@@ -204,12 +388,12 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
-## `CameraModel/init(backend:saver:)`
+## `CameraModel/init(backend:saver:sleep:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil)
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) })
 ```
 
 Creates a model in the ``CameraState/starting`` state.
@@ -218,6 +402,30 @@ Creates a model in the ``CameraState/starting`` state.
   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
   - saver: The save pipeline. Without one, every photo ends in
     ``CaptureError/savingUnavailable`` and nothing is saved.
+  - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+
+A ``ManualCaptureBackend`` also gets manual controls (``manual``).
+
+## `CameraModel/isCleanView`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isCleanView: Bool { get set }
+```
+
+Whether clean view is on: the interface hides every control that isn't essential. Off by
+default. Warnings that change what the photo is are never hidden.
+
+## `CameraModel/manual`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let manual: ManualControlsModel
+```
+
+The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
 
 ## `CameraModel/observeEvents()`
 
@@ -960,6 +1168,20 @@ Say that it was saved, and whether it is signed: "Saved and signed", or "Saved t
 Photos. Not signed:" with the ``SignatureStatus/UnsignedReason``. Announce it to
 VoiceOver.
 
+## `CaptureStatus/savedBracket(_:)`
+
+public, declared in `Sources/NopeCore/CaptureStatus.swift`
+
+```swift
+case savedBracket([SavedPhoto])
+```
+
+An exposure bracket was taken and every frame was saved as its own photo: separate
+single-frame photos, nothing merged, darkest first.
+
+Say how many photos were saved, and whether all of them are signed; when one isn't,
+say why, as for ``saved(_:)``. Announce it to VoiceOver.
+
 ## `CaptureStatus/saving`
 
 public, declared in `Sources/NopeCore/CaptureStatus.swift`
@@ -1077,6 +1299,282 @@ let rawImageData: Data?
 For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
+
+## `ControlAvailability`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+enum ControlAvailability
+```
+
+Whether a manual control can be used on the selected lens right now.
+
+## `ControlAvailability/adjustable`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case adjustable
+```
+
+The control can be set.
+
+## `ControlAvailability/blockedByManualExposure`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case blockedByManualExposure
+```
+
+The control can't be set now because of another control: exposure compensation has no
+effect while ISO, shutter and aperture are all set manually. Show it disabled with
+the reason.
+
+## `ControlAvailability/fixed(_:)`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case fixed(Double)
+```
+
+The lens has one value that can't change, such as a fixed aperture. Show the value with
+"Fixed" and explain why when the person asks.
+
+- Parameter value: The fixed value, in the control's unit.
+
+## `ControlAvailability/isAdjustable`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+var isAdjustable: Bool { get }
+```
+
+Whether the control can be changed.
+
+## `ControlAvailability/unavailable`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case unavailable
+```
+
+The lens or this version of iOS doesn't offer the control. Show "Not available".
+
+## `ControlScale`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+struct ControlScale
+```
+
+The values one manual control steps through on a lens, smallest first.
+
+Interfaces draw a ruler or slider over ``values`` and send the chosen value; VoiceOver's
+adjustable action sends ``ManualControlIntent/step(_:by:)``, which uses ``value(from:steppedBy:)``.
+Every scale ends exactly at the lens's limits, so the whole range the hardware reports is
+reachable.
+
+## `ControlScale/bounded(_:to:)`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static func bounded(_ nominal: [Double], to range: ClosedRange<Double>) -> ControlScale
+```
+
+The marked values strictly inside a range, plus both ends of the range.
+
+- Parameters:
+  - nominal: The marked values.
+  - range: The lens's range.
+- Returns: The scale.
+
+## `ControlScale/focusStep`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let focusStep: Double
+```
+
+The focus step on the relative 0 to 1 scale: twenty steps from closest to far.
+
+## `ControlScale/init(values:)`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+init?(values: [Double])
+```
+
+Creates a scale from values, sorted and without duplicates.
+
+- Parameter values: The values. An empty list gives `nil`.
+
+## `ControlScale/maximumCompensation`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let maximumCompensation: Double
+```
+
+The largest exposure compensation nope. offers, in EV either way: ±3 EV, as in the manual
+controls design, within the lens's own range.
+
+## `ControlScale/nearestIndex(to:)`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+func nearestIndex(to value: Double) -> Int
+```
+
+The position of the value nearest to a value. Distances are compared as ratios when every
+value is positive (ISO, shutter, aperture), so "nearest" means nearest in stops.
+
+- Parameter value: Any value in the control's unit.
+- Returns: An index into ``values``.
+
+## `ControlScale/nominalISOValues`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let nominalISOValues: [Double]
+```
+
+The one-third-stop ISO values marked on cameras (ISO 10 to 25,600).
+
+## `ControlScale/nominalShutterValues`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let nominalShutterValues: [Double]
+```
+
+The one-third-stop shutter speeds marked on cameras, in seconds (1/16,000 s to 30 s).
+
+## `ControlScale/range`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+var range: ClosedRange<Double> { get }
+```
+
+The scale's range, from the first value to the last.
+
+## `ControlScale/scale(for:on:)`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static func scale(for control: ManualControl, on lens: Lens) -> ControlScale?
+```
+
+The scale for a control on a lens, or `nil` when the lens reports no range for it.
+
+- ISO and shutter: the one-third-stop marked values within the lens's range, plus its
+  limits.
+- Exposure compensation: thirds of a stop within ±3 EV and the lens's range.
+- Aperture: the f-numbers the system recommends.
+- Focus: twenty steps from 0 (closest) to 1 (far).
+- White balance: the temperature in 100 K steps over ``WhiteBalance/temperatureRange``.
+
+- Parameters:
+  - control: The control.
+  - lens: The lens.
+- Returns: The scale, or `nil`.
+
+## `ControlScale/stepped(_:by:)`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static func stepped(_ range: ClosedRange<Double>, by step: Double) -> ControlScale
+```
+
+Evenly spaced values from the start of a range to its end, ending exactly at the end. A
+step that would land within half a step of the end is replaced by the end itself.
+
+- Parameters:
+  - range: The range.
+  - step: The spacing, greater than 0.
+- Returns: The scale.
+
+## `ControlScale/temperatureStep`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let temperatureStep: Double
+```
+
+The white balance temperature step, in kelvin.
+
+## `ControlScale/thirdStop`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let thirdStop: Double
+```
+
+One third of a stop, in EV: the step of the ISO, shutter and compensation scales.
+
+## `ControlScale/tint`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static var tint: ControlScale { get }
+```
+
+The tint scale: steps of 5 over ``WhiteBalance/tintRange``.
+
+## `ControlScale/tintStep`
+
+internal, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+static let tintStep: Double
+```
+
+The tint step.
+
+## `ControlScale/value(from:steppedBy:)`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+func value(from value: Double, steppedBy steps: Int) -> Double
+```
+
+The value a number of steps away from the value nearest to `value`, stopping at either
+end of the scale.
+
+- Parameters:
+  - value: The current value.
+  - steps: How many steps to move; negative moves down.
+- Returns: The new value.
+
+## `ControlScale/values`
+
+public, declared in `Sources/NopeCore/ControlScale.swift`
+
+```swift
+let values: [Double]
+```
+
+The values, smallest first. Never empty.
 
 ## `DevelopedLook`
 
@@ -1209,6 +1707,419 @@ var supportsBayerRAW: Bool { get }
 Whether at least one lens delivers single-frame Bayer RAW.
 
 When it's `false`, every photo uses the labeled processed fallback.
+
+## `DeviceControls`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+struct DeviceControls
+```
+
+What a ``ManualCaptureBackend`` sets on the camera: exposure, focus, white balance and
+metering, already checked against the lens.
+
+``ManualControlsModel`` builds it with ``init(settings:lens:)``, which holds every rule
+about which combination a lens supports and keeps each value inside the lens's range. A
+backend only applies it.
+
+## `DeviceControls/Exposure`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+enum Exposure
+```
+
+How the camera sets exposure.
+
+## `DeviceControls/Exposure/automatic(compensation:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case automatic(compensation: Double)
+```
+
+Continuous auto exposure with a compensation in EV.
+
+## `DeviceControls/Exposure/custom(iso:duration:aperture:compensation:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case custom(iso: Parameter, duration: Parameter, aperture: Parameter, compensation: Double)
+```
+
+Custom exposure: each parameter fixed, kept, or left to the camera, with a
+compensation in EV that the camera applies through the parameters it still sets.
+
+## `DeviceControls/Exposure/locked`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case locked
+```
+
+Auto exposure locked at its current values (AE-L).
+
+## `DeviceControls/Focus`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+enum Focus
+```
+
+How the camera focuses.
+
+## `DeviceControls/Focus/automatic`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case automatic
+```
+
+Continuous autofocus.
+
+## `DeviceControls/Focus/lensPosition(_:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case lensPosition(Double)
+```
+
+Locked at a relative lens position, 0 (closest) to 1 (far).
+
+## `DeviceControls/Focus/locked`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case locked
+```
+
+Autofocus locked where it is (AF-L).
+
+## `DeviceControls/Parameter`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+enum Parameter
+```
+
+One exposure parameter in a custom exposure.
+
+## `DeviceControls/Parameter/auto`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case auto
+```
+
+The camera keeps setting it (`AVCaptureDevice.autoISO`, `autoExposureDuration` or
+`autoLensAperture`, iOS 27 and later).
+
+## `DeviceControls/Parameter/current`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case current
+```
+
+Keep the value the camera is using now (`AVCaptureDevice.currentLensAperture`).
+
+## `DeviceControls/Parameter/value(_:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case value(Double)
+```
+
+A fixed value: an ISO, a duration in seconds or an f-number.
+
+## `DeviceControls/WhiteBalanceControl`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+enum WhiteBalanceControl
+```
+
+How the camera sets white balance.
+
+## `DeviceControls/WhiteBalanceControl/automatic`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case automatic
+```
+
+Continuous auto white balance.
+
+## `DeviceControls/WhiteBalanceControl/fixed(_:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+case fixed(WhiteBalance)
+```
+
+Locked at a temperature and tint.
+
+## `DeviceControls/automatic`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+static let automatic: DeviceControls
+```
+
+Everything automatic: how the camera starts.
+
+## `DeviceControls/exposure`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let exposure: Exposure
+```
+
+The exposure.
+
+## `DeviceControls/focus`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let focus: Focus
+```
+
+The focus.
+
+## `DeviceControls/init(exposure:focus:whiteBalance:metering:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+init(exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode)
+```
+
+Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:lens:)``.
+
+- Parameters:
+  - exposure: The exposure.
+  - focus: The focus.
+  - whiteBalance: The white balance.
+  - metering: The metering mode.
+
+## `DeviceControls/init(settings:lens:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+init(settings: ManualSettings, lens: Lens)
+```
+
+Builds the controls for settings on a lens.
+
+- Values outside the lens's ranges are moved to the nearest limit.
+- A control the lens doesn't support stays automatic.
+- An exposure combination the lens doesn't support (for example shutter priority before
+  iOS 27) falls back to auto exposure; ``ManualControlsModel`` never asks for one.
+- Exposure compensation is dropped when ISO and shutter are both set, because the camera
+  has nothing left to adjust (`AVCaptureDevice.exposureTargetBias`).
+
+- Parameters:
+  - settings: The person's settings.
+  - lens: The selected lens.
+
+## `DeviceControls/metering`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let metering: MeteringMode
+```
+
+The metering mode.
+
+## `DeviceControls/whiteBalance`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let whiteBalance: WhiteBalanceControl
+```
+
+The white balance.
+
+## `Double/limited(to:)`
+
+internal, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+func limited(to range: ClosedRange<Double>) -> Double
+```
+
+The value, moved to the nearest end of a range when it lies outside.
+
+- Parameter range: The allowed values.
+- Returns: The value inside the range.
+
+## `ExposureMode`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+enum ExposureMode
+```
+
+The four exposure modes, named by which of ISO and shutter the person sets.
+
+The mode is derived from ``ManualSettings``: it is not a separate setting, so the grid and
+the mode picker can never disagree.
+
+## `ExposureMode/isoPriority`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case isoPriority
+```
+
+ISO priority (I): the person sets ISO, the camera sets the shutter.
+
+## `ExposureMode/manual`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case manual
+```
+
+Manual (M): the person sets ISO and shutter.
+
+## `ExposureMode/program`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case program
+```
+
+Program (P): the camera sets ISO and shutter.
+
+## `ExposureMode/shutterPriority`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case shutterPriority
+```
+
+Shutter priority (S): the person sets the shutter, the camera sets ISO.
+
+## `ExposureReading`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+struct ExposureReading
+```
+
+What the camera is using right now, as the hardware reports it.
+
+A ``ManualCaptureBackend`` sends readings while manual controls are on, at a reduced rate.
+Interfaces show them in every slot set to Auto, so the person sees what the meter chose.
+
+## `ExposureReading/aperture`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let aperture: Double
+```
+
+The aperture in use, as an f-number.
+
+## `ExposureReading/exposureDuration`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let exposureDuration: Double
+```
+
+The exposure duration in use, in seconds.
+
+## `ExposureReading/exposureOffset`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let exposureOffset: Double
+```
+
+How far the scene's metered exposure is from the camera's target, in EV
+(`AVCaptureDevice.exposureTargetOffset`): 0 when the exposure matches the meter, negative
+when the photo will be darker than the meter's reading.
+
+## `ExposureReading/init(iso:exposureDuration:exposureOffset:lensPosition:aperture:whiteBalance:)`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+init(iso: Double, exposureDuration: Double, exposureOffset: Double, lensPosition: Double, aperture: Double, whiteBalance: WhiteBalance?)
+```
+
+Creates a reading.
+
+- Parameters:
+  - iso: The ISO in use.
+  - exposureDuration: The exposure duration in use, in seconds.
+  - exposureOffset: The metered offset from the target, in EV.
+  - lensPosition: The relative focus position, 0 to 1.
+  - aperture: The aperture in use, as an f-number.
+  - whiteBalance: The white balance in use, or `nil`.
+
+## `ExposureReading/iso`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let iso: Double
+```
+
+The ISO in use.
+
+## `ExposureReading/lensPosition`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let lensPosition: Double
+```
+
+The relative focus position, from 0 (closest) to 1 (farthest). It is not a distance.
+
+## `ExposureReading/whiteBalance`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let whiteBalance: WhiteBalance?
+```
+
+The white balance in use, or `nil` when the camera can't convert its gains.
 
 ## `HEIFReader`
 
@@ -1476,6 +2387,127 @@ The device is too hot, or under other system pressure, to run the camera.
 
 Say that the camera is paused to let the device cool down.
 
+## `IntervalProgress`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct IntervalProgress
+```
+
+How far a running interval series has got.
+
+## `IntervalProgress/init(taken:total:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(taken: Int, total: Int)
+```
+
+Creates a progress value.
+
+- Parameters:
+  - taken: The photos taken so far.
+  - total: The photos in the series.
+
+## `IntervalProgress/taken`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let taken: Int
+```
+
+The photos taken (or skipped because the camera was paused) so far.
+
+## `IntervalProgress/total`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let total: Int
+```
+
+The photos in the series.
+
+## `IntervalSettings`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct IntervalSettings
+```
+
+Interval shooting: a series of separate photos at a fixed interval.
+
+Each photo is an ordinary single capture; nothing is combined into a video or merged. The
+timer runs only while a series is running and nope. is open (AGENTS.md, "Battery").
+
+## `IntervalSettings/count`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let count: Int
+```
+
+How many photos the series takes.
+
+## `IntervalSettings/countRange`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let countRange: ClosedRange<Int>
+```
+
+The photo counts nope. offers: 2 to 999.
+
+## `IntervalSettings/init(interval:count:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(interval: Double, count: Int)
+```
+
+Creates interval settings, moving each value into its allowed range.
+
+- Parameters:
+  - interval: The time between photos, in seconds.
+  - count: The number of photos.
+
+## `IntervalSettings/interval`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let interval: Double
+```
+
+The time from one photo to the next, in seconds.
+
+## `IntervalSettings/intervalRange`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let intervalRange: ClosedRange<Double>
+```
+
+The intervals nope. offers, in seconds: 1 second to 1 hour.
+
+## `IntervalSettings/standard`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let standard: IntervalSettings
+```
+
+The default series: 10 photos, 10 seconds apart.
+
 ## `JPEGReader`
 
 internal, declared in `Sources/NopeCore/JPEGReader.swift`
@@ -1716,12 +2748,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [])
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none)
 ```
 
 Creates a lens description.
@@ -1738,6 +2770,7 @@ Creates a lens description.
   - aperture: The aperture range, or `nil` when unknown.
   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
   - photoDimensions: The supported photo sizes, smallest first.
+  - manualControls: The manual controls the lens supports. Defaults to none.
 
 ## `Lens/isoRange`
 
@@ -1773,6 +2806,16 @@ front camera, which has no rear wide camera to compare with.
 
 It is computed from each camera's field of view, so it is approximate. It is for labels
 only: nope. never zooms digitally.
+
+## `Lens/manualControls`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let manualControls: ManualCapabilities
+```
+
+The manual controls the lens supports. ``ManualCapabilities/none`` when unknown.
 
 ## `Lens/maxBracketedPhotoCount`
 
@@ -1901,6 +2944,1028 @@ case orientation
 ```
 
 Orientation. Without it the photo shows sideways or upside down.
+
+## `ManualCapabilities`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+struct ManualCapabilities
+```
+
+Which manual controls one lens supports, as plain values.
+
+A ``CaptureBackend`` fills it from the camera's own answers (for example
+`isExposureModeSupported(.custom)` and `isLockingFocusWithCustomLensPositionSupported`), so
+an interface shows only what the lens can do (AGENTS.md, "Progressive enhancement"). The
+numeric ranges (ISO, shutter, aperture, bracket count) are on ``Lens``.
+
+## `ManualCapabilities/exposureCompensationRange`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let exposureCompensationRange: ClosedRange<Double>?
+```
+
+The exposure compensation the lens accepts, in EV (`minExposureTargetBias` to
+`maxExposureTargetBias`), or `nil` when it has none.
+
+## `ManualCapabilities/exposureModes`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+var exposureModes: [ExposureMode] { get }
+```
+
+The exposure modes the lens supports, in the order P, S, I, M. Program is always
+offered: it is the camera's own auto exposure.
+
+## `ManualCapabilities/init(supportsManualExposure:supportsShutterPriority:supportsISOPriority:supportsAperturePriority:exposureCompensationRange:supportsExposureLock:supportsAutoFocus:supportsFocusLock:supportsManualFocus:supportsManualWhiteBalance:meteringModes:)`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+init(supportsManualExposure: Bool, supportsShutterPriority: Bool, supportsISOPriority: Bool, supportsAperturePriority: Bool, exposureCompensationRange: ClosedRange<Double>?, supportsExposureLock: Bool, supportsAutoFocus: Bool, supportsFocusLock: Bool, supportsManualFocus: Bool, supportsManualWhiteBalance: Bool, meteringModes: [MeteringMode])
+```
+
+Creates a capability description.
+
+- Parameters:
+  - supportsManualExposure: Whether ISO and shutter can both be set.
+  - supportsShutterPriority: Whether shutter priority is supported.
+  - supportsISOPriority: Whether ISO priority is supported.
+  - supportsAperturePriority: Whether aperture priority is supported.
+  - exposureCompensationRange: The exposure compensation range in EV, or `nil`.
+  - supportsExposureLock: Whether auto exposure can be locked.
+  - supportsAutoFocus: Whether the lens can autofocus.
+  - supportsFocusLock: Whether autofocus can be locked.
+  - supportsManualFocus: Whether the focus can be set to a lens position.
+  - supportsManualWhiteBalance: Whether the white balance can be set.
+  - meteringModes: The metering modes offered.
+
+## `ManualCapabilities/meteringModes`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let meteringModes: [MeteringMode]
+```
+
+The metering modes the lens offers. ``MeteringMode/center`` is the camera's default and
+is always listed when the lens meters at all; the others need an exposure region of
+interest (iOS 26 and later).
+
+## `ManualCapabilities/none`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+static let none: ManualCapabilities
+```
+
+A lens with no manual controls, such as one a backend can't describe.
+
+## `ManualCapabilities/supportsAperturePriority`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsAperturePriority: Bool
+```
+
+Whether the aperture can be set while the camera keeps setting ISO and shutter (a
+variable aperture, iOS 27 and later).
+
+## `ManualCapabilities/supportsAutoFocus`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsAutoFocus: Bool
+```
+
+Whether the lens can focus by itself (`continuousAutoFocus`).
+
+## `ManualCapabilities/supportsExposureLock`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsExposureLock: Bool
+```
+
+Whether auto exposure can be locked (`AVCaptureDevice.ExposureMode.locked`).
+
+## `ManualCapabilities/supportsFocusLock`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsFocusLock: Bool
+```
+
+Whether autofocus can be locked (`AVCaptureDevice.FocusMode.locked`).
+
+## `ManualCapabilities/supportsISOPriority`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsISOPriority: Bool
+```
+
+Whether ISO can be set while the camera keeps setting the shutter (iOS 27 and later,
+`AVCaptureDevice.autoExposureDuration`, checked per format).
+
+## `ManualCapabilities/supportsManualExposure`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsManualExposure: Bool
+```
+
+Whether ISO and shutter can both be set (`AVCaptureDevice.ExposureMode.custom`).
+
+## `ManualCapabilities/supportsManualFocus`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsManualFocus: Bool
+```
+
+Whether the focus can be set to a lens position
+(`isLockingFocusWithCustomLensPositionSupported`).
+
+## `ManualCapabilities/supportsManualWhiteBalance`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsManualWhiteBalance: Bool
+```
+
+Whether the white balance can be set (`isLockingWhiteBalanceWithCustomDeviceGainsSupported`).
+
+## `ManualCapabilities/supportsShutterPriority`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsShutterPriority: Bool
+```
+
+Whether the shutter can be set while the camera keeps setting ISO (iOS 27 and later,
+`AVCaptureDevice.autoISO`, checked per format).
+
+## `ManualCaptureBackend`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+protocol ManualCaptureBackend : CaptureBackend
+```
+
+A ``CaptureBackend`` that can also set the camera's exposure, focus and white balance, report
+what the camera is using, and take exposure brackets.
+
+`NopeCapture`'s AVFoundation backend and ``SimulatedCaptureBackend`` implement it. A backend
+that doesn't simply has no manual controls: ``ManualControlsModel`` then offers none.
+
+## `ManualCaptureBackend/applyControls(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+func applyControls(_ controls: DeviceControls) async throws(CaptureError)
+```
+
+Sets exposure, focus, white balance and metering on the running camera.
+
+Starting the camera or switching lenses returns every control to automatic, so
+``ManualControlsModel`` applies its controls again after each start.
+
+- Parameter controls: The controls, already checked against the lens.
+- Throws: ``CaptureError/notRunning`` if the camera isn't running, or
+  ``CaptureError/configurationFailed`` if the camera refused the change.
+
+## `ManualCaptureBackend/captureBracket(_:frames:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+func captureBracket(_ request: CaptureRequest, frames: [BracketFrame]) async throws(CaptureError) -> [CapturedPhoto]
+```
+
+Takes an exposure bracket: one separate single-frame photo per frame, nothing merged.
+
+- Parameters:
+  - request: The lens and format; the same as the last ``CaptureBackend/startSession(_:)``.
+  - frames: Each frame's exact ISO and exposure duration, no more than the lens's
+    ``Lens/maxBracketedPhotoCount``.
+- Returns: The photos, in the order of `frames`.
+- Throws: ``CaptureError/notRunning`` if the camera isn't running,
+  ``CaptureError/blankPicture`` if any frame is blank (every frame is dropped), or
+  ``CaptureError/captureFailed`` if the system reports an error or too few photos.
+
+## `ManualCaptureBackend/exposureReadings`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+var exposureReadings: AsyncStream<ExposureReading> { get }
+```
+
+What the camera is using now, sent while readings are on
+(``setExposureReadingsEnabled(_:)``), at a reduced rate. ``ManualControlsModel/observeReadings()``
+is its only consumer. The stream ends when the backend is released.
+
+## `ManualCaptureBackend/setExposureReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+func setExposureReadingsEnabled(_ enabled: Bool) async
+```
+
+Turns the readings on or off. They are off by default and are on only while manual
+controls are shown, so nothing is measured ahead of need (AGENTS.md, "Battery").
+
+- Parameter enabled: Whether to send readings.
+
+## `ManualControl`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+enum ManualControl
+```
+
+One of the six manual controls, in the fixed order every interface shows them.
+
+The order is the same on every device (the manual controls design: "Six slots in the same
+order on every device"). A control the selected lens can't set stays in its place, and
+``ManualControlsModel/availability(of:)`` says why.
+
+## `ManualControl/aperture`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case aperture
+```
+
+The lens aperture, as an f-number.
+
+## `ManualControl/exposureCompensation`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case exposureCompensation
+```
+
+Exposure compensation, in EV.
+
+## `ManualControl/focus`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case focus
+```
+
+The focus, as a relative lens position (no distance).
+
+## `ManualControl/iso`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case iso
+```
+
+The sensor gain, as an ISO value.
+
+## `ManualControl/shutter`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case shutter
+```
+
+The exposure duration, in seconds.
+
+## `ManualControl/whiteBalance`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case whiteBalance
+```
+
+The white balance, as a color temperature in kelvin and a tint.
+
+## `ManualControlIntent`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+enum ManualControlIntent
+```
+
+A request an interface sends to change manual controls, wrapped in
+``CameraIntent/manual(_:)``.
+
+None of these has an effect while manual controls are off (``ManualControlsModel/isEnabled``),
+except ``setEnabled(_:)``.
+
+## `ManualControlIntent/allAuto`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case allAuto
+```
+
+Return every control to automatic in one step ("All Auto").
+
+## `ManualControlIntent/setAuto(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setAuto(ManualControl)
+```
+
+Return one control to Auto. Exposure compensation returns to 0.
+
+## `ManualControlIntent/setBracket(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setBracket(BracketSettings?)
+```
+
+Turn exposure bracketing on with settings, or off with `nil`.
+
+## `ManualControlIntent/setEnabled(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setEnabled(Bool)
+```
+
+Turn manual controls on or off: the "Manual controls" option in Settings. Turning them
+off returns everything to automatic and stops an interval series.
+
+## `ManualControlIntent/setExposureLock(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setExposureLock(Bool)
+```
+
+Lock or unlock auto exposure (AE-L).
+
+## `ManualControlIntent/setExposureMode(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setExposureMode(ExposureMode)
+```
+
+Switch to an exposure mode: Program sets ISO and shutter to Auto; S, I and M keep or take
+the values in use.
+
+## `ManualControlIntent/setFocusLock(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setFocusLock(Bool)
+```
+
+Lock or unlock autofocus (AF-L).
+
+## `ManualControlIntent/setInterval(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setInterval(IntervalSettings)
+```
+
+Choose the interval and photo count of the next interval series.
+
+## `ManualControlIntent/setMetering(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setMetering(MeteringMode)
+```
+
+Choose how auto exposure measures the scene.
+
+## `ManualControlIntent/setTint(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setTint(Double)
+```
+
+Set the white balance tint, switching white balance to Manual.
+
+## `ManualControlIntent/setValue(_:_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setValue(ManualControl, Double)
+```
+
+Set a control to a value, switching it to Manual. Units: EV for exposure compensation,
+ISO, seconds for the shutter, an f-number for the aperture, 0 (closest) to 1 (far) for
+focus, and kelvin for white balance (the tint is kept). The value is moved inside the
+lens's range.
+
+## `ManualControlIntent/setWhiteBalancePreset(_:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case setWhiteBalancePreset(WhiteBalancePreset)
+```
+
+Set the white balance from a preset.
+
+## `ManualControlIntent/startInterval`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case startInterval
+```
+
+Start an interval series with the chosen settings.
+
+## `ManualControlIntent/step(_:by:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case step(ManualControl, by: Int)
+```
+
+Move a control a number of steps along its ``ControlScale``, switching it to Manual.
+VoiceOver's adjustable action sends ±1.
+
+## `ManualControlIntent/stopInterval`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+case stopInterval
+```
+
+Stop a running interval series.
+
+## `ManualControlsModel`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor final class ManualControlsModel
+```
+
+The manual and pro controls: the state behind the control grid, the exposure modes, the
+locks, bracketing and interval shooting.
+
+``CameraModel`` owns one as ``CameraModel/manual``. An interface reads its properties and
+sends ``ManualControlIntent`` values through ``CameraModel/send(_:)`` as
+``CameraIntent/manual(_:)``. Every rule lives here: which controls a lens offers
+(``availability(of:)``), the steps of each control (``scale(for:)``), and how the exposure
+modes combine. Full auto is the default, and manual controls stay hidden until the "Manual
+controls" option turns them on (``isEnabled``).
+
+## `ManualControlsModel/availability(of:)`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func availability(of control: ManualControl) -> ControlAvailability
+```
+
+Whether a control can be used on the selected lens now, and if not, why.
+
+- Parameter control: A control.
+- Returns: The control's availability.
+
+## `ManualControlsModel/bracket`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var bracket: BracketSettings? { get set }
+```
+
+The exposure bracket for the next photo, or `nil` when bracketing is off.
+
+## `ManualControlsModel/bracketFrameCounts`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var bracketFrameCounts: [Int] { get }
+```
+
+The bracket frame counts the selected lens offers; empty when it can't bracket.
+
+## `ManualControlsModel/bracketFrames()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func bracketFrames() -> [BracketFrame]?
+```
+
+The frames of the next photo's exposure bracket, or `nil` for a single photo: bracketing
+is off, the lens reports no ISO or shutter range, or there is no exposure to start from
+yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't.
+
+The base exposure is the person's ISO and shutter where set, otherwise the camera's
+reading, which already includes exposure compensation.
+
+## `ManualControlsModel/canLockExposure`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var canLockExposure: Bool { get }
+```
+
+Whether AE-L can be turned on: the lens supports it and ISO, shutter and aperture are Auto.
+
+## `ManualControlsModel/canLockFocus`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var canLockFocus: Bool { get }
+```
+
+Whether AF-L can be turned on: the lens supports it and focus is Auto.
+
+## `ManualControlsModel/capabilities`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var capabilities: ManualCapabilities { get }
+```
+
+The selected lens's manual capabilities.
+
+## `ManualControlsModel/exposureModes`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var exposureModes: [ExposureMode] { get }
+```
+
+The exposure modes the selected lens offers, in the order P, S, I, M.
+
+## `ManualControlsModel/fallbackFocus`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor static let fallbackFocus: Double
+```
+
+Focus to start from before the first reading: the middle of the relative scale.
+
+## `ManualControlsModel/fallbackISO`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor static let fallbackISO: Double
+```
+
+ISO to start from when a control is first set before the camera has reported a reading.
+
+## `ManualControlsModel/fallbackShutter`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor static let fallbackShutter: Double
+```
+
+Shutter to start from before the first reading, in seconds: 1/60 s.
+
+## `ManualControlsModel/handle(_:capture:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Void) async
+```
+
+Handles one intent. ``CameraModel/send(_:)`` calls it.
+
+Settings intents and starting a series have no effect while manual controls are off.
+
+- Parameters:
+  - intent: The intent.
+  - capture: Takes one photo the way the shutter does; used by interval shooting.
+
+## `ManualControlsModel/init(backend:sleep:)`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void)
+```
+
+Creates the model.
+
+- Parameters:
+  - backend: The hardware, or `nil` when it has no manual controls.
+  - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
+
+## `ManualControlsModel/interval`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var interval: IntervalSettings { get set }
+```
+
+The interval and photo count of the next interval series.
+
+## `ManualControlsModel/intervalProgress`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var intervalProgress: IntervalProgress? { get set }
+```
+
+The running interval series, or `nil` when none is running.
+
+## `ManualControlsModel/isEnabled`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var isEnabled: Bool { get set }
+```
+
+Whether manual controls are on (the "Manual controls" option). Off by default.
+
+## `ManualControlsModel/isSupported`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var isSupported: Bool { get }
+```
+
+Whether the backend offers manual controls at all. When it's `false`, an interface
+shouldn't offer the "Manual controls" option.
+
+## `ManualControlsModel/lens`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lens: Lens? { get set }
+```
+
+The selected lens, or `nil` before the camera is ready.
+
+## `ManualControlsModel/lensWillStart(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func lensWillStart(_ lens: Lens)
+```
+
+Records the lens the camera is about to use. Switching to another lens drops the last
+reading, which belonged to the old lens, and a bracket longer than the new lens allows.
+
+- Parameter lens: The selected lens.
+
+## `ManualControlsModel/observeReadings()`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func observeReadings() async
+```
+
+Applies the backend's readings until its stream ends. Interfaces
+run it in a `.task` while the camera is visible. Returns at once without manual controls.
+
+## `ManualControlsModel/reading`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var reading: ExposureReading? { get set }
+```
+
+What the camera is using now, or `nil` before the first reading or while manual controls
+are off.
+
+## `ManualControlsModel/scale(for:)`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func scale(for control: ManualControl) -> ControlScale?
+```
+
+The steps of a control on the selected lens (``ControlScale/scale(for:on:)``), or `nil`.
+
+- Parameter control: A control.
+
+## `ManualControlsModel/sessionDidStart()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func sessionDidStart() async
+```
+
+Applies the settings again after the camera started, because starting it returns every
+control to automatic. Does nothing in full auto.
+
+## `ManualControlsModel/settings`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var settings: ManualSettings { get set }
+```
+
+The person's settings. ``ManualSettings/automatic`` (full auto) by default.
+
+## `ManualControlsModel/tint`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var tint: Double { get }
+```
+
+The white balance tint in use: the person's when white balance is Manual, otherwise the
+camera's reading, otherwise 0.
+
+## `ManualControlsModel/value(of:)`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func value(of control: ManualControl) -> Double?
+```
+
+The value a control has now: the person's value when it is Manual, otherwise the
+camera's reading. In the control's unit (see ``ManualControlIntent/setValue(_:_:)``).
+
+- Parameter control: A control.
+- Returns: The value, or `nil` before the first reading.
+
+## `ManualControlsSetting`
+
+public, declared in `Sources/NopeCore/ManualControlsSetting.swift`
+
+```swift
+enum ManualControlsSetting
+```
+
+The "Manual controls" option: where it is stored and its default.
+
+The Settings screen stores the switch in `UserDefaults` under ``userDefaultsKey``; the app
+target reads it and sends ``ManualControlIntent/setEnabled(_:)``. It is off by default: full
+auto, with manual controls hidden (AGENTS.md, "Manual controls stay hidden unless turned on").
+
+## `ManualControlsSetting/defaultValue`
+
+public, declared in `Sources/NopeCore/ManualControlsSetting.swift`
+
+```swift
+static let defaultValue: Bool
+```
+
+The option's default: off.
+
+## `ManualControlsSetting/userDefaultsKey`
+
+public, declared in `Sources/NopeCore/ManualControlsSetting.swift`
+
+```swift
+static let userDefaultsKey: String
+```
+
+The `UserDefaults` key of the option.
+
+## `ManualSettings`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+struct ManualSettings
+```
+
+The manual settings the person chose. A `nil` value means Auto: the camera sets it.
+
+``automatic`` is full auto, the default. ``ManualControlsModel`` changes the settings in
+response to intents and keeps them consistent with the selected lens; interfaces only read
+them.
+
+## `ManualSettings/aperture`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var aperture: Double?
+```
+
+The aperture as an f-number, or `nil` for Auto.
+
+## `ManualSettings/automatic`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+static let automatic: ManualSettings
+```
+
+Full auto: every control on Auto, the default metering and no locks.
+
+## `ManualSettings/exposureCompensation`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var exposureCompensation: Double
+```
+
+Exposure compensation in EV; 0 is none. It applies only while at least one of ISO and
+shutter is Auto.
+
+## `ManualSettings/exposureLocked`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var exposureLocked: Bool
+```
+
+Whether auto exposure is locked (AE-L). Meaningful only while ISO, shutter and aperture
+are Auto.
+
+## `ManualSettings/exposureMode`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var exposureMode: ExposureMode { get }
+```
+
+The exposure mode these settings amount to: P, S, I or M, from which of ISO and shutter
+are set.
+
+## `ManualSettings/focus`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var focus: Double?
+```
+
+The relative focus position from 0 (closest) to 1 (farthest), or `nil` for autofocus.
+
+## `ManualSettings/focusLocked`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var focusLocked: Bool
+```
+
+Whether autofocus is locked (AF-L). Meaningful only while focus is Auto.
+
+## `ManualSettings/init(iso:shutter:aperture:exposureCompensation:focus:whiteBalance:metering:exposureLocked:focusLocked:)`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+init(iso: Double? = nil, shutter: Double? = nil, aperture: Double? = nil, exposureCompensation: Double = 0, focus: Double? = nil, whiteBalance: WhiteBalance? = nil, metering: MeteringMode = .center, exposureLocked: Bool = false, focusLocked: Bool = false)
+```
+
+Creates settings. With no arguments, full auto.
+
+- Parameters:
+  - iso: The ISO, or `nil` for Auto.
+  - shutter: The exposure duration in seconds, or `nil` for Auto.
+  - aperture: The f-number, or `nil` for Auto.
+  - exposureCompensation: Exposure compensation in EV.
+  - focus: The relative focus position, or `nil` for autofocus.
+  - whiteBalance: The white balance, or `nil` for Auto.
+  - metering: The metering mode.
+  - exposureLocked: Whether auto exposure is locked.
+  - focusLocked: Whether autofocus is locked.
+
+## `ManualSettings/isAutomatic`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var isAutomatic: Bool { get }
+```
+
+Whether everything is automatic: no manual control, the default metering and no lock.
+When it's `false`, an interface offers "All Auto".
+
+## `ManualSettings/isManual(_:)`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+func isManual(_ control: ManualControl) -> Bool
+```
+
+Whether a control is set manually (shown as M), rather than by the camera (A).
+Exposure compensation counts as manual when it isn't 0.
+
+- Parameter control: A control.
+- Returns: `true` when the person set it.
+
+## `ManualSettings/iso`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var iso: Double?
+```
+
+The ISO, or `nil` for Auto.
+
+## `ManualSettings/manualControlCount`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var manualControlCount: Int { get }
+```
+
+How many controls are set manually.
+
+## `ManualSettings/metering`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var metering: MeteringMode
+```
+
+How auto exposure measures the scene.
+
+## `ManualSettings/shutter`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var shutter: Double?
+```
+
+The exposure duration in seconds, or `nil` for Auto.
+
+## `ManualSettings/whiteBalance`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+var whiteBalance: WhiteBalance?
+```
+
+The white balance, or `nil` for Auto.
 
 ## `MetadataAllowlist`
 
@@ -3678,6 +5743,50 @@ case unreadable(String)
 
 Part of the file couldn't be read, so it can't be shown to be clean.
 
+## `MeteringMode`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+enum MeteringMode
+```
+
+How the camera measures the scene for auto exposure.
+
+AVFoundation offers no named metering patterns. nope. offers what the camera's exposure
+region of interest can express (`AVCaptureDevice.exposureRectOfInterest`, iOS 26 and
+later), and names each by the region it measures, not by a pattern it can't promise.
+
+## `MeteringMode/center`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case center
+```
+
+The camera's default: a region at the center of the frame.
+
+## `MeteringMode/spot`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case spot
+```
+
+A small region at the center: the smallest region the lens supports.
+
+## `MeteringMode/wholeFrame`
+
+public, declared in `Sources/NopeCore/ManualControl.swift`
+
+```swift
+case wholeFrame
+```
+
+The whole frame.
+
 ## `PhotoDeveloping`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -4455,7 +6564,10 @@ struct SimulatedCaptureBackend
 A ``CaptureBackend`` that returns fixed answers instead of talking to hardware.
 
 Use it in tests, SwiftUI previews and UI tests. It never shows a system prompt, has no
-video, and returns a small placeholder instead of a real photo.
+video, and returns a small placeholder instead of a real photo. As a
+``ManualCaptureBackend`` it accepts every control without changing anything, reports
+``placeholderReading`` when readings are turned on, and returns one placeholder per bracket
+frame.
 
 ```swift
 let backend = SimulatedCaptureBackend(
@@ -4466,6 +6578,18 @@ let backend = SimulatedCaptureBackend(
 let model = CameraModel(backend: backend)
 ```
 
+## `SimulatedCaptureBackend/applyControls(_:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+func applyControls(_ controls: DeviceControls) async throws(CaptureError)
+```
+
+Accepts the controls without changing anything.
+
+- Parameter controls: Ignored.
+
 ## `SimulatedCaptureBackend/capabilities`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -4475,6 +6599,23 @@ let capabilities: DeviceCapabilities
 ```
 
 The capabilities reported by ``deviceCapabilities()``.
+
+## `SimulatedCaptureBackend/captureBracket(_:frames:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+func captureBracket(_ request: CaptureRequest, frames: [BracketFrame]) async throws(CaptureError) -> [CapturedPhoto]
+```
+
+Returns one placeholder photo per frame, with the frame's ISO and duration, or throws
+``captureError``.
+
+- Parameters:
+  - request: The lens and format of the photos.
+  - frames: The frames.
+- Returns: One photo per frame.
+- Throws: ``captureError``.
 
 ## `SimulatedCaptureBackend/captureError`
 
@@ -4554,6 +6695,16 @@ let eventsAfterStart: [CaptureEvent]
 
 Events emitted each time ``startSession(_:)`` succeeds, for example an interruption.
 
+## `SimulatedCaptureBackend/exposureReadings`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let exposureReadings: AsyncStream<ExposureReading>
+```
+
+The readings stream: ``placeholderReading`` each time readings are turned on.
+
 ## `SimulatedCaptureBackend/finishEvents()`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -4562,8 +6713,9 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 func finishEvents()
 ```
 
-Ends ``events``, so ``CameraModel/observeEvents()`` returns once it has applied every
-event sent so far.
+Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
+``ManualControlsModel/observeReadings()`` return once they have applied everything sent
+so far.
 
 ## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:)`
 
@@ -4624,6 +6776,17 @@ static let placeholderPhotoData: Data
 
 The bytes of every simulated photo. They are not an image file.
 
+## `SimulatedCaptureBackend/placeholderReading`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+static let placeholderReading: ExposureReading
+```
+
+The reading sent when readings are turned on: ISO 100, 1/120 s, on target, focus in the
+middle, f/1.8 and 5200 K.
+
 ## `SimulatedCaptureBackend/previewSource`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -4643,6 +6806,18 @@ func requestPermission() async -> CameraPermission
 ```
 
 Returns ``permissionAfterRequest`` without showing a prompt.
+
+## `SimulatedCaptureBackend/setExposureReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+func setExposureReadingsEnabled(_ enabled: Bool) async
+```
+
+Sends ``placeholderReading`` when readings are turned on.
+
+- Parameter enabled: Whether readings are on.
 
 ## `SimulatedCaptureBackend/startError`
 
@@ -4992,6 +7167,158 @@ Reads a TIFF structure.
   - bytes: The bytes, starting at the `II` or `MM` byte order mark.
   - extractImageData: Whether to collect IFD0's image data (only for a DNG).
 - Returns: Every tag, the problems, and IFD0's image data if asked for.
+
+## `WhiteBalance`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+struct WhiteBalance
+```
+
+A white balance as a color temperature and a tint, the device-independent values
+AVFoundation converts to and from the camera's gains
+(`AVCaptureDevice.WhiteBalanceTemperatureAndTintValues`).
+
+## `WhiteBalance/init(temperature:tint:)`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+init(temperature: Double, tint: Double = 0)
+```
+
+Creates a white balance.
+
+- Parameters:
+  - temperature: The color temperature, in kelvin.
+  - tint: The tint. Defaults to 0, no tint.
+
+## `WhiteBalance/limited`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+var limited: WhiteBalance { get }
+```
+
+The same white balance with both values inside ``temperatureRange`` and ``tintRange``.
+
+## `WhiteBalance/temperature`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+let temperature: Double
+```
+
+The color temperature, in kelvin.
+
+## `WhiteBalance/temperatureRange`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+static let temperatureRange: ClosedRange<Double>
+```
+
+The temperatures nope. offers, in kelvin: 2500 K to 10,000 K, the range in the manual
+controls design. AVFoundation converts any temperature; values the camera's gains can't
+reach are limited to the nearest gains it accepts.
+
+## `WhiteBalance/tint`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+let tint: Double
+```
+
+The tint: negative toward green, positive toward magenta.
+
+## `WhiteBalance/tintRange`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+static let tintRange: ClosedRange<Double>
+```
+
+The tints nope. offers, from green (negative) to magenta (positive). A tool setting:
+AVFoundation converts any tint, and the camera's gain limit applies as for temperature.
+
+## `WhiteBalancePreset`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+enum WhiteBalancePreset
+```
+
+Common white balance starting points.
+
+The temperatures are the conventional photographic values for each light, not measurements
+of a scene; the person can adjust them.
+
+## `WhiteBalancePreset/cloudy`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+case cloudy
+```
+
+An overcast sky, 6500 K.
+
+## `WhiteBalancePreset/daylight`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+case daylight
+```
+
+Direct daylight, 5500 K.
+
+## `WhiteBalancePreset/fluorescent`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+case fluorescent
+```
+
+Fluorescent light, 4000 K.
+
+## `WhiteBalancePreset/shade`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+case shade
+```
+
+Open shade, 7500 K.
+
+## `WhiteBalancePreset/tungsten`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+case tungsten
+```
+
+Tungsten (incandescent) light, 3200 K.
+
+## `WhiteBalancePreset/whiteBalance`
+
+public, declared in `Sources/NopeCore/WhiteBalance.swift`
+
+```swift
+var whiteBalance: WhiteBalance { get }
+```
+
+The preset's white balance, with no tint.
 
 ## `XMPDate`
 
