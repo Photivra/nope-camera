@@ -19,11 +19,14 @@ import SwiftUI
 /// controls stay reachable: the shutter offers "Show Controls" as a VoiceOver action, and Voice
 /// Control can say it.
 ///
-/// Slots, for controls added to the camera screen (hidden in clean view):
+/// Slots, for controls added to the camera screen:
 /// - `topBar`: buttons at the top, such as Settings. Stacked: first, above the badge, across the
-///   screen's width. Side by side: first, at the top of the column. Supply your own `HStack`.
-/// - `controls`: extra controls. Stacked: after the manual controls, above the lens buttons.
-///   Side by side: the same order, in the column's scrolling part. Lay them out to fit a
+///   screen's width. Side by side: first, at the top of the column. Supply your own `HStack`,
+///   and hide it in clean view (`CameraModel.isCleanView`) if it should be hidden: the slot is
+///   always in the layout, because an `if` around an empty slot adds the stack's spacing.
+/// - `controls`: extra controls, hidden in clean view with the manual controls. Stacked: after
+///   the manual controls, above the lens buttons. Side by side: the same order, in the column's
+///   scrolling part. Lay them out to fit a
 ///   300-point column (for example with `ViewThatFits`).
 ///
 /// An empty slot takes no space.
@@ -130,7 +133,7 @@ struct CameraReadyView<Viewfinder: View, TopBar: View, Controls: View>: View {
     /// - Parameter viewfinderHeight: A fixed viewfinder height, or `nil` to fill the free space.
     private func stack(viewfinderHeight: CGFloat?) -> some View {
         VStack(spacing: CameraLayout.spacing) {
-            if !model.isCleanView { topBar }
+            topBar
             formatBadge
             viewfinderArea
                 .frame(maxWidth: .infinity, minHeight: viewfinderHeight, maxHeight: viewfinderHeight ?? .infinity)
@@ -166,7 +169,7 @@ struct CameraReadyView<Viewfinder: View, TopBar: View, Controls: View>: View {
                 GeometryReader { proxy in
                     ScrollView {
                         VStack(spacing: CameraLayout.spacing) {
-                            if !model.isCleanView { topBar }
+                            topBar
                             Spacer(minLength: 0)
                             intervalProgress
                             CaptureStatusView(status: model.captureStatus)
