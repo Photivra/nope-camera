@@ -61,7 +61,7 @@ Enable the shutter only when ``CameraModel/canCapture`` is `true`.
 ### Offer manual controls
 
 Manual controls are off by default and stay hidden until the person turns on the "Manual
-controls" option (stored under ``ManualControlsSetting/userDefaultsKey``; send
+controls" option (``NopeSettings/showsManualControls``; send
 ``ManualControlIntent/setEnabled(_:)`` when it changes). While ``ManualControlsModel/isEnabled``
 is `true`, read ``CameraModel/manual``:
 

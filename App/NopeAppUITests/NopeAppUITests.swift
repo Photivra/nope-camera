@@ -61,6 +61,10 @@ final class NopeAppUITests: XCTestCase {
 
     /// Runs the accessibility audit at the largest text sizes, where the screen scrolls.
     ///
+    /// The screen is first scrolled back to the top. Tapping the shutter scrolls it, and with the
+    /// Settings button above the scroll view, a badge scrolled away at the top is clipped inside
+    /// the screen, where the audit still measures it.
+    ///
     /// A contrast issue is ignored only for an element that runs past the edge of the screen:
     /// the audit then measures the clipped edge. In CI the status text (white on black, see the
     /// failing run's screenshot on PR #32) ran past the bottom of the scrolling screen and failed
@@ -70,6 +74,9 @@ final class NopeAppUITests: XCTestCase {
     /// more of the screen near the bottom edge.
     @MainActor
     private func auditScrollingScreen(_ app: XCUIApplication) throws {
+        app.swipeDown()
+        app.swipeDown()
+        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Scrolling stops")], timeout: 2)
         try app.performAccessibilityAudit { issue in
             guard issue.auditType == .contrast else { return false }
             guard let element = issue.element else { return true }
@@ -372,6 +379,233 @@ final class NopeAppUITests: XCTestCase {
         try app.performAccessibilityAudit()
     }
 
+    /// The largest accessibility text size.
+    private static let largestTextSize = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+
+    /// Opens Settings from the camera screen and audits every settings screen: Settings,
+    /// Formats, Privacy, Honesty, About and the license text.
+    @MainActor
+    private func auditSettingsScreens(_ app: XCUIApplication) throws {
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        try audit(app)
+
+        open(app, row: "Formats")
+        XCTAssertTrue(app.navigationBars["Formats"].waitForExistence(timeout: 5))
+        try audit(app)
+        goBack(app)
+
+        open(app, row: "Privacy")
+        XCTAssertTrue(app.navigationBars["Privacy"].waitForExistence(timeout: 5))
+        try audit(app)
+        app.swipeUp()
+        app.swipeUp()
+        try audit(app, afterScrolling: true)
+        goBack(app)
+
+        open(app, row: "Honesty")
+        XCTAssertTrue(app.navigationBars["Honesty"].waitForExistence(timeout: 5))
+        try audit(app)
+        app.swipeUp()
+        try audit(app, afterScrolling: true)
+        goBack(app)
+
+        open(app, row: "About and Licenses")
+        XCTAssertTrue(app.navigationBars["About and Licenses"].waitForExistence(timeout: 5))
+        try audit(app)
+        open(app, row: "GNU General Public License")
+        XCTAssertTrue(element(app, containing: "GNU GENERAL PUBLIC LICENSE").waitForExistence(timeout: 5))
+        try audit(app)
+        goBack(app)
+        goBack(app)
+
+        app.buttons["Done"].tap()
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+    }
+
+    /// Waits for navigation and scrolling animations to finish, then runs the accessibility
+    /// audit. An audit taken mid-animation measures moving, half-drawn text.
+    ///
+    /// - Parameter afterScrolling: After a scroll, a `Form` reports stale accessibility frames
+    ///   for rows it moved or recycled, and text under the navigation bar is faded by the
+    ///   system's scroll edge effect, so the audit's results there describe where text was, not
+    ///   where it is. After a scroll the audit therefore skips the contrast check (every row
+    ///   style is contrast-checked in the audit before scrolling), issues it can't tie to an
+    ///   element, and issues on an element whose frame no longer matches the element found by
+    ///   the same label now. Every other issue fails the test.
+    @MainActor
+    private func audit(
+        _ app: XCUIApplication, afterScrolling: Bool = false, file: StaticString = #filePath, line: UInt = #line
+    ) throws {
+        settle()
+        // One retry: on a slow runner a navigation transition can still be finishing. Issues are
+        // collected during the audit and judged after it, because querying the app from inside
+        // the audit's handler can make the audit time out.
+        var remaining = try reportedIssues(app).filter { !Self.isIgnored($0, in: app, afterScrolling: afterScrolling) }
+        if !remaining.isEmpty {
+            settle()
+            remaining = try reportedIssues(app).filter { !Self.isIgnored($0, in: app, afterScrolling: afterScrolling) }
+        }
+        for issue in remaining {
+            XCTFail(
+                "\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+        }
+    }
+
+    /// Runs the accessibility audit and returns every issue it found, without failing the test.
+    @MainActor
+    private func reportedIssues(_ app: XCUIApplication) throws -> [XCUIAccessibilityAuditIssue] {
+        var issues: [XCUIAccessibilityAuditIssue] = []
+        try app.performAccessibilityAudit { issue in
+            issues.append(issue)
+            return true
+        }
+        return issues
+    }
+
+    /// Waits for animations to finish.
+    @MainActor
+    private func settle() {
+        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Animations finish")], timeout: 3)
+    }
+
+    /// Whether an audit issue is skipped under the after-scrolling rules of
+    /// ``audit(_:afterScrolling:)``.
+    @MainActor
+    private static func isIgnored(
+        _ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication, afterScrolling: Bool
+    ) -> Bool {
+        guard afterScrolling else { return false }
+        guard issue.auditType != .contrast, let element = issue.element else { return true }
+        let current = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", element.label))
+            .firstMatch
+        return !current.exists || !current.isHittable || current.frame != element.frame
+    }
+
+    /// Scrolls to a navigation row whose label contains the text, and opens it.
+    @MainActor
+    private func open(_ app: XCUIApplication, row text: String) {
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+        var swipes = 0
+        while !row.isHittable && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        row.tap()
+    }
+
+    /// Goes back one screen in the navigation stack.
+    @MainActor
+    private func goBack(_ app: XCUIApplication) {
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+    }
+
+    @MainActor
+    func testSettingsScreensPassAccessibilityAudits() throws {
+        let app = launch("allow")
+        let allow = app.buttons["Allow Camera Access"]
+        XCTAssertTrue(allow.waitForExistence(timeout: 10))
+        allow.tap()
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
+        try auditSettingsScreens(app)
+    }
+
+    @MainActor
+    func testSettingsAtTheLargestTextSize() throws {
+        let app = launch("denied", extraArguments: Self.largestTextSize)
+        XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
+        try auditSettingsScreens(app)
+    }
+
+    @MainActor
+    func testSettingsInRightToLeftLayout() throws {
+        let app = launch(
+            "denied", extraArguments: ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
+        XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
+        try auditSettingsScreens(app)
+    }
+
+    /// The source address is a link to the https address; the test doesn't tap it, so no
+    /// browser opens and nothing goes online.
+    @MainActor
+    func testSourceCodeIsAnHTTPSLink() throws {
+        let app = launch("denied")
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        open(app, row: "About and Licenses")
+        let link = app.links["Source code address"]
+        var swipes = 0
+        while !link.isHittable && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(link.exists)
+        XCTAssertEqual(link.value as? String, "https://github.com/Photivra/nope-camera")
+        XCTAssertTrue(element(app, containing: "Opens in your browser").exists)
+    }
+
+    @MainActor
+    func testFormatsAndPrivacySwitchesFollowTheRules() throws {
+        let app = launch("denied")
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        XCTAssertTrue(element(app, containing: "RAW (DNG) and HEIF").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "All Optional Removed").exists)
+
+        // At least one format: with only RAW left, RAW can't be turned off.
+        open(app, row: "Formats")
+        let raw = app.buttons["RAW (DNG)"]
+        let heif = app.buttons["HEIF"]
+        XCTAssertTrue(raw.waitForExistence(timeout: 5))
+        XCTAssertTrue(raw.isSelected)
+        XCTAssertTrue(heif.isSelected)
+        XCTAssertFalse(app.buttons["JPEG"].isSelected)
+        // The HEIF and JPEG look shows only while a developed format is selected.
+        let flat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Flat")).firstMatch
+        XCTAssertTrue(flat.waitForExistence(timeout: 5))
+        heif.tap()
+        XCTAssertFalse(heif.isSelected)
+        XCTAssertFalse(raw.isEnabled)
+        XCTAssertFalse(flat.exists)
+        heif.tap()
+        XCTAssertTrue(raw.isEnabled)
+        XCTAssertTrue(flat.waitForExistence(timeout: 5))
+        flat.tap()
+        XCTAssertTrue(flat.isSelected)
+        goBack(app)
+
+        // The master switch is on by default; turning on one item makes it "Custom".
+        open(app, row: "Privacy")
+        let master = app.switches["Remove All Optional Details"]
+        XCTAssertTrue(master.waitForExistence(timeout: 5))
+        XCTAssertEqual(master.value as? String, "1")
+        let timeZone = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Time Zone")).firstMatch
+        XCTAssertEqual(timeZone.value as? String, "0")
+        timeZone.switches.firstMatch.tap()
+        XCTAssertEqual(timeZone.value as? String, "1")
+        XCTAssertEqual(master.value as? String, "0")
+        let sign = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Sign Each Photo")).firstMatch
+        var swipes = 0
+        while !sign.isHittable && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertEqual(sign.value as? String, "1")
+        let locked = element(app, containing: "Image Size and Layout")
+        swipes = 0
+        while !locked.exists && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertEqual(locked.value as? String, "Locked")
+        goBack(app)
+        XCTAssertTrue(element(app, containing: "Custom").waitForExistence(timeout: 5))
+    }
+
     // MARK: - Manual controls
 
     /// Waits up to 20 seconds (the CI Simulator is slow) for an element's accessibility value
@@ -384,7 +618,7 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// The launch arguments that turn the "Manual controls" option on.
-    private static let manualOn = ["-manualControlsEnabled", "YES"]
+    private static let manualOn = ["-NopeSettings.showsManualControls", "YES"]
 
     @MainActor
     func testManualControlsAreHiddenByDefault() throws {
@@ -528,6 +762,28 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 2))
     }
 
+    /// "Start in clean view" in Settings opens the camera in clean view, and turning it on in
+    /// Settings applies it.
+    @MainActor
+    func testStartInCleanViewSetting() throws {
+        let app = launch("manual", extraArguments: ["-NopeSettings.startsInCleanView", "YES"])
+        XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Take Photo"].exists)
+        app.terminate()
+
+        let fresh = launch("manual")
+        let settingsButton = fresh.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 20))
+        settingsButton.tap()
+        let toggle = fresh.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Start in Clean View")).firstMatch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "0")
+        toggle.switches.firstMatch.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        fresh.buttons["Done"].tap()
+        XCTAssertTrue(fresh.buttons["Show Controls"].waitForExistence(timeout: 20))
+    }
+
     @MainActor
     func testCleanViewHidesControlsButKeepsTheShutter() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
@@ -595,6 +851,9 @@ final class NopeAppUITests: XCTestCase {
             ])
         let tools = large.buttons["Pro Tools"]
         XCTAssertTrue(tools.waitForExistence(timeout: 20))
+        // At this text size the button starts at the bottom edge, where a tap lands on the Home
+        // indicator; scroll it up first.
+        large.swipeUp()
         tools.tap()
         XCTAssertTrue(large.staticTexts["Metering"].waitForExistence(timeout: 20))
         for (label, regularHeight) in zip(labels, regularHeights) {

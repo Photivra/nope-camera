@@ -27,6 +27,14 @@ Your interface depends on `NopeCore` only. It does three things:
 `CameraModel` runs on the main actor and uses Observation, so a SwiftUI view that reads `state`
 updates automatically.
 
+Settings work the same way. `NopeSettings` holds the formats, the metadata switches
+(`MetadataSettings`), signing, manual controls and clean view. Read its properties and change
+them only through its methods (`setFormat(_:isSelected:)`, `setMetadataItem(_:isIncluded:)`,
+`setRemovesAllOptionalDetails(_:)`, `setSignsPhotos(_:)` and the others), which apply the
+rules and save the change. Show a metadata switch only where `MetadataItem.isOfferedInSettings`
+is true, and every `LockedMetadataItem` as locked, with its reason. Privacy and Honesty wording
+must not claim more than `docs/research/privacy-claims.md` supports.
+
 ## Steps
 
 1. Create a module or target that imports `NopeCore` (and SwiftUI, if you use it).

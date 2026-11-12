@@ -43,7 +43,7 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; lenses with manual controls: the wide lens has every control,
         /// including a variable aperture and S and I modes; the ultra wide has a fixed aperture
         /// and only P and M; the front camera has no manual focus. Pair it with
-        /// `-manualControlsEnabled YES` to show the controls.
+        /// `-NopeSettings.showsManualControls YES` to show the controls.
         case manual
         /// Access declined.
         case denied
@@ -65,6 +65,18 @@ enum SimulatedCameraLaunch {
         Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1),
         Lens(id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil),
     ]
+    /// The `UserDefaults` suite that holds settings during UI tests.
+    static let settingsSuiteName = "NopeUITestSettings"
+
+    /// An emptied settings store for a UI test launch, or `nil` without a scenario, so UI tests
+    /// always start from the default settings and never change the real ones.
+    static func settingsStore() -> UserDefaults? {
+        guard ProcessInfo.processInfo.arguments.contains(argument),
+            let store = UserDefaults(suiteName: settingsSuiteName)
+        else { return nil }
+        store.removePersistentDomain(forName: settingsSuiteName)
+        return store
+    }
 
     /// The scenario in the launch arguments, or `nil` without one.
     static var scenario: Scenario? {
