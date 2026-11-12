@@ -18,10 +18,10 @@ so nope. builds its own copy from source with every network feature off, and pub
   rustup installer (`https://sh.rustup.rs`).
 - **Targets:** `aarch64-apple-ios` (devices), `aarch64-apple-ios-sim` and `x86_64-apple-ios`
   (Simulator), as one `C2PAC.xcframework`, with c2pa-swift's header patch and module map.
-- **Reproducibility:** paths are remapped out of the binary, and the zip has fixed timestamps and
-  sorted entries. Two builds in different folders on the same Mac gave the same checksum; CI
-  rebuilds it on every pull request and fails if the checksum differs from the pin in
-  `Package.swift`.
+- **Reproducibility:** paths are remapped out of the binary, the xcframework's `Info.plist` is
+  sorted, and the zip has fixed timestamps and sorted entries. Builds on a Mac and on a GitHub
+  runner give the same checksum; CI rebuilds it on every pull request and fails if the checksum
+  differs from the pin in `Package.swift`.
 
 The Swift wrapper is vendored separately, without its networking code
 (`Vendor/c2pa-swift/README.md`).

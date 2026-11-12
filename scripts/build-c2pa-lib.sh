@@ -96,6 +96,18 @@ xcodebuild -quiet -create-xcframework \
   -framework "$out/simulator/C2PAC.framework" \
   -output "$out/C2PAC.xcframework"
 
+# xcodebuild lists the two libraries in no fixed order; sort them so the file is the same on
+# every build.
+python3 -I - "$out/C2PAC.xcframework/Info.plist" <<'PY'
+import plistlib, sys
+path = sys.argv[1]
+with open(path, "rb") as f:
+    info = plistlib.load(f)
+info["AvailableLibraries"].sort(key=lambda library: library["LibraryIdentifier"])
+with open(path, "wb") as f:
+    plistlib.dump(info, f, sort_keys=True)
+PY
+
 # 5. Zip with fixed timestamps and sorted entries, without extra attributes.
 find "$out/C2PAC.xcframework" -exec touch -h -t 200001010000 {} +
 rm -f "$work/C2PAC.xcframework.zip"

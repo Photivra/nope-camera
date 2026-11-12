@@ -21,7 +21,7 @@ let c2paLibrary: Target =
     : .binaryTarget(
         name: "C2PAC",
         url: "https://github.com/Photivra/nope-camera/releases/download/c2pa-lib-v0.92.0/C2PAC.xcframework.zip",
-        checksum: "b30f1902d84d34ece70644959f3d6837b5cce4b0b4ae9f8669c446063fc1adb8")
+        checksum: "9e2ddfe541ac320f0108c217d9850bad83c217e7004d789ce1ac5985cef60bb9")
 
 let package = Package(
     name: "NopeKit",
