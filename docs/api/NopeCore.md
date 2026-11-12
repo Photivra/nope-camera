@@ -2945,6 +2945,90 @@ case orientation
 
 Orientation. Without it the photo shows sideways or upside down.
 
+## `LockedMetadataItem`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+enum LockedMetadataItem
+```
+
+A metadata item every file keeps, because the photo can't be opened or shown correctly
+without it.
+
+Each case is a row of the "Locked" table in `docs/PRIVACY.md`. None of them identify the
+person or link their photos. Interfaces show them as locked, each with its explanation.
+
+## `LockedMetadataItem/blackAndWhiteLevels`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case blackAndWhiteLevels
+```
+
+Black and white levels.
+
+## `LockedMetadataItem/colorCalibration`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case colorCalibration
+```
+
+Color matrices and the as-shot white balance.
+
+## `LockedMetadataItem/colorFilterPattern`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case colorFilterPattern
+```
+
+The color filter pattern: which pixels are red, green and blue.
+
+## `LockedMetadataItem/colorProfile`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case colorProfile
+```
+
+The color profile of HEIF and JPEG files.
+
+## `LockedMetadataItem/dngVersion`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case dngVersion
+```
+
+The DNG version.
+
+## `LockedMetadataItem/imageLayout`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case imageLayout
+```
+
+Image size, bit depth, compression and data layout.
+
+## `LockedMetadataItem/orientation`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+case orientation
+```
+
+Orientation.
+
 ## `ManualCapabilities`
 
 public, declared in `Sources/NopeCore/ManualCapabilities.swift`
@@ -3749,40 +3833,6 @@ camera's reading. In the control's unit (see ``ManualControlIntent/setValue(_:_:
 
 - Parameter control: A control.
 - Returns: The value, or `nil` before the first reading.
-
-## `ManualControlsSetting`
-
-public, declared in `Sources/NopeCore/ManualControlsSetting.swift`
-
-```swift
-enum ManualControlsSetting
-```
-
-The "Manual controls" option: where it is stored and its default.
-
-The Settings screen stores the switch in `UserDefaults` under ``userDefaultsKey``; the app
-target reads it and sends ``ManualControlIntent/setEnabled(_:)``. It is off by default: full
-auto, with manual controls hidden (AGENTS.md, "Manual controls stay hidden unless turned on").
-
-## `ManualControlsSetting/defaultValue`
-
-public, declared in `Sources/NopeCore/ManualControlsSetting.swift`
-
-```swift
-static let defaultValue: Bool
-```
-
-The option's default: off.
-
-## `ManualControlsSetting/userDefaultsKey`
-
-public, declared in `Sources/NopeCore/ManualControlsSetting.swift`
-
-```swift
-static let userDefaultsKey: String
-```
-
-The `UserDefaults` key of the option.
 
 ## `ManualSettings`
 
@@ -4948,6 +4998,20 @@ case exposureSettings
 
 The exposure settings: shutter speed, ISO, aperture, focal length and related EXIF tags.
 
+## `MetadataItem/isOfferedInSettings`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+var isOfferedInSettings: Bool { get }
+```
+
+Whether settings offer a switch for the item yet.
+
+Location needs its own explanation and the system location prompt, and the name and
+copyright need text entry; neither flow is built, so those switches aren't shown and the
+items stay off. Interfaces show a switch only where this is `true`.
+
 ## `MetadataItem/isOnWhenCustomizing`
 
 public, declared in `Sources/NopeCore/MetadataSettings.swift`
@@ -5012,6 +5076,16 @@ case nameAndCopyright
 
 The photographer's name and copyright notice, written only when the person enters them
 (``MetadataSettings/ownerName`` and ``MetadataSettings/copyrightNotice``).
+
+## `MetadataItem/offeredInSettings`
+
+public, declared in `Sources/NopeCore/MetadataSettingsPresentation.swift`
+
+```swift
+static var offeredInSettings: [MetadataItem] { get }
+```
+
+The items whose switches settings show, in display order.
 
 ## `MetadataItem/subSecondTime`
 
@@ -5786,6 +5860,331 @@ case wholeFrame
 ```
 
 The whole frame.
+
+## `NopeSettings`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor final class NopeSettings
+```
+
+The person's settings, stored on the device: what each photo saves (``SaveSettings``: formats,
+metadata and signing) and the camera screen options.
+
+Every interface reads the same object and changes it only through its methods, which apply
+the rules of ``SaveSettings`` and ``MetadataSettings`` (at least one format, the metadata
+master switch). Each change is saved at once. The app passes ``save`` to
+``CameraModel/saveSettings`` whenever it changes, so the next photo uses it.
+
+Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in the app's own
+`UserDefaults` on the device only. They are never synced through iCloud or sent anywhere.
+
+The model is isolated to the main actor, so an interface can read its properties directly.
+
+```swift
+let settings = NopeSettings(defaults: .standard)
+settings.setFormat(.jpeg, isSelected: true)
+settings.setSignsPhotos(false)
+model.saveSettings = settings.save
+```
+
+## `NopeSettings/Key`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+enum Key
+```
+
+The `UserDefaults` keys.
+
+## `NopeSettings/Key/legacyManualControls`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let legacyManualControls: String
+```
+
+The key the "Manual controls" option used before `NopeSettings`, migrated once.
+
+## `NopeSettings/Key/save`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let save: String
+```
+
+The save settings, as JSON-encoded ``SaveSettings``.
+
+## `NopeSettings/Key/showsManualControls`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let showsManualControls: String
+```
+
+Whether the manual controls are shown, a Boolean.
+
+## `NopeSettings/Key/startsInCleanView`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let startsInCleanView: String
+```
+
+Whether the camera starts in clean view, a Boolean.
+
+## `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func canTurnOff(_ format: PhotoFormat, deviceSupportsBayerRAW: Bool) -> Bool
+```
+
+Whether the person can turn a selected format off.
+
+Every photo needs at least one format the device can save, so the last one can't be
+turned off.
+
+- Parameters:
+  - format: A selected format.
+  - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+- Returns: `false` when the format is the only one left that the device can save.
+
+## `NopeSettings/developedLook`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var developedLook: DevelopedLook { get }
+```
+
+How the HEIF and JPEG copies are developed from the RAW. ``DevelopedLook/standard`` by
+default. The RAW is never changed by it.
+
+## `NopeSettings/formats`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var formats: Set<PhotoFormat> { get }
+```
+
+The formats each photo is saved in. Never empty; RAW and HEIF by default.
+
+## `NopeSettings/init(defaults:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor init(defaults: UserDefaults)
+```
+
+Loads the settings, using the default for any value not stored yet or not readable.
+
+Unreadable save settings fall back to ``SaveSettings/init()``, which removes every
+optional detail and signs: the most private choice (AGENTS.md, "Fail closed").
+
+- Parameter defaults: The store to read and write, normally `UserDefaults.standard`.
+  Tests pass a store of their own.
+
+## `NopeSettings/isAvailable(_:deviceSupportsBayerRAW:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor static func isAvailable(_ format: PhotoFormat, deviceSupportsBayerRAW: Bool) -> Bool
+```
+
+Whether a format can be chosen on a device.
+
+- Parameters:
+  - format: A format.
+  - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW
+    (``DeviceCapabilities/supportsBayerRAW``).
+- Returns: `false` only for RAW on a device without Bayer RAW.
+
+## `NopeSettings/metadata`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var metadata: MetadataSettings { get }
+```
+
+Which optional metadata items each file carries. The default removes them all.
+
+## `NopeSettings/orderedFormats`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var orderedFormats: [PhotoFormat] { get }
+```
+
+The selected formats in display order: RAW, HEIF, JPEG.
+
+## `NopeSettings/save`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var save: SaveSettings { get set }
+```
+
+What each photo saves: formats, the HEIF and JPEG look, metadata and the signature switch.
+
+## `NopeSettings/savesDevelopedFormat`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var savesDevelopedFormat: Bool { get }
+```
+
+Whether any selected format is developed by nope. from the RAW (HEIF or JPEG).
+
+## `NopeSettings/selectedFormats(deviceSupportsBayerRAW:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func selectedFormats(deviceSupportsBayerRAW: Bool) -> [PhotoFormat]
+```
+
+The selected formats the device can save, in display order.
+
+- Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+- Returns: ``orderedFormats`` without RAW on a device that has none.
+
+## `NopeSettings/setDevelopedLook(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setDevelopedLook(_ look: DevelopedLook)
+```
+
+Sets how the HEIF and JPEG copies are developed, and saves the change.
+
+- Parameter look: The look.
+
+## `NopeSettings/setFormat(_:isSelected:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@discardableResult @MainActor func setFormat(_ format: PhotoFormat, isSelected: Bool) -> Bool
+```
+
+Turns a format on or off, and saves the change.
+
+- Parameters:
+  - format: The format to change.
+  - isSelected: Whether photos should be saved in the format.
+- Returns: `false`, changing nothing, when the change would leave no format selected.
+  Interfaces also check ``canTurnOff(_:deviceSupportsBayerRAW:)`` first.
+
+## `NopeSettings/setMetadataItem(_:isIncluded:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setMetadataItem(_ item: MetadataItem, isIncluded: Bool)
+```
+
+Turns one metadata item on or off, and saves the change.
+
+- Parameters:
+  - item: The item. See ``MetadataSettings/set(_:isOn:)``.
+  - isIncluded: Whether files should carry the item.
+
+## `NopeSettings/setRemovesAllOptionalDetails(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setRemovesAllOptionalDetails(_ isOn: Bool)
+```
+
+Turns the metadata master switch on or off, and saves the change.
+
+- Parameter isOn: See ``MetadataSettings/setRemovesAllOptionalDetails(_:)``.
+
+## `NopeSettings/setShowsManualControls(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setShowsManualControls(_ isOn: Bool)
+```
+
+Shows or hides the manual controls on the camera screen, and saves the change.
+
+- Parameter isOn: Whether the manual controls are shown.
+
+## `NopeSettings/setSignsPhotos(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setSignsPhotos(_ isOn: Bool)
+```
+
+Turns signing on or off, and saves the change.
+
+- Parameter isOn: Whether each photo is signed.
+
+## `NopeSettings/setStartsInCleanView(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setStartsInCleanView(_ isOn: Bool)
+```
+
+Sets whether the camera screen starts in clean view, and saves the change.
+
+- Parameter isOn: Whether the camera starts in clean view.
+
+## `NopeSettings/showsManualControls`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var showsManualControls: Bool { get set }
+```
+
+Whether the camera screen shows the manual controls. Off by default, so the camera stays
+simple unless the person asks (AGENTS.md, "Cognitive").
+
+## `NopeSettings/signsPhotos`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var signsPhotos: Bool { get }
+```
+
+Whether each photo is signed with Content Credentials. On by default, and separate from
+the metadata master switch (`docs/PRIVACY.md`, "Metadata plan").
+
+## `NopeSettings/startsInCleanView`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var startsInCleanView: Bool { get set }
+```
+
+Whether the camera screen starts in clean view, with only the viewfinder, the shutter
+and honesty warnings. Off by default.
 
 ## `PhotoDeveloping`
 

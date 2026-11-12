@@ -52,6 +52,7 @@ Related documentation in the repository:
 - ``CameraPermission``
 - ``PhotoFormat``
 
+
 ### Capture
 
 - ``CaptureFormat``
@@ -60,10 +61,12 @@ Related documentation in the repository:
 
 ### Settings
 
+- ``NopeSettings``
 - ``SaveSettings``
 - ``DevelopedLook``
 - ``MetadataSettings``
 - ``MetadataItem``
+- ``LockedMetadataItem``
 
 ### Saving
 
@@ -94,7 +97,6 @@ Related documentation in the repository:
 
 - ``ManualControlsModel``
 - ``ManualControlIntent``
-- ``ManualControlsSetting``
 - ``ManualControl``
 - ``ControlAvailability``
 - ``ControlScale``

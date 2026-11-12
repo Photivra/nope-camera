@@ -22,11 +22,11 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem` | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `PerPhotoSigner`, which uses a fresh key for every photo | `NopeCore`, CryptoKit, C2PA |
-| `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status) | `NopeCore`, SwiftUI |
+| `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status, Settings button) and `SettingsScreen` (formats, privacy and signing, manual controls, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, no signer yet) into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
@@ -77,9 +77,10 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
 
 ### Manual controls
 
-Manual controls are off by default. The "Manual controls" option is stored in `UserDefaults`
-under `ManualControlsSetting.userDefaultsKey`; the app target sends
-`.manual(.setEnabled(_:))` when it changes.
+Manual controls are off by default. The "Manual controls" option is
+`NopeSettings.showsManualControls`; the app target sends `.manual(.setEnabled(_:))` when it
+changes. "Start in clean view" (`NopeSettings.startsInCleanView`) sends `.setCleanView(_:)`
+when the camera opens and when the option changes.
 
 ```
  NopeUI ── .manual(ManualControlIntent) ──▶ CameraModel.manual (ManualControlsModel)
@@ -119,7 +120,7 @@ under `ManualControlsSetting.userDefaultsKey`; the app target sends
 `NopeUI` may import only `NopeCore` and SwiftUI, and `NopeCapture` may not import UIKit, so the
 preview crosses the layers as an opaque `CameraPreviewSource`. The AVFoundation backend's source
 is a `CaptureSessionPreviewSource`; the app target's `Viewfinder` view turns it into an
-`AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:viewfinder:)`. The app also
+`AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:settings:viewfinder:)`. The app also
 attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control take a
 photo.
 
@@ -169,6 +170,31 @@ each is on the allowlist only where it holds nothing beyond what the switches al
 
 Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
 
+## Settings
+
+`NopeSettings` (in `NopeCore`, main actor, Observation) holds the person's choices:
+`SaveSettings` (the formats, at least one, RAW and HEIF by default; `MetadataSettings`, with the
+master switch "Remove all optional details", on by default, one switch per optional item, as in
+[`PRIVACY.md`](PRIVACY.md), "Metadata plan", and signing, on by default; and the HEIF and JPEG
+look, `DevelopedLook`, standard by default, or flat, which never changes the RAW), manual
+controls (off) and clean view (off). Interfaces change it only through its methods, which hold the rules (the
+last format can't be turned off; turning on one item turns the master switch off). Each change
+is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
+network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
+Settings button opens `SettingsScreen` as a sheet in every camera state.
+
+The app passes `NopeSettings.save` to `CameraModel.saveSettings` whenever it changes, so the
+next photo uses it. Location and the
+name and copyright have no switch yet (`MetadataItem.isOfferedInSettings`): their flows (the
+location prompt, text entry) aren't built, so they stay off. Clean view is stored but not
+shown in Settings until the camera screen supports it.
+
+The Honesty screen and About are static: every Honesty statement comes from
+[`research/privacy-claims.md`](research/privacy-claims.md), and About shows bundled copies of
+`LICENSE` and `NOTICE` (a unit test keeps them identical) with the source address as a link.
+Tapping it hands the `https` address to the system browser; nope. makes no network request,
+registers no URL scheme and opens no system setting.
+
 ## The simulated backend
 
 Tests and previews use `SimulatedCaptureBackend`. Debug builds launched with
@@ -177,8 +203,9 @@ Simulator (docs/TESTING.md). Release builds always use `AVFoundationCaptureBacke
 
 ## Appearance
 
-The camera screen uses the dark appearance (`preferredColorScheme(.dark)`). Settings and other
-screens, when they exist, follow the system appearance; their UI tests will cover both.
+The camera screen uses the dark appearance (`preferredColorScheme(.dark)`). The settings sheet
+is presented from it and inherits the dark appearance for now; following the system appearance
+in the sheet is a follow-up.
 
 ## Signing and secrets
 

@@ -18,9 +18,8 @@ struct NopeApp: App {
     /// The camera model shared by the app's single scene.
     @State private var model = CameraModel(backend: Self.backend, saver: Self.makeSaver())
 
-    /// The "Manual controls" option from Settings; off by default.
-    @AppStorage(ManualControlsSetting.userDefaultsKey) private var manualControlsEnabled =
-        ManualControlsSetting.defaultValue
+    /// The person's settings, stored on the device only.
+    @State private var settings = NopeSettings(defaults: Self.makeSettingsStore())
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -55,16 +54,35 @@ struct NopeApp: App {
     /// (AVKit, iOS 18), on release of the button, as the system Camera app does. The system
     /// delivers these events only while a capture session runs.
     private var cameraScreen: some View {
-        CameraScreen(model: model) { source in
+        CameraScreen(model: model, settings: settings) { source in
             Viewfinder(source: source)
         }
         .onCameraCaptureEvent { event in
             guard event.phase == .ended else { return }
             Task { await model.send(.capture) }
         }
-        .task(id: manualControlsEnabled) {
-            await model.send(.manual(.setEnabled(manualControlsEnabled)))
+        // The person's save settings (formats, metadata, signing) apply from the next photo.
+        .onChange(of: settings.save, initial: true) { _, save in
+            model.saveSettings = save
         }
+        // The "Manual controls" option from Settings shows or hides the manual controls.
+        .task(id: settings.showsManualControls) {
+            await model.send(.manual(.setEnabled(settings.showsManualControls)))
+        }
+        // "Start in clean view": applied when the camera opens and whenever the option changes;
+        // the camera's own button still toggles clean view at any time.
+        .task(id: settings.startsInCleanView) {
+            await model.send(.setCleanView(settings.startsInCleanView))
+        }
+    }
+
+    /// Where settings are stored: the app's standard `UserDefaults`, or in Debug builds launched
+    /// by the UI tests, an empty store of their own, so every test starts from the defaults.
+    private static func makeSettingsStore() -> UserDefaults {
+        #if DEBUG
+        if let store = SimulatedCameraLaunch.settingsStore() { return store }
+        #endif
+        return .standard
     }
 
     /// The save pipeline for this launch: simulated steps for a UI test scenario in Debug builds,

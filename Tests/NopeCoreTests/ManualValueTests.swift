@@ -59,11 +59,6 @@ struct ManualSettingsTests {
         #expect(reading.aperture == 1.5)
         #expect(reading.whiteBalance == WhiteBalance(temperature: 4000, tint: 10))
     }
-
-    @Test func settingKeyAndDefault() {
-        #expect(ManualControlsSetting.userDefaultsKey == "manualControlsEnabled")
-        #expect(ManualControlsSetting.defaultValue == false)
-    }
 }
 
 struct WhiteBalanceTests {

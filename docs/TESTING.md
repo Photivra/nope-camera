@@ -108,7 +108,12 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `captureFails` | The capture failure message |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off and no-camera screens |
-| `manual` (with `-manualControlsEnabled YES`) | Manual controls: hidden without the option; the six slots; a panel with the lens's range; Manual and "All Auto"; P/S/I/M; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; interval progress and Stop; clean view; the list at the largest text size; right-to-left |
+| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Privacy (top and bottom), Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG look picker (shown only with HEIF or JPEG selected) and the privacy rules (master switch on by default, one item on makes it "Custom", signing on, locked items read "Locked") |
+
+UI test launches store settings in their own `UserDefaults` suite, emptied at each launch
+(`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
+settings are never touched.
+| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the six slots; a panel with the lens's range; Manual and "All Auto"; P/S/I/M; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; interval progress and Stop; clean view; the list at the largest text size; right-to-left |
 | `allow` (clean view) | The no-RAW badge stays visible in clean view |
 
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
