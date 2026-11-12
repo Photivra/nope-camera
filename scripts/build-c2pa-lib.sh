@@ -101,5 +101,7 @@ find "$out/C2PAC.xcframework" -exec touch -h -t 200001010000 {} +
 rm -f "$work/C2PAC.xcframework.zip"
 (cd "$out" && find C2PAC.xcframework -print | LC_ALL=C sort | zip -q -X -@ "$work/C2PAC.xcframework.zip")
 
+# Per-file hashes, to compare two builds when their checksums differ.
+(cd "$out" && find C2PAC.xcframework -type f | LC_ALL=C sort | xargs shasum -a 256)
 echo "==> $work/C2PAC.xcframework.zip"
 swift package compute-checksum "$work/C2PAC.xcframework.zip"

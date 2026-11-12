@@ -62,6 +62,13 @@ jobs:
           pinned=$(grep -oE 'checksum: "[0-9a-f]{64}"' Package.swift | grep -oE '[0-9a-f]{64}')
           echo "built:  $actual"; echo "pinned: $pinned"
           [[ "$actual" == "$pinned" ]]
+      - name: Upload the build for inspection when its checksum differs from the pin
+        if: failure() && steps.cache.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: C2PAC.xcframework-unverified
+          path: c2pa-lib-work/C2PAC.xcframework.zip
+          retention-days: 7
       - name: No networking code in the library
         run: |
           mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../c2pa-lib-work/C2PAC.xcframework.zip)
