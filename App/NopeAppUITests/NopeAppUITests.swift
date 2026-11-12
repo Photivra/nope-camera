@@ -191,7 +191,9 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testExposureModesAndFixedAperture() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
-        let manual = app.segmentedControls["exposure-mode"].buttons["Manual"]
+        XCTAssertTrue(app.buttons["Shutter"].waitForExistence(timeout: 20))
+        // The only "Manual" button while no panel is open: the M segment of the mode picker.
+        let manual = app.buttons["Manual"].firstMatch
         XCTAssertTrue(manual.waitForExistence(timeout: 10))
         manual.tap()
         XCTAssertTrue(hasValue(app.buttons["Shutter"], startingWith: "Manual"))
