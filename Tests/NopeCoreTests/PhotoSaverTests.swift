@@ -230,9 +230,12 @@ struct PhotoSaverTests {
         let photo = CapturedPhoto(
             data: data, format: .processedFallback(fallback), lensID: "tele", dimensions: PhotoDimensions(width: 4, height: 3),
             exposureDuration: nil, iso: nil)
-        let saved = try await Self.saver(library: FakeLibrary()).save(photo, settings: SaveSettings())
+        let library = FakeLibrary()
+        let saved = try await Self.saver(library: library).save(photo, settings: SaveSettings())
         #expect(saved.formats == [format])
         #expect(saved.isProcessedFallback)
+        // The signer is told the phone processed this file, so its manifest says so.
+        #expect(await library.added.first?.first?.primary.isProcessedByDevice == true)
     }
 
     @Test func planUsesTheAppVersion() {
@@ -243,6 +246,7 @@ struct PhotoSaverTests {
 
     @Test func assetsPairRAWWithHEIFFirstThenJPEG() {
         let raw = PhotoFile(format: .raw, data: Data([1]))
+        #expect(!raw.isProcessedByDevice)
         let heif = PhotoFile(format: .heif, data: Data([2]))
         let jpeg = PhotoFile(format: .jpeg, data: Data([3]))
         #expect(PhotoLibraryAsset.assets(for: [raw, jpeg]) == [PhotoLibraryAsset(primary: raw, alternate: jpeg)])

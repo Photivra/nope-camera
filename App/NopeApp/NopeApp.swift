@@ -2,6 +2,7 @@ import AVKit
 import NopeCapture
 import NopeCore
 import NopeDevelop
+import NopeSigning
 import NopeUI
 import SwiftUI
 
@@ -88,15 +89,19 @@ struct NopeApp: App {
     /// The save pipeline for this launch: simulated steps for a UI test scenario in Debug builds,
     /// otherwise the RAW developer, the ImageIO read-back and add-only PhotoKit.
     ///
-    /// No signer is passed yet: signing lands in a later change, and until then every photo is
-    /// saved unsigned and the status says so (`SignatureStatus.UnsignedReason.unavailable`).
+    /// Every file is signed with Content Credentials when the signature switch is on: a new
+    /// Secure Enclave key per file on a device (`platformKeyProvider()`), fully offline. If
+    /// signing fails, the photo is saved unsigned and the status says so.
     private static func makeSaver() -> PhotoSaver {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         #if DEBUG
         if let saver = SimulatedCameraLaunch.saver(appVersion: version) { return saver }
         #endif
         return PhotoSaver(
-            developer: RAWDeveloper(), signer: nil, reader: ImageIOReadBack(), library: PhotoKitLibrary(),
+            developer: RAWDeveloper(),
+            signer: ContentCredentialsSigner(
+                keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
+            reader: ImageIOReadBack(), library: PhotoKitLibrary(),
             appVersion: version)
     }
 

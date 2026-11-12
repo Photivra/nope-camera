@@ -1,0 +1,52 @@
+# License review of every Rust crate compiled into the network-free C2PA library
+# (scripts/check-c2pa-lib-licenses.sh). Only licenses compatible with GPL-3.0-only are allowed
+# (AGENTS.md, "Third-party licenses"); a crate under any other license fails the check.
+# Adding a license is a reviewed decision.
+
+[graph]
+targets = ["aarch64-apple-ios", "aarch64-apple-ios-sim", "x86_64-apple-ios"]
+no-default-features = true
+features = ["rust_native_crypto", "file_io"]
+exclude-dev = true
+
+[licenses]
+confidence-threshold = 0.93
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "BSL-1.0",
+    "CC0-1.0",
+    "Unlicense",
+    "Unicode-3.0",
+    "MPL-2.0",
+]
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+# Network crates must never be compiled in (c2pa-lib/README.md).
+deny = [
+    { crate = "reqwest" },
+    { crate = "hyper" },
+    { crate = "hyper-util" },
+    { crate = "h2" },
+    { crate = "rustls" },
+    { crate = "native-tls" },
+    { crate = "ureq" },
+    { crate = "mio" },
+    { crate = "socket2" },
+    { crate = "webpki-roots" },
+]
+
+[advisories]
+# Advisories need the online RustSec database; they are checked separately, not in this
+# offline license review.

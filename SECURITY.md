@@ -20,6 +20,9 @@ Out of scope:
 - behavior of the operating system, the Photos app or cloud services, which are outside the app's control (see the app's Honesty screen);
 - third-party forks.
 
+Expected behavior, not a vulnerability:
+- C2PA validators report nope.'s signatures as coming from an untrusted or unknown signer. Each file is signed with a new, anonymous key and a certificate that key issues to itself, not chained to any certificate authority (`docs/PRIVACY.md`, "Content Credentials"). The signature proves the file is unchanged, not who took it, and anyone can create a similar anonymous signature.
+
 ## Supported versions
 
 Security fixes go into the latest released version. There is no release yet.

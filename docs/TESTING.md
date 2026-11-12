@@ -41,7 +41,7 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
-| `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave | On-device check |
+| `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
 | `Sources/NopeCapture/PhotoKitLibrary.swift` | Asking for add-only access shows a system prompt, and adding changes the person's library | On-device check |
 | `Sources/NopeDevelop/CoreImageRAWRenderer.swift` | Core Image's RAW filter needs a real Bayer DNG; ImageIO and Core Image don't decode a hand-built one | On-device check |
 
@@ -100,9 +100,10 @@ each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Saved. Not signed: this development version can't sign photos yet."; the telephoto (no RAW) shows the fallback badge |
+| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) shows the fallback badge |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
 | `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" message |
+| `signingFails` | The signer fails: the photo is saved unsigned, "Saved. Not signed: the signature couldn't be created.", shutter still enabled |
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure message |
@@ -152,10 +153,12 @@ iPad:
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
-- a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`);
+- a Secure Enclave key signs and verifies (`SecureEnclaveSigningKey`), and a DNG, HEIF and JPEG
+  saved on the device validate with c2patool (below) as `Valid` with only
+  `signingCredential.untrusted` failing;
 - capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
   viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
-  a photo and show "Saved. Not signed: this development version can't sign photos yet."; a lens
+  a photo and show "Saved and signed."; a lens
   without Bayer RAW shows the fallback badge; a phone call or another camera app shows the interruption message, and
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
 - saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
@@ -198,6 +201,50 @@ lens without RAW, in the fallback:
   buttons, Camera Control) still works with manual controls on and in clean view.
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
+
+## The C2PA library and the networking check
+
+`NopeSigning` links the C2PA library built from source with every network feature off
+(`c2pa-lib/README.md`). SwiftPM downloads the published, checksummed build. To build it yourself
+and test against your build, which is what CI does on every pull request:
+
+```sh
+scripts/build-c2pa-lib.sh build/c2pa-lib-work      # needs rustup; prints the checksum
+mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../c2pa-lib-work/C2PAC.xcframework.zip)
+export NOPE_C2PA_LIB_FROM_SOURCE=1                  # then run any xcodebuild command below
+scripts/check-c2pa-lib-licenses.sh build/c2pa-lib-work
+scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
+```
+
+CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
+and runs `scripts/check-no-networking.sh` on both, with no exceptions.
+
+## Checking signatures
+
+The unit tests in `Tests/NopeSigningTests` sign synthetic DNG, HEIF and JPEG files with a
+software key and validate them with the C2PA library's reader, offline: the hash binding and
+claim signature are valid, the only failure is `signingCredential.untrusted`, and a one-bit
+change in the image data or in the claim makes the file invalid. They also check that signing
+adds only the Content Credentials store (`docs/PRIVACY.md`, "Content Credentials").
+
+To check a signed file by hand, use [c2patool](https://github.com/contentauth/c2patool) on a Mac
+(a local tool only; it isn't a project dependency):
+
+```sh
+c2patool photo.dng             # the manifest and its validation report
+c2patool photo.dng --detailed  # also the claim and the hash exclusions
+```
+
+Expect `"validation_state": "Valid"`, with `signingCredential.untrusted` as the only failure.
+The anonymous per-photo certificate isn't on any trust list; that is by design.
+
+The software key is compiled only for the Simulator. To confirm it isn't in a device build:
+
+```sh
+xcodebuild build -scheme NopeKit-Package -destination 'generic/platform=iOS' \
+  -configuration Release -derivedDataPath DerivedData-device CODE_SIGNING_ALLOWED=NO
+nm "$(find DerivedData-device/Build/Products/Release-iphoneos -name NopeSigning.o)" | grep -c Simulator   # 0
+```
 
 ## Tag check (metadata dump from a real device)
 

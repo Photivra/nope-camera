@@ -25,9 +25,9 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
 | `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem` | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
-| `NopeSigning` | C2PA signing. Now: `PerPhotoSigner`, which uses a fresh key for every photo | `NopeCore`, CryptoKit, C2PA |
+| `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status, Settings button) and `SettingsScreen` (formats, privacy and signing, manual controls, Honesty, About and licenses) | `NopeCore`, SwiftUI |
-| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, no signer yet) into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
+| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -170,6 +170,31 @@ each is on the allowlist only where it holds nothing beyond what the switches al
 
 Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
 
+### Signing
+
+`NopeCore` defines the signing hook, `PhotoSigning.sign(_:)`, which takes and returns a
+`PhotoFile` (its format, bytes, and whether the phone's camera processed it). `PhotoSaver` builds
+each file's metadata, then, when `MetadataSettings.signsPhotos` is on, calls the signer, then
+reads the signed file back against `MetadataPlan.allowlist(for:signed:)`, which permits the
+Content Credentials item of a signed file and nothing else, then saves it. If signing fails, the
+file is saved unsigned and the status says so. `NopeSigning` implements the hook:
+
+```
+ ContentCredentialsSigner (PhotoSigning)
+   ├─ SigningKeyProvider: SecureEnclaveKeyProvider on a device (excluded from the coverage gate),
+   │                      SimulatorSoftwareKeyProvider in the Simulator only
+   ├─ SelfIssuedCertificate (swift-certificates): anonymous, non-CA, C2PA EKU, fixed validity
+   ├─ ContentCredentialsManifest: one c2pa.created action, nope. as claim generator
+   ├─ OfflineC2PAContext: every fetch off, no network host
+   └─ InMemoryFile and InMemoryStream: the C2PA library reads and writes memory, never a file
+```
+
+The C2PA library is c2pa-rs built from source with every network feature off
+(`c2pa-lib/README.md`), and its Swift wrapper is vendored without its networking code
+(`Vendor/c2pa-swift`). Details and the exact contents are in [`PRIVACY.md`](PRIVACY.md),
+"Content Credentials".
+
+
 ## Settings
 
 `NopeSettings` (in `NopeCore`, main actor, Observation) holds the person's choices:
@@ -186,8 +211,7 @@ Settings button opens `SettingsScreen` as a sheet in every camera state.
 The app passes `NopeSettings.save` to `CameraModel.saveSettings` whenever it changes, so the
 next photo uses it. Location and the
 name and copyright have no switch yet (`MetadataItem.isOfferedInSettings`): their flows (the
-location prompt, text entry) aren't built, so they stay off. Clean view is stored but not
-shown in Settings until the camera screen supports it.
+location prompt, text entry) aren't built, so they stay off.
 
 The Honesty screen and About are static: every Honesty statement comes from
 [`research/privacy-claims.md`](research/privacy-claims.md), and About shows bundled copies of

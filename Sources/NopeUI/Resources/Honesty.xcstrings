@@ -4159,68 +4159,68 @@
         }
       }
     },
-    "Saved. Not signed: this development version can't sign photos yet.": {
-      "comment": "Shown after a photo was saved without a Content Credentials signature because signing isn't built into this development version yet. Honesty wording: never imply the photo is signed.",
+    "Saved. Not signed: this version of the app can't sign photos.": {
+      "comment": "Shown after a photo was saved without a Content Credentials signature because this build of the app has no signer, for example a preview or a different interface built on NopeCore. Honesty wording: never imply the photo is signed.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Gesichert. Nicht signiert: Diese Entwicklungsversion kann Fotos noch nicht signieren."
+            "value": "Gesichert. Nicht signiert: Diese Version der App kann keine Fotos signieren."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Guardada. Sin firmar: esta versión de desarrollo aún no puede firmar fotos."
+            "value": "Guardada. Sin firmar: esta versión de la app no puede firmar fotos."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Enregistrée. Non signée : cette version de développement ne peut pas encore signer les photos."
+            "value": "Enregistrée. Non signée : cette version de l’app ne peut pas signer les photos."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Salvata. Non firmata: questa versione di sviluppo non può ancora firmare le foto."
+            "value": "Salvata. Non firmata: questa versione dell’app non può firmare le foto."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "保存しました。署名なし：この開発版はまだ写真に署名できません。"
+            "value": "保存しました。署名なし：このバージョンのアプリは写真に署名できません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "저장됨. 서명되지 않음: 이 개발 버전은 아직 사진에 서명할 수 없습니다."
+            "value": "저장됨. 서명되지 않음: 이 버전의 앱은 사진에 서명할 수 없습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Bewaard. Niet ondertekend: deze ontwikkelversie kan nog geen foto’s ondertekenen."
+            "value": "Bewaard. Niet ondertekend: deze versie van de app kan geen foto’s ondertekenen."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Salva. Não assinada: esta versão de desenvolvimento ainda não pode assinar fotos."
+            "value": "Salva. Não assinada: esta versão do app não pode assinar fotos."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "已存储。未签名：此开发版本尚无法为照片签名。"
+            "value": "已存储。未签名：此版本的 App 无法为照片签名。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "已儲存。未簽署：此開發版本尚無法簽署照片。"
+            "value": "已儲存。未簽署：此版本的 App 無法簽署照片。"
           }
         }
       }
