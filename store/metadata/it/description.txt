@@ -1,0 +1,25 @@
+nope. scatta foto con la minima elaborazione consentita dal tuo telefono, firma ciascuna e non conserva nulla che ti tracci. Aprila e scatta: non c'è niente da configurare.
+
+LA MINIMA ELABORAZIONE CONSENTITA DAL TUO TELEFONO
+• Ogni foto è un RAW Bayer a fotogramma singolo (DNG). nope. non usa mai ProRAW e non unisce mai più fotogrammi.
+• Se un obiettivo non può salvare RAW non elaborati, nope. te lo dice prima dello scatto e lo indica sulla foto.
+• Puoi salvare anche in HEIF o JPEG, sviluppati da nope. dallo stesso RAW, senza riduzione del rumore, nitidezza o mappatura dei toni locale.
+
+NIENTE TI TRACCIA
+• nope. non contiene codice di rete e non effettua connessioni di rete. Niente analisi, niente pubblicità, niente account.
+• Verificalo tu stesso con il Resoconto privacy app in Impostazioni: nope. non dovrebbe mostrare alcun dominio.
+• I dettagli facoltativi, come fuso orario, versione di iOS e note del produttore, sono rimossi per impostazione predefinita. Sei tu a scegliere cosa conserva ogni foto.
+• La posizione è disattivata per impostazione predefinita.
+• nope. può solo aggiungere foto alla tua libreria. iOS non le permette di vedere le foto che hai già.
+
+FIRMATE
+• Ogni foto contiene Content Credentials, firmate ogni volta con una nuova chiave, così le firme non possono collegare le tue foto tra loro.
+• La firma mostra se il file è stato modificato dopo che nope. lo ha salvato. Non prova chi ha scattato la foto.
+
+ONESTA SUI LIMITI
+• La schermata Trasparenza (ⓘ) elenca ogni dettaglio della tua ultima foto, ciò che il telefono può ancora fare al di fuori del controllo di nope. e ciò che nessuna app può rimuovere, come il debole schema di rumore del sensore.
+
+PER TUTTI
+• Funziona con VoiceOver, Controllo vocale e le dimensioni del testo più grandi. I tasti del volume fanno da pulsante di scatto.
+
+Gratuita e open source con licenza GNU GPL, versione 3.

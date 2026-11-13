@@ -1,0 +1,25 @@
+nope. maakt foto's met zo weinig bewerking als je telefoon toelaat, ondertekent elke foto en bewaart niets wat je volgt. Openen en fotograferen: er is niets in te stellen.
+
+ZO WEINIG BEWERKING ALS JE TELEFOON TOELAAT
+• Elke foto is een Bayer-RAW uit één opname (DNG). nope. gebruikt nooit ProRAW en voegt nooit opnamen samen.
+• Als een lens geen onbewerkte RAW kan bewaren, meldt nope. dat vóór de opname en markeert het de foto.
+• Bewaar desgewenst ook HEIF of JPEG, door nope. ontwikkeld uit dezelfde RAW, zonder ruisonderdrukking, verscherping of lokale tonemapping.
+
+NIETS VOLGT JE
+• nope. bevat geen netwerkcode en maakt geen netwerkverbindingen. Geen analyse, geen advertenties, geen accounts.
+• Controleer het zelf met het App-privacyrapport in Instellingen: nope. zou geen domeinen moeten tonen.
+• Optionele details, zoals tijdzone, iOS-versie en fabrikantnotities, worden standaard verwijderd. Jij kiest wat elke foto bewaart.
+• Locatie staat standaard uit.
+• nope. kan alleen foto's aan je bibliotheek toevoegen. iOS laat de app je bestaande foto's niet zien.
+
+ONDERTEKEND
+• Elke foto heeft Content Credentials, elke keer met een nieuwe sleutel ondertekend, zodat handtekeningen je foto's niet aan elkaar kunnen koppelen.
+• De handtekening laat zien of het bestand is gewijzigd sinds nope. het bewaarde. Ze bewijst niet wie de foto heeft gemaakt.
+
+EERLIJK OVER DE GRENZEN
+• Het scherm Transparantie (ⓘ) toont elk detail van je laatste foto, wat je telefoon buiten de controle van nope. nog kan doen, en wat geen enkele app kan verwijderen, zoals het zwakke ruispatroon van de sensor.
+
+VOOR IEDEREEN
+• Werkt met VoiceOver, Stembediening en de grootste tekstgroottes. De volumeknoppen werken als ontspanknop.
+
+Gratis en open source onder de GNU GPL, versie 3.

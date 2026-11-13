@@ -1,0 +1,25 @@
+nope. macht Fotos mit so wenig Verarbeitung, wie dein Telefon zulässt, signiert jedes einzelne und behält nichts, was dich verfolgt. Öffnen und auslösen: Es gibt nichts einzurichten.
+
+SO WENIG VERARBEITUNG, WIE DEIN TELEFON ZULÄSST
+• Jedes Foto ist ein Einzelbild-Bayer-RAW (DNG). nope. verwendet nie ProRAW und fügt nie Bilder zusammen.
+• Kann ein Objektiv kein unverarbeitetes RAW speichern, sagt nope. dir das vor der Aufnahme und kennzeichnet das Foto.
+• Optional speicherst du auch HEIF oder JPEG, von nope. aus demselben RAW entwickelt, ohne Rauschreduzierung, Schärfung oder lokales Tone-Mapping.
+
+NICHTS VERFOLGT DICH
+• nope. enthält keinen Netzwerkcode und baut keine Netzwerkverbindungen auf. Keine Analyse, keine Werbung, keine Konten.
+• Prüfe es selbst mit dem App-Datenschutzbericht in den Einstellungen: nope. sollte keine Domains anzeigen.
+• Optionale Details wie Zeitzone, iOS-Version und Herstellernotizen werden standardmäßig entfernt. Du wählst, was jedes Foto behält.
+• Der Standort ist standardmäßig aus.
+• nope. kann nur Fotos zu deiner Mediathek hinzufügen. iOS lässt die App deine vorhandenen Fotos nicht sehen.
+
+SIGNIERT
+• Jedes Foto trägt Content Credentials, jedes Mal mit einem neuen Schlüssel signiert, sodass Signaturen deine Fotos nicht miteinander verknüpfen können.
+• Die Signatur zeigt, ob die Datei verändert wurde, seit nope. sie gespeichert hat. Sie beweist nicht, wer das Foto gemacht hat.
+
+EHRLICH ÜBER DIE GRENZEN
+• Der Transparenz-Bildschirm (ⓘ) listet jedes Detail deines letzten Fotos auf, was dein Telefon außerhalb der Kontrolle von nope. noch tun kann und was keine App entfernen kann, etwa das schwache Rauschmuster des Sensors.
+
+FÜR ALLE
+• Funktioniert mit VoiceOver, Sprachsteuerung und den größten Textgrößen. Die Lautstärketasten dienen als Auslöser.
+
+Kostenlos und Open Source unter der GNU GPL, Version 3.

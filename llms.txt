@@ -23,6 +23,15 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/BUILDING-AN-INTERFACE.md](docs/BUILDING-AN-INTERFACE.md): how to replace the SwiftUI interface
 - [docs/TESTING.md](docs/TESTING.md): how to run the checks, unit tests, UI tests and documentation build; CI jobs
 - [docs/PRIVACY.md](docs/PRIVACY.md): what the app writes and removes, and the metadata plan
+- [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md): threat model, every pre-release security check with how to run it and pass criteria, and the sign-off checklist
+
+## Store and privacy policy (drafts, need human review)
+
+- [docs/store/README.md](docs/store/README.md): App Store listing drafts, field limits, and the features each claim depends on
+- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in 13 App Store locales (11 languages), one file per field, and its review status
+- [docs/store/app-privacy-label.md](docs/store/app-privacy-label.md): App Store privacy label answers ("Data Not Collected")
+- [docs/store/accessibility-label.md](docs/store/accessibility-label.md): Accessibility Nutrition Label answers and the evidence each needs
+- [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy draft, for the maintainer to publish
 
 ## API (generated from DocC comments)
 

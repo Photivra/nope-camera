@@ -1,0 +1,25 @@
+nope. takes photos with as little processing as your phone allows, signs each one, and keeps nothing that tracks you. Open it and shoot: there's nothing to set up.
+
+AS LITTLE PROCESSING AS YOUR PHONE ALLOWS
+• Each photo is a single-frame Bayer RAW (DNG). nope. never uses ProRAW or merges frames.
+• If a lens can't save unprocessed RAW, nope. tells you before you shoot and labels the photo.
+• You can also save HEIF or JPEG, developed by nope. from the same RAW with no noise reduction, sharpening or local tone mapping.
+
+NOTHING TRACKS YOU
+• nope. contains no networking code and makes no network connections. No analytics, no ads, no accounts.
+• Check it yourself with App Privacy Report in Settings: nope. should list no domains.
+• Optional details, such as the time zone, iOS version and maker notes, are removed by default. You choose what each photo keeps.
+• Location is off by default.
+• nope. can only add photos to your library. iOS doesn't let it see your existing photos.
+
+SIGNED
+• Every photo carries Content Credentials, signed with a new key each time, so signatures can't link your photos together.
+• The signature shows whether the file has changed since nope. saved it. It doesn't prove who took the photo.
+
+HONEST ABOUT THE LIMITS
+• The Honesty screen (ⓘ) lists every detail in your last photo, what your phone may still do outside nope.'s control, and what no app can remove, such as the sensor's faint noise pattern.
+
+FOR EVERYONE
+• Works with VoiceOver, Voice Control and the largest text sizes. The volume buttons work as a shutter.
+
+Free and open source under the GNU GPL, version 3.

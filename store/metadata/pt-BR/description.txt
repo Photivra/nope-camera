@@ -1,0 +1,25 @@
+O nope. tira fotos com o mínimo de processamento que seu celular permite, assina cada uma e não guarda nada que rastreie você. Abra e fotografe: não há nada para configurar.
+
+O MÍNIMO DE PROCESSAMENTO QUE SEU CELULAR PERMITE
+• Cada foto é um RAW Bayer de quadro único (DNG). O nope. nunca usa ProRAW nem combina quadros.
+• Se uma lente não consegue salvar RAW sem processamento, o nope. avisa antes da foto e identifica a foto.
+• Você também pode salvar em HEIF ou JPEG, revelados pelo nope. a partir do mesmo RAW, sem redução de ruído, nitidez ou mapeamento de tons local.
+
+NADA RASTREIA VOCÊ
+• O nope. não contém código de rede e não faz conexões de rede. Sem análises, sem anúncios, sem contas.
+• Confira você mesmo no Relatório de Privacidade de Apps, em Ajustes: o nope. não deve listar nenhum domínio.
+• Detalhes opcionais, como fuso horário, versão do iOS e notas do fabricante, são removidos por padrão. Você escolhe o que cada foto mantém.
+• A localização vem desativada por padrão.
+• O nope. só pode adicionar fotos à sua biblioteca. O iOS não permite que ele veja suas fotos existentes.
+
+ASSINADA
+• Cada foto leva Content Credentials, assinadas com uma chave nova a cada vez, para que as assinaturas não possam ligar suas fotos umas às outras.
+• A assinatura mostra se o arquivo foi alterado desde que o nope. o salvou. Ela não prova quem tirou a foto.
+
+HONESTO SOBRE OS LIMITES
+• A tela de Transparência (ⓘ) lista cada detalhe da sua última foto, o que seu celular ainda pode fazer fora do controle do nope. e o que nenhum app consegue remover, como o leve padrão de ruído do sensor.
+
+PARA TODOS
+• Funciona com VoiceOver, Controle por Voz e os maiores tamanhos de texto. Os botões de volume funcionam como disparador.
+
+Gratuito e de código aberto sob a GNU GPL, versão 3.
