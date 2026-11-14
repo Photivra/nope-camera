@@ -64,10 +64,13 @@ a warning that changes what the photo is.
 `NopeUI`'s camera screen is one interface on this contract, following the approved layout in
 [`design/ux-v3.html`](design/ux-v3.html). If you extend it rather than replace it, add camera
 toggles to `QuickControls.builders`, non-default states to `StatePills.builders` and persistent
-warnings to `CameraWarnings.builders`; the layout places them. The app target supplies three
+warnings to `CameraWarnings.builders`; the layout places them. The app target supplies four
 environment values: `cameraUprightRotation` (which way up the iPhone is held),
-`cameraPresentsSheet` (so the app can rotate sheets while the camera stays in portrait) and
-`openAppSettings` (Open Settings buttons; leave it `nil` and they are hidden).
+`cameraPresentsSheet` (so the app can rotate sheets while the camera stays in portrait),
+`openAppSettings` (Open Settings buttons; leave it `nil` and they are hidden) and
+`openPhotosApp` (the last-photo thumbnail's Open in Photos; leave it `nil` and a tap shows the
+photo's details instead). Each `SavedPhoto` carries its `thumbnail` and `details` for your own
+last-photo view.
 
 ## Rules that still apply
 

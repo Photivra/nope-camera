@@ -1238,4 +1238,110 @@ final class NopeAppUITests: XCTestCase {
         }
         try audit(app)
     }
+
+    // MARK: - Last photo and its details (issues #36, #53)
+
+    /// Takes a photo and opens its details from the thumbnail's long-press menu.
+    @MainActor
+    private func openPhotoDetails(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10), file: file, line: line)
+        shutter.tap()
+        XCTAssertTrue(lastPhoto(app, says: "Saved"), file: file, line: line)
+        let thumbnail = app.buttons["Last Photo"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 5), file: file, line: line)
+        thumbnail.press(forDuration: 1.2)
+        let details = app.buttons["Photo Details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 5), file: file, line: line)
+        XCTAssertTrue(app.buttons["Open in Photos"].exists, file: file, line: line)
+        details.tap()
+        XCTAssertTrue(app.navigationBars["What's in This Photo"].waitForExistence(timeout: 5), file: file, line: line)
+    }
+
+    /// Swipes up in a list until the element exists, at most eight times.
+    @MainActor
+    private func scrollUntilExists(_ app: XCUIApplication, _ element: XCUIElement) -> Bool {
+        for _ in 0..<8 where !element.exists { app.swipeUp() }
+        return element.exists
+    }
+
+    @MainActor
+    func testLastPhotoDetailsListWhatWasSaved() throws {
+        let app = launch("allow")
+        continuePastFirstRun(app)
+        openPhotoDetails(app)
+        XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "RAW (DNG)").exists)
+        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Saved and signed.")))
+        // As for the format sheet (testFormatChipExplainsTheFormat): the list's system section
+        // headers are reported as "partially unsupported" at the default size; the same list is
+        // audited in full at the largest size in testLastPhotoDetailsAtTheLargestTextSize. On
+        // iPad the sheet is a popover, whose section headers the audit reports as low contrast.
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        // First launch: every optional detail is left out, each with its reason.
+        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Off in Settings")))
+        try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Last Photo"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testLastPhotoDetailsAtTheLargestTextSize() throws {
+        let app = launch("signingFails", extraArguments: Self.largestTextSize)
+        openPhotoDetails(app)
+        try audit(app, checksContrast: !isPad)
+        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Not signed")))
+        try audit(app, afterScrolling: true, checksContrast: !isPad)
+    }
+
+    @MainActor
+    func testLastPhotoDetailsRightToLeft() throws {
+        let app = launch("noRAW", extraArguments: Self.rightToLeft)
+        openPhotoDetails(app)
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "this lens can't save RAW")))
+        try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
+    }
+
+    /// A bracket's details show one frame at a time, chosen with the Photo picker.
+    @MainActor
+    func testBracketDetailsChooseEachFrame() throws {
+        let app = launch("manual", extraArguments: Self.manualOn)
+        manualMenu(app, "Pro Tools")
+        let bracketing = app.switches["Bracketing"]
+        XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
+        bracketing.switches.firstMatch.tap()
+        XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 20))
+        closeProTools(app)
+        // Let Pro Tools finish closing, so the shutter takes the tap.
+        settle()
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 30))
+        app.buttons["Last Photo"].press(forDuration: 1.2)
+        let details = app.buttons["Photo Details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        details.tap()
+        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        picker.tap()
+        let second = app.buttons["Photo 2 of 3"]
+        XCTAssertTrue(second.waitForExistence(timeout: 5))
+        second.tap()
+        XCTAssertTrue(element(app, containing: "Photo 2 of 3").waitForExistence(timeout: 5))
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+    }
+
+    /// Tapping the thumbnail opens the Photos app (issue #36).
+    @MainActor
+    func testTappingTheLastPhotoOpensPhotos() throws {
+        let app = launch("allow")
+        continuePastFirstRun(app)
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))
+        try audit(app)
+        app.buttons["Last Photo"].tap()
+        let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
+        XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 15))
+        app.activate()
+    }
 }

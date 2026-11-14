@@ -1503,6 +1503,61 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 The backing's shape.
 
+## `DetailRow`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct DetailRow
+```
+
+A row with a title on the leading side and a value on the trailing side that wraps under it
+at large text sizes.
+
+## `DetailRow/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row.
+
+## `DetailRow/init(title:value:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(title: Text, value: Text)
+```
+
+Creates a row.
+
+- Parameters:
+  - title: The title.
+  - value: The value.
+
+## `DetailRow/title`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The title.
+
+## `DetailRow/value`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let value: Text
+```
+
+The value.
+
 ## `DoneButton`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
@@ -1545,17 +1600,6 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 Creates the button.
 
 - Parameter action: Closes the sheet.
-
-## `EnvironmentValues/cameraGravitySource`
-
-public, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-var cameraGravitySource: (any GravitySource)? { get set }
-```
-
-Where the level's gravity readings come from, or `nil` to hide the level. The app target
-sets it to a Core Motion source; `NopeUI` doesn't import Core Motion.
 
 ## `EnvironmentValues/cameraPresentsSheet`
 
@@ -1604,6 +1648,18 @@ Opens nope.'s page in the Settings app, for the Open Settings buttons (camera ac
 declined, photos access declined). `nil` hides those buttons, so an interface without a
 way to open Settings shows no button that does nothing. The app target sets it with
 `UIApplication.openSettingsURLString`.
+
+## `EnvironmentValues/openPhotosApp`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var openPhotosApp: CameraAction? { get set }
+```
+
+Opens the Photos app, for the last-photo thumbnail (issue #36). `nil` makes a tap on the
+thumbnail show the photo's details instead, and hides Open in Photos. The app target sets
+it; it runs only when the person taps.
 
 ## `FailureAction`
 
@@ -1727,6 +1783,62 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 Takes the photo again.
 
+## `FileDetailsRows`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct FileDetailsRows
+```
+
+One file's rows: its format and size, then its pixel size, bit depth and, for a DNG, the
+color filter pattern, levels and lens corrections.
+
+## `FileDetailsRows/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The rows, as one element per file for VoiceOver.
+
+## `FileDetailsRows/file`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let file: PhotoDetails.File
+```
+
+The file.
+
+## `FileDetailsRows/init(file:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(file: PhotoDetails.File)
+```
+
+Creates the rows.
+
+- Parameter file: The file.
+
+## `FileDetailsRows/levels(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func levels(_ values: [Double]) -> String
+```
+
+Level values as a list, such as "528, 528, 528, 528".
+
+- Parameter values: The values.
+- Returns: The list, in the current language.
+
 ## `FirstRunView`
 
 internal, declared in `Sources/NopeUI/FirstRunView.swift`
@@ -1807,59 +1919,6 @@ static func systemImage(for mode: FlashMode) -> String
 The SF Symbol for a flash mode.
 
 - Parameter mode: The flash mode.
-
-## `FocusPeakingOverlay`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor struct FocusPeakingOverlay
-```
-
-Focus peaking: the in-focus cells of the live preview filled in magenta, a color that stands
-out over most scenes and isn't one of the camera's teal, amber or white meanings.
-
-## `FocusPeakingOverlay/body`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The highlighted cells, drawn as a shape so they add nothing to the accessibility tree.
-
-## `FocusPeakingOverlay/color`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor static let color: Color
-```
-
-The highlight color.
-
-## `FocusPeakingOverlay/init(map:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor init(map: FocusPeakingMap)
-```
-
-Creates the overlay.
-
-- Parameter map: The map of in-focus cells.
-
-## `FocusPeakingOverlay/map`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let map: FocusPeakingMap
-```
-
-The map of in-focus cells.
 
 ## `FormatChip`
 
@@ -2138,221 +2197,6 @@ using the system list format for the current language.
   - deviceSupportsBayerRAW: Whether RAW can be chosen on this device.
 - Returns: The available selected formats, in display order.
 
-## `GridOverlay`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor struct GridOverlay
-```
-
-The grid: thin white lines with a dark outline, so they show over any scene (issue #40).
-
-## `GridOverlay/body`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The lines: a dark outline under a white line, drawn as shapes (not a canvas), so they
-add nothing to the accessibility tree.
-
-## `GridOverlay/init(style:placement:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor init(style: GridStyle, placement: SpiralPlacement)
-```
-
-Creates the grid.
-
-- Parameters:
-  - style: The style.
-  - placement: Where the spiral sits.
-
-## `GridOverlay/lineWidth`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor static let lineWidth: CGFloat
-```
-
-The width of the white line, in points.
-
-## `GridOverlay/outlineWidth`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor static let outlineWidth: CGFloat
-```
-
-The width of the dark outline under it, in points.
-
-## `GridOverlay/path(style:placement:in:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-nonisolated static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path
-```
-
-The grid's lines, or the spiral, at a size.
-
-- Parameters:
-  - style: The style.
-  - placement: The spiral's placement.
-  - size: The picture's size.
-
-## `GridOverlay/placement`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let placement: SpiralPlacement
-```
-
-Where the spiral sits, for `GridStyle/goldenSpiral`.
-
-## `GridOverlay/style`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let style: GridStyle
-```
-
-The style.
-
-## `GridShape`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-struct GridShape
-```
-
-The grid's lines as a shape.
-
-## `GridShape/init(style:placement:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-init(style: GridStyle, placement: SpiralPlacement)
-```
-
-Creates the shape.
-
-- Parameters:
-  - style: The style.
-  - placement: Where the spiral sits.
-
-## `GridShape/path(in:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-func path(in rect: CGRect) -> Path
-```
-
-The lines in a rectangle.
-
-- Parameter rect: The picture's rectangle.
-
-## `GridShape/placement`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-let placement: SpiralPlacement
-```
-
-Where the spiral sits.
-
-## `GridShape/style`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-let style: GridStyle
-```
-
-The style.
-
-## `HistogramText`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-enum HistogramText
-```
-
-The histogram's words for VoiceOver.
-
-## `HistogramText/description(of:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-static func description(of clipping: ClippingState) -> Text
-```
-
-What is clipped, such as "Highlights clipped", or "No clipping".
-
-- Parameter clipping: The clipping.
-
-## `HistogramView`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor struct HistogramView
-```
-
-The live histogram with its clipping indicators: white bars on a dark backing, "Preview"
-under it because it measures the processed preview, not the RAW, and a warning with a symbol
-and words for clipped highlights or shadows (issue #47).
-
-VoiceOver reads it as one element whose value says what is clipped, on request; changes
-aren't announced.
-
-## `HistogramView/body`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The graph, its caption and the clipping warnings.
-
-## `HistogramView/histogram`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor let histogram: Histogram
-```
-
-The histogram.
-
-## `HistogramView/init(histogram:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor init(histogram: Histogram)
-```
-
-Creates the view.
-
-- Parameter histogram: The histogram.
-
 ## `HonestyScreen`
 
 internal, declared in `Sources/NopeUI/HonestyScreen.swift`
@@ -2497,6 +2341,19 @@ internal, declared in `Sources/NopeUI/HonestyScreen.swift`
 ```
 
 The heading.
+
+## `Image/photo(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+static func photo(_ thumbnail: PhotoThumbnail) -> Image?
+```
+
+An image of a photo's thumbnail, made from its RGBA pixels with Core Graphics.
+
+- Parameter thumbnail: The thumbnail.
+- Returns: The image, or `nil` if Core Graphics can't make one.
 
 ## `IntervalProgressView`
 
@@ -2829,524 +2686,6 @@ The name of a kind of lens, such as "Wide".
 
 - Parameter kind: The kind of lens.
 - Returns: The localized name.
-
-## `LevelOverlay`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor struct LevelOverlay
-```
-
-The level (issue #40): a horizon bar that stays on the real horizon and turns solid and
-thicker when the device is level, or, when the device points straight down, a top-down level
-whose inner circle fills when level. A haptic marks the moment it becomes level.
-
-VoiceOver reads the state on request, as the element's value; it isn't announced as it
-changes.
-
-## `LevelOverlay/barShare`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor static let barShare: Double
-```
-
-The horizon bar's length, as a share of the picture's shorter side.
-
-## `LevelOverlay/body`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The level.
-
-## `LevelOverlay/init(state:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor init(state: LevelState?)
-```
-
-Creates the level.
-
-- Parameter state: What the level shows, or `nil` before the first reading.
-
-## `LevelOverlay/maximumOffset`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor static let maximumOffset: CGFloat
-```
-
-The farthest the inner circle moves, in points.
-
-## `LevelOverlay/pointsPerDegree`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor static let pointsPerDegree: CGFloat
-```
-
-How far the top-down level's inner circle moves per degree of tilt, in points.
-
-## `LevelOverlay/state`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let state: LevelState?
-```
-
-What the level shows, or `nil` before the first reading.
-
-## `LevelText`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-enum LevelText
-```
-
-The level's words for VoiceOver.
-
-## `LevelText/degreesText(_:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-static func degreesText(_ degrees: Double) -> String
-```
-
-An angle in whole degrees, such as "3°".
-
-- Parameter degrees: The angle.
-
-## `LevelText/description(of:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-static func description(of state: LevelState?) -> Text
-```
-
-The level's state in words, such as "Tilted 3° clockwise" or "Level".
-
-- Parameter state: The state, or `nil` before the first reading.
-
-## `LiveAidToggles`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor struct LiveAidToggles
-```
-
-The focus peaking, histogram and live camera readout switches, in Settings and in Pro Tools.
-
-## `LiveAidToggles/body`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The switches.
-
-## `LiveAidToggles/init(settings:)`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor init(settings: NopeSettings)
-```
-
-Creates the switches.
-
-- Parameter settings: The settings to show and change.
-
-## `LiveAidToggles/settings`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor let settings: NopeSettings
-```
-
-The settings to show and change.
-
-## `LiveAidsPanel`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor struct LiveAidsPanel
-```
-
-The histogram (issue #47) and the live camera readout (issue #52), each on a dark backing,
-stacked. The camera shows it over the picture's top trailing corner, and below the picture at
-accessibility text sizes. It shows nothing while neither is on.
-
-## `LiveAidsPanel/body`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The histogram and the readout.
-
-## `LiveAidsPanel/init(model:settings:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor init(model: CameraModel, settings: NopeSettings)
-```
-
-Creates the panel.
-
-- Parameters:
-  - model: The camera model.
-  - settings: The person's settings.
-
-## `LiveAidsPanel/model`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor let model: CameraModel
-```
-
-The camera model.
-
-## `LiveAidsPanel/settings`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor let settings: NopeSettings
-```
-
-The person's settings.
-
-## `LiveReadoutText`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor enum LiveReadoutText
-```
-
-The live readout's lines: names and values in words, from what the hardware reports.
-
-## `LiveReadoutText/Row`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-struct Row
-```
-
-One line of the readout.
-
-## `LiveReadoutText/Row/id`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-let id: String
-```
-
-A stable identifier, such as "iso".
-
-## `LiveReadoutText/Row/init(id:name:value:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-init(id: String, name: String, value: String)
-```
-
-Creates a line.
-
-- Parameters:
-  - id: A stable identifier.
-  - name: The value's name.
-  - value: The value.
-
-## `LiveReadoutText/Row/name`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-let name: String
-```
-
-The value's name.
-
-## `LiveReadoutText/Row/value`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-let value: String
-```
-
-The value.
-
-## `LiveReadoutText/biasRow(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func biasRow(_ reading: CameraStatsReading) -> Row
-```
-
-The exposure bias and the meter offset, such as "+0.3 EV / −0.7 EV".
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/exposureRow(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func exposureRow(_ reading: CameraStatsReading) -> Row
-```
-
-Shutter, ISO, aperture and exposure mode, such as "1/120 · ISO 100 · f/1.8 · Auto".
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/fixed(_:fractionLength:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func fixed(_ value: Double, fractionLength: Int = 2) -> String
-```
-
-A number with a fixed number of decimals, such as "1.92".
-
-- Parameters:
-  - value: The number.
-  - fractionLength: The decimals.
-
-## `LiveReadoutText/focusModeName(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func focusModeName(_ reading: CameraStatsReading) -> String
-```
-
-The focus mode, or "Moving" while the lens is moving.
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/focusRow(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func focusRow(_ reading: CameraStatsReading) -> Row
-```
-
-The relative focus position, the focus mode and the near focus limit when it is on.
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/gainsRow(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func gainsRow(_ reading: CameraStatsReading) -> Row
-```
-
-The white balance gains, such as "R 1.92 G 1.00 B 1.71".
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/joined(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func joined(_ values: [String]) -> String
-```
-
-Values on one line, separated by " · ".
-
-- Parameter values: The values.
-
-## `LiveReadoutText/name(of:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func name(of feature: ProcessingFeature) -> String
-```
-
-The short name of a processing feature.
-
-- Parameter feature: The feature.
-
-## `LiveReadoutText/name(of:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func name(of mode: ExposureModeReading) -> String
-```
-
-The name of an exposure mode reading.
-
-- Parameter mode: The mode.
-
-## `LiveReadoutText/name(of:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func name(of pressure: SystemPressureReading) -> String
-```
-
-The name of a pressure level.
-
-- Parameter pressure: The level.
-
-## `LiveReadoutText/processingRow(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func processingRow(_ reading: CameraStatsReading) -> Row
-```
-
-The processing features that are off: "All", or their names.
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/rows(for:lens:format:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func rows(for reading: CameraStatsReading, lens: Lens?, format: CaptureFormat?) -> [Row]
-```
-
-The readout's lines for a reading: several values share a line, separated by " · ", so
-the readout stays small over the picture.
-
-- Parameters:
-  - reading: The hardware's values.
-  - lens: The lens in use, or `nil`.
-  - format: The format of the next photo, or `nil`; its name says whether it is Bayer RAW.
-
-## `LiveReadoutText/signed(_:fractionLength:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func signed(_ value: Double, fractionLength: Int) -> String
-```
-
-A number with its sign, such as "+3".
-
-- Parameters:
-  - value: The number.
-  - fractionLength: The decimals.
-
-## `LiveReadoutText/title`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static var title: Text { get }
-```
-
-The readout's name, "Live Camera Readout".
-
-## `LiveReadoutText/whiteBalanceRow(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func whiteBalanceRow(_ reading: CameraStatsReading) -> Row
-```
-
-The white balance temperature and tint and its mode, such as "5,200 K / +3 · Auto".
-
-- Parameter reading: The hardware's values.
-
-## `LiveReadoutText/zoom(_:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor static func zoom(_ factor: Double) -> String
-```
-
-A zoom factor, such as "1.0×".
-
-- Parameter factor: The zoom factor.
-
-## `LiveReadoutView`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor struct LiveReadoutView
-```
-
-The live camera readout ("stats for nerds", issue #52): one name and value per line, in small
-type with tabular digits, on a dark backing.
-
-VoiceOver reads it as a list on request (each line is one element, name then value); changes
-aren't announced.
-
-## `LiveReadoutView/body`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The lines.
-
-## `LiveReadoutView/init(rows:)`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor init(rows: [LiveReadoutText.Row])
-```
-
-Creates the readout.
-
-- Parameter rows: The lines.
-
-## `LiveReadoutView/rows`
-
-internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
-
-```swift
-@MainActor let rows: [LiveReadoutText.Row]
-```
-
-The lines.
 
 ## `LookSettingsView`
 
@@ -3760,160 +3099,149 @@ static var red: Color { get }
 
 The one color of night mode: pure sRGB red.
 
-## `OverlaySettingsView`
+## `PhotoDetailsSections`
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor struct OverlaySettingsView
+@MainActor struct PhotoDetailsSections
 ```
 
-The viewfinder overlays: grid and its style, level, focus peaking, histogram and live camera
-readout, each its own switch, all off by default (issues #40, #47, #51 and #52). Settings
-links to it from its Camera section.
+The sections of the photo details.
 
-The screen renders `NopeSettings` and changes it only through its methods.
+## `PhotoDetailsSections/body`
 
-## `OverlaySettingsView/body`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
 @MainActor var body: some View { get }
 ```
 
-The form.
+The sections.
 
-## `OverlaySettingsView/gridTitle`
+## `PhotoDetailsSections/details`
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor static var gridTitle: Text { get }
-```
-
-"Grid".
-
-## `OverlaySettingsView/init(settings:)`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings)
+@MainActor let details: PhotoDetails
 ```
 
-Creates the screen.
+The details shown.
 
-- Parameter settings: The settings to show and change.
+## `PhotoDetailsSections/init(details:)`
 
-## `OverlaySettingsView/levelTitle`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor static var levelTitle: Text { get }
+@MainActor init(details: PhotoDetails)
 ```
 
-"Level".
+Creates the sections.
 
-## `OverlaySettingsView/link(settings:)`
+- Parameter details: The details shown.
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+## `PhotoDetailsSections/milliseconds(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor static func link(settings: NopeSettings) -> some View
-
+@MainActor static func milliseconds(_ duration: Duration) -> String
 ```
 
-A navigation row to the overlays, showing "On" when any is on.
+A duration as milliseconds, such as "112 ms", in the current language.
 
-- Parameter settings: The settings.
+- Parameter duration: The duration.
+- Returns: The text.
 
-## `OverlaySettingsView/name(of:)`
+## `PhotoDetailsSections/processing(_:)`
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor static func name(of style: GridStyle) -> Text
+@MainActor static func processing(_ processing: PhotoDetails.Processing) -> Text
 ```
 
-The name of a grid style.
+What processing a file went through, in plain words.
 
-- Parameter style: The style.
+- Parameter processing: The processing.
+- Returns: The text, from `Honesty.xcstrings`.
 
-## `OverlaySettingsView/rowTitle`
+## `PhotoDetailsSections/reason(_:)`
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor static var rowTitle: Text { get }
+@MainActor static func reason(_ state: PhotoDetails.ItemReceipt.State) -> Text
 ```
 
-The row and screen title, "Viewfinder Overlays".
+Why an optional item isn't in the files.
 
-## `OverlaySettingsView/settings`
+- Parameter state: What happened to the item.
+- Returns: The reason, from `Honesty.xcstrings`.
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+## `PhotoDetailsSheet`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor let settings: NopeSettings
+@MainActor struct PhotoDetailsSheet
 ```
 
-The settings to show and change.
+"What's in This Photo": the facts read back from a photo nope. just saved (issue #53),
+opened from the last-photo thumbnail.
 
-## `OverlaySettingsView/turnSpiralTitle`
+A native list with one section per topic, each with a heading VoiceOver can jump between:
+the files, the exposure as written, the processing, the signature, the details kept and left
+out, everything the read-back found, and the timings. Every value comes from
+`SavedPhoto.details`; a value the file doesn't hold isn't shown.
 
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+Privacy: on screen only. Nothing is logged, stored or copied, and the text can't be selected
+(no clipboard access).
+
+## `PhotoDetailsSheet/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor static var turnSpiralTitle: Text { get }
+@MainActor var body: some View { get }
 ```
 
-"Turn Spiral".
+The list, with a Done button.
 
-## `PeakingShape`
+## `PhotoDetailsSheet/init(photos:openPhoto:)`
 
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-struct PeakingShape
+@MainActor init(photos: [SavedPhoto], openPhoto: (() -> Void)?)
 ```
 
-The in-focus cells of a focus peaking map as a shape.
+Creates the sheet.
 
-## `PeakingShape/init(map:)`
+- Parameters:
+  - photos: The photos of the last press of the shutter.
+  - openPhoto: Opens Photos, or `nil`.
 
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
+## `PhotoDetailsSheet/openPhoto`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-init(map: FocusPeakingMap)
+@MainActor let openPhoto: (() -> Void)?
 ```
 
-Creates the shape.
+Opens Photos, or `nil` when the app can't.
 
-- Parameter map: The map.
+## `PhotoDetailsSheet/photos`
 
-## `PeakingShape/map`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-let map: FocusPeakingMap
+@MainActor let photos: [SavedPhoto]
 ```
 
-The map.
-
-## `PeakingShape/path(in:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-func path(in rect: CGRect) -> Path
-```
-
-One rectangle per in-focus cell.
-
-- Parameter rect: The picture's rectangle.
+The photos of the last press of the shutter: one, or a bracket's frames.
 
 ## `PrivacySettingsView`
 
@@ -4063,20 +3391,17 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 
 The form.
 
-## `ProToolsSheet/init(model:settings:)`
+## `ProToolsSheet/init(model:)`
 
 internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings? = nil)
+@MainActor init(model: CameraModel)
 ```
 
 Creates the sheet.
 
-- Parameters:
-  - model: The camera model.
-  - settings: The person's settings, for the focus peaking, histogram and live readout
-    switches, or `nil` to leave them out.
+- Parameter model: The camera model.
 
 ## `ProToolsSheet/intervals`
 
@@ -4107,16 +3432,6 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 The photo counts offered for a series, from 2 to the 999 nope. allows.
-
-## `ProToolsSheet/settings`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor let settings: NopeSettings?
-```
-
-The person's settings, for the live aid switches, or `nil` to leave them out.
 
 ## `QuickControlButton`
 
@@ -4410,18 +3725,6 @@ lens supports.
 
 - Parameter context: The model and settings.
 
-## `QuickControls/grid(_:)`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor static func grid(_ context: CameraControlContext) -> QuickControlItem?
-```
-
-Grid: a menu of Off and each grid style.
-
-- Parameter context: The model and settings.
-
 ## `QuickControls/hideControls(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -4432,18 +3735,6 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Hide Controls: clean view, which leaves only the shutter, a Show Controls button and any
 warnings.
-
-- Parameter context: The model and settings.
-
-## `QuickControls/level(_:)`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor static func level(_ context: CameraControlContext) -> QuickControlItem?
-```
-
-Level: a switch.
 
 - Parameter context: The model and settings.
 
@@ -5655,8 +4946,10 @@ The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and 
 until the first photo of the session, never an empty square. Then it shows the last photo with
 a teal seal when every file was signed, or an amber mark when one wasn't.
 
-The last-photo thumbnail that opens the photo (issue #36) fills ``image`` and makes the slot
-a button; until then the slot shows a photo symbol.
+With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
+without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
+Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
+Control offer both, Open in Photos and Photo Details.
 
 ## `ThumbnailSlot/body`
 
@@ -5678,12 +4971,12 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 The photo's thumbnail, or `nil` to show a photo symbol.
 
-## `ThumbnailSlot/init(photos:image:isBusy:)`
+## `ThumbnailSlot/init(photos:image:isBusy:openPhoto:showDetails:)`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 ```swift
-@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool)
+@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil)
 ```
 
 Creates the slot.
@@ -5692,6 +4985,8 @@ Creates the slot.
   - photos: The photos saved by the last press of the shutter, or `nil` before the first.
   - image: The photo's thumbnail, or `nil` to show a photo symbol.
   - isBusy: Whether a photo is being taken or saved now.
+  - openPhoto: Opens Photos, or `nil` when the app can't.
+  - showDetails: Shows the photo's details, or `nil` for none.
 
 ## `ThumbnailSlot/isBusy`
 
@@ -5703,6 +4998,16 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 Whether a photo is being taken or saved now.
 
+## `ThumbnailSlot/openPhoto`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let openPhoto: (() -> Void)?
+```
+
+Opens Photos, or `nil` when the app can't.
+
 ## `ThumbnailSlot/photos`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
@@ -5712,6 +5017,16 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 The photos saved by the last press of the shutter, or `nil` before the first.
+
+## `ThumbnailSlot/showDetails`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let showDetails: (() -> Void)?
+```
+
+Shows the photo's details (issue #53), or `nil` for none.
 
 ## `ThumbnailSlot/side`
 
@@ -5971,69 +5286,6 @@ Turns this block upright as one unit while the iPhone is on its side.
 
 - Parameter sidewaysWidth: The width text wraps at while sideways, or `nil` for the
   natural width.
-
-## `ViewfinderOverlays`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor struct ViewfinderOverlays
-```
-
-The guides and live aids drawn over the viewfinder: the grid, focus peaking and the level,
-and, at standard text sizes, the histogram and the live camera readout (``LiveAidsPanel``).
-
-Everything here is on screen only and never written to the photo (issues #40, #47, #51 and
-#52). Nothing takes touches, so the viewfinder's own gestures still work. The guides stay in
-clean view; the histogram and the readout don't.
-
-It tells the model what the live analysis must measure and whether the readout is on, as
-the options and the screen change, and turns both off when it goes away (AGENTS.md,
-"Battery").
-
-## `ViewfinderOverlays/body`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The overlays.
-
-## `ViewfinderOverlays/init(model:settings:)`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor init(model: CameraModel, settings: NopeSettings)
-```
-
-Creates the overlays.
-
-- Parameters:
-  - model: The camera model.
-  - settings: The person's settings.
-
-## `ViewfinderOverlays/model`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let model: CameraModel
-```
-
-The camera model.
-
-## `ViewfinderOverlays/settings`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let settings: NopeSettings
-```
-
-The person's settings.
 
 ## `WarningChip`
 

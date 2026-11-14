@@ -120,7 +120,8 @@ enum SimulatedCameraLaunch {
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
-            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion,
+            thumbnailer: SimulatedThumbnailer())
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
     static let fullManual = ManualCapabilities(

@@ -466,12 +466,56 @@ as untrusted; the signature proves the file is unchanged, not who took it.
 Threading: the work is synchronous and CPU-bound (it hashes the whole file); call it off the
 main actor. The type holds no mutable state, so one signer can serve concurrent calls.
 
+## `ContentCredentialsSigner/SignedData`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+struct SignedData
+```
+
+A signed file and the manifest store embedded in it.
+
+## `ContentCredentialsSigner/SignedData/file`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+let file: Data
+```
+
+The signed file's bytes.
+
+## `ContentCredentialsSigner/SignedData/init(file:manifestStore:)`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+init(file: Data, manifestStore: Data)
+```
+
+Pairs a signed file with its manifest store.
+
+- Parameters:
+  - file: The signed file's bytes.
+  - manifestStore: The manifest store's bytes.
+
+## `ContentCredentialsSigner/SignedData/manifestStore`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+let manifestStore: Data
+```
+
+The manifest store's bytes, as the C2PA library returned them.
+
 ## `ContentCredentialsSigner/embed(_:as:manifest:key:)`
 
 internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
 
 ```swift
-static func embed(_ data: Data, as file: SignableFile, manifest: ContentCredentialsManifest, key: any PerPhotoSigningKey) throws -> Data
+static func embed(_ data: Data, as file: SignableFile, manifest: ContentCredentialsManifest, key: any PerPhotoSigningKey) throws -> SignedData
 ```
 
 Embeds and signs a manifest with one key.
@@ -485,7 +529,7 @@ and ImageIO can't open the result (issue #66).
   - file: What the file is.
   - manifest: The manifest to embed.
   - key: The file's one-use key.
-- Returns: The signed file.
+- Returns: The signed file and its manifest store.
 - Throws: Any error from the certificate, the key or the C2PA library.
 
 ## `ContentCredentialsSigner/embedInDNG(_:manifest:signer:)`
@@ -493,7 +537,7 @@ and ImageIO can't open the result (issue #66).
 internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
 
 ```swift
-static func embedInDNG(_ data: Data, manifest: ContentCredentialsManifest, signer: sending Signer) throws -> Data
+static func embedInDNG(_ data: Data, manifest: ContentCredentialsManifest, signer: sending Signer) throws -> SignedData
 ```
 
 Signs a DNG with the C2PA data-hash workflow, keeping IFD0 in place.
@@ -508,7 +552,7 @@ Signs a DNG with the C2PA data-hash workflow, keeping IFD0 in place.
   - data: The DNG.
   - manifest: The manifest to embed.
   - signer: The file's one-use signer; the context takes it.
-- Returns: The signed DNG.
+- Returns: The signed DNG and its manifest store.
 - Throws: Any error from the library, or a ``DNGManifestSlot/Failure``, for example if
   the signed store isn't the placeholder's size.
 
@@ -538,10 +582,27 @@ Signs one file.
 
 - Parameter file: The complete file, with its final metadata.
 - Returns: The same file with a Content Credentials manifest embedded in the one place
-  its format allows (see `SignableFile.mediaType`); nothing else in the file changes.
+  its format allows (see `SignableFile.mediaType`); nothing else in the file changes. Its
+  `contentCredentials` summarizes the manifest for the "What's in this photo" details.
 - Throws: ``PhotoSigningError/keyCreationFailed`` if no key could be created, or
   ``PhotoSigningError/signingFailed`` if the certificate, the claim signature or the
   C2PA library failed, for example because the bytes aren't a valid file of that kind.
+
+## `ContentCredentialsSigner/summary(of:manifestStore:)`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+func summary(of file: SignableFile, manifestStore: Data) -> ContentCredentialsSummary
+```
+
+What the details show about a file's manifest: the claim generator, the manifest's
+description, and the SHA-256 hash of the manifest store the C2PA library returned.
+
+- Parameters:
+  - file: What the file is.
+  - manifestStore: The signed manifest store's bytes.
+- Returns: The summary.
 
 ## `DNGManifestSlot`
 
