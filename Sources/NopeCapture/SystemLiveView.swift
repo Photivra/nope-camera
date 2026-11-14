@@ -37,7 +37,7 @@ extension SystemCaptureHardware: LiveViewHardware {
 ///   ("it is assumed that video data output buffers are being delivered as a preview proxy",
 ///   `AVCaptureVideoDataOutput.h`, `automaticallyConfiguresOutputBufferDimensions`). Late frames
 ///   are dropped, every frame between two analyses is returned at once, and an analysis reads
-///   only about 160 × 120 pixels (``LumaSampler``), at most four a second (``LiveUpdateRate``).
+///   only about 160 × 120 pixels (``LumaSampler``), at most four a second (`LiveUpdateRate`).
 ///   No frame is stored. The photo output and its settings are not touched, so what is captured
 ///   doesn't change; a device check confirms it (docs/TESTING.md).
 /// - **Live readout.** Key-value observation of the attached camera while the readout is shown,

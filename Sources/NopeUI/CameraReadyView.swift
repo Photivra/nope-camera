@@ -226,7 +226,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                 picture
                     .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
-                LiveAidsPanel(model: model, settings: settings)
+                if LiveAidsPanel.isShown(model) {
+                    LiveAidsPanel(model: model, settings: settings)
+                }
                 if showsControls {
                     if model.manual.isEnabled {
                         ManualControlsList(model: model)

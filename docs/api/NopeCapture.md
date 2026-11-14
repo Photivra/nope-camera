@@ -118,6 +118,17 @@ nonisolated let exposureReadings: AsyncStream<ExposureReading>
 
 What the camera is using now, while readings are on.
 
+## `AVFoundationCaptureBackend/frameAnalyses`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+nonisolated var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The live frame analyses from the hardware; a stream that ends at once if the hardware has
+no live view.
+
 ## `AVFoundationCaptureBackend/init()`
 
 public, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -141,6 +152,16 @@ Creates a backend from its parts. The app uses ``init()``; tests pass fakes.
 - Parameters:
   - hardware: The camera calls.
   - authorization: Camera permission.
+
+## `AVFoundationCaptureBackend/liveHardware`
+
+internal, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+nonisolated let liveHardware: (any LiveViewHardware)?
+```
+
+The live view calls, or `nil` when the hardware has none.
 
 ## `AVFoundationCaptureBackend/previewSource`
 
@@ -174,6 +195,30 @@ Turns the camera's readings on or off.
 
 - Parameter enabled: Whether to send readings.
 
+## `AVFoundationCaptureBackend/setFrameAnalysis(_:)`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Starts, changes or stops the live frame analysis.
+
+- Parameter needs: What to measure; empty stops it.
+
+## `AVFoundationCaptureBackend/setStatsReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Turns the live readout's values on or off.
+
+- Parameter enabled: Whether to send values.
+
 ## `AVFoundationCaptureBackend/setTorch(level:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -200,6 +245,17 @@ Configures the session for the request's lens and format, and starts it.
 - Parameter request: The lens and format.
 - Throws: `CaptureError.configurationFailed` if the lens wasn't discovered, the format is
   invalid, or the hardware can't be configured.
+
+## `AVFoundationCaptureBackend/statsReadings`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+nonisolated var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The live readout's values from the hardware; a stream that ends at once if the hardware
+has no live view.
 
 ## `AVFoundationCaptureBackend/stopSession()`
 
@@ -1076,6 +1132,77 @@ ASCII.
 - Parameter code: A pixel format code.
 - Returns: For example `bgg4`, or `0x00000000`.
 
+## `FrameAnalysisDelegate`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+final class FrameAnalysisDelegate
+```
+
+Receives the analysis video output's frames, lets through a few a second, and analyzes them.
+
+`@unchecked Sendable`: frames arrive one at a time on the video queue, and the state set from
+the session queue is behind a lock.
+
+## `FrameAnalysisDelegate/captureOutput(_:didOutput:from:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
+```
+
+Analyzes a frame if one is due, and returns at once otherwise.
+
+## `FrameAnalysisDelegate/finish()`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func finish()
+```
+
+Ends the analyses.
+
+## `FrameAnalysisDelegate/init(continuation:rotation:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+init(continuation: AsyncStream<FrameAnalysis>.Continuation, rotation: PreviewRotation)
+```
+
+Creates the delegate.
+
+- Parameters:
+  - continuation: Feeds the analyses.
+  - rotation: The viewfinder's rotation.
+
+## `FrameAnalysisDelegate/update(mirrored:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func update(mirrored: Bool)
+```
+
+Changes whether the viewfinder mirrors the picture.
+
+- Parameter mirrored: Whether it mirrors.
+
+## `FrameAnalysisDelegate/update(needs:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func update(needs: LiveAnalysisNeeds)
+```
+
+Changes what is measured.
+
+- Parameter needs: What to measure.
+
 ## `HardwarePhoto`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
@@ -1243,6 +1370,217 @@ the nearest 0.5 from 1× up (for example 0.5×, 1×, 2.5×, 5×).
   - fieldOfView: The lens's horizontal field of view, in degrees.
   - reference: The rear wide camera's horizontal field of view, in degrees.
 - Returns: The magnification, or `nil` if either angle isn't between 0 and 180 degrees.
+
+## `LiveViewHardware`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+protocol LiveViewHardware : Sendable
+```
+
+The hardware calls behind ``AVFoundationCaptureBackend``'s live view: the low-rate frame
+analysis and the live readout's values. A separate protocol from ``CaptureHardware``, so a
+fake without a live view needs nothing extra.
+
+``SystemCaptureHardware`` implements it and is verified on a device.
+
+## `LiveViewHardware/frameAnalyses`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The analyses of live frames, while analysis is on.
+
+## `LiveViewHardware/setFrameAnalysis(_:)`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Adds, changes or removes the video output that the analysis reads.
+
+- Parameter needs: What to measure; empty removes the output.
+
+## `LiveViewHardware/setStatsReadingsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops observing the attached camera for the live readout.
+
+- Parameter enabled: Whether to send values.
+
+## `LiveViewHardware/statsReadings`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The live readout's values, while they are on.
+
+## `LumaPlane`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+struct LumaPlane
+```
+
+The brightness plane of one live video frame, read one byte at a time.
+
+``SystemCaptureHardware`` makes it from the Y plane of a preview-sized video frame; tests make
+it from an array. Privacy rule: it is read once for one analysis and never copied whole,
+stored or logged.
+
+## `LumaPlane/brightness(x:y:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+func brightness(x: Int, y: Int) -> Int
+```
+
+The full-range brightness of one pixel, 0 to 255.
+
+- Parameters:
+  - x: The column, 0 to `width` − 1.
+  - y: The row, 0 to `height` − 1.
+
+## `LumaPlane/bytesPerRow`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let bytesPerRow: Int
+```
+
+The bytes from the start of one row to the start of the next.
+
+## `LumaPlane/height`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let height: Int
+```
+
+The height in pixels.
+
+## `LumaPlane/init(width:height:bytesPerRow:isVideoRange:read:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+init(width: Int, height: Int, bytesPerRow: Int, isVideoRange: Bool, read: @escaping (Int) -> UInt8)
+```
+
+Creates a plane.
+
+- Parameters:
+  - width: The width in pixels.
+  - height: The height in pixels.
+  - bytesPerRow: The bytes from the start of one row to the start of the next.
+  - isVideoRange: Whether the plane is video range.
+  - read: Reads the byte at an offset; called only with offsets inside the plane.
+
+## `LumaPlane/isVideoRange`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let isVideoRange: Bool
+```
+
+Whether the plane is video range (16 black to 235 white) rather than full range (0 to
+255), as `kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange` is.
+
+## `LumaPlane/read`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let read: (Int) -> UInt8
+```
+
+Reads the byte at an offset from the start of the plane.
+
+## `LumaPlane/width`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let width: Int
+```
+
+The width in pixels.
+
+## `LumaSampler`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+enum LumaSampler
+```
+
+Samples a small grid from a live frame's brightness plane, for the histogram and focus
+peaking (issues #47 and #51).
+
+Only about 160 × 120 pixels of a preview-sized frame are read, so an analysis costs little
+(AGENTS.md, "Battery"). Each cell takes the brightness of one pixel and, for its sharpness,
+the brightness differences to its neighbors right and below in the full frame, so fine detail
+still counts although the grid is small.
+
+## `LumaSampler/longSideCells`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+static let longSideCells: Int
+```
+
+The cells along the frame's long side. A tool setting: about 2.5 points per cell on a
+phone's viewfinder, fine enough to show which edges are sharp.
+
+## `LumaSampler/position(of:count:length:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+static func position(of cell: Int, count: Int, length: Int) -> Int
+```
+
+The pixel at the middle of a cell, kept one pixel inside the edges so its neighbors
+exist.
+
+- Parameters:
+  - cell: The cell, 0 to `count` − 1.
+  - count: The cells along this side.
+  - length: The pixels along this side, at least 3.
+
+## `LumaSampler/sample(_:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+static func sample(_ plane: LumaPlane) -> LumaFrame
+```
+
+Samples a plane.
+
+- Parameter plane: The plane.
+- Returns: The grid, in the plane's orientation; empty for a plane smaller than 3 × 3
+  pixels.
 
 ## `ManualControlSupport`
 
@@ -2045,6 +2383,18 @@ nonisolated init()
 
 Creates a rotation helper with no camera and no layer.
 
+## `PreviewRotation/previewAngle`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+nonisolated var previewAngle: CGFloat? { get }
+```
+
+The angle, in degrees, the viewfinder turns the video by, or `nil` before one is known.
+The live frame analysis turns its frames the same way (``SystemLiveView``). Safe to read
+from any thread.
+
 ## `PreviewRotation/use(deviceID:)`
 
 internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
@@ -2487,6 +2837,16 @@ let exposureReadings: AsyncStream<ExposureReading>
 
 What the camera is using now, while readings are on.
 
+## `SystemCaptureHardware/frameAnalyses`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The analyses of live frames, while analysis is on.
+
 ## `SystemCaptureHardware/init()`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2498,6 +2858,16 @@ init()
 Creates the hardware adapter and starts observing interruptions, runtime errors and the
 thermal state.
 
+## `SystemCaptureHardware/live`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+let live: SystemLiveView
+```
+
+The live view: the low-rate frame analysis and the live readout (``SystemLiveView``).
+
 ## `SystemCaptureHardware/previewSource`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2507,6 +2877,18 @@ let previewSource: any CameraPreviewSource
 ```
 
 The session, for the app's preview layer.
+
+## `SystemCaptureHardware/setFrameAnalysis(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Adds, changes or removes the analysis video output, on the session queue.
+
+- Parameter needs: What to measure; empty removes the output.
 
 ## `SystemCaptureHardware/setReadingsEnabled(_:)`
 
@@ -2518,6 +2900,18 @@ func setReadingsEnabled(_ enabled: Bool) async
 
 Starts or stops the readings, on `queue`.
 
+## `SystemCaptureHardware/setStatsReadingsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops observing the camera for the live readout, on the session queue.
+
+- Parameter enabled: Whether to send values.
+
 ## `SystemCaptureHardware/setTorch(level:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2527,6 +2921,16 @@ func setTorch(level: Double?) async -> TorchStatus
 ```
 
 Turns the attached camera's torch on at a level, or off, on `queue`.
+
+## `SystemCaptureHardware/statsReadings`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The live readout's values, while they are on.
 
 ## `SystemCaptureHardware/stop()`
 
@@ -2546,6 +2950,114 @@ The method returns only after both steps, because the caller awaits `perform`. T
 ``configure(_:)`` re-adds the input and output with the full setup order. This is the
 only way a session is taken down: nope. never creates a second session, and never
 starts one while another is still stopping (docs/TESTING.md, "Black frames").
+
+## `SystemLiveView`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+final class SystemLiveView
+```
+
+The live view of ``SystemCaptureHardware``: a low-rate frame analysis for the histogram and
+focus peaking (issues #47 and #51), and the live readout's values (issue #52).
+
+- **Frame analysis.** An `AVCaptureVideoDataOutput` is in the session only while the histogram
+  or focus peaking is shown. With the `.photo` preset it delivers preview-sized frames
+  ("it is assumed that video data output buffers are being delivered as a preview proxy",
+  `AVCaptureVideoDataOutput.h`, `automaticallyConfiguresOutputBufferDimensions`). Late frames
+  are dropped, every frame between two analyses is returned at once, and an analysis reads
+  only about 160 × 120 pixels (``LumaSampler``), at most four a second (`LiveUpdateRate`).
+  No frame is stored. The photo output and its settings are not touched, so what is captured
+  doesn't change; a device check confirms it (docs/TESTING.md).
+- **Live readout.** Key-value observation of the attached camera while the readout is shown,
+  at most four values a second. No video is read for it.
+
+`@unchecked Sendable`: every mutable property is confined to the session `queue`, and the
+video delegate keeps its own state behind a lock.
+
+## `SystemLiveView/cameraDidChange(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func cameraDidChange(_ device: AVCaptureDevice?)
+```
+
+Follows a newly attached camera, or none. Call only on `queue`.
+
+- Parameter device: The attached camera, or `nil` after the teardown.
+
+## `SystemLiveView/frameAnalyses`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+let frameAnalyses: AsyncStream<FrameAnalysis>
+```
+
+The analyses of live frames.
+
+## `SystemLiveView/init(session:photoOutput:queue:rotation:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+init(session: AVCaptureSession, photoOutput: AVCapturePhotoOutput, queue: DispatchQueue, rotation: PreviewRotation)
+```
+
+Creates the live view for a session.
+
+- Parameters:
+  - session: The capture session.
+  - photoOutput: The photo output.
+  - queue: The session queue.
+  - rotation: The viewfinder's rotation, which the analysis follows.
+
+## `SystemLiveView/setNeeds(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setNeeds(_ needs: LiveAnalysisNeeds) async
+```
+
+Asks the analysis for something else, adding or removing the video output, on `queue`.
+
+- Parameter needs: What to measure.
+
+## `SystemLiveView/setStatsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setStatsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops the readout, on `queue`.
+
+- Parameter enabled: Whether to send values.
+
+## `SystemLiveView/statsReadings`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+let statsReadings: AsyncStream<CameraStatsReading>
+```
+
+The live readout's values.
+
+## `SystemLiveView/updateVideoOutput()`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func updateVideoOutput()
+```
+
+Adds the video output while analysis is on and a camera is attached, and removes it
+otherwise. Call only on `queue`, inside a configuration transaction.
 
 ## `WhiteBalanceGains`
 

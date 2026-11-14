@@ -202,15 +202,16 @@ final class OverlayUITests: XCTestCase {
         app.buttons["Done"].firstMatch.tap()
         app.buttons["More Manual Controls"].tap()
         app.buttons["Pro Tools"].tap()
-        let peaking = app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Focus Peaking'")).firstMatch
-        var proSwipes = 0
-        while !peaking.isHittable && proSwipes < 8 {
-            app.swipeUp()
-            proSwipes += 1
+        // The form loads rows as they scroll in; the live aids are its last section but Done.
+        for name in ["Focus Peaking", "Histogram", "Live Camera Readout"] {
+            let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+            var proSwipes = 0
+            while !(toggle.exists && toggle.isHittable) && proSwipes < 8 {
+                app.swipeUp()
+                proSwipes += 1
+            }
+            XCTAssertTrue(toggle.exists, name)
         }
-        XCTAssertTrue(peaking.exists)
-        XCTAssertTrue(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Histogram'")).firstMatch.exists)
-        XCTAssertTrue(app.switches.matching(NSPredicate(format: "label BEGINSWITH 'Live Camera Readout'")).firstMatch.exists)
     }
 
     @MainActor

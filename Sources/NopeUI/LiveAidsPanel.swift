@@ -21,6 +21,14 @@ struct LiveAidsPanel: View {
         self.settings = settings
     }
 
+    /// Whether the panel has anything to show, so a layout can leave it out (and its spacing)
+    /// otherwise.
+    ///
+    /// - Parameter model: The camera model.
+    static func isShown(_ model: CameraModel) -> Bool {
+        model.live.needs.contains(.histogram) || model.live.showsStats
+    }
+
     /// The histogram and the readout.
     var body: some View {
         VStack(alignment: .trailing, spacing: CameraStyle.targetSpacing) {
@@ -181,6 +189,18 @@ enum LiveReadoutText {
         let name: String
         /// The value.
         let value: String
+
+        /// Creates a line.
+        ///
+        /// - Parameters:
+        ///   - id: A stable identifier.
+        ///   - name: The value's name.
+        ///   - value: The value.
+        init(id: String, name: String, value: String) {
+            self.id = id
+            self.name = name
+            self.value = value
+        }
     }
 
     /// The readout's name, "Live Camera Readout".

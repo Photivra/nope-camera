@@ -128,7 +128,7 @@ struct GridOverlay: View {
     /// The style.
     let style: GridStyle
 
-    /// Where the spiral sits, for ``GridStyle/goldenSpiral``.
+    /// Where the spiral sits, for `GridStyle/goldenSpiral`.
     let placement: SpiralPlacement
 
     /// The width of the white line, in points.
@@ -136,6 +136,16 @@ struct GridOverlay: View {
 
     /// The width of the dark outline under it, in points.
     static let outlineWidth: CGFloat = 2.5
+
+    /// Creates the grid.
+    ///
+    /// - Parameters:
+    ///   - style: The style.
+    ///   - placement: Where the spiral sits.
+    init(style: GridStyle, placement: SpiralPlacement) {
+        self.style = style
+        self.placement = placement
+    }
 
     /// The lines: a dark outline under a white line, drawn as shapes (not a canvas), so they
     /// add nothing to the accessibility tree.
@@ -151,7 +161,7 @@ struct GridOverlay: View {
     ///   - style: The style.
     ///   - placement: The spiral's placement.
     ///   - size: The picture's size.
-    static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path {
+    nonisolated static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path {
         let point = { (guide: GuidePoint) in CGPoint(x: guide.x * size.width, y: guide.y * size.height) }
         var path = Path()
         if style == .goldenSpiral {
@@ -175,6 +185,16 @@ struct GridShape: Shape {
     /// Where the spiral sits.
     let placement: SpiralPlacement
 
+    /// Creates the shape.
+    ///
+    /// - Parameters:
+    ///   - style: The style.
+    ///   - placement: Where the spiral sits.
+    init(style: GridStyle, placement: SpiralPlacement) {
+        self.style = style
+        self.placement = placement
+    }
+
     /// The lines in a rectangle.
     ///
     /// - Parameter rect: The picture's rectangle.
@@ -193,6 +213,13 @@ struct FocusPeakingOverlay: View {
     /// The highlight color.
     static let color = Color(red: 1, green: 0.2, blue: 0.85)
 
+    /// Creates the overlay.
+    ///
+    /// - Parameter map: The map of in-focus cells.
+    init(map: FocusPeakingMap) {
+        self.map = map
+    }
+
     /// The highlighted cells, drawn as a shape so they add nothing to the accessibility tree.
     var body: some View {
         PeakingShape(map: map).fill(Self.color.opacity(0.75))
@@ -203,6 +230,13 @@ struct FocusPeakingOverlay: View {
 struct PeakingShape: Shape {
     /// The map.
     let map: FocusPeakingMap
+
+    /// Creates the shape.
+    ///
+    /// - Parameter map: The map.
+    init(map: FocusPeakingMap) {
+        self.map = map
+    }
 
     /// One rectangle per in-focus cell.
     ///
@@ -238,6 +272,13 @@ struct LevelOverlay: View {
 
     /// The farthest the inner circle moves, in points.
     static let maximumOffset: CGFloat = 60
+
+    /// Creates the level.
+    ///
+    /// - Parameter state: What the level shows, or `nil` before the first reading.
+    init(state: LevelState?) {
+        self.state = state
+    }
 
     /// The level.
     var body: some View {
