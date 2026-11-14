@@ -34,7 +34,8 @@ struct Viewfinder: View {
     /// asks for with `-NopeSimulatedViewfinder white` or `yellow`, to check contrast over the
     /// brightest scenes (issue #68, "Contrast").
     private var placeholder: Color {
-        #if DEBUG
+        // The Lock Screen capture extension shares this file but not the UI-test scenarios.
+        #if DEBUG && !NOPE_CAPTURE_EXTENSION
         if let color = SimulatedCameraLaunch.viewfinderColor { return color }
         #endif
         return Color(white: 0.12)

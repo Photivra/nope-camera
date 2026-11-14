@@ -1157,6 +1157,34 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Applies the backend's events until its stream ends. Run it for as long as the camera
 screen is visible, for example in a SwiftUI `.task`.
 
+## `CameraModel/outcome(of:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func outcome(of status: CaptureStatus) -> ShortcutOutcome
+```
+
+The outcome a capture status reports.
+
+- Parameter status: The status after the photo.
+- Returns: The outcome.
+
+## `CameraModel/perform(_:inbox:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func perform(_ request: ShortcutRequest, inbox: ShortcutInbox) async -> ShortcutOutcome
+```
+
+Performs one request.
+
+- Parameters:
+  - request: What was asked for.
+  - inbox: The inbox, for its waits and timeouts.
+- Returns: How it ended.
+
 ## `CameraModel/pressShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -1237,6 +1265,22 @@ Side effects: ``CameraIntent/requestPermission`` may show the system camera prom
 ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
+
+## `CameraModel/serveShortcuts(from:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func serveShortcuts(from inbox: ShortcutInbox) async
+```
+
+Performs each request from the inbox in turn, until the calling task is cancelled. Run it
+for as long as the camera screen is shown, for example in a SwiftUI `.task`.
+
+Side effects: as ``CameraIntent/capture`` and ``CameraIntent/selectLens(_:)``; a request
+may switch the lens, start the self-timer, take a photo and add it to Photos.
+
+- Parameter inbox: Where the app's App Intents leave their requests.
 
 ## `CameraModel/sessionStatus`
 
@@ -1674,6 +1718,58 @@ var zoomFactor: Double
 ```
 
 The zoom factor in use; nope. keeps it at 1.0, which Bayer RAW requires.
+
+## `CameraUnavailability`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum CameraUnavailability
+```
+
+Why the camera couldn't take a photo for a ``ShortcutRequest``.
+
+## `CameraUnavailability/needsPermission`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case needsPermission
+```
+
+The person hasn't been asked for camera access yet. Say to open nope. to allow it.
+
+## `CameraUnavailability/noCamera`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case noCamera
+```
+
+The device has no camera nope. can use. Say so.
+
+## `CameraUnavailability/notRunning`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case notRunning
+```
+
+The camera didn't start or isn't running: it is starting too slowly, in use by another
+app, paused for heat, failed, or the camera screen isn't open. Say the camera isn't
+available right now.
+
+## `CameraUnavailability/permissionDenied`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case permissionDenied
+```
+
+Camera access is declined or restricted. Say it can be turned on in the Settings app.
 
 ## `CaptureBackend`
 
@@ -2359,6 +2455,58 @@ let rawImageData: Data?
 For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
+
+## `ChangeWaiter`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class ChangeWaiter
+```
+
+Wakes a waiting task when observable state it read changes, or when its timeout passes.
+
+## `ChangeWaiter/expire()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func expire()
+```
+
+Marks the timeout as passed and wakes the waiting task.
+
+## `ChangeWaiter/init()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates a waiter that isn't waiting.
+
+## `ChangeWaiter/isExpired`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var isExpired: Bool { get }
+```
+
+Whether the timeout passed.
+
+## `ChangeWaiter/waitForChange(of:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func waitForChange(of condition: @escaping @MainActor () -> Bool) async
+```
+
+Waits until a value the condition reads changes, or ``expire()``.
+
+- Parameter condition: The condition whose observable reads are tracked.
 
 ## `ClippingState`
 
@@ -11719,6 +11867,74 @@ Writes the options to a store.
 
 - Parameter defaults: The store to write.
 
+## `PendingShortcut`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class PendingShortcut
+```
+
+One request in a ``ShortcutInbox``, with the intent's wait for its outcome.
+
+## `PendingShortcut/finish(_:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func finish(_ outcome: ShortcutOutcome)
+```
+
+Ends the intent's wait with the outcome. Later calls do nothing.
+
+- Parameter outcome: How the request ended.
+
+## `PendingShortcut/init(request:continuation:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init(request: ShortcutRequest, continuation: CheckedContinuation<ShortcutOutcome, Never>)
+```
+
+Creates a pending request.
+
+- Parameters:
+  - request: What was asked for.
+  - continuation: The intent's wait for the outcome.
+
+## `PendingShortcut/pickedUp()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func pickedUp() -> PendingShortcut
+```
+
+Marks the request as taken by a camera screen, so it no longer times out.
+
+- Returns: This request.
+
+## `PendingShortcut/request`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor let request: ShortcutRequest
+```
+
+What was asked for.
+
+## `PendingShortcut/timeout`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var timeout: Task<Void, Never>?
+```
+
+The timeout for a camera screen to take the request, cancelled when one does.
+
 ## `PhotoDetails`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -13278,6 +13494,83 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
+## `PhotoShortcut`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+struct PhotoShortcut
+```
+
+The parameters of a "Take Photo" request: the delay before the shot and the lens.
+
+Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
+is.
+
+## `PhotoShortcut/delaySeconds`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let delaySeconds: Int
+```
+
+The delay before the photo, in seconds, from 0 (none) to ``maximumDelaySeconds``. A delay
+runs the self-timer, with its countdown on screen and announced.
+
+## `PhotoShortcut/init(delaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+```
+
+Creates a request.
+
+- Parameters:
+  - delaySeconds: The delay in seconds. Values below 0 become 0, and values above
+    ``maximumDelaySeconds`` become ``maximumDelaySeconds``.
+  - lensKind: The kind of lens, or `nil` for the lens already selected.
+
+## `PhotoShortcut/init(timer:customDelaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil)
+```
+
+Creates a request from a preset delay and an optional custom one, as the "Take Photo"
+intent offers them: a custom delay, when given, replaces the preset.
+
+- Parameters:
+  - timer: The preset delay, or `nil` for none.
+  - customDelaySeconds: A custom delay in seconds, or `nil` to use the preset.
+  - lensKind: The kind of lens, or `nil` for the lens already selected.
+
+## `PhotoShortcut/lensKind`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let lensKind: Lens.Kind?
+```
+
+The kind of lens to use, or `nil` for the lens already selected.
+
+## `PhotoShortcut/maximumDelaySeconds`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static let maximumDelaySeconds: Int
+```
+
+The longest delay a request may ask for, in seconds. A product choice for issue #62, not
+a platform limit: Siri waits for the result, and a minute keeps that wait short. Longer
+requests are shortened to it.
+
 ## `PhotoSigning`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -14314,6 +14607,226 @@ case stopped
 ```
 
 The camera hasn't started yet. Show the viewfinder area empty, without a message.
+
+## `ShortcutInbox`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class ShortcutInbox
+```
+
+Hands requests from Siri and Shortcuts (issue #62) to the camera screen, and their outcomes
+back.
+
+The app owns one inbox for its lifetime. An App Intent calls ``submit(_:)`` and waits for the
+outcome; the camera screen runs ``CameraModel/serveShortcuts(from:)`` while it is shown, which
+takes each request in turn and performs it.
+
+```swift
+// In an App Intent:
+let outcome = await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 10)))
+// On the camera screen:
+.task { await model.serveShortcuts(from: inbox) }
+```
+
+Battery rule (AGENTS.md, "Battery"): nothing here polls. Waiting follows the model's
+observable state, and the only timers are one-shot timeouts that end with the request.
+
+## `ShortcutInbox/init(sleep:)`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) })
+```
+
+Creates an empty inbox.
+
+- Parameter sleep: Waits a number of seconds, throwing when cancelled. Tests pass their
+  own; the default is `Task.sleep`.
+
+## `ShortcutInbox/next()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func next() async -> PendingShortcut?
+```
+
+The next request, waiting until one arrives. Only one camera screen serves at a time: a
+second caller replaces the first, whose wait ends with `nil`.
+
+- Returns: The request, or `nil` when the calling task is cancelled.
+
+## `ShortcutInbox/sleep`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor let sleep: @Sendable (Double) async throws -> Void
+```
+
+Waits a number of seconds, for the timeouts. Tests pass their own.
+
+## `ShortcutInbox/startTimeoutSeconds`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor static let startTimeoutSeconds: Double
+```
+
+How long a request waits for the camera screen to take it, and for the camera to start,
+in seconds, before it ends as ``CameraUnavailability/notRunning``. An assumption, to be
+confirmed on a device: the camera usually starts well within a second, and Siri opens
+nope. before the intent runs, so ten seconds leaves room for a slow start.
+
+## `ShortcutInbox/submit(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func submit(_ request: ShortcutRequest) async -> ShortcutOutcome
+```
+
+Hands a request to the camera screen and waits until it is done.
+
+- Parameter request: What Siri or Shortcuts asks for.
+- Returns: How it ended. When no camera screen takes the request within
+  ``startTimeoutSeconds``, ``ShortcutOutcome/cameraUnavailable(_:)`` with
+  ``CameraUnavailability/notRunning``.
+
+## `ShortcutInbox/wait(timeoutSeconds:until:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func wait(timeoutSeconds: Double? = nil, until condition: @escaping @MainActor () -> Bool) async -> Bool
+```
+
+Waits, without polling, until the condition holds, or until the timeout passes.
+
+The condition is checked again each time a value it read changes (Observation,
+`withObservationTracking`), so it must read only observable state.
+
+- Parameters:
+  - timeoutSeconds: The longest wait in seconds, or `nil` to wait until it holds.
+  - condition: What to wait for.
+- Returns: Whether the condition holds at the end.
+
+## `ShortcutOutcome`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum ShortcutOutcome
+```
+
+How a ``ShortcutRequest`` ended, for Siri or Shortcuts to say.
+
+It reports only whether photos were saved and signed, never image data or metadata
+(issue #62, "Privacy"). Each case says what an intent should say.
+
+## `ShortcutOutcome/busy`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case busy
+```
+
+A photo, countdown or burst was already in progress. Say so; nothing changed.
+
+## `ShortcutOutcome/cameraUnavailable(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case cameraUnavailable(CameraUnavailability)
+```
+
+The camera can't take a photo now. Say why, from the reason.
+
+## `ShortcutOutcome/cancelled`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case cancelled
+```
+
+The countdown was cancelled on the device, so no photo was taken. Say so.
+
+## `ShortcutOutcome/lensUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lensUnavailable
+```
+
+The device has no lens of the kind asked for. Say so; nothing was taken.
+
+## `ShortcutOutcome/notSaved(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case notSaved(CaptureError)
+```
+
+The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved, and
+that nope. shows why.
+
+## `ShortcutOutcome/saved(isSigned:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case saved(isSigned: Bool)
+```
+
+One photo was saved. Say "Photo saved and signed." or, when `isSigned` is false, "Photo
+saved. It isn't signed."
+
+## `ShortcutOutcome/savedSeveral(allSigned:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case savedSeveral(allSigned: Bool)
+```
+
+An exposure bracket was saved, each frame its own photo, because bracketing is on in
+the manual controls. Say "Photos saved and signed." or "Photos saved. Not all of them are
+signed."
+
+## `ShortcutRequest`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum ShortcutRequest
+```
+
+A request from outside the camera screen: Siri, the Shortcuts app, or another system entry
+point that runs one of the app's App Intents (issue #62).
+
+The app's intents hold no rules of their own (AGENTS.md, "Siri and Shortcuts"): an intent
+turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports the
+``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:)`` performs it with the same intents
+as the on-screen controls.
+
+## `ShortcutRequest/takePhoto(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case takePhoto(PhotoShortcut)
+```
+
+Take one photo, after an optional delay, with an optional lens.
 
 ## `SignatureStatus`
 
