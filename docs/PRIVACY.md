@@ -109,11 +109,15 @@ read-back exactly as its unsigned original does:
 
 | Format | Added | Notes |
 |---|---|---|
-| DNG | TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0 | The C2PA library writes a new IFD0 (the old tags plus this one) at the end of the file and points the header at it. The original IFD0 bytes stay in the file, unreferenced; they hold the same allowlisted tags. The hash excludes the manifest and the 4-byte offset of tag 52545 |
+| DNG | TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0, and the store at the end of the file | nope. inserts the entry into IFD0 where it is, at its tag-number position, and moves every later byte (and every offset that points to it) 12 bytes on (`DNGManifestSlot`); no tag is removed or rewritten. The C2PA library then signs with its data-hash workflow, and the hash excludes only the store. (The library's own DNG writer moves IFD0 to the end of the file, and iOS can't open that file as a DNG: issue #66, `docs/TESTING.md`, "Signed DNG and ImageIO") |
 | HEIF | One top-level `uuid` box, UUID `D8FEC3D6-1B0E-483C-9297-5828877EC481`, after `ftyp` | No other box changes type or order. The hash excludes `/uuid`, `/ftyp`, `/mfra`, `/free` and `/skip`, the C2PA default exclusions for this format |
 | JPEG | APP11 (`0xFFEB`) segments with JUMBF (common identifier `JP`), after APP0 | No other segment changes. The hash excludes only the APP11 segments |
 
 ImageIO reports no new property for the signed HEIF and JPEG (only the file size changes).
+Every signed file must open in ImageIO as its own type with exactly one image, like every other
+file. **A signed file that fails the read-back is never saved:** its unsigned file, which already
+passed, is saved instead, and the status says "Saved. Not signed: the signed file didn't pass the
+check." (`SignatureStatus.UnsignedReason.signedFileFailedCheck`).
 
 **Signing must be the last change.** Any later change to the bytes (an edit in Photos, export,
 re-encoding by a sharing app) breaks the signature or removes it.
@@ -261,7 +265,8 @@ allow, from the system's metadata. A tag the system adds that isn't listed here 
 - **Processed fallback (a lens without RAW):** written by AVFoundation with the replacement
   dictionary, like the DNG.
 
-**Read back before saving (fail closed).** Every finished file, after signing, is read back by
+**Read back before saving (fail closed).** Every finished file is read back before signing and,
+when signed, again after signing, by
 the project's own reader (`MetadataFileReader`): every tag in every TIFF directory (IFD0, EXIF,
 GPS, interoperability, SubIFDs, and any chained IFD such as a thumbnail), every JPEG segment,
 every HEIF box, item, item property and reference, and every XMP property. ImageIO then opens the
@@ -303,13 +308,27 @@ for all 8,192 switch combinations in every format.
 | Sub-second time | `SubSecTime`, `SubSecTimeOriginal`, `SubSecTimeDigitized` | same |
 | Time zone | `OffsetTime`, `OffsetTimeOriginal`, `OffsetTimeDigitized` | same |
 | Camera make and model | `Make`, `Model`, `HostComputer` | same |
+| Always in a DNG, empty when their switch is off | `DateTime`, `Make`, `Model`, `Software`: the value above when the switch is on, an empty text when it is off (see below) | — (left out when off) |
 | Lens make and model | EXIF `LensMake`, `LensModel`, `LensSpecification`; DNG `LensInfo` | EXIF `LensMake`, `LensModel`, `LensSpecification` |
 | Lens correction instructions | `OpcodeList1`, `OpcodeList2`, `OpcodeList3` | — |
 | Exposure settings | EXIF `ExposureTime`, `FNumber`, `ExposureProgram`, `PhotographicSensitivity`, `SensitivityType`, `ShutterSpeedValue`, `ApertureValue`, `BrightnessValue`, `ExposureBiasValue`, `MaxApertureValue`, `MeteringMode`, `Flash`, `FocalLength`, `SubjectArea`, `SensingMethod`, `SceneType`, `ExposureMode`, `WhiteBalance`, `FocalLengthIn35mmFilm`, `SceneCaptureType` | same |
 | iOS version / app name and version | `Software`: "Photivra Nope Camera 0.x.y" (app), the system's version (iOS), or "Photivra Nope Camera 0.x.y (27.2.1)" (both) | same, plus HEIF XMP `xmp:CreatorTool` with the same value |
 | Maker notes | EXIF `MakerNote` | same |
 | Your name and copyright | `Artist`, `Copyright`, only when entered | same, plus HEIF XMP `dc:creator`, `dc:rights` with the same values |
-| Content Credentials (signed files only) | IFD0 tag `0xCD41` | JPEG `APP11`; HEIF top-level `uuid` box (C2PA 2.1, appendix A; to be confirmed by the signing work) |
+| Content Credentials (signed files only) | IFD0 tag `0xCD41` | JPEG `APP11`; HEIF top-level `uuid` box (C2PA 2.1, appendix A) |
+
+**Four TIFF fields every DNG carries (issue #65).** On an iPhone 16 Pro Max with iOS 27.2.1,
+`AVCapturePhoto.fileDataRepresentation(with:)` returns no file at all for a Bayer RAW photo unless
+the replacement metadata's `{TIFF}` dictionary has `DateTime`, `Make`, `Model` and `Software`
+(measured with debug runs on the device; Apple doesn't document it). Leaving out any one fails;
+`HostComputer` and the resolution keys aren't needed; an empty text for each of the four works,
+and `NSNull` doesn't. So every DNG's dictionary has all four (`MetadataPlan.requiredRAWTIFFFields`):
+the real value when the item's switch is on, and an empty text, never a placeholder, when it is
+off. An empty field says nothing about the date, camera or software. The read-back accepts each
+of the four when its switch is off only if it is empty: one NUL, a count of 0, only NULs, or the
+tag left out (which of these AVFoundation writes is a device check below); any text fails. HEIF
+and JPEG don't need them, so they leave them out when the switch is off. `UniqueCameraModel`
+keeps its "Generic camera" value.
 
 **Containers.** A JPEG may hold only `APP0` (JFIF), `APP1` (EXIF), `APP2` (ICC profile), the
 empty IPTC record ImageIO always writes in `APP13` (no fields; checked byte for byte), and the
@@ -334,4 +353,12 @@ Simulator has no camera and no real DNG can be made in a unit test:
 - the processed fallback HEIF passes the read-back;
 - the add-only prompt appears once, and a RAW plus HEIF shows as one photo in Photos with the RAW
   as the original;
-- an exiftool dump of each saved file matches the tables above.
+- an exiftool dump of each saved file matches the tables above;
+- with "Remove all optional details" on (the default) and with every switch on, a RAW is saved
+  (issue #65), and the saved DNG's `DateTime`, `Make`, `Model` and `Software` are empty with the
+  switches off: note which encoding AVFoundation uses (one NUL, a count of 0, or the tag left
+  out), and that the read-back accepts it;
+- a signed DNG, HEIF and JPEG are saved and open in Photos and a RAW editor, and validate with
+  c2patool (issue #66); with maker notes on, an exiftool dump of the signed DNG's maker note
+  matches the unsigned one's (the maker note moves 12 bytes, and its offsets are assumed to be
+  relative to its own start).

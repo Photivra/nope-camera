@@ -25,9 +25,21 @@ The logic modules are tested with Swift Testing, against fakes of the hardware p
 ```sh
 xcodebuild test -scheme NopeKit-Package \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
-  -derivedDataPath DerivedData -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO
+  -derivedDataPath DerivedData -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO \
+  'OTHER_SWIFT_FLAGS=$(inherited) -Xllvm -instrprof-atomic-counter-update-all'
 scripts/check-coverage.sh DerivedData
 ```
+
+Keep the `OTHER_SWIFT_FLAGS` line (CI passes it too). Swift Testing runs tests in parallel, and
+coverage counters are plain, non-atomic increments by default, so two threads running the same
+code can lose a count. Swift's coverage data derives some regions by subtraction (for example the
+`else` arm is the parent's count minus the `then` arm's), so a lost count in the parent can make
+a region that ran show as 0. That is why the gate sometimes reported
+`HEIFReader.swift: 134/135 regions` (issue #59), and `LensCatalog.swift: 36/37` in a local run
+without the flag, though a test does run that code. `-instrprof-atomic-counter-update-all` makes
+every counter update atomic (LLVM's `InstrProfiling` pass option, the same as Clang's
+`-fprofile-update=atomic`), so the counts are exact; it changes only coverage builds. With it,
+the unit tests and the gate passed 5 times in a row locally with 100% each time (2026-11-14).
 
 `check-coverage.sh` requires 100% of lines and regions in `NopeCore`, `NopeCapture`,
 `NopeDevelop` and `NopeSigning`. Swift's coverage data records each branch arm (each `switch`
@@ -70,6 +82,22 @@ decisions are in `PhotoKitMapping` (resource types and access), and `RAWDevelope
   in the Simulator and read them back clean for the first-launch and all-on settings. `NopeUI` is not part of
 the coverage gate: it is covered by UI tests and accessibility audits instead.
 
+### RAW not saved without four TIFF fields (issue #65)
+
+**How it was found.** On an iPhone 16 Pro Max (iOS 27.2.1), every Bayer RAW capture failed
+("The photo wasn't taken. Try again.") with the default "Remove all optional details". Debug
+runs on the device showed that `AVCapturePhoto.fileDataRepresentation(with:)` returned `nil`:
+it needs `DateTime`, `Make`, `Model` and `Software` in the replacement metadata's `{TIFF}`
+dictionary. Leaving out any one fails; an empty text for each works; `NSNull` doesn't.
+
+**Tests.** `MetadataPropertiesTests.rawPropertiesAlwaysHoldTheFourTIFFFields` checks, for all
+8,192 switch combinations, that a DNG's dictionary has the four keys, each the system's value
+when its switch is on and empty when it is off, and that HEIF and JPEG don't get them.
+`MetadataVerifierTests.emptyTIFFFieldsInADNGAreAcceptedInEveryEncoding` checks that the read-back
+accepts every way a TIFF writer can store an empty text (one NUL, a count of 0, several NULs)
+and the tag left out, and rejects a space, any text and a non-text value. Which encoding
+AVFoundation writes is a device check (`docs/PRIVACY.md`, "Device checks").
+
 ### Developed looks
 
 The RAW renderer can't run on a hand-built DNG, so one test needs a real DNG and is skipped
@@ -104,6 +132,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
 | `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" message |
 | `signingFails` | The signer fails: the photo is saved unsigned, "Saved. Not signed: the signature couldn't be created.", shutter still enabled |
+| `signedFileRejected` | Every signed file fails the read-back: the unsigned files are saved, "Saved. Not signed: the signed file didn't pass the check.", shutter still enabled |
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure message |
@@ -118,6 +147,21 @@ settings are never touched.
 | `allow` (clean view) | The no-RAW badge stays visible in clean view |
 
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
+
+`testBlankPictureAtTheLargestTextSize` failed intermittently on CI with "Contrast failed" on
+the status text (issue #59). The failing runs audited right after the status text appeared,
+while the blank-picture retry could still change the screen, and before the screen had stopped
+scrolling. The test now waits for the final state ("isn't sending a picture"), scrolls to the
+top, and audits only once the layout has stopped moving: the shutter's frame must read the same
+twice in a row, half a second apart (`waitUntilStill`), instead of a fixed pause. Issues are
+judged after the audit rather than inside its handler (querying the app from the handler can
+make the audit time out), and a failing audit is repeated once after the layout settles again.
+It could not be made to fail locally before or after the change (10 runs, 4 of them with every
+CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
+
+`CaptureReadinessTests` use a 600-second timeout: the ready answer comes on a fixed read, so the
+timeout only has to be longer than any CI runner can take (with 5 seconds, `waitsUntilReady`
+failed intermittently while the other tests kept every thread busy).
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
 Every new screen and state adds an audit.
@@ -226,6 +270,48 @@ software key and validate them with the C2PA library's reader, offline: the hash
 claim signature are valid, the only failure is `signingCredential.untrusted`, and a one-bit
 change in the image data or in the claim makes the file invalid. They also check that signing
 adds only the Content Credentials store (`docs/PRIVACY.md`, "Content Credentials").
+
+They also open every signed file in ImageIO, as Photos and other apps do: it must report the
+file's own type (`com.adobe.raw-image`, `public.heic` or `public.jpeg`) with exactly one image
+(`signedFileOpensInImageIOAsItsTypeWithOneImage`, and `ReadBackTests` runs the app's own
+`ImageIOReadBack`). The synthetic DNG is 256 × 256 pixels because ImageIO doesn't recognize the
+same DNG as a DNG at 200 × 200 or smaller (macOS 27, 2026-11-14), and a test needs an unsigned
+DNG that ImageIO opens to show the signed one still does.
+
+### Signed DNG and ImageIO
+
+**How it was found (issue #66).** On an iPhone 16 Pro Max (iOS 27.2.1) with every metadata item
+on, the RAW and HEIF passed the read-back before signing, but after signing the DNG,
+`CGImageSourceCreateWithData` reported `public.tiff` with 0 images instead of
+`com.adobe.raw-image`, so the read-back rejected it and nothing was saved.
+
+**Cause.** The C2PA library's own DNG writer (c2pa-rs 0.92.0) writes a new IFD0, the old tags
+plus tag 52545, at the end of the file and points the header at it; the old IFD0 stays in the
+file unreferenced. Reproduced on a Mac with c2patool 0.28.6, on a camera DNG and on the
+synthetic one: ImageIO reports `public.tiff` for the signed file. On the camera DNG, moving IFD0
+to the end of the file is enough to cause it, with no store at all, and inserting tag 52545 into
+IFD0 where it is keeps `com.adobe.raw-image` (macOS 27, 2026-11-14).
+
+**Fix.** nope. inserts the entry into IFD0 in place and appends the store
+(`DNGManifestSlot`), then signs with the C2PA library's data-hash workflow: a placeholder store
+of the final size, the hash over the file with the store excluded, and the signed store written
+over the placeholder (`ContentCredentialsSigner.embedInDNG`). The tests check that every value in
+every directory is unchanged after the insertion, in both byte orders, with IFD0 first or last,
+SubIFDs, EXIF, GPS and interoperability directories, a chained IFD1 and SHORT offsets, plus 400
+seeded random layouts and damaged files (`DNGManifestSlotTests`), and
+`theLibrarysOwnDNGWriterMakesAFileImageIOCantOpenAsDNG` records the library's behavior, so a
+library update that changes it is noticed. Checked by hand on 2026-11-14: c2patool 0.28.6
+reports `Valid` for the signed synthetic DNG, HEIF and JPEG files of every kind from the tests
+(`assertion.dataHash.match` for the DNG and JPEG, `assertion.bmffHash.match` for the HEIF), with
+`signingCredential.untrusted` the only failure, and ImageIO on macOS 27 opens each as its own
+type with one image. A DNG from the camera is signed this way only on a device (`docs/PRIVACY.md`,
+"Device checks").
+
+**Safety net.** If a signed file still fails the read-back for any reason, `PhotoSaver` saves
+the unsigned file, which passed the read-back first, and the status says "Saved. Not signed: the
+signed file didn't pass the check." An unreadable file is never saved.
+
+### Checking a signed file by hand
 
 To check a signed file by hand, use [c2patool](https://github.com/contentauth/c2patool) on a Mac
 (a local tool only; it isn't a project dependency):

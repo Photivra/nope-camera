@@ -151,6 +151,16 @@ extension MetadataField {
         "Software", .primary, 0x0131, [ImageIOKey(tiff, "Software")], .optional([.systemVersion, .appNameAndVersion]),
         all)
 
+    /// The `DateTime` tag (`0x0132`), the date and time the file was written.
+    public static let dateTime = item(
+        "DateTime", .primary, 0x0132, [ImageIOKey(tiff, "DateTime")], .dateAndTime, all)
+
+    /// The `Make` tag (`0x010F`), the camera's manufacturer.
+    public static let make = item("Make", .primary, 0x010F, [ImageIOKey(tiff, "Make")], .cameraMakeAndModel, all)
+
+    /// The `Model` tag (`0x0110`), the camera's model name.
+    public static let model = item("Model", .primary, 0x0110, [ImageIOKey(tiff, "Model")], .cameraMakeAndModel, all)
+
     /// The DNG `UniqueCameraModel` tag (`0xC614`). Required by DNG, so a DNG always carries it;
     /// its value is generic when ``MetadataItem/exactCameraModel`` is off.
     public static let uniqueCameraModel = item(
@@ -257,7 +267,7 @@ extension MetadataField {
 
     /// The fields that describe the capture: dates, camera, lens and exposure.
     private static let capture: [MetadataField] = [
-        item("DateTime", .primary, 0x0132, [ImageIOKey(tiff, "DateTime")], .dateAndTime, all),
+        dateTime,
         item("DateTimeOriginal", .exif, 0x9003, [ImageIOKey(exif, "DateTimeOriginal")], .dateAndTime, all),
         item("DateTimeDigitized", .exif, 0x9004, [ImageIOKey(exif, "DateTimeDigitized")], .dateAndTime, all),
         item("SubSecTime", .exif, 0x9290, [ImageIOKey(exif, "SubsecTime")], .subSecondTime, all),
@@ -266,8 +276,8 @@ extension MetadataField {
         item("OffsetTime", .exif, 0x9010, [ImageIOKey(exif, "OffsetTime")], .timeZone, all),
         item("OffsetTimeOriginal", .exif, 0x9011, [ImageIOKey(exif, "OffsetTimeOriginal")], .timeZone, all),
         item("OffsetTimeDigitized", .exif, 0x9012, [ImageIOKey(exif, "OffsetTimeDigitized")], .timeZone, all),
-        item("Make", .primary, 0x010F, [ImageIOKey(tiff, "Make")], .cameraMakeAndModel, all),
-        item("Model", .primary, 0x0110, [ImageIOKey(tiff, "Model")], .cameraMakeAndModel, all),
+        make,
+        model,
         item("HostComputer", .primary, 0x013C, [ImageIOKey(tiff, "HostComputer")], .cameraMakeAndModel, all),
         item(
             "LensSpecification", .exif, 0xA432, [ImageIOKey(exif, "LensSpecification"), ImageIOKey(exifAux, "LensInfo")],

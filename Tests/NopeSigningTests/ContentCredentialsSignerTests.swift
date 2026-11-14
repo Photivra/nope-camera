@@ -1,5 +1,6 @@
 import C2PA
 import Foundation
+import ImageIO
 import NopeCore
 import Testing
 import X509
@@ -82,6 +83,28 @@ struct FailingClaimKeyProvider: SigningKeyProvider {
     func makeKey() throws -> any PerPhotoSigningKey { FailingClaimKey() }
 }
 
+/// What ImageIO makes of a file: its type identifier and image count.
+struct ImageIOType: Equatable {
+    let type: String?
+    let count: Int
+
+    /// The type ImageIO reports for each format, as the app's read-back expects
+    /// (`ImageIOReadBack.expectedType(of:)`).
+    static func of(_ format: PhotoFormat) -> String {
+        switch format {
+        case .raw: "com.adobe.raw-image"
+        case .heif: "public.heic"
+        case .jpeg: "public.jpeg"
+        }
+    }
+
+    /// Opens the bytes with ImageIO.
+    static func read(_ data: Data) -> ImageIOType {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return ImageIOType(type: nil, count: 0) }
+        return ImageIOType(type: CGImageSourceGetType(source) as String?, count: CGImageSourceGetCount(source))
+    }
+}
+
 /// Flips one bit of the byte at an index.
 func flippingBit(of data: Data, at index: Int) -> Data {
     var copy = data
@@ -126,6 +149,37 @@ struct ContentCredentialsSignerTests {
         #expect(report.codes("failure") == ["signingCredential.untrusted"])
     }
 
+    /// Issue #66: every signed file opens in ImageIO, the way Photos and other apps open it, as
+    /// its own type with exactly one image, and still validates with the C2PA library's reader.
+    @Test(arguments: SignableFile.allCases)
+    func signedFileOpensInImageIOAsItsTypeWithOneImage(file: SignableFile) async throws {
+        let original = SyntheticPhotos.data(for: file)
+        let expected = ImageIOType.of(file.format)
+        #expect(ImageIOType.read(original) == ImageIOType(type: expected, count: 1), "the unsigned fixture")
+        let signed = try await signer.signData(original, as: file)
+        #expect(ImageIOType.read(signed) == ImageIOType(type: expected, count: 1))
+        #expect(Report(try validate(signed, as: file)).state == "Valid")
+    }
+
+    /// Why nope. inserts the DNG's store itself: the C2PA library's own DNG writer moves IFD0 to
+    /// the end of the file, and ImageIO then sees a plain TIFF with no image (measured on an
+    /// iPhone 16 Pro Max with iOS 27.2.1, and here in the Simulator). If a library update changes
+    /// this, this test fails, and the custom layout can be reconsidered.
+    @Test func theLibrarysOwnDNGWriterMakesAFileImageIOCantOpenAsDNG() throws {
+        let key = SimulatorSoftwareSigningKey()
+        let signer = try Signer(
+            algorithm: .es256, certificateChainPEM: try SelfIssuedCertificate.pem(for: key), tsa: nil
+        ) { claim in try key.signatureDER(for: claim) }
+        let manifest = ContentCredentialsManifest(file: .singleFrameRAW, generator: ClaimGenerator(version: "0.1.0"), instanceID: UUID())
+        let builder = try Builder(context: OfflineC2PAContext.make(), manifestJSON: manifest.json())
+        let destination = InMemoryFile()
+        try builder.sign(
+            format: SignableFile.singleFrameRAW.mediaType, source: InMemoryStream.make(InMemoryFile(SyntheticPhotos.dng())),
+            destination: InMemoryStream.make(destination), signer: signer)
+        #expect(ImageIOType.read(destination.data).type == "public.tiff")
+        #expect(ImageIOType.read(destination.data).type != ImageIOType.of(.raw))
+    }
+
     @Test(arguments: SignableFile.allCases)
     func manifestSaysOnlyWhatNopeDid(file: SignableFile) async throws {
         let signed = try await signer.signData(SyntheticPhotos.data(for: file), as: file)
@@ -159,8 +213,9 @@ struct ContentCredentialsSignerTests {
     @Test(arguments: SignableFile.allCases)
     func oneBitChangeInTheImageFailsValidation(file: SignableFile) async throws {
         let signed = try await signer.signData(SyntheticPhotos.data(for: file), as: file)
-        // A byte inside the image data: the DNG's pixel strip keeps its offset (182) after
-        // signing; the HEIF's media data and the JPEG's scan data end the file.
+        // A byte inside the image data: the DNG's pixel strip starts at 182 before signing and
+        // 194 after (the new IFD0 entry moves it 12 bytes); the HEIF's media data and the JPEG's
+        // scan data end the file.
         let index =
             switch file.format {
             case .raw: 200

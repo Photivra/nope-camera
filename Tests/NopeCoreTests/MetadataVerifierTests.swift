@@ -48,6 +48,40 @@ struct MetadataVerifierTests {
                 == [.unexpectedValue(MetadataAllowlist.TagID(.primary, 0xC614))])
     }
 
+    /// Issue #65: a DNG always carries DateTime, Make, Model and Software, empty when the switch
+    /// is off. Every way a TIFF writer can store an empty ASCII value passes: one NUL (TIFF 6.0,
+    /// section 2: "the last byte must be NUL"), a count of 0, several NULs, or the tag left out.
+    /// Which one AVFoundation writes is a device check (docs/TESTING.md). Any text, a space, or a
+    /// value that isn't ASCII fails.
+    @Test func emptyTIFFFieldsInADNGAreAcceptedInEveryEncoding() {
+        let encodings: [(TIFFBuilder.Value, passes: Bool)] = [
+            (.ascii(""), true),
+            (.raw(type: 2, count: 0, bytes: []), true),
+            (.raw(type: 2, count: 2, bytes: [0, 0]), true),
+            (.raw(type: 2, count: 4, bytes: [0, 0, 0, 0]), true),
+            (.ascii(" "), false),
+            (.ascii("Apple"), false),
+            (.bytes([0]), false),
+        ]
+        let allowlist = Self.plan.allowlist(for: .raw, signed: false)
+        for (value, passes) in encodings {
+            for tag: UInt16 in [0x0132, 0x010F, 0x0110, 0x0131] {
+                let root = CleanFiles.tiff(for: allowlist)
+                root.entries.removeAll { $0.0 == tag }
+                root.entries.append((tag, value))
+                let found = violations(Data(TIFFBuilder.build(root)), .raw, allowlist)
+                #expect(found == (passes ? [] : [.unexpectedValue(MetadataAllowlist.TagID(.primary, tag))]), "\(tag) \(value)")
+            }
+        }
+    }
+
+    @Test func theFourTIFFFieldsMayBeAbsentFromADNG() {
+        let allowlist = Self.plan.allowlist(for: .raw, signed: false)
+        let root = CleanFiles.tiff(for: allowlist)
+        root.entries.removeAll { [0x0132, 0x010F, 0x0110, 0x0131].contains($0.0) }
+        #expect(violations(Data(TIFFBuilder.build(root)), .raw, allowlist).isEmpty)
+    }
+
     @Test func missingRequiredDNGTagIsRejected() {
         let allowlist = Self.plan.allowlist(for: .raw, signed: false)
         let root = CleanFiles.tiff(for: allowlist)

@@ -33,7 +33,10 @@ struct SimulatedReadBack: MetadataReading {
             tags = [0x828D, 0x828E, 0xC612, 0xC621].map { MetadataInventory.Tag(directory: .primary, tag: $0) }
             tags.append(MetadataInventory.Tag(directory: .primary, tag: 0xC614, text: MetadataPlan.genericUniqueCameraModel))
         }
-        if addsUnexpectedTag { tags.append(MetadataInventory.Tag(directory: .primary, tag: Self.futureSystemTag)) }
+        // A file that isn't the placeholder was changed by a breaking signer: it fails.
+        if addsUnexpectedTag || file.data != SimulatedCaptureBackend.placeholderPhotoData {
+            tags.append(MetadataInventory.Tag(directory: .primary, tag: Self.futureSystemTag))
+        }
         return MetadataReadBack(
             file: MetadataFileReader.Result(
                 inventory: MetadataInventory(tags: tags),
@@ -43,7 +46,8 @@ struct SimulatedReadBack: MetadataReading {
 }
 
 /// Stands in for the signer: returns each file unchanged, so the status shows "Saved and
-/// signed.", or fails, so it shows the signing-failed message. The simulated backend's
+/// signed."; fails, so it shows the signing-failed message; or returns a changed file that
+/// fails the read-back, so the unsigned file is saved and the status says why (issue #66). The simulated backend's
 /// placeholder bytes aren't an image the real signer can sign; `NopeSigningTests` cover real
 /// signing.
 struct SimulatedSigner: PhotoSigning {
@@ -53,10 +57,14 @@ struct SimulatedSigner: PhotoSigning {
     /// Whether every file fails to sign.
     let fails: Bool
 
-    /// Returns the file, or throws ``Failure``.
+    /// Whether every signed file is changed so that it fails the read-back.
+    var breaksFiles = false
+
+    /// Returns the file, a changed copy, or throws ``Failure``.
     func sign(_ file: PhotoFile) async throws -> PhotoFile {
         if fails { throw Failure() }
-        return file
+        guard breaksFiles else { return file }
+        return PhotoFile(format: file.format, data: file.data + [0], isProcessedByDevice: file.isProcessedByDevice)
     }
 }
 

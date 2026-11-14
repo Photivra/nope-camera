@@ -4,7 +4,7 @@ nope. is split into a replaceable interface and interface-free logic. The rules 
 [`AGENTS.md`](../AGENTS.md), "Architecture: interface separate from logic"; this page describes
 how the code follows them. Status: in development. The camera captures, each photo's metadata is
 built from the allowlist and checked by reading the file back, and clean photos are saved to
-Photos. Signing is not built yet, so photos are saved unsigned and the app says so.
+Photos, signed with Content Credentials when signing is on.
 
 ## Repository layout
 
@@ -54,8 +54,8 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
    goes from `.starting` to `.running`.
 5. `.selectLens` reconfigures the backend for another lens. `.capture` builds a `MetadataPlan`
    from `saveSettings` and asks the backend for one photo, whose file is written with that
-   plan's metadata. `PhotoSaver` then develops, signs (when a signer exists), reads back,
-   checks and saves it (below). The result is `captureStatus = .saved(photo)` or
+   plan's metadata. `PhotoSaver` then develops, reads back, signs (when a signer exists), reads
+   back again, checks and saves it (below). The result is `captureStatus = .saved(photo)` or
    `.failed(error)`.
 6. Backend events (`CaptureEvent`) update `sessionStatus`: interruptions (calls, other apps,
    multitasking), critical heat (the model stops the camera and restarts it when the device
@@ -138,10 +138,12 @@ photo.
  PhotoSaver (NopeCore)
    1. files: the DNG, plus HEIF/JPEG from RAWDeveloper (NopeDevelop), as SaveSettings.formats
       say; a lens without RAW gives its processed fallback file
-   2. PhotoSigning hook (NopeSigning, not built yet: files are saved unsigned, status says so)
-   3. read-back of every file: ImageIOReadBack = MetadataFileReader (every tag, block and XMP
+   2. read-back of every file: ImageIOReadBack = MetadataFileReader (every tag, block and XMP
       property) + ImageIO's keys; MetadataVerifier against MetadataPlan.allowlist(for:signed:);
       for the DNG, its RAW image data must equal the reference. Any violation: nothing is saved
+   3. PhotoSigning (ContentCredentialsSigner, NopeSigning) when signing is on; each signed file
+      is read back the same way, and one that fails is replaced by its unsigned file, with
+      "not signed" and the reason in the status
    4. PhotoKitLibrary (NopeCapture): add-only access, one PHAssetCreationRequest per asset;
       the DNG as `.photo` and its HEIF (or JPEG) as `.alternatePhoto`
 ```
@@ -174,10 +176,11 @@ Photos go from memory to Photos (`addResource(with:data:options:)`) and never li
 
 `NopeCore` defines the signing hook, `PhotoSigning.sign(_:)`, which takes and returns a
 `PhotoFile` (its format, bytes, and whether the phone's camera processed it). `PhotoSaver` builds
-each file's metadata, then, when `MetadataSettings.signsPhotos` is on, calls the signer, then
-reads the signed file back against `MetadataPlan.allowlist(for:signed:)`, which permits the
-Content Credentials item of a signed file and nothing else, then saves it. If signing fails, the
-file is saved unsigned and the status says so. `NopeSigning` implements the hook:
+each file's metadata and reads the file back, then, when `MetadataSettings.signsPhotos` is on,
+calls the signer, then reads the signed file back against `MetadataPlan.allowlist(for:signed:)`,
+which permits the Content Credentials item of a signed file and nothing else, then saves it. If
+signing fails, or the signed file fails the read-back, the unsigned file is saved and the status
+says so. `NopeSigning` implements the hook:
 
 ```
  ContentCredentialsSigner (PhotoSigning)
@@ -186,6 +189,8 @@ file is saved unsigned and the status says so. `NopeSigning` implements the hook
    ├─ SelfIssuedCertificate (swift-certificates): anonymous, non-CA, C2PA EKU, fixed validity
    ├─ ContentCredentialsManifest: one c2pa.created action, nope. as claim generator
    ├─ OfflineC2PAContext: every fetch off, no network host
+   ├─ DNGManifestSlot: a DNG's tag 52545 inserted into IFD0 in place, so iOS still opens it
+   │                   as a DNG; signed with the library's data-hash workflow (issue #66)
    └─ InMemoryFile and InMemoryStream: the C2PA library reads and writes memory, never a file
 ```
 

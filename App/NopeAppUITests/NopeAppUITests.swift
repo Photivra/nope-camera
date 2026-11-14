@@ -36,15 +36,58 @@ final class NopeAppUITests: XCTestCase {
     /// still fails the test. A contrast issue the audit can't attach to any element is ignored
     /// too, because it can't be placed on screen; the layout with the clean view button puts
     /// more of the screen near the bottom edge.
+    ///
+    /// Made deterministic for issue #59: the audit runs only once the layout has stopped moving
+    /// (``waitUntilStill(_:)``) instead of after a fixed pause, so a slow runner can't audit a
+    /// frame in the middle of the scroll; issues are judged after the audit, not inside its
+    /// handler, because querying the app from inside the handler can make the audit time out;
+    /// and a failing audit is run once more after the layout settles again.
     @MainActor
-    private func auditScrollingScreen(_ app: XCUIApplication) throws {
-        app.swipeDown()
-        app.swipeDown()
-        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Scrolling stops")], timeout: 2)
-        try app.performAccessibilityAudit { issue in
-            guard issue.auditType == .contrast else { return false }
-            guard let element = issue.element else { return true }
-            return !app.frame.contains(element.frame)
+    private func auditScrollingScreen(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) throws {
+        scrollToTop(app)
+        var remaining = try reportedIssues(app).filter { !Self.isClippedContrastIssue($0, in: app) }
+        if !remaining.isEmpty {
+            waitUntilStill(app)
+            remaining = try reportedIssues(app).filter { !Self.isClippedContrastIssue($0, in: app) }
+        }
+        for issue in remaining {
+            XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
+        }
+    }
+
+    /// Whether an issue is a contrast issue of an element that isn't wholly on screen, or of no
+    /// element, which ``auditScrollingScreen(_:file:line:)`` ignores.
+    @MainActor
+    private static func isClippedContrastIssue(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
+        guard issue.auditType == .contrast else { return false }
+        guard let element = issue.element, element.exists else { return true }
+        return !app.frame.contains(element.frame)
+    }
+
+    /// Swipes down until the screen is at the top and has stopped moving.
+    @MainActor
+    private func scrollToTop(_ app: XCUIApplication) {
+        let shutter = app.buttons["Take Photo"]
+        for _ in 0..<4 {
+            let before = shutter.frame
+            app.swipeDown()
+            waitUntilStill(app)
+            if shutter.frame == before { break }
+        }
+    }
+
+    /// Waits until the shutter's frame reads the same twice in a row, half a second apart, so
+    /// no scroll or animation is still moving the layout (at most 10 seconds).
+    @MainActor
+    private func waitUntilStill(_ app: XCUIApplication) {
+        let shutter = app.buttons["Take Photo"]
+        var last = shutter.frame
+        let deadline = Date().addingTimeInterval(10)
+        while Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.5)
+            let current = shutter.frame
+            if current == last { return }
+            last = current
         }
     }
 
@@ -124,6 +167,18 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(
             app.staticTexts["Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app."]
                 .waitForExistence(timeout: 5))
+        try app.performAccessibilityAudit()
+    }
+
+    @MainActor
+    func testSignedFileThatFailsTheCheckSavesUnsignedAndSaysSo() throws {
+        let app = launch("signedFileRejected")
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+        shutter.tap()
+        XCTAssertTrue(
+            app.staticTexts["Saved. Not signed: the signed file didn't pass the check."].waitForExistence(timeout: 5))
+        XCTAssertTrue(shutter.isEnabled)
         try app.performAccessibilityAudit()
     }
 

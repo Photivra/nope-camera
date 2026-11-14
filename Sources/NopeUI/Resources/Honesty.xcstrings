@@ -4159,6 +4159,72 @@
         }
       }
     },
+    "Saved. Not signed: the signed file didn't pass the check.": {
+      "comment": "Shown after a photo was saved without a Content Credentials signature because the signed file failed the app's final check (for example, the system couldn't open it), so the unsigned file, which passed, was saved instead. Honesty wording: never imply the photo is signed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichert. Nicht signiert: Die signierte Datei hat die Prüfung nicht bestanden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardada. Sin firmar: el archivo firmado no superó la comprobación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrée. Non signée : le fichier signé n’a pas réussi la vérification."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvata. Non firmata: il file firmato non ha superato il controllo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存しました。署名なし：署名済みファイルがチェックに合格しませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장됨. 서명되지 않음: 서명된 파일이 검사를 통과하지 못했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaard. Niet ondertekend: het ondertekende bestand slaagde niet voor de controle."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva. Não assinada: o arquivo assinado não passou na verificação."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已存储。未签名：已签名的文件未通过检查。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已儲存。未簽署：已簽署的檔案未通過檢查。"
+          }
+        }
+      }
+    },
     "Saved. Not signed: this version of the app can't sign photos.": {
       "comment": "Shown after a photo was saved without a Content Credentials signature because this build of the app has no signer, for example a preview or a different interface built on NopeCore. Honesty wording: never imply the photo is signed.",
       "extractionState": "manual",

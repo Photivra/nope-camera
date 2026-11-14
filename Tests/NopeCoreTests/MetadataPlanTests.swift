@@ -1,6 +1,7 @@
 import Foundation
-import NopeCore
 import Testing
+
+@testable import NopeCore
 
 /// The exact tags each format may carry for each switch (AGENTS.md: "metadata tests asserting
 /// the exact tags written for each switch combination"). Written out by hand from
@@ -23,7 +24,7 @@ enum ExpectedTags {
                     0x0142, 0x0143, 0x0144, 0x0145, 0x8769, 0x828D, 0x828E, 0xC612, 0xC613, 0xC614, 0xC616, 0xC617,
                     0xC619, 0xC61A, 0xC61D, 0xC61F, 0xC620, 0xC621, 0xC622, 0xC628, 0xC62A, 0xC65A, 0xC65B, 0xC68D,
                     0xC6F7, 0xC761,
-                ]) .union(ids(.exif, [0x9000, 0xA002, 0xA003]))
+                ]) .union(ids(.exif, [0x9000, 0xA002, 0xA003])).union(alwaysInRAW)
         case .heif:
             ids(.primary, [0x0112, 0x011A, 0x011B, 0x0128, 0x0142, 0x0143, 0x0213, 0x8769])
                 .union(ids(.exif, [0x9000, 0x9101, 0xA000, 0xA001, 0xA002, 0xA003]))
@@ -32,6 +33,10 @@ enum ExpectedTags {
                 .union(ids(.exif, [0x9000, 0x9101, 0xA000, 0xA001, 0xA002, 0xA003]))
         }
     }
+
+    /// DateTime, Make, Model and Software: AVFoundation writes no DNG without them (issue #65),
+    /// so a DNG always has them, empty when their switch is off.
+    static let alwaysInRAW = ids(.primary, [0x0132, 0x010F, 0x0110, 0x0131])
 
     /// The tags one switch adds, by format.
     static func item(_ item: MetadataItem, _ format: PhotoFormat) -> Set<ID> {
@@ -94,6 +99,34 @@ struct MetadataPlanTests {
         #expect(
             plan.allowlist(for: .raw, signed: false).textRules[MetadataAllowlist.TagID(.primary, 0xC614)]
                 == .exactly(MetadataPlan.genericUniqueCameraModel))
+        // The four TIFF fields every DNG carries must be empty when their switches are off.
+        for tag in ExpectedTags.alwaysInRAW {
+            #expect(plan.allowlist(for: .raw, signed: false).textRules[tag] == .exactly(""), "\(tag)")
+        }
+    }
+
+    /// With a field's switch on, its DNG value is the system's (no empty-string rule); with it
+    /// off, only an empty value passes. HEIF and JPEG never carry a field whose switch is off.
+    @Test func theFourTIFFFieldsFollowTheirSwitchesInADNG() {
+        let cases: [(MetadataItem, UInt16)] = [
+            (.dateAndTime, 0x0132), (.cameraMakeAndModel, 0x010F), (.cameraMakeAndModel, 0x0110), (.systemVersion, 0x0131),
+        ]
+        for (item, tag) in cases {
+            var settings = MetadataSettings()
+            settings.set(item, isOn: true)
+            let id = MetadataAllowlist.TagID(.primary, tag)
+            let raw = MetadataPlan(settings: settings).allowlist(for: .raw, signed: false)
+            #expect(raw.tags.contains(id))
+            #expect(raw.textRules[id] == nil || raw.textRules[id] == .any, "\(id)")
+            #expect(raw.allows(ImageIOKey("{TIFF}", MetadataField.catalog.first { $0.tag == tag }!.name)))
+            #expect(!MetadataPlan().allowlist(for: .heif, signed: false).tags.contains(id))
+            #expect(!MetadataPlan().allowlist(for: .jpeg, signed: false).tags.contains(id))
+        }
+        var app = MetadataSettings()
+        app.set(.appNameAndVersion, isOn: true)
+        #expect(
+            MetadataPlan(settings: app, appVersion: "0.2.0").allowlist(for: .raw, signed: false)
+                .textRules[MetadataAllowlist.TagID(.primary, 0x0131)] == .exactly("Photivra Nope Camera 0.2.0"))
     }
 
     /// Every one of the 8,192 switch combinations, for every format, signed and not: the allowed
@@ -243,9 +276,36 @@ struct MetadataPropertiesTests {
         #expect(
             Self.keys(properties) == [
                 "Orientation", "{TIFF}.Orientation", "{Exif}.ExifVersion", "{DNG}.DNGVersion", "{DNG}.BlackLevel",
-                "{DNG}.UniqueCameraModel",
+                "{DNG}.UniqueCameraModel", "{TIFF}.DateTime", "{TIFF}.Make", "{TIFF}.Model", "{TIFF}.Software",
             ])
         #expect((properties["{DNG}"] as? [String: Any])?["UniqueCameraModel"] as? String == "Generic camera")
+        let tiff = properties["{TIFF}"] as? [String: Any]
+        for key in ["DateTime", "Make", "Model", "Software"] { #expect(tiff?[key] as? String == "", "\(key)") }
+    }
+
+    /// Regression test for issue #65: for every one of the 8,192 switch combinations, a DNG's
+    /// replacement metadata has DateTime, Make, Model and Software in `{TIFF}`, each a string:
+    /// the system's value when its switch is on, and empty when it is off. HEIF and JPEG get
+    /// none of them unless the switch is on.
+    @Test func rawPropertiesAlwaysHoldTheFourTIFFFields() {
+        let system = Self.systemMetadata["{TIFF}"] as! [String: Any]
+        for mask in 0..<(1 << MetadataItem.allCases.count) {
+            let settings = ExpectedTags.settings(mask: mask)
+            let plan = MetadataPlan(settings: settings, appVersion: "0.2.0")
+            let tiff = plan.properties(for: .raw, from: Self.systemMetadata)["{TIFF}"] as? [String: Any] ?? [:]
+            let expected: [String: String] = [
+                "DateTime": settings.isOn(.dateAndTime) ? system["DateTime"] as! String : "",
+                "Make": settings.isOn(.cameraMakeAndModel) ? system["Make"] as! String : "",
+                "Model": settings.isOn(.cameraMakeAndModel) ? system["Model"] as! String : "",
+                "Software": plan.softwareValue(systemSoftware: system["Software"] as? String) ?? "",
+            ]
+            for (key, value) in expected where tiff[key] as? String != value {
+                Issue.record("mask \(mask): {TIFF}.\(key) is \(String(describing: tiff[key])), expected \"\(value)\"")
+                return
+            }
+            let processed = plan.properties(for: .jpeg, from: Self.systemMetadata)["{TIFF}"] as? [String: Any] ?? [:]
+            #expect((processed["Make"] != nil) == settings.isOn(.cameraMakeAndModel))
+        }
     }
 
     @Test func everyCustomItemCopiesItsValues() {
@@ -276,8 +336,12 @@ struct MetadataPropertiesTests {
     @Test func exactModelWithoutASourceValueWritesNone() {
         var settings = MetadataSettings()
         settings.set(.exactCameraModel, isOn: true)
+        settings.set(.cameraMakeAndModel, isOn: true)
+        settings.set(.dateAndTime, isOn: true)
         let properties = MetadataPlan(settings: settings).properties(for: .raw, from: [:])
-        #expect(properties.isEmpty)
+        // Only the four TIFF fields AVFoundation needs, empty because the system gave no value.
+        #expect(Self.keys(properties) == ["{TIFF}.DateTime", "{TIFF}.Make", "{TIFF}.Model", "{TIFF}.Software"])
+        #expect((properties["{TIFF}"] as? [String: Any])?.values.allSatisfy { $0 as? String == "" } == true)
     }
 
     @Test(arguments: [

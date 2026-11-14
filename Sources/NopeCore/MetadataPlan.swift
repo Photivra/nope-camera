@@ -18,6 +18,17 @@ public struct MetadataPlan: Equatable, Sendable {
     /// Camera 0.2.0", or "Photivra Nope Camera 0.2.0 (27.2.1)" with the system version.
     public static let appName = "Photivra Nope Camera"
 
+    /// The `{TIFF}` fields a DNG's replacement metadata must always contain: `DateTime`, `Make`,
+    /// `Model` and `Software`.
+    ///
+    /// Measured on an iPhone 16 Pro Max with iOS 27.2.1 (issue #65):
+    /// `AVCapturePhoto.fileDataRepresentation(with:)` returns `nil` for a Bayer RAW photo unless
+    /// the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
+    /// them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
+    /// requirement. Privacy rule: when a field's switch is off, nope. writes an empty string, never
+    /// a placeholder value, so the DNG still says nothing about the date, camera or software.
+    public static let requiredRAWTIFFFields: [MetadataField] = [.dateTime, .make, .model, .software]
+
     /// The XMP basic namespace (XMP part 1, 8.4).
     public static let xmpNamespace = "http://ns.adobe.com/xap/1.0/"
     /// The Photoshop namespace, used by ImageIO for `DateCreated` (XMP part 2, 3.2).
@@ -137,7 +148,9 @@ public struct MetadataPlan: Equatable, Sendable {
     ///     manifest's tag or block.
     /// - Returns: Everything the file may carry.
     public func allowlist(for format: PhotoFormat, signed: Bool) -> MetadataAllowlist {
-        let fields = MetadataField.catalog.filter { writes($0, in: format) }
+        let written = MetadataField.catalog.filter { writes($0, in: format) }
+        let alwaysPresent = format == .raw ? Self.requiredRAWTIFFFields.filter { !written.contains($0) } : []
+        let fields = written + alwaysPresent
         var tags = Set(fields.map { MetadataAllowlist.TagID($0.directory, $0.tag) })
         var blocks: Set<String> = []
         var xmp: Set<MetadataAllowlist.XMPName> = []
@@ -151,6 +164,8 @@ public struct MetadataPlan: Equatable, Sendable {
             textRules[MetadataAllowlist.TagID(.primary, MetadataField.uniqueCameraModel.tag)] =
                 .exactly(Self.genericUniqueCameraModel)
         }
+        // A DNG always carries these four, empty when their switch is off (issue #65).
+        for field in alwaysPresent { textRules[MetadataAllowlist.TagID(field.directory, field.tag)] = .exactly("") }
         switch format {
         case .raw:
             if signed { tags.insert(Self.contentCredentialsTag) }
@@ -169,7 +184,7 @@ public struct MetadataPlan: Equatable, Sendable {
                     MetadataAllowlist.XMPName(Self.xmpNamespace, "ModifyDate"),
                 ])
             }
-            for (field, name) in Self.xmpMirrors where fields.contains(field) { xmp.insert(name) }
+            for (field, name) in Self.xmpMirrors where written.contains(field) { xmp.insert(name) }
             if !xmp.isEmpty { blocks.insert(Self.heifXMPBlock) }
         }
         if settings.isOn(.location) { wildcardDictionaries.insert(MetadataField.gps) }
@@ -191,7 +206,8 @@ public struct MetadataPlan: Equatable, Sendable {
     /// Privacy rule: the result starts empty, and only allowlisted values are copied in
     /// (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
     /// and the person's name and copyright are written by nope.; everything else is the system's
-    /// own value.
+    /// own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+    /// string for each one whose switch is off.
     ///
     /// - Parameters:
     ///   - format: The file's format.
@@ -227,6 +243,13 @@ public struct MetadataPlan: Equatable, Sendable {
         }
         if let orientation {
             for key in MetadataField.orientation.imageIOKeys { Self.put(orientation, at: key, in: &result) }
+        }
+        if format == .raw {
+            // AVFoundation writes no DNG without these four keys (issue #65): an empty string
+            // stands in for a value the switches leave out, or the system didn't supply.
+            for key in Self.requiredRAWTIFFFields.map({ $0.imageIOKeys[0] }) where Self.value(of: key, in: result) == nil {
+                Self.put("", at: key, in: &result)
+            }
         }
         return result
     }

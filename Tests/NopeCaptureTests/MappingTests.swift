@@ -96,12 +96,15 @@ struct CaptureReadinessTests {
     }
 
     @Test func readyAtOnce() async throws {
-        #expect(try await CaptureReadiness.waitUntilReady(timeout: 1, interval: 0.001) { .ready })
+        #expect(try await CaptureReadiness.waitUntilReady(timeout: 600, interval: 0.001) { .ready })
     }
 
+    /// The timeout is far longer than the test can take, so a slow CI runner can't make it give
+    /// up early (issue #59: with 5 s, the test failed intermittently while the other tests kept
+    /// every thread busy). The ready answer comes on the fourth read whatever the timing.
     @Test func waitsUntilReady() async throws {
         let reads = Counter()
-        let ready = try await CaptureReadiness.waitUntilReady(timeout: 5, interval: 0.001) {
+        let ready = try await CaptureReadiness.waitUntilReady(timeout: 600, interval: 0.001) {
             await reads.next() < 3 ? .notReady : .ready
         }
         #expect(ready)
@@ -114,7 +117,7 @@ struct CaptureReadinessTests {
 
     @Test func stopsWhenTheSessionIsntRunning() async {
         await #expect(throws: CaptureError.notRunning) {
-            try await CaptureReadiness.waitUntilReady(timeout: 1, interval: 0.001) { .sessionNotRunning }
+            try await CaptureReadiness.waitUntilReady(timeout: 600, interval: 0.001) { .sessionNotRunning }
         }
     }
 }

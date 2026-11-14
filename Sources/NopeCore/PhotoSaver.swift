@@ -8,9 +8,12 @@ import Foundation
 /// 1. Build the files. A Bayer RAW photo's DNG already has its metadata built from the
 ///    allowlist by the capture backend; HEIF and JPEG are developed from it
 ///    (``PhotoDeveloping``). A lens without RAW gives its processed fallback file.
-/// 2. Sign each file (``PhotoSigning``), when signing is on and a signer exists.
-/// 3. Read each file back (``MetadataReading``) and check it with ``MetadataVerifier``.
+/// 2. Read each file back (``MetadataReading``) and check it with ``MetadataVerifier``.
 ///    Any violation rejects the whole photo: nothing is saved (AGENTS.md, "Fail closed").
+/// 3. Sign each file (``PhotoSigning``), when signing is on and a signer exists, and check the
+///    signed file the same way. A signed file that fails is never saved: the unsigned file,
+///    which passed, is saved instead, and the status says it isn't signed
+///    (``SignatureStatus/UnsignedReason/signedFileFailedCheck``).
 /// 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
 ///    file as one asset (``PhotoLibraryAsset/assets(for:)``).
 public struct PhotoSaver: Sendable {
@@ -62,26 +65,57 @@ public struct PhotoSaver: Sendable {
     ///   - settings: The formats and metadata choices.
     /// - Returns: What was saved.
     /// - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
-    ///   ``CaptureError/metadataNotAllowed`` if any file fails the read-back (nothing is saved),
+    ///   ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
+    ///   saved),
     ///   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
     public func save(_ photo: CapturedPhoto, settings: SaveSettings) async throws(CaptureError) -> SavedPhoto {
         let plan = plan(for: settings.metadata)
         let files = try await buildFiles(for: photo, settings: settings, plan: plan)
-        let (signed, signature) = await sign(files, isOn: settings.metadata.signsPhotos)
+        var status = SignatureStatus.signed
+        var finished: [PhotoFile] = []
         var metadata: [PhotoFormat: MetadataInventory] = [:]
-        for (file, isSigned) in signed {
-            let readBack = try reader.readBack(file)
-            let allowlist = plan.allowlist(for: file.format, signed: isSigned)
-            let violations = MetadataVerifier.violations(
-                in: readBack, allowlist: allowlist, expectedRawImageData: photo.rawImageData)
-            guard violations.isEmpty else { throw .metadataNotAllowed }
-            metadata[file.format] = readBack.file.inventory
+        for file in files {
+            // Fail closed: the unsigned file must pass before anything else happens to it.
+            let unsigned = try check(file, signed: false, plan: plan, rawImageData: photo.rawImageData)
+            switch await sign(file, isOn: settings.metadata.signsPhotos) {
+            case .signed(let signedFile):
+                // A signed file is saved only if it passes too; otherwise the unsigned file,
+                // which did, is saved instead and the status says so (issue #66).
+                if let inventory = try? check(signedFile, signed: true, plan: plan, rawImageData: photo.rawImageData) {
+                    finished.append(signedFile)
+                    metadata[file.format] = inventory
+                    continue
+                }
+                if status == .signed { status = .unsigned(.signedFileFailedCheck) }
+            case .notSigned(let reason):
+                if status == .signed { status = .unsigned(reason) }
+            }
+            finished.append(file)
+            metadata[file.format] = unsigned
         }
-        let finished = signed.map(\.file)
         try await library.add(PhotoLibraryAsset.assets(for: finished))
         return SavedPhoto(
-            formats: finished.map(\.format), isProcessedFallback: !photo.format.isBayerRAW, signature: signature,
+            formats: finished.map(\.format), isProcessedFallback: !photo.format.isBayerRAW, signature: status,
             metadata: metadata)
+    }
+
+    /// Reads a file back and checks it against its allowlist (AGENTS.md, "Fail closed").
+    ///
+    /// - Parameters:
+    ///   - file: The finished file.
+    ///   - signed: Whether the file carries a Content Credentials manifest.
+    ///   - plan: The metadata plan.
+    ///   - rawImageData: The RAW image data the camera returned, which a DNG must still hold.
+    /// - Returns: The file's read-back inventory.
+    /// - Throws: The reader's error, or ``CaptureError/metadataNotAllowed`` for any violation.
+    private func check(
+        _ file: PhotoFile, signed: Bool, plan: MetadataPlan, rawImageData: Data?
+    ) throws(CaptureError) -> MetadataInventory {
+        let readBack = try reader.readBack(file)
+        let violations = MetadataVerifier.violations(
+            in: readBack, allowlist: plan.allowlist(for: file.format, signed: signed), expectedRawImageData: rawImageData)
+        guard violations.isEmpty else { throw .metadataNotAllowed }
+        return readBack.file.inventory
     }
 
     /// Builds the files to save: the DNG and the developed formats for a RAW photo, or the
@@ -110,25 +144,27 @@ public struct PhotoSaver: Sendable {
         }
     }
 
-    /// Signs each file, keeping the unsigned file if signing is off, unavailable or fails.
+    /// Signs one file.
     ///
     /// - Parameters:
-    ///   - files: The files.
+    ///   - file: The file, which has passed the read-back.
     ///   - isOn: Whether the person has signing on.
-    /// - Returns: Each file with whether it is signed, and the photo's signature status.
-    private func sign(_ files: [PhotoFile], isOn: Bool) async -> ([(file: PhotoFile, isSigned: Bool)], SignatureStatus) {
-        guard isOn else { return (files.map { ($0, false) }, .unsigned(.turnedOff)) }
-        guard let signer else { return (files.map { ($0, false) }, .unsigned(.unavailable)) }
-        var result: [(file: PhotoFile, isSigned: Bool)] = []
-        var status = SignatureStatus.signed
-        for file in files {
-            do {
-                result.append((try await signer.sign(file), true))
-            } catch {
-                result.append((file, false))
-                status = .unsigned(.failed)
-            }
+    /// - Returns: The signed file, or why there is none: signing is off, unavailable or failed.
+    private func sign(_ file: PhotoFile, isOn: Bool) async -> SigningOutcome {
+        guard isOn else { return .notSigned(.turnedOff) }
+        guard let signer else { return .notSigned(.unavailable) }
+        do {
+            return .signed(try await signer.sign(file))
+        } catch {
+            return .notSigned(.failed)
         }
-        return (result, status)
+    }
+
+    /// What signing one file gave.
+    private enum SigningOutcome {
+        /// The signed file, not yet read back.
+        case signed(PhotoFile)
+        /// No signed file, for this reason.
+        case notSigned(SignatureStatus.UnsignedReason)
     }
 }

@@ -124,7 +124,7 @@ struct CaptureFormatTests {
         #expect(saved.formats == [.heif])
         #expect(saved.isProcessedFallback)
         #expect(saved.signature == .signed)
-        #expect(SignatureStatus.UnsignedReason.allCases.count == 3)
+        #expect(SignatureStatus.UnsignedReason.allCases.count == 4)
         let file = PhotoFile(format: .raw, data: Data([1]))
         #expect(file.format == .raw && file.data == Data([1]))
         let request = CaptureRequest(lens: Lens(id: "t", kind: .telephoto, bayerRAWFormat: nil), format: .processedFallback(.jpeg))

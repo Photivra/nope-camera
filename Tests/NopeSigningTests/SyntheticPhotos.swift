@@ -52,12 +52,15 @@ enum SyntheticPhotos {
             "2+PX8P8Aedj/2Q==",
         ].joined())!
 
-    /// A minimal little-endian DNG: one IFD holding a 4 × 4, 16-bit Bayer (CFA) image.
+    /// A minimal little-endian DNG: one IFD holding a 256 × 256, 16-bit Bayer (CFA) image.
     ///
     /// Tags follow the DNG specification 1.7.1.0 and TIFF 6.0; only those a reader needs are written.
+    /// ImageIO opens it as `com.adobe.raw-image` with one image, like a camera's DNG. With the
+    /// same tags at 200 × 200 or smaller, ImageIO on macOS 27 reports `public.tiff` with no image
+    /// (measured 2026-11-14), so the tests couldn't tell a DNG ImageIO opens from one it doesn't.
     static func dng() -> Data {
-        let width: UInt32 = 4
-        let height: UInt32 = 4
+        let width: UInt32 = 256
+        let height: UInt32 = 256
         let pixelBytes = Int(width * height) * 2
         // (tag, type, count, value-or-offset bytes)
         typealias Entry = (tag: UInt16, type: UInt16, count: UInt32, value: [UInt8])
@@ -94,7 +97,7 @@ enum SyntheticPhotos {
         }
         bytes += long(0)  // no next IFD
         for i in 0..<Int(width * height) {
-            bytes += withUnsafeBytes(of: UInt16(512 + i * 64).littleEndian, Array.init)
+            bytes += withUnsafeBytes(of: UInt16(truncatingIfNeeded: 512 + i * 64).littleEndian, Array.init)
         }
         return Data(bytes)
     }

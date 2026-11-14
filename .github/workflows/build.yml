@@ -129,6 +129,7 @@ jobs:
           -resultBundlePath unit-tests.xcresult
           -enableCodeCoverage YES
           CODE_SIGNING_ALLOWED=NO
+          'OTHER_SWIFT_FLAGS=$(inherited) -Xllvm -instrprof-atomic-counter-update-all'
       - name: Coverage gate (100% lines and branches of logic modules)
         run: scripts/check-coverage.sh DerivedData
       - name: Upload test results
