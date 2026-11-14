@@ -107,7 +107,8 @@ when the camera opens and when the option changes.
   autofocus is searching) come from key-value observation of the camera, at most four a second,
   while the camera runs: full auto's fast shutter rule and the close-up hint read them too. They
   are shown only while manual controls are on. No video data output is added for them; the meter
-  is the camera's own exposure offset.
+  is the camera's own exposure offset. The live camera readout is built from the same
+  observations (below, "Viewfinder overlays").
 
 ### Full-auto aids (issues #35, #41, #51, #56)
 
@@ -139,7 +140,7 @@ when the camera opens and when the option changes.
 - **Close-Up** sets `autoFocusRangeRestriction = .near`. The **close-up hint** suggests the ultra
   wide lens when the lens stays at its nearest position while autofocus searches; nope. never
   switches lenses itself. The **magnifier** scales the preview view only.
-- **Focus peaking** is part F's live frame-analysis pipeline; it is not part of these aids.
+- **Focus peaking** is part of the live frame analysis (below, "Viewfinder overlays").
 - **Bracketing** uses `AVCapturePhotoBracketSettings` with
   `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
   photo, and each is saved through the same pipeline as a single photo
@@ -191,6 +192,44 @@ keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`
 the photo output's connection before each photo, follows gravity. The photo output records the
 angle as the Exif orientation and doesn't rotate pixels (`AVCaptureSession.h`,
 `videoRotationAngle`), so it becomes the Orientation tag, a locked metadata item.
+
+### Viewfinder overlays
+
+Guides and live aids drawn over the picture (issues #40, #47, #51 and #52), each off by default
+and each its own switch in `NopeSettings.overlays` (`OverlayOptions`; Settings, "Viewfinder
+Overlays"; Grid and Level are also in the quick-controls tray, and the live aids in Pro Tools).
+Nothing they show is written to a photo, stored or logged, and nothing takes touches.
+
+- **Grid** (`GridStyle`): rule of thirds, 4 × 4, a centered square, golden ratio lines or a
+  golden spiral in one of eight placements (`SpiralPlacement`, "Turn Spiral" in Settings). The
+  lines come from `GridGeometry` and `GoldenSpiral` in unit coordinates; `NopeUI` draws them as
+  thin white lines on a dark outline. The spiral turns with an iPhone held sideways.
+- **Level** (`LevelModel`, `LevelTracker`): a horizon bar, or a top-down level when the device
+  points straight down, from gravity readings of a `GravitySource`. The app target supplies Core
+  Motion device motion (`MotionGravitySource`, no permission needed) through
+  `EnvironmentValues.cameraGravitySource`; updates run only while the level is shown. A haptic
+  marks the moment it becomes level; VoiceOver reads the tilt as the level's value.
+- **Live analysis** (`LiveViewModel`, `CameraModel.live`, `LiveViewBackend`): focus peaking and
+  the histogram with clipping indicators. `SystemLiveView` adds an `AVCaptureVideoDataOutput`
+  only while one of them is shown (`LiveAnalysisNeeds`: peaking whenever on; the histogram only
+  with the manual controls and outside clean view). It delivers preview-sized frames with the
+  `.photo` preset; at most four a second (two in Low Power Mode or at serious heat, none at
+  critical heat, `LiveUpdateRate`) are sampled to about 160 × 120 cells (`LumaSampler`), turned to
+  the viewfinder's orientation and analyzed (`Histogram`, `FocusPeakingMap`). The photo output
+  and its settings are untouched. Peaking is drawn on the picture itself, so the focus magnifier
+  enlarges it with the preview; the grid and level stay on the whole frame.
+- **Live camera readout** ("stats for nerds"): the values AVFoundation reports
+  (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
+  four a second) while the readout is shown; no second set of observations and no video. Hidden
+  in clean view.
+
+```
+ NopeUI ViewfinderOverlays ── setNeeds / setShowsStats ──▶ CameraModel.live (LiveViewModel)
+                                                             │
+ LiveViewBackend.setFrameAnalysis / setStatsReadingsEnabled ◀┘   frameAnalyses, statsReadings ──▶ analysis, stats
+   └─ SystemLiveView: video data output (only while needed) ─▶ LumaSampler ─▶ FrameAnalysis
+                      camera readings' observations (while shown) ─▶ CameraStatsReading
+```
 
 ### Camera layout
 

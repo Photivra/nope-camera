@@ -56,6 +56,10 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   outside the photo itself, never logged and never sent. The privacy manifest declares no
   collected data: Apple's "collected" means data transmitted off the device, and the location
   goes only into the person's own photos on the device.
+- **Viewfinder overlays:** the level reads the motion sensors (Core Motion device motion, which
+  needs no permission) only while it is shown; focus peaking and the histogram sample a few
+  reduced preview frames a second in memory only while they are shown; the live camera readout
+  reads values the camera reports. None of this is written to a photo, stored, logged or copied.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
   nothing. Debug builds include the

@@ -99,6 +99,8 @@ enum QuickControls {
         light,
         flash,
         exposure,
+        grid,
+        level,
         fastShutter,
         closeUp,
         magnifier,

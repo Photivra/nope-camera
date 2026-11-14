@@ -45,6 +45,9 @@ public final class CameraModel {
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
+    /// The live aids over the viewfinder: histogram, focus peaking and the live camera readout.
+    public let live: LiveViewModel
+
     /// Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
     /// focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
     public private(set) var isMagnifying = false
@@ -81,6 +84,7 @@ public final class CameraModel {
         self.saver = saver
         self.now = now
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
+        live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)
     }
 

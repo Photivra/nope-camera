@@ -152,6 +152,7 @@ public struct SettingsScreen: View {
                         bundle: .module, comment: "Explains the clean view switch."))
             }
             FastShutterSettingsView.link(settings: settings)
+            OverlaySettingsView.link(settings: settings)
             Toggle(isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) })) {
                 SettingLabel(
                     title: Text("Night Mode", bundle: .module, comment: "Switch and its Voice Control name: shows nope.'s screens in red on black for working in the dark. Keep \"nope.\" unchanged."),
