@@ -105,8 +105,8 @@ when the camera opens and when the option changes.
   `ManualControlsModel` to apply its settings again after every start and lens switch.
 - **Readings** (exposure offset, ISO, shutter, focus position, aperture, white balance) come from
   key-value observation of the camera, at most four a second, only while manual controls are on.
-  No video data output is added, so there is no live histogram; the meter is the camera's own
-  exposure offset.
+  The meter is the camera's own exposure offset; the live histogram is a separate, opt-in
+  overlay (below, "Viewfinder overlays").
 - **Bracketing** uses `AVCapturePhotoBracketSettings` with
   `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
   photo, and each is saved through the same pipeline as a single photo
@@ -130,6 +130,42 @@ keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`
 the photo output's connection before each photo, follows gravity. The photo output records the
 angle as the Exif orientation and doesn't rotate pixels (`AVCaptureSession.h`,
 `videoRotationAngle`), so it becomes the Orientation tag, a locked metadata item.
+
+### Viewfinder overlays
+
+Guides and live aids drawn over the picture (issues #40, #47, #51 and #52), each off by default
+and each its own switch in `NopeSettings.overlays` (`OverlayOptions`; Settings, "Viewfinder
+Overlays"; Grid and Level are also in the quick-controls tray, and the live aids in Pro Tools).
+Nothing they show is written to a photo, stored or logged, and nothing takes touches.
+
+- **Grid** (`GridStyle`): rule of thirds, 4 × 4, a centered square, golden ratio lines or a
+  golden spiral in one of eight placements (`SpiralPlacement`, "Turn Spiral" in Settings). The
+  lines come from `GridGeometry` and `GoldenSpiral` in unit coordinates; `NopeUI` draws them as
+  thin white lines on a dark outline. The spiral turns with an iPhone held sideways.
+- **Level** (`LevelModel`, `LevelTracker`): a horizon bar, or a top-down level when the device
+  points straight down, from gravity readings of a `GravitySource`. The app target supplies Core
+  Motion device motion (`MotionGravitySource`, no permission needed) through
+  `EnvironmentValues.cameraGravitySource`; updates run only while the level is shown. A haptic
+  marks the moment it becomes level; VoiceOver reads the tilt as the level's value.
+- **Live analysis** (`LiveViewModel`, `CameraModel.live`, `LiveViewBackend`): focus peaking and
+  the histogram with clipping indicators. `SystemLiveView` adds an `AVCaptureVideoDataOutput`
+  only while one of them is shown (`LiveAnalysisNeeds`: peaking whenever on; the histogram only
+  with the manual controls and outside clean view). It delivers preview-sized frames with the
+  `.photo` preset; at most four a second (two in Low Power Mode or at serious heat, none at
+  critical heat, `LiveUpdateRate`) are sampled to about 160 × 120 cells (`LumaSampler`), turned to
+  the viewfinder's orientation and analyzed (`Histogram`, `FocusPeakingMap`). The photo output
+  and its settings are untouched.
+- **Live camera readout** ("stats for nerds"): the values AVFoundation reports
+  (`CameraStatsReading`), from key-value observation at most four times a second, only while the
+  readout is shown; no video is read for it. Hidden in clean view.
+
+```
+ NopeUI ViewfinderOverlays ── setNeeds / setShowsStats ──▶ CameraModel.live (LiveViewModel)
+                                                             │
+ LiveViewBackend.setFrameAnalysis / setStatsReadingsEnabled ◀┘   frameAnalyses, statsReadings ──▶ analysis, stats
+   └─ SystemLiveView: video data output (only while needed) ─▶ LumaSampler ─▶ FrameAnalysis
+                      key-value observation (only while shown) ─▶ CameraStatsReading
+```
 
 ### Camera layout
 

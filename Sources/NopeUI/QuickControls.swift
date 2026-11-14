@@ -96,6 +96,8 @@ enum QuickControls {
     /// Every item builder, in display order. Add a feature's builder here, before
     /// ``hideControls(_:)``.
     static let builders: [@MainActor (CameraControlContext) -> QuickControlItem?] = [
+        grid,
+        level,
         hideControls,
     ]
 

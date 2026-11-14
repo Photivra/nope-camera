@@ -141,7 +141,7 @@ struct CameraReadyView<Viewfinder: View>: View {
         // assistive technologies, so VoiceOver reads only the form.
         .accessibilityHidden(showsProTools)
         .fullScreenCover(isPresented: $showsProTools) {
-            ProToolsSheet(model: model)
+            ProToolsSheet(model: model, settings: settings)
         }
         .adaptivePresentation(isPresented: $showsFormats) {
             if let format = model.captureFormat {
@@ -221,6 +221,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                 picture
                     .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
+                LiveAidsPanel(model: model, settings: settings)
                 if showsControls {
                     if model.manual.isEnabled {
                         ManualControlsList(model: model)
@@ -514,6 +515,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text("Viewfinder", bundle: .module, comment: "VoiceOver name of the live camera view."))
                 .accessibilityValue(viewfinderDescription)
+            ViewfinderOverlays(model: model, settings: settings)
             SessionStatusView(status: model.sessionStatus)
                 .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
         }

@@ -62,6 +62,18 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     /// Feeds ``exposureReadings``.
     private let readingsContinuation: AsyncStream<ExposureReading>.Continuation
 
+    /// The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
+    public let frameAnalyses: AsyncStream<FrameAnalysis>
+
+    /// Feeds ``frameAnalyses``.
+    let analysesContinuation: AsyncStream<FrameAnalysis>.Continuation
+
+    /// The live readout's values: ``placeholderStats`` each time they are turned on.
+    public let statsReadings: AsyncStream<CameraStatsReading>
+
+    /// Feeds ``statsReadings``.
+    let statsContinuation: AsyncStream<CameraStatsReading>.Continuation
+
     /// Creates a simulated backend.
     ///
     /// - Parameters:
@@ -88,6 +100,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
         self.eventsAfterStart = eventsAfterStart
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
         (exposureReadings, readingsContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
+        (frameAnalyses, analysesContinuation) = AsyncStream.makeStream(of: FrameAnalysis.self)
+        (statsReadings, statsContinuation) = AsyncStream.makeStream(of: CameraStatsReading.self)
         previewSource = SimulatedPreviewSource()
     }
 
@@ -100,10 +114,12 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
 
     /// Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
     /// ``ManualControlsModel/observeReadings()`` return once they have applied everything sent
-    /// so far.
+    /// so far. Also ends ``frameAnalyses`` and ``statsReadings``.
     public func finishEvents() {
         continuation.finish()
         readingsContinuation.finish()
+        analysesContinuation.finish()
+        statsContinuation.finish()
     }
 
     /// Returns ``permission``.

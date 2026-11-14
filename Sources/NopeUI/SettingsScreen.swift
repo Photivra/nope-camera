@@ -133,6 +133,7 @@ public struct SettingsScreen: View {
                         "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.",
                         bundle: .module, comment: "Explains the clean view switch."))
             }
+            OverlaySettingsView.link(settings: settings)
         } header: {
             Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")
         }

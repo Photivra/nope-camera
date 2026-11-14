@@ -69,6 +69,7 @@ struct NopeApp: App {
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
+        .environment(\.cameraGravitySource, Self.gravitySource)
         .environment(\.cameraPresentsSheet, SheetPresentationAction { AppDelegate.setSheetPresented($0) })
         // Open Settings goes to nope.'s own page in the Settings app (UIKit,
         // `openSettingsURLString`), opened only when the person taps the button.
@@ -95,6 +96,15 @@ struct NopeApp: App {
         .task(id: settings.startsInCleanView) {
             await model.send(.setCleanView(settings.startsInCleanView))
         }
+    }
+
+    /// The level's motion readings: Core Motion, or in Debug builds launched by the UI tests, a
+    /// fixed reading (``SimulatedGravity``), because the Simulator has no motion sensors.
+    private static var gravitySource: any GravitySource {
+        #if DEBUG
+        if let simulated = SimulatedGravity.fromLaunchArguments() { return simulated }
+        #endif
+        return MotionGravitySource()
     }
 
     /// Where settings are stored: the app's standard `UserDefaults`, or in Debug builds launched

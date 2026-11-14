@@ -34,6 +34,11 @@ public final class NopeSettings {
     /// and honesty warnings. Off by default.
     public private(set) var startsInCleanView: Bool
 
+    /// The viewfinder overlays: grid, level, focus peaking, histogram and live camera readout.
+    /// Every overlay is off by default. Change them with the setters in `OverlayOptions.swift`
+    /// or ``setOverlays(_:)``.
+    public private(set) var overlays: OverlayOptions
+
     /// Where the settings are stored.
     private let defaults: UserDefaults
 
@@ -52,6 +57,7 @@ public final class NopeSettings {
         // string, which `bool(forKey:)` reads; a missing value is the default, off.
         showsManualControls = defaults.bool(forKey: Key.showsManualControls)
         startsInCleanView = defaults.bool(forKey: Key.startsInCleanView)
+        overlays = OverlayOptions(defaults: defaults)
         migrateManualControlsOption()
     }
 
@@ -181,6 +187,14 @@ public final class NopeSettings {
     public func setStartsInCleanView(_ isOn: Bool) {
         startsInCleanView = isOn
         defaults.set(isOn, forKey: Key.startsInCleanView)
+    }
+
+    /// Replaces the viewfinder overlay options, and saves the change.
+    ///
+    /// - Parameter options: The new options.
+    public func setOverlays(_ options: OverlayOptions) {
+        overlays = options
+        options.store(in: defaults)
     }
 
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,

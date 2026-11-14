@@ -40,6 +40,9 @@ public final class CameraModel {
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
+    /// The live aids over the viewfinder: histogram, focus peaking and the live camera readout.
+    public let live: LiveViewModel
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -62,6 +65,7 @@ public final class CameraModel {
         self.backend = backend
         self.saver = saver
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
+        live = LiveViewModel(backend: backend as? any LiveViewBackend)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.

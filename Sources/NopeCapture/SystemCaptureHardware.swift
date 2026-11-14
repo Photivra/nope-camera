@@ -58,6 +58,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// The same preview source, typed, for its rotation.
     private let preview: CaptureSessionPreviewSource
 
+    /// The live view: the low-rate frame analysis and the live readout (``SystemLiveView``).
+    let live: SystemLiveView
+
     /// Feeds ``events``.
     private let continuation: AsyncStream<CaptureEvent>.Continuation
 
@@ -109,6 +112,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         (exposureReadings, readingsContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
         preview = CaptureSessionPreviewSource(session: session)
         previewSource = preview
+        live = SystemLiveView(session: session, photoOutput: photoOutput, queue: queue, rotation: preview.rotation)
         observeNotifications()
         continuation.yield(.heat(HeatLevel(ProcessInfo.processInfo.thermalState)))
     }
@@ -228,6 +232,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         currentInput = nil
         appliedMaxDimensions = nil
         observeReadings()
+        live.cameraDidChange(nil)
     }
 
     /// Runs work on `queue` and returns its result.
@@ -261,6 +266,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         session.addInput(input)
         currentInput = input
         observeReadings()
+        live.cameraDidChange(device)
         if !session.outputs.contains(photoOutput) {
             guard session.canAddOutput(photoOutput) else { return false }
             session.addOutput(photoOutput)
@@ -616,6 +622,8 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             photoOutput.maxPhotoDimensions = chosen
             appliedMaxDimensions = PhotoDimensions(width: Int(chosen.width), height: Int(chosen.height))
         }
+        // The teardown removed every output; the live analysis output comes back if it is on.
+        live.updateVideoOutput()
         session.commitConfiguration()
 
         do {

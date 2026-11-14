@@ -2377,6 +2377,72 @@
         }
       }
     },
+    "Live aids are measured on the preview, a few times a second, only while they show. Nothing is saved.": {
+      "comment": "Note under the focus peaking, histogram and live readout switches. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Live-Hilfen werden nur, solange sie angezeigt werden, ein paar Mal pro Sekunde an der Vorschau gemessen. Nichts wird gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Las ayudas en directo se miden en la vista previa, unas pocas veces por segundo y solo mientras se muestran. No se guarda nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les aides en direct sont mesurées sur l’aperçu, quelques fois par seconde, uniquement quand elles sont affichées. Rien n’est enregistré."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gli aiuti in tempo reale vengono misurati sull’anteprima, poche volte al secondo, solo mentre sono visibili. Non viene salvato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライブ補助は表示中だけ、1秒に数回プレビューで測定します。何も保存されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "실시간 보조는 표시되는 동안에만 미리보기에서 초당 몇 번 측정합니다. 아무것도 저장되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Live hulpmiddelen worden alleen zolang ze zichtbaar zijn een paar keer per seconde op de voorvertoning gemeten. Er wordt niets bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Os auxílios ao vivo são medidos na pré-visualização, algumas vezes por segundo, só enquanto aparecem. Nada é salvo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "实时辅助仅在显示时于预览画面上每秒测量几次，不会存储任何内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "即時輔助只在顯示時於預覽畫面上每秒測量幾次，不會儲存任何內容。"
+          }
+        }
+      }
+    },
     "Location": {
       "comment": "Metadata item: where the photo was taken. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -4881,6 +4947,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "從「照片」分享"
+          }
+        }
+      }
+    },
+    "Shown with the manual controls. It measures the processed live preview, not the RAW.": {
+      "comment": "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wird mit den manuellen Einstellungen angezeigt. Es misst die verarbeitete Live-Vorschau, nicht das RAW."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se muestra con los controles manuales. Mide la vista previa en directo procesada, no el RAW."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Affiché avec les réglages manuels. Il mesure l’aperçu en direct traité, pas le RAW."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Visibile con i controlli manuali. Misura l’anteprima in tempo reale elaborata, non il RAW."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "マニュアル操作と一緒に表示されます。RAWではなく、処理済みのライブプレビューを測定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "수동 조절과 함께 표시됩니다. RAW가 아니라 처리된 실시간 미리보기를 측정합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zichtbaar bij de handmatige regelaars. Het meet de bewerkte live voorvertoning, niet de RAW."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aparece com os controles manuais. Mede a pré-visualização ao vivo processada, não o RAW."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "与手动控制一起显示。测量的是已处理的实时预览，而不是 RAW。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "與手動控制項一起顯示。測量的是已處理的即時預覽，而不是 RAW。"
           }
         }
       }
