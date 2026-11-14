@@ -538,3 +538,56 @@ enum MagnifierText {
         Text("Magnify", bundle: .module, comment: "Quick control and pill on the camera: shows the viewfinder enlarged around the focus point, to check focus. The photo is not zoomed.")
     }
 }
+
+/// The Fast Shutter setting (issue #56): an inline picker of the choices with the explanation,
+/// as the Look screen does, opened from the Camera section of Settings.
+struct FastShutterSettingsView: View {
+    /// The person's settings.
+    let settings: NopeSettings
+
+    /// Creates the screen.
+    ///
+    /// - Parameter settings: The person's settings.
+    init(settings: NopeSettings) {
+        self.settings = settings
+    }
+
+    /// The picker and the explanation.
+    var body: some View {
+        Form {
+            Section {
+                Picker(selection: Binding(get: { settings.fastShutter }, set: { settings.setFastShutter($0) })) {
+                    ForEach(FastShutter.allCases, id: \.self) { choice in
+                        FastShutterText.name(choice).tag(choice)
+                    }
+                } label: {
+                    FastShutterText.title
+                }
+                .pickerStyle(.inline)
+            }
+            // A row rather than a section footer, as on the Look screen, so it follows Dynamic Type.
+            Section {
+                Text(
+                    "In full auto, the camera prefers the fastest shutter that still exposes well, so photos blur less. Standard aims for a speed you can hold by hand. Manual controls are never changed.",
+                    bundle: .module, comment: "Explains the Fast Shutter setting.")
+                    .font(.footnote)
+            }
+        }
+        .navigationTitle(FastShutterText.title)
+    }
+
+    /// A navigation row to the setting, showing the current choice.
+    ///
+    /// - Parameter settings: The settings.
+    static func link(settings: NopeSettings) -> some View {
+        NavigationLink {
+            FastShutterSettingsView(settings: settings)
+        } label: {
+            LabeledContent {
+                FastShutterText.name(settings.fastShutter)
+            } label: {
+                FastShutterText.title
+            }
+        }
+    }
+}

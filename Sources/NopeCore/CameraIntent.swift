@@ -36,4 +36,7 @@ public enum CameraIntent: Equatable, Sendable {
     /// lock, exposure compensation, Close-Up, the fast shutter rule and the focus magnifier. See
     /// ``AutoControlIntent``.
     case auto(AutoControlIntent)
+
+    /// Change the flash or the torch: see ``LightIntent``.
+    case light(LightIntent)
 }

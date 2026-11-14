@@ -153,7 +153,7 @@ struct HonestyStatement: View {
             title
                 .font(.headline)
             text
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CameraStyle.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

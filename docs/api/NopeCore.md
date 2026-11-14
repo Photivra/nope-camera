@@ -570,6 +570,16 @@ Take one photo with the selected lens, in the format the model chose. Send it fr
 shutter button, the volume buttons or the Camera Control. Ignored while the camera isn't
 running or a photo is already being taken.
 
+## `CameraIntent/light(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case light(LightIntent)
+```
+
+Change the flash or the torch: see ``LightIntent``.
+
 ## `CameraIntent/manual(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -716,7 +726,8 @@ Creates a model in the ``CameraState/starting`` state.
     ``CaptureError/savingUnavailable`` and nothing is saved.
   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
 
-A ``ManualCaptureBackend`` also gets manual controls (``manual``).
+A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
+``LightCaptureBackend`` a torch (``light``).
 
 ## `CameraModel/isCleanView`
 
@@ -739,6 +750,16 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
 focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
+
+## `CameraModel/light`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let light: LightModel
+```
+
+The flash and the torch. Their intents arrive as ``CameraIntent/light(_:)``.
 
 ## `CameraModel/manual`
 
@@ -1317,6 +1338,17 @@ The scene changed substantially, for example the camera moved
 (`AVCaptureDevice.subjectAreaDidChangeNotification`). Sent only while a tapped point is
 being followed, so autofocus can return to the center.
 
+## `CaptureEvent/torchUnavailable`
+
+public, declared in `Sources/NopeCore/CaptureEvent.swift`
+
+```swift
+case torchUnavailable
+```
+
+The system made the torch unavailable or turned it off, for example because the device
+is too hot (`AVCaptureDevice.isTorchAvailable`).
+
 ## `CaptureFormat`
 
 public, declared in `Sources/NopeCore/CaptureFormat.swift`
@@ -1393,6 +1425,18 @@ What ``CameraModel`` asks a ``CaptureBackend`` to set up or capture: one lens an
 The model builds it from the selected lens with ``CaptureFormat/init(for:)``, so the format
 decision stays in `NopeCore`.
 
+## `CaptureRequest/flashMode`
+
+public, declared in `Sources/NopeCore/CaptureRequest.swift`
+
+```swift
+let flashMode: FlashMode
+```
+
+When the flash fires for this photo. ``FlashMode/off`` for starting the camera, and
+whenever ``LightModel/flashModeForCapture`` says so (no flash on the lens, or the torch
+is on). A bracket never uses the flash: AVFoundation doesn't support it in brackets.
+
 ## `CaptureRequest/format`
 
 public, declared in `Sources/NopeCore/CaptureRequest.swift`
@@ -1422,12 +1466,12 @@ has Bayer RAW, such as the Debug-only tag check (docs/TESTING.md, "Tag check").
   - format: The format to capture. A Bayer RAW format must be one the lens supports.
   - metadata: The metadata plan. Defaults to the first-launch settings.
 
-## `CaptureRequest/init(lens:metadata:)`
+## `CaptureRequest/init(lens:metadata:flashMode:)`
 
 public, declared in `Sources/NopeCore/CaptureRequest.swift`
 
 ```swift
-init(lens: Lens, metadata: MetadataPlan = MetadataPlan())
+init(lens: Lens, metadata: MetadataPlan = MetadataPlan(), flashMode: FlashMode = .off)
 ```
 
 Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
@@ -1436,6 +1480,7 @@ Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:
   - lens: The lens to use.
   - metadata: The metadata plan. Defaults to the first-launch settings: every optional
     detail removed.
+  - flashMode: When the flash fires. Defaults to off.
 
 ## `CaptureRequest/lens`
 
@@ -2705,6 +2750,51 @@ var slowestShutter: Double? { get }
 The slowest shutter this choice allows on its own, in seconds, or `nil` for
 ``handheld``, which depends on the lens.
 
+## `FlashMode`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+enum FlashMode
+```
+
+When the flash fires for a photo (issue #38).
+
+The flash only adds light; nope. turns on no processing with it. Each lens lists the modes
+it supports in ``Lens/flashModes``; an interface offers a flash control only when that list
+has a mode other than ``off``.
+
+## `FlashMode/auto`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case auto
+```
+
+The camera decides at capture time whether the scene needs the flash.
+
+## `FlashMode/off`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case off
+```
+
+The flash never fires. The default.
+
+## `FlashMode/on`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case on
+```
+
+The flash fires for every photo, unless the device is too hot for it (the system then
+takes the photo without it).
+
 ## `FocusTarget`
 
 public, declared in `Sources/NopeCore/AutoControls.swift`
@@ -3484,6 +3574,28 @@ let exposureDurationRange: ClosedRange<Double>?
 The exposure durations the lens supports in its photo format, in seconds, or `nil` when
 unknown.
 
+## `Lens/flashModes`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let flashModes: [FlashMode]
+```
+
+The flash modes the lens supports, as the photo output reported them for this camera.
+Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
+camera: nope. uses no screen flash (issue #38).
+
+## `Lens/hasTorch`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let hasTorch: Bool
+```
+
+Whether the lens has a torch: a light that can stay on while framing and taking photos.
+
 ## `Lens/id`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -3496,12 +3608,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil)
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false)
 ```
 
 Creates a lens description.
@@ -3520,6 +3632,8 @@ Creates a lens description.
   - photoDimensions: The supported photo sizes, smallest first.
   - manualControls: The manual controls the lens supports. Defaults to none.
   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
+  - flashModes: The flash modes the lens supports. Defaults to none.
+  - hasTorch: Whether the lens has a torch. Defaults to `false`.
 
 ## `Lens/isoRange`
 
@@ -3606,6 +3720,316 @@ var supportsBayerRAW: Bool { get }
 ```
 
 Whether this lens delivers single-frame Bayer RAW.
+
+## `LightCaptureBackend`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+protocol LightCaptureBackend : CaptureBackend
+```
+
+A ``CaptureBackend`` that can also switch the torch of the running lens.
+
+`NopeCapture`'s AVFoundation backend and ``SimulatedCaptureBackend`` implement it. With a
+backend that doesn't, ``LightModel`` offers no torch.
+
+## `LightCaptureBackend/setTorch(level:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the torch of the running lens on at a brightness level, or off.
+
+The system may refuse a level while the device is hot; the backend then reports
+``TorchStatus/unavailable`` and leaves the light off. Stopping the camera or switching
+lenses turns the light off, so ``LightModel`` asks again after each start.
+
+- Parameter level: The brightness, from just above 0 to 1, or `nil` to turn the light
+  off.
+- Returns: The light's state afterwards.
+
+## `LightIntent`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+enum LightIntent
+```
+
+A request an interface sends to change the flash or the torch, wrapped in
+``CameraIntent/light(_:)``.
+
+## `LightIntent/setFlashMode(_:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case setFlashMode(FlashMode)
+```
+
+Choose when the flash fires. A mode the lens doesn't support means no flash on that lens.
+
+## `LightIntent/setTorch(_:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case setTorch(Bool)
+```
+
+Turn the torch on or off. Ignored while the lens has no torch.
+
+## `LightIntent/setTorchLevel(_:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case setTorchLevel(Double)
+```
+
+Set the torch's brightness, from just above 0 to 1. Moved inside
+``LightModel/torchLevelRange``. Applies at once when the torch is on.
+
+## `LightModel`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor final class LightModel
+```
+
+The flash and the torch: what the person chose, and what the light is doing (issue #38).
+
+``CameraModel`` owns one as ``CameraModel/light`` and sends it ``CameraIntent/light(_:)``
+intents. The rules:
+
+- The torch stays on while framing, focusing and taking photos; while it is on, the flash
+  is off for every photo, so the light doesn't change or blink when the shutter fires.
+  Choosing Auto or On for the flash turns the torch off.
+- The torch turns off when the camera stops, pauses (an interruption, heat) or switches to a
+  lens without a torch (AGENTS.md, "Battery"). The brightness level is kept.
+- After a restart of the same lens, such as a recovery from an error, a torch that was on
+  comes back on.
+
+Isolated to the main actor, like ``CameraModel``.
+
+## `LightModel/applyTorch()`
+
+internal, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor func applyTorch() async
+```
+
+Asks the hardware for the torch at ``torchLevel``, and records the answer. Does nothing
+without a backend.
+
+## `LightModel/cameraDidPause()`
+
+internal, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor func cameraDidPause() async
+```
+
+Turns the torch off because the camera stopped or paused (an interruption, heat, or nope.
+leaving the screen). The person turns it on again when they want it.
+
+Side effect: switches the torch off.
+
+## `LightModel/clampedTorchLevel(_:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+nonisolated static func clampedTorchLevel(_ level: Double) -> Double
+```
+
+Moves a brightness level inside ``torchLevelRange``.
+
+- Parameter level: A brightness level.
+- Returns: The nearest level in the range.
+
+## `LightModel/defaultTorchLevel`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+nonisolated static let defaultTorchLevel: Double
+```
+
+The brightness the torch starts at until the person picks another: a quarter.
+
+## `LightModel/flashMode`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var flashMode: FlashMode { get set }
+```
+
+When the flash fires, as the person chose. Applies only on a lens that supports it and
+while the torch is off (``flashModeForCapture``).
+
+## `LightModel/flashModeForCapture`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var flashModeForCapture: FlashMode { get }
+```
+
+The flash mode for the next photo: the person's choice when the lens supports it, and
+``FlashMode/off`` while the torch is on, so the steady light isn't replaced by a flash.
+
+## `LightModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor func handle(_ intent: LightIntent) async
+```
+
+Handles one light intent.
+
+- Parameter intent: What the interface asks for.
+
+Side effect: may switch the torch on or off.
+
+## `LightModel/init(backend:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor init(backend: (any LightCaptureBackend)?)
+```
+
+Creates the model.
+
+- Parameter backend: The hardware, or `nil` for no torch.
+
+## `LightModel/isTorchOn`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var isTorchOn: Bool { get }
+```
+
+Whether the torch is on now.
+
+## `LightModel/lensWillStart(_:)`
+
+internal, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor func lensWillStart(_ lens: Lens)
+```
+
+Records the lens the camera is about to start with. Called by ``CameraModel`` before
+each start; the light is off until ``sessionDidStart()``.
+
+- Parameter lens: The lens.
+
+## `LightModel/sessionDidStart()`
+
+internal, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor func sessionDidStart() async
+```
+
+Turns the torch back on after a start, if the person wants it and the lens has one.
+
+Side effect: may switch the torch on.
+
+## `LightModel/supportedFlashModes`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var supportedFlashModes: [FlashMode] { get }
+```
+
+The flash modes of the lens in use, in ``FlashMode`` order (off first); empty before the
+camera starts and on a lens with no flash.
+
+## `LightModel/supportsFlash`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var supportsFlash: Bool { get }
+```
+
+Whether the lens in use has a flash: it supports a mode other than ``FlashMode/off``.
+
+## `LightModel/supportsTorch`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var supportsTorch: Bool { get }
+```
+
+Whether the lens in use has a torch nope. can switch.
+
+## `LightModel/systemMadeTorchUnavailable()`
+
+internal, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor func systemMadeTorchUnavailable()
+```
+
+Records that the system took the light away, for example because the device is too hot.
+
+## `LightModel/torch`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var torch: TorchStatus { get set }
+```
+
+What the torch is doing now.
+
+## `LightModel/torchLevel`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+@MainActor var torchLevel: Double { get set }
+```
+
+The torch's brightness, as the person chose. Kept while the light is off.
+
+## `LightModel/torchLevelRange`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+nonisolated static let torchLevelRange: ClosedRange<Double>
+```
+
+The levels the torch accepts. AVFoundation takes a level above 0 and up to 1
+(`AVCaptureDevice.setTorchModeOn(level:)`); 0 is "off", which ``LightIntent/setTorch(_:)``
+handles.
+
+## `LightModel/torchLevels`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+nonisolated static let torchLevels: [Double]
+```
+
+The brightness levels an interface offers, from dim to full. A dim level suits close
+subjects, which a full torch would wash out.
 
 ## `LockedMetadata`
 
@@ -7113,6 +7537,26 @@ static let fastShutter: String
 
 How fast a shutter full auto prefers, a ``FastShutter`` raw value.
 
+## `NopeSettings/Key/flashMode`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let flashMode: String
+```
+
+When the flash fires, a ``FlashMode`` raw value.
+
+## `NopeSettings/Key/isNightModeOn`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let isNightModeOn: String
+```
+
+Whether night mode is on, a Boolean.
+
 ## `NopeSettings/Key/legacyManualControls`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -7153,6 +7597,26 @@ static let startsInCleanView: String
 
 Whether the camera starts in clean view, a Boolean.
 
+## `NopeSettings/Key/tintsViewfinderInNightMode`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let tintsViewfinderInNightMode: String
+```
+
+Whether night mode tints the viewfinder, a Boolean.
+
+## `NopeSettings/Key/torchLevel`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let torchLevel: String
+```
+
+The torch's brightness, a number from 0.01 to 1.
+
 ## `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -7192,6 +7656,17 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 How fast a shutter full auto prefers. ``FastShutter/handheld`` by default; the camera
 screen applies it with ``AutoControlIntent/setFastShutter(_:)``.
+
+## `NopeSettings/flashMode`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var flashMode: FlashMode { get set }
+```
+
+When the flash fires, remembered between launches. ``FlashMode/off`` by default. The app
+passes it to ``CameraModel/light`` with ``LightIntent/setFlashMode(_:)``.
 
 ## `NopeSettings/formats`
 
@@ -7234,6 +7709,21 @@ Whether a format can be chosen on a device.
   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW
     (``DeviceCapabilities/supportsBayerRAW``).
 - Returns: `false` only for RAW on a device without Bayer RAW.
+
+## `NopeSettings/isNightModeOn`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var isNightModeOn: Bool { get set }
+```
+
+Whether night mode is on: every nope. screen in red on black, to keep eyes used to the
+dark (issue #61). Off by default, remembered between launches, never switched on or off
+automatically. nope. never changes the screen's brightness; people use the device's own
+brightness control.
+
+Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
 
 ## `NopeSettings/metadata`
 
@@ -7312,6 +7802,18 @@ Sets how fast a shutter full auto prefers, and saves the change.
 
 - Parameter choice: The choice.
 
+## `NopeSettings/setFlashMode(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setFlashMode(_ mode: FlashMode)
+```
+
+Sets when the flash fires, and saves the change.
+
+- Parameter mode: The flash mode.
+
 ## `NopeSettings/setFormat(_:isSelected:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -7341,6 +7843,18 @@ Turns one metadata item on or off, and saves the change.
 - Parameters:
   - item: The item. See ``MetadataSettings/set(_:isOn:)``.
   - isIncluded: Whether files should carry the item.
+
+## `NopeSettings/setNightMode(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setNightMode(_ isOn: Bool)
+```
+
+Turns night mode on or off, and saves the change.
+
+- Parameter isOn: Whether nope.'s screens are red on black.
 
 ## `NopeSettings/setRemovesAllOptionalDetails(_:)`
 
@@ -7390,6 +7904,30 @@ Sets whether the camera screen starts in clean view, and saves the change.
 
 - Parameter isOn: Whether the camera starts in clean view.
 
+## `NopeSettings/setTintsViewfinderInNightMode(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setTintsViewfinderInNightMode(_ isOn: Bool)
+```
+
+Sets whether night mode tints the live viewfinder red, and saves the change.
+
+- Parameter isOn: Whether the viewfinder is tinted in night mode.
+
+## `NopeSettings/setTorchLevel(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setTorchLevel(_ level: Double)
+```
+
+Sets the torch's brightness, and saves the change.
+
+- Parameter level: The brightness, moved inside ``LightModel/torchLevelRange``.
+
 ## `NopeSettings/showsManualControls`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -7422,6 +7960,29 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 Whether the camera screen starts in clean view, with only the viewfinder, the shutter
 and honesty warnings. Off by default.
+
+## `NopeSettings/tintsViewfinderInNightMode`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var tintsViewfinderInNightMode: Bool { get set }
+```
+
+Whether night mode also tints the live viewfinder red. Off by default: the viewfinder
+keeps its natural colors. Only the preview on screen is tinted; photos never change.
+
+## `NopeSettings/torchLevel`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var torchLevel: Double { get set }
+```
+
+The torch's brightness, remembered between launches (the torch itself always starts off).
+``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
+with ``LightIntent/setTorchLevel(_:)``.
 
 ## `PhotoDeveloping`
 
@@ -8218,7 +8779,8 @@ Use it in tests, SwiftUI previews and UI tests. It never shows a system prompt, 
 video, and returns a small placeholder instead of a real photo. As a
 ``ManualCaptureBackend`` it accepts every control without changing anything, reports its
 ``reading`` (``placeholderReading`` by default) when readings are turned on, and returns one
-placeholder per bracket frame.
+placeholder per bracket frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
+``TorchStatus/unavailable`` when created with `torchAvailable: false`.
 
 ```swift
 let backend = SimulatedCaptureBackend(
@@ -8369,12 +8931,12 @@ Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
 ``ManualControlsModel/observeReadings()`` return once they have applied everything sent
 so far.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true)
 ```
 
 Creates a simulated backend.
@@ -8391,6 +8953,7 @@ Creates a simulated backend.
     ``placeholderReading``.
   - readingCount: How many times to report it when readings turn on, for example enough
     for the close-up suggestion. Defaults to 1.
+  - torchAvailable: Whether the system allows the torch. Defaults to `true`.
 
 ## `SimulatedCaptureBackend/permission`
 
@@ -8495,6 +9058,20 @@ Sends ``reading``, ``readingCount`` times, when readings are turned on.
 
 - Parameter enabled: Whether readings are on.
 
+## `SimulatedCaptureBackend/setTorch(level:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Reports the torch on at `level`, off for `nil`, or ``TorchStatus/unavailable`` when
+``torchAvailable`` is `false`. There is no light to switch.
+
+- Parameter level: The brightness, or `nil` for off.
+- Returns: The simulated light's state.
+
 ## `SimulatedCaptureBackend/startError`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -8527,6 +9104,16 @@ func stopSession() async
 ```
 
 Does nothing: there is no camera to stop.
+
+## `SimulatedCaptureBackend/torchAvailable`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let torchAvailable: Bool
+```
+
+Whether the system allows the torch; `false` simulates a device too hot for it.
 
 ## `SimulatedPreviewSource`
 
@@ -8856,6 +9443,49 @@ Reads a TIFF structure.
   - bytes: The bytes, starting at the `II` or `MM` byte order mark.
   - extractImageData: Whether to collect IFD0's image data (only for a DNG).
 - Returns: Every tag, the problems, and IFD0's image data if asked for.
+
+## `TorchStatus`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+enum TorchStatus
+```
+
+The state of the torch, the light that stays on while framing and taking photos
+(issue #38): for close subjects in the dark, such as an insect at night.
+
+## `TorchStatus/off`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case off
+```
+
+The light is off.
+
+## `TorchStatus/on(level:)`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case on(level: Double)
+```
+
+The light is on at a brightness level from just above 0 to 1 (full).
+
+## `TorchStatus/unavailable`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case unavailable
+```
+
+The person asked for the light, but the system didn't allow it or turned it off, for
+example because the device is too hot. The light is off. An interface says so until the
+person turns the light off or tries again.
 
 ## `WhiteBalance`
 

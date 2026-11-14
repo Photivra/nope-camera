@@ -21,4 +21,8 @@ public enum CaptureEvent: Equatable, Sendable {
     /// (`AVCaptureDevice.subjectAreaDidChangeNotification`). Sent only while a tapped point is
     /// being followed, so autofocus can return to the center.
     case subjectAreaChanged
+
+    /// The system made the torch unavailable or turned it off, for example because the device
+    /// is too hot (`AVCaptureDevice.isTorchAvailable`).
+    case torchUnavailable
 }

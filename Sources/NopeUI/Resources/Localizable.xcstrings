@@ -859,6 +859,72 @@
         }
       }
     },
+    "Brightness %@": {
+      "comment": "Action of the Light pill on the camera: sets the light's brightness. The value is a percentage such as 25%.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Helligkeit %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Brillo %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luminosité %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luminosità %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "明るさ %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "밝기 %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Helderheid %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Brilho %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "亮度 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "亮度 %@"
+          }
+        }
+      }
+    },
     "Camera": {
       "comment": "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.",
       "extractionState": "manual",
@@ -2713,6 +2779,402 @@
         }
       }
     },
+    "Flash": {
+      "comment": "Camera menu and its Voice Control name: when the flash fires (Off, Auto, On).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Blitz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フラッシュ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "플래시"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flitser"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "闪光灯"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "閃光燈"
+          }
+        }
+      }
+    },
+    "Flash Auto": {
+      "comment": "Flash menu item and pill: the camera decides whether the flash fires.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Blitz automatisch"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash automático"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash automatique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash automatico"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フラッシュ自動"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "플래시 자동"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flitser automatisch"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash automático"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "闪光灯自动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "閃光燈自動"
+          }
+        }
+      }
+    },
+    "Flash Off": {
+      "comment": "Flash menu item and pill: the flash never fires.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Blitz aus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash desactivado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash désactivé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash disattivato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フラッシュオフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "플래시 끔"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flitser uit"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash desativado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "闪光灯关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "閃光燈關閉"
+          }
+        }
+      }
+    },
+    "Flash On": {
+      "comment": "Flash menu item and pill: the flash fires for every photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Blitz ein"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash activado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash activé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash attivato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フラッシュオン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "플래시 켬"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flitser aan"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flash ativado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "闪光灯打开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "閃光燈開啟"
+          }
+        }
+      }
+    },
+    "Flash pill: Auto": {
+      "comment": "Short text of the flash pill on the camera: the camera decides whether the flash fires.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自動"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "자동"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自動"
+          }
+        }
+      }
+    },
+    "Flash pill: On": {
+      "comment": "Short text of the flash pill on the camera: the flash fires for every photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ein"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Activé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "On"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "オン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "켬"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aan"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ativado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開啟"
+          }
+        }
+      }
+    },
     "Flat": {
       "comment": "Developed look: no contrast curve, closest to the sensor.",
       "extractionState": "manual",
@@ -4363,6 +4825,138 @@
         }
       }
     },
+    "Light": {
+      "comment": "Camera switch and its Voice Control name: turns on the phone's light (torch) and keeps it on while taking photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lumière"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lamp"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luz"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光"
+          }
+        }
+      }
+    },
+    "Light Unavailable": {
+      "comment": "Warning chip on the camera: the light (torch) the person turned on is off because the system didn't allow it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licht nicht verfügbar"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luz no disponible"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lumière indisponible"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luce non disponibile"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトを使用できません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명 사용 불가"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lamp niet beschikbaar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luz indisponível"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光不可用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光無法使用"
+          }
+        }
+      }
+    },
     "Lock": {
       "comment": "Button under the focus square on the camera: locks focus and exposure at the tapped point.",
       "extractionState": "manual",
@@ -5217,6 +5811,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "接下來，iOS 會請求相機取用權限。首次儲存時會請求照片取用權限。"
+          }
+        }
+      }
+    },
+    "Night Mode": {
+      "comment": "Switch and its Voice Control name: shows nope.'s screens in red on black for working in the dark. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nachtmodus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Modo nocturno"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mode nuit"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Modalità notte"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ナイトモード"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "야간 모드"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nachtmodus"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Modo noturno"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "夜间模式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "夜間模式"
           }
         }
       }
@@ -6607,6 +7267,138 @@
         }
       }
     },
+    "Red Viewfinder": {
+      "comment": "Switch: in night mode, the live camera picture on screen is shown in red too.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Roter Sucher"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Visor rojo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Viseur rouge"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mirino rosso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "赤いビューファインダー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빨간색 뷰파인더"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rode zoeker"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Visor vermelho"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "红色取景器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "紅色觀景窗"
+          }
+        }
+      }
+    },
+    "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness: dim it in Control Center, or with Reduce White Point in the Accessibility settings.": {
+      "comment": "Explains the Night Mode switch. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rot auf Schwarz, damit sich deine Augen an die Dunkelheit gewöhnt halten. nope. ändert die Bildschirmhelligkeit nicht: Dimme sie im Kontrollzentrum oder mit „Weißpunkt reduzieren“ in den Bedienungshilfen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rojo sobre negro, para que tus ojos sigan acostumbrados a la oscuridad. nope. no cambia el brillo de la pantalla: atenúalo en el centro de control o con «Reducir punto blanco» en los ajustes de Accesibilidad."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rouge sur noir, pour que vos yeux restent habitués à l'obscurité. nope. ne change pas la luminosité de l'écran : baissez-la dans le centre de contrôle ou avec « Réduire le point blanc » dans les réglages d'Accessibilité."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rosso su nero, per mantenere gli occhi abituati al buio. nope. non cambia la luminosità dello schermo: abbassala da Centro di Controllo o con «Riduci punto di bianco» nelle impostazioni di Accessibilità."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "赤と黒で表示し、目を暗さに慣れたままにします。nope.は画面の明るさを変更しません。コントロールセンター、またはアクセシビリティ設定の「ホワイトポイントを下げる」で暗くしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "검은 바탕에 빨간색으로 표시해 눈이 어둠에 적응된 상태를 유지합니다. nope.은 화면 밝기를 바꾸지 않습니다. 제어 센터나 손쉬운 사용 설정의 '화이트 포인트 줄이기'로 어둡게 하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rood op zwart, zodat je ogen aan het donker gewend blijven. nope. verandert de helderheid van het scherm niet: dim het in het bedieningspaneel of met 'Verlaag witpunt' in de toegankelijkheidsinstellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vermelho sobre preto, para manter seus olhos acostumados ao escuro. O nope. não altera o brilho da tela: diminua-o na Central de Controle ou com \"Reduzir Ponto Branco\" nos ajustes de Acessibilidade."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "黑底红字，让眼睛保持对黑暗的适应。nope. 不会更改屏幕亮度：请在控制中心或辅助功能设置中的“降低白点值”调暗屏幕。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "黑底紅字，讓眼睛保持適應黑暗。nope. 不會更改螢幕亮度：請在控制中心或輔助使用設定中的「降低白點值」調暗螢幕。"
+          }
+        }
+      }
+    },
     "Reset": {
       "comment": "Button that returns one manual control to automatic.",
       "extractionState": "manual",
@@ -7203,6 +7995,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "在相機畫面顯示手動控制。預設為關閉。"
+          }
+        }
+      }
+    },
+    "Shows the live picture in red too. Only the screen changes; photos keep their colors.": {
+      "comment": "Explains the Red Viewfinder switch, shown while night mode is on.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zeigt auch das Livebild in Rot. Nur der Bildschirm ändert sich; Fotos behalten ihre Farben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Muestra también la imagen en directo en rojo. Solo cambia la pantalla; las fotos conservan sus colores."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Affiche aussi l'image en direct en rouge. Seul l'écran change ; les photos gardent leurs couleurs."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra in rosso anche l'immagine dal vivo. Cambia solo lo schermo; le foto mantengono i loro colori."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライブ映像も赤で表示します。変わるのは画面だけで、写真の色はそのままです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "실시간 화면도 빨간색으로 표시합니다. 화면만 바뀌며 사진의 색은 그대로입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toont ook het livebeeld in rood. Alleen het scherm verandert; foto's houden hun kleuren."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra também a imagem ao vivo em vermelho. Só a tela muda; as fotos mantêm suas cores."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "实时画面也以红色显示。只改变屏幕显示；照片保留原有颜色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "即時畫面也以紅色顯示。只改變螢幕顯示；照片保留原本顏色。"
           }
         }
       }
@@ -8995,6 +9853,72 @@
         }
       }
     },
+    "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Quick Controls to try again, or choose a lower brightness.": {
+      "comment": "Explains the Light Unavailable warning. Light and Quick Controls are the names of camera controls.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Licht ist aus: Das System hat es nicht zugelassen, zum Beispiel weil das Gerät zu warm ist. Schalte Licht in den Schnellsteuerungen aus und wieder ein, um es erneut zu versuchen, oder wähle eine geringere Helligkeit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luz está apagada: el sistema no la ha permitido, por ejemplo porque el dispositivo está demasiado caliente. Desactiva y vuelve a activar Luz en Controles rápidos para intentarlo de nuevo, o elige un brillo menor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La lumière est éteinte : le système ne l'a pas autorisée, par exemple parce que l'appareil est trop chaud. Désactivez puis réactivez Lumière dans Commandes rapides pour réessayer, ou choisissez une luminosité plus faible."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luce è spenta: il sistema non l'ha consentita, ad esempio perché il dispositivo è troppo caldo. Disattiva e riattiva Luce in Controlli rapidi per riprovare, oppure scegli una luminosità più bassa."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトはオフです。デバイスが熱くなりすぎているなどの理由で、システムが許可しませんでした。もう一度試すにはクイックコントロールでライトをオフにしてから再びオンにするか、明るさを下げてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명이 꺼져 있습니다. 기기가 너무 뜨거운 등의 이유로 시스템이 허용하지 않았습니다. 다시 시도하려면 빠른 컨트롤에서 조명을 껐다가 다시 켜거나, 더 낮은 밝기를 선택하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De lamp is uit: het systeem stond het niet toe, bijvoorbeeld omdat het apparaat te warm is. Zet Lamp uit en weer aan in Snelle bediening om het opnieuw te proberen, of kies een lagere helderheid."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A luz está desligada: o sistema não a permitiu, por exemplo porque o dispositivo está quente demais. Desative e ative Luz novamente em Controles rápidos para tentar de novo, ou escolha um brilho menor."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光已关闭：系统不允许使用，例如设备过热。要重试，请在快捷控制中关闭再打开灯光，或选择较低的亮度。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光已關閉：系統不允許使用，例如裝置過熱。若要重試，請在快速控制中關閉再開啟燈光，或選擇較低的亮度。"
+          }
+        }
+      }
+    },
     "The photo wasn't taken. Try again.": {
       "comment": "Shown when taking a photo failed.",
       "extractionState": "manual",
@@ -9783,6 +10707,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "關閉近拍"
+          }
+        }
+      }
+    },
+    "Turn Off Flash": {
+      "comment": "Action of the flash pill on the camera: the flash no longer fires.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Blitz ausschalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desactivar el flash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Désactiver le flash"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disattiva il flash"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フラッシュをオフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "플래시 끄기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Flitser uitzetten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desativar o flash"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭闪光灯"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉閃光燈"
+          }
+        }
+      }
+    },
+    "Turn Off Light": {
+      "comment": "Action of the Light pill on the camera: turns the light (torch) off.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licht ausschalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apagar la luz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Éteindre la lumière"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spegni la luce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトをオフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명 끄기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lamp uitzetten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desligar a luz"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭灯光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉燈光"
           }
         }
       }

@@ -36,6 +36,7 @@ enum CameraWarnings {
     /// Every warning builder, in display order. Add a cause's builder here.
     static let builders: [@MainActor (CameraControlContext, SignatureStatus?) -> CameraWarning?] = [
         signing,
+        lightUnavailable,
     ]
 
     /// The warnings that apply now, in display order.
@@ -45,6 +46,23 @@ enum CameraWarnings {
     ///   - lastSignature: The signature of the last photo saved this session, or `nil`.
     static func current(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> [CameraWarning] {
         builders.compactMap { $0(context, lastSignature) }
+    }
+
+    /// "Light Unavailable" while the system refuses the light the person turned on, or turned it
+    /// off, for example because the device is too warm (issue #38).
+    ///
+    /// - Parameters:
+    ///   - context: The model and settings.
+    ///   - lastSignature: Not used.
+    static func lightUnavailable(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning? {
+        guard context.model.light.torch == .unavailable else { return nil }
+        return CameraWarning(
+            id: "light",
+            title: Text("Light Unavailable", bundle: .module, comment: "Warning chip on the camera: the light (torch) the person turned on is off because the system didn't allow it."),
+            explanation: Text(
+                "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Quick Controls to try again, or choose a lower brightness.",
+                bundle: .module,
+                comment: "Explains the Light Unavailable warning. Light and Quick Controls are the names of camera controls."))
     }
 
     /// "Not Signed" while signing is off in Settings, or after the last photo couldn't be
@@ -79,6 +97,9 @@ struct WarningChip: View {
 
     /// Whether the explanation is shown.
     @State private var showsExplanation = false
+
+    /// Whether night mode is on, so the explanation is red too.
+    @Environment(\.isNightMode) private var isNightMode
 
     /// Creates the chip.
     ///
@@ -117,6 +138,7 @@ struct WarningChip: View {
                 .padding()
                 .frame(idealWidth: 320)
                 .presentationCompactAdaptation(.popover)
+                .nightModeStyle(isNightMode)
         }
     }
 }

@@ -69,6 +69,14 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// approximate. Full auto uses it for the handheld shutter rule (``AutoShutter``).
     public let equivalentFocalLength: Double?
 
+    /// The flash modes the lens supports, as the photo output reported them for this camera.
+    /// Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
+    /// camera: nope. uses no screen flash (issue #38).
+    public let flashModes: [FlashMode]
+
+    /// Whether the lens has a torch: a light that can stay on while framing and taking photos.
+    public let hasTorch: Bool
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -85,6 +93,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - photoDimensions: The supported photo sizes, smallest first.
     ///   - manualControls: The manual controls the lens supports. Defaults to none.
     ///   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
+    ///   - flashModes: The flash modes the lens supports. Defaults to none.
+    ///   - hasTorch: Whether the lens has a torch. Defaults to `false`.
     public init(
         id: String,
         kind: Kind,
@@ -97,7 +107,9 @@ public struct Lens: Identifiable, Equatable, Sendable {
         maxBracketedPhotoCount: Int = 0,
         photoDimensions: [PhotoDimensions] = [],
         manualControls: ManualCapabilities = .none,
-        equivalentFocalLength: Double? = nil
+        equivalentFocalLength: Double? = nil,
+        flashModes: [FlashMode] = [],
+        hasTorch: Bool = false
     ) {
         self.id = id
         self.kind = kind
@@ -111,6 +123,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.photoDimensions = photoDimensions
         self.manualControls = manualControls
         self.equivalentFocalLength = equivalentFocalLength
+        self.flashModes = flashModes
+        self.hasTorch = hasTorch
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

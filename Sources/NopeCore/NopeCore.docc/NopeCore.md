@@ -53,6 +53,14 @@ Related documentation in the repository:
 - ``PhotoFormat``
 
 
+### Flash and light
+
+- ``LightModel``
+- ``LightIntent``
+- ``FlashMode``
+- ``TorchStatus``
+- ``LightCaptureBackend``
+
 ### Capture
 
 - ``CaptureFormat``

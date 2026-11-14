@@ -6,7 +6,8 @@ import Foundation
 /// video, and returns a small placeholder instead of a real photo. As a
 /// ``ManualCaptureBackend`` it accepts every control without changing anything, reports its
 /// ``reading`` (``placeholderReading`` by default) when readings are turned on, and returns one
-/// placeholder per bracket frame.
+/// placeholder per bracket frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
+/// ``TorchStatus/unavailable`` when created with `torchAvailable: false`.
 ///
 /// ```swift
 /// let backend = SimulatedCaptureBackend(
@@ -16,7 +17,7 @@ import Foundation
 /// )
 /// let model = CameraModel(backend: backend)
 /// ```
-public struct SimulatedCaptureBackend: ManualCaptureBackend {
+public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend {
     /// The bytes of every simulated photo. They are not an image file.
     public static let placeholderPhotoData = Data("nope. simulated photo".utf8)
 
@@ -46,6 +47,9 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
 
     /// Events emitted each time ``startSession(_:)`` succeeds, for example an interruption.
     public let eventsAfterStart: [CaptureEvent]
+
+    /// Whether the system allows the torch; `false` simulates a device too hot for it.
+    public let torchAvailable: Bool
 
     /// The event stream. It carries ``eventsAfterStart`` and anything sent with ``emit(_:)``.
     public let events: AsyncStream<CaptureEvent>
@@ -83,6 +87,7 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     ///     ``placeholderReading``.
     ///   - readingCount: How many times to report it when readings turn on, for example enough
     ///     for the close-up suggestion. Defaults to 1.
+    ///   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
     public init(
         permission: CameraPermission,
         permissionAfterRequest: CameraPermission? = nil,
@@ -91,7 +96,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
         captureError: CaptureError? = nil,
         eventsAfterStart: [CaptureEvent] = [],
         reading: ExposureReading = placeholderReading,
-        readingCount: Int = 1
+        readingCount: Int = 1,
+        torchAvailable: Bool = true
     ) {
         self.reading = reading
         self.readingCount = readingCount
@@ -101,6 +107,7 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
         self.startError = startError
         self.captureError = captureError
         self.eventsAfterStart = eventsAfterStart
+        self.torchAvailable = torchAvailable
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
         (exposureReadings, readingsContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
         previewSource = SimulatedPreviewSource()
@@ -204,5 +211,15 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
                 rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil
             )
         }
+    }
+
+    /// Reports the torch on at `level`, off for `nil`, or ``TorchStatus/unavailable`` when
+    /// ``torchAvailable`` is `false`. There is no light to switch.
+    ///
+    /// - Parameter level: The brightness, or `nil` for off.
+    /// - Returns: The simulated light's state.
+    public func setTorch(level: Double?) async -> TorchStatus {
+        guard let level else { return .off }
+        return torchAvailable ? .on(level: level) : .unavailable
     }
 }
