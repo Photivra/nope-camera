@@ -242,6 +242,49 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The f-numbers, widest first.
 
+## `BrightenScreenButton`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor struct BrightenScreenButton
+```
+
+Covers the dimmed screen: a tap anywhere brightens it, and a visible Brighten Screen button in
+the middle says what happened and does the same, so the dimming never depends on a gesture.
+
+## `BrightenScreenButton/action`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor let action: () -> Void
+```
+
+Brightens the screen.
+
+## `BrightenScreenButton/body`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The tap area and the button.
+
+## `BrightenScreenButton/init(action:)`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor init(action: @escaping () -> Void)
+```
+
+Creates the cover.
+
+- Parameter action: Brightens the screen.
+
 ## `CameraAction`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -900,6 +943,20 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 The registry of warning chips: each cause adds one function here that returns its warning,
 or `nil` when it doesn't apply. Location tagging (issue #43) adds "Location On".
 
+## `CameraWarnings/battery(_:lastSignature:)`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor static func battery(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
+```
+
+"Battery Low" at 20% or less while the device isn't plugged in (issue #44).
+
+- Parameters:
+  - context: The model and settings.
+  - lastSignature: Not used.
+
 ## `CameraWarnings/builders`
 
 internal, declared in `Sources/NopeUI/CameraWarnings.swift`
@@ -938,6 +995,21 @@ signed. A missing signature is always stated, never hidden (issue #1).
 - Parameters:
   - context: The model and settings.
   - lastSignature: The signature of the last photo saved this session, or `nil`.
+
+## `CameraWarnings/storage(_:lastSignature:)`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor static func storage(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
+```
+
+"Storage Low" when fewer than `DeviceStatus.lowStoragePhotoCount` photos fit, or
+"Storage Full" when the next one doesn't (issue #44).
+
+- Parameters:
+  - context: The model and settings.
+  - lastSignature: Not used.
 
 ## `CaptureMessages`
 
@@ -1383,6 +1455,50 @@ The value of a control as text, such as "200", "1/500", "f/1.8", "+0.3", "5,200 
   - value: The value in the control's unit.
   - control: The control.
 
+## `CountdownNumber`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct CountdownNumber
+```
+
+The large countdown number in the middle of the picture while the self-timer runs. VoiceOver
+hears each number through an announcement instead (``DriveFeedback``), so it is hidden from
+assistive technologies.
+
+## `CountdownNumber/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The number, or nothing.
+
+## `CountdownNumber/drive`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let drive: DriveModel
+```
+
+The drive model.
+
+## `CountdownNumber/init(drive:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(drive: DriveModel)
+```
+
+Creates the number.
+
+- Parameter drive: The drive model.
+
 ## `DarkBacking`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -1473,6 +1589,179 @@ Creates the button.
 
 - Parameter action: Closes the sheet.
 
+## `DriveFeedback`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct DriveFeedback
+```
+
+Feedback for the self-timer and bursts without looking at the screen: a haptic tick and a
+spoken number each second of the countdown, and spoken start and end of a burst (AGENTS.md,
+"Taking photos without seeing the screen"). Saved photos are announced by the camera's
+usual save feedback.
+
+## `DriveFeedback/body(content:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the feedback attached.
+
+- Parameter content: The camera.
+
+## `DriveFeedback/drive`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let drive: DriveModel
+```
+
+The drive model.
+
+## `DriveFeedback/init(drive:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(drive: DriveModel)
+```
+
+Creates the feedback.
+
+- Parameter drive: The drive model.
+
+## `DriveProgressView`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct DriveProgressView
+```
+
+A running countdown or burst: what it is doing and a button to stop it. It stays on screen,
+even in clean view, until it ends, so stopping never depends on a gesture.
+
+## `DriveProgressView/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The text and the button, or nothing.
+
+## `DriveProgressView/init(model:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the view.
+
+- Parameter model: The camera model.
+
+## `DriveProgressView/model`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `DriveText`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor enum DriveText
+```
+
+The words for the drive modes, the self-timer and bursts (issues #39 and #46).
+
+## `DriveText/endMessage(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func endMessage(_ result: BurstResult) -> String?
+```
+
+What to announce when a burst ends other than by the person, or `nil`.
+
+- Parameter result: How the burst ended.
+
+## `DriveText/name(of:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func name(of mode: DriveMode) -> Text
+```
+
+A mode's name, as the Drive menu lists it.
+
+- Parameter mode: The mode.
+
+## `DriveText/shortSeconds(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func shortSeconds(_ seconds: Int) -> String
+```
+
+A number of seconds in the system's short form, such as "3s" or "3 Sek.".
+
+- Parameter seconds: The seconds.
+
+## `DriveText/shutterValue(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func shutterValue(_ drive: DriveModel) -> Text?
+```
+
+What the shutter does now, for VoiceOver, or `nil` in single mode with nothing running.
+
+- Parameter drive: The drive model.
+
+## `DriveText/spokenSeconds(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func spokenSeconds(_ seconds: Int) -> String
+```
+
+A number of seconds in words, such as "3 seconds", for VoiceOver.
+
+- Parameter seconds: The seconds.
+
+## `DriveText/systemImage(for:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func systemImage(for mode: DriveMode) -> String
+```
+
+The SF Symbol for a mode.
+
+- Parameter mode: The mode.
+
 ## `EnvironmentValues/cameraPresentsSheet`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -1509,6 +1798,17 @@ Opens nope.'s page in the Settings app, for the Open Settings buttons (camera ac
 declined, photos access declined). `nil` hides those buttons, so an interface without a
 way to open Settings shows no button that does nothing. The app target sets it with
 `UIApplication.openSettingsURLString`.
+
+## `EnvironmentValues/seriesScreenKeeper`
+
+public, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+var seriesScreenKeeper: SeriesScreenKeeper? { get set }
+```
+
+Keeps the screen awake and dimmed during an interval series (issue #48), or `nil` when
+the app gives none, as in previews: then the screen is left alone.
 
 ## `FailureAction`
 
@@ -3179,6 +3479,19 @@ The tray's items for the current state, in display order.
 
 - Parameter context: The model and settings.
 
+## `QuickControls/drive(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func drive(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Drive: a menu of single, the 3 and 10 second self-timer, and burst (issue #68). Bracket
+and interval shooting stay in Pro Tools, behind the manual controls.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/hideControls(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -3301,6 +3614,52 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 The items, in display order.
 
+## `ResourceWarningAnnouncements`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor struct ResourceWarningAnnouncements
+```
+
+Announces the storage and battery warnings to VoiceOver when they first appear or change,
+so a person who isn't looking at the screen hears them (issue #44).
+
+## `ResourceWarningAnnouncements/body(content:)`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the announcements attached.
+
+- Parameter content: The camera.
+
+## `ResourceWarningAnnouncements/init(model:)`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the announcements.
+
+- Parameter model: The camera model.
+
+## `ResourceWarningAnnouncements/model`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
 ## `ScaleSlider`
 
 internal, declared in `Sources/NopeUI/ControlDial.swift`
@@ -3413,6 +3772,56 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 The styled button.
 
 - Parameter configuration: The button's label and press state.
+
+## `SeriesScreen`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor struct SeriesScreen
+```
+
+The camera screen's ties to its own lifetime: the screen stays awake and dimmed while an
+interval series runs (`SeriesScreenKeeper`), and a countdown or burst stops when the camera
+screen goes away (AGENTS.md, "Battery").
+
+While the screen is dimmed, a "Brighten Screen" button covers it: any tap brightens the
+screen while the series continues, and VoiceOver hears the change.
+
+## `SeriesScreen/body(content:)`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the dimming button over it.
+
+- Parameter content: The camera screen.
+
+## `SeriesScreen/init(model:)`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the modifier.
+
+- Parameter model: The camera model.
+
+## `SeriesScreen/model`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
 
 ## `SessionStatusView`
 
@@ -4147,6 +4556,19 @@ The pills for settings not at their defaults, in display order.
 
 - Parameter context: The model and settings.
 
+## `StatePills/drive(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func drive(_ context: CameraControlContext) -> StatePill?
+```
+
+The self-timer's delay ("3s") or "Burst" while the drive mode isn't single; its action
+returns to single photos.
+
+- Parameter context: The model and settings.
+
 ## `StatePills/locks(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -4522,6 +4944,19 @@ Presents content as a popover on iPad and as a sheet on iPhone.
   - isPresented: Whether the content is shown.
   - content: The presented content.
 
+## `View/announcesResourceWarnings(_:)`
+
+internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
+
+```swift
+@MainActor func announcesResourceWarnings(_ model: CameraModel) -> some View
+
+```
+
+Announces storage and battery warnings (``ResourceWarningAnnouncements``).
+
+- Parameter model: The camera model.
+
 ## `View/darkBacking()`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -4545,6 +4980,19 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 Puts a dark backing behind a control drawn over the picture.
 
 - Parameter shape: The backing's shape; a rounded rectangle by default.
+
+## `View/driveFeedback(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor func driveFeedback(_ drive: DriveModel) -> some View
+
+```
+
+Adds the self-timer and burst feedback (``DriveFeedback``).
+
+- Parameter drive: The drive model.
 
 ## `View/hardScrollEdges()`
 
@@ -4570,6 +5018,33 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The look of a state pill: small bold text on a dark capsule, inside a touch target at
 least 44 points on each side.
+
+## `View/seriesScreen(_:)`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor func seriesScreen(_ model: CameraModel) -> some View
+
+```
+
+Keeps the screen awake and dimmed during an interval series, and stops a countdown or
+burst when the camera screen goes away (``SeriesScreen``).
+
+- Parameter model: The camera model.
+
+## `View/shutterDriveValue(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor func shutterDriveValue(_ drive: DriveModel) -> some View
+
+```
+
+Adds what the shutter does in the current drive mode to its VoiceOver value.
+
+- Parameter drive: The drive model.
 
 ## `View/uprightUnit(sidewaysWidth:)`
 

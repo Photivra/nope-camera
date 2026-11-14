@@ -73,9 +73,13 @@ struct SimulatedPhotoLibrary: PhotoLibrary {
     /// Whether adding is allowed.
     let allowsAdding: Bool
 
+    /// How long each add takes, in seconds, so a burst runs long enough to watch.
+    var addSeconds = 0.0
+
     /// Does nothing, or throws `CaptureError.photosAccessDenied`.
     func add(_ assets: [PhotoLibraryAsset]) async throws(CaptureError) {
         guard allowsAdding else { throw .photosAccessDenied }
+        if addSeconds > 0 { try? await Task.sleep(for: .seconds(addSeconds)) }
     }
 }
 #endif

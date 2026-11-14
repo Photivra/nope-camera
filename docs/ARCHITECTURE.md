@@ -22,7 +22,7 @@ Photos, signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem` | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
@@ -113,7 +113,39 @@ when the camera opens and when the option changes.
   (`CaptureStatus.savedBracket`). Bayer RAW rules still apply: `.speed`, zoom 1.0, no
   multi-frame processing.
 - **Interval shooting** calls the same capture path as the shutter; its timer exists only while a
-  series runs, and the camera screen stops it when it disappears.
+  series runs, and the camera screen stops it when it disappears. While a series runs in the
+  foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
+  back when the series ends or stops, the camera screen goes away, or the app goes to the
+  background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
+
+### Drive modes: single, self-timer, burst
+
+`CameraIntent.capture` is what every shutter sends (the on-screen shutter, the volume buttons,
+the Camera Control, the Space bar); `CameraModel` applies `drive.mode`. Single takes one photo;
+a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds), which takes one photo at
+zero; burst takes frames until it is stopped. While a countdown or burst runs, the same intent
+stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a countdown of any length,
+for Siri and Shortcuts (issue #62). The app maps the hardware buttons' capture event phases to
+`.drive(.hardwareButton(_:))`: a photo on release, as the system Camera app does, or in burst
+mode a burst while the button is held.
+
+A burst is single frames through `capturePhoto`, each saved through the same `PhotoSaver` as any
+photo (allowlist, read-back, a signature per file); nothing is merged. Each frame is saved while
+the next one is taken, so at most two frames are in memory. The burst stops when asked, at
+`DriveModel.maximumBurstFrames`, when the next frame wouldn't fit in storage, when the camera
+stops, or at the first frame that can't be taken or saved; frames already taken are still
+saved. It ends as `CaptureStatus.savedBurst` (or `.failed`) and `drive.lastBurst`.
+
+### Storage and battery
+
+`CameraModel.deviceStatus` (`DeviceStatus`) reads the free storage and the battery through
+`DeviceStatusReading`, implemented in the app with `volumeAvailableCapacityForImportantUsageKey`,
+`UIDevice` battery monitoring and `ProcessInfo.isLowPowerModeEnabled`
+(`SystemDeviceStatusReader`). Nothing polls: the model reads it when the camera starts, before
+each photo, after each save and before each burst frame, and the app reads it again on the
+system's battery and power state notifications. `CameraModel.storageWarning` compares the free
+space with `PhotoSizeEstimate` for the selected lens and formats; `DeviceStatus.batteryWarning`
+applies at 20% unplugged. `NopeUI` shows them as `CameraWarnings` chips and announces them.
 
 ### The viewfinder
 
@@ -121,8 +153,9 @@ when the camera opens and when the option changes.
 preview crosses the layers as an opaque `CameraPreviewSource`. The AVFoundation backend's source
 is a `CaptureSessionPreviewSource`; the app target's `Viewfinder` view turns it into an
 `AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:settings:viewfinder:)`. The app also
-attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control take a
-photo, and `CameraCommands`, so a hardware keyboard's Space bar does.
+attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control are the
+shutter (enabled only while `CameraModel.handlesHardwareButtons`, so the buttons keep their
+system behavior otherwise), and `CameraCommands`, so a hardware keyboard's Space bar is.
 
 `CaptureSessionPreviewSource.connect(_:)` attaches the session to the app's preview layer and
 keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`

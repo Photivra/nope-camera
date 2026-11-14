@@ -70,6 +70,7 @@ enum CaptureMessages {
         switch status {
         case .saved(let photo): [photo]
         case .savedBracket(let photos): photos
+        case .savedBurst(let photos): photos
         default: nil
         }
     }

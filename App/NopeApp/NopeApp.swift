@@ -18,7 +18,11 @@ struct NopeApp: App {
     private static let backend = makeBackend()
 
     /// The camera model shared by the app's single scene.
-    @State private var model = CameraModel(backend: Self.backend, saver: Self.makeSaver())
+    @State private var model = CameraModel(
+        backend: Self.backend, saver: Self.makeSaver(), deviceStatusReader: Self.makeDeviceStatusReader())
+
+    /// Keeps the screen awake and dimmed during an interval series.
+    @State private var screenKeeper = SeriesScreenKeeper(screen: SystemScreen())
 
     /// The person's settings, stored on the device only.
     @State private var settings = NopeSettings(defaults: Self.makeSettingsStore())
@@ -61,9 +65,12 @@ struct NopeApp: App {
 
     /// The camera screen with the live viewfinder and the hardware shutter.
     ///
-    /// The volume buttons and the Camera Control take a photo through `onCameraCaptureEvent`
-    /// (AVKit, iOS 18), on release of the button, as the system Camera app does. The system
-    /// delivers these events only while a capture session runs.
+    /// The volume buttons and the Camera Control are the shutter through `onCameraCaptureEvent`
+    /// (AVKit, iOS 18): its single handler gets both the primary and the secondary button
+    /// (`AVCaptureEventInteraction.init(handler:)`). The model takes a photo on release of the
+    /// button, as the system Camera app does, or in burst mode, takes a burst while it is held.
+    /// The system delivers these events only while a capture session runs; while the camera
+    /// isn't running, the interaction is off, so the buttons keep their system behavior.
     private var cameraScreen: some View {
         CameraScreen(model: model, settings: settings) { source in
             Viewfinder(source: source)
@@ -78,10 +85,21 @@ struct NopeApp: App {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
             })
-        .onCameraCaptureEvent { event in
-            guard event.phase == .ended else { return }
-            Task { await model.send(.capture) }
+        .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
+            let phase: HardwareButtonPhase =
+                switch event.phase {
+                case .began: .pressed
+                case .ended: .released
+                default: .cancelled
+                }
+            Task { await model.send(.drive(.hardwareButton(phase))) }
         }
+        .environment(\.seriesScreenKeeper, screenKeeper)
+        // The battery and Low Power Mode warnings follow the system's change notifications;
+        // nothing polls (AGENTS.md, "Battery").
+        .task { await refreshDeviceStatus(on: UIDevice.batteryLevelDidChangeNotification) }
+        .task { await refreshDeviceStatus(on: UIDevice.batteryStateDidChangeNotification) }
+        .task { await refreshDeviceStatus(on: .NSProcessInfoPowerStateDidChange) }
         // The person's save settings (formats, metadata, signing) apply from the next photo.
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save
@@ -95,6 +113,25 @@ struct NopeApp: App {
         .task(id: settings.startsInCleanView) {
             await model.send(.setCleanView(settings.startsInCleanView))
         }
+    }
+
+    /// Reads the storage and battery again each time the notification is posted, for as long as
+    /// the camera screen is shown.
+    ///
+    /// - Parameter name: A battery or power state notification.
+    private func refreshDeviceStatus(on name: Notification.Name) async {
+        for await _ in NotificationCenter.default.notifications(named: name) {
+            model.deviceStatus.refresh()
+        }
+    }
+
+    /// The storage and battery reader: fixed values for a UI test in Debug builds, otherwise
+    /// the system's.
+    @MainActor private static func makeDeviceStatusReader() -> any DeviceStatusReading {
+        #if DEBUG
+        if let reader = SimulatedDeviceStatus.reader() { return reader }
+        #endif
+        return SystemDeviceStatusReader()
     }
 
     /// Where settings are stored: the app's standard `UserDefaults`, or in Debug builds launched

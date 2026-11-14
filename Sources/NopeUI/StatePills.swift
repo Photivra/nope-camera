@@ -111,6 +111,7 @@ enum StatePills {
     static let builders: [@MainActor (CameraControlContext) -> StatePill?] = [
         manual,
         locks,
+        drive,
     ]
 
     /// The pills for settings not at their defaults, in display order.

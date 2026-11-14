@@ -727,6 +727,270 @@
         }
       }
     },
+    "Back to Single Photo": {
+      "comment": "Action of the self-timer or burst pill on the camera: the shutter takes one photo per press again.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zurück zum Einzelfoto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Volver a foto única"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Revenir à la photo unique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Torna alla foto singola"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1枚撮影に戻す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "단일 사진으로 돌아가기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Terug naar enkele foto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Voltar para foto única"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "改回单张照片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "改回單張照片"
+          }
+        }
+      }
+    },
+    "Battery Low": {
+      "comment": "Warning chip on the camera: the battery is low and the device isn't charging.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Akku schwach"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batería baja"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batterie faible"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batteria scarica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バッテリー残量低下"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "배터리 부족"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batterij bijna leeg"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bateria fraca"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "电池电量低"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "電池電量低"
+          }
+        }
+      }
+    },
+    "Battery at %@. Charge the device soon to keep taking photos.": {
+      "comment": "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 15%, formatted by the system.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Akku bei %@. Lade das Gerät bald, um weiter zu fotografieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batería al %@. Carga pronto el dispositivo para seguir tomando fotos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batterie à %@. Rechargez bientôt l’appareil pour continuer à prendre des photos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batteria al %@. Ricarica presto il dispositivo per continuare a scattare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バッテリー残量%@。撮影を続けるには、早めにデバイスを充電してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "배터리 %@. 계속 촬영하려면 곧 기기를 충전하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batterij op %@. Laad het apparaat binnenkort op om foto’s te blijven maken."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bateria em %@. Carregue o dispositivo logo para continuar tirando fotos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "电池电量 %@。请尽快为设备充电以继续拍照。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "電池電量 %@。請盡快為裝置充電以繼續拍照。"
+          }
+        }
+      }
+    },
+    "Battery at %@. Low Power Mode is on.": {
+      "comment": "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 15%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Akku bei %@. Der Stromsparmodus ist an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batería al %@. El modo de bajo consumo está activado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batterie à %@. Le mode Économie d’énergie est activé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batteria al %@. La modalità Risparmio energetico è attiva."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バッテリー残量%@。低電力モードがオンです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "배터리 %@. 저전력 모드가 켜져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Batterij op %@. Energiebesparingsmodus staat aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bateria em %@. O Modo de Pouca Energia está ativado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "电池电量 %@。低电量模式已开启。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "電池電量 %@。低耗電模式已開啟。"
+          }
+        }
+      }
+    },
     "Bracketing": {
       "comment": "Switch for exposure bracketing: several photos at different exposures from one press.",
       "extractionState": "manual",
@@ -789,6 +1053,468 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "包圍曝光"
+          }
+        }
+      }
+    },
+    "Brighten Screen": {
+      "comment": "VoiceOver and Voice Control name of the button that covers the dimmed screen during interval shooting; it restores the brightness.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bildschirm aufhellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aumentar brillo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Éclaircir l’écran"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schiarisci schermo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "画面を明るくする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "화면 밝게 하기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherm helderder maken"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Clarear tela"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "调亮屏幕"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "調亮螢幕"
+          }
+        }
+      }
+    },
+    "Burst": {
+      "comment": "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ráfaga"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バースト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sequência"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "连拍"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "連拍"
+          }
+        }
+      }
+    },
+    "Burst started.": {
+      "comment": "Announced to VoiceOver when a burst starts.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie gestartet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ráfaga iniciada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale lancée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica avviata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バーストを開始しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영을 시작했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst gestart."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sequência iniciada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已开始连拍。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已開始連拍。"
+          }
+        }
+      }
+    },
+    "Burst stopped at %lld photos, the most one burst takes.": {
+      "comment": "Announced and shown when a burst stops because it reached its maximum number of photos. The number is that count of photos, such as 50.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie nach %lld Fotos beendet, dem Maximum für eine Serie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La ráfaga se detuvo en %lld fotos, el máximo de una ráfaga."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale arrêtée à %lld photos, le maximum pour une rafale."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica interrotta a %lld foto, il massimo per una raffica."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バーストは1回の上限である%lld枚で停止しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영이 한 번의 최대치인 %lld장에서 중지되었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst gestopt bij %lld foto’s, het maximum voor één burst."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A sequência parou em %lld fotos, o máximo de uma sequência."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "连拍已在 %lld 张时停止，这是单次连拍的上限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "連拍已在 %lld 張時停止，這是單次連拍的上限。"
+          }
+        }
+      }
+    },
+    "Burst stopped: storage is full.": {
+      "comment": "Announced and shown when a burst stops because the next photo wouldn't fit in the device's free storage.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie beendet: Der Speicher ist voll."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La ráfaga se detuvo: el almacenamiento está lleno."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale arrêtée : le stockage est plein."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica interrotta: lo spazio di archiviazione è pieno."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バーストを停止しました: ストレージがいっぱいです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영이 중지됨: 저장 공간이 가득 찼습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst gestopt: de opslag is vol."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A sequência parou: o armazenamento está cheio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "连拍已停止：存储空间已满。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "連拍已停止：儲存空間已滿。"
+          }
+        }
+      }
+    },
+    "Burst stopped: the camera stopped.": {
+      "comment": "Announced and shown when a burst stops because the camera was interrupted or switched lenses.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie beendet: Die Kamera wurde angehalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La ráfaga se detuvo: la cámara se detuvo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale arrêtée : l’appareil photo s’est arrêté."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica interrotta: la fotocamera si è fermata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バーストを停止しました: カメラが停止しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영이 중지됨: 카메라가 멈췄습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst gestopt: de camera is gestopt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A sequência parou: a câmera parou."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "连拍已停止：相机已停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "連拍已停止：相機已停止。"
+          }
+        }
+      }
+    },
+    "Burst. Press to start, press again to stop.": {
+      "comment": "VoiceOver value of the shutter in burst mode: one press starts a rapid run of separate photos, the next press stops it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie. Zum Starten drücken, zum Beenden erneut drücken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ráfaga. Pulsa para empezar y vuelve a pulsar para detenerla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale. Appuyez pour commencer, puis de nouveau pour arrêter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica. Premi per iniziare, premi di nuovo per interrompere."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バースト。押すと開始、もう一度押すと停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영. 누르면 시작하고, 다시 누르면 중지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst. Druk om te starten en nogmaals om te stoppen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sequência. Pressione para começar e pressione de novo para parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "连拍。按下开始，再按一次停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "連拍。按下開始，再按一次停止。"
           }
         }
       }
@@ -987,6 +1713,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "需要取用相機"
+          }
+        }
+      }
+    },
+    "Cancel Timer": {
+      "comment": "Button that stops the self-timer without taking a photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer abbrechen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cancelar temporizador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Annuler le retardateur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Annulla autoscatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "タイマーをキャンセル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "타이머 취소"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer annuleren"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cancelar temporizador"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取消定时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取消定時"
           }
         }
       }
@@ -1387,6 +2179,72 @@
         }
       }
     },
+    "Counting down. Press to cancel.": {
+      "comment": "VoiceOver value of the shutter while the self-timer counts down: pressing the shutter cancels the photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Countdown läuft. Drücken zum Abbrechen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cuenta atrás en curso. Pulsa para cancelar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compte à rebours en cours. Appuyez pour annuler."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Conto alla rovescia in corso. Premi per annullare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カウントダウン中。押すとキャンセルします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카운트다운 중입니다. 누르면 취소됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aftellen bezig. Druk om te annuleren."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contagem regressiva em andamento. Pressione para cancelar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在倒计时。按下可取消。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在倒數。按下可取消。"
+          }
+        }
+      }
+    },
     "Daylight": {
       "comment": "White balance preset for direct daylight.",
       "extractionState": "manual",
@@ -1647,6 +2505,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "完成"
+          }
+        }
+      }
+    },
+    "Drive": {
+      "comment": "Quick control on the camera: a menu that chooses what the shutter does: one photo, a self-timer, or a burst.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aufnahmemodus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mode de prise"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ドライブ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "드라이브"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opnamemodus"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "驱动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "驅動"
+          }
+        }
+      }
+    },
+    "Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown.": {
+      "comment": "Accessibility screen: the self-timer and burst. A burst is a rapid run of separate photos. Drive is the name of the camera's quick control for the self-timer and burst; Quick Controls is the row of camera toggles. VoiceOver is Apple's screen reader; keep the name unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aufnahmemodus in den Schnellsteuerungen stellt einen Selbstauslöser von 3 oder 10 Sekunden oder eine Serie ein. VoiceOver sagt jede Sekunde des Countdowns an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo, en los controles rápidos, ajusta un temporizador de 3 o 10 segundos, o una ráfaga. VoiceOver dice cada segundo de la cuenta atrás."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mode de prise, dans les commandes rapides, règle un retardateur de 3 ou 10 secondes, ou une rafale. VoiceOver annonce chaque seconde du compte à rebours."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto, nei controlli rapidi, imposta un autoscatto di 3 o 10 secondi, o una raffica. VoiceOver pronuncia ogni secondo del conto alla rovescia."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "クイックコントロールの「ドライブ」で、3秒または10秒のセルフタイマー、またはバーストを設定できます。VoiceOverがカウントダウンを1秒ずつ読み上げます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 제어의 드라이브에서 3초 또는 10초 셀프 타이머나 연속 촬영을 설정할 수 있습니다. VoiceOver가 카운트다운을 1초마다 읽어 줍니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opnamemodus, in Snelle bediening, stelt een zelfontspanner van 3 of 10 seconden of een burst in. VoiceOver zegt elke seconde van het aftellen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo, nos Controles Rápidos, define um temporizador de 3 ou 10 segundos, ou uma sequência. O VoiceOver fala cada segundo da contagem regressiva."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快捷控制中的“驱动”可设置 3 秒或 10 秒的自拍定时或连拍。VoiceOver 会读出倒计时的每一秒。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速控制中的「驅動」可設定 3 秒或 10 秒的自拍定時或連拍。VoiceOver 會讀出倒數的每一秒。"
           }
         }
       }
@@ -5083,6 +6073,72 @@
         }
       }
     },
+    "Photo in %@": {
+      "comment": "Self-timer progress on the camera: the photo is taken after this many seconds. The value is a short number of seconds, such as 3s, formatted by the system.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto in %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto en %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photo dans %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto tra %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@後に撮影"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ 후 촬영"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto over %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto em %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@后拍照"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@後拍照"
+          }
+        }
+      }
+    },
     "Photos": {
       "comment": "Picker for how many photos an interval series takes.",
       "extractionState": "manual",
@@ -5145,6 +6201,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "照片"
+          }
+        }
+      }
+    },
+    "Photos taken: %lld": {
+      "comment": "Burst progress on the camera: how many photos of the running burst are taken so far.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aufgenommene Fotos: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos tomadas: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photos prises : %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto scattate: %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影枚数: %lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "촬영한 사진: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gemaakte foto’s: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos tiradas: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已拍摄：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已拍攝：%lld"
+          }
+        }
+      }
+    },
+    "Photos that still fit on this device: about %lld.": {
+      "comment": "Explanation of the Storage Low warning on the camera. The number is an estimate of how many more photos, with the chosen formats, fit in the device's free storage.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos, die noch auf dieses Gerät passen: etwa %lld."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos que aún caben en este dispositivo: unas %lld."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photos qui tiennent encore sur cet appareil : environ %lld."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto che entrano ancora in questo dispositivo: circa %lld."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このデバイスにまだ保存できる写真: 約%lld枚。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 기기에 더 저장할 수 있는 사진: 약 %lld장."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto’s die nog op dit apparaat passen: ongeveer %lld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos que ainda cabem neste dispositivo: cerca de %lld."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此设备还能存储的照片：约 %lld 张。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此裝置還能儲存的照片：約 %lld 張。"
           }
         }
       }
@@ -5677,6 +6865,270 @@
         }
       }
     },
+    "Screen brightness restored.": {
+      "comment": "Announced to VoiceOver when the app puts the screen's brightness back, after interval shooting or a tap.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bildschirmhelligkeit wiederhergestellt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Brillo de la pantalla restaurado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luminosité de l’écran rétablie."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luminosità dello schermo ripristinata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "画面の明るさを元に戻しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "화면 밝기를 복원했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schermhelderheid hersteld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Brilho da tela restaurado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已恢复屏幕亮度。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已恢復螢幕亮度。"
+          }
+        }
+      }
+    },
+    "Screen dimmed to save battery. Tap to brighten it.": {
+      "comment": "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts and the app dims the screen to save battery.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bildschirm abgedunkelt, um Akku zu sparen. Zum Aufhellen tippen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pantalla atenuada para ahorrar batería. Toca para aumentar el brillo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Écran assombri pour économiser la batterie. Touchez pour l’éclaircir."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schermo oscurato per risparmiare batteria. Tocca per schiarirlo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バッテリー節約のため画面を暗くしました。タップすると明るくなります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "배터리를 절약하기 위해 화면을 어둡게 했습니다. 탭하면 밝아집니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherm gedimd om de batterij te sparen. Tik om het helderder te maken."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tela escurecida para economizar bateria. Toque para clarear."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已调暗屏幕以节省电量。轻点可调亮。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已調暗螢幕以節省電量。點一下可調亮。"
+          }
+        }
+      }
+    },
+    "Self-Timer": {
+      "comment": "VoiceOver and Voice Control name of the pill on the camera that shows the self-timer is on.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Selbstauslöser"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Retardateur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autoscatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "セルフタイマー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "셀프 타이머"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zelfontspanner"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍定时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍定時"
+          }
+        }
+      }
+    },
+    "Self-timer: %@": {
+      "comment": "VoiceOver value of the shutter when the self-timer is on. The value is a number of seconds in words, such as 3 seconds, formatted by the system.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Selbstauslöser: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Retardateur : %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autoscatto: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "セルフタイマー: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "셀프 타이머: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zelfontspanner: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍定时：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍定時：%@"
+          }
+        }
+      }
+    },
     "Settings": {
       "comment": "Title of the settings screen, and the camera button that opens it.",
       "extractionState": "manual",
@@ -6141,6 +7593,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "快門優先"
+          }
+        }
+      }
+    },
+    "Single Photo": {
+      "comment": "Drive menu option on the camera: each press of the shutter takes one photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Einzelfoto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto único"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photo unique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto singola"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1枚撮影"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "단일 사진"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enkele foto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto única"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "单张照片"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "單張照片"
           }
         }
       }
@@ -6811,6 +8329,336 @@
         }
       }
     },
+    "Stop Burst": {
+      "comment": "Button that stops a running burst. Every photo already taken is saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie beenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detener ráfaga"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Arrêter la rafale"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Interrompi raffica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バーストを停止"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영 중지"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst stoppen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Parar sequência"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止连拍"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止連拍"
+          }
+        }
+      }
+    },
+    "Storage Full": {
+      "comment": "Warning chip on the camera: the device has no room for another photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speicher voll"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Almacenamiento lleno"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stockage plein"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spazio esaurito"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ストレージがいっぱい"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 공간 가득 참"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opslag vol"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Armazenamento cheio"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储空间已满"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存空間已滿"
+          }
+        }
+      }
+    },
+    "Storage Low": {
+      "comment": "Warning chip on the camera: the device is almost out of storage for photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speicher fast voll"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Poco almacenamiento"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stockage presque plein"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spazio quasi esaurito"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ストレージ残りわずか"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 공간 부족"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opslag bijna vol"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pouco armazenamento"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储空间不足"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存空間不足"
+          }
+        }
+      }
+    },
+    "Storage full. The next photo won't fit.": {
+      "comment": "Announced to VoiceOver when the device has no room for another photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speicher voll. Das nächste Foto passt nicht mehr."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Almacenamiento lleno. La próxima foto no cabrá."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stockage plein. La prochaine photo ne tiendra pas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spazio esaurito. La prossima foto non entrerà."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ストレージがいっぱいです。次の写真は保存できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 공간이 가득 찼습니다. 다음 사진은 저장할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opslag vol. De volgende foto past niet."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Armazenamento cheio. A próxima foto não vai caber."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储空间已满。下一张照片放不下。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存空間已滿。下一張照片放不下。"
+          }
+        }
+      }
+    },
+    "Storage low. Photos that still fit on this device: about %lld.": {
+      "comment": "Announced to VoiceOver when the device is almost out of storage. The number is an estimate of how many more photos fit.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speicher fast voll. Fotos, die noch auf dieses Gerät passen: etwa %lld."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Poco almacenamiento. Fotos que aún caben en este dispositivo: unas %lld."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stockage presque plein. Photos qui tiennent encore sur cet appareil : environ %lld."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spazio quasi esaurito. Foto che entrano ancora in questo dispositivo: circa %lld."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ストレージ残りわずか。このデバイスにまだ保存できる写真: 約%lld枚。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 공간 부족. 이 기기에 더 저장할 수 있는 사진: 약 %lld장."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opslag bijna vol. Foto’s die nog op dit apparaat passen: ongeveer %lld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pouco armazenamento. Fotos que ainda cabem neste dispositivo: cerca de %lld."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储空间不足。此设备还能存储的照片：约 %lld 张。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存空間不足。此裝置還能儲存的照片：約 %lld 張。"
+          }
+        }
+      }
+    },
     "Switch Camera": {
       "comment": "VoiceOver and Voice Control name of the button that switches between the front and rear cameras.",
       "extractionState": "manual",
@@ -7141,6 +8989,72 @@
         }
       }
     },
+    "Taking a burst. Press to stop.": {
+      "comment": "VoiceOver value of the shutter while a burst runs: pressing the shutter stops it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie läuft. Drücken zum Beenden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tomando una ráfaga. Pulsa para detenerla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rafale en cours. Appuyez pour l’arrêter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raffica in corso. Premi per interromperla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バースト撮影中。押すと停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "연속 촬영 중입니다. 누르면 중지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Burst bezig. Druk om te stoppen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tirando uma sequência. Pressione para parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在连拍。按下可停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在連拍。按下可停止。"
+          }
+        }
+      }
+    },
     "Taking photo…": {
       "comment": "Shown while a photo is being taken.",
       "extractionState": "manual",
@@ -7269,6 +9183,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "望遠"
+          }
+        }
+      }
+    },
+    "The battery is low.": {
+      "comment": "Announced to VoiceOver when the battery is low and the device isn't charging.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Der Akku ist schwach."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La batería está baja."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La batterie est faible."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La batteria è scarica."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バッテリー残量が少なくなっています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "배터리가 부족합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De batterij is bijna leeg."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A bateria está fraca."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "电池电量低。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "電池電量低。"
           }
         }
       }
@@ -7735,6 +9715,72 @@
         }
       }
     },
+    "The next photo won't fit. Free up storage on this device to keep taking photos.": {
+      "comment": "Explanation of the Storage Full warning on the camera: saving another photo would fail until the person frees storage.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das nächste Foto passt nicht mehr. Gib Speicher auf diesem Gerät frei, um weiter zu fotografieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La próxima foto no cabrá. Libera espacio en este dispositivo para seguir tomando fotos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La prochaine photo ne tiendra pas. Libérez de l’espace sur cet appareil pour continuer à prendre des photos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La prossima foto non entrerà. Libera spazio su questo dispositivo per continuare a scattare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "次の写真は保存できません。撮影を続けるには、このデバイスのストレージを空けてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "다음 사진은 저장할 수 없습니다. 계속 촬영하려면 이 기기의 저장 공간을 확보하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De volgende foto past niet. Maak opslag vrij op dit apparaat om foto’s te blijven maken."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A próxima foto não vai caber. Libere espaço neste dispositivo para continuar tirando fotos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "下一张照片放不下。请释放此设备的存储空间以继续拍照。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "下一張照片放不下。請釋放此裝置的儲存空間以繼續拍照。"
+          }
+        }
+      }
+    },
     "The photo wasn't taken. Try again.": {
       "comment": "Shown when taking a photo failed.",
       "extractionState": "manual",
@@ -8127,6 +10173,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "此鏡頭：%@"
+          }
+        }
+      }
+    },
+    "Timer: %@": {
+      "comment": "Drive menu option on the camera: a self-timer. The value is a short number of seconds, such as 3s or 10s, formatted by the system.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Retardateur : %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autoscatto: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "タイマー: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "타이머: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "定时：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "定時：%@"
           }
         }
       }

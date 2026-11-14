@@ -36,6 +36,8 @@ enum CameraWarnings {
     /// Every warning builder, in display order. Add a cause's builder here.
     static let builders: [@MainActor (CameraControlContext, SignatureStatus?) -> CameraWarning?] = [
         signing,
+        storage,
+        battery,
     ]
 
     /// The warnings that apply now, in display order.

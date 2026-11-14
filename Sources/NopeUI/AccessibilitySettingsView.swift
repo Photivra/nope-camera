@@ -19,6 +19,11 @@ struct AccessibilitySettingsView: View {
                         "The volume buttons, and the Camera Control on iPhones that have one, take a photo.", bundle: .module,
                         comment: "Accessibility screen: hardware buttons work as the shutter. Camera Control is Apple's name for the camera button on recent iPhones."))
                 row(
+                    systemImage: "timer",
+                    Text(
+                        "Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown.", bundle: .module,
+                        comment: "Accessibility screen: the self-timer and burst. A burst is a rapid run of separate photos. Drive is the name of the camera's quick control for the self-timer and burst; Quick Controls is the row of camera toggles. VoiceOver is Apple's screen reader; keep the name unchanged."))
+                row(
                     systemImage: "keyboard",
                     Text(
                         "With a hardware keyboard, the Space bar takes a photo.", bundle: .module,

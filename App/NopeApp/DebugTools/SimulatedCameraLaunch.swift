@@ -49,6 +49,9 @@ enum SimulatedCameraLaunch {
         /// and only P and M; the front camera has no manual focus. Pair it with
         /// `-NopeSettings.showsManualControls YES` to show the controls.
         case manual
+        /// Access already allowed; each save takes half a second, so a burst runs long enough
+        /// for the UI tests to see and stop it.
+        case slowSaving
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -114,7 +117,8 @@ enum SimulatedCameraLaunch {
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
-            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving ? 0.5 : 0),
+            appVersion: appVersion)
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
     static let fullManual = ManualCapabilities(
@@ -175,7 +179,7 @@ enum SimulatedCameraLaunch {
         case .noRAW:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: lensesWithoutRAW))
-        case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected:
+        case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:
             return SimulatedCaptureBackend(

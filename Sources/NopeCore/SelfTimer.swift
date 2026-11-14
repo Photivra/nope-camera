@@ -1,0 +1,88 @@
+import Foundation
+import Observation
+
+/// The self-timer delays the shutter offers: 3 and 10 seconds (AGENTS.md, "Taking photos
+/// without seeing the screen"; issue #39).
+public enum SelfTimerDelay: Int, CaseIterable, Sendable {
+    /// Three seconds.
+    case threeSeconds = 3
+
+    /// Ten seconds.
+    case tenSeconds = 10
+
+    /// The delay, in seconds.
+    public var seconds: Int {
+        rawValue
+    }
+}
+
+/// A countdown in whole seconds that runs an action when it reaches zero: the self-timer.
+///
+/// ``CameraModel`` owns one through ``DriveModel/countdown``. The shutter starts it in a timer
+/// drive mode (``DriveMode/timer(_:)``), and ``DriveIntent/startTimer(seconds:)`` starts it with
+/// any number of seconds, for example from a Siri or Shortcuts request with a delay (issue #62).
+/// An interface shows and announces ``remainingSeconds`` and gives a haptic tick when it changes.
+///
+/// Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between ticks; it does no
+/// other work, and nothing keeps running once it ends or is cancelled.
+///
+/// ```swift
+/// countdown.start(seconds: 3) { await takePhoto() }
+/// countdown.remainingSeconds  // 3, then 2, then 1, then nil when the photo is taken
+/// ```
+@MainActor
+@Observable
+public final class Countdown {
+    /// The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
+    public private(set) var remainingSeconds: Int?
+
+    /// Waits a number of seconds. Tests pass a faster one.
+    private let sleep: @Sendable (Double) async throws -> Void
+
+    /// The running countdown.
+    private var task: Task<Void, Never>?
+
+    /// Creates a countdown that isn't running.
+    ///
+    /// - Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
+    public init(sleep: @escaping @Sendable (Double) async throws -> Void) {
+        self.sleep = sleep
+    }
+
+    /// Whether a countdown is running.
+    public var isRunning: Bool {
+        remainingSeconds != nil
+    }
+
+    /// Starts counting down, one tick a second, and runs the action when the count reaches zero.
+    /// Does nothing when a countdown already runs or `seconds` is less than 1.
+    ///
+    /// - Parameters:
+    ///   - seconds: The delay, in seconds.
+    ///   - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
+    ///     is cancelled.
+    public func start(seconds: Int, fire: @escaping @MainActor () async -> Void) {
+        guard seconds > 0, task == nil else { return }
+        remainingSeconds = seconds
+        // The count changes only after a tick that wasn't cancelled, so a cancelled countdown
+        // never writes over the state of the next one.
+        task = Task {
+            var remaining = seconds
+            while remaining > 0 {
+                try? await sleep(1)
+                if Task.isCancelled { return }
+                remaining -= 1
+                remainingSeconds = remaining > 0 ? remaining : nil
+            }
+            task = nil
+            await fire()
+        }
+    }
+
+    /// Stops the countdown without running its action. Does nothing when none runs.
+    public func cancel() {
+        task?.cancel()
+        task = nil
+        remainingSeconds = nil
+    }
+}

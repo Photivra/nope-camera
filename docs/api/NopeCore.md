@@ -84,6 +84,105 @@ let recommendedStops: [Double]
 
 The f-numbers the system recommends offering, widest first.
 
+## `BatteryReading`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+struct BatteryReading
+```
+
+The battery's state, as the system reports it.
+
+## `BatteryReading/init(level:isCharging:isLowPowerMode:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+init(level: Double?, isCharging: Bool, isLowPowerMode: Bool)
+```
+
+Creates a reading.
+
+- Parameters:
+  - level: The charge from 0 to 1, or `nil` when unknown.
+  - isCharging: Whether the device is plugged in.
+  - isLowPowerMode: Whether Low Power Mode is on.
+
+## `BatteryReading/isCharging`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+let isCharging: Bool
+```
+
+Whether the device is plugged in: charging or full.
+
+## `BatteryReading/isLowPowerMode`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+let isLowPowerMode: Bool
+```
+
+Whether Low Power Mode is on.
+
+## `BatteryReading/level`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+let level: Double?
+```
+
+The charge from 0 to 1, or `nil` when the system doesn't know it (as in the Simulator).
+
+## `BatteryWarning`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+struct BatteryWarning
+```
+
+A battery warning: the battery is low and the device isn't plugged in (issue #44).
+
+## `BatteryWarning/init(percent:isLowPowerMode:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+init(percent: Int, isLowPowerMode: Bool)
+```
+
+Creates a warning.
+
+- Parameters:
+  - percent: The charge, in percent.
+  - isLowPowerMode: Whether Low Power Mode is on.
+
+## `BatteryWarning/isLowPowerMode`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+let isLowPowerMode: Bool
+```
+
+Whether Low Power Mode is on.
+
+## `BatteryWarning/percent`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+let percent: Int
+```
+
+The charge, in percent.
+
 ## `BracketFrame`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -246,6 +345,154 @@ static let steps: [Double]
 
 The steps between frames nope. offers, in EV: 1/3, 2/3, 1 and 2 stops.
 
+## `BurstEnd`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum BurstEnd
+```
+
+Why a burst ended.
+
+## `BurstEnd/cameraStopped`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case cameraStopped
+```
+
+The camera stopped running, for example because of an interruption or a lens change.
+
+## `BurstEnd/failed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case failed
+```
+
+A frame couldn't be taken or saved; ``CameraModel/captureStatus`` holds the error.
+
+## `BurstEnd/limitReached`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case limitReached
+```
+
+The burst reached ``DriveModel/maximumBurstFrames``.
+
+## `BurstEnd/stopped`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case stopped
+```
+
+The person let go of the button, or pressed Stop.
+
+## `BurstEnd/storageFull`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case storageFull
+```
+
+The next frame wouldn't fit in the device's free storage (issue #44).
+
+## `BurstProgress`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+struct BurstProgress
+```
+
+The progress of a running burst.
+
+## `BurstProgress/init(taken:saved:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+init(taken: Int, saved: Int)
+```
+
+Creates a progress value.
+
+- Parameters:
+  - taken: The frames taken so far.
+  - saved: The frames saved so far.
+
+## `BurstProgress/saved`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let saved: Int
+```
+
+The frames saved so far. Saving follows taking, so it can be one behind.
+
+## `BurstProgress/taken`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let taken: Int
+```
+
+The frames taken so far.
+
+## `BurstResult`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+struct BurstResult
+```
+
+How the last burst went: why it ended and how many frames were saved.
+
+## `BurstResult/end`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let end: BurstEnd
+```
+
+Why it ended.
+
+## `BurstResult/init(end:saved:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+init(end: BurstEnd, saved: Int)
+```
+
+Creates a result.
+
+- Parameters:
+  - end: Why it ended.
+  - saved: The frames saved.
+
+## `BurstResult/saved`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let saved: Int
+```
+
+The frames saved, each its own photo.
+
 ## `CameraIntent`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -270,6 +517,20 @@ case capture
 Take one photo with the selected lens, in the format the model chose. Send it from the
 shutter button, the volume buttons or the Camera Control. Ignored while the camera isn't
 running or a photo is already being taken.
+
+The ``DriveModel/mode`` applies: a timer mode starts the countdown and burst mode starts
+a burst. While a countdown or burst runs, it stops it instead.
+
+## `CameraIntent/drive(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case drive(DriveIntent)
+```
+
+Change the drive mode, start or cancel the self-timer, stop a burst, or report a hardware
+shutter button: see ``DriveIntent``.
 
 ## `CameraIntent/manual(_:)`
 
@@ -346,6 +607,16 @@ direction of flow").
 
 The model is isolated to the main actor, so an interface can read its properties directly.
 
+## `CameraModel/backend`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let backend: any CaptureBackend
+```
+
+The hardware the model asks for permission, capabilities and photos.
+
 ## `CameraModel/canCapture`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -357,6 +628,17 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the shutter should be enabled: the camera is running and no photo is being taken
 or saved.
 
+## `CameraModel/canPressShutter`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var canPressShutter: Bool { get }
+```
+
+Whether the shutter should be enabled: a photo can be taken now, or a countdown or burst
+runs, which pressing the shutter stops.
+
 ## `CameraModel/capabilities`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -366,6 +648,19 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The device's capabilities while ``state`` is ``CameraState/ready(_:)``, otherwise `nil`.
+
+## `CameraModel/capture()`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func capture() async
+```
+
+Takes one photo with the selected lens, if the camera can capture now.
+
+A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
+camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
 
 ## `CameraModel/captureFormat`
 
@@ -388,12 +683,57 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
-## `CameraModel/init(backend:saver:sleep:)`
+## `CameraModel/deviceStatus`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) })
+@MainActor let deviceStatus: DeviceStatus
+```
+
+The device's free storage and battery, for warnings and to stop a burst in time.
+
+## `CameraModel/drive`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let drive: DriveModel
+```
+
+The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+
+## `CameraModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func handle(_ intent: DriveIntent) async
+```
+
+Handles one drive intent.
+
+- Parameter intent: The intent.
+
+## `CameraModel/handlesHardwareButtons`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var handlesHardwareButtons: Bool { get }
+```
+
+Whether the app should take the hardware shutter buttons (the volume buttons and the
+Camera Control): while the camera runs. At other times they keep their system behavior,
+as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
+"isEnabled").
+
+## `CameraModel/init(backend:saver:sleep:deviceStatusReader:)`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }, deviceStatusReader: (any DeviceStatusReading)? = nil)
 ```
 
 Creates a model in the ``CameraState/starting`` state.
@@ -402,7 +742,9 @@ Creates a model in the ``CameraState/starting`` state.
   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
   - saver: The save pipeline. Without one, every photo ends in
     ``CaptureError/savingUnavailable`` and nothing is saved.
-  - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+  - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
+    pass a faster one.
+  - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
 
 A ``ManualCaptureBackend`` also gets manual controls (``manual``).
 
@@ -438,6 +780,17 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Applies the backend's events until its stream ends. Run it for as long as the camera
 screen is visible, for example in a SwiftUI `.task`.
 
+## `CameraModel/pressShutter()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func pressShutter() async
+```
+
+What the shutter does: stops a running countdown or burst, or else applies the drive mode:
+one photo, the self-timer, or a burst.
+
 ## `CameraModel/previewSource`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -458,6 +811,16 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The formats and metadata choices used for the next photo. A Settings screen changes them
 through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
+
+## `CameraModel/saver`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let saver: PhotoSaver?
+```
+
+Builds, checks and saves each photo, or `nil` when this model can't save (previews).
 
 ## `CameraModel/selectedLens`
 
@@ -495,7 +858,8 @@ Side effects: ``CameraIntent/requestPermission`` may show the system camera prom
 ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
 ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
 ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
-it to Photos (which may show the add-only Photos prompt).
+it to Photos (which may show the add-only Photos prompt), or applies the drive mode
+(``pressShutter()``).
 
 ## `CameraModel/sessionStatus`
 
@@ -517,6 +881,17 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The current camera state. Interfaces render it; only the model changes it.
+
+## `CameraModel/storageWarning`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var storageWarning: StorageWarning? { get }
+```
+
+The storage warning for the next photo with the selected lens and formats, or `nil`
+(issue #44). The photo's size is estimated with ``PhotoSizeEstimate``.
 
 ## `CameraPermission`
 
@@ -1182,6 +1557,20 @@ single-frame photos, nothing merged, darkest first.
 Say how many photos were saved, and whether all of them are signed; when one isn't,
 say why, as for ``saved(_:)``. Announce it to VoiceOver.
 
+## `CaptureStatus/savedBurst(_:)`
+
+public, declared in `Sources/NopeCore/CaptureStatus.swift`
+
+```swift
+case savedBurst([SavedPhoto])
+```
+
+A burst was taken and every frame was saved as its own photo: separate single-frame
+photos, nothing merged, in the order they were taken (``DriveMode/burst``).
+
+Say how many photos were saved, and whether all of them are signed; when one isn't,
+say why, as for ``saved(_:)``. Announce it to VoiceOver.
+
 ## `CaptureStatus/saving`
 
 public, declared in `Sources/NopeCore/CaptureStatus.swift`
@@ -1576,6 +1965,87 @@ let values: [Double]
 
 The values, smallest first. Never empty.
 
+## `Countdown`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor final class Countdown
+```
+
+A countdown in whole seconds that runs an action when it reaches zero: the self-timer.
+
+``CameraModel`` owns one through ``DriveModel/countdown``. The shutter starts it in a timer
+drive mode (``DriveMode/timer(_:)``), and ``DriveIntent/startTimer(seconds:)`` starts it with
+any number of seconds, for example from a Siri or Shortcuts request with a delay (issue #62).
+An interface shows and announces ``remainingSeconds`` and gives a haptic tick when it changes.
+
+Battery rule (AGENTS.md, "Battery"): the countdown only sleeps between ticks; it does no
+other work, and nothing keeps running once it ends or is cancelled.
+
+```swift
+countdown.start(seconds: 3) { await takePhoto() }
+countdown.remainingSeconds  // 3, then 2, then 1, then nil when the photo is taken
+```
+
+## `Countdown/cancel()`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor func cancel()
+```
+
+Stops the countdown without running its action. Does nothing when none runs.
+
+## `Countdown/init(sleep:)`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void)
+```
+
+Creates a countdown that isn't running.
+
+- Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
+
+## `Countdown/isRunning`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor var isRunning: Bool { get }
+```
+
+Whether a countdown is running.
+
+## `Countdown/remainingSeconds`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor var remainingSeconds: Int? { get set }
+```
+
+The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
+
+## `Countdown/start(seconds:fire:)`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor func start(seconds: Int, fire: @escaping @MainActor () async -> Void)
+```
+
+Starts counting down, one tick a second, and runs the action when the count reaches zero.
+Does nothing when a countdown already runs or `seconds` is less than 1.
+
+- Parameters:
+  - seconds: The delay, in seconds.
+  - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
+    is cancelled.
+
 ## `DevelopedLook`
 
 public, declared in `Sources/NopeCore/DevelopedLook.swift`
@@ -1962,6 +2432,158 @@ let whiteBalance: WhiteBalanceControl
 
 The white balance.
 
+## `DeviceStatus`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor final class DeviceStatus
+```
+
+The device's free storage and battery, for the camera's warnings and to stop a burst before
+storage runs out (issue #44).
+
+``CameraModel`` owns one as ``CameraModel/deviceStatus``. Nothing polls: the model reads it
+when the camera starts, before each photo and after each save, and the app calls
+``refresh()`` when the system reports a battery or Low Power Mode change (AGENTS.md,
+"Battery").
+
+## `DeviceStatus/availableStorageBytes`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor var availableStorageBytes: Int64? { get set }
+```
+
+The bytes free for important data, or `nil` when unknown.
+
+## `DeviceStatus/battery`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor var battery: BatteryReading? { get set }
+```
+
+The battery's state, or `nil` when unknown.
+
+## `DeviceStatus/batteryWarning`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor var batteryWarning: BatteryWarning? { get }
+```
+
+The battery warning, or `nil` when the battery isn't low, is unknown, or is charging.
+
+## `DeviceStatus/fits(bytes:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func fits(bytes: Int64) -> Bool
+```
+
+Whether a photo of this size fits. `true` when the free storage is unknown, so an unknown
+value never blocks a burst.
+
+- Parameter bytes: The photo's estimated size.
+
+## `DeviceStatus/init(reader:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor init(reader: (any DeviceStatusReading)?)
+```
+
+Creates the status with nothing read yet.
+
+- Parameter reader: Reads the values, or `nil` for none.
+
+## `DeviceStatus/lowBatteryLevel`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor static let lowBatteryLevel: Double
+```
+
+At or below this charge, unplugged, the battery warning shows: 20%, where iOS itself
+first warns and offers Low Power Mode (Apple Support, "Use Low Power Mode to save
+battery life on your iPhone").
+
+## `DeviceStatus/lowStoragePhotoCount`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor static let lowStoragePhotoCount: Int
+```
+
+Below this many photos, the storage warning shows.
+
+## `DeviceStatus/refresh()`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func refresh()
+```
+
+Reads the storage and battery again.
+
+## `DeviceStatus/storageWarning(bytesPerPhoto:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func storageWarning(bytesPerPhoto: Int64) -> StorageWarning?
+```
+
+The storage warning for photos of this size, or `nil` when enough fit or the free storage
+is unknown.
+
+- Parameter bytesPerPhoto: The estimated size of one photo, more than 0.
+
+## `DeviceStatusReading`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor protocol DeviceStatusReading
+```
+
+Reads the device's free storage and battery state. The app implements it with the system
+APIs; tests and the UI tests pass fakes.
+
+Privacy rule (AGENTS.md, "Nothing tracks you"): the values are read on the device, used only
+for the camera's warnings and never stored or sent. The free storage API is a required-reason
+API, declared in the app's privacy manifest.
+
+## `DeviceStatusReading/availableStorageBytes()`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func availableStorageBytes() -> Int64?
+```
+
+The bytes free for important data, such as photos the person takes, or `nil` when the
+system can't say.
+
+## `DeviceStatusReading/battery()`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func battery() -> BatteryReading?
+```
+
+The battery's state, or `nil` on a device without a battery.
+
 ## `Double/limited(to:)`
 
 internal, declared in `Sources/NopeCore/WhiteBalance.swift`
@@ -1974,6 +2596,286 @@ The value, moved to the nearest end of a range when it lies outside.
 
 - Parameter range: The allowed values.
 - Returns: The value inside the range.
+
+## `DriveIntent`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum DriveIntent
+```
+
+A request about the drive mode, the self-timer or a burst, sent as ``CameraIntent/drive(_:)``.
+
+## `DriveIntent/cancelTimer`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case cancelTimer
+```
+
+Stop the countdown without taking a photo.
+
+## `DriveIntent/hardwareButton(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case hardwareButton(HardwareButtonPhase)
+```
+
+A hardware shutter button moved. In burst mode, holding it takes a burst until it comes
+up; in the other modes, it acts like the on-screen shutter when it comes up, as the
+system Camera app does.
+
+## `DriveIntent/setMode(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case setMode(DriveMode)
+```
+
+Choose what the shutter does. Ignored while a countdown or burst runs.
+
+## `DriveIntent/startTimer(seconds:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case startTimer(seconds: Int)
+```
+
+Count down this many seconds, then take one photo, whatever the drive mode. Ignored while
+a photo can't be taken or a countdown or burst runs. A Siri or Shortcuts request with a
+delay (issue #62) sends it.
+
+- Parameter seconds: The delay, at least 1.
+
+## `DriveIntent/stopBurst`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case stopBurst
+```
+
+Stop a running burst after the frame being taken. Every frame already taken is saved.
+
+## `DriveMode`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum DriveMode
+```
+
+What one press of the shutter does: take one photo, start the self-timer, or take a burst
+(issue #68, "Drive"). Single is the default.
+
+## `DriveMode/allCases`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+static let allCases: [DriveMode]
+```
+
+Every mode, in the order an interface lists them: single, 3 s, 10 s, burst.
+
+## `DriveMode/burst`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case burst
+```
+
+A rapid run of single, unprocessed frames, each saved as its own photo (issue #46).
+
+## `DriveMode/single`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case single
+```
+
+One photo per press.
+
+## `DriveMode/timer(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case timer(SelfTimerDelay)
+```
+
+A countdown, then one photo (issue #39).
+
+## `DriveModel`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor final class DriveModel
+```
+
+The drive mode and the state of the self-timer and of a burst.
+
+``CameraModel`` owns one as ``CameraModel/drive``. An interface reads it and sends
+``DriveIntent`` values as ``CameraIntent/drive(_:)``; the shutter itself sends
+``CameraIntent/capture``, and the model applies the mode. Single is the default, and the mode
+isn't stored: every launch starts in single (AGENTS.md, "Cognitive": no surprise modes).
+
+## `DriveModel/beginBurst()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func beginBurst()
+```
+
+Marks a burst as started.
+
+## `DriveModel/burstProgress`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var burstProgress: BurstProgress? { get set }
+```
+
+The running burst, or `nil` when none runs.
+
+## `DriveModel/countdown`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor let countdown: Countdown
+```
+
+The self-timer.
+
+## `DriveModel/endBurst(_:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func endBurst(_ end: BurstEnd)
+```
+
+Marks the burst as ended.
+
+- Parameter end: Why it ended.
+
+## `DriveModel/init(sleep:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void)
+```
+
+Creates the model in single mode.
+
+- Parameter sleep: Waits a number of seconds between countdown ticks.
+
+## `DriveModel/isBurstStopRequested`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var isBurstStopRequested: Bool { get set }
+```
+
+Whether the person asked the running burst to stop.
+
+## `DriveModel/isBusy`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var isBusy: Bool { get }
+```
+
+Whether a countdown or a burst runs, so the shutter stops it instead of taking a photo.
+
+## `DriveModel/lastBurst`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var lastBurst: BurstResult? { get set }
+```
+
+How the last burst ended, or `nil` before the first one. Cleared when the next starts.
+
+## `DriveModel/maximumBurstFrames`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor static let maximumBurstFrames: Int
+```
+
+The most frames one burst takes (issue #46, "Limits"). An assumption to be confirmed on a
+device: with RAW and HEIF at 12 MP this is under 2 GB, and memory stays bounded at any
+count, because each frame is saved while the next is taken.
+
+## `DriveModel/mode`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var mode: DriveMode { get set }
+```
+
+What the shutter does.
+
+## `DriveModel/recordSaved()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `DriveModel/recordTaken()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
+
+## `DriveModel/requestBurstStop()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func requestBurstStop()
+```
+
+Asks the running burst to stop after the frame being taken.
+
+## `DriveModel/setMode(_:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func setMode(_ mode: DriveMode)
+```
+
+Changes the mode, unless a countdown or burst runs.
+
+- Parameter mode: The new mode.
 
 ## `ExposureMode`
 
@@ -2192,6 +3094,48 @@ static let xmpContentType: String
 ```
 
 The XMP content type of a `mime` item.
+
+## `HardwareButtonPhase`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum HardwareButtonPhase
+```
+
+How a hardware shutter button moved: the volume buttons or the Camera Control (issue #37).
+
+The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`).
+
+## `HardwareButtonPhase/cancelled`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case cancelled
+```
+
+The system cancelled the press.
+
+## `HardwareButtonPhase/pressed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case pressed
+```
+
+The button went down.
+
+## `HardwareButtonPhase/released`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case released
+```
+
+The button came up.
 
 ## `HeatLevel`
 
@@ -6678,6 +7622,101 @@ Signs one file.
 - Returns: The same file with a Content Credentials manifest.
 - Throws: Any error; the file is then saved unsigned, and the status says signing failed.
 
+## `PhotoSizeEstimate`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+enum PhotoSizeEstimate
+```
+
+The largest a saved photo's files can be, estimated before the photo is taken.
+
+The estimates are upper bounds chosen to warn early; they are assumptions until measured on a
+device (docs/TESTING.md, "Low storage"):
+- Bayer RAW: at most 16 bits a photosite (DNG 1.7, "BitsPerSample"), 2 bytes a pixel, whether
+  or not it is compressed.
+- HEIF: 1 byte a pixel, several times what the system HEVC encoder writes at full quality.
+- JPEG at full quality: 2.5 bytes a pixel.
+- Each file adds up to 1 MB for its metadata, preview and Content Credentials manifest.
+
+## `PhotoSizeEstimate/bytes(for:settings:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static func bytes(for lens: Lens, settings: SaveSettings) -> Int64
+```
+
+The most bytes one photo with this lens and these settings saves.
+
+- Parameters:
+  - lens: The lens. A lens without Bayer RAW saves only its processed fallback.
+  - settings: The formats chosen.
+- Returns: The estimate, in bytes.
+
+## `PhotoSizeEstimate/bytesPerPixel(_:)`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static func bytesPerPixel(_ format: PhotoFormat) -> Double
+```
+
+Bytes a pixel for a format.
+
+- Parameter format: The format.
+
+## `PhotoSizeEstimate/fallbackDimensions`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static let fallbackDimensions: PhotoDimensions
+```
+
+The size assumed for a lens that doesn't report its photo sizes: 12 MP, 4032 × 3024.
+
+## `PhotoSizeEstimate/fileOverheadBytes`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static let fileOverheadBytes: Double
+```
+
+Bytes each file adds besides its pixels.
+
+## `PhotoSizeEstimate/heifBytesPerPixel`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static let heifBytesPerPixel: Double
+```
+
+Bytes a pixel for HEIF.
+
+## `PhotoSizeEstimate/jpegBytesPerPixel`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static let jpegBytesPerPixel: Double
+```
+
+Bytes a pixel for JPEG.
+
+## `PhotoSizeEstimate/rawBytesPerPixel`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+static let rawBytesPerPixel: Double
+```
+
+Bytes a pixel for Bayer RAW.
+
 ## `ProcessedFallback`
 
 public, declared in `Sources/NopeCore/ProcessedFallback.swift`
@@ -6690,6 +7729,16 @@ The least-processed format a lens without Bayer RAW can give.
 
 The camera processes these photos, so the interface labels them (issue #1, "No-RAW
 fallback").
+
+## `ProcessedFallback/format`
+
+internal, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+var format: PhotoFormat { get }
+```
+
+The file format of the fallback.
 
 ## `ProcessedFallback/heif`
 
@@ -6850,6 +7899,167 @@ let signature: SignatureStatus
 ```
 
 Whether the photo is signed.
+
+## `ScreenControlling`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor protocol ScreenControlling : AnyObject
+```
+
+The screen's brightness and idle timer. The app implements it with UIKit
+(`UIScreen.brightness`, `UIApplication.isIdleTimerDisabled`); tests pass a fake.
+
+## `ScreenControlling/brightness`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor var brightness: Double { get set }
+```
+
+The screen's brightness, from 0 to 1.
+
+## `ScreenControlling/isIdleTimerDisabled`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor var isIdleTimerDisabled: Bool { get set }
+```
+
+Whether the system's idle timer is off, so the screen doesn't lock.
+
+## `SelfTimerDelay`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+enum SelfTimerDelay
+```
+
+The self-timer delays the shutter offers: 3 and 10 seconds (AGENTS.md, "Taking photos
+without seeing the screen"; issue #39).
+
+## `SelfTimerDelay/seconds`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+var seconds: Int { get }
+```
+
+The delay, in seconds.
+
+## `SelfTimerDelay/tenSeconds`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+case tenSeconds
+```
+
+Ten seconds.
+
+## `SelfTimerDelay/threeSeconds`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+case threeSeconds
+```
+
+Three seconds.
+
+## `SeriesScreenKeeper`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor final class SeriesScreenKeeper
+```
+
+Keeps the screen awake and dimmed while an interval series runs, and puts both back when it
+ends (issue #48).
+
+During a series the screen mustn't lock, or the camera stops and the series with it; dimming
+saves battery over a long series (AGENTS.md, "Battery"). This is the only place nope. turns
+the idle timer off, and it is turned on again whenever the series ends or is stopped, the
+camera screen goes away, or the app leaves the foreground.
+
+An interface calls ``update(isSeriesRunning:isInForeground:)`` whenever either value changes,
+shows a "Brighten Screen" control over the whole screen while ``isDimmed``, and announces the
+change to VoiceOver. ``brighten()`` restores the brightness while the series continues.
+
+## `SeriesScreenKeeper/brighten()`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor func brighten()
+```
+
+Restores the brightness while the series continues; the screen still doesn't lock.
+
+## `SeriesScreenKeeper/dimmedBrightness`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor static let dimmedBrightness: Double
+```
+
+The brightness during a series, from 0 to 1. A screen already darker isn't changed. An
+assumption to be checked on a device: dark enough to save power, bright enough to see the
+progress.
+
+## `SeriesScreenKeeper/init(screen:)`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor init(screen: any ScreenControlling)
+```
+
+Creates the keeper. It changes nothing until a series runs.
+
+- Parameter screen: The screen.
+
+## `SeriesScreenKeeper/isDimmed`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor var isDimmed: Bool { get set }
+```
+
+Whether the screen is dimmed now.
+
+## `SeriesScreenKeeper/isKeepingAwake`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor var isKeepingAwake: Bool { get set }
+```
+
+Whether the idle timer is off now.
+
+## `SeriesScreenKeeper/update(isSeriesRunning:isInForeground:)`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor func update(isSeriesRunning: Bool, isInForeground: Bool)
+```
+
+Keeps the screen awake and dims it when a series runs in the foreground, and puts both
+back otherwise.
+
+- Parameters:
+  - isSeriesRunning: Whether an interval series runs on the camera screen.
+  - isInForeground: Whether the app is in the foreground.
 
 ## `SessionStatus`
 
@@ -7354,6 +8564,36 @@ init()
 ```
 
 Creates a simulated preview source.
+
+## `StorageWarning`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+enum StorageWarning
+```
+
+A storage warning: few photos fit, or the next one doesn't (issue #44).
+
+## `StorageWarning/full`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+case full
+```
+
+The next photo doesn't fit: saving it would fail.
+
+## `StorageWarning/low(photosThatFit:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+case low(photosThatFit: Int)
+```
+
+About this many more photos fit, fewer than ``DeviceStatus/lowStoragePhotoCount``.
 
 ## `TIFFDirectory`
 

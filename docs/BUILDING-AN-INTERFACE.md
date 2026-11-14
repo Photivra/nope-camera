@@ -59,6 +59,18 @@ model keeps the combination valid for the lens. Offer "All Auto" whenever
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
 a warning that changes what the photo is.
 
+## Drive modes, storage and battery
+
+The shutter, and every hardware shutter, sends `.capture`; the model applies `drive.mode`
+(single, a 3 or 10 second self-timer, or burst), and the same intent stops a running countdown
+or burst. Enable the shutter with `canPressShutter`, not `canCapture`, so it can stop them. Show
+`drive.countdown.remainingSeconds` and `drive.burstProgress` with a visible way to stop each
+(`.drive(.cancelTimer)`, `.drive(.stopBurst)`), and announce them. Pass the hardware buttons'
+phases as `.drive(.hardwareButton(_:))`. Pass a `DeviceStatusReading` to `CameraModel` and show
+`storageWarning` and `deviceStatus.batteryWarning`. During an interval series, call
+`SeriesScreenKeeper.update(isSeriesRunning:isInForeground:)` so the screen stays awake and is
+dimmed, with a visible way to brighten it.
+
 ## The standard camera layout
 
 `NopeUI`'s camera screen is one interface on this contract, following the approved layout in

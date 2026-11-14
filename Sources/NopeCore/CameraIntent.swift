@@ -22,6 +22,9 @@ public enum CameraIntent: Equatable, Sendable {
     /// Take one photo with the selected lens, in the format the model chose. Send it from the
     /// shutter button, the volume buttons or the Camera Control. Ignored while the camera isn't
     /// running or a photo is already being taken.
+    ///
+    /// The ``DriveModel/mode`` applies: a timer mode starts the countdown and burst mode starts
+    /// a burst. While a countdown or burst runs, it stops it instead.
     case capture
 
     /// Change a manual or pro control: see ``ManualControlIntent``. Ignored while manual
@@ -31,4 +34,8 @@ public enum CameraIntent: Equatable, Sendable {
     /// Turn clean view on or off. Clean view hides every control that isn't essential, leaving
     /// the viewfinder and the shutter; it never changes a setting.
     case setCleanView(Bool)
+
+    /// Change the drive mode, start or cancel the self-timer, stop a burst, or report a hardware
+    /// shutter button: see ``DriveIntent``.
+    case drive(DriveIntent)
 }

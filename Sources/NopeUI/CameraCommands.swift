@@ -38,7 +38,7 @@ public struct CameraCommands: Commands {
                 Text("Take Photo", bundle: .module, comment: "VoiceOver and Voice Control name of the shutter button.")
             }
             .keyboardShortcut(.space, modifiers: [])
-            .disabled(!model.canCapture)
+            .disabled(!model.canPressShutter)
         }
     }
 }

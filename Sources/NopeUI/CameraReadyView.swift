@@ -166,6 +166,8 @@ struct CameraReadyView<Viewfinder: View>: View {
         .onChange(of: model.isCleanView) { showsTray = false }
         .sensoryFeedback(.impact(weight: .light), trigger: saveCount)
         .sensoryFeedback(.error, trigger: failureCount)
+        .driveFeedback(model.drive)
+        .announcesResourceWarnings(model)
     }
 
     // MARK: - Arrangements
@@ -390,10 +392,11 @@ struct CameraReadyView<Viewfinder: View>: View {
 
     /// The shutter. Pressing it closes the tray and takes a photo.
     private var shutter: some View {
-        ShutterButton(isEnabled: model.canCapture) {
+        ShutterButton(isEnabled: model.canPressShutter) {
             showsTray = false
             Task { await model.send(.capture) }
         }
+        .shutterDriveValue(model.drive)
         .accessibilityActions {
             if model.isCleanView {
                 Button {
@@ -500,6 +503,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                 Task { await model.send(.manual(.stopInterval)) }
             }
         }
+        DriveProgressView(model: model)
     }
 
     /// The viewfinder with the session's pause message over it.
@@ -516,6 +520,8 @@ struct CameraReadyView<Viewfinder: View>: View {
                 .accessibilityValue(viewfinderDescription)
             SessionStatusView(status: model.sessionStatus)
                 .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
+            CountdownNumber(drive: model.drive)
+                .uprightUnit()
         }
         .clipped()
         .contentShape(.rect)

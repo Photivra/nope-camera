@@ -24,14 +24,14 @@ public final class CameraModel {
     public private(set) var sessionStatus: SessionStatus = .stopped
 
     /// The state of the most recent capture.
-    public private(set) var captureStatus: CaptureStatus = .idle
+    public internal(set) var captureStatus: CaptureStatus = .idle
 
     /// The formats and metadata choices used for the next photo. A Settings screen changes them
     /// through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
     public var saveSettings = SaveSettings()
 
     /// Builds, checks and saves each photo, or `nil` when this model can't save (previews).
-    private let saver: PhotoSaver?
+    let saver: PhotoSaver?
 
     /// Whether clean view is on: the interface hides every control that isn't essential. Off by
     /// default. Warnings that change what the photo is are never hidden.
@@ -40,11 +40,17 @@ public final class CameraModel {
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
+    /// The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+    public let drive: DriveModel
+
+    /// The device's free storage and battery, for warnings and to stop a burst in time.
+    public let deviceStatus: DeviceStatus
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
     /// The hardware the model asks for permission, capabilities and photos.
-    private let backend: any CaptureBackend
+    let backend: any CaptureBackend
 
     /// Creates a model in the ``CameraState/starting`` state.
     ///
@@ -52,16 +58,21 @@ public final class CameraModel {
     ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
     ///   - saver: The save pipeline. Without one, every photo ends in
     ///     ``CaptureError/savingUnavailable`` and nothing is saved.
-    ///   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+    ///   - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
+    ///     pass a faster one.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
     ///
     /// A ``ManualCaptureBackend`` also gets manual controls (``manual``).
     public init(
         backend: any CaptureBackend, saver: PhotoSaver? = nil,
-        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
+        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
+        deviceStatusReader: (any DeviceStatusReading)? = nil
     ) {
         self.backend = backend
         self.saver = saver
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
+        drive = DriveModel(sleep: sleep)
+        deviceStatus = DeviceStatus(reader: deviceStatusReader)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -101,7 +112,8 @@ public final class CameraModel {
     /// ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
     /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
     /// ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
-    /// it to Photos (which may show the add-only Photos prompt).
+    /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
+    /// (``pressShutter()``).
     public func send(_ intent: CameraIntent) async {
         switch intent {
         case .start:
@@ -111,11 +123,13 @@ public final class CameraModel {
         case .selectLens(let id):
             await selectLens(id)
         case .capture:
-            await capture()
+            await pressShutter()
         case .manual(let intent):
             await manual.handle(intent) { [weak self] in await self?.capture() }
         case .setCleanView(let isOn):
             isCleanView = isOn
+        case .drive(let intent):
+            await handle(intent)
         }
     }
 
@@ -180,6 +194,7 @@ public final class CameraModel {
             }
             state = .ready(capabilities)
             selectedLensID = lens.id
+            deviceStatus.refresh()
             await startSession()
         }
     }
@@ -216,9 +231,10 @@ public final class CameraModel {
     /// Takes one photo with the selected lens, if the camera can capture now.
     ///
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
-    /// camera once and takes the photo again (``recoverFromBlankPicture(_:)``).
-    private func capture() async {
+    /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
+    func capture() async {
         guard canCapture, let lens = selectedLens else { return }
+        deviceStatus.refresh()
         captureStatus = .capturing
         let settings = saveSettings
         let plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
@@ -254,6 +270,7 @@ public final class CameraModel {
         } catch {
             captureStatus = .failed(error)
         }
+        deviceStatus.refresh()
     }
 
     /// Handles a blank photo: stops the camera, starts it again, and retries the photo once.
