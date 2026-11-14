@@ -420,6 +420,29 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
   the torch show when another feature turns them on.
 
+### Comparison shot on a device (issue #55)
+
+The rules (which photos are comparison shots, that only nope.'s files reach the library, failure
+handling, the metadata grouping and masking) are unit-tested with a scripted backend; the UI tests
+audit the compare view at the default and largest text sizes, right-to-left and in night mode.
+On the iPhone 16 Pro Max, record:
+
+- the time between the two photos (the compare view's "started … after nope.'s"), on the wide,
+  ultra wide and telephoto lenses and the front camera, in good and low light;
+- that the phone-processed side visibly shows the phone's processing (tone, noise reduction,
+  sharpening, multi-frame fusion in low light), and nope.'s side matches the saved photo;
+- that only nope.'s files appear in Photos after several comparison shots, and that a following
+  photo with Compare off has the same DNG tags and image data as before (the output's maximum
+  prioritization is back at `.speed`): run the tag check after a comparison shot;
+- memory in Xcode's memory gauge or Instruments: it rises while the compare view is open and
+  returns to the camera's level when Done is pressed;
+- the app switcher shows the hidden-contents cover, not the photos;
+- with the flash set to On, whether the second photo fires the flash again and how long it
+  waits for it;
+- App Privacy Report after a session of comparison shots: no network activity for nope.;
+- the masked values in Details (maker notes, `ImageUniqueID`, any serial number) and whether iOS
+  adds location to the phone's file (it shouldn't: nope. supplies none).
+
 ### Focus, exposure and close-up aids on a device
 
 The rules (point handling, the lock, the fast shutter limit and its hysteresis, the hint and the

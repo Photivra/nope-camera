@@ -160,6 +160,7 @@ struct CameraReadyView<Viewfinder: View>: View {
             ProToolsSheet(model: model, settings: settings)
                 .nightModeStyle(isNightMode)
         }
+        .comparisonCover(model, isNightMode: isNightMode)
         .adaptivePresentation(isPresented: $showsFormats) {
             if let format = model.captureFormat {
                 FormatDetailsSheet(
@@ -183,7 +184,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                 // clipped text.
                 .presentationDetents([.large])
         }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
         .onChange(of: model.captureStatus) { _, status in record(status) }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil

@@ -105,6 +105,7 @@ enum QuickControls {
         fastShutter,
         closeUp,
         magnifier,
+        compare,
         night,
         hideControls,
     ]

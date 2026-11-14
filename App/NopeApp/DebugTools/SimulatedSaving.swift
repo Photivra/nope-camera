@@ -82,6 +82,24 @@ struct SimulatedThumbnailer: PhotoThumbnailing {
     }
 }
 
+/// Makes the compare view's two pictures (issue #55): plain 4:3 pictures held upright, gray-blue
+/// for nope.'s file and warm orange for the phone-processed one, so the divider is visible. The
+/// simulated photos aren't images; `NopeDevelopTests` cover the ImageIO thumbnailer.
+struct SimulatedComparisonRenderer: PhotoThumbnailing {
+    /// The picture's width, in pixels.
+    static let width = 30
+    /// The picture's height, in pixels.
+    static let height = 40
+
+    /// Returns a picture in the file's color.
+    func thumbnail(of file: PhotoFile) -> PhotoThumbnail? {
+        let pixel: [UInt8] = file.isProcessedByDevice ? [200, 120, 60, 255] : [70, 90, 120, 255]
+        return PhotoThumbnail(
+            width: Self.width, height: Self.height,
+            rgba: Data(Array(repeating: pixel, count: Self.width * Self.height).joined()))
+    }
+}
+
 /// Accepts or refuses every add, without touching the Simulator's photo library.
 struct SimulatedPhotoLibrary: PhotoLibrary {
     /// Whether adding is allowed.

@@ -61,6 +61,9 @@ public final class CameraModel {
     /// The flash and the torch. Their intents arrive as ``CameraIntent/light(_:)``.
     public let light: LightModel
 
+    /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
+    public let comparison: ComparisonModel
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -97,6 +100,7 @@ public final class CameraModel {
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
         live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)
+        comparison = ComparisonModel(backend: backend as? any ComparisonCaptureBackend)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -122,10 +126,11 @@ public final class CameraModel {
         selectedLens.map(CaptureFormat.init(for:))
     }
 
-    /// Whether the shutter should be enabled: the camera is running and no photo is being taken
-    /// or saved.
+    /// Whether the shutter should be enabled: the camera is running, no photo is being taken
+    /// or saved, and the compare view isn't open.
     public var canCapture: Bool {
         sessionStatus.canCapture && captureStatus != .capturing && captureStatus != .saving
+            && !comparison.isPresented
     }
 
     /// Handles one intent from the interface and updates the model's state.
@@ -158,6 +163,8 @@ public final class CameraModel {
             await handleAuto(intent)
         case .light(let intent):
             await light.handle(intent)
+        case .comparison(let intent):
+            comparison.handle(intent)
         }
     }
 
@@ -332,9 +339,14 @@ public final class CameraModel {
             await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
             return
         }
+        let comparisonBackend = comparisonBackendForNextPhoto
         do {
             let start = now()
             let photo = try await backend.capturePhoto(request)
+            if let comparisonBackend {
+                await saveComparing(photo, started: start, request: request, settings: settings, backend: comparisonBackend)
+                return
+            }
             await save(photo, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             await recoverFromBlankPicture(request, settings: settings)

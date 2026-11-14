@@ -133,6 +133,72 @@
         }
       }
     },
+    "A second photo, started %@ after nope.'s, with the processing iOS applies when an app asks for the highest quality. It may combine several frames, and it may differ from what other camera apps save.": {
+      "comment": "Compare view: what the phone-processed side is. The value is a time such as 850 ms. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ein zweites Foto, %@ nach dem von nope. begonnen, mit der Verarbeitung, die iOS anwendet, wenn eine App die höchste Qualität anfordert. Es kann mehrere Einzelbilder kombinieren und von dem abweichen, was andere Kamera-Apps sichern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Una segunda foto, iniciada %@ después de la de nope., con el procesado que aplica iOS cuando una app pide la máxima calidad. Puede combinar varios fotogramas y puede diferir de lo que guardan otras apps de cámara."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Une seconde photo, lancée %@ après celle de nope., avec le traitement qu’iOS applique quand une app demande la meilleure qualité. Elle peut combiner plusieurs images et peut différer de ce qu’enregistrent d’autres apps d’appareil photo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Una seconda foto, avviata %@ dopo quella di nope., con l’elaborazione che iOS applica quando un’app chiede la qualità più alta. Può combinare più fotogrammi e può differire da ciò che salvano altre app fotocamera."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. の写真の %@ 後に開始した2枚目の写真で、アプリが最高画質を要求したときに iOS が適用する処理が施されています。複数のフレームを合成することがあり、ほかのカメラアプリが保存するものとは異なる場合があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 사진보다 %@ 후에 시작된 두 번째 사진으로, 앱이 최고 품질을 요청할 때 iOS가 적용하는 처리를 거쳤습니다. 여러 프레임을 합칠 수 있으며, 다른 카메라 앱이 저장하는 것과 다를 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Een tweede foto, %@ na die van nope. gestart, met de verwerking die iOS toepast wanneer een app om de hoogste kwaliteit vraagt. Ze kan meerdere beelden combineren en kan verschillen van wat andere camera-apps bewaren."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uma segunda foto, iniciada %@ depois da do nope., com o processamento que o iOS aplica quando um app pede a qualidade mais alta. Ela pode combinar vários quadros e pode ser diferente do que outros apps de câmera salvam."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "第二张照片，在 nope. 照片之后 %@ 开始拍摄，使用 iOS 在 App 请求最高质量时所应用的处理。它可能合成多帧，也可能与其他相机 App 存储的照片不同。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "第二張照片，在 nope. 照片之後 %@ 開始拍攝，使用 iOS 在 App 要求最高品質時所套用的處理。它可能合成多個影格，也可能與其他相機 App 儲存的照片不同。"
+          }
+        }
+      }
+    },
     "All Optional Removed": {
       "comment": "Settings row value: the master switch is on and no optional details are saved. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -1581,6 +1647,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "由 nope. 從 RAW 沖印，「標準」風格"
+          }
+        }
+      }
+    },
+    "Different": {
+      "comment": "Heading in the compare view's details, also spoken for each item: metadata both files hold, with different values.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Unterschiedlich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Diferente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Différent"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Diverso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "異なる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "다름"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verschillend"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Diferente"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不同"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不同"
           }
         }
       }
@@ -4291,6 +4423,72 @@
         }
       }
     },
+    "Not saved: it is discarded when you close this view.": {
+      "comment": "Compare view: the phone-processed photo is never saved and is discarded on Done. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert: Es wird verworfen, wenn du diese Ansicht schließt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guarda: se descarta al cerrar esta vista."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrée : elle est supprimée lorsque vous fermez cette vue."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvata: viene eliminata quando chiudi questa vista."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存されません：この画面を閉じると破棄されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장되지 않음: 이 화면을 닫으면 삭제됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard: ze wordt verwijderd wanneer je deze weergave sluit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não é salva: ela é descartada quando você fecha esta tela."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不会存储：关闭此视图时即被丢弃。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不會儲存：關閉此畫面時即會捨棄。"
+          }
+        }
+      }
+    },
     "Not saved: nope. couldn't confirm that the photo holds only the details you chose.": {
       "comment": "Shown when a finished photo file contained a metadata detail that is not on the privacy list, or couldn't be checked, so the app saved nothing. Honesty and privacy wording. Keep the name nope. unchanged, lowercase with its period.",
       "extractionState": "manual",
@@ -5347,6 +5545,138 @@
         }
       }
     },
+    "Only in Phone Version": {
+      "comment": "Heading in the compare view's details, also spoken for each item: metadata only the phone-processed version holds.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nur in der Telefonversion"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Solo en la versión del teléfono"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uniquement dans la version du téléphone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Solo nella versione del telefono"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "スマートフォン版のみ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "휴대폰 버전에만 있음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alleen in telefoonversie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Só na versão do celular"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "仅在手机版本中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "僅在手機版本中"
+          }
+        }
+      }
+    },
+    "Only in nope.'s File": {
+      "comment": "Heading in the compare view's details, also spoken for each item: metadata only nope.'s saved file holds, such as its signature. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nur in der Datei von nope."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Solo en el archivo de nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uniquement dans le fichier de nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Solo nel file di nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. のファイルのみ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 파일에만 있음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alleen in het bestand van nope."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Só no arquivo do nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "仅在 nope. 的文件中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "僅在 nope. 的檔案中"
+          }
+        }
+      }
+    },
     "Orientation": {
       "comment": "Locked metadata item: which way up the photo is. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -6073,6 +6403,72 @@
         }
       }
     },
+    "Same in Both": {
+      "comment": "Heading in the compare view's details, also spoken for each item: metadata both files hold with the same value.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In beiden gleich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Igual en ambos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Identique dans les deux"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uguale in entrambi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "両方で同じ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "둘 다 동일"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gelijk in beide"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Igual nos dois"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "两者相同"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "兩者相同"
+          }
+        }
+      }
+    },
     "Saved and signed.": {
       "comment": "Shown after a photo was added to the photo library with a Content Credentials signature in every file. Honesty wording: says only that it was saved and signed.",
       "extractionState": "manual",
@@ -6535,6 +6931,72 @@
         }
       }
     },
+    "Shown here as iOS displays RAW files.": {
+      "comment": "Compare view, when only the RAW was saved: the RAW is displayed with the system's own RAW decoding, not developed by nope. RAW is a file format name; iOS is a product name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hier so angezeigt, wie iOS RAW-Dateien darstellt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se muestra aquí tal como iOS muestra los archivos RAW."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Affichée ici comme iOS affiche les fichiers RAW."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostrata qui come iOS mostra i file RAW."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ここでは iOS が RAW ファイルを表示する方法で表示しています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "여기에서는 iOS가 RAW 파일을 표시하는 방식으로 표시됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hier getoond zoals iOS RAW-bestanden weergeeft."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostrada aqui como o iOS exibe arquivos RAW."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此处按 iOS 显示 RAW 文件的方式显示。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此處依 iOS 顯示 RAW 檔案的方式顯示。"
+          }
+        }
+      }
+    },
     "Shown with the manual controls. It measures the processed live preview, not the RAW.": {
       "comment": "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English.",
       "extractionState": "manual",
@@ -6927,6 +7389,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "告訴編輯器哪些像素是紅、綠、藍。缺少此資訊，RAW 就沒有色彩。"
+          }
+        }
+      }
+    },
+    "The Comparison Photo Is Never Saved": {
+      "comment": "Honesty heading: the phone-processed photo of the comparison shot is never saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Vergleichsfoto wird nie gesichert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La foto de comparación nunca se guarda"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La photo de comparaison n’est jamais enregistrée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La foto di confronto non viene mai salvata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "比較用の写真は保存されません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "비교용 사진은 저장되지 않음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De vergelijkingsfoto wordt nooit bewaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A foto de comparação nunca é salva"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "比较照片绝不会存储"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "比較照片絕不會儲存"
           }
         }
       }
@@ -7723,6 +8251,72 @@
         }
       }
     },
+    "What each file holds, read on this device. Values are shown on this screen only: nothing is stored or copied.": {
+      "comment": "Introduction of the compare view's Details tab. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Was jede Datei enthält, auf diesem Gerät gelesen. Die Werte werden nur auf diesem Bildschirm angezeigt: Nichts wird gespeichert oder kopiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lo que contiene cada archivo, leído en este dispositivo. Los valores solo se muestran en esta pantalla: no se almacena ni se copia nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ce que contient chaque fichier, lu sur cet appareil. Les valeurs ne s’affichent que sur cet écran : rien n’est stocké ni copié."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cosa contiene ogni file, letto su questo dispositivo. I valori sono mostrati solo su questa schermata: nulla viene memorizzato o copiato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各ファイルの内容をこのデバイス上で読み取ったものです。値はこの画面にのみ表示され、何も保存・コピーされません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 파일에 담긴 내용을 이 기기에서 읽은 것입니다. 값은 이 화면에만 표시되며, 아무것도 저장하거나 복사하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wat elk bestand bevat, gelezen op dit apparaat. Waarden worden alleen op dit scherm getoond: er wordt niets opgeslagen of gekopieerd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O que cada arquivo contém, lido neste dispositivo. Os valores aparecem só nesta tela: nada é armazenado ou copiado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每个文件包含的内容，在此设备上读取。这些值仅显示在此屏幕上：不会存储或复制任何内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每個檔案包含的內容，在此裝置上讀取。這些值僅顯示在此畫面上：不會儲存或拷貝任何內容。"
+          }
+        }
+      }
+    },
     "What iOS May Still Do": {
       "comment": "Honesty section header: things iOS does that the app can't change. iOS is a product name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -7917,6 +8511,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "從「照片」分享時，除非你在「選項」中關閉，否則會包含位置。其他資訊（例如日期和裝置型號）仍可能會傳送出去。"
+          }
+        }
+      }
+    },
+    "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos.": {
+      "comment": "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wenn „Vergleichen“ aktiviert ist, nimmt nope. ein zweites Foto mit der Verarbeitung des Telefons auf, nur um es neben deinem anzuzeigen. Dieses Foto wird nie gesichert, signiert oder geteilt und wird verworfen, wenn du den Vergleich schließt. Nur dein nope.-Foto kommt in „Fotos“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Con Comparar activado, nope. toma una segunda foto con el procesado del teléfono, solo para mostrarla junto a la tuya. Esa foto nunca se guarda, se firma ni se comparte, y se descarta al cerrar la comparación. Solo tu foto de nope. va a Fotos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Quand Comparer est activé, nope. prend une seconde photo avec le traitement du téléphone, uniquement pour l’afficher à côté de la vôtre. Cette photo n’est jamais enregistrée, signée ni partagée, et elle est supprimée lorsque vous fermez la comparaison. Seule votre photo nope. va dans Photos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Con Confronta attivo, nope. scatta una seconda foto con l’elaborazione del telefono, solo per mostrarla accanto alla tua. Quella foto non viene mai salvata, firmata o condivisa, e viene eliminata quando chiudi il confronto. Solo la tua foto nope. va in Foto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「比較」がオンのとき、nope. はスマートフォンの処理による2枚目の写真を撮影し、あなたの写真の隣に表示するためだけに使います。その写真は保存・署名・共有されることはなく、比較を閉じると破棄されます。写真に入るのは nope. の写真だけです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "비교를 켜면 nope.은(는) 휴대폰 처리를 거친 두 번째 사진을 촬영해 내 사진 옆에 보여 주는 데만 사용합니다. 그 사진은 저장, 서명 또는 공유되지 않으며, 비교를 닫으면 삭제됩니다. 사진에는 nope. 사진만 저장됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Als Vergelijken aan staat, neemt nope. een tweede foto met de verwerking van de telefoon, alleen om die naast de jouwe te tonen. Die foto wordt nooit bewaard, ondertekend of gedeeld en wordt verwijderd wanneer je de vergelijking sluit. Alleen je nope.-foto gaat naar Foto's."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Com Comparar ativado, o nope. tira uma segunda foto com o processamento do celular, só para mostrá-la ao lado da sua. Essa foto nunca é salva, assinada ou compartilhada, e é descartada quando você fecha a comparação. Só a sua foto do nope. vai para o Fotos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开“比较”后，nope. 会拍摄一张经手机处理的第二张照片，仅用于在你的照片旁显示。这张照片绝不会被存储、签名或共享，关闭比较时即被丢弃。只有你的 nope. 照片会进入“照片”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開啟「比較」後，nope. 會拍攝一張經手機處理的第二張照片，僅用於在你的照片旁顯示。這張照片絕不會被儲存、簽署或分享，關閉比較時即會捨棄。只有你的 nope. 照片會進入「照片」。"
           }
         }
       }
@@ -8379,6 +9039,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "你的姓名與版權"
+          }
+        }
+      }
+    },
+    "Your nope. photo was saved. The second photo, with the phone's processing, couldn't be taken, so there is nothing to compare. You can try again.": {
+      "comment": "Compare view, when the second photo of the comparison shot failed. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dein nope.-Foto wurde gesichert. Das zweite Foto mit der Verarbeitung des Telefons konnte nicht aufgenommen werden, daher gibt es nichts zu vergleichen. Du kannst es erneut versuchen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tu foto de nope. se ha guardado. No se pudo tomar la segunda foto, con el procesado del teléfono, así que no hay nada que comparar. Puedes intentarlo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Votre photo nope. a été enregistrée. La seconde photo, avec le traitement du téléphone, n’a pas pu être prise : il n’y a donc rien à comparer. Vous pouvez réessayer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La tua foto nope. è stata salvata. Non è stato possibile scattare la seconda foto, con l’elaborazione del telefono, quindi non c’è niente da confrontare. Puoi riprovare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. の写真は保存されました。スマートフォンの処理による2枚目の写真を撮影できなかったため、比較するものがありません。もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 사진은 저장되었습니다. 휴대폰 처리를 거친 두 번째 사진을 촬영할 수 없어 비교할 항목이 없습니다. 다시 시도할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Je nope.-foto is bewaard. De tweede foto, met de verwerking van de telefoon, kon niet worden genomen, dus er is niets om te vergelijken. Je kunt het opnieuw proberen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sua foto do nope. foi salva. Não foi possível tirar a segunda foto, com o processamento do celular, então não há nada para comparar. Você pode tentar de novo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "你的 nope. 照片已存储。无法拍摄经手机处理的第二张照片，因此没有可比较的内容。你可以再试一次。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "你的 nope. 照片已儲存。無法拍攝經手機處理的第二張照片，因此沒有可比較的內容。你可以再試一次。"
           }
         }
       }
@@ -8907,6 +9633,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 從不連接網際網路，也不保留任何關於你的資訊。"
+          }
+        }
+      }
+    },
+    "nope. never writes this.": {
+      "comment": "Compare view, for a metadata item only the phone-processed version holds and that no nope. setting can turn on: nope.'s allowlist never writes it. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. schreibt dies nie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. nunca escribe esto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. n’écrit jamais ceci."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. non scrive mai questo dato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. はこれを書き込みません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.은(는) 이 항목을 기록하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. schrijft dit nooit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. nunca grava isto."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 从不写入此项。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 從不寫入此項。"
+          }
+        }
+      }
+    },
+    "nope.'s Content Credentials signature.": {
+      "comment": "Compare view: this item of nope.'s file is its Content Credentials signature. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Content-Credentials-Signatur von nope."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La firma de Content Credentials de nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La signature Content Credentials de nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La firma Content Credentials di nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. のコンテンツクレデンシャル署名。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.의 콘텐츠 자격 증명 서명."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De Content Credentials-handtekening van nope."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A assinatura de Content Credentials do nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 的内容凭证签名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 的內容憑證簽名。"
           }
         }
       }

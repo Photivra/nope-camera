@@ -46,4 +46,7 @@ public enum CameraIntent: Equatable, Sendable {
 
     /// Change the flash or the torch: see ``LightIntent``.
     case light(LightIntent)
+
+    /// Turn the comparison shot on or off, or close the compare view: see ``ComparisonIntent``.
+    case comparison(ComparisonIntent)
 }

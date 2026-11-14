@@ -381,6 +381,46 @@ The C2PA library is c2pa-rs built from source with every network feature off
 (`Vendor/c2pa-swift`). Details and the exact contents are in [`PRIVACY.md`](PRIVACY.md),
 "Content Credentials".
 
+### Comparison shot (issue #55)
+
+`CameraModel.comparison` (`ComparisonModel`) holds whether Compare is on (off at launch, not
+remembered) and the compare view's content (`ComparisonModel.State`); its intents arrive as
+`CameraIntent.comparison(ComparisonIntent)`. It is offered only with a
+`ComparisonCaptureBackend` (`ComparisonModel.isAvailable`).
+
+```
+ shutter ──▶ CameraModel.capture()
+               ├─ backend.capturePhoto(request)            nope.'s photo, exactly as without Compare
+               ├─ ComparisonCaptureBackend.captureComparison(request)
+               │     └─ second photo, .quality, system metadata kept   (PhoneProcessedPhoto)
+               ├─ PhotoSaver.saveReturningFiles(photo)     only nope.'s files go to Photos
+               └─ ComparisonModel.present(...)             pictures (renderer) + MetadataComparison
+ Done ──▶ .comparison(.close)                              everything above is dropped
+```
+
+- **Only single and self-timer photos** are comparison shots (`CameraModel.comparisonAppliesToNextPhoto`):
+  never a burst, a bracket or an interval series.
+- **nope.'s photo is unchanged.** The session keeps `ProcessingSwitches.leastProcessing`; for the
+  second photo only, `SystemCaptureHardware` raises the photo output's
+  `maxPhotoQualityPrioritization` to `.quality` (a `.quality` photo needs it), then sets it back
+  to `.speed` and prepares the session's RAW settings again before returning
+  (`ComparisonHardware`, `CapturePolicy.comparisonPlan(for:)`, `ProcessingSwitches.phoneProcessing`).
+- **The phone's version can't be saved.** It is a `PhoneProcessedPhoto`, not a `CapturedPhoto`,
+  so it can't be handed to `PhotoSaver`; the unit tests assert that only nope.'s files reach the
+  library. If nope.'s photo fails to save, the phone's version is dropped; if the second photo
+  fails, nope.'s photo is still saved and the view says there is nothing to compare.
+- **Pictures** are decoded off the main actor by `ComparisonModel.renderer` (the app passes
+  `ImageIOThumbnailer` at 4032 pixels): nope.'s saved HEIF or JPEG, or the DNG when only RAW
+  was saved, and the phone's file. **Metadata** (`MetadataComparison`) pairs the read-back of
+  the shown nope. file with the phone's file read by `MetadataFileReader`, grouped as only in the
+  phone's version, different, only in nope.'s file and the same, each item linked to its privacy
+  switch and marked when its value identifies the device or the photo.
+- While the compare view is open, `canCapture` and `handlesHardwareButtons` are false. `NopeUI`
+  shows it as a full-screen cover (`ComparisonScreen`): the pictures with a divider (a slider,
+  VoiceOver adjustable action, nope. Only / Split / Phone Only buttons, pinch and zoom buttons),
+  and a pushed Details list. It hides its contents while the scene isn't active, so the app
+  switcher's snapshot doesn't show them. The Compare item is in the quick-controls tray, with a
+  pill and the hint "Hold the camera steady or use a tripod. Two photos are taken, a moment apart."
 
 ## Settings
 

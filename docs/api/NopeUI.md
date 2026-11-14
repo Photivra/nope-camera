@@ -1361,6 +1361,672 @@ static var title: Text { get }
 
 "Close-Up".
 
+## `ComparisonCover`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonCover
+```
+
+Covers the screen with the compare view while the comparison is presented.
+
+The cover follows the model on the main actor's next turn, through its own state: presented
+in the same update as the saved photo's status, the camera's reaction to that status (the
+thumbnail and the "saved" announcement) was dropped as the cover hid the camera (issue #55).
+
+## `ComparisonCover/body(content:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the cover.
+
+- Parameter content: The camera.
+
+## `ComparisonCover/init(model:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(model: CameraModel, isNightMode: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - model: The camera model.
+  - isNightMode: Whether night mode is on.
+
+## `ComparisonCover/isNightMode`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether night mode is on, so the view is red too.
+
+## `ComparisonCover/model`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `ComparisonDetailsList`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonDetailsList
+```
+
+The details: the metadata of nope.'s file and the phone's version, grouped by how they
+differ, with identifying values hidden until the person asks.
+
+## `ComparisonDetailsList/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+One section per kind of difference that has entries.
+
+## `ComparisonDetailsList/init(result:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(result: PhotoComparison)
+```
+
+Creates the list.
+
+- Parameter result: The comparison.
+
+## `ComparisonDetailsList/result`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let result: PhotoComparison
+```
+
+The comparison.
+
+## `ComparisonEntryRow`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonEntryRow
+```
+
+One metadata item: its name, each file's value, and why it matters.
+
+## `ComparisonEntryRow/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row.
+
+## `ComparisonEntryRow/entry`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let entry: MetadataComparison.Entry
+```
+
+The item.
+
+## `ComparisonEntryRow/init(entry:isRevealed:reveal:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(entry: MetadataComparison.Entry, isRevealed: Bool, reveal: @escaping () -> Void)
+```
+
+Creates the row.
+
+- Parameters:
+  - entry: The item.
+  - isRevealed: Whether its identifying value is shown.
+  - reveal: Shows its identifying value.
+
+## `ComparisonEntryRow/isRevealed`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let isRevealed: Bool
+```
+
+Whether its identifying value is shown.
+
+## `ComparisonEntryRow/reveal`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let reveal: () -> Void
+```
+
+Shows its identifying value.
+
+## `ComparisonHiddenView`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonHiddenView
+```
+
+Covers the compare view while nope. isn't the active app.
+
+## `ComparisonHiddenView/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+An opaque background with a short explanation.
+
+## `ComparisonHiddenView/init()`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the cover.
+
+## `ComparisonHint`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonHint
+```
+
+The hint before a comparison shot: two photos are taken, so hold still.
+
+## `ComparisonHint/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hint, while the next photo is a comparison shot.
+
+## `ComparisonHint/init(model:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the hint.
+
+- Parameter model: The camera model.
+
+## `ComparisonHint/model`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `ComparisonNavigation`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonNavigation<Content> where Content : View
+```
+
+A navigation stack with the compare view's title and a Done button.
+
+## `ComparisonNavigation/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The stack.
+
+## `ComparisonNavigation/close`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the compare view.
+
+## `ComparisonNavigation/content`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let content: Content
+```
+
+The content.
+
+## `ComparisonNavigation/init(close:content:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(close: @escaping () -> Void, @ViewBuilder content: () -> Content)
+```
+
+Creates the stack.
+
+- Parameters:
+  - close: Closes the compare view.
+  - content: The content.
+
+## `ComparisonPicturesView`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonPicturesView
+```
+
+The pictures: both photos lined up, with the divider, the view choice, zoom, and what
+each side is.
+
+## `ComparisonPicturesView/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The pictures above the controls, scrolling at large text sizes.
+
+## `ComparisonPicturesView/init(result:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(result: PhotoComparison)
+```
+
+Creates the pictures.
+
+- Parameter result: The comparison.
+
+## `ComparisonPicturesView/maximumZoom`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor static let maximumZoom: Double
+```
+
+The largest zoom: 4×, enough to see noise and sharpening at the photos' full size.
+
+## `ComparisonPicturesView/result`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let result: PhotoComparison
+```
+
+The comparison.
+
+## `ComparisonPicturesView/splitStep`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor static let splitStep: Double
+```
+
+One step of the divider for VoiceOver and the keyboard: a tenth of the width.
+
+## `ComparisonPicturesView/zoomStep`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor static let zoomStep: Double
+```
+
+One step of the zoom buttons.
+
+## `ComparisonScreen`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonScreen
+```
+
+The compare view of the comparison shot (issue #55): nope.'s photo and the phone's fully
+processed version of almost the same moment, with a divider to slide between them, and their
+metadata side by side.
+
+It covers the whole screen while `CameraModel.comparison` is presented. It opens on the
+pictures (the divider, a choice of nope. only, split or phone only, and zoom); its Details
+button pushes a native list of the metadata, grouped by how it differs. Each side says exactly
+what it is.
+
+Privacy: the phone's version is shown only here and is never saved, shared or copied: the view
+has no save, share or copy control, its text can't be selected, and its contents are hidden
+while nope. isn't the active app, so the app switcher's snapshot doesn't show them. Done
+sends `ComparisonIntent.close`, which discards both pictures and the list.
+
+## `ComparisonScreen/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The content for the comparison's state, hidden in the background.
+
+## `ComparisonScreen/init(model:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the compare view.
+
+- Parameter model: The camera model.
+
+## `ComparisonScreen/model`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model, whose comparison is shown.
+
+## `ComparisonSideLabel`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonSideLabel
+```
+
+A side's label on the pictures: white text on a dark backing.
+
+## `ComparisonSideLabel/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The label.
+
+## `ComparisonSideLabel/init(text:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(text: Text)
+```
+
+Creates the label.
+
+- Parameter text: The label.
+
+## `ComparisonSideLabel/text`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let text: Text
+```
+
+The label.
+
+## `ComparisonSidesDescription`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor struct ComparisonSidesDescription
+```
+
+What each side of the comparison is, in plain words, and that the phone's version isn't saved.
+
+## `ComparisonSidesDescription/body`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+One paragraph per side.
+
+## `ComparisonSidesDescription/init(result:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor init(result: PhotoComparison)
+```
+
+Creates the description.
+
+- Parameter result: The comparison.
+
+## `ComparisonSidesDescription/result`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor let result: PhotoComparison
+```
+
+The comparison.
+
+## `ComparisonText`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+enum ComparisonText
+```
+
+The compare view's words.
+
+## `ComparisonText/describe(_:masked:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static func describe(_ value: MetadataComparison.Value, masked: Bool) -> String
+```
+
+A value as text, or "Hidden" when masked.
+
+- Parameters:
+  - value: The value.
+  - masked: Whether to hide it.
+
+## `ComparisonText/details`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static var details: Text { get }
+```
+
+The name of the details list, and of the button that opens it.
+
+## `ComparisonText/hasReadableValue(_:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static func hasReadableValue(_ value: MetadataComparison.Value?) -> Bool
+```
+
+Whether a value has something to hide: text or numbers.
+
+- Parameter value: The value, or `nil`.
+
+## `ComparisonText/heading(of:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static func heading(of difference: MetadataComparison.Difference) -> Text
+```
+
+A group's heading.
+
+- Parameter difference: The difference.
+
+## `ComparisonText/name(of:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static func name(of view: ComparisonView) -> Text
+```
+
+A view choice's name.
+
+- Parameter view: The choice.
+
+## `ComparisonText/nopeSide`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static var nopeSide: Text { get }
+```
+
+The label of nope.'s side.
+
+## `ComparisonText/phoneSide`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static var phoneSide: Text { get }
+```
+
+The label of the phone's side.
+
+## `ComparisonText/signatureName`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static var signatureName: String { get }
+```
+
+The name of the signature item.
+
+## `ComparisonText/title`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+static var title: Text { get }
+```
+
+The view's title.
+
+## `ComparisonView`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+enum ComparisonView
+```
+
+Which picture the compare view shows.
+
+## `ComparisonView/id`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+var id: String { get }
+```
+
+The case's raw value.
+
+## `ComparisonView/nope`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+case nope
+```
+
+nope.'s photo only.
+
+## `ComparisonView/phone`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+case phone
+```
+
+The phone's version only.
+
+## `ComparisonView/split`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+case split
+```
+
+Both, split by the divider.
+
 ## `ControlDial`
 
 internal, declared in `Sources/NopeUI/ControlDial.swift`
@@ -5762,6 +6428,18 @@ Close-Up: limits autofocus to near subjects, so it doesn't jump to the backgroun
 
 - Parameter context: The model and settings.
 
+## `QuickControls/compare(_:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor static func compare(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Compare: the comparison shot (issue #55). Shown where the device can take it.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/current(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -7039,6 +7717,18 @@ the limit off.
 
 - Parameter context: The model and settings.
 
+## `StatePills/compare(_:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor static func compare(_ context: CameraControlContext) -> StatePill?
+```
+
+The comparison shot, while it is on.
+
+- Parameter context: The model and settings.
+
 ## `StatePills/current(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -7538,6 +8228,22 @@ internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
 Announces storage and battery warnings (``ResourceWarningAnnouncements``).
 
 - Parameter model: The camera model.
+
+## `View/comparisonCover(_:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
+
+```swift
+@MainActor func comparisonCover(_ model: CameraModel, isNightMode: Bool) -> some View
+
+```
+
+Covers the screen with the compare view while the comparison is presented
+(``ComparisonCover``).
+
+- Parameters:
+  - model: The camera model.
+  - isNightMode: Whether night mode is on, so the view is red too.
 
 ## `View/darkBacking()`
 

@@ -11,9 +11,9 @@ extension CameraModel {
     /// Whether the app should take the hardware shutter buttons (the volume buttons and the
     /// Camera Control): while the camera runs. At other times they keep their system behavior,
     /// as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
-    /// "isEnabled").
+    /// "isEnabled"). Not while the compare view is open (issue #55).
     public var handlesHardwareButtons: Bool {
-        sessionStatus.canCapture
+        sessionStatus.canCapture && !comparison.isPresented
     }
 
     /// The storage warning for the next photo with the selected lens and formats, or `nil`

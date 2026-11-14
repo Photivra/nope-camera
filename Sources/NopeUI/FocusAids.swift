@@ -401,6 +401,7 @@ struct CameraHints: View {
         if let lens = model.closeUpLens {
             CloseUpSuggestion(model: model, lens: lens)
         }
+        ComparisonHint(model: model)
     }
 }
 

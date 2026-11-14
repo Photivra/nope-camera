@@ -85,6 +85,24 @@ public struct PhotoSaver: Sendable {
     public func save(
         _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil
     ) async throws(CaptureError) -> SavedPhoto {
+        try await saveReturningFiles(photo, settings: settings, captureDuration: captureDuration).saved
+    }
+
+    /// Saves one photo, as ``save(_:settings:captureDuration:)`` does, and also returns the
+    /// files exactly as they were added to Photos, for the compare view of the comparison shot
+    /// (issue #55). The files stay in memory; the caller drops them.
+    ///
+    /// Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+    ///
+    /// - Parameters:
+    ///   - photo: The captured photo, with its metadata already built for the plan.
+    ///   - settings: The formats and metadata choices.
+    ///   - captureDuration: How long the camera took to return the photo, or `nil`.
+    /// - Returns: What was saved, and the saved files in the order they were built.
+    /// - Throws: The same errors as ``save(_:settings:captureDuration:)``.
+    func saveReturningFiles(
+        _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?
+    ) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile]) {
         let plan = plan(for: settings.metadata)
         var timings = SaveTimings(capture: captureDuration)
         let files = try await buildFiles(for: photo, settings: settings, plan: plan, timings: &timings)
@@ -114,11 +132,12 @@ public struct PhotoSaver: Sendable {
         timings.save = now() - start
         var metadata: [PhotoFormat: MetadataInventory] = [:]
         for checked in finished { metadata[checked.file.format] = checked.readBack.file.inventory }
-        return SavedPhoto(
+        let saved = SavedPhoto(
             formats: finished.map(\.file.format), isProcessedFallback: !photo.format.isBayerRAW, signature: status,
             metadata: metadata, thumbnail: thumbnail(of: finished.map(\.file)),
             details: PhotoDetails.build(
                 files: finished, plan: plan, look: settings.developedLook, signature: status, timings: timings))
+        return (saved, finished.map(\.file))
     }
 
     /// The last-photo thumbnail, from the file that is quickest to read: the HEIF or JPEG when

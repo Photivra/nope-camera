@@ -60,6 +60,15 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   needs no permission) only while it is shown; focus peaking and the histogram sample a few
   reduced preview frames a second in memory only while they are shown; the live camera readout
   reads values the camera reports. None of this is written to a photo, stored, logged or copied.
+- **Comparison shot (issue #55):** off unless the person turns Compare on (quick-controls tray;
+  not remembered). Each single or self-timer photo is then followed by a second photo with the
+  phone's processing at `.quality` prioritization, which keeps the system's own metadata, so the
+  compare view can show what it carries. That photo is never saved, signed, written to a file,
+  shared, copied or logged: it is decoded into a picture and read by nope.'s tag reader in
+  memory, and everything is dropped when the person closes the view. nope.'s own photo is saved
+  exactly as without Compare. Identifying values (maker notes, location, unique IDs and serial
+  numbers) are hidden until the person taps Show Value. The view's contents are hidden while
+  nope. isn't the active app. No network request is involved.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
   nothing. Debug builds include the

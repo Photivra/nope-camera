@@ -97,7 +97,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
 
     /// Delegates of captures in progress, keyed by settings `uniqueID`; the photo output keeps
     /// only a weak reference to its delegate. Queue-confined.
-    private var captureDelegates: [Int64: PhotoCaptureDelegate] = [:]
+    private var captureDelegates: [Int64: any AVCapturePhotoCaptureDelegate] = [:]
 
     /// Notification observer tokens, removed on deinit.
     private var observers: [any NSObjectProtocol] = []
@@ -1051,5 +1051,102 @@ final class MetadataCustomizer: NSObject, AVCapturePhotoFileDataRepresentationCu
     /// Returns the allowlisted metadata, which replaces the photo's own.
     func replacementMetadata(for photo: AVCapturePhoto) -> [String: Any]? {
         properties
+    }
+}
+
+// MARK: - Comparison shot (issue #55)
+
+extension SystemCaptureHardware: ComparisonHardware {
+    /// Waits until the output is ready, raises its maximum prioritization for one `.quality`
+    /// photo, takes it, then sets the maximum back and prepares the session's own photo settings
+    /// again, all on `queue`, before returning.
+    func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan)
+        async throws(CaptureError) -> HardwarePhoto
+    {
+        _ = try await CaptureReadiness.waitUntilReady(
+            timeout: Self.readinessTimeoutSeconds, interval: Self.readinessPollSeconds
+        ) {
+            await self.perform { CaptureReadiness(self.photoOutput.captureReadiness) }
+        }
+        let result: Result<HardwarePhoto, CaptureError> = await withCheckedContinuation { continuation in
+            queue.async {
+                guard self.session.isRunning, self.currentInput != nil else {
+                    continuation.resume(returning: .failure(.notRunning))
+                    return
+                }
+                self.setMaximumQualityPrioritization(plan.switches.qualityPrioritization)
+                let settings = PhotoSettingsFactory.makeSettings(for: plan, maxPhotoDimensions: self.appliedMaxDimensions)
+                let id = settings.uniqueID
+                let delegate = ComparisonCaptureDelegate { result in
+                    self.queue.async {
+                        self.captureDelegates[id] = nil
+                        // nope.'s next photo needs the session exactly as it was.
+                        self.setMaximumQualityPrioritization(sessionPlan.switches.qualityPrioritization)
+                        self.prepare(sessionPlan) { continuation.resume(returning: result) }
+                    }
+                }
+                self.captureDelegates[id] = delegate
+                self.applyCaptureRotation()
+                self.keepPhotosUnmirrored()
+                self.photoOutput.capturePhoto(with: settings, delegate: delegate)
+            }
+        }
+        return try result.get()
+    }
+
+    /// Sets the photo output's maximum prioritization in one configuration transaction, as
+    /// `AVCapturePhotoOutput.h` asks for settings that reconfigure the pipeline. Does nothing
+    /// when it is already that value. Call only on `queue`.
+    ///
+    /// - Parameter prioritization: The new maximum.
+    private func setMaximumQualityPrioritization(_ prioritization: AVCapturePhotoOutput.QualityPrioritization) {
+        guard photoOutput.maxPhotoQualityPrioritization != prioritization else { return }
+        session.beginConfiguration()
+        photoOutput.maxPhotoQualityPrioritization = prioritization
+        session.commitConfiguration()
+    }
+}
+
+/// Receives the comparison shot's second photo and reports it once the capture finishes.
+///
+/// Privacy: this file keeps the system's own metadata (`fileDataRepresentation()` without a
+/// customizer), on purpose: the compare view shows what the phone's version carries by default.
+/// It is never saved, signed, written to disk or logged (issue #55). nope.'s own photos are
+/// written by ``PhotoCaptureDelegate`` with the allowlist.
+///
+/// `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
+/// capture, and `photo` is only touched in them.
+final class ComparisonCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unchecked Sendable {
+    /// Called once with the result.
+    private let completion: @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
+    /// The photo, once delivered.
+    private var photo: HardwarePhoto?
+
+    /// Creates a delegate for one capture.
+    ///
+    /// - Parameter completion: Called once with the result.
+    init(completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void) {
+        self.completion = completion
+    }
+
+    /// Keeps the photo's file in memory.
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?) {
+        guard error == nil, let data = photo.fileDataRepresentation() else { return }
+        let size = photo.resolvedSettings.photoDimensions
+        self.photo = HardwarePhoto(
+            data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
+            exposureDuration: nil, iso: nil, pixelSample: nil)
+    }
+
+    /// Reports the photo, or a failure if the capture failed or no file arrived.
+    func photoOutput(
+        _ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings,
+        error: (any Error)?
+    ) {
+        guard error == nil, let photo else {
+            completion(.failure(.captureFailed))
+            return
+        }
+        completion(.success(photo))
     }
 }

@@ -23,6 +23,16 @@ coverage gate and verified on a device (docs/TESTING.md).
 
 Create it with ``init()`` in the app target.
 
+## `AVFoundationCaptureBackend/activeConfiguration`
+
+internal, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+var activeConfiguration: SessionConfiguration? { get }
+```
+
+The configuration the session runs with, or `nil` when it is stopped.
+
 ## `AVFoundationCaptureBackend/applyControls(_:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -57,6 +67,24 @@ Takes a manual exposure bracket, in memory only, and rejects it if any frame is 
   `CaptureError.blankPicture` if any frame is blank (all are dropped), or the hardware's
   error.
 
+## `AVFoundationCaptureBackend/captureComparison(_:)`
+
+public, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+func captureComparison(_ request: CaptureRequest) async throws(CaptureError) -> PhoneProcessedPhoto
+```
+
+Takes the phone's fully processed photo, in memory only (issue #55).
+
+Privacy: the file keeps the system's own metadata, because showing it is the point; it
+is never saved, signed or logged. Its metadata is read with the project's own tag reader.
+
+- Parameter request: nope.'s request; must match the last ``startSession(_:)``.
+- Returns: The photo.
+- Throws: `CaptureError.notRunning` if the session isn't configured for this request,
+  `CaptureError.captureFailed` if the hardware can't take it, or the hardware's error.
+
 ## `AVFoundationCaptureBackend/capturePhoto(_:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -73,6 +101,16 @@ Takes one photo, in memory only, and rejects it if its pixel buffer is blank.
 - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
   `CaptureError.blankPicture` if ``PictureCheck`` finds the photo's buffer zero-filled
   (the photo is dropped), or the hardware's error.
+
+## `AVFoundationCaptureBackend/comparisonHardware`
+
+internal, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+nonisolated let comparisonHardware: (any ComparisonHardware)?
+```
+
+The comparison shot's camera call (issue #55), or `nil` when the hardware has none.
 
 ## `AVFoundationCaptureBackend/currentPermission()`
 
@@ -863,6 +901,21 @@ enum CapturePolicy
 
 Turns a `NopeCore` capture request into hardware settings.
 
+## `CapturePolicy/comparisonPlan(for:)`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+static func comparisonPlan(for request: CaptureRequest) -> PhotoSettingsPlan
+```
+
+The settings of the comparison shot's second photo: one processed photo at `.quality`
+prioritization, with the request's flash mode, as HEIF (JPEG on a lens whose fallback is
+JPEG, which offers no HEVC).
+
+- Parameter request: nope.'s request.
+- Returns: The plan.
+
 ## `CapturePolicy/fileFormat(of:)`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
@@ -1084,6 +1137,94 @@ let session: AVCaptureSession
 ```
 
 The session to show in an `AVCaptureVideoPreviewLayer`.
+
+## `ComparisonCaptureDelegate`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+final class ComparisonCaptureDelegate
+```
+
+Receives the comparison shot's second photo and reports it once the capture finishes.
+
+Privacy: this file keeps the system's own metadata (`fileDataRepresentation()` without a
+customizer), on purpose: the compare view shows what the phone's version carries by default.
+It is never saved, signed, written to disk or logged (issue #55). nope.'s own photos are
+written by ``PhotoCaptureDelegate`` with the allowlist.
+
+`@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
+capture, and `photo` is only touched in them.
+
+## `ComparisonCaptureDelegate/init(completion:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+init(completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void)
+```
+
+Creates a delegate for one capture.
+
+- Parameter completion: Called once with the result.
+
+## `ComparisonCaptureDelegate/photoOutput(_:didFinishCaptureFor:error:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: (any Error)?)
+```
+
+Reports the photo, or a failure if the capture failed or no file arrived.
+
+## `ComparisonCaptureDelegate/photoOutput(_:didFinishProcessingPhoto:error:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?)
+```
+
+Keeps the photo's file in memory.
+
+## `ComparisonHardware`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+protocol ComparisonHardware : Sendable
+```
+
+The camera call for the comparison shot's second photo (issue #55), behind a protocol so
+``AVFoundationCaptureBackend`` can be tested with a fake.
+
+``SystemCaptureHardware`` implements it and is verified on a device.
+
+## `ComparisonHardware/captureComparison(_:restoring:)`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+```
+
+Takes the phone's fully processed photo, with the system's own metadata, and then puts
+the photo output back as nope.'s photos need it.
+
+The photo output's `maxPhotoQualityPrioritization` is `.speed` for nope.'s own photos
+(Bayer RAW requires it). A `.quality` photo needs the maximum to be at least `.quality`
+(`AVCapturePhotoOutput.h`, `photoQualityPrioritization`), so it is raised only for this
+photo and set back to `.speed` afterwards, before nope.'s next photo; the session's other
+switches, and nope.'s photo just taken, are unchanged.
+
+- Parameters:
+  - plan: The comparison photo's settings (``CapturePolicy/comparisonPlan(for:)``).
+  - sessionPlan: The session's own photo settings, prepared again afterwards.
+- Returns: The file bytes from `AVCapturePhoto.fileDataRepresentation()`, with the
+  system's metadata, and the resolved size. No pixel sample and no RAW data.
+- Throws: `CaptureError.notRunning` if the session isn't running, or
+  `CaptureError.captureFailed` if the system reports an error or no file.
 
 ## `FlashMode/captureFlashMode`
 
@@ -2599,6 +2740,20 @@ static let leastProcessing: ProcessingSwitches
 
 The switches nope. uses.
 
+## `ProcessingSwitches/phoneProcessing`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+static let phoneProcessing: ProcessingSwitches
+```
+
+The switches for the comparison shot's second photo: the phone's processing at its
+highest setting for apps, `.quality` prioritization, which lets the system combine several
+frames where the device does that. Every other switch is the session's
+(``leastProcessing``): they are configured once for the session, so nope.'s own photos
+stay exactly as they are. This photo is never saved (issue #55).
+
 ## `ProcessingSwitches/qualityPrioritization`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
@@ -2877,6 +3032,18 @@ func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata:
 ```
 
 Waits until the output is ready, then takes a manual exposure bracket.
+
+## `SystemCaptureHardware/captureComparison(_:restoring:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+```
+
+Waits until the output is ready, raises its maximum prioritization for one `.quality`
+photo, takes it, then sets the maximum back and prepares the session's own photo settings
+again, all on `queue`, before returning.
 
 ## `SystemCaptureHardware/configure(_:)`
 

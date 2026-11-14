@@ -114,6 +114,8 @@ struct NopeApp: App {
         .task { await refreshDeviceStatus(on: UIDevice.batteryLevelDidChangeNotification) }
         .task { await refreshDeviceStatus(on: UIDevice.batteryStateDidChangeNotification) }
         .task { await refreshDeviceStatus(on: .NSProcessInfoPowerStateDidChange) }
+        // The compare view's pictures (issue #55); set once, as for the location below.
+        .task { if model.comparison.renderer == nil { model.comparison.renderer = Self.makeComparisonRenderer() } }
         // The person's save settings (formats, metadata, signing) apply from the next photo.
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save
@@ -213,6 +215,17 @@ struct NopeApp: App {
                 keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
             reader: ImageIOReadBack(), library: PhotoKitLibrary(),
             appVersion: version, thumbnailer: ImageIOThumbnailer())
+    }
+
+    /// Decodes both photos of the comparison shot for the compare view (issue #55): ImageIO, in
+    /// memory, up to 4032 pixels on the long side, the size of the 12 MP photos nope. takes
+    /// (`CapturePolicy` picks the lens's smallest photo size), so zooming in shows the photos'
+    /// own pixels. In Debug builds launched by the UI tests, two plain colored pictures.
+    private static func makeComparisonRenderer() -> any PhotoThumbnailing {
+        #if DEBUG
+        if SimulatedCameraLaunch.scenario != nil { return SimulatedComparisonRenderer() }
+        #endif
+        return ImageIOThumbnailer(maximumPixelSize: 4032)
     }
 
     /// The backend for this launch: the simulated one for a UI test scenario in Debug builds,

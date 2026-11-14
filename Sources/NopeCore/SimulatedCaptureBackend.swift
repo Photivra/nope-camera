@@ -51,6 +51,9 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// Whether the system allows the torch; `false` simulates a device too hot for it.
     public let torchAvailable: Bool
 
+    /// The error ``captureComparison(_:)`` throws, or `nil` to succeed.
+    public let comparisonError: CaptureError?
+
     /// The event stream. It carries ``eventsAfterStart`` and anything sent with ``emit(_:)``.
     public let events: AsyncStream<CaptureEvent>
 
@@ -100,6 +103,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///   - readingCount: How many times to report it when readings turn on, for example enough
     ///     for the close-up suggestion. Defaults to 1.
     ///   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
+    ///   - comparisonError: The error taking the comparison shot's second photo throws, or
+    ///     `nil` to succeed.
     public init(
         permission: CameraPermission,
         permissionAfterRequest: CameraPermission? = nil,
@@ -109,8 +114,10 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         eventsAfterStart: [CaptureEvent] = [],
         reading: ExposureReading = placeholderReading,
         readingCount: Int = 1,
-        torchAvailable: Bool = true
+        torchAvailable: Bool = true,
+        comparisonError: CaptureError? = nil
     ) {
+        self.comparisonError = comparisonError
         self.reading = reading
         self.readingCount = readingCount
         self.permission = permission

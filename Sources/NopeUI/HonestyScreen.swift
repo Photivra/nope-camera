@@ -60,6 +60,12 @@ struct HonestyScreen: View {
                     "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("The Comparison Photo Is Never Saved", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the phone-processed photo of the comparison shot is never saved."),
+                text: Text(
+                    "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What nope. Never Does", tableName: "Honesty", bundle: .module, comment: "Honesty section header. Keep \"nope.\" unchanged.")
         }

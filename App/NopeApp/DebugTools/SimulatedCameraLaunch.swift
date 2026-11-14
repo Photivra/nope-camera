@@ -62,6 +62,9 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; the four lenses, but the system refuses the light, as on a
         /// device too hot for it.
         case lightUnavailable
+        /// Access already allowed; the comparison shot's second photo, with the phone's
+        /// processing, always fails (issue #55).
+        case comparisonFails
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -233,6 +236,8 @@ enum SimulatedCameraLaunch {
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: lensesWithoutRAW))
         case .lightUnavailable:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, torchAvailable: false)
+        case .comparisonFails:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, comparisonError: .captureFailed)
         case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:

@@ -820,6 +820,16 @@ running or a photo is already being taken.
 The ``DriveModel/mode`` applies: a timer mode starts the countdown and burst mode starts
 a burst. While a countdown or burst runs, it stops it instead.
 
+## `CameraIntent/comparison(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case comparison(ComparisonIntent)
+```
+
+Turn the comparison shot on or off, or close the compare view: see ``ComparisonIntent``.
+
 ## `CameraIntent/drive(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -934,8 +944,8 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 @MainActor var canCapture: Bool { get }
 ```
 
-Whether the shutter should be enabled: the camera is running and no photo is being taken
-or saved.
+Whether the shutter should be enabled: the camera is running, no photo is being taken
+or saved, and the compare view isn't open.
 
 ## `CameraModel/canPressShutter`
 
@@ -1005,6 +1015,40 @@ ultra wide lens, from the wide or a telephoto lens, while
 ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
 a button to switch; nope. never switches on its own (issue #51).
 
+## `CameraModel/comparison`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let comparison: ComparisonModel
+```
+
+The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
+
+## `CameraModel/comparisonAppliesToNextPhoto`
+
+public, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
+
+```swift
+@MainActor var comparisonAppliesToNextPhoto: Bool { get }
+```
+
+Whether the next photo is a comparison shot: the comparison is on, and the shutter takes
+one photo (single or self-timer, not a burst, a bracket or an interval series). An
+interface shows "Hold the camera steady or use a tripod. Two photos are taken, a moment
+apart." while it is `true`.
+
+## `CameraModel/comparisonBackendForNextPhoto`
+
+internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
+
+```swift
+@MainActor var comparisonBackendForNextPhoto: (any ComparisonCaptureBackend)? { get }
+```
+
+The backend that takes the phone's version when the next photo is a comparison shot,
+otherwise `nil`.
+
 ## `CameraModel/deviceStatus`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1048,7 +1092,7 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 Whether the app should take the hardware shutter buttons (the volume buttons and the
 Camera Control): while the camera runs. At other times they keep their system behavior,
 as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
-"isEnabled").
+"isEnabled"). Not while the compare view is open (issue #55).
 
 ## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
 
@@ -1177,6 +1221,32 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The handle the app turns into the live viewfinder, or `nil` when there is no video.
+
+## `CameraModel/saveComparing(_:started:request:settings:backend:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
+
+```swift
+@MainActor func saveComparing(_ photo: CapturedPhoto, started: ContinuousClock.Instant, request: CaptureRequest, settings: SaveSettings, backend: any ComparisonCaptureBackend) async
+```
+
+Takes the phone's version right after nope.'s photo, saves nope.'s photo as usual, and
+opens the compare view.
+
+Privacy: only nope.'s photo goes to ``PhotoSaver``. The phone's version is a
+``PhoneProcessedPhoto``, which the saver can't take, and it is dropped when nope.'s photo
+fails to save. If the phone's version can't be taken, nope.'s photo is still saved and
+the compare view says why there is nothing to compare.
+
+Side effects: takes a second photo; may show the add-only Photos prompt; adds nope.'s
+photo to Photos.
+
+- Parameters:
+  - photo: nope.'s photo, just taken.
+  - started: When nope.'s photo was started.
+  - request: nope.'s request, which the phone's version repeats.
+  - settings: The settings nope.'s photo is saved with.
+  - backend: The backend that takes the phone's version.
 
 ## `CameraModel/saveSettings`
 
@@ -2463,6 +2533,313 @@ static let requiredReadings: Int
 
 How many readings in a row must find the lens there: two seconds at four readings a
 second (``ExposureReading`` rate).
+
+## `ComparisonCaptureBackend`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+protocol ComparisonCaptureBackend : CaptureBackend
+```
+
+A ``CaptureBackend`` that can also take the phone's fully processed photo for the comparison
+shot (issue #55).
+
+`NopeCapture` implements it with AVFoundation: a second capture, right after nope.'s own,
+with `.quality` prioritization, which lets the system combine several frames where the
+device does that. iOS doesn't allow that processing in the same capture as a Bayer RAW,
+so it is a separate photo a moment later. ``SimulatedCaptureBackend`` returns a placeholder.
+
+## `ComparisonCaptureBackend/captureComparison(_:)`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+func captureComparison(_ request: CaptureRequest) async throws(CaptureError) -> PhoneProcessedPhoto
+```
+
+Takes the phone's fully processed photo with the request's lens, in memory only.
+
+Side effects: none beyond the capture itself. The photo isn't written to a file or saved,
+and the camera is left configured for nope.'s own photos afterwards.
+
+- Parameter request: The lens, format and flash of nope.'s photo, just taken; the same as
+  the last ``CaptureBackend/startSession(_:)``. Its metadata plan is ignored: the
+  phone's version keeps the system's own metadata, because that is what it shows.
+- Returns: The photo.
+- Throws: ``CaptureError/notRunning`` if the camera isn't running, or
+  ``CaptureError/captureFailed`` if the system reports an error or returns no file.
+
+## `ComparisonIntent`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+enum ComparisonIntent
+```
+
+A request about the comparison shot, sent as ``CameraIntent/comparison(_:)``.
+
+## `ComparisonIntent/close`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+case close
+```
+
+Close the compare view and discard the phone's version and both pictures.
+
+## `ComparisonIntent/setOn(_:)`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+case setOn(Bool)
+```
+
+Turn the comparison shot on or off. While it is on, each single or self-timer photo is
+followed by the phone's fully processed photo, and the compare view opens after nope.'s
+photo is saved. Ignored when the backend can't take the second photo
+(``ComparisonModel/isAvailable``). Not remembered between launches.
+
+## `ComparisonModel`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor final class ComparisonModel
+```
+
+The comparison shot (issue #55): whether it is on, and the compare view's content.
+
+``CameraModel/comparison`` holds it; its intents arrive as ``CameraIntent/comparison(_:)``.
+While ``isOn``, ``CameraModel`` follows each single or self-timer photo with the phone's
+fully processed photo (``ComparisonCaptureBackend``), saves only nope.'s photo through
+``PhotoSaver`` as usual, and then fills ``state`` for the compare view.
+
+Privacy: the phone's version never reaches the save pipeline. Its pictures and metadata are
+kept in ``state`` only while the compare view is open; ``ComparisonIntent/close`` drops
+them. Nothing is written to disk, logged or sent anywhere.
+
+## `ComparisonModel/State`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+enum State
+```
+
+What the compare view shows.
+
+## `ComparisonModel/State/failed(_:)`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+case failed(CaptureError)
+```
+
+nope.'s photo was saved, but the phone's version couldn't be taken, so there is
+nothing to compare. Say so, and that nope.'s photo was saved.
+
+## `ComparisonModel/State/idle`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+case idle
+```
+
+No comparison: the compare view is closed.
+
+## `ComparisonModel/State/preparing`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+case preparing
+```
+
+nope.'s photo was saved and both pictures are being prepared. Show progress.
+
+## `ComparisonModel/State/ready(_:)`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+case ready(PhotoComparison)
+```
+
+Both photos are ready to compare.
+
+## `ComparisonModel/backend`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor let backend: (any ComparisonCaptureBackend)?
+```
+
+Takes the phone's version, or `nil` when the backend can't.
+
+## `ComparisonModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor func handle(_ intent: ComparisonIntent)
+```
+
+Handles one intent.
+
+- Parameter intent: The intent.
+
+## `ComparisonModel/init(backend:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor init(backend: (any ComparisonCaptureBackend)?)
+```
+
+Creates the comparison model.
+
+- Parameter backend: The backend that takes the phone's version, or `nil`.
+
+## `ComparisonModel/inventory(of:in:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor static func inventory(of file: PhotoFile?, in saved: SavedPhoto) -> MetadataInventory
+```
+
+The read-back of the shown nope. file.
+
+- Parameters:
+  - file: The shown file, or `nil`.
+  - saved: nope.'s saved photo, with each file's read-back.
+- Returns: The file's read-back, or an empty inventory without a file.
+
+## `ComparisonModel/isAvailable`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor var isAvailable: Bool { get }
+```
+
+Whether this device and build can take the comparison shot. Interfaces show the switch
+only where it is `true`.
+
+## `ComparisonModel/isOn`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor var isOn: Bool { get set }
+```
+
+Whether the comparison shot is on. Off at launch; not remembered.
+
+## `ComparisonModel/isPresented`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor var isPresented: Bool { get }
+```
+
+Whether the compare view is open: preparing, ready or showing the failure. The camera
+takes no photo while it is.
+
+## `ComparisonModel/present(_:saved:files:delay:mirrorsPhoneImage:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor func present(_ phone: Result<PhoneProcessedPhoto, CaptureError>, saved: SavedPhoto, files: [PhotoFile], delay: Duration, mirrorsPhoneImage: Bool) async
+```
+
+Opens the compare view after nope.'s photo was saved: the failure when the phone's
+version couldn't be taken, otherwise both pictures and the metadata side by side.
+
+The pictures are decoded off the main actor. If the view was closed meanwhile, the result
+is dropped.
+
+- Parameters:
+  - phone: The phone's version, or why it couldn't be taken.
+  - saved: nope.'s saved photo.
+  - files: nope.'s saved files, in the order they were built.
+  - delay: The time between the starts of the two photos.
+  - mirrorsPhoneImage: Whether nope.'s picture is mirrored and the phone's isn't.
+
+## `ComparisonModel/render(_:with:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+nonisolated static func render(_ file: PhotoFile?, with renderer: (any PhotoThumbnailing)?) async -> PhotoThumbnail?
+```
+
+Decodes a file into a picture, off the main actor.
+
+- Parameters:
+  - file: The file, or `nil`.
+  - renderer: The renderer, or `nil`.
+- Returns: The picture, or `nil` without a file or renderer, or when it can't be decoded.
+
+## `ComparisonModel/renderer`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor var renderer: (any PhotoThumbnailing)? { get set }
+```
+
+Decodes both photos into pictures for the compare view, or `nil` for none (the view then
+shows the metadata only). The app sets it once; `NopeDevelop`'s `ImageIOThumbnailer`
+with a large size does it with ImageIO, in memory.
+
+## `ComparisonModel/shownFile(in:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor static func shownFile(in files: [PhotoFile]) -> PhotoFile?
+```
+
+The nope. file the compare view shows: the developed HEIF or JPEG when one was saved,
+because it is the same kind of file as the phone's version, otherwise the DNG.
+
+- Parameter files: nope.'s saved files.
+- Returns: The file, or `nil` for none.
+
+## `ComparisonModel/state`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor var state: State { get set }
+```
+
+The compare view's content.
+
+## `ComparisonModel/takePhonePhoto(_:with:)`
+
+internal, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+@MainActor func takePhonePhoto(_ request: CaptureRequest, with backend: any ComparisonCaptureBackend) async -> Result<PhoneProcessedPhoto, CaptureError>
+```
+
+Takes the phone's version with a backend.
+
+- Parameters:
+  - request: nope.'s request.
+  - backend: The backend.
+- Returns: The photo, or the error.
 
 ## `CompressionQuality`
 
@@ -9130,6 +9507,525 @@ Required values for XMP properties that mirror a tag: `CreatorTool` mirrors `Sof
 and `dc:creator` and `dc:rights` mirror the artist and copyright. Other allowed XMP
 properties are dates.
 
+## `MetadataComparison`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+struct MetadataComparison
+```
+
+The metadata of nope.'s saved file and of the phone's fully processed version, side by side
+(issue #55, "Compare the metadata").
+
+Both sides come from the project's own tag reader (``MetadataFileReader``): nope.'s from the
+read-back of the saved file, the phone's from the in-memory file iOS wrote. Each tag, block
+and XMP property becomes one ``Entry``, grouped by ``Difference``.
+
+Privacy: built and shown in memory only; nothing is stored, logged or copied. Values that
+can identify the device or link photos are marked ``Entry/isIdentifying`` so an interface
+masks them until the person asks to see them.
+
+## `MetadataComparison/Difference`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+enum Difference
+```
+
+How an item differs between the two files.
+
+## `MetadataComparison/Difference/different`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case different
+```
+
+Both have it, with different values.
+
+## `MetadataComparison/Difference/onlyInNopeFile`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case onlyInNopeFile
+```
+
+Only nope.'s file has it, such as its signature.
+
+## `MetadataComparison/Difference/onlyInPhoneVersion`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case onlyInPhoneVersion
+```
+
+Only the phone's version has it.
+
+## `MetadataComparison/Difference/same`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case same
+```
+
+Both have it, with the same value.
+
+## `MetadataComparison/Entry`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+struct Entry
+```
+
+One tag, block or property, with each file's value.
+
+## `MetadataComparison/Entry/difference`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let difference: Difference
+```
+
+How the two differ.
+
+## `MetadataComparison/Entry/id`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let id: String
+```
+
+A stable identifier: the item's place and number or name.
+
+## `MetadataComparison/Entry/init(id:name:kind:phoneValue:nopeValue:item:isIdentifying:isSignature:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+init(id: String, name: String, kind: Kind, phoneValue: Value?, nopeValue: Value?, item: MetadataItem?, isIdentifying: Bool, isSignature: Bool)
+```
+
+Creates an entry.
+
+- Parameters:
+  - id: A stable identifier.
+  - name: The item's name.
+  - kind: Where it lives.
+  - phoneValue: The phone's value, or `nil`.
+  - nopeValue: nope.'s value, or `nil`.
+  - item: The privacy switch, or `nil`.
+  - isIdentifying: Whether to mask the value.
+  - isSignature: Whether it is nope.'s signature.
+
+## `MetadataComparison/Entry/isIdentifying`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let isIdentifying: Bool
+```
+
+Whether the value can identify the device or link photos (maker notes, location,
+unique IDs and serial numbers). Show it masked until the person asks.
+
+## `MetadataComparison/Entry/isSignature`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let isSignature: Bool
+```
+
+Whether the item is nope.'s Content Credentials signature.
+
+## `MetadataComparison/Entry/item`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let item: MetadataItem?
+```
+
+The privacy switch that controls the item in nope. (`docs/PRIVACY.md`), or `nil` when
+no switch does: nope. then never writes it unless it is locked.
+
+## `MetadataComparison/Entry/kind`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let kind: Kind
+```
+
+Where it lives.
+
+## `MetadataComparison/Entry/name`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let name: String
+```
+
+The item's specification name, such as `ImageUniqueID`, `heif:item:hvc1` or
+`DocumentID`. A tag without a known name is shown by its directory and number.
+
+## `MetadataComparison/Entry/nopeValue`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let nopeValue: Value?
+```
+
+nope.'s value, or `nil` when nope.'s file doesn't have it.
+
+## `MetadataComparison/Entry/phoneValue`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let phoneValue: Value?
+```
+
+The phone's value, or `nil` when the phone's version doesn't have it.
+
+## `MetadataComparison/Item`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+struct Item
+```
+
+One item as one file holds it, before the two files are paired.
+
+## `MetadataComparison/Item/id`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let id: String
+```
+
+The identifier both files share.
+
+## `MetadataComparison/Item/init(id:name:kind:value:item:isIdentifying:isSignature:)`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+init(id: String, name: String, kind: Kind, value: Value, item: MetadataItem?, isIdentifying: Bool, isSignature: Bool)
+```
+
+Creates an item.
+
+- Parameters:
+  - id: The identifier both files share.
+  - name: The item's name.
+  - kind: Where it lives.
+  - value: Its value.
+  - item: The privacy switch, or `nil`.
+  - isIdentifying: Whether the value is identifying.
+  - isSignature: Whether it is a signature.
+
+## `MetadataComparison/Item/isIdentifying`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let isIdentifying: Bool
+```
+
+Whether the value is identifying.
+
+## `MetadataComparison/Item/isSignature`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let isSignature: Bool
+```
+
+Whether it is a signature.
+
+## `MetadataComparison/Item/item`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let item: MetadataItem?
+```
+
+The privacy switch, or `nil`.
+
+## `MetadataComparison/Item/kind`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let kind: Kind
+```
+
+Where it lives.
+
+## `MetadataComparison/Item/name`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let name: String
+```
+
+The item's name.
+
+## `MetadataComparison/Item/value`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let value: Value
+```
+
+Its value.
+
+## `MetadataComparison/Kind`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+enum Kind
+```
+
+Where an item lives in the file.
+
+## `MetadataComparison/Kind/block`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case block
+```
+
+A container block: a HEIF box, item or property, or a JPEG segment.
+
+## `MetadataComparison/Kind/tag(_:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case tag(TIFFDirectory)
+```
+
+A TIFF tag in this directory (EXIF, GPS, IFD0).
+
+## `MetadataComparison/Kind/xmp(namespace:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case xmp(namespace: String)
+```
+
+A top-level XMP property, in this namespace.
+
+## `MetadataComparison/TagID`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+typealias TagID = MetadataAllowlist.TagID
+```
+
+A tag's place: its directory and number.
+
+## `MetadataComparison/Value`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+enum Value
+```
+
+What an item holds.
+
+## `MetadataComparison/Value/count(_:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case count(Int)
+```
+
+A container block, found this many times.
+
+## `MetadataComparison/Value/numbers(_:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case numbers([Double])
+```
+
+Numbers: a numeric tag's values, rationals divided out.
+
+## `MetadataComparison/Value/present`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case present
+```
+
+Present, with no value the reader records (such as a maker note's bytes).
+
+## `MetadataComparison/Value/text(_:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+case text(String)
+```
+
+Text: an ASCII tag or an XMP property.
+
+## `MetadataComparison/entries`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let entries: [Entry]
+```
+
+Every entry: the phone's items in file order, then those only nope.'s file has.
+
+## `MetadataComparison/entries(_:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+func entries(_ difference: Difference) -> [Entry]
+```
+
+The entries with one difference, in order.
+
+- Parameter difference: The difference.
+- Returns: The entries.
+
+## `MetadataComparison/entry(_:phone:nope:)`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static func entry(_ side: Item, phone: Item?, nope: Item?) -> Entry
+```
+
+Pairs one item's two sides.
+
+- Parameters:
+  - side: The side the item is listed from: the phone's, or nope.'s when only nope.'s
+    file has it. Its name, place and privacy switch are shown.
+  - phone: The phone's side, or `nil`.
+  - nope: nope.'s side, or `nil`.
+- Returns: The entry.
+
+## `MetadataComparison/identifyingTags`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static let identifyingTags: Set<TagID>
+```
+
+Tags whose values identify the device or one photo: `ImageUniqueID`, `CameraOwnerName`,
+`BodySerialNumber` and `LensSerialNumber` (EXIF 3.0, 4.6.5, tags `0xA420`, `0xA430`,
+`0xA431` and `0xA435`).
+
+## `MetadataComparison/init(phone:nope:)`
+
+public, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+init(phone: MetadataInventory, nope: MetadataInventory)
+```
+
+Compares two files' metadata.
+
+- Parameters:
+  - phone: What the tag reader found in the phone's version.
+  - nope: What the read-back found in nope.'s saved file.
+
+## `MetadataComparison/items(in:)`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static func items(in inventory: MetadataInventory) -> [Item]
+```
+
+Every item of a file, once each: its tags (the first of a repeated tag), its container
+blocks with how often each appears, and its XMP properties.
+
+- Parameter inventory: The file's metadata.
+- Returns: The items, in file order.
+
+## `MetadataComparison/name(of:)`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static func name(of tag: MetadataInventory.Tag) -> String
+```
+
+A tag's name: from the allowlist's catalog, from ``otherTagNames``, or its directory and
+number (``PhotoDetails/name(of:)``).
+
+- Parameter tag: The tag.
+- Returns: The name.
+
+## `MetadataComparison/otherTagNames`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static let otherTagNames: [TagID : String]
+```
+
+Names of tags the phone may write that nope. never does, so they aren't in
+``MetadataField/catalog``: from the EXIF 3.0 tag tables (4.6.5 for EXIF, 4.6.6 for GPS).
+
+## `MetadataComparison/signatureBlocks`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static let signatureBlocks: Set<String>
+```
+
+The container blocks that hold nope.'s Content Credentials manifest.
+
+## `MetadataComparison/tagItem(_:)`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+static func tagItem(_ tag: MetadataInventory.Tag) -> Item
+```
+
+One tag as an item.
+
+- Parameter tag: The tag.
+- Returns: The item.
+
 ## `MetadataField`
 
 public, declared in `Sources/NopeCore/MetadataField.swift`
@@ -11719,6 +12615,198 @@ Writes the options to a store.
 
 - Parameter defaults: The store to write.
 
+## `PhoneProcessedPhoto`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+struct PhoneProcessedPhoto
+```
+
+The phone's fully processed version of (almost) the same moment as a nope. photo, for the
+comparison shot (issue #55).
+
+Privacy: it is never saved. It isn't a ``CapturedPhoto``, so it can't be handed to
+``PhotoSaver``; it is never written to a file, added to Photos, signed, shared or logged.
+``ComparisonModel`` turns it into a picture and a metadata list for the compare view and then
+drops it; the picture and list are dropped when the view closes.
+
+## `PhoneProcessedPhoto/data`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let data: Data
+```
+
+The file bytes as iOS wrote them, with the system's own metadata: a HEIF, or a JPEG on a
+lens that gives only JPEG.
+
+## `PhoneProcessedPhoto/dimensions`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let dimensions: PhotoDimensions
+```
+
+The photo's size, in pixels, as the system resolved it.
+
+## `PhoneProcessedPhoto/format`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let format: PhotoFormat
+```
+
+The format of ``data``: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
+
+## `PhoneProcessedPhoto/init(data:format:dimensions:metadata:)`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+init(data: Data, format: PhotoFormat, dimensions: PhotoDimensions, metadata: MetadataInventory)
+```
+
+Creates a phone-processed photo.
+
+- Parameters:
+  - data: The file bytes.
+  - format: The format of the bytes.
+  - dimensions: The photo's size, in pixels.
+  - metadata: The file's metadata, as the tag reader found it.
+
+## `PhoneProcessedPhoto/metadata`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let metadata: MetadataInventory
+```
+
+Everything metadata-like in ``data``, read by the project's own tag reader
+(``MetadataFileReader``): what the phone's version carries by default.
+
+## `PhotoComparison`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+struct PhotoComparison
+```
+
+One finished comparison, for the compare view: nope.'s photo and the phone's version as
+pictures, and their metadata side by side.
+
+Privacy: in memory only, for as long as the compare view is open (``ComparisonModel``).
+
+## `PhotoComparison/init(nopeImage:phoneImage:nopeFile:phoneFormat:phoneDimensions:metadata:secondPhotoDelay:mirrorsPhoneImage:)`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+init(nopeImage: PhotoThumbnail?, phoneImage: PhotoThumbnail?, nopeFile: PhotoDetails.File?, phoneFormat: PhotoFormat, phoneDimensions: PhotoDimensions, metadata: MetadataComparison, secondPhotoDelay: Duration, mirrorsPhoneImage: Bool)
+```
+
+Creates a result.
+
+- Parameters:
+  - nopeImage: nope.'s picture, or `nil`.
+  - phoneImage: The phone's picture, or `nil`.
+  - nopeFile: What the shown nope. file is, or `nil`.
+  - phoneFormat: The phone's format.
+  - phoneDimensions: The phone's size, in pixels.
+  - metadata: The metadata side by side.
+  - secondPhotoDelay: The time between the starts of the two photos.
+  - mirrorsPhoneImage: Whether to mirror the phone's picture to match nope.'s.
+
+## `PhotoComparison/metadata`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let metadata: MetadataComparison
+```
+
+The metadata of the shown nope. file and of the phone's version, side by side.
+
+## `PhotoComparison/mirrorsPhoneImage`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let mirrorsPhoneImage: Bool
+```
+
+Whether nope.'s picture is mirrored (a front camera photo with mirroring on, issue #45)
+while the phone's version isn't, so an interface mirrors the phone's picture to line the
+two up. The phone's file itself is never changed.
+
+## `PhotoComparison/nopeFile`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let nopeFile: PhotoDetails.File?
+```
+
+What the shown nope. file is: its format, size and processing, from the photo's details,
+or `nil` when the details don't list it.
+
+## `PhotoComparison/nopeImage`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let nopeImage: PhotoThumbnail?
+```
+
+nope.'s photo as a picture: the saved HEIF or JPEG, or the DNG when only the RAW was
+saved; `nil` when it couldn't be decoded or the app has no renderer.
+
+## `PhotoComparison/phoneDimensions`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let phoneDimensions: PhotoDimensions
+```
+
+The size of the phone's version, in pixels.
+
+## `PhotoComparison/phoneFormat`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let phoneFormat: PhotoFormat
+```
+
+The format of the phone's version.
+
+## `PhotoComparison/phoneImage`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let phoneImage: PhotoThumbnail?
+```
+
+The phone's version as a picture, or `nil` when it couldn't be decoded.
+
+## `PhotoComparison/secondPhotoDelay`
+
+public, declared in `Sources/NopeCore/Comparison.swift`
+
+```swift
+let secondPhotoDelay: Duration
+```
+
+From the start of nope.'s photo to the start of the phone's version, measured with the
+monotonic clock.
+
 ## `PhotoDetails`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -13278,6 +14366,27 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
+## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:)`
+
+internal, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
+```
+
+Saves one photo, as ``save(_:settings:captureDuration:)`` does, and also returns the
+files exactly as they were added to Photos, for the compare view of the comparison shot
+(issue #55). The files stay in memory; the caller drops them.
+
+Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+
+- Parameters:
+  - photo: The captured photo, with its metadata already built for the plan.
+  - settings: The formats and metadata choices.
+  - captureDuration: How long the camera took to return the photo, or `nil`.
+- Returns: What was saved, and the saved files in the order they were built.
+- Throws: The same errors as ``save(_:settings:captureDuration:)``.
+
 ## `PhotoSigning`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -14474,6 +15583,23 @@ Returns one placeholder photo per frame, with the frame's ISO and duration, or t
 - Returns: One photo per frame.
 - Throws: ``captureError``.
 
+## `SimulatedCaptureBackend/captureComparison(_:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+Comparison.swift`
+
+```swift
+func captureComparison(_ request: CaptureRequest) async throws(CaptureError) -> PhoneProcessedPhoto
+```
+
+Returns a placeholder phone-processed photo for the request, or throws
+``comparisonError``.
+
+- Parameter request: nope.'s request.
+- Returns: ``placeholderComparisonData`` as a HEIF (a JPEG for a lens whose fallback is
+  JPEG), the lens's largest photo size (or ``placeholderDimensions``), and
+  ``placeholderComparisonMetadata``.
+- Throws: ``comparisonError``.
+
 ## `SimulatedCaptureBackend/captureError`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -14499,6 +15625,16 @@ Returns a placeholder photo for the request, or throws ``captureError``.
   lens's largest photo size (or ``placeholderDimensions``), 1/60 s and ISO 100; for Bayer
   RAW, ``placeholderPhotoData`` is also the reference RAW image data.
 - Throws: ``captureError``.
+
+## `SimulatedCaptureBackend/comparisonError`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let comparisonError: CaptureError?
+```
+
+The error ``captureComparison(_:)`` throws, or `nil` to succeed.
 
 ## `SimulatedCaptureBackend/currentPermission()`
 
@@ -14585,12 +15721,12 @@ let frameAnalyses: AsyncStream<FrameAnalysis>
 
 The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil)
 ```
 
 Creates a simulated backend.
@@ -14608,6 +15744,8 @@ Creates a simulated backend.
   - readingCount: How many times to report it when readings turn on, for example enough
     for the close-up suggestion. Defaults to 1.
   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
+  - comparisonError: The error taking the comparison shot's second photo throws, or
+    `nil` to succeed.
 
 ## `SimulatedCaptureBackend/permission`
 
@@ -14641,6 +15779,28 @@ The analysis sent when analysis is asked for: ``placeholderFrame``, analyzed for
 needs.
 
 - Parameter needs: What was asked for.
+
+## `SimulatedCaptureBackend/placeholderComparisonData`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+Comparison.swift`
+
+```swift
+static let placeholderComparisonData: Data
+```
+
+The bytes of every simulated phone-processed photo. They are not an image file.
+
+## `SimulatedCaptureBackend/placeholderComparisonMetadata`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+Comparison.swift`
+
+```swift
+static let placeholderComparisonMetadata: MetadataInventory
+```
+
+The metadata of every simulated phone-processed photo: a mix of what a phone's own file
+carries by default (camera, software version, time zone offset, sub-second time, maker
+note, a unique ID) and two image items, with made-up values.
 
 ## `SimulatedCaptureBackend/placeholderDimensions`
 

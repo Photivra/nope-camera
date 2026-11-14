@@ -29,6 +29,9 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     /// The live view calls, or `nil` when the hardware has none.
     nonisolated let liveHardware: (any LiveViewHardware)?
 
+    /// The comparison shot's camera call (issue #55), or `nil` when the hardware has none.
+    nonisolated let comparisonHardware: (any ComparisonHardware)?
+
     /// Camera permission.
     private let authorization: any CameraAuthorizing
 
@@ -36,7 +39,7 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     private var knownLensIDs: Set<Lens.ID> = []
 
     /// The configuration the session runs with, or `nil` when it is stopped.
-    private var activeConfiguration: SessionConfiguration?
+    private(set) var activeConfiguration: SessionConfiguration?
 
     /// Creates a backend from its parts. The app uses ``init()``; tests pass fakes.
     ///
@@ -47,6 +50,7 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
         self.hardware = hardware
         self.authorization = authorization
         liveHardware = hardware as? any LiveViewHardware
+        comparisonHardware = hardware as? any ComparisonHardware
         events = hardware.events
         exposureReadings = hardware.exposureReadings
         previewSource = hardware.previewSource
