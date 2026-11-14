@@ -107,6 +107,17 @@ struct NopeSettingsTests {
         #expect(settings.developedLook == .standard)
     }
 
+    @MainActor
+    @Test func theFastShutterChoiceIsSavedAndAnUnknownOneIsStandard() {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(settings.fastShutter == .handheld)
+        settings.setFastShutter(.freezeFastMotion)
+        #expect(NopeSettings(defaults: scratch.defaults).fastShutter == .freezeFastMotion)
+        scratch.defaults.set("warp", forKey: NopeSettings.Key.fastShutter)
+        #expect(NopeSettings(defaults: scratch.defaults).fastShutter == .handheld)
+    }
+
     @Test func theOldManualControlsOptionIsMigratedOnce() {
         let scratch = ScratchDefaults()
         scratch.defaults.set(true, forKey: NopeSettings.Key.legacyManualControls)

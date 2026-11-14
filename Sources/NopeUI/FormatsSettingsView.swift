@@ -89,6 +89,8 @@ struct FormatsSettingsView: View {
                     bundle: .module,
                     comment: "Explains why there are two items in Photos when RAW, HEIF and JPEG are all saved. Photos is the system photo library app. RAW is a file format name."))
         }
+        // A pushed list, as in File Options: a menu picker failed the night mode color tests.
+        .pickerStyle(.navigationLink)
     }
 
     /// One format's row: its name, a checkmark when selected, and why it's unavailable.

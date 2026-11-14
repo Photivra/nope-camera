@@ -3,7 +3,7 @@ import Foundation
 /// What a ``ManualCaptureBackend`` sets on the camera: exposure, focus, white balance and
 /// metering, already checked against the lens.
 ///
-/// ``ManualControlsModel`` builds it with ``init(settings:lens:)``, which holds every rule
+/// ``ManualControlsModel`` builds it with ``init(settings:lens:assist:)``, which holds every rule
 /// about which combination a lens supports and keeps each value inside the lens's range. A
 /// backend only applies it.
 public struct DeviceControls: Equatable, Sendable {
@@ -47,6 +47,39 @@ public struct DeviceControls: Equatable, Sendable {
         case fixed(WhiteBalance)
     }
 
+    /// Where autofocus and auto exposure aim after a tap (`focusPointOfInterest` and
+    /// `exposurePointOfInterest`, in the camera's 0-to-1 coordinates).
+    public struct PointOfInterest: Equatable, Sendable {
+        /// The point, in the camera's coordinates.
+        public let point: FramePoint
+
+        /// Whether autofocus aims there: focus is automatic and the lens supports a focus point.
+        public let focuses: Bool
+
+        /// Whether auto exposure meters there: exposure is automatic and the lens supports an
+        /// exposure point.
+        public let exposes: Bool
+
+        /// Whether focus and exposure adjust once and then lock (`AVCaptureDevice.FocusMode.autoFocus`
+        /// and `ExposureMode.autoExpose`), rather than keep following the point until the scene
+        /// changes.
+        public let locks: Bool
+
+        /// Creates a point of interest.
+        ///
+        /// - Parameters:
+        ///   - point: The point, in the camera's coordinates.
+        ///   - focuses: Whether autofocus aims there.
+        ///   - exposes: Whether auto exposure meters there.
+        ///   - locks: Whether focus and exposure lock after adjusting.
+        public init(point: FramePoint, focuses: Bool, exposes: Bool, locks: Bool) {
+            self.point = point
+            self.focuses = focuses
+            self.exposes = exposes
+            self.locks = locks
+        }
+    }
+
     /// The exposure.
     public let exposure: Exposure
 
@@ -59,22 +92,41 @@ public struct DeviceControls: Equatable, Sendable {
     /// The metering mode.
     public let metering: MeteringMode
 
+    /// The tapped point, or `nil` for the camera's default (the center).
+    public let pointOfInterest: PointOfInterest?
+
+    /// Whether autofocus is limited to near subjects (`autoFocusRangeRestriction = .near`).
+    public let nearFocusLimit: Bool
+
+    /// The longest shutter auto exposure may use, in seconds (`activeMaxExposureDuration`), or
+    /// `nil` for the camera's default. Set only with ``Exposure/automatic(compensation:)``.
+    public let longestAutoExposure: Double?
+
     /// Everything automatic: how the camera starts.
     public static let automatic = DeviceControls(
         exposure: .automatic(compensation: 0), focus: .automatic, whiteBalance: .automatic, metering: .center)
 
-    /// Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:lens:)``.
+    /// Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:lens:assist:)``.
     ///
     /// - Parameters:
     ///   - exposure: The exposure.
     ///   - focus: The focus.
     ///   - whiteBalance: The white balance.
     ///   - metering: The metering mode.
-    public init(exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode) {
+    ///   - pointOfInterest: The tapped point, or `nil`. Defaults to `nil`.
+    ///   - nearFocusLimit: Whether autofocus is limited to near subjects. Defaults to `false`.
+    ///   - longestAutoExposure: The longest auto exposure in seconds, or `nil`. Defaults to `nil`.
+    public init(
+        exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode,
+        pointOfInterest: PointOfInterest? = nil, nearFocusLimit: Bool = false, longestAutoExposure: Double? = nil
+    ) {
         self.exposure = exposure
         self.focus = focus
         self.whiteBalance = whiteBalance
         self.metering = metering
+        self.pointOfInterest = pointOfInterest
+        self.nearFocusLimit = nearFocusLimit
+        self.longestAutoExposure = longestAutoExposure
     }
 
     /// Builds the controls for settings on a lens.
@@ -86,12 +138,19 @@ public struct DeviceControls: Equatable, Sendable {
     /// - Exposure compensation is dropped when ISO and shutter are both set, because the camera
     ///   has nothing left to adjust (`AVCaptureDevice.exposureTargetBias`).
     ///
+    /// - The automatic aids apply only to what is automatic: the tapped point aims autofocus
+    ///   only while focus is automatic, and auto exposure only while exposure is automatic; the
+    ///   near focus limit needs autofocus; the longest shutter needs auto exposure. Each needs
+    ///   the lens to support it.
+    ///
     /// - Parameters:
     ///   - settings: The person's settings.
     ///   - lens: The selected lens.
-    public init(settings: ManualSettings, lens: Lens) {
+    ///   - assist: The automatic aids. Defaults to none.
+    public init(settings: ManualSettings, lens: Lens, assist: AssistSettings = .none) {
         let capabilities = lens.manualControls
-        exposure = Self.exposure(for: settings, lens: lens)
+        let exposure = Self.exposure(for: settings, lens: lens)
+        self.exposure = exposure
         if let position = settings.focus, capabilities.supportsManualFocus {
             focus = .lensPosition(position.limited(to: 0...1))
         } else if settings.focusLocked, capabilities.supportsFocusLock {
@@ -105,9 +164,22 @@ public struct DeviceControls: Equatable, Sendable {
             whiteBalance = .automatic
         }
         metering = capabilities.meteringModes.contains(settings.metering) ? settings.metering : .center
+        let autoFocuses = focus == .automatic && capabilities.supportsAutoFocus
+        let autoExposes: Bool
+        if case .automatic = exposure { autoExposes = true } else { autoExposes = false }
+        pointOfInterest = assist.focusTarget.flatMap { target in
+            let focuses = autoFocuses && capabilities.supportsFocusPoint
+            let exposes = autoExposes && capabilities.supportsExposurePoint
+            guard focuses || exposes else { return nil }
+            return PointOfInterest(point: target.devicePoint, focuses: focuses, exposes: exposes, locks: target.isLocked)
+        }
+        nearFocusLimit = assist.nearFocusLimit && autoFocuses && capabilities.supportsNearFocusLimit
+        longestAutoExposure =
+            autoExposes
+            ? lens.exposureDurationRange.flatMap { range in assist.longestShutter.map { $0.limited(to: range) } } : nil
     }
 
-    /// The exposure for settings on a lens (see ``init(settings:lens:)``).
+    /// The exposure for settings on a lens (see ``init(settings:lens:assist:)``).
     ///
     /// - Parameters:
     ///   - settings: The person's settings.

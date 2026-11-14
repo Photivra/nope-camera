@@ -29,6 +29,12 @@ struct ManualControlSupport: Equatable, Sendable {
     let customWhiteBalance: Bool
     /// iOS 26: `isExposureRectOfInterestSupported`.
     let exposureRegion: Bool
+    /// `isFocusPointOfInterestSupported`.
+    let focusPoint: Bool
+    /// `isExposurePointOfInterestSupported`.
+    let exposurePoint: Bool
+    /// `isAutoFocusRangeRestrictionSupported`.
+    let focusRangeRestriction: Bool
 
     /// A camera with no manual control.
     static let none = ManualControlSupport(
@@ -51,10 +57,14 @@ struct ManualControlSupport: Equatable, Sendable {
     ///   - lensPositionFocus: Focus locked at a lens position.
     ///   - customWhiteBalance: White balance locked with custom gains.
     ///   - exposureRegion: The exposure region of interest.
+    ///   - focusPoint: The focus point of interest. Defaults to `false`.
+    ///   - exposurePoint: The exposure point of interest. Defaults to `false`.
+    ///   - focusRangeRestriction: The autofocus range restriction. Defaults to `false`.
     init(
         customExposure: Bool, continuousAutoExposure: Bool, lockedExposure: Bool, shutterPriority: Bool,
         isoPriority: Bool, aperturePriority: Bool, exposureBiasRange: ClosedRange<Double>, continuousAutoFocus: Bool,
-        lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool
+        lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool,
+        focusPoint: Bool = false, exposurePoint: Bool = false, focusRangeRestriction: Bool = false
     ) {
         self.customExposure = customExposure
         self.continuousAutoExposure = continuousAutoExposure
@@ -68,11 +78,15 @@ struct ManualControlSupport: Equatable, Sendable {
         self.lensPositionFocus = lensPositionFocus
         self.customWhiteBalance = customWhiteBalance
         self.exposureRegion = exposureRegion
+        self.focusPoint = focusPoint
+        self.exposurePoint = exposurePoint
+        self.focusRangeRestriction = focusRangeRestriction
     }
 
     /// The `NopeCore` capabilities. Metering modes need auto exposure; spot and whole frame
     /// also need the exposure region of interest. Exposure compensation needs auto exposure and
-    /// a bias range wider than 0.
+    /// a bias range wider than 0. The focus point and the range restriction need autofocus, and
+    /// the exposure point needs auto exposure.
     var capabilities: ManualCapabilities {
         let compensates = continuousAutoExposure && exposureBiasRange.lowerBound < exposureBiasRange.upperBound
         let metering: [MeteringMode] =
@@ -88,7 +102,10 @@ struct ManualControlSupport: Equatable, Sendable {
             supportsFocusLock: lockedFocus,
             supportsManualFocus: lensPositionFocus,
             supportsManualWhiteBalance: customWhiteBalance,
-            meteringModes: metering)
+            meteringModes: metering,
+            supportsFocusPoint: focusPoint && continuousAutoFocus,
+            supportsExposurePoint: exposurePoint && continuousAutoExposure,
+            supportsNearFocusLimit: focusRangeRestriction && continuousAutoFocus)
     }
 }
 

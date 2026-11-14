@@ -1246,8 +1246,8 @@ final class NopeAppUITests: XCTestCase {
 
     // MARK: - Pairing, file options, mirroring and location (issues #50, #57, #45, #43)
 
-    /// Opens the menu of a menu-style picker and chooses an option. The option's name may also be
-    /// a row on the screen (the formats are), so the last match, the menu's, is chosen.
+    /// Opens a picker (a menu or a pushed list) and chooses an option. The option's name may also
+    /// be a row on the screen (the formats are), so the match that wasn't there before is chosen.
     @MainActor
     private func choose(_ app: XCUIApplication, _ option: String, inPickerLabeled label: String) {
         let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
@@ -1295,7 +1295,8 @@ final class NopeAppUITests: XCTestCase {
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         choose(app, "JPEG", inPickerLabeled: "Paired with RAW")
         let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Paired with RAW")).firstMatch
-        XCTAssertTrue(picker.label.hasSuffix("JPEG"), picker.label)
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(picker.label.hasSuffix("JPEG") || picker.value as? String == "JPEG", picker.label)
         // Without RAW the choice doesn't apply.
         app.buttons["RAW (DNG)"].tap()
         XCTAssertFalse(element(app, containing: "Paired with RAW").waitForExistence(timeout: 2))
@@ -1425,6 +1426,161 @@ final class NopeAppUITests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Location On"].waitForExistence(timeout: 5))
         try audit(app)
+    }
+
+    // MARK: - Focus, exposure and close-up aids (issues #35, #41, #51, #56)
+
+    /// The viewfinder of the camera screen.
+    @MainActor
+    private func viewfinder(_ app: XCUIApplication) -> XCUIElement {
+        app.otherElements["Viewfinder"]
+    }
+
+    @MainActor
+    func testTapToFocusLocksWithTheButtonAndUnlocksWithThePill() throws {
+        let app = launch("aids")
+        XCTAssertTrue(viewfinder(app).waitForExistence(timeout: 20))
+        viewfinder(app).tap()
+        let lock = app.buttons["Lock Focus and Exposure"]
+        XCTAssertTrue(lock.waitForExistence(timeout: 10))
+        try audit(app)
+        lock.tap()
+        let unlock = app.buttons["Unlock Focus and Exposure"]
+        XCTAssertTrue(unlock.waitForExistence(timeout: 10))
+        let pill = app.buttons["Exposure and Focus Lock"]
+        XCTAssertTrue(pill.exists)
+        try audit(app)
+        pill.tap()
+        XCTAssertFalse(pill.waitForExistence(timeout: 2))
+        XCTAssertFalse(unlock.exists)
+        // Press and hold locks in one step; the button under the square unlocks, which returns
+        // focus to continuous auto at the center (no square).
+        viewfinder(app).press(forDuration: 1.2)
+        XCTAssertTrue(unlock.waitForExistence(timeout: 10))
+        unlock.tap()
+        XCTAssertFalse(unlock.waitForExistence(timeout: 2))
+        XCTAssertFalse(lock.exists)
+    }
+
+    @MainActor
+    func testExposureCompensationInFullAuto() throws {
+        let app = launch("aids")
+        quickControl(app, "Exposure")
+        let slider = app.sliders["Exposure"]
+        XCTAssertTrue(slider.waitForExistence(timeout: 10))
+        app.buttons["Quick Controls"].tap()
+        app.buttons["Brighter"].tap()
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "+0.3"), object: slider)],
+                timeout: 10) == .completed)
+        try audit(app)
+        app.buttons["Close Exposure"].tap()
+        XCTAssertFalse(slider.waitForExistence(timeout: 2))
+        // The pill shows the compensation and resets it.
+        let pill = app.buttons["Exposure"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        pill.tap()
+        XCTAssertFalse(pill.waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testCloseUpMagnifierAndFastShutterPills() throws {
+        let app = launch("aids")
+        // Switches stay in the open tray; Fast Shutter is a menu of choices.
+        quickControl(app, "Close-Up")
+        app.buttons["Magnify"].tap()
+        app.buttons["Fast Shutter"].tap()
+        let freeze = app.buttons["Freeze Motion (1/500 s)"]
+        XCTAssertTrue(freeze.waitForExistence(timeout: 10))
+        freeze.tap()
+        app.buttons["Quick Controls"].tap()
+        for name in ["Close-Up", "Magnify", "Fast Shutter"] {
+            XCTAssertTrue(app.buttons[name].waitForExistence(timeout: 10), name)
+        }
+        try audit(app)
+        for name in ["Close-Up", "Magnify", "Fast Shutter"] {
+            app.buttons[name].tap()
+            XCTAssertFalse(app.buttons[name].waitForExistence(timeout: 2), name)
+        }
+    }
+
+    @MainActor
+    func testDimLightSaysHoldItSteady() throws {
+        let app = launch("dimLight")
+        XCTAssertTrue(element(app, containing: "Hold it steady or use a tripod.").waitForExistence(timeout: 20))
+        try audit(app)
+    }
+
+    @MainActor
+    func testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself() throws {
+        let app = launch("tooClose")
+        let switchLens = app.buttons["Switch to Ultra Wide"]
+        XCTAssertTrue(switchLens.waitForExistence(timeout: 20))
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "Lens: Wide"), object: viewfinder(app))],
+                timeout: 10) == .completed)
+        try audit(app)
+        switchLens.tap()
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "Lens: Ultra Wide"), object: viewfinder(app))],
+                timeout: 10) == .completed)
+        XCTAssertFalse(switchLens.exists)
+    }
+
+    @MainActor
+    func testTooCloseSuggestionCanBeDismissed() throws {
+        let app = launch("tooClose")
+        let dismiss = app.buttons["Dismiss"]
+        XCTAssertTrue(dismiss.waitForExistence(timeout: 20))
+        dismiss.tap()
+        XCTAssertFalse(app.buttons["Switch to Ultra Wide"].waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testFocusAidsAtTheLargestTextSize() throws {
+        let app = launch("dimLight", extraArguments: Self.largestTextSize)
+        XCTAssertTrue(viewfinder(app).waitForExistence(timeout: 20))
+        viewfinder(app).tap()
+        XCTAssertTrue(app.buttons["Lock Focus and Exposure"].waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, containing: "Hold it steady").exists)
+        try auditScrollingScreen(app, checksContrast: !isPad)
+    }
+
+    @MainActor
+    func testFocusAidsRightToLeft() throws {
+        let app = launch("dimLight", extraArguments: Self.rightToLeft)
+        XCTAssertTrue(viewfinder(app).waitForExistence(timeout: 20))
+        viewfinder(app).tap()
+        XCTAssertTrue(app.buttons["Lock Focus and Exposure"].waitForExistence(timeout: 10))
+        quickControl(app, "Exposure")
+        XCTAssertTrue(app.sliders["Exposure"].waitForExistence(timeout: 10))
+        app.buttons["Quick Controls"].tap()
+        try audit(app)
+    }
+
+    @MainActor
+    func testFastShutterSettingPassesAudits() throws {
+        for arguments in [[String](), Self.largestTextSize] {
+            let app = launch("aids", extraArguments: arguments)
+            XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 20))
+            app.buttons["Settings"].tap()
+            let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fast Shutter")).firstMatch
+            var swipes = 0
+            while !(row.exists && row.isHittable) && swipes < 8 {
+                app.swipeUp()
+                swipes += 1
+            }
+            row.tap()
+            let freeze = app.buttons["Freeze Motion (1/500 s)"]
+            XCTAssertTrue(freeze.waitForExistence(timeout: 10))
+            try audit(app, checksDynamicType: !arguments.isEmpty, checksContrast: !isPad)
+            freeze.tap()
+            XCTAssertTrue(freeze.isSelected)
+            app.terminate()
+        }
     }
 
     // MARK: - Last photo and its details (issues #36, #53)

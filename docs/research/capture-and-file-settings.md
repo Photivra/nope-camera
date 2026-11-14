@@ -51,13 +51,14 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Exposure modes P, S, I, M (iOS 27 priority modes) | Offered | Where the format reports them. |
 | Exposure compensation (`exposureTargetBias`, `minExposureTargetBias…max`) | Offered | ±3 EV in thirds within the lens's range. |
 | Metering (`exposureRectOfInterest`, center, spot, whole frame) | Offered | Spot and whole frame need iOS 26. |
+| Focus and exposure point (`focusPointOfInterest`, `exposurePointOfInterest`) | Offered | Tap to focus and expose, with a lock (issues #35, #41, #51, #56). |
 | AE lock, AF lock | Offered | |
 | Focus position (`setFocusModeLocked(lensPosition:)`) | Offered | Where the lens supports manual focus. |
-| Focus range restriction (`autoFocusRangeRestriction`: near, far) | Not offered yet | Supported on some lenses; a candidate for the manual controls. |
+| Focus range restriction (`autoFocusRangeRestriction`) | Offered (near) | Close-up aids (issues #35, #41, #51, #56): the near limit, where the lens supports it. Far isn't offered. |
 | Smooth autofocus, face-driven AE/AF (`isSmoothAutoFocusEnabled`, `isFaceDrivenAutoExposureEnabled`, `isFaceDrivenAutoFocusEnabled`) | Not offered | System defaults in full auto; face-driven exposure is a candidate behind Pro Tools. |
 | White balance temperature and tint, presets, gains (`setWhiteBalanceModeLocked(with:)`, `deviceWhiteBalanceGains`) | Offered | Temperature and tint (2500–10,000 K) are converted to gains within `maxWhiteBalanceGain`; direct gains aren't shown, because temperature and tint describe the same values. |
 | Aperture (`lensAperture`, iOS 27 variable aperture) | Offered | Where the lens has more than one stop. |
-| Max exposure duration in auto (`activeMaxExposureDuration`) | Not offered | Affects auto exposure only; the manual shutter already covers long exposures. |
+| Max exposure duration in auto (`activeMaxExposureDuration`) | Offered | Fast Shutter in Settings (issues #35, #41, #51, #56): a shutter limit for auto exposure. |
 | Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Pro Tools; each frame a separate single-frame photo. |
 | Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by nope.; it is documented for low-light frame rates, and its effect on photos isn't measured. |
 | Global tone mapping, video HDR, Center Stage | Not offered | Video and preview processing, not the RAW. |
