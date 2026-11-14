@@ -825,6 +825,14 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(start.waitForExistence(timeout: 20))
         start.tap()
         XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
+        // The screen dims during the series (issue #48); a tap anywhere brightens it, and the
+        // series continues.
+        let brighten = app.buttons["Brighten Screen"]
+        XCTAssertTrue(brighten.waitForExistence(timeout: 10))
+        try audit(app)
+        brighten.tap()
+        XCTAssertFalse(brighten.waitForExistence(timeout: 2))
+        XCTAssertTrue(element(app, containing: "photos taken").exists)
         XCTAssertTrue(lastPhoto(app, says: "Saved and signed.", timeout: 20))
         try audit(app)
         app.buttons["Stop"].tap()
@@ -1579,6 +1587,122 @@ final class NopeAppUITests: XCTestCase {
             try audit(app, checksDynamicType: !arguments.isEmpty, checksContrast: !isPad)
             freeze.tap()
             XCTAssertTrue(freeze.isSelected)
+            app.terminate()
+        }
+    }
+
+    // MARK: - Drive, warnings (issues #39, #44, #46)
+
+    /// Chooses a drive mode in the tray's Drive menu.
+    @MainActor
+    private func chooseDrive(_ app: XCUIApplication, _ option: String) {
+        quickControl(app, "Drive")
+        let item = app.buttons[option]
+        XCTAssertTrue(item.waitForExistence(timeout: 10), option)
+        item.tap()
+    }
+
+    @MainActor
+    func testSelfTimerCountsDownAndCanBeCancelled() throws {
+        let app = launch("noRAW")
+        // Ten seconds, so the countdown is still running after the audit.
+        chooseDrive(app, "Timer: 10s")
+        let pill = app.buttons["Self-Timer"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 5))
+        let shutter = app.buttons["Take Photo"]
+        shutter.tap()
+        let cancel = app.buttons["Cancel Timer"]
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "Photo in").exists)
+        XCTAssertEqual(shutter.value as? String, "Counting down. Press to cancel.")
+        try audit(app)
+        cancel.tap()
+        XCTAssertFalse(cancel.waitForExistence(timeout: 2))
+        XCTAssertFalse(app.descendants(matching: .any)["Last Photo"].exists)
+        // Counting down again takes the photo at zero.
+        shutter.tap()
+        XCTAssertTrue(lastPhoto(app, says: "Saved and signed.", timeout: 20))
+        // The pill goes back to single photos.
+        pill.tap()
+        XCTAssertFalse(pill.waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testSelfTimerAtTheLargestTextSizeAndRightToLeft() throws {
+        for arguments in [Self.largestTextSize, Self.rightToLeft] {
+            let app = launch("noRAW", extraArguments: arguments)
+            if arguments == Self.largestTextSize {
+                // The tray's button scrolls into view at the largest sizes.
+                let tray = app.buttons["Quick Controls"]
+                XCTAssertTrue(tray.waitForExistence(timeout: 20))
+                var swipes = 0
+                while !tray.isHittable && swipes < 6 {
+                    app.swipeUp()
+                    swipes += 1
+                }
+            }
+            chooseDrive(app, "Timer: 10s")
+            app.buttons["Take Photo"].tap()
+            XCTAssertTrue(app.buttons["Cancel Timer"].waitForExistence(timeout: 5))
+            if arguments == Self.largestTextSize {
+                try auditScrollingScreen(app)
+            } else {
+                try audit(app)
+            }
+            app.terminate()
+        }
+    }
+
+    @MainActor
+    func testBurstRunsUntilStoppedAndSavesEachFrame() throws {
+        let app = launch("slowSaving")
+        chooseDrive(app, "Burst")
+        XCTAssertTrue(app.buttons["Burst"].waitForExistence(timeout: 5))
+        let shutter = app.buttons["Take Photo"]
+        shutter.tap()
+        let stop = app.buttons["Stop Burst"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "Photos taken").exists)
+        XCTAssertEqual(shutter.value as? String, "Taking a burst. Press to stop.")
+        try audit(app)
+        stop.tap()
+        XCTAssertFalse(stop.waitForExistence(timeout: 10))
+        XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 15))
+        // The shutter, pressed again, starts and stops a burst too.
+        shutter.tap()
+        XCTAssertTrue(stop.waitForExistence(timeout: 5))
+        shutter.tap()
+        XCTAssertFalse(stop.waitForExistence(timeout: 10))
+    }
+
+    @MainActor
+    func testStorageAndBatteryWarnings() throws {
+        let cases: [(String, String, String)] = [
+            ("lowStorage", "Storage Low", "Photos that still fit on this device: about 15."),
+            ("fullStorage", "Storage Full", "The next photo won't fit."),
+            ("lowBattery", "Battery Low", "Battery at 15%. Charge the device soon"),
+            ("lowBatteryLowPower", "Battery Low", "Low Power Mode is on."),
+        ]
+        for (status, title, explanation) in cases {
+            let app = launch("noRAW", extraArguments: ["-NopeSimulatedDeviceStatus", status])
+            let chip = app.buttons[title]
+            XCTAssertTrue(chip.waitForExistence(timeout: 10), status)
+            XCTAssertTrue((chip.value as? String)?.contains(explanation) == true, status)
+            try audit(app)
+            app.terminate()
+        }
+    }
+
+    @MainActor
+    func testWarningsAtTheLargestTextSizeAndRightToLeft() throws {
+        for arguments in [Self.largestTextSize, Self.rightToLeft] {
+            let app = launch("noRAW", extraArguments: ["-NopeSimulatedDeviceStatus", "lowStorage"] + arguments)
+            XCTAssertTrue(app.buttons["Storage Low"].waitForExistence(timeout: 10))
+            if arguments == Self.largestTextSize {
+                try auditScrollingScreen(app)
+            } else {
+                try audit(app)
+            }
             app.terminate()
         }
     }

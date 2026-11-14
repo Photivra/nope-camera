@@ -28,6 +28,15 @@ struct AccessibilitySettingsView: View {
             }
             Section {
                 row(
+                    systemImage: "timer",
+                    Text(
+                        "Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown.", bundle: .module,
+                        comment: "Accessibility screen: the self-timer and burst. A burst is a rapid run of separate photos. Drive is the name of the camera's quick control for the self-timer and burst; Quick Controls is the row of camera toggles. VoiceOver is Apple's screen reader; keep the name unchanged."))
+            } header: {
+                Text("Self-Timer and Burst", bundle: .module, comment: "Accessibility screen section header: the self-timer and burst modes of the shutter.")
+            }
+            Section {
+                row(
                     systemImage: "hand.tap",
                     Text(
                         "On iPhone, a tap you can feel confirms each press of the shutter and each saved photo.", bundle: .module,

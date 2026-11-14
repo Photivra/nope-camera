@@ -123,6 +123,8 @@ public struct CameraScreen<Viewfinder: View>: View {
         .task { await model.live.observeStats() }
         // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
         .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
+        // The screen stays awake and dimmed during a series; a countdown or burst stops here.
+        .seriesScreen(model, isNightMode: settings.isNightModeOn)
     }
 
     /// Whether the camera is ready, so the Settings button is in the camera layout.

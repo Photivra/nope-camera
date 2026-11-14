@@ -169,6 +169,7 @@ struct CaptureFeedbackTests {
     @Test func statusesReadAsSavesOrErrors() {
         #expect(CaptureMessages.savedPhotos(in: .saved(Self.signed)) == [Self.signed])
         #expect(CaptureMessages.savedPhotos(in: .savedBracket([Self.signed])) == [Self.signed])
+        #expect(CaptureMessages.savedPhotos(in: .savedBurst([Self.signed, Self.signed])) == [Self.signed, Self.signed])
         #expect(CaptureMessages.savedPhotos(in: .saving) == nil)
         #expect(CaptureMessages.error(in: .failed(.saveFailed)) == .saveFailed)
         #expect(CaptureMessages.error(in: .idle) == nil)
@@ -221,5 +222,22 @@ struct RegistryTests {
         ]
         #expect(QuickControlItem(id: "b", title: Text(verbatim: "B"), systemImage: "b.circle", kind: .menu(options)).isOn)
         #expect(!QuickControlItem(id: "c", title: Text(verbatim: "C"), systemImage: "c.circle", kind: .menu([])).isOn)
+    }
+}
+
+@MainActor
+struct DriveTextTests {
+    @Test func burstEndsArePlainSentences() {
+        #expect(DriveText.endMessage(BurstResult(end: .stopped, saved: 3)) == nil)
+        #expect(DriveText.endMessage(BurstResult(end: .failed, saved: 3)) == nil)
+        #expect(DriveText.endMessage(BurstResult(end: .limitReached, saved: 50)) == "Burst stopped at 50 photos, the most one burst takes.")
+        #expect(DriveText.endMessage(BurstResult(end: .storageFull, saved: 2)) == "Burst stopped: storage is full.")
+        #expect(DriveText.endMessage(BurstResult(end: .cameraStopped, saved: 2)) == "Burst stopped: the camera stopped.")
+    }
+
+    @Test func secondsUseSystemFormatting() {
+        #expect(DriveText.shortSeconds(3).contains("3"))
+        #expect(DriveText.spokenSeconds(10).contains("10"))
+        #expect(DriveText.systemImage(for: .burst) != DriveText.systemImage(for: .single))
     }
 }

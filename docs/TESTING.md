@@ -289,7 +289,40 @@ iPad:
 - viewfinder overlays: see "Viewfinder overlays on a device" below;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size), including the turned icons and text on an iPhone held sideways, the failure
-  banner taking VoiceOver focus, and the low-priority "Saved and signed" announcement.
+  banner taking VoiceOver focus, and the low-priority "Saved and signed" announcement;
+- hardware shutter (issue #37), on an iPhone 16 Pro Max: volume up, volume down and a Camera
+  Control press each take one photo on release; while the camera is paused (another app using
+  it) the volume buttons change the volume; note what a press does with Settings open; the
+  AirPods camera remote, where available, behaves the same;
+- self-timer (issue #39): 3 s and 10 s count down with a light haptic each second and, with
+  VoiceOver, each number spoken; pressing the shutter, a volume button or Cancel Timer stops it
+  without a photo; Instruments shows no CPU work during the countdown beyond the running camera;
+- burst (issue #46), on each lens for RAW, RAW + HEIF and HEIF: holding a volume button or the
+  Camera Control takes a burst until it is released, and tapping the shutter starts and stops
+  one; record the frames per second (below, "Burst rate"); every saved frame passes the
+  read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
+  Allocations); VoiceOver announces the start and the saved count;
+- storage and battery warnings (issue #44): see "Low storage" below; at 20% battery, unplugged,
+  "Battery Low" shows and is announced, and it goes away when the device is plugged in; Low Power
+  Mode changes the explanation;
+- interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
+  a tap brightens it while the series continues; the brightness and auto-lock come back when the
+  series ends, is stopped, or nope. goes to the background, and after the camera screen closes.
+
+### Low storage
+
+`PhotoSizeEstimate` uses upper bounds that are assumptions until measured: 2 bytes a pixel for
+Bayer RAW, 1 for HEIF, 2.5 for JPEG, and 1 MB a file. On each test device, save a RAW + HEIF and a
+RAW + HEIF + JPEG photo with each lens, compare the file sizes in Photos with the estimate, and
+record them here. Then fill the device until fewer than 25 photos fit and check that "Storage
+Low" shows about the right number, that "Storage Full" shows before a save would fail, and that a
+burst stops with "Burst stopped: storage is full." before it fails.
+
+### Burst rate
+
+Not measured yet. On an iPhone 16 Pro Max, for each lens and RAW, RAW + HEIF and HEIF, hold the
+shutter for a 20-frame burst and record frames per second here (time from the first to the last
+frame, from the photos' capture times).
 
 ### Flash, light and night mode on a device
 

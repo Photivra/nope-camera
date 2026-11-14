@@ -98,6 +98,7 @@ enum QuickControls {
     static let builders: [@MainActor (CameraControlContext) -> QuickControlItem?] = [
         light,
         flash,
+        drive,
         exposure,
         grid,
         level,

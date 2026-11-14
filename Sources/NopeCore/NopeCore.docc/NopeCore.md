@@ -120,6 +120,29 @@ Related documentation in the repository:
 - ``IntervalSettings``
 - ``IntervalProgress``
 
+### Drive modes, self-timer and burst
+
+- ``DriveModel``
+- ``DriveMode``
+- ``DriveIntent``
+- ``HardwareButtonPhase``
+- ``SelfTimerDelay``
+- ``Countdown``
+- ``BurstProgress``
+- ``BurstEnd``
+- ``BurstResult``
+
+### Storage, battery and the screen
+
+- ``DeviceStatus``
+- ``DeviceStatusReading``
+- ``BatteryReading``
+- ``BatteryWarning``
+- ``StorageWarning``
+- ``PhotoSizeEstimate``
+- ``SeriesScreenKeeper``
+- ``ScreenControlling``
+
 ### Full-auto aids
 
 - ``AutoControlIntent``

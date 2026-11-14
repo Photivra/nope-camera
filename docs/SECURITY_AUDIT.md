@@ -182,12 +182,14 @@ tracking, no tracking domains, no collected data and no required-reason APIs.
 with `CA92.1`, for the settings (`NopeSettings`, stored in the app's own `UserDefaults`).
 It also declares `NSPrivacyAccessedAPICategorySystemBootTime` with `35F9.1`, because Release
 code calls `ProcessInfo.systemUptime` to throttle exposure readings
-(`Sources/NopeCapture/SystemCaptureHardware.swift`). Expected 1.0 use:
+(`Sources/NopeCapture/SystemCaptureHardware.swift`), and
+`NSPrivacyAccessedAPICategoryDiskSpace` with `E174.1` and `85F4.1` for the storage warning
+(issue #44). Expected 1.0 use:
 
 | Category | Expected 1.0 use | Reason code (recheck on Apple's page before submission) |
 |---|---|---|
 | `NSPrivacyAccessedAPICategoryUserDefaults` | Settings: formats, the master switch and each metadata item, signing, manual controls, clean view (declared, `CA92.1`) | `CA92.1`: read and write data only the app itself uses |
-| `NSPrivacyAccessedAPICategoryDiskSpace` | Only if the app checks free space before saving or shows an out-of-space message | `E174.1`: check space before writing files |
+| `NSPrivacyAccessedAPICategoryDiskSpace` | `volumeAvailableCapacityForImportantUsageKey` for the low storage warning, the number of photos that fit, and stopping a burst before storage runs out (declared, `App/NopeApp/Camera/DeviceStatusReader.swift`, issue #44) | `E174.1`: check space before writing files; `85F4.1`: show disk space to the person (as a number of photos) |
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |

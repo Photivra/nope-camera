@@ -126,6 +126,7 @@ enum StatePills {
         fastShutter,
         closeUp,
         magnifier,
+        drive,
     ]
 
     /// The builders whose pills stay in clean view: the light, so it can always be turned off
