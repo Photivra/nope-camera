@@ -38,6 +38,10 @@ user. The full design is in issue #1.
 5. **The maintainer approves releases.** Get explicit approval before any action that reaches
    users: an App Store, Google Play or F-Droid submission, a release tag, or a change to signing.
    Ask for each one separately; an earlier approval does not carry over.
+6. **No private deployments in this public repository.** Never name, link or describe private
+   pre-release or test deployments of any Photivra app (their host names, URLs or measurements
+   "on" them) in files, commits, issues, pull requests or release notes.
+   `scripts/check-repo.sh` fails on any host name containing "staging".
 
 ## Code
 
