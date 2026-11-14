@@ -388,12 +388,12 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
-## `CameraModel/init(backend:saver:sleep:)`
+## `CameraModel/init(backend:saver:sleep:now:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) })
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
 ```
 
 Creates a model in the ``CameraState/starting`` state.
@@ -403,6 +403,7 @@ Creates a model in the ``CameraState/starting`` state.
   - saver: The save pipeline. Without one, every photo ends in
     ``CaptureError/savingUnavailable`` and nothing is saved.
   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+  - now: Reads the clock that times each capture. Tests pass a scripted one.
 
 A ``ManualCaptureBackend`` also gets manual controls (``manual``).
 
@@ -1299,6 +1300,78 @@ let rawImageData: Data?
 For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
+
+## `ContentCredentialsSummary`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+struct ContentCredentialsSummary
+```
+
+What a file's Content Credentials manifest says, as the signer embedded it: for the "What's
+in this photo" details (issue #53).
+
+The signer fills it from the manifest it built and the manifest bytes the C2PA library
+returned (``PhotoFile/contentCredentials``). Privacy: it holds nothing about the person or
+the device; the manifest itself doesn't (docs/PRIVACY.md, "Content Credentials").
+
+## `ContentCredentialsSummary/actionDescription`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let actionDescription: String
+```
+
+The manifest's description of what happened to the file, in the manifest's own (English)
+words.
+
+## `ContentCredentialsSummary/generatorName`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let generatorName: String
+```
+
+The claim generator's name, "Photivra Nope Camera".
+
+## `ContentCredentialsSummary/generatorVersion`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let generatorVersion: String
+```
+
+The claim generator's version, such as `0.2.0`.
+
+## `ContentCredentialsSummary/init(generatorName:generatorVersion:actionDescription:manifestSHA256:)`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+init(generatorName: String, generatorVersion: String, actionDescription: String, manifestSHA256: String)
+```
+
+Creates a summary.
+
+- Parameters:
+  - generatorName: The claim generator's name.
+  - generatorVersion: The claim generator's version.
+  - actionDescription: The manifest's description of the file.
+  - manifestSHA256: The manifest store's SHA-256 hash, in lowercase hexadecimal.
+
+## `ContentCredentialsSummary/manifestSHA256`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let manifestSHA256: String
+```
+
+The SHA-256 hash of the embedded manifest store, as 64 lowercase hexadecimal digits.
 
 ## `ControlAvailability`
 
@@ -2314,6 +2387,64 @@ let key: String
 ```
 
 The key.
+
+## `ImageProperties`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+struct ImageProperties
+```
+
+What ImageIO reports about the image in a file when the read-back opens it: its size and bit
+depth (`kCGImagePropertyPixelWidth`, `kCGImagePropertyPixelHeight`, `kCGImagePropertyDepth`).
+
+The details use it for HEIF and JPEG, whose size and depth aren't TIFF tags.
+
+## `ImageProperties/depth`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let depth: Int?
+```
+
+Bits per color channel, or `nil` if ImageIO didn't report it.
+
+## `ImageProperties/init(pixelWidth:pixelHeight:depth:)`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+init(pixelWidth: Int?, pixelHeight: Int?, depth: Int?)
+```
+
+Creates the properties.
+
+- Parameters:
+  - pixelWidth: The width, in pixels.
+  - pixelHeight: The height, in pixels.
+  - depth: Bits per color channel.
+
+## `ImageProperties/pixelHeight`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let pixelHeight: Int?
+```
+
+The height, in pixels, or `nil` if ImageIO didn't report one.
+
+## `ImageProperties/pixelWidth`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let pixelWidth: Int?
+```
+
+The width, in pixels, or `nil` if ImageIO didn't report one.
 
 ## `InterruptionReason`
 
@@ -4802,12 +4933,12 @@ let directory: TIFFDirectory
 
 The directory the tag is in.
 
-## `MetadataInventory/Tag/init(directory:tag:text:)`
+## `MetadataInventory/Tag/init(directory:tag:text:values:)`
 
 public, declared in `Sources/NopeCore/MetadataInventory.swift`
 
 ```swift
-init(directory: TIFFDirectory, tag: UInt16, text: String? = nil)
+init(directory: TIFFDirectory, tag: UInt16, text: String? = nil, values: [Double] = [])
 ```
 
 Creates a tag record.
@@ -4816,6 +4947,7 @@ Creates a tag record.
   - directory: The directory the tag is in.
   - tag: The tag number.
   - text: The ASCII value, or `nil`.
+  - values: The numeric values, or none.
 
 ## `MetadataInventory/Tag/tag`
 
@@ -4836,6 +4968,20 @@ let text: String?
 ```
 
 The value of an ASCII tag, without the trailing NUL, or `nil` for other types.
+
+## `MetadataInventory/Tag/values`
+
+public, declared in `Sources/NopeCore/MetadataInventory.swift`
+
+```swift
+let values: [Double]
+```
+
+The values of a numeric tag (BYTE, SHORT, LONG, RATIONAL and their signed forms), in
+file order, with each rational divided out; empty for other types, for a rational
+with a zero denominator, and for a tag with more than
+``TIFFReader/maximumRecordedValues`` values. The "What's in this photo" details
+(``PhotoDetails``) read the exposure, size and levels from them.
 
 ## `MetadataInventory/XMPProperty`
 
@@ -5528,6 +5674,17 @@ let file: MetadataFileReader.Result
 
 Every tag, block and property, and the RAW image data of a DNG.
 
+## `MetadataReadBack/image`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let image: ImageProperties?
+```
+
+The image's size and bit depth as ImageIO reports them, or `nil` when the reader doesn't
+supply them.
+
 ## `MetadataReadBack/imageIOKeys`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -5538,12 +5695,12 @@ let imageIOKeys: [ImageIOKey]
 
 Every key in ImageIO's property dictionaries for the image, as ``ImageIOKey`` values.
 
-## `MetadataReadBack/init(file:imageIOKeys:)`
+## `MetadataReadBack/init(file:imageIOKeys:image:)`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
 
 ```swift
-init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey])
+init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey], image: ImageProperties? = nil)
 ```
 
 Creates a read-back result.
@@ -5551,6 +5708,7 @@ Creates a read-back result.
 - Parameters:
   - file: The project reader's result.
   - imageIOKeys: ImageIO's keys.
+  - image: ImageIO's size and bit depth, or `nil`.
 
 ## `MetadataReading`
 
@@ -6253,6 +6411,957 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Whether the camera screen starts in clean view, with only the viewfinder, the shutter
 and honesty warnings. Off by default.
 
+## `PhotoDetails`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+struct PhotoDetails
+```
+
+"What's in this photo": the facts about one photo nope. just saved, read back from the
+saved files (issue #53).
+
+``PhotoSaver`` builds it from each file's read-back (the project's own tag reader and
+ImageIO), the metadata plan, the signer's manifest summary and the measured timings, and keeps
+it in ``SavedPhoto/details``. Every value is what the file holds or what was measured; a
+value the file doesn't hold is `nil` or empty, never estimated.
+
+Privacy: built in memory from the just-saved photo and shown on screen only; nothing is
+logged, stored or copied. nope. can't reopen older photos (add-only access), so details
+exist only for photos taken in this session.
+
+## `PhotoDetails/CheckedFile`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+struct CheckedFile
+```
+
+One finished file and what its read-back found.
+
+## `PhotoDetails/CheckedFile/file`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let file: PhotoFile
+```
+
+The file as saved.
+
+## `PhotoDetails/CheckedFile/init(file:readBack:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(file: PhotoFile, readBack: MetadataReadBack)
+```
+
+Pairs a file with its read-back.
+
+- Parameters:
+  - file: The file as saved.
+  - readBack: The file's read-back.
+
+## `PhotoDetails/CheckedFile/readBack`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let readBack: MetadataReadBack
+```
+
+The file's read-back.
+
+## `PhotoDetails/Exposure`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+struct Exposure
+```
+
+The exposure as the file records it, in its EXIF tags.
+
+## `PhotoDetails/Exposure/exposureBias`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let exposureBias: Double?
+```
+
+`ExposureBiasValue`, in EV.
+
+## `PhotoDetails/Exposure/exposureTime`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let exposureTime: Double?
+```
+
+`ExposureTime`, in seconds.
+
+## `PhotoDetails/Exposure/fNumber`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let fNumber: Double?
+```
+
+`FNumber`, the aperture's f-number.
+
+## `PhotoDetails/Exposure/focalLength`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let focalLength: Double?
+```
+
+`FocalLength`, in millimeters (the lens's real focal length, not the 35 mm equivalent).
+
+## `PhotoDetails/Exposure/init(exposureTime:iso:fNumber:focalLength:exposureBias:whiteBalance:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?, whiteBalance: WhiteBalanceSetting?)
+```
+
+Creates the exposure details.
+
+- Parameters:
+  - exposureTime: The exposure time in seconds.
+  - iso: The ISO.
+  - fNumber: The f-number.
+  - focalLength: The focal length in millimeters.
+  - exposureBias: The exposure bias in EV.
+  - whiteBalance: The white balance setting.
+
+## `PhotoDetails/Exposure/iso`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let iso: Double?
+```
+
+`PhotographicSensitivity` (ISO).
+
+## `PhotoDetails/Exposure/whiteBalance`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let whiteBalance: WhiteBalanceSetting?
+```
+
+`WhiteBalance`: automatic or manual.
+
+## `PhotoDetails/File`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+struct File
+```
+
+One saved file.
+
+## `PhotoDetails/File/bitDepth`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let bitDepth: Int?
+```
+
+Bits per sample: a DNG's `BitsPerSample`, or the bit depth ImageIO reports for HEIF and
+JPEG.
+
+## `PhotoDetails/File/blackLevels`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let blackLevels: [Double]
+```
+
+A DNG's `BlackLevel` values; empty otherwise.
+
+## `PhotoDetails/File/byteCount`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let byteCount: Int
+```
+
+The file's size, in bytes.
+
+## `PhotoDetails/File/colorFilterPattern`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let colorFilterPattern: String?
+```
+
+A DNG's color filter pattern, such as `RGGB`, from `CFARepeatPatternDim` and
+`CFAPattern` (TIFF/EP; DNG 1.7, "CFAPattern"); `nil` otherwise.
+
+## `PhotoDetails/File/contentCredentials`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let contentCredentials: ContentCredentialsSummary?
+```
+
+What the file's Content Credentials manifest says, or `nil` when it isn't signed.
+
+## `PhotoDetails/File/contents`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let contents: [String]
+```
+
+Every tag, block and property the read-back found, by its specification name (such as
+`ExposureTime` or `jpeg:APP1:Exif`), in file order. A tag without a catalog name is
+shown by its directory and number, such as `primary 0xC7FF`.
+
+## `PhotoDetails/File/format`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let format: PhotoFormat
+```
+
+The file's format.
+
+## `PhotoDetails/File/init(format:byteCount:pixelWidth:pixelHeight:bitDepth:colorFilterPattern:blackLevels:whiteLevels:storesLensCorrections:processing:contentCredentials:contents:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(format: PhotoFormat, byteCount: Int, pixelWidth: Int?, pixelHeight: Int?, bitDepth: Int?, colorFilterPattern: String?, blackLevels: [Double], whiteLevels: [Double], storesLensCorrections: Bool, processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String])
+```
+
+Creates a file's details.
+
+- Parameters:
+  - format: The format.
+  - byteCount: The size in bytes.
+  - pixelWidth: The width in pixels.
+  - pixelHeight: The height in pixels.
+  - bitDepth: Bits per sample.
+  - colorFilterPattern: The color filter pattern.
+  - blackLevels: The black levels.
+  - whiteLevels: The white levels.
+  - storesLensCorrections: Whether lens correction instructions are stored.
+  - processing: The processing.
+  - contentCredentials: The manifest summary.
+  - contents: The names of everything found.
+
+## `PhotoDetails/File/pixelHeight`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let pixelHeight: Int?
+```
+
+The image height in pixels, read like ``pixelWidth``.
+
+## `PhotoDetails/File/pixelWidth`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let pixelWidth: Int?
+```
+
+The image width in pixels: for a DNG, the RAW data's `ImageWidth`; for HEIF and
+JPEG, the width ImageIO reports (or the EXIF `PixelXDimension`).
+
+## `PhotoDetails/File/processing`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let processing: Processing
+```
+
+What processing the file's pixels went through.
+
+## `PhotoDetails/File/storesLensCorrections`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let storesLensCorrections: Bool
+```
+
+Whether a DNG stores lens correction instructions (opcode lists 1, 2 or 3). nope.
+never applies them to the pixels.
+
+## `PhotoDetails/File/whiteLevels`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let whiteLevels: [Double]
+```
+
+A DNG's `WhiteLevel` values; empty otherwise.
+
+## `PhotoDetails/ItemReceipt`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+struct ItemReceipt
+```
+
+What happened to one optional metadata item.
+
+## `PhotoDetails/ItemReceipt/State`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+enum State
+```
+
+What happened.
+
+## `PhotoDetails/ItemReceipt/State/nothingToWrite`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case nothingToWrite
+```
+
+The item's switch is on, but there was nothing to write, such as a location nope.
+doesn't capture, or lens correction instructions the camera didn't supply.
+
+## `PhotoDetails/ItemReceipt/State/removed`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case removed
+```
+
+The item's switch is off, so it isn't in the files. For the exact camera model, a
+generic value stands in, because DNG requires the tag.
+
+## `PhotoDetails/ItemReceipt/State/written`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case written
+```
+
+The item's switch is on and the files hold it.
+
+## `PhotoDetails/ItemReceipt/init(item:state:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(item: MetadataItem, state: State)
+```
+
+Creates a receipt line.
+
+- Parameters:
+  - item: The item.
+  - state: What happened to it.
+
+## `PhotoDetails/ItemReceipt/item`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let item: MetadataItem
+```
+
+The item.
+
+## `PhotoDetails/ItemReceipt/state`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let state: State
+```
+
+What happened to it.
+
+## `PhotoDetails/Processing`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+enum Processing
+```
+
+What processing a file's pixels went through.
+
+## `PhotoDetails/Processing/byDevice`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case byDevice
+```
+
+Processed by the phone's camera, because the lens can't save RAW.
+
+## `PhotoDetails/Processing/developed(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case developed(DevelopedLook)
+```
+
+Developed by nope. from the RAW, with this look.
+
+## `PhotoDetails/Processing/none`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case none
+```
+
+None by nope.: the sensor data as the camera delivered it (the DNG).
+
+## `PhotoDetails/Tag`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+enum Tag
+```
+
+Tag numbers the details read (TIFF 6.0, EXIF 3.0, DNG 1.7).
+
+## `PhotoDetails/Tag/bitsPerSample`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let bitsPerSample: UInt16
+```
+
+`BitsPerSample`.
+
+## `PhotoDetails/Tag/blackLevel`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let blackLevel: UInt16
+```
+
+`BlackLevel`.
+
+## `PhotoDetails/Tag/cfaPattern`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let cfaPattern: UInt16
+```
+
+`CFAPattern`.
+
+## `PhotoDetails/Tag/cfaRepeatPatternDim`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let cfaRepeatPatternDim: UInt16
+```
+
+`CFARepeatPatternDim`.
+
+## `PhotoDetails/Tag/contentCredentials`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let contentCredentials: UInt16
+```
+
+The Content Credentials manifest in a DNG (C2PA 2.1, A.3.3).
+
+## `PhotoDetails/Tag/exposureBias`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let exposureBias: UInt16
+```
+
+`ExposureBiasValue`.
+
+## `PhotoDetails/Tag/exposureTime`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let exposureTime: UInt16
+```
+
+`ExposureTime`.
+
+## `PhotoDetails/Tag/fNumber`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let fNumber: UInt16
+```
+
+`FNumber`.
+
+## `PhotoDetails/Tag/focalLength`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let focalLength: UInt16
+```
+
+`FocalLength`.
+
+## `PhotoDetails/Tag/imageLength`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let imageLength: UInt16
+```
+
+`ImageLength`.
+
+## `PhotoDetails/Tag/imageWidth`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let imageWidth: UInt16
+```
+
+`ImageWidth`.
+
+## `PhotoDetails/Tag/iso`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let iso: UInt16
+```
+
+`PhotographicSensitivity`.
+
+## `PhotoDetails/Tag/makerNote`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let makerNote: UInt16
+```
+
+`MakerNote`.
+
+## `PhotoDetails/Tag/opcodeLists`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let opcodeLists: Set<UInt16>
+```
+
+`OpcodeList1`, `OpcodeList2` and `OpcodeList3`.
+
+## `PhotoDetails/Tag/pixelXDimension`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let pixelXDimension: UInt16
+```
+
+`PixelXDimension`.
+
+## `PhotoDetails/Tag/pixelYDimension`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let pixelYDimension: UInt16
+```
+
+`PixelYDimension`.
+
+## `PhotoDetails/Tag/whiteBalance`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let whiteBalance: UInt16
+```
+
+`WhiteBalance`.
+
+## `PhotoDetails/Tag/whiteLevel`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let whiteLevel: UInt16
+```
+
+`WhiteLevel`.
+
+## `PhotoDetails/WhiteBalanceSetting`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+enum WhiteBalanceSetting
+```
+
+The EXIF `WhiteBalance` tag's value (EXIF 3.0, tag `0xA403`).
+
+## `PhotoDetails/WhiteBalanceSetting/automatic`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case automatic
+```
+
+0: automatic white balance.
+
+## `PhotoDetails/WhiteBalanceSetting/manual`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+case manual
+```
+
+1: manual white balance.
+
+## `PhotoDetails/build(files:plan:look:signature:timings:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings) -> PhotoDetails
+```
+
+Builds the details of one saved photo.
+
+- Parameters:
+  - files: Each saved file with its read-back, in the order they were built.
+  - plan: The metadata plan the files were written with.
+  - look: The look HEIF and JPEG were developed with.
+  - signature: The photo's signature status.
+  - timings: The measured timings.
+- Returns: The details.
+
+## `PhotoDetails/colorFilterLetters`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let colorFilterLetters: [Character]
+```
+
+The color names of TIFF/EP's `CFAPattern` codes: 0 red, 1 green, 2 blue, 3 cyan,
+4 magenta, 5 yellow, 6 white (ISO 12234-2, "CFAPattern").
+
+## `PhotoDetails/colorFilterPattern(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func colorFilterPattern(in inventory: MetadataInventory) -> String?
+```
+
+A DNG's color filter pattern as letters, row by row, such as `RGGB`, or `nil` when the
+pattern is missing, doesn't match its dimensions, or uses an unknown color code.
+
+- Parameter inventory: The DNG's read-back.
+- Returns: The pattern.
+
+## `PhotoDetails/contents(of:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func contents(of inventory: MetadataInventory) -> [String]
+```
+
+The names of everything a read-back found: each tag by its catalog name, then each
+container block and XMP property.
+
+- Parameter inventory: The read-back.
+- Returns: The names, in file order.
+
+## `PhotoDetails/exposure`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let exposure: Exposure?
+```
+
+The exposure as written, from the first file that records it, or `nil` when no file does
+(exposure settings off).
+
+## `PhotoDetails/exposure(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func exposure(in inventory: MetadataInventory) -> Exposure?
+```
+
+The exposure a file's EXIF records, or `nil` when it records none of it.
+
+- Parameter inventory: The file's read-back.
+- Returns: The exposure.
+
+## `PhotoDetails/fileDetails(_:look:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func fileDetails(_ checked: CheckedFile, look: DevelopedLook) -> File
+```
+
+One file's details.
+
+- Parameters:
+  - checked: The file and its read-back.
+  - look: The developed look.
+- Returns: The details.
+
+## `PhotoDetails/files`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let files: [File]
+```
+
+Each saved file, in the order it was built (RAW first).
+
+## `PhotoDetails/holds(_:_:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func holds(_ item: MetadataItem, _ tag: MetadataInventory.Tag) -> Bool
+```
+
+Whether a tag carries an item.
+
+- Parameters:
+  - item: The item.
+  - tag: A tag with a value.
+- Returns: `true` if the tag is one of the item's.
+
+## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings)
+```
+
+Creates details.
+
+- Parameters:
+  - files: Each file's details.
+  - exposure: The exposure as written.
+  - items: What happened to each optional item.
+  - lockedItems: The locked items kept.
+  - signature: The signature status.
+  - timings: The timings.
+
+## `PhotoDetails/integer(_:in:directory:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func integer(_ tag: UInt16, in inventory: MetadataInventory, directory: TIFFDirectory = .primary) -> Int?
+```
+
+The first value of a tag as a whole number, or `nil`.
+
+- Parameters:
+  - tag: The tag number.
+  - inventory: The file's read-back.
+  - directory: The directory. Defaults to IFD0.
+- Returns: The value.
+
+## `PhotoDetails/items`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let items: [ItemReceipt]
+```
+
+Every optional metadata item, in `MetadataItem.allCases` order, with what happened to it.
+
+## `PhotoDetails/leftOutItems`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var leftOutItems: [ItemReceipt] { get }
+```
+
+The optional items that were removed or had nothing to write.
+
+## `PhotoDetails/lockedItems`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let lockedItems: [LockedMetadataItem]
+```
+
+The locked items the saved formats keep, because the photo can't be opened without them.
+
+## `PhotoDetails/lockedItems(for:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func lockedItems(for formats: Set<PhotoFormat>) -> [LockedMetadataItem]
+```
+
+The locked items the saved formats keep.
+
+- Parameter formats: The saved formats.
+- Returns: The items, in `LockedMetadataItem.allCases` order.
+
+## `PhotoDetails/name(of:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func name(of tag: MetadataInventory.Tag) -> String
+```
+
+A tag's specification name from ``MetadataField/catalog``, `C2PA manifest` for the Content
+Credentials tag, or its directory and hexadecimal number.
+
+- Parameter tag: The tag.
+- Returns: The name.
+
+## `PhotoDetails/signature`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let signature: SignatureStatus
+```
+
+Whether the photo is signed, or why not.
+
+## `PhotoDetails/state(of:settings:inventories:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func state(of item: MetadataItem, settings: MetadataSettings, inventories: [MetadataInventory]) -> ItemReceipt.State
+```
+
+What happened to an optional item: written, removed by its switch, or nothing to write.
+
+An ASCII tag with empty text doesn't count as written: a DNG always carries `DateTime`,
+`Make`, `Model` and `Software`, empty when their switches are off (issue #65).
+
+- Parameters:
+  - item: The item.
+  - settings: The metadata choices the files were written with.
+  - inventories: Each file's read-back.
+- Returns: The state.
+
+## `PhotoDetails/timings`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let timings: SaveTimings
+```
+
+How long each step took.
+
+## `PhotoDetails/value(_:in:directory:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func value(_ tag: UInt16, in inventory: MetadataInventory, directory: TIFFDirectory = .primary) -> Double?
+```
+
+The first value of a tag, or `nil`.
+
+- Parameters:
+  - tag: The tag number.
+  - inventory: The file's read-back.
+  - directory: The directory. Defaults to IFD0.
+- Returns: The value.
+
+## `PhotoDetails/values(_:in:directory:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static func values(_ tag: UInt16, in inventory: MetadataInventory, directory: TIFFDirectory = .primary) -> [Double]
+```
+
+The values of a tag in a directory, or none if the file doesn't have it.
+
+- Parameters:
+  - tag: The tag number.
+  - inventory: The file's read-back.
+  - directory: The directory. Defaults to IFD0.
+- Returns: The values.
+
+## `PhotoDetails/writtenItems`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var writtenItems: [MetadataItem] { get }
+```
+
+The optional items that were written.
+
 ## `PhotoDeveloping`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -6350,6 +7459,17 @@ One file of a photo, on its way to Photos: a DNG, or a HEIF or JPEG.
 Privacy: files live in memory only. They go from memory to Photos and are never written to
 disk by `NopeCore` (AGENTS.md, "Photos never linger").
 
+## `PhotoFile/contentCredentials`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+let contentCredentials: ContentCredentialsSummary?
+```
+
+What the file's Content Credentials manifest says, set by the signer on the file it
+returns; `nil` for an unsigned file. The "What's in this photo" details show it.
+
 ## `PhotoFile/data`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -6370,12 +7490,12 @@ let format: PhotoFormat
 
 The file's format.
 
-## `PhotoFile/init(format:data:isProcessedByDevice:)`
+## `PhotoFile/init(format:data:isProcessedByDevice:contentCredentials:)`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
 
 ```swift
-init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false)
+init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false, contentCredentials: ContentCredentialsSummary? = nil)
 ```
 
 Creates a file.
@@ -6385,6 +7505,8 @@ Creates a file.
   - data: The file's bytes.
   - isProcessedByDevice: Whether the phone's camera processed it (the fallback of a lens
     without Bayer RAW). Defaults to `false`.
+  - contentCredentials: What the file's manifest says, for a signed file. Defaults to
+    `nil`.
 
 ## `PhotoFile/isProcessedByDevice`
 
@@ -6582,6 +7704,8 @@ The order is fixed, and each step is a protocol so the whole pipeline is tested 
    (``SignatureStatus/UnsignedReason/signedFileFailedCheck``).
 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
    file as one asset (``PhotoLibraryAsset/assets(for:)``).
+5. Make the last-photo thumbnail (``PhotoThumbnailing``) and the "What's in this photo"
+   details (``PhotoDetails``) from the saved files, in memory.
 
 ## `PhotoSaver/appVersion`
 
@@ -6593,12 +7717,12 @@ let appVersion: String
 
 The app's version, written with its name when ``MetadataItem/appNameAndVersion`` is on.
 
-## `PhotoSaver/init(developer:signer:reader:library:appVersion:)`
+## `PhotoSaver/init(developer:signer:reader:library:appVersion:thumbnailer:now:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String)
+init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
 ```
 
 Creates a pipeline.
@@ -6609,6 +7733,8 @@ Creates a pipeline.
   - reader: Reads finished files back.
   - library: Adds files to Photos.
   - appVersion: The app's version, such as `0.2.0`.
+  - thumbnailer: Makes the last-photo thumbnail, or `nil` for none.
+  - now: Reads the clock for the timings. Tests pass a scripted one.
 
 ## `PhotoSaver/plan(for:)`
 
@@ -6623,12 +7749,12 @@ The metadata plan for a set of choices, with this app's version.
 - Parameter settings: The person's metadata choices.
 - Returns: The plan.
 
-## `PhotoSaver/save(_:settings:)`
+## `PhotoSaver/save(_:settings:captureDuration:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func save(_ photo: CapturedPhoto, settings: SaveSettings) async throws(CaptureError) -> SavedPhoto
+func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil) async throws(CaptureError) -> SavedPhoto
 ```
 
 Saves one photo.
@@ -6638,7 +7764,9 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
 - Parameters:
   - photo: The captured photo, with its metadata already built for the plan.
   - settings: The formats and metadata choices.
-- Returns: What was saved.
+  - captureDuration: How long the camera took to return the photo, for the details, or
+    `nil` when unknown.
+- Returns: What was saved, with its thumbnail and details.
 - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
   ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
   saved),
@@ -6677,6 +7805,117 @@ Signs one file.
 - Parameter file: The file to sign.
 - Returns: The same file with a Content Credentials manifest.
 - Throws: Any error; the file is then saved unsigned, and the status says signing failed.
+
+## `PhotoThumbnail`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+struct PhotoThumbnail
+```
+
+A small picture of a photo nope. just saved, for the last-photo thumbnail beside the shutter
+(issue #36).
+
+nope. has add-only Photos access and can't read the library, so the thumbnail is made from
+the saved file while it is still in memory (``PhotoThumbnailing``).
+
+Privacy: the pixels live in memory only, for this session. They are never written to disk,
+logged or copied (AGENTS.md, "Photos never linger").
+
+## `PhotoThumbnail/bytesPerPixel`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+static let bytesPerPixel: Int
+```
+
+Bytes per pixel in ``rgba``: red, green, blue and alpha, one byte each.
+
+## `PhotoThumbnail/bytesPerRow`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+var bytesPerRow: Int { get }
+```
+
+The bytes in one row of ``rgba``.
+
+## `PhotoThumbnail/height`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let height: Int
+```
+
+The height, in pixels.
+
+## `PhotoThumbnail/init(width:height:rgba:)`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+init?(width: Int, height: Int, rgba: Data)
+```
+
+Creates a thumbnail, or `nil` if the size and the pixel data don't match.
+
+- Parameters:
+  - width: The width, in pixels; at least 1.
+  - height: The height, in pixels; at least 1.
+  - rgba: The pixels, exactly `width × height × 4` bytes, as ``rgba`` describes.
+
+## `PhotoThumbnail/rgba`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let rgba: Data
+```
+
+The pixels: `width × height` RGBA values, 8 bits per channel, alpha premultiplied, in
+the sRGB color space, row by row from the top-left corner, with no padding between rows.
+
+## `PhotoThumbnail/width`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+let width: Int
+```
+
+The width, in pixels.
+
+## `PhotoThumbnailing`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+protocol PhotoThumbnailing : Sendable
+```
+
+Makes the last-photo thumbnail from a saved file, in memory.
+
+`NopeDevelop` implements it with ImageIO (`ImageIOThumbnailer`). ``PhotoSaver`` calls it
+once per saved photo, after the photo is in Photos, with the file that is quickest to read:
+the HEIF or JPEG when there is one, otherwise the DNG.
+
+## `PhotoThumbnailing/thumbnail(of:)`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+func thumbnail(of file: PhotoFile) -> PhotoThumbnail?
+```
+
+Makes a thumbnail.
+
+- Parameter file: A file that was just saved.
+- Returns: The thumbnail, upright, or `nil` if the file can't be read. A missing
+  thumbnail never fails the save; the interface shows a photo symbol instead.
 
 ## `ProcessedFallback`
 
@@ -6784,6 +8023,113 @@ least one format is always saved.
   - isSelected: Whether it is saved.
 - Returns: `false` if the change was refused because it would leave no format.
 
+## `SaveTimings`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+struct SaveTimings
+```
+
+How long each step of taking and saving one photo took, for the details (issue #53).
+
+Measured on the device with a monotonic clock (`ContinuousClock`); never logged or stored.
+A step that didn't run, such as developing when only the RAW is saved, is `nil`.
+
+## `SaveTimings/add(_:to:)`
+
+internal, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+mutating func add(_ duration: Duration, to step: WritableKeyPath<SaveTimings, Duration?>)
+```
+
+Adds a duration to a step's total, starting from zero.
+
+- Parameters:
+  - duration: The time one more run of the step took.
+  - step: The step.
+
+## `SaveTimings/capture`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+var capture: Duration?
+```
+
+From the shutter to the camera returning the photo, or `nil` for a bracket frame.
+
+## `SaveTimings/develop`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+var develop: Duration?
+```
+
+Developing the HEIF and JPEG from the RAW, all files together.
+
+## `SaveTimings/init(capture:develop:sign:readBack:save:)`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+init(capture: Duration? = nil, develop: Duration? = nil, sign: Duration? = nil, readBack: Duration? = nil, save: Duration? = nil)
+```
+
+Creates timings.
+
+- Parameters:
+  - capture: The capture time, or `nil`.
+  - develop: The development time, or `nil`.
+  - sign: The signing time, or `nil`.
+  - readBack: The read-back time, or `nil`.
+  - save: The time to add to Photos, or `nil`.
+
+## `SaveTimings/milliseconds(_:)`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+static func milliseconds(_ duration: Duration) -> Int
+```
+
+The duration in whole milliseconds, rounded to the nearest, for display.
+
+- Parameter duration: A duration.
+- Returns: The milliseconds.
+
+## `SaveTimings/readBack`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+var readBack: Duration?
+```
+
+Reading every file back and checking it against the allowlist.
+
+## `SaveTimings/save`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+var save: Duration?
+```
+
+Adding the files to Photos.
+
+## `SaveTimings/sign`
+
+public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
+
+```swift
+var sign: Duration?
+```
+
+Signing every file.
+
 ## `SavedPhoto`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
@@ -6793,6 +8139,17 @@ struct SavedPhoto
 ```
 
 A photo that passed the read-back and was added to Photos.
+
+## `SavedPhoto/details`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let details: PhotoDetails?
+```
+
+"What's in this photo": the facts read back from the saved files (issue #53), or `nil`
+for a record made outside ``PhotoSaver``. In memory only.
 
 ## `SavedPhoto/formats`
 
@@ -6804,12 +8161,12 @@ let formats: [PhotoFormat]
 
 The formats saved, in the order they were built.
 
-## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:)`
+## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:thumbnail:details:)`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory])
+init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil)
 ```
 
 Creates a saved-photo record.
@@ -6819,6 +8176,8 @@ Creates a saved-photo record.
   - isProcessedFallback: Whether it is the processed fallback.
   - signature: The signature status.
   - metadata: Each file's read-back inventory.
+  - thumbnail: The photo's thumbnail, or `nil`.
+  - details: The photo's details, or `nil`.
 
 ## `SavedPhoto/isProcessedFallback`
 
@@ -6850,6 +8209,17 @@ let signature: SignatureStatus
 ```
 
 Whether the photo is signed.
+
+## `SavedPhoto/thumbnail`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let thumbnail: PhotoThumbnail?
+```
+
+A small picture of the photo for the last-photo thumbnail (issue #36), or `nil` when
+there is no thumbnailer or the file couldn't be read. In memory only.
 
 ## `SessionStatus`
 
@@ -7633,6 +9003,31 @@ static let maximumEntriesPerDirectory: Int
 ```
 
 The most entries one directory may have. nope.'s largest has about 40.
+
+## `TIFFReader/maximumRecordedValues`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let maximumRecordedValues: Int
+```
+
+The most numeric values recorded for one tag (``MetadataInventory/Tag/values``). The
+details screen needs a handful (a 3 × 3 color matrix has 9); longer arrays, such as strip
+offsets, aren't shown, so they aren't copied.
+
+## `TIFFReader/offsetTags`
+
+internal, declared in `Sources/NopeCore/TIFFReader.swift`
+
+```swift
+static let offsetTags: Set<UInt16>
+```
+
+Tags whose values are byte offsets into the file (image data, child directories and an
+embedded JPEG), so they change whenever the layout does. They mean nothing to a person
+and aren't recorded, so a change of layout alone, such as the signer inserting its tag,
+leaves the recorded tags as they were.
 
 ## `TIFFReader/read(_:extractImageData:)`
 

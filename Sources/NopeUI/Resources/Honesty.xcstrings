@@ -265,6 +265,72 @@
         }
       }
     },
+    "Always kept": {
+      "comment": "In the photo details, next to a metadata item every file keeps because the photo can't be opened without it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Immer behalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Siempre se conserva"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toujours conservé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sempre conservato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "常に保持"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "항상 유지"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Altijd behouden"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sempre mantido"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "始终保留"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一律保留"
+          }
+        }
+      }
+    },
     "Analysis in Photos": {
       "comment": "Honesty heading: the Photos app analyzes photos. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -727,6 +793,72 @@
         }
       }
     },
+    "Claim generator: %@ %@": {
+      "comment": "In the photo details: the software the Content Credentials manifest names as its claim generator. The values are a name and a version, such as Photivra Nope Camera 0.2.0.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Claim-Generator: %@ %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Generador de la declaración: %@ %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Générateur de la déclaration : %@ %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Generatore della dichiarazione: %@ %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "クレーム生成元：%@ %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "클레임 생성기: %@ %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Claimgenerator: %@ %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gerador da declaração: %@ %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "声明生成器：%@ %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "聲明產生器：%@ %@"
+          }
+        }
+      }
+    },
     "Color Data and White Balance": {
       "comment": "Locked metadata item: color matrices and the as-shot white balance. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -1185,6 +1317,270 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "拍攝日期與時間"
+          }
+        }
+      }
+    },
+    "Details Kept": {
+      "comment": "Heading in the photo details: the metadata items the saved files hold.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Behaltene Angaben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Datos conservados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Informations conservées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dati conservati"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保持された情報"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "유지된 정보"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Behouden gegevens"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dados mantidos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保留的信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保留的資訊"
+          }
+        }
+      }
+    },
+    "Details Left Out": {
+      "comment": "Heading in the photo details: the optional metadata items the saved files don't hold, each with the reason.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Weggelassene Angaben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Datos omitidos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Informations omises"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dati esclusi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "含めなかった情報"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "제외된 정보"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Weggelaten gegevens"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dados omitidos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未包含的信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未包含的資訊"
+          }
+        }
+      }
+    },
+    "Developed by nope. from the RAW, Flat look": {
+      "comment": "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Flat look (no contrast curve). Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Von nope. aus dem RAW entwickelt, Look „Flach“"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Revelado por nope. a partir del RAW, aspecto Plano"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Développé par nope. à partir du RAW, rendu Plat"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sviluppato da nope. dal RAW, aspetto Piatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. が RAW から現像、「フラット」ルック"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.가 RAW에서 현상, 플랫 룩"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Door nope. ontwikkeld uit de RAW, look Vlak"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Revelado pelo nope. a partir do RAW, visual Plano"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "由 nope. 从 RAW 冲印，“平淡”风格"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "由 nope. 從 RAW 沖印，「平淡」風格"
+          }
+        }
+      }
+    },
+    "Developed by nope. from the RAW, Standard look": {
+      "comment": "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Standard look (one overall tone curve). Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Von nope. aus dem RAW entwickelt, Look „Standard“"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Revelado por nope. a partir del RAW, aspecto Estándar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Développé par nope. à partir du RAW, rendu Standard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sviluppato da nope. dal RAW, aspetto Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. が RAW から現像、「標準」ルック"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.가 RAW에서 현상, 표준 룩"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Door nope. ontwikkeld uit de RAW, look Standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Revelado pelo nope. a partir do RAW, visual Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "由 nope. 从 RAW 冲印，“标准”风格"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "由 nope. 從 RAW 沖印，「標準」風格"
           }
         }
       }
@@ -2311,6 +2707,138 @@
         }
       }
     },
+    "Lens corrections: not stored": {
+      "comment": "In the photo details: the RAW file holds no lens correction instructions.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Objektivkorrekturen: nicht gespeichert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correcciones del objetivo: no guardadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Corrections d’objectif : non enregistrées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correzioni dell’obiettivo: non salvate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "レンズ補正：保存なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "렌즈 보정: 저장 안 됨"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lenscorrecties: niet opgeslagen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correções de lente: não armazenadas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "镜头校正：未存储"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "鏡頭校正：未儲存"
+          }
+        }
+      }
+    },
+    "Lens corrections: stored, not applied": {
+      "comment": "In the photo details: the RAW file holds lens correction instructions that editors can use, but nope. didn't apply them to the pixels.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Objektivkorrekturen: gespeichert, nicht angewendet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correcciones del objetivo: guardadas, no aplicadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Corrections d’objectif : enregistrées, non appliquées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correzioni dell’obiettivo: salvate, non applicate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "レンズ補正：保存済み、適用なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "렌즈 보정: 저장됨, 적용 안 됨"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lenscorrecties: opgeslagen, niet toegepast"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correções de lente: armazenadas, não aplicadas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "镜头校正：已存储，未应用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "鏡頭校正：已儲存，未套用"
+          }
+        }
+      }
+    },
     "Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.": {
       "comment": "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -2571,6 +3099,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "製造商註記"
+          }
+        }
+      }
+    },
+    "Manifest SHA-256: %@": {
+      "comment": "In the photo details: the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manifest SHA-256: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "SHA-256 del manifiesto: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "SHA-256 du manifeste : %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "SHA-256 del manifesto: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "マニフェストの SHA-256：%@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "매니페스트 SHA-256: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manifest-SHA-256: %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "SHA-256 do manifesto: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "清单 SHA-256：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "清單 SHA-256：%@"
           }
         }
       }
@@ -2971,6 +3565,72 @@
         }
       }
     },
+    "Not in the files: exposure settings are off in Settings.": {
+      "comment": "Shown in the photo details when the files hold no exposure settings, because the person turned that metadata item off.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht in den Dateien: Belichtungseinstellungen sind in den Einstellungen aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No está en los archivos: los ajustes de exposición están desactivados en Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Absent des fichiers : les réglages d’exposition sont désactivés dans Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non presente nei file: le impostazioni di esposizione sono disattivate in Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ファイルにはありません：設定で露出設定がオフになっています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "파일에 없음: 설정에서 노출 설정이 꺼져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet in de bestanden: belichtingsinstellingen staan uit in Instellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não está nos arquivos: os ajustes de exposição estão desativados em Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不在文件中：曝光设置在“设置”中已关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不在檔案中：曝光設定在「設定」中已關閉。"
+          }
+        }
+      }
+    },
     "Not saved: nope. couldn't confirm that the photo holds only the details you chose.": {
       "comment": "Shown when a finished photo file contained a metadata detail that is not on the privacy list, or couldn't be checked, so the app saved nothing. Honesty and privacy wording. Keep the name nope. unchanged, lowercase with its period.",
       "extractionState": "manual",
@@ -3033,6 +3693,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "未儲存：nope. 無法確認照片只包含你選擇的資料。"
+          }
+        }
+      }
+    },
+    "Off in Settings": {
+      "comment": "In the photo details, why a metadata item isn't in the files: the person's switch for it is off.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In den Einstellungen aus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desactivado en Ajustes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Désactivé dans Réglages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disattivato in Impostazioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定でオフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "설정에서 꺼짐"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uit in Instellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desativado em Ajustes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在“设置”中已关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在「設定」中已關閉"
           }
         }
       }
@@ -3697,6 +4423,72 @@
         }
       }
     },
+    "On, but there was nothing to write": {
+      "comment": "In the photo details, why a metadata item isn't in the files although its switch is on: the camera gave no value for it, such as no location or no lens corrections.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "An, aber es gab nichts zu schreiben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Activado, pero no había nada que escribir"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Activé, mais il n’y avait rien à écrire"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Attivato, ma non c’era nulla da scrivere"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "オンですが、書き込む内容がありませんでした"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "켜져 있지만 기록할 내용이 없었습니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aan, maar er was niets om te schrijven"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ativado, mas não havia nada para gravar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已开启，但没有可写入的内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已開啟，但沒有可寫入的內容"
+          }
+        }
+      }
+    },
     "On: each photo keeps only what it needs to open. Off: choose each item below.": {
       "comment": "Explains the master switch. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -3825,6 +4617,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "對整張影像套用單一色調曲線，讓照片看起來正常。"
+          }
+        }
+      }
+    },
+    "Only for photos taken since nope. opened: nope. can't read your photo library, and these details aren't stored.": {
+      "comment": "Footer in the photo details. nope. has add-only access to the photo library, so it can show details only for photos it saved in this session, from memory. Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nur für Fotos seit dem Öffnen von nope.: nope. kann deine Fotomediathek nicht lesen, und diese Angaben werden nicht gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Solo para las fotos tomadas desde que se abrió nope.: nope. no puede leer tu fototeca y estos datos no se guardan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uniquement pour les photos prises depuis l’ouverture de nope. : nope. ne peut pas lire votre photothèque, et ces informations ne sont pas conservées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Solo per le foto scattate da quando è stata aperta nope.: nope. non può leggere la tua libreria foto e questi dati non vengono salvati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開いてから撮った写真のみ：nope. は写真ライブラリを読み取れず、これらの情報は保存されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.를 연 이후에 찍은 사진만 해당: nope.는 사진 보관함을 읽을 수 없으며 이 정보는 저장되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alleen voor foto's die zijn gemaakt sinds nope. is geopend: nope. kan je fotobibliotheek niet lezen en deze gegevens worden niet bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Somente para fotos tiradas desde que o nope. foi aberto: o nope. não pode ler sua fototeca, e estes dados não são armazenados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "仅限打开 nope. 后拍摄的照片：nope. 无法读取你的照片图库，这些信息也不会被存储。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "僅限開啟 nope. 後拍攝的照片：nope. 無法讀取你的照片圖庫，這些資訊也不會被儲存。"
           }
         }
       }
@@ -4225,6 +5083,72 @@
         }
       }
     },
+    "Processed by the phone's camera: this lens can't save RAW": {
+      "comment": "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Von der Kamera des Telefons verarbeitet: Dieses Objektiv kann kein RAW sichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Procesado por la cámara del teléfono: este objetivo no puede guardar RAW"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Traité par l’appareil photo du téléphone : cet objectif ne peut pas enregistrer en RAW"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elaborato dalla fotocamera del telefono: questo obiettivo non può salvare in RAW"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "スマートフォンのカメラで処理済み：このレンズは RAW を保存できません"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "휴대폰 카메라가 처리함: 이 렌즈는 RAW를 저장할 수 없습니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verwerkt door de camera van de telefoon: deze lens kan geen RAW bewaren"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Processado pela câmera do celular: esta lente não pode salvar RAW"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "由手机相机处理：此镜头无法存储 RAW"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "由手機相機處理：此鏡頭無法儲存 RAW"
+          }
+        }
+      }
+    },
     "RAW · Single frame": {
       "comment": "Badge: the next photo is one unprocessed RAW frame from the sensor. RAW is a file format name.",
       "extractionState": "manual",
@@ -4287,6 +5211,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "RAW · 單一影格"
+          }
+        }
+      }
+    },
+    "Read Back from the Files": {
+      "comment": "Heading in the photo details: every metadata tag, block and property nope. read back from each saved file before saving it. Keep nope. unchanged if it appears.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aus den Dateien zurückgelesen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Releído de los archivos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Relu dans les fichiers"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Riletto dai file"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ファイルから読み戻した内容"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "파일에서 다시 읽은 내용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Teruggelezen uit de bestanden"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Relido dos arquivos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "从文件中回读的内容"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "從檔案回讀的內容"
           }
         }
       }
@@ -5017,6 +6007,72 @@
         }
       }
     },
+    "Signature": {
+      "comment": "Heading in the photo details: whether the photo carries a Content Credentials signature.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Signatur"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Firma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Signature"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Firma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "署名"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "서명"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Handtekening"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Assinatura"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "签名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "簽章"
+          }
+        }
+      }
+    },
     "Sub-Second Time": {
       "comment": "Metadata item: fractions of a second in the time taken. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -5281,6 +6337,72 @@
         }
       }
     },
+    "The RAW sensor data as the camera delivered it. nope. didn't develop it.": {
+      "comment": "In the photo details, the processing of the RAW (DNG) file: nope. didn't develop or change it. Must not claim more than the English: it doesn't say the phone did nothing. Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die RAW-Sensordaten, wie die Kamera sie geliefert hat. nope. hat sie nicht entwickelt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Los datos RAW del sensor tal como los entregó la cámara. nope. no los reveló."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les données RAW du capteur telles que l’appareil photo les a fournies. nope. ne les a pas développées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "I dati RAW del sensore così come li ha forniti la fotocamera. nope. non li ha sviluppati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラから渡されたままの RAW センサーデータです。nope. は現像していません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 전달한 그대로의 RAW 센서 데이터입니다. nope.는 현상하지 않았습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De RAW-sensorgegevens zoals de camera ze heeft geleverd. nope. heeft ze niet ontwikkeld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Os dados RAW do sensor como a câmera os entregou. O nope. não os revelou."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机提供的原样 RAW 传感器数据。nope. 未对其进行冲印。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機提供的原樣 RAW 感光元件資料。nope. 未對其進行沖印。"
+          }
+        }
+      }
+    },
     "The Sensor's Noise Pattern": {
       "comment": "Honesty heading: the camera sensor's unique noise fingerprint. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -5343,6 +6465,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "感光元件的雜訊模式"
+          }
+        }
+      }
+    },
+    "The files don't record the exposure.": {
+      "comment": "Shown in the photo details when the saved files hold no exposure values although the exposure settings item is on, because the camera didn't supply them.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Dateien enthalten keine Belichtungswerte."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Los archivos no registran la exposición."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les fichiers n’enregistrent pas l’exposition."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "I file non registrano l’esposizione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ファイルには露出が記録されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "파일에 노출 정보가 기록되어 있지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De bestanden bevatten geen belichtingsgegevens."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Os arquivos não registram a exposição."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件中未记录曝光信息。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "檔案中未記錄曝光資訊。"
           }
         }
       }

@@ -36,6 +36,12 @@ public struct MetadataInventory: Equatable, Sendable {
         public let tag: UInt16
         /// The value of an ASCII tag, without the trailing NUL, or `nil` for other types.
         public let text: String?
+        /// The values of a numeric tag (BYTE, SHORT, LONG, RATIONAL and their signed forms), in
+        /// file order, with each rational divided out; empty for other types, for a rational
+        /// with a zero denominator, and for a tag with more than
+        /// ``TIFFReader/maximumRecordedValues`` values. The "What's in this photo" details
+        /// (``PhotoDetails``) read the exposure, size and levels from them.
+        public let values: [Double]
 
         /// Creates a tag record.
         ///
@@ -43,10 +49,12 @@ public struct MetadataInventory: Equatable, Sendable {
         ///   - directory: The directory the tag is in.
         ///   - tag: The tag number.
         ///   - text: The ASCII value, or `nil`.
-        public init(directory: TIFFDirectory, tag: UInt16, text: String? = nil) {
+        ///   - values: The numeric values, or none.
+        public init(directory: TIFFDirectory, tag: UInt16, text: String? = nil, values: [Double] = []) {
             self.directory = directory
             self.tag = tag
             self.text = text
+            self.values = values
         }
     }
 
