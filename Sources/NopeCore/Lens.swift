@@ -64,6 +64,14 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// The manual controls the lens supports. ``ManualCapabilities/none`` when unknown.
     public let manualControls: ManualCapabilities
 
+    /// The flash modes the lens supports, as the photo output reported them for this camera.
+    /// Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
+    /// camera: nope. uses no screen flash (issue #38).
+    public let flashModes: [FlashMode]
+
+    /// Whether the lens has a torch: a light that can stay on while framing and taking photos.
+    public let hasTorch: Bool
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -79,6 +87,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
     ///   - photoDimensions: The supported photo sizes, smallest first.
     ///   - manualControls: The manual controls the lens supports. Defaults to none.
+    ///   - flashModes: The flash modes the lens supports. Defaults to none.
+    ///   - hasTorch: Whether the lens has a torch. Defaults to `false`.
     public init(
         id: String,
         kind: Kind,
@@ -90,7 +100,9 @@ public struct Lens: Identifiable, Equatable, Sendable {
         aperture: ApertureRange? = nil,
         maxBracketedPhotoCount: Int = 0,
         photoDimensions: [PhotoDimensions] = [],
-        manualControls: ManualCapabilities = .none
+        manualControls: ManualCapabilities = .none,
+        flashModes: [FlashMode] = [],
+        hasTorch: Bool = false
     ) {
         self.id = id
         self.kind = kind
@@ -103,6 +115,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
         self.manualControls = manualControls
+        self.flashModes = flashModes
+        self.hasTorch = hasTorch
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

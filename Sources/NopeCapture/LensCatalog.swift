@@ -6,7 +6,8 @@ import NopeCore
 /// Rules (capability survey, item 1, and AGENTS.md, "Honesty"):
 /// - only physical cameras: virtual multi-camera devices and unknown types are dropped;
 /// - a lens's RAW format is its first Bayer RAW format; Apple ProRAW never counts;
-/// - lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front.
+/// - lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front;
+/// - the front camera gets no flash modes: nope. uses no screen flash (issue #38).
 enum LensCatalog {
     /// Builds the lens list.
     ///
@@ -48,7 +49,9 @@ enum LensCatalog {
             aperture: device.aperture,
             maxBracketedPhotoCount: device.maxBracketedPhotoCount,
             photoDimensions: device.photoDimensions.sorted { $0.pixelCount < $1.pixelCount },
-            manualControls: device.manualControls.capabilities
+            manualControls: device.manualControls.capabilities,
+            flashModes: kind == .front ? [] : device.flashModes,
+            hasTorch: device.hasTorch
         )
     }
 

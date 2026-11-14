@@ -30,7 +30,10 @@ struct ProcessingSwitches: Equatable, Sendable {
     let geometricDistortionCorrection: Bool
     /// The device zoom factor. 1.0: Bayer RAW requires it, and nope. never zooms digitally.
     let videoZoomFactor: Double
-    /// The flash. Off in this version.
+    /// The flash. Off for starting the camera and for brackets (which don't support it,
+    /// `AVCapturePhotoBracketSettings`); a single photo takes the request's mode
+    /// (``CapturePolicy/photoSettings(_:flashMode:)``). The flash only adds light: no
+    /// processing switch changes with it.
     let flashMode: AVCaptureDevice.FlashMode
 
     /// Creates a set of switches. nope. uses only ``leastProcessing``.
@@ -61,6 +64,19 @@ struct ProcessingSwitches: Equatable, Sendable {
         self.geometricDistortionCorrection = geometricDistortionCorrection
         self.videoZoomFactor = videoZoomFactor
         self.flashMode = flashMode
+    }
+
+    /// The same switches with another flash mode.
+    ///
+    /// - Parameter mode: The flash mode.
+    /// - Returns: A copy with `flashMode` replaced.
+    func withFlashMode(_ mode: AVCaptureDevice.FlashMode) -> ProcessingSwitches {
+        ProcessingSwitches(
+            qualityPrioritization: qualityPrioritization, appleProRAW: appleProRAW, zeroShutterLag: zeroShutterLag,
+            responsiveCapture: responsiveCapture, deferredDelivery: deferredDelivery, constantColor: constantColor,
+            contentAwareDistortionCorrection: contentAwareDistortionCorrection,
+            geometricDistortionCorrection: geometricDistortionCorrection, videoZoomFactor: videoZoomFactor,
+            flashMode: mode)
     }
 
     /// The switches nope. uses.
@@ -150,6 +166,22 @@ enum CapturePolicy {
             photoSettings: plan,
             switches: .leastProcessing
         )
+    }
+
+    /// A photo plan with the request's flash mode. The session is configured and prepared with
+    /// the flash off, so the session configuration never depends on the flash; each photo
+    /// takes the mode it was asked for. Bayer RAW supports the flash: the RAW rules in
+    /// `AVCapturePhotoOutput.h` don't restrict it; the mode must be one of the output's
+    /// `supportedFlashModes`, which `Lens.flashModes` lists.
+    ///
+    /// - Parameters:
+    ///   - plan: The session's photo plan.
+    ///   - flashMode: When the flash fires.
+    /// - Returns: The plan with the flash mode applied.
+    static func photoSettings(_ plan: PhotoSettingsPlan, flashMode: FlashMode) -> PhotoSettingsPlan {
+        PhotoSettingsPlan(
+            rawPixelFormat: plan.rawPixelFormat, processedFormat: plan.processedFormat,
+            switches: plan.switches.withFlashMode(flashMode.captureFlashMode))
     }
 
     /// The format of the file a plan produces: DNG for RAW, otherwise the processed format.

@@ -96,6 +96,9 @@ enum QuickControls {
     /// Every item builder, in display order. Add a feature's builder here, before
     /// ``hideControls(_:)``.
     static let builders: [@MainActor (CameraControlContext) -> QuickControlItem?] = [
+        light,
+        flash,
+        night,
         hideControls,
     ]
 
@@ -104,6 +107,54 @@ enum QuickControls {
     /// - Parameter context: The model and settings.
     static func current(_ context: CameraControlContext) -> [QuickControlItem] {
         builders.compactMap { $0(context) }
+    }
+
+    /// Light: the torch, a steady light for close subjects in the dark (issue #38). Shown only
+    /// on a lens with a torch. Its brightness is on the Light pill that appears while it is on.
+    ///
+    /// - Parameter context: The model and settings.
+    static func light(_ context: CameraControlContext) -> QuickControlItem? {
+        let light = context.model.light
+        guard light.supportsTorch else { return nil }
+        return QuickControlItem(
+            id: "light",
+            title: Text("Light", bundle: .module, comment: "Camera switch and its Voice Control name: turns on the phone's light (torch) and keeps it on while taking photos."),
+            systemImage: light.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill",
+            // On while the light is on or was refused, so a refused light (with its warning) is
+            // cleared by turning the switch off, and tried again by turning it on.
+            kind: .toggle(isOn: light.torch != .off) { context.send(.light(.setTorch($0))) })
+    }
+
+    /// Flash: Off, Auto or On (issue #38). Shown only on a lens with a flash, with the modes the
+    /// lens supports.
+    ///
+    /// - Parameter context: The model and settings.
+    static func flash(_ context: CameraControlContext) -> QuickControlItem? {
+        let light = context.model.light
+        guard light.supportsFlash else { return nil }
+        let settings = context.settings
+        return QuickControlItem(
+            id: "flash",
+            title: Text("Flash", bundle: .module, comment: "Camera menu and its Voice Control name: when the flash fires (Off, Auto, On)."),
+            systemImage: FlashText.systemImage(for: settings.flashMode),
+            kind: .menu(light.supportedFlashModes.map { mode in
+                QuickControlItem.Option(id: mode.rawValue, title: FlashText.name(of: mode), isSelected: settings.flashMode == mode) {
+                    settings.setFlashMode(mode)
+                }
+            }))
+    }
+
+    /// Night: red and black screens for working in the dark (issue #61). Remembered between
+    /// launches; nope. never changes the screen's brightness.
+    ///
+    /// - Parameter context: The model and settings.
+    static func night(_ context: CameraControlContext) -> QuickControlItem? {
+        let settings = context.settings
+        return QuickControlItem(
+            id: "night",
+            title: Text("Night Mode", bundle: .module, comment: "Switch and its Voice Control name: shows nope.'s screens in red on black for working in the dark. Keep \"nope.\" unchanged."),
+            systemImage: "moon.fill",
+            kind: .toggle(isOn: settings.isNightModeOn) { settings.setNightMode($0) })
     }
 
     /// Hide Controls: clean view, which leaves only the shutter, a Show Controls button and any
@@ -217,5 +268,30 @@ struct QuickControlButton: View {
         }
         .font(.footnote)
         .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// The words and symbols for flash modes.
+enum FlashText {
+    /// A flash mode's name, as in the Flash menu.
+    ///
+    /// - Parameter mode: The flash mode.
+    static func name(of mode: FlashMode) -> Text {
+        switch mode {
+        case .off: Text("Flash Off", bundle: .module, comment: "Flash menu item and pill: the flash never fires.")
+        case .auto: Text("Flash Auto", bundle: .module, comment: "Flash menu item and pill: the camera decides whether the flash fires.")
+        case .on: Text("Flash On", bundle: .module, comment: "Flash menu item and pill: the flash fires for every photo.")
+        }
+    }
+
+    /// The SF Symbol for a flash mode.
+    ///
+    /// - Parameter mode: The flash mode.
+    static func systemImage(for mode: FlashMode) -> String {
+        switch mode {
+        case .off: "bolt.slash.fill"
+        case .auto: "bolt.badge.automatic.fill"
+        case .on: "bolt.fill"
+        }
     }
 }

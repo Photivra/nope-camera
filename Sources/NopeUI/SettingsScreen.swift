@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
 /// (issue #68, "Settings"): Photos (formats, look), Privacy (the master switch, signing, the
-/// details), Camera (manual controls, clean view) and More (Accessibility, Honesty, About).
+/// details), Camera (manual controls, clean view, night mode) and More (Accessibility, Honesty, About).
 ///
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
@@ -112,7 +112,7 @@ public struct SettingsScreen: View {
         }
     }
 
-    /// Manual controls and clean view, each with its explanation under its name.
+    /// Manual controls, clean view and night mode, each with its explanation under its name.
     private var cameraSection: some View {
         Section {
             Toggle(
@@ -132,6 +132,26 @@ public struct SettingsScreen: View {
                     explanation: Text(
                         "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.",
                         bundle: .module, comment: "Explains the clean view switch."))
+            }
+            Toggle(isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) })) {
+                SettingLabel(
+                    title: Text("Night Mode", bundle: .module, comment: "Switch and its Voice Control name: shows nope.'s screens in red on black for working in the dark. Keep \"nope.\" unchanged."),
+                    explanation: Text(
+                        "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness: dim it in Control Center, or with Reduce White Point in the Accessibility settings.",
+                        bundle: .module,
+                        comment: "Explains the Night Mode switch. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS."))
+            }
+            if settings.isNightModeOn {
+                Toggle(
+                    isOn: Binding(
+                        get: { settings.tintsViewfinderInNightMode }, set: { settings.setTintsViewfinderInNightMode($0) })
+                ) {
+                    SettingLabel(
+                        title: Text("Red Viewfinder", bundle: .module, comment: "Switch: in night mode, the live camera picture on screen is shown in red too."),
+                        explanation: Text(
+                            "Shows the live picture in red too. Only the screen changes; photos keep their colors.",
+                            bundle: .module, comment: "Explains the Red Viewfinder switch, shown while night mode is on."))
+                }
             }
         } header: {
             Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")
