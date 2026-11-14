@@ -78,6 +78,16 @@ struct NopeApp: App {
                 guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
                 UIApplication.shared.open(url)
             })
+        // The last-photo thumbnail opens the Photos app (issue #36), only when the person taps
+        // it. Add-only access can't read the library, and iOS has no documented way to open
+        // Photos at one asset, so this opens Photos with its `photos-redirect:` URL, which isn't
+        // documented by Apple either (an owner decision; docs/TESTING.md, "On-device checks").
+        .environment(
+            \.openPhotosApp,
+            CameraAction {
+                guard let url = URL(string: "photos-redirect://") else { return }
+                UIApplication.shared.open(url)
+            })
         .onCameraCaptureEvent { event in
             guard event.phase == .ended else { return }
             Task { await model.send(.capture) }
@@ -135,7 +145,7 @@ struct NopeApp: App {
             signer: ContentCredentialsSigner(
                 keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
             reader: ImageIOReadBack(), library: PhotoKitLibrary(),
-            appVersion: version)
+            appVersion: version, thumbnailer: ImageIOThumbnailer())
     }
 
     /// The backend for this launch: the simulated one for a UI test scenario in Debug builds,

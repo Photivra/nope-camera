@@ -53,6 +53,8 @@ struct FakeSigner: PhotoSigning {
     var breaksFiles: Set<PhotoFormat> = []
     /// The settings the RAW was captured with, which the signed RAW is rebuilt for.
     var rawSettings = MetadataSettings()
+    /// The manifest summary each signed file carries.
+    var summary: ContentCredentialsSummary?
 
     func sign(_ file: PhotoFile) async throws -> PhotoFile {
         if failing.contains(file.format) { throw Failure() }
@@ -70,7 +72,7 @@ struct FakeSigner: PhotoSigning {
             data += HEIFBuilder.box("uuid", [1, 2])
         }
         if breaksFiles.contains(file.format) { data = Array(data.prefix(8)) }
-        return PhotoFile(format: file.format, data: Data(data))
+        return PhotoFile(format: file.format, data: Data(data), contentCredentials: summary)
     }
 }
 

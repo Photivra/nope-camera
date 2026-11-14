@@ -320,8 +320,10 @@ struct AutoExposureDial: View {
                 } label: {
                     Text("Reset", bundle: .module, comment: "Button that returns one manual control to automatic.")
                 }
+                // Filled white at 0, as Auto is on the manual dial; not disabled, because a dimmed
+                // button fails the contrast audit over the picture.
                 .buttonStyle(SelectableCapsuleStyle(isSelected: compensation == 0))
-                .disabled(compensation == 0)
+                .accessibilityAddTraits(compensation == 0 ? .isSelected : [])
             }
         }
         .foregroundStyle(.white)
