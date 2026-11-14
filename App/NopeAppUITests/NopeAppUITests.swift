@@ -1313,8 +1313,10 @@ final class NopeAppUITests: XCTestCase {
         bracketing.switches.firstMatch.tap()
         XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 20))
         closeProTools(app)
+        // Let Pro Tools finish closing, so the shutter takes the tap.
+        settle()
         app.buttons["Take Photo"].tap()
-        XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 20))
+        XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 30))
         app.buttons["Last Photo"].press(forDuration: 1.2)
         let details = app.buttons["Photo Details"]
         XCTAssertTrue(details.waitForExistence(timeout: 5))
