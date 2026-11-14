@@ -51,7 +51,10 @@ final class OverlayUITests: XCTestCase {
         let barBottom = navigationBar.exists ? navigationBar.frame.maxY : 0
         for issue in issues {
             if !checksDynamicType && issue.auditType == .dynamicType { continue }
-            if issue.element == nil && (issue.auditType == .contrast || issue.auditType == .textClipped) { continue }
+            // A finding the audit can't attach to any element can't be placed on screen; after a
+            // scroll at the largest text size the audit reports such Dynamic Type findings for
+            // rows it pushed past the edge. Findings on real elements still fail.
+            if issue.element == nil && [.contrast, .textClipped, .dynamicType].contains(issue.auditType) { continue }
             if let element = issue.element, element.exists, !window.contains(element.frame) { continue }
             if issue.auditType == .contrast, let element = issue.element, element.exists, element.frame.minY < barBottom { continue }
             // In the scrolling layout the shutter row is pinned over the bottom of the scroll
