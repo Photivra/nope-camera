@@ -26,7 +26,7 @@ Photos. Signing is not built yet, so photos are saved unsigned and the app says 
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
-| `NopeUI` | SwiftUI views. Now: `CameraScreen` (format badge, viewfinder, lens buttons, shutter, status, Settings button) and `SettingsScreen` (formats, privacy and signing, manual controls, Honesty, About and licenses) | `NopeCore`, SwiftUI |
+| `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
@@ -122,7 +122,43 @@ preview crosses the layers as an opaque `CameraPreviewSource`. The AVFoundation 
 is a `CaptureSessionPreviewSource`; the app target's `Viewfinder` view turns it into an
 `AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:settings:viewfinder:)`. The app also
 attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control take a
-photo.
+photo, and `CameraCommands`, so a hardware keyboard's Space bar does.
+
+`CaptureSessionPreviewSource.connect(_:)` attaches the session to the app's preview layer and
+keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`
+(`PreviewRotation`): the preview angle follows the interface, and the capture angle, applied to
+the photo output's connection before each photo, follows gravity. The photo output records the
+angle as the Exif orientation and doesn't rotate pixels (`AVCaptureSession.h`,
+`videoRotationAngle`), so it becomes the Orientation tag, a locked metadata item.
+
+### Camera layout
+
+The camera screen follows the approved layout in [`design/ux-v3.html`](design/ux-v3.html)
+(issue #68). `CameraLayout` chooses the arrangement from the space and the text size:
+
+- **iPhone (stacked):** top bar (pills, format chip, Settings), the whole 4:3 picture, the lens
+  row with the quick-controls button (⋯), the manual readout when manual controls are on, and the
+  shutter row (last photo, shutter, camera flip). When the bands don't fit below the picture, as
+  on a 4.7-inch iPhone, they overlay its bottom on a dark backing. The app target keeps the
+  iPhone interface in portrait (`AppDelegate`, `application(_:supportedInterfaceOrientationsFor:)`)
+  and tells `NopeUI` which way up the phone is (`EnvironmentValues.cameraUprightRotation`, from
+  `UIDevice.orientation`); icons and text blocks turn upright as units (`UprightUnit`), and the
+  chip, pills and warnings move to the picture's upper edge. While Settings or another sheet is
+  open, the app lets the interface rotate (`EnvironmentValues.cameraPresentsSheet`).
+- **iPad, or any window wider than tall (column):** the interface rotates; the picture sits
+  beside a trailing column with the shutter centered, and Settings and the format details open as
+  popovers. In a reduced window the camera shows the multitasking pause.
+- **Accessibility text sizes (scrolling):** the iPhone bands in a scroll view.
+
+Three registries let later features add to the camera without touching the layout:
+`QuickControls.builders` (tray items: buttons, switches or native menus), `StatePills.builders`
+(pills for settings not at their defaults, at most three then "+n") and
+`CameraWarnings.builders` (persistent amber chips, such as "Not Signed"). Feedback has three
+tiers: a good save is quiet (the last-photo slot with a teal seal, a light haptic and a
+low-priority VoiceOver announcement); anything that changes what the photo is stays as an amber
+chip; a failed capture or save is a banner that stays until dismissed or the next good save,
+takes VoiceOver focus and offers one action (Try Again or Open Settings, through
+`EnvironmentValues.openAppSettings`).
 
 ### From capture to Photos
 
@@ -206,7 +242,10 @@ controls (off) and clean view (off). Interfaces change it only through its metho
 last format can't be turned off; turning on one item turns the master switch off). Each change
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
 network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
-Settings button opens `SettingsScreen` as a sheet in every camera state.
+Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
+state. Settings is a short grouped list: Photos (formats, look), Privacy (the master switch,
+"Choose Details", signing), Camera (manual controls, clean view) and More (Accessibility,
+Honesty, About); explanations are in footers and on the detail screens.
 
 The app passes `NopeSettings.save` to `CameraModel.saveSettings` whenever it changes, so the
 next photo uses it. Location and the
@@ -217,7 +256,8 @@ The Honesty screen and About are static: every Honesty statement comes from
 [`research/privacy-claims.md`](research/privacy-claims.md), and About shows bundled copies of
 `LICENSE` and `NOTICE` (a unit test keeps them identical) with the source address as a link.
 Tapping it hands the `https` address to the system browser; nope. makes no network request,
-registers no URL scheme and opens no system setting.
+registers no URL scheme. The only system setting it opens is nope.'s own page in the Settings
+app, when the person presses Open Settings after declining camera or photo library access.
 
 ## The simulated backend
 

@@ -15,6 +15,8 @@ fallback on a lens without it, in memory. Each file is flattened with metadata b
 allowlist (`AVCapturePhotoFileDataRepresentationCustomizer.replacementMetadata(for:)`), and for
 RAW the system's own RAW image data is kept as the reference the read-back compares with. Its
 decisions are in tested types; the calls that need a camera are in `SystemCaptureHardware.swift`.
+``CaptureSessionPreviewSource/connect(_:)`` shows the session in the app's preview layer and
+keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`.
 
 ``PhotoKitLibrary`` adds checked photos to Photos with add-only access, a RAW and its processed
 file as one asset. Its decisions are in the tested `PhotoKitMapping`.

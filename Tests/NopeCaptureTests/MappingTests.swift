@@ -81,6 +81,19 @@ struct DeviceMappingTests {
         let session = AVCaptureSession()
         #expect(CaptureSessionPreviewSource(session: session).session === session)
     }
+
+    @MainActor
+    @Test func connectingALayerShowsTheSessionOnce() {
+        let session = AVCaptureSession()
+        let source = CaptureSessionPreviewSource(session: session)
+        let layer = AVCaptureVideoPreviewLayer()
+        source.connect(layer)
+        #expect(layer.session === session)
+        // Connecting the same layer again keeps the session and has no camera to rotate for.
+        source.connect(layer)
+        #expect(layer.session === session)
+        #expect(source.rotation.captureAngle == nil)
+    }
 }
 
 struct CaptureReadinessTests {

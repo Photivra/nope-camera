@@ -5,6 +5,7 @@ import NopeDevelop
 import NopeSigning
 import NopeUI
 import SwiftUI
+import UIKit
 
 /// The nope. app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
 ///
@@ -21,6 +22,12 @@ struct NopeApp: App {
 
     /// The person's settings, stored on the device only.
     @State private var settings = NopeSettings(defaults: Self.makeSettingsStore())
+
+    /// Keeps the iPhone camera in portrait while sheets rotate.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    /// Which way up the person holds the iPhone, for the camera's upright icons.
+    @State private var orientation = DeviceOrientation()
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -47,6 +54,9 @@ struct NopeApp: App {
             cameraScreen
             #endif
         }
+        // The Camera menu: Space takes a photo from a hardware keyboard, listed in the iPad
+        // menu bar and keyboard shortcuts overlay.
+        .commands { CameraCommands(model: model) }
     }
 
     /// The camera screen with the live viewfinder and the hardware shutter.
@@ -58,6 +68,16 @@ struct NopeApp: App {
         CameraScreen(model: model, settings: settings) { source in
             Viewfinder(source: source)
         }
+        .environment(\.cameraUprightRotation, orientation.rotation)
+        .environment(\.cameraPresentsSheet, SheetPresentationAction { AppDelegate.setSheetPresented($0) })
+        // Open Settings goes to nope.'s own page in the Settings app (UIKit,
+        // `openSettingsURLString`), opened only when the person taps the button.
+        .environment(
+            \.openAppSettings,
+            CameraAction {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            })
         .onCameraCaptureEvent { event in
             guard event.phase == .ended else { return }
             Task { await model.send(.capture) }

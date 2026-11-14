@@ -41,6 +41,7 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
+| `Sources/NopeCapture/PreviewRotation.swift` | `AVCaptureDevice.RotationCoordinator` needs a camera device | On-device check |
 | `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
 | `Sources/NopeCapture/PhotoKitLibrary.swift` | Asking for add-only access shows a system prompt, and adding changes the person's library | On-device check |
 | `Sources/NopeDevelop/CoreImageRAWRenderer.swift` | Core Image's RAW filter needs a real Bayer DNG; ImageIO and Core Image don't decode a hand-built one | On-device check |
@@ -90,7 +91,28 @@ check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Stand
 ```sh
 xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
+  -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' CODE_SIGNING_ALLOWED=NO
 ```
+
+The same tests run on an iPhone and an iPad Simulator, one at a time (running both at once
+stalled the test runner on the CI runner), in portrait and landscape (`XCUIDevice.orientation`).
+The iPhone camera layout stays in portrait when the device turns, and its icons and text turn
+upright; the tests check that the window stays portrait, the shutter stays below the picture,
+and Settings rotates. On iPad the window rotates and the shutter is in the column beside the
+picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
+4.7-inch layout, where the lens row overlays the bottom of the picture.
+
+`audit(_:)` in `NopeAppUITests.swift` runs every audit with these documented exceptions; every
+other finding fails the test:
+
+- an element cut by the window's edge (a form row below the fold), and a contrast finding with
+  no element, which comes from such a row: the audit measures the clipped edge;
+- a Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges the text
+  past the edge and can't measure it (the same text styles are measured higher up elsewhere);
+- on an iPhone held sideways, clipped-text and contrast findings on SwiftUI nodes the audit
+  can't tie to an element: it measures turned text in its unturned frame. The same views pass
+  every check in portrait; the turned layout is on the manual accessibility pass below.
 
 The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
 `-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
@@ -100,22 +122,25 @@ each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) shows the fallback badge |
+| `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the chip into its warning; full auto shows only the default controls; the camera flip; the format chip's sheet; the quick-controls tray (closes on the shutter and on ⋯); signing off in Settings shows the "Not Signed" chip, also in clean view; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
+| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the fallback chip and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
+| `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
+| `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
-| `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" message |
-| `signingFails` | The signer fails: the photo is saved unsigned, "Saved. Not signed: the signature couldn't be created.", shutter still enabled |
+| `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" banner with Open Settings |
+| `signingFails` | The signer fails: the photo is saved unsigned, the last-photo slot and the "Not Signed" chip say "Saved. Not signed: the signature couldn't be created.", shutter still enabled; also right-to-left, with the bottom row mirrored |
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
-| `captureFails` | The capture failure message |
+| `captureFails` | The capture failure banner: Try Again, Dismiss |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
-| `denied`, `noCamera` | The access-off and no-camera screens |
-| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Privacy (top and bottom), Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG look picker (shown only with HEIF or JPEG selected) and the privacy rules (master switch on by default, one item on makes it "Custom", signing on, locked items read "Locked") |
+| `denied`, `noCamera` | The access-off screen with Open Settings, and the no-camera screen |
+| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Look, Choose Details (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the Look row (shown only with HEIF or JPEG selected) and the privacy rules (master switch and signing on by default, one item on makes it "Custom", locked items read "Locked") |
 
 UI test launches store settings in their own `UserDefaults` suite, emptied at each launch
 (`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
 settings are never touched.
-| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the six slots; a panel with the lens's range; Manual and "All Auto"; P/S/I/M; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; interval progress and Stop; clean view; the list at the largest text size; right-to-left |
-| `allow` (clean view) | The no-RAW badge stays visible in clean view |
+| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the M pill; the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; the lock pill after AE-L, which unlocks; the M pill turns manual controls off; interval progress and Stop; clean view from the tray; the list at the largest text size; right-to-left |
+| `allow` (clean view) | The no-RAW chip stays visible in clean view |
 
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
@@ -141,7 +166,8 @@ the local toolchain). Jobs:
 | Job | What it runs |
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator, the coverage gate |
-| `ui-tests` | App build and the UI smoke test with accessibility audits |
+| `ui-tests` | App build and the UI tests with accessibility audits on the iPhone 18 Pro Simulator |
+| `ui-tests-ipad` | The same UI tests on the iPad Air 11-inch (M4) Simulator, in a separate job |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
@@ -158,18 +184,32 @@ iPad:
   `signingCredential.untrusted` failing;
 - capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
   viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
-  a photo and show "Saved and signed."; a lens
-  without Bayer RAW shows the fallback badge; a phone call or another camera app shows the interruption message, and
+  a photo and the last-photo slot appears with a teal seal; a lens
+  without Bayer RAW turns the format chip amber; a phone call or another camera app shows the interruption message, and
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
 - saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
-  prompt appears once and declining it shows the "isn't allowed to add photos" message; a RAW
+  prompt appears once and declining it shows the "isn't allowed to add photos" banner, whose
+  Open Settings opens nope.'s page in the Settings app; a RAW
   plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
 - manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
   controls turned on: see "Manual controls on a device" below;
+- rotation (`PreviewRotation`, `AppDelegate`, `DeviceOrientation`): on an iPhone 16 Pro Max in
+  both landscape orientations, mounted on a tripod, the camera layout stays put while the chip,
+  pills, warnings, banners, readouts and buttons turn upright and nothing collides; Settings and
+  the format sheet rotate and the camera returns to its layout when they close; on an iPad Air in
+  all four orientations the interface rotates with the controls in the trailing column; with the
+  rear and front cameras the viewfinder is upright and not stretched, and each saved DNG's
+  Orientation tag (read with `scripts/dump-tags.swift`) shows it upright (the developed HEIF and
+  JPEG are rendered upright and carry Orientation 1); Split View or Stage Manager shows the
+  multitasking pause; a hardware keyboard's Space bar takes a photo;
+- contrast over real scenes: the chip, pills, warnings, banner, dial, thumbnail and shutter ring
+  stay readable against a white wall and a yellow surface, with and without Reduce Transparency
+  and Increase Contrast; the haptic on a good save is light;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
-  largest text size).
+  largest text size), including the turned icons and text on an iPhone held sideways, the failure
+  banner taking VoiceOver focus, and the low-priority "Saved and signed" announcement.
 
 ### Manual controls on a device
 

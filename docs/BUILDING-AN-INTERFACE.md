@@ -59,6 +59,16 @@ model keeps the combination valid for the lens. Offer "All Auto" whenever
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
 a warning that changes what the photo is.
 
+## The standard camera layout
+
+`NopeUI`'s camera screen is one interface on this contract, following the approved layout in
+[`design/ux-v3.html`](design/ux-v3.html). If you extend it rather than replace it, add camera
+toggles to `QuickControls.builders`, non-default states to `StatePills.builders` and persistent
+warnings to `CameraWarnings.builders`; the layout places them. The app target supplies three
+environment values: `cameraUprightRotation` (which way up the iPhone is held),
+`cameraPresentsSheet` (so the app can rotate sheets while the camera stays in portrait) and
+`openAppSettings` (Open Settings buttons; leave it `nil` and they are hidden).
+
 ## Rules that still apply
 
 Your interface follows AGENTS.md like the standard one: native controls, Dynamic Type, VoiceOver

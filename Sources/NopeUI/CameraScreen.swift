@@ -12,8 +12,13 @@ import SwiftUI
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
 /// backed by `AVCaptureVideoPreviewLayer`).
 ///
-/// A Settings button at the top opens ``SettingsScreen`` as a sheet, in every state, so settings
-/// and the Honesty screen are reachable before the camera is allowed.
+/// A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
+/// state, so settings and the Honesty screen are reachable before the camera is allowed. Before
+/// camera access is asked, ``FirstRunView`` says what nope. does, then asks.
+///
+/// The app target can set ``SwiftUI/EnvironmentValues/openAppSettings`` (Open Settings buttons),
+/// ``SwiftUI/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
+/// ``SwiftUI/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
 ///
 /// ```swift
 /// CameraScreen(model: model, settings: settings) { source in
@@ -49,48 +54,46 @@ public struct CameraScreen<Viewfinder: View>: View {
         self.viewfinder = viewfinder
     }
 
+    /// Opens nope.'s page in the Settings app, or `nil` when the app can't.
+    @Environment(\.openAppSettings) private var openAppSettings
+
+    /// Tells the app that a sheet opened or closed, so it can rotate.
+    @Environment(\.cameraPresentsSheet) private var presentsSheet
+
     /// The screen's content for the current state.
     public var body: some View {
-        // The Settings button sits above the content, not over it, so scrolling content at large
-        // text sizes never passes under it.
+        // Outside the ready camera, the Settings button sits above the content, not over it, so
+        // scrolling content at large text sizes never passes under it. The ready camera has it
+        // in its own top bar or control column.
         VStack(spacing: 0) {
-            settingsButton
+            if !isReady {
+                HStack {
+                    Spacer()
+                    SettingsButton { showsSettings = true }
+                }
+                .padding(.horizontal)
+            }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(.background)
-            .sheet(isPresented: $showsSettings) {
-                SettingsScreen(settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
-            }
-            .preferredColorScheme(.dark)
-            .task { await model.send(.start) }
-            .task { await model.observeEvents() }
-            .task { await model.manual.observeReadings() }
-            // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
-            .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
+        // A popover on iPad; on iPhone the system shows it as a sheet.
+        .adaptivePresentation(isPresented: $showsSettings) {
+            SettingsScreen(settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
+                .frame(idealWidth: 480, idealHeight: 720)
+        }
+        .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
+        .preferredColorScheme(.dark)
+        .task { await model.send(.start) }
+        .task { await model.observeEvents() }
+        .task { await model.manual.observeReadings() }
+        // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
+        .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
     }
 
-    /// Opens the settings. Its name, "Settings", is what VoiceOver reads and what Voice Control
-    /// users say; the Large Content Viewer shows it at accessibility text sizes.
-    private var settingsButton: some View {
-        HStack {
-            Spacer()
-            Button {
-                showsSettings = true
-            } label: {
-                Label {
-                    Text("Settings", bundle: .module, comment: "Title of the settings screen, and the camera button that opens it.")
-                } icon: {
-                    Image(systemName: "gearshape")
-                }
-                .labelStyle(.iconOnly)
-                .frame(minWidth: 44, minHeight: 44)
-            }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
-            .accessibilityShowsLargeContentViewer()
-        }
-        .padding(.horizontal)
+    /// Whether the camera is ready, so the Settings button is in the camera layout.
+    private var isReady: Bool {
+        if case .ready = model.state { true } else { false }
     }
 
     /// The view for the model's current state.
@@ -101,7 +104,7 @@ public struct CameraScreen<Viewfinder: View>: View {
                 Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
             }
         case .needsPermission:
-            PermissionRequestView { Task { await model.send(.requestPermission) } }
+            FirstRunView { Task { await model.send(.requestPermission) } }
         case .permissionDenied:
             StatusMessageView(
                 title: Text("Camera Access Is Off", bundle: .module, comment: "Title when camera access was declined."),
@@ -111,7 +114,18 @@ public struct CameraScreen<Viewfinder: View>: View {
                     bundle: .module,
                     comment: "Explains how to allow camera access after it was declined. Keep \"nope.\" unchanged: it is the app's name."
                 )
-            )
+            ) {
+                if let openAppSettings {
+                    Button {
+                        openAppSettings()
+                    } label: {
+                        Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                }
+            }
         case .unavailable:
             StatusMessageView(
                 title: Text("No Camera Available", bundle: .module, comment: "Title when the device has no usable camera."),
@@ -123,7 +137,7 @@ public struct CameraScreen<Viewfinder: View>: View {
                 )
             )
         case .ready(let capabilities):
-            CameraReadyView(model: model, lenses: capabilities.lenses) {
+            CameraReadyView(model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true }) {
                 if let source = model.previewSource {
                     viewfinder(source)
                 } else {
@@ -142,39 +156,5 @@ extension CameraScreen where Viewfinder == Color {
     ///   - settings: The person's settings.
     public init(model: CameraModel, settings: NopeSettings) {
         self.init(model: model, settings: settings) { _ in Color.black }
-    }
-}
-
-/// Explains why nope. needs the camera and offers one button to ask.
-struct PermissionRequestView: View {
-    /// Called when the person presses the button.
-    let requestAccess: () -> Void
-
-    /// Creates the permission request.
-    ///
-    /// - Parameter requestAccess: Called when the person presses the button.
-    init(requestAccess: @escaping () -> Void) {
-        self.requestAccess = requestAccess
-    }
-
-    /// The explanation and the button.
-    var body: some View {
-        StatusMessageView(
-            title: Text("Camera Access Needed", bundle: .module, comment: "Title before the app asks for camera access."),
-            systemImage: "camera",
-            message: Text(
-                "nope. uses the camera only to take the photos you ask for.",
-                bundle: .module,
-                comment: "Explains why the app asks for camera access. Keep \"nope.\" unchanged: it is the app's name."
-            )
-        ) {
-            Button(action: requestAccess) {
-                Text("Allow Camera Access", bundle: .module, comment: "Button that shows the system camera permission prompt.")
-            }
-            // The bordered style, not the prominent one: white text on the system blue fill
-            // fails the accessibility audit's contrast check (WCAG 2.2 AA, 4.5:1) in dark mode.
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-        }
     }
 }

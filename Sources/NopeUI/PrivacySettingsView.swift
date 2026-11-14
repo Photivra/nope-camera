@@ -5,8 +5,8 @@ import SwiftUI
 /// "Metadata plan".
 ///
 /// The master switch comes first, then one switch per optional item with what turning it off
-/// costs, then signing (outside the master switch), then the items every file keeps, each
-/// marked locked with the reason. All wording is a privacy claim, so it lives in
+/// costs, then the items every file keeps, each marked locked with the reason. The signing switch
+/// is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
 /// `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 /// `MetadataSettings`; this view only shows them.
 struct PrivacySettingsView: View {
@@ -25,10 +25,14 @@ struct PrivacySettingsView: View {
         Form {
             masterSection
             itemsSection
-            signingSection
             lockedSection
         }
-        .navigationTitle(Text("Privacy", bundle: .module, comment: "Settings row and screen title: which details are saved in each photo, and signing."))
+        .navigationTitle(Self.title)
+    }
+
+    /// The settings row and screen title, "Choose Details".
+    static var title: Text {
+        Text("Choose Details", tableName: "Honesty", bundle: .module, comment: "Settings row and screen title: choose which optional details, such as the date or camera model, are saved in each photo.")
     }
 
     /// "Remove all optional details".
@@ -62,22 +66,6 @@ struct PrivacySettingsView: View {
             }
         } header: {
             Text("In Each Photo", tableName: "Honesty", bundle: .module, comment: "Section header above the switches for optional details saved in each photo.")
-        }
-    }
-
-    /// The Content Credentials signature, outside the master switch.
-    private var signingSection: some View {
-        Section {
-            Toggle(isOn: Binding(get: { settings.signsPhotos }, set: { settings.setSignsPhotos($0) })) {
-                SettingLabel(
-                    title: Text("Sign Each Photo", tableName: "Honesty", bundle: .module, comment: "Switch that adds a Content Credentials signature to each photo."),
-                    explanation: Text(
-                        "Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.",
-                        tableName: "Honesty", bundle: .module,
-                        comment: "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo."))
-            }
-        } header: {
-            Text("Content Credentials", tableName: "Honesty", bundle: .module, comment: "Section header for the photo signature. Content Credentials is the name of the C2PA signature standard's label.")
         }
     }
 

@@ -1,9 +1,12 @@
 import NopeCore
 import SwiftUI
 
-/// The settings: a native `Form` in a navigation stack, shown as a sheet from the camera.
+/// The settings: a short inset grouped list in a navigation stack, opened from the camera
+/// (issue #68, "Settings"): Photos (formats, look), Privacy (the master switch, signing, the
+/// details), Camera (manual controls, clean view) and More (Accessibility, Honesty, About).
 ///
-/// Each row shows its current value, so the state reads at a glance. The screen renders a
+/// One line per row; each switch's explanation is in a footer or on its detail screen. Each
+/// row shows its current value, so the state reads at a glance. The screen renders a
 /// `NopeSettings` and changes it only through its methods, which hold the rules (AGENTS.md,
 /// "One direction of flow"). It follows the system appearance.
 ///
@@ -38,34 +41,23 @@ public struct SettingsScreen: View {
     public var body: some View {
         NavigationStack {
             Form {
-                captureSection
+                photosSection
                 privacySection
-                aboutSection
+                cameraSection
+                moreSection
             }
             .navigationTitle(Text("Settings", bundle: .module, comment: "Title of the settings screen, and the camera button that opens it."))
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    // The system checkmark, as iOS shows for a sheet's confirm button. Its name,
-                    // "Done", is what VoiceOver reads and Voice Control users say. The Large
-                    // Content Viewer shows it at accessibility text sizes.
-                    Button {
-                        dismiss()
-                    } label: {
-                        Label {
-                            Text("Done", bundle: .module, comment: "Button that closes the settings.")
-                        } icon: {
-                            Image(systemName: "checkmark")
-                        }
-                        .labelStyle(.iconOnly)
-                    }
-                    .accessibilityShowsLargeContentViewer()
+                    // The system checkmark, as iOS shows for a sheet's confirm button.
+                    DoneButton { dismiss() }
                 }
             }
         }
     }
 
-    /// Formats, then the camera screen options.
-    @ViewBuilder private var captureSection: some View {
+    /// Formats and, while HEIF or JPEG is selected, the look.
+    private var photosSection: some View {
         Section {
             NavigationLink {
                 FormatsSettingsView(settings: settings, deviceSupportsBayerRAW: deviceSupportsBayerRAW)
@@ -76,9 +68,52 @@ public struct SettingsScreen: View {
                     Text("Formats", bundle: .module, comment: "Settings row and screen title: the file formats each photo is saved in.")
                 }
             }
+            if settings.savesDevelopedFormat {
+                LookSettingsView.link(settings: settings)
+            }
         } header: {
-            Text("Capture", bundle: .module, comment: "Settings section header for how photos are taken and saved.")
+            // Its own key: "Photos" alone is the photo count picker in Pro Tools, translated as a count.
+            Text(String(localized: "Settings section: Photos", defaultValue: "Photos", bundle: .module, comment: "Settings section header for the formats and look each photo is saved with (a heading, not a count)."))
         }
+    }
+
+    /// The master switch, the details screen and signing; each detail's explanation is on its
+    /// screen.
+    private var privacySection: some View {
+        Section {
+            Toggle(
+                isOn: Binding(
+                    get: { settings.metadata.removesAllOptionalDetails },
+                    set: { settings.setRemovesAllOptionalDetails($0) })
+            ) {
+                Text("Remove All Optional Details", tableName: "Honesty", bundle: .module, comment: "Master switch: when on, photos keep only the details they need to open.")
+            }
+            NavigationLink {
+                PrivacySettingsView(settings: settings)
+            } label: {
+                LabeledContent {
+                    PrivacySettingsView.summary(of: settings.metadata)
+                } label: {
+                    PrivacySettingsView.title
+                }
+            }
+            // The explanation is under the switch's name, as on the detail screens: as a section
+            // footer the accessibility audit reported it as not following Dynamic Type.
+            Toggle(isOn: Binding(get: { settings.signsPhotos }, set: { settings.setSignsPhotos($0) })) {
+                SettingLabel(
+                    title: Text("Sign Each Photo", tableName: "Honesty", bundle: .module, comment: "Switch that adds a Content Credentials signature to each photo."),
+                    explanation: Text(
+                        "Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo."))
+            }
+        } header: {
+            Text("Privacy", bundle: .module, comment: "Settings row and screen title: which details are saved in each photo, and signing.")
+        }
+    }
+
+    /// Manual controls and clean view, each with its explanation under its name.
+    private var cameraSection: some View {
         Section {
             Toggle(
                 isOn: Binding(get: { settings.showsManualControls }, set: { settings.setShowsManualControls($0) })
@@ -98,27 +133,19 @@ public struct SettingsScreen: View {
                         "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.",
                         bundle: .module, comment: "Explains the clean view switch."))
             }
+        } header: {
+            Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")
         }
     }
 
-    /// The privacy and signing row.
-    private var privacySection: some View {
+    /// Accessibility, Honesty and About.
+    private var moreSection: some View {
         Section {
             NavigationLink {
-                PrivacySettingsView(settings: settings)
+                AccessibilitySettingsView()
             } label: {
-                LabeledContent {
-                    PrivacySettingsView.summary(of: settings.metadata)
-                } label: {
-                    Text("Privacy", bundle: .module, comment: "Settings row and screen title: which details are saved in each photo, and signing.")
-                }
+                AccessibilitySettingsView.title
             }
-        }
-    }
-
-    /// Honesty and About.
-    private var aboutSection: some View {
-        Section {
             NavigationLink {
                 HonestyScreen()
             } label: {
@@ -129,6 +156,8 @@ public struct SettingsScreen: View {
             } label: {
                 Text("About and Licenses", bundle: .module, comment: "Settings row and screen title: version, license and third-party notices.")
             }
+        } header: {
+            Text("More", bundle: .module, comment: "Settings section header above Accessibility, Honesty and About.")
         }
     }
 }

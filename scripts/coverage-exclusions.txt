@@ -9,6 +9,9 @@ Sources/NopeCapture/SystemCameraAuthorization.swift
 # has none. Its decisions are in LensCatalog, CapturePolicy, PhotoSettingsFactory and
 # CaptureReadiness, which are fully tested.
 Sources/NopeCapture/SystemCaptureHardware.swift
+# The rotation coordinator needs a camera device; the Simulator has none. The layer hookup is in
+# CaptureSessionPreviewSource, which is fully tested.
+Sources/NopeCapture/PreviewRotation.swift
 # The Secure Enclave doesn't exist in the iOS Simulator.
 Sources/NopeSigning/SecureEnclaveSigningKey.swift
 # Adding to the photo library shows the add-only Photos prompt and changes the person's library;

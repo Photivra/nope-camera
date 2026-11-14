@@ -1,0 +1,122 @@
+import NopeCore
+import SwiftUI
+
+/// A persistent warning about what the photo is, such as "Not Signed" (issue #68, "Feedback
+/// tiers"): an amber chip with a symbol and words that stays until the cause goes away, even in
+/// clean view. Tapping it shows the explanation.
+///
+/// The no-RAW fallback is not in this list: the format chip itself turns into its warning.
+struct CameraWarning: Identifiable {
+    /// A stable identifier, such as "signing".
+    let id: String
+
+    /// The chip's words, such as "Not Signed".
+    let title: Text
+
+    /// What it means, in one or two sentences. VoiceOver reads it as the chip's value.
+    let explanation: Text
+
+    /// Creates a warning.
+    ///
+    /// - Parameters:
+    ///   - id: A stable identifier.
+    ///   - title: The chip's words.
+    ///   - explanation: What it means.
+    init(id: String, title: Text, explanation: Text) {
+        self.id = id
+        self.title = title
+        self.explanation = explanation
+    }
+}
+
+/// The registry of warning chips: each cause adds one function here that returns its warning,
+/// or `nil` when it doesn't apply. Location tagging (issue #43) adds "Location On".
+@MainActor
+enum CameraWarnings {
+    /// Every warning builder, in display order. Add a cause's builder here.
+    static let builders: [@MainActor (CameraControlContext, SignatureStatus?) -> CameraWarning?] = [
+        signing,
+    ]
+
+    /// The warnings that apply now, in display order.
+    ///
+    /// - Parameters:
+    ///   - context: The model and settings.
+    ///   - lastSignature: The signature of the last photo saved this session, or `nil`.
+    static func current(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> [CameraWarning] {
+        builders.compactMap { $0(context, lastSignature) }
+    }
+
+    /// "Not Signed" while signing is off in Settings, or after the last photo couldn't be
+    /// signed. A missing signature is always stated, never hidden (issue #1).
+    ///
+    /// - Parameters:
+    ///   - context: The model and settings.
+    ///   - lastSignature: The signature of the last photo saved this session, or `nil`.
+    static func signing(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning? {
+        let explanation: Text
+        if !context.settings.signsPhotos {
+            explanation = Text(
+                "Photos aren't signed: signing is off in Settings.", tableName: "Honesty", bundle: .module,
+                comment: "Warning on the camera while the person has turned signing off in the app's settings: new photos get no Content Credentials signature. Honesty wording: never imply photos are signed.")
+        } else if case .unsigned(let reason) = lastSignature, reason != .turnedOff {
+            explanation = Text(verbatim: CaptureMessages.message(for: .unsigned(reason)))
+        } else {
+            return nil
+        }
+        return CameraWarning(
+            id: "signing",
+            title: Text("Not Signed", tableName: "Honesty", bundle: .module, comment: "Warning chip on the camera: photos are saved without a Content Credentials signature. Honesty wording: never imply photos are signed."),
+            explanation: explanation)
+    }
+}
+
+/// An amber warning chip. Tapping it shows the explanation in a popover; VoiceOver reads the
+/// explanation as its value without opening it.
+struct WarningChip: View {
+    /// The warning.
+    let warning: CameraWarning
+
+    /// Whether the explanation is shown.
+    @State private var showsExplanation = false
+
+    /// Creates the chip.
+    ///
+    /// - Parameter warning: The warning.
+    init(warning: CameraWarning) {
+        self.warning = warning
+    }
+
+    /// The chip.
+    var body: some View {
+        Button {
+            showsExplanation = true
+        } label: {
+            Label {
+                warning.title
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(CameraStyle.warning)
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .darkBacking(Capsule())
+            .overlay(Capsule().strokeBorder(CameraStyle.warning, lineWidth: 1))
+            .frame(minHeight: CameraStyle.minimumTarget)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(warning.explanation)
+        .accessibilityShowsLargeContentViewer()
+        .popover(isPresented: $showsExplanation) {
+            warning.explanation
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding()
+                .frame(idealWidth: 320)
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+}

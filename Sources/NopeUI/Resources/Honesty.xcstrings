@@ -661,6 +661,72 @@
         }
       }
     },
+    "Choose Details": {
+      "comment": "Settings row and screen title: choose which optional details, such as the date or camera model, are saved in each photo. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Details auswählen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elegir detalles"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Choisir les détails"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scegli i dettagli"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "詳細を選択"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "세부 정보 선택"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kies details"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Escolher detalhes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "选择详细信息"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "選擇詳細資訊"
+          }
+        }
+      }
+    },
     "Color Data and White Balance": {
       "comment": "Locked metadata item: color matrices and the as-shot white balance. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -1189,6 +1255,72 @@
         }
       }
     },
+    "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it.": {
+      "comment": "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto ist ein einzelnes Bild vom Sensor, als RAW gesichert mit so wenig Verarbeitung, wie dieses Telefon zulässt. HEIF- und JPEG-Kopien werden daraus entwickelt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto es un único fotograma del sensor, guardado como RAW con el menor procesamiento que permite este teléfono. Las copias HEIF y JPEG se revelan a partir de él."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque photo est une seule image du capteur, enregistrée en RAW avec aussi peu de traitement que ce téléphone le permet. Les copies HEIF et JPEG sont développées à partir de celle-ci."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni foto è un singolo fotogramma del sensore, salvato come RAW con la minima elaborazione consentita da questo telefono. Le copie HEIF e JPEG vengono sviluppate da esso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真はセンサーからの1フレームで、この電話で可能な限り処理の少ないRAWとして保存されます。HEIFとJPEGのコピーはそこから現像されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 사진은 센서에서 얻은 한 프레임으로, 이 휴대폰이 허용하는 한 최소한의 처리만 거친 RAW로 저장됩니다. HEIF 및 JPEG 사본은 이를 바탕으로 현상됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto is één beeld van de sensor, bewaard als RAW met zo weinig bewerking als deze telefoon toelaat. HEIF- en JPEG-kopieën worden ervan ontwikkeld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto é um único quadro do sensor, salvo como RAW com o mínimo de processamento que este telefone permite. As cópias HEIF e JPEG são reveladas a partir dele."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片都是传感器的单帧，以本机允许的最低处理程度存储为 RAW。HEIF 和 JPEG 副本由它冲印而成。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片都是感光元件的單一影格，以本機允許的最低處理程度儲存為 RAW。HEIF 和 JPEG 副本由它沖印而成。"
+          }
+        }
+      }
+    },
     "Each photo is separate. Nothing is combined. Keep nope. open while the series runs.": {
       "comment": "Explains interval shooting. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
       "extractionState": "manual",
@@ -1251,6 +1383,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "每張照片都是獨立的，不會合併。拍攝期間請保持 nope. 開啟。"
+          }
+        }
+      }
+    },
+    "Each photo is signed, so changes can be detected.": {
+      "comment": "First-run statement 2 of 3: photos get a Content Credentials signature (on by default). Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto wird signiert, damit Änderungen erkannt werden können."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto se firma, para que se puedan detectar los cambios."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque photo est signée, pour que les modifications puissent être détectées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni foto è firmata, così le modifiche possono essere rilevate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真に署名するので、変更を検出できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "모든 사진에 서명하므로 변경 사항을 감지할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto wordt ondertekend, zodat wijzigingen kunnen worden opgemerkt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto é assinada, para que alterações possam ser detectadas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片都会签名，因此可以检测到更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片都會簽署，因此可以偵測到變更。"
           }
         }
       }
@@ -2707,6 +2905,72 @@
         }
       }
     },
+    "Not Signed": {
+      "comment": "Warning chip on the camera: photos are saved without a Content Credentials signature. Honesty wording: never imply photos are signed. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht signiert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sin firmar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non signée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non firmata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "署名なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "서명 안 됨"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet ondertekend"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não assinada"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未签名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未簽署"
+          }
+        }
+      }
+    },
     "Not saved: nope. couldn't confirm that the photo holds only the details you chose.": {
       "comment": "Shown when a finished photo file contained a metadata detail that is not on the privacy list, or couldn't be checked, so the app saved nothing. Honesty and privacy wording. Keep the name nope. unchanged, lowercase with its period.",
       "extractionState": "manual",
@@ -3631,6 +3895,138 @@
         }
       }
     },
+    "Photo Format": {
+      "comment": "VoiceOver and Voice Control name of the chip at the top of the camera that says what the next photo will be. Tapping it explains the format and lists the formats. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotoformat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formato de foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Format de photo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formato foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真のフォーマット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 포맷"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotoformaat"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Formato da foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片格式"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片格式"
+          }
+        }
+      }
+    },
+    "Photos aren't signed: signing is off in Settings.": {
+      "comment": "Warning on the camera while the person has turned signing off in the app's settings: new photos get no Content Credentials signature. Honesty wording: never imply photos are signed. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos werden nicht signiert: Signieren ist in den Einstellungen ausgeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Las fotos no se firman: la firma está desactivada en Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les photos ne sont pas signées : la signature est désactivée dans Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le foto non sono firmate: la firma è disattivata in Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真は署名されません：設定で署名がオフになっています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진에 서명되지 않습니다: 설정에서 서명이 꺼져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto’s worden niet ondertekend: ondertekenen staat uit in Instellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "As fotos não são assinadas: a assinatura está desativada em Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片不会签名：已在设置中关闭签名。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片不會簽署：已在設定中關閉簽署。"
+          }
+        }
+      }
+    },
     "Photos may privately compare landmark regions with Apple's servers (Enhanced Visual Search). You can turn it off in Settings › Apps › Photos.": {
       "comment": "Claim 10 in docs/research/privacy-claims.md. Keep \"may\": it is not verified whether it is on by default. Use the names iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -3759,6 +4155,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "「照片」會使用裝置上的分析來辨識人物與寵物，並將場景分類。你為人物取的名稱會透過 iCloud 同步。"
+          }
+        }
+      }
+    },
+    "Photos with as little processing as this phone allows.": {
+      "comment": "First-run statement 1 of 3. Must not claim more than the English: as little processing as the phone allows, never zero. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos mit so wenig Verarbeitung, wie dieses Telefon zulässt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos con el menor procesamiento que permite este teléfono."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Des photos avec aussi peu de traitement que ce téléphone le permet."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto con la minima elaborazione consentita da questo telefono."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "この電話で可能な限り処理の少ない写真。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 휴대폰이 허용하는 한 최소한의 처리만 거친 사진."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto’s met zo weinig bewerking als deze telefoon toelaat."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos com o mínimo de processamento que este telefone permite."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片的处理程度尽可能低，以本机允许的最低程度为限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片的處理程度盡可能低，以本機允許的最低程度為限。"
           }
         }
       }
@@ -6333,6 +6795,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 不含任何網路程式碼，也不會建立任何網路連線。"
+          }
+        }
+      }
+    },
+    "nope. never connects to the internet and keeps nothing about you.": {
+      "comment": "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. verbindet sich nie mit dem Internet und speichert nichts über dich."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. nunca se conecta a internet y no guarda nada sobre ti."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. ne se connecte jamais à Internet et ne conserve rien sur vous."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. non si connette mai a internet e non conserva nulla su di te."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. はインターネットに接続せず、あなたに関する情報を何も保持しません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.은 인터넷에 연결하지 않으며 사용자에 대한 정보를 전혀 보관하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. maakt nooit verbinding met het internet en bewaart niets over jou."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. nunca se conecta à internet e não guarda nada sobre você."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 从不连接互联网，也不保留任何关于你的信息。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 從不連接網際網路，也不保留任何關於你的資訊。"
           }
         }
       }

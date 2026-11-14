@@ -11,15 +11,21 @@ repository and the "Building an interface" article in `NopeCore`.
 Every string is in the module's `Localizable.xcstrings`, in all eleven launch languages, except
 honesty claims (the RAW badge, the no-RAW fallback wording, the privacy and signing settings and
 the Honesty screen), which are in `Honesty.xcstrings` and need a fluent human review before
-release. ``CameraScreen`` has a Settings button that opens ``SettingsScreen``: formats, the
-metadata switches and signing (`NopeSettings`), manual controls, the Honesty screen,
-and About with the license and notices.
-When the "Manual controls" option is on, the camera screen adds the manual controls: an EV
-meter, the exposure modes, a six-slot grid in a fixed order with one panel per control (native
-sliders and pickers), Pro Tools (metering, AE and AF locks, bracketing, interval shooting) and
-"All Auto". At accessibility text sizes the grid becomes a list with steppers. Each slot is a
-VoiceOver adjustable element. Clean view hides every non-essential control and keeps honesty
-warnings.
+release.
+
+``CameraScreen`` follows the approved clean layout (issue #68, `docs/design/ux-v3.html`): in
+full auto a format chip, Settings, the lens row below the 4:3 picture with a quick-controls
+button, the shutter, a camera flip and the last-photo slot. State pills, warning chips, the
+quick-controls tray and the manual readout row with its dial appear only when needed; later
+features register their items in the tray, pill and warning registries. A first-run screen comes
+before the camera prompt. The iPhone layout stays in portrait and turns icons and text upright;
+on iPad the controls are in a trailing column. ``SettingsScreen`` is a short grouped list:
+Photos, Privacy, Camera and More (Accessibility, Honesty, About and licenses).
+
+The app target supplies ``CameraCommands`` (the Space bar takes a photo) and three environment
+values: ``SwiftUI/EnvironmentValues/cameraUprightRotation``,
+``SwiftUI/EnvironmentValues/cameraPresentsSheet`` and
+``SwiftUI/EnvironmentValues/openAppSettings``.
 
 The live viewfinder view is supplied by the app target, because `NopeUI` imports only `NopeCore`
 and SwiftUI. The
@@ -32,3 +38,10 @@ is checked by the UI tests with `performAccessibilityAudit()`.
 
 - ``CameraScreen``
 - ``SettingsScreen``
+
+### App target hooks
+
+- ``CameraCommands``
+- ``UprightRotation``
+- ``CameraAction``
+- ``SheetPresentationAction``
