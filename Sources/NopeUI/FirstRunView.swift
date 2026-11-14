@@ -51,7 +51,7 @@ struct FirstRunView: View {
                         "Next, iOS asks for camera access. Photos access is asked the first time you save.", bundle: .module,
                         comment: "Note under Continue on the first-run screen. iOS is a product name; keep it unchanged.")
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(CameraStyle.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
                 }

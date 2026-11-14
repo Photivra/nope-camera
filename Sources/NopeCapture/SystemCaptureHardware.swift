@@ -102,6 +102,10 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// Notification observer tokens, removed on deinit.
     private var observers: [any NSObjectProtocol] = []
 
+    /// Observes `isTorchAvailable` of the camera whose torch is on, or `nil` while the light is
+    /// off. Queue-confined.
+    private var torchObservation: NSKeyValueObservation?
+
     /// Logs failures without values (AGENTS.md, "Logs mark every value private").
     private let logger = Logger(subsystem: "com.photivra.nope", category: "Capture")
 
@@ -120,6 +124,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     deinit {
         observers.forEach(NotificationCenter.default.removeObserver)
         readingObservations.forEach { $0.invalidate() }
+        torchObservation?.invalidate()
         continuation.finish()
         readingsContinuation.finish()
     }
@@ -219,11 +224,76 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         return try result.get()
     }
 
+    /// Turns the attached camera's torch on at a level, or off, on `queue`.
+    func setTorch(level: Double?) async -> TorchStatus {
+        await perform { self.switchTorch(level: level) }
+    }
+
     // MARK: - Queue-confined work
+
+    /// Switches the attached camera's torch. Call only on `queue`.
+    ///
+    /// A level the device can't give right now (it is too hot) fails with
+    /// `AVErrorTorchLevelUnavailable` (`AVCaptureDevice.h`, `setTorchModeOn(level:)`); the light
+    /// is then left off and reported unavailable, rather than silently brighter or dimmer.
+    ///
+    /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+    /// - Returns: The light's state afterwards.
+    private func switchTorch(level: Double?) -> TorchStatus {
+        guard let device = currentInput?.device, device.hasTorch else { return .off }
+        guard let level else {
+            turnTorchOff(device)
+            return .off
+        }
+        guard device.isTorchAvailable, device.isTorchModeSupported(.on) else { return .unavailable }
+        do {
+            try device.lockForConfiguration()
+        } catch {
+            logger.error("Capture: the camera could not be locked for the torch")
+            return .unavailable
+        }
+        defer { device.unlockForConfiguration() }
+        do {
+            try device.setTorchModeOn(level: Float(LightModel.clampedTorchLevel(level)))
+        } catch {
+            logger.error("Capture: the torch level was not available")
+            device.torchMode = .off
+            return .unavailable
+        }
+        observeTorchAvailability(of: device)
+        return .on(level: LightModel.clampedTorchLevel(level))
+    }
+
+    /// Turns a camera's torch off, if it is on, and stops observing its availability. Called
+    /// before the camera leaves the session, so the light never stays on without a session
+    /// (AGENTS.md, "Battery"). Call only on `queue`.
+    ///
+    /// - Parameter device: The camera.
+    private func turnTorchOff(_ device: AVCaptureDevice) {
+        torchObservation?.invalidate()
+        torchObservation = nil
+        guard device.hasTorch, device.torchMode != .off, (try? device.lockForConfiguration()) != nil else { return }
+        device.torchMode = .off
+        device.unlockForConfiguration()
+    }
+
+    /// Reports `CaptureEvent.torchUnavailable` when the system makes the torch unavailable
+    /// while it is on, for example because the device is too hot (`isTorchAvailable` is
+    /// key-value observable). Call only on `queue`.
+    ///
+    /// - Parameter device: The camera whose torch is on.
+    private func observeTorchAvailability(of device: AVCaptureDevice) {
+        let continuation = continuation
+        torchObservation?.invalidate()
+        torchObservation = device.observe(\.isTorchAvailable) { device, _ in
+            if !device.isTorchAvailable { continuation.yield(.torchUnavailable) }
+        }
+    }
 
     /// Stops the session, waits for it to stop, then removes every input and output. Call only
     /// on `queue`.
     private func tearDown() {
+        if let device = currentInput?.device { turnTorchOff(device) }
         if session.isRunning { session.stopRunning() }
         session.beginConfiguration()
         session.inputs.forEach(session.removeInput)
@@ -257,6 +327,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         defer { session.commitConfiguration() }
         if session.canSetSessionPreset(.photo) { session.sessionPreset = .photo }
         if let currentInput {
+            turnTorchOff(currentInput.device)
             session.removeInput(currentInput)
             self.currentInput = nil
         }
@@ -301,7 +372,11 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                 PhotoDimensions(width: Int($0.width), height: Int($0.height))
             },
             fieldOfViewDegrees: Double(format.videoFieldOfView),
-            manualControls: Self.manualSupport(of: device)
+            manualControls: Self.manualSupport(of: device),
+            // Read with this camera attached: the list is "for the current capture session
+            // configuration" (`AVCapturePhotoOutput.supportedFlashModes`).
+            flashModes: device.hasFlash ? photoOutput.supportedFlashModes.compactMap(FlashMode.init) : [],
+            hasTorch: device.hasTorch && device.isTorchModeSupported(.on)
         )
     }
 

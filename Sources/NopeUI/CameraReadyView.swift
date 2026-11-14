@@ -58,6 +58,9 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
 
+    /// Whether night mode is on, so the sheets opened here are red too.
+    private var isNightMode: Bool { settings.isNightModeOn }
+
     /// The space the screen has.
     @State private var size = CGSize.zero
 
@@ -142,12 +145,14 @@ struct CameraReadyView<Viewfinder: View>: View {
         .accessibilityHidden(showsProTools)
         .fullScreenCover(isPresented: $showsProTools) {
             ProToolsSheet(model: model, settings: settings)
+                .nightModeStyle(isNightMode)
         }
         .adaptivePresentation(isPresented: $showsFormats) {
             if let format = model.captureFormat {
                 FormatDetailsSheet(
                     settings: settings, format: format,
                     deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
+                    .nightModeStyle(isNightMode)
                     .frame(idealWidth: 420, idealHeight: 560)
                     // Opaque: a translucent sheet or popover lets the live picture through and
                     // fails the contrast audit.
@@ -324,9 +329,7 @@ struct CameraReadyView<Viewfinder: View>: View {
 
     /// The top bar's items in portrait.
     @ViewBuilder private var topBarItems: some View {
-        if showsControls {
-            StatePillRow(pills: StatePills.current(context))
-        }
+        StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
         Spacer(minLength: 0)
         formatChip
         if showsControls {
@@ -434,9 +437,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                 VStack(alignment: .leading, spacing: CameraStyle.targetSpacing) {
                     if clusterOverPicture {
                         HStack(spacing: CameraStyle.targetSpacing) {
-                            if showsControls {
-                                StatePillRow(pills: StatePills.current(context))
-                            }
+                            StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
                             formatChip
                         }
                     }
@@ -510,7 +511,7 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// a tap closes the tray.
     private var picture: some View {
         ZStack {
-            viewfinder
+            viewfinderLayer
                 .accessibilityIgnoresInvertColors()
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text("Viewfinder", bundle: .module, comment: "VoiceOver name of the live camera view."))
@@ -523,6 +524,17 @@ struct CameraReadyView<Viewfinder: View>: View {
         .contentShape(.rect)
         .gesture(cleanViewSwipe, isEnabled: layout != .scrolling)
         .simultaneousGesture(TapGesture().onEnded { showsTray = false }, isEnabled: showsTray)
+    }
+
+    /// The live viewfinder; in night mode with natural colors, a clear frame that
+    /// ``CameraScreen`` fills from behind the red interface (``NaturalViewfinderFrame``), so the
+    /// red tint doesn't reach the picture. The photo is never changed either way.
+    @ViewBuilder private var viewfinderLayer: some View {
+        if isNightMode && !settings.tintsViewfinderInNightMode {
+            Color.clear.anchorPreference(key: NaturalViewfinderFrame.self, value: .bounds) { $0 }
+        } else {
+            viewfinder
+        }
     }
 
     /// Swipe down on the picture for clean view, up to bring the controls back.
@@ -718,5 +730,24 @@ struct ShowControlsButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// Where the ready camera reserves room for a viewfinder in natural colors while night mode is
+/// on, for ``CameraScreen`` to draw it behind the red interface (issue #61). `nil` otherwise.
+struct NaturalViewfinderFrame: PreferenceKey {
+    /// Creates the key. It holds no state.
+    init() {}
+
+    /// No frame: the viewfinder is drawn in place.
+    static var defaultValue: Anchor<CGRect>? { nil }
+
+    /// Keeps the first frame reported.
+    ///
+    /// - Parameters:
+    ///   - value: The frame so far.
+    ///   - nextValue: The next frame reported.
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
     }
 }

@@ -96,6 +96,14 @@ struct NopeApp: App {
         .task(id: settings.startsInCleanView) {
             await model.send(.setCleanView(settings.startsInCleanView))
         }
+        // The remembered flash mode and light brightness (issue #38); the light itself always
+        // starts off.
+        .task(id: settings.flashMode) {
+            await model.send(.light(.setFlashMode(settings.flashMode)))
+        }
+        .task(id: settings.torchLevel) {
+            await model.send(.light(.setTorchLevel(settings.torchLevel)))
+        }
     }
 
     /// The level's motion readings: Core Motion, or in Debug builds launched by the UI tests, a

@@ -67,7 +67,8 @@ func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> Captu
 
 Takes one photo, in memory only, and rejects it if its pixel buffer is blank.
 
-- Parameter request: The lens and format; must match the last ``startSession(_:)``.
+- Parameter request: The lens and format; must match the last ``startSession(_:)``. Its
+  flash mode applies to this photo only.
 - Returns: The photo.
 - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
   `CaptureError.blankPicture` if ``PictureCheck`` finds the photo's buffer zero-filled
@@ -172,6 +173,19 @@ func setExposureReadingsEnabled(_ enabled: Bool) async
 Turns the camera's readings on or off.
 
 - Parameter enabled: Whether to send readings.
+
+## `AVFoundationCaptureBackend/setTorch(level:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the running lens's torch on at a level, or off.
+
+- Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+- Returns: The light's state; `TorchStatus.off` while the session isn't configured.
 
 ## `AVFoundationCaptureBackend/startSession(_:)`
 
@@ -450,12 +464,34 @@ let fieldOfViewDegrees: Double
 
 The active format's horizontal field of view, in degrees (`videoFieldOfView`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:)`
+## `CameraDeviceDescription/flashModes`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none)
+let flashModes: [FlashMode]
+```
+
+The flash modes the photo output supports with this camera attached
+(`AVCapturePhotoOutput.supportedFlashModes`).
+
+## `CameraDeviceDescription/hasTorch`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let hasTorch: Bool
+```
+
+Whether the camera has a torch that can be turned on (`hasTorch` and
+`isTorchModeSupported(.on)`).
+
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:flashModes:hasTorch:)`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
 ```
 
 Creates a camera description.
@@ -474,6 +510,8 @@ Creates a camera description.
   - photoDimensions: The supported maximum photo sizes, as reported.
   - fieldOfViewDegrees: The horizontal field of view, in degrees.
   - manualControls: The camera's answers about manual control. Defaults to none.
+  - flashModes: The supported flash modes. Defaults to none.
+  - hasTorch: Whether the camera has a torch. Defaults to `false`.
 
 ## `CameraDeviceDescription/isVirtual`
 
@@ -729,6 +767,23 @@ Starts or stops observing the attached camera's exposure, focus and white balanc
 
 - Parameter enabled: Whether to send readings.
 
+## `CaptureHardware/setTorch(level:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the attached camera's torch on at a level, or off.
+
+The system may refuse a level while the device is hot (`AVErrorTorchLevelUnavailable`)
+or make the torch unavailable (`isTorchAvailable`); the light then stays off.
+
+- Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+- Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
+  is attached.
+
 ## `CaptureHardware/stop()`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
@@ -764,6 +819,25 @@ The format of the file a plan produces: DNG for RAW, otherwise the processed for
 
 - Parameter plan: The photo plan.
 - Returns: The file's format, which chooses its metadata allowlist.
+
+## `CapturePolicy/photoSettings(_:flashMode:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+static func photoSettings(_ plan: PhotoSettingsPlan, flashMode: FlashMode) -> PhotoSettingsPlan
+```
+
+A photo plan with the request's flash mode. The session is configured and prepared with
+the flash off, so the session configuration never depends on the flash; each photo
+takes the mode it was asked for. Bayer RAW supports the flash: the RAW rules in
+`AVCapturePhotoOutput.h` don't restrict it; the mode must be one of the output's
+`supportedFlashModes`, which `Lens.flashModes` lists.
+
+- Parameters:
+  - plan: The session's photo plan.
+  - flashMode: When the flash fires.
+- Returns: The plan with the flash mode applied.
 
 ## `CapturePolicy/photoSettings(for:)`
 
@@ -939,6 +1013,30 @@ let session: AVCaptureSession
 
 The session to show in an `AVCaptureVideoPreviewLayer`.
 
+## `FlashMode/captureFlashMode`
+
+internal, declared in `Sources/NopeCapture/FlashMode+AVFoundation.swift`
+
+```swift
+var captureFlashMode: AVCaptureDevice.FlashMode { get }
+```
+
+The AVFoundation flash mode for `AVCapturePhotoSettings.flashMode`.
+
+## `FlashMode/init(_:)`
+
+internal, declared in `Sources/NopeCapture/FlashMode+AVFoundation.swift`
+
+```swift
+init?(_ mode: AVCaptureDevice.FlashMode)
+```
+
+Converts an AVFoundation flash mode, such as one of the photo output's
+`supportedFlashModes`.
+
+- Parameter mode: The AVFoundation flash mode.
+- Returns: `nil` for a mode added in a later iOS, which nope. doesn't offer.
+
 ## `FourCharacterCode`
 
 internal, declared in `Sources/NopeCapture/FourCharacterCode.swift`
@@ -1113,7 +1211,8 @@ Turns the cameras the hardware reports into the lenses `NopeCore` publishes.
 Rules (capability survey, item 1, and AGENTS.md, "Honesty"):
 - only physical cameras: virtual multi-camera devices and unknown types are dropped;
 - a lens's RAW format is its first Bayer RAW format; Apple ProRAW never counts;
-- lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front.
+- lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front;
+- the front camera gets no flash modes: nope. uses no screen flash (issue #38).
 
 ## `LensCatalog/lenses(from:)`
 
@@ -1745,8 +1844,9 @@ Creates settings for one photo. Settings can't be reused, so call it for every c
   processed image and no embedded thumbnail.
 - A fallback plan gives one HEVC (HEIF) or JPEG image in its file container.
 
-Every photo uses the plan's prioritization (`.speed`), the flash off, and content-aware
-distortion correction and constant color off. No location is supplied, so no GPS
+Every photo uses the plan's prioritization (`.speed`), the plan's flash mode (off unless
+the person chose the flash, issue #38), and content-aware distortion correction and
+constant color off. No location is supplied, so no GPS
 metadata is written by the app.
 
 - Parameters:
@@ -2021,7 +2121,10 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 let flashMode: AVCaptureDevice.FlashMode
 ```
 
-The flash. Off in this version.
+The flash. Off for starting the camera and for brackets (which don't support it,
+`AVCapturePhotoBracketSettings`); a single photo takes the request's mode
+(``CapturePolicy/photoSettings(_:flashMode:)``). The flash only adds light: no
+processing switch changes with it.
 
 ## `ProcessingSwitches/geometricDistortionCorrection`
 
@@ -2095,6 +2198,19 @@ let videoZoomFactor: Double
 ```
 
 The device zoom factor. 1.0: Bayer RAW requires it, and nope. never zooms digitally.
+
+## `ProcessingSwitches/withFlashMode(_:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+func withFlashMode(_ mode: AVCaptureDevice.FlashMode) -> ProcessingSwitches
+```
+
+The same switches with another flash mode.
+
+- Parameter mode: The flash mode.
+- Returns: A copy with `flashMode` replaced.
 
 ## `ProcessingSwitches/zeroShutterLag`
 
@@ -2401,6 +2517,16 @@ func setReadingsEnabled(_ enabled: Bool) async
 ```
 
 Starts or stops the readings, on `queue`.
+
+## `SystemCaptureHardware/setTorch(level:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the attached camera's torch on at a level, or off, on `queue`.
 
 ## `SystemCaptureHardware/stop()`
 

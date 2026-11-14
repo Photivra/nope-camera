@@ -39,6 +39,27 @@ public final class NopeSettings {
     /// or ``setOverlays(_:)``.
     public private(set) var overlays: OverlayOptions
 
+    /// When the flash fires, remembered between launches. ``FlashMode/off`` by default. The app
+    /// passes it to ``CameraModel/light`` with ``LightIntent/setFlashMode(_:)``.
+    public private(set) var flashMode: FlashMode
+
+    /// The torch's brightness, remembered between launches (the torch itself always starts off).
+    /// ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
+    /// with ``LightIntent/setTorchLevel(_:)``.
+    public private(set) var torchLevel: Double
+
+    /// Whether night mode is on: every nope. screen in red on black, to keep eyes used to the
+    /// dark (issue #61). Off by default, remembered between launches, never switched on or off
+    /// automatically. nope. never changes the screen's brightness; people use the device's own
+    /// brightness control.
+    ///
+    /// Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
+    public private(set) var isNightModeOn: Bool
+
+    /// Whether night mode also tints the live viewfinder red. Off by default: the viewfinder
+    /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
+    public private(set) var tintsViewfinderInNightMode: Bool
+
     /// Where the settings are stored.
     private let defaults: UserDefaults
 
@@ -58,6 +79,11 @@ public final class NopeSettings {
         showsManualControls = defaults.bool(forKey: Key.showsManualControls)
         startsInCleanView = defaults.bool(forKey: Key.startsInCleanView)
         overlays = OverlayOptions(defaults: defaults)
+        flashMode = defaults.string(forKey: Key.flashMode).flatMap(FlashMode.init(rawValue:)) ?? .off
+        torchLevel = defaults.object(forKey: Key.torchLevel) == nil
+            ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
+        isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
+        tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
         migrateManualControlsOption()
     }
 
@@ -197,6 +223,38 @@ public final class NopeSettings {
         options.store(in: defaults)
     }
 
+    /// Sets when the flash fires, and saves the change.
+    ///
+    /// - Parameter mode: The flash mode.
+    public func setFlashMode(_ mode: FlashMode) {
+        flashMode = mode
+        defaults.set(mode.rawValue, forKey: Key.flashMode)
+    }
+
+    /// Sets the torch's brightness, and saves the change.
+    ///
+    /// - Parameter level: The brightness, moved inside ``LightModel/torchLevelRange``.
+    public func setTorchLevel(_ level: Double) {
+        torchLevel = LightModel.clampedTorchLevel(level)
+        defaults.set(torchLevel, forKey: Key.torchLevel)
+    }
+
+    /// Turns night mode on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether nope.'s screens are red on black.
+    public func setNightMode(_ isOn: Bool) {
+        isNightModeOn = isOn
+        defaults.set(isOn, forKey: Key.isNightModeOn)
+    }
+
+    /// Sets whether night mode tints the live viewfinder red, and saves the change.
+    ///
+    /// - Parameter isOn: Whether the viewfinder is tinted in night mode.
+    public func setTintsViewfinderInNightMode(_ isOn: Bool) {
+        tintsViewfinderInNightMode = isOn
+        defaults.set(isOn, forKey: Key.tintsViewfinderInNightMode)
+    }
+
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
     /// once: a stored value is kept unless this model already has one, and the old key is
     /// removed.
@@ -224,5 +282,13 @@ public final class NopeSettings {
         static let legacyManualControls = "manualControlsEnabled"
         /// Whether the camera starts in clean view, a Boolean.
         static let startsInCleanView = "NopeSettings.startsInCleanView"
+        /// When the flash fires, a ``FlashMode`` raw value.
+        static let flashMode = "NopeSettings.flashMode"
+        /// The torch's brightness, a number from 0.01 to 1.
+        static let torchLevel = "NopeSettings.torchLevel"
+        /// Whether night mode is on, a Boolean.
+        static let isNightModeOn = "NopeSettings.isNightModeOn"
+        /// Whether night mode tints the viewfinder, a Boolean.
+        static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
     }
 }
