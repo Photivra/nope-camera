@@ -1518,6 +1518,61 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 The backing's shape.
 
+## `DetailRow`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct DetailRow
+```
+
+A row with a title on the leading side and a value on the trailing side that wraps under it
+at large text sizes.
+
+## `DetailRow/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row.
+
+## `DetailRow/init(title:value:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(title: Text, value: Text)
+```
+
+Creates a row.
+
+- Parameters:
+  - title: The title.
+  - value: The value.
+
+## `DetailRow/title`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The title.
+
+## `DetailRow/value`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let value: Text
+```
+
+The value.
+
 ## `DoneButton`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
@@ -1608,6 +1663,18 @@ Opens nope.'s page in the Settings app, for the Open Settings buttons (camera ac
 declined, photos access declined). `nil` hides those buttons, so an interface without a
 way to open Settings shows no button that does nothing. The app target sets it with
 `UIApplication.openSettingsURLString`.
+
+## `EnvironmentValues/openPhotosApp`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var openPhotosApp: CameraAction? { get set }
+```
+
+Opens the Photos app, for the last-photo thumbnail (issue #36). `nil` makes a tap on the
+thumbnail show the photo's details instead, and hides Open in Photos. The app target sets
+it; it runs only when the person taps.
 
 ## `FailureAction`
 
@@ -1730,6 +1797,62 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 Takes the photo again.
+
+## `FileDetailsRows`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct FileDetailsRows
+```
+
+One file's rows: its format and size, then its pixel size, bit depth and, for a DNG, the
+color filter pattern, levels and lens corrections.
+
+## `FileDetailsRows/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The rows, as one element per file for VoiceOver.
+
+## `FileDetailsRows/file`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let file: PhotoDetails.File
+```
+
+The file.
+
+## `FileDetailsRows/init(file:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(file: PhotoDetails.File)
+```
+
+Creates the rows.
+
+- Parameter file: The file.
+
+## `FileDetailsRows/levels(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func levels(_ values: [Double]) -> String
+```
+
+Level values as a list, such as "528, 528, 528, 528".
+
+- Parameter values: The values.
+- Returns: The list, in the current language.
 
 ## `FileOptionsSettingsView`
 
@@ -2345,6 +2468,19 @@ internal, declared in `Sources/NopeUI/HonestyScreen.swift`
 ```
 
 The heading.
+
+## `Image/photo(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+static func photo(_ thumbnail: PhotoThumbnail) -> Image?
+```
+
+An image of a photo's thumbnail, made from its RGBA pixels with Core Graphics.
+
+- Parameter thumbnail: The thumbnail.
+- Returns: The image, or `nil` if Core Graphics can't make one.
 
 ## `IntervalProgressView`
 
@@ -3089,6 +3225,150 @@ static var red: Color { get }
 ```
 
 The one color of night mode: pure sRGB red.
+
+## `PhotoDetailsSections`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct PhotoDetailsSections
+```
+
+The sections of the photo details.
+
+## `PhotoDetailsSections/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The sections.
+
+## `PhotoDetailsSections/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details shown.
+
+## `PhotoDetailsSections/init(details:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(details: PhotoDetails)
+```
+
+Creates the sections.
+
+- Parameter details: The details shown.
+
+## `PhotoDetailsSections/milliseconds(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func milliseconds(_ duration: Duration) -> String
+```
+
+A duration as milliseconds, such as "112 ms", in the current language.
+
+- Parameter duration: The duration.
+- Returns: The text.
+
+## `PhotoDetailsSections/processing(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func processing(_ processing: PhotoDetails.Processing) -> Text
+```
+
+What processing a file went through, in plain words.
+
+- Parameter processing: The processing.
+- Returns: The text, from `Honesty.xcstrings`.
+
+## `PhotoDetailsSections/reason(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func reason(_ state: PhotoDetails.ItemReceipt.State) -> Text
+```
+
+Why an optional item isn't in the files.
+
+- Parameter state: What happened to the item.
+- Returns: The reason, from `Honesty.xcstrings`.
+
+## `PhotoDetailsSheet`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct PhotoDetailsSheet
+```
+
+"What's in This Photo": the facts read back from a photo nope. just saved (issue #53),
+opened from the last-photo thumbnail.
+
+A native list with one section per topic, each with a heading VoiceOver can jump between:
+the files, the exposure as written, the processing, the signature, the details kept and left
+out, everything the read-back found, and the timings. Every value comes from
+`SavedPhoto.details`; a value the file doesn't hold isn't shown.
+
+Privacy: on screen only. Nothing is logged, stored or copied, and the text can't be selected
+(no clipboard access).
+
+## `PhotoDetailsSheet/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list, with a Done button.
+
+## `PhotoDetailsSheet/init(photos:openPhoto:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(photos: [SavedPhoto], openPhoto: (() -> Void)?)
+```
+
+Creates the sheet.
+
+- Parameters:
+  - photos: The photos of the last press of the shutter.
+  - openPhoto: Opens Photos, or `nil`.
+
+## `PhotoDetailsSheet/openPhoto`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let openPhoto: (() -> Void)?
+```
+
+Opens Photos, or `nil` when the app can't.
+
+## `PhotoDetailsSheet/photos`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let photos: [SavedPhoto]
+```
+
+The photos of the last press of the shutter: one, or a bracket's frames.
 
 ## `PrivacySettingsView`
 
@@ -4812,8 +5092,10 @@ The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and 
 until the first photo of the session, never an empty square. Then it shows the last photo with
 a teal seal when every file was signed, or an amber mark when one wasn't.
 
-The last-photo thumbnail that opens the photo (issue #36) fills ``image`` and makes the slot
-a button; until then the slot shows a photo symbol.
+With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
+without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
+Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
+Control offer both, Open in Photos and Photo Details.
 
 ## `ThumbnailSlot/body`
 
@@ -4835,12 +5117,12 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 The photo's thumbnail, or `nil` to show a photo symbol.
 
-## `ThumbnailSlot/init(photos:image:isBusy:)`
+## `ThumbnailSlot/init(photos:image:isBusy:openPhoto:showDetails:)`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 ```swift
-@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool)
+@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil)
 ```
 
 Creates the slot.
@@ -4849,6 +5131,8 @@ Creates the slot.
   - photos: The photos saved by the last press of the shutter, or `nil` before the first.
   - image: The photo's thumbnail, or `nil` to show a photo symbol.
   - isBusy: Whether a photo is being taken or saved now.
+  - openPhoto: Opens Photos, or `nil` when the app can't.
+  - showDetails: Shows the photo's details, or `nil` for none.
 
 ## `ThumbnailSlot/isBusy`
 
@@ -4860,6 +5144,16 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 Whether a photo is being taken or saved now.
 
+## `ThumbnailSlot/openPhoto`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let openPhoto: (() -> Void)?
+```
+
+Opens Photos, or `nil` when the app can't.
+
 ## `ThumbnailSlot/photos`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
@@ -4869,6 +5163,16 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 The photos saved by the last press of the shutter, or `nil` before the first.
+
+## `ThumbnailSlot/showDetails`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let showDetails: (() -> Void)?
+```
+
+Shows the photo's details (issue #53), or `nil` for none.
 
 ## `ThumbnailSlot/side`
 

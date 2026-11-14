@@ -210,7 +210,20 @@ takes VoiceOver focus and offers one action (Try Again or Open Settings, through
       "not signed" and the reason in the status
    4. PhotoKitLibrary (NopeCapture): add-only access, one PHAssetCreationRequest per asset;
       the DNG as `.photo` and its HEIF (or JPEG) as `.alternatePhoto`
+   5. in memory, for the interface: SavedPhoto.thumbnail (PhotoThumbnailing: ImageIOThumbnailer,
+      NopeDevelop) and SavedPhoto.details (PhotoDetails, built from each file's read-back, the
+      plan, the signer's ContentCredentialsSummary and SaveTimings)
 ```
+
+**Last photo and its details (issues #36, #53).** The read-back already holds every tag; the
+TIFF reader also records each numeric tag's values (`MetadataInventory.Tag.values`, at most 16,
+never for offset tags), and `ImageIOReadBack` reports ImageIO's pixel size and bit depth
+(`ImageProperties`). `PhotoDetails` turns these into plain facts; it estimates nothing, so a
+value the file doesn't hold is left out. `PhotoSaver` and `CameraModel` time each step with an
+injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The camera screen
+shows the thumbnail in the last-photo slot: a tap opens Photos through
+`EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
+and accessibility actions offer Open in Photos and Photo Details.
 
 **Why the DNG's metadata is written by AVFoundation.** ImageIO can't write DNG: on macOS 27 and
 the iOS 27 Simulator, `CGImageDestinationCopyTypeIdentifiers()` doesn't list

@@ -35,6 +35,12 @@ public struct SavedPhoto: Equatable, Sendable {
     /// Every tag, block and property of each saved file, for the "What's in your last photo"
     /// screen (issue #1). Kept in memory only, because add-only access can't read Photos.
     public let metadata: [PhotoFormat: MetadataInventory]
+    /// A small picture of the photo for the last-photo thumbnail (issue #36), or `nil` when
+    /// there is no thumbnailer or the file couldn't be read. In memory only.
+    public let thumbnail: PhotoThumbnail?
+    /// "What's in this photo": the facts read back from the saved files (issue #53), or `nil`
+    /// for a record made outside ``PhotoSaver``. In memory only.
+    public let details: PhotoDetails?
 
     /// Creates a saved-photo record.
     ///
@@ -43,13 +49,17 @@ public struct SavedPhoto: Equatable, Sendable {
     ///   - isProcessedFallback: Whether it is the processed fallback.
     ///   - signature: The signature status.
     ///   - metadata: Each file's read-back inventory.
+    ///   - thumbnail: The photo's thumbnail, or `nil`.
+    ///   - details: The photo's details, or `nil`.
     public init(
         formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus,
-        metadata: [PhotoFormat: MetadataInventory]
+        metadata: [PhotoFormat: MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil
     ) {
         self.formats = formats
         self.isProcessedFallback = isProcessedFallback
         self.signature = signature
         self.metadata = metadata
+        self.thumbnail = thumbnail
+        self.details = details
     }
 }

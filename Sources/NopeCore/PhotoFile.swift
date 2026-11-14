@@ -13,6 +13,9 @@ public struct PhotoFile: Equatable, Sendable {
     /// RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
     /// uses it to describe the file truthfully in its Content Credentials.
     public let isProcessedByDevice: Bool
+    /// What the file's Content Credentials manifest says, set by the signer on the file it
+    /// returns; `nil` for an unsigned file. The "What's in this photo" details show it.
+    public let contentCredentials: ContentCredentialsSummary?
 
     /// Creates a file.
     ///
@@ -21,10 +24,16 @@ public struct PhotoFile: Equatable, Sendable {
     ///   - data: The file's bytes.
     ///   - isProcessedByDevice: Whether the phone's camera processed it (the fallback of a lens
     ///     without Bayer RAW). Defaults to `false`.
-    public init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false) {
+    ///   - contentCredentials: What the file's manifest says, for a signed file. Defaults to
+    ///     `nil`.
+    public init(
+        format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false,
+        contentCredentials: ContentCredentialsSummary? = nil
+    ) {
         self.format = format
         self.data = data
         self.isProcessedByDevice = isProcessedByDevice
+        self.contentCredentials = contentCredentials
     }
 }
 
@@ -35,15 +44,20 @@ public struct MetadataReadBack: Equatable, Sendable {
     public let file: MetadataFileReader.Result
     /// Every key in ImageIO's property dictionaries for the image, as ``ImageIOKey`` values.
     public let imageIOKeys: [ImageIOKey]
+    /// The image's size and bit depth as ImageIO reports them, or `nil` when the reader doesn't
+    /// supply them.
+    public let image: ImageProperties?
 
     /// Creates a read-back result.
     ///
     /// - Parameters:
     ///   - file: The project reader's result.
     ///   - imageIOKeys: ImageIO's keys.
-    public init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey]) {
+    ///   - image: ImageIO's size and bit depth, or `nil`.
+    public init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey], image: ImageProperties? = nil) {
         self.file = file
         self.imageIOKeys = imageIOKeys
+        self.image = image
     }
 }
 

@@ -34,6 +34,19 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
   runs before the read-back, so a signed file is checked like any other (see "Content
   Credentials").
+- **Last photo and its details:** after each save, the last-photo thumbnail beside the shutter
+  is made from the saved HEIF or JPEG (or the DNG when only RAW is saved) with ImageIO, in memory
+  (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from the
+  thumbnail's long-press menu or its VoiceOver action) lists what the read-back found in each
+  saved file (pixel size, bit depth, file size, the DNG's color filter pattern, black and white
+  levels and whether it stores lens correction instructions; the exposure tags as written; every
+  tag, block and property by name), which optional details were written or left out and why, the
+  signature (the manifest's claim generator and description, and the SHA-256 hash of the
+  manifest store the C2PA library returned), and how long each step took. Both are kept in
+  memory for this session only: never written to disk, logged or copied, and gone when the app
+  quits. nope. can't reopen older photos (add-only access). Tapping the thumbnail opens the
+  Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
+  Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
   HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in the app's own `UserDefaults` on the device. They are
   never synced or sent. The name and copyright fields of `SaveSettings` stay empty: Settings

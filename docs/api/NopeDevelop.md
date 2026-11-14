@@ -248,6 +248,20 @@ The uniform type identifier ImageIO must report for a format
 - Parameter format: The file's format.
 - Returns: The type identifier.
 
+## `ImageIOReadBack/imageProperties(of:)`
+
+internal, declared in `Sources/NopeDevelop/ImageIOReadBack.swift`
+
+```swift
+static func imageProperties(of properties: [String : Any]) -> ImageProperties
+```
+
+The image's size and bit depth from its ImageIO properties, for the details.
+
+- Parameter properties: The image's properties.
+- Returns: `kCGImagePropertyPixelWidth`, `kCGImagePropertyPixelHeight` and
+  `kCGImagePropertyDepth`, each `nil` if absent.
+
 ## `ImageIOReadBack/init()`
 
 public, declared in `Sources/NopeDevelop/ImageIOReadBack.swift`
@@ -286,6 +300,73 @@ Reads a file back.
 - Returns: The byte reader's result and ImageIO's property keys.
 - Throws: `CaptureError.metadataNotAllowed` if ImageIO can't open the file as exactly one
   image of its format.
+
+## `ImageIOThumbnailer`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+struct ImageIOThumbnailer
+```
+
+Makes the last-photo thumbnail from a saved file with ImageIO, in memory (issue #36).
+
+`CGImageSourceCreateThumbnailAtIndex` decodes the file at a small size, turned upright by its
+orientation tag (`kCGImageSourceCreateThumbnailWithTransform`). The image is always made from
+the full image (`kCGImageSourceCreateThumbnailFromImageAlways`): nope.'s files embed no
+thumbnail. The result is drawn into an sRGB RGBA bitmap, the layout `PhotoThumbnail`
+describes.
+
+Privacy: nothing is cached or written to disk (`kCGImageSourceShouldCache` is off); the
+pixels stay in memory (AGENTS.md, "Photos never linger").
+
+## `ImageIOThumbnailer/defaultMaximumPixelSize`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+static let defaultMaximumPixelSize: Int
+```
+
+The longest side of the thumbnail, in pixels: the 52-point slot at 3× scale.
+
+## `ImageIOThumbnailer/init(maximumPixelSize:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+init(maximumPixelSize: Int = Self.defaultMaximumPixelSize)
+```
+
+Creates a thumbnailer.
+
+- Parameter maximumPixelSize: The longest side of the thumbnail, in pixels.
+
+## `ImageIOThumbnailer/maximumPixelSize`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+let maximumPixelSize: Int
+```
+
+The longest side of the thumbnail, in pixels.
+
+## `ImageIOThumbnailer/thumbnail(of:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+func thumbnail(of file: PhotoFile) -> PhotoThumbnail?
+```
+
+Makes a thumbnail.
+
+The thumbnail is drawn into a bitmap context that owns its memory, and the pixels are
+copied out through the image it makes, so no pointer is handled here.
+
+- Parameter file: A saved DNG, HEIF or JPEG.
+- Returns: The thumbnail, upright, or `nil` if ImageIO can't decode the file.
 
 ## `PhotoEncoder`
 

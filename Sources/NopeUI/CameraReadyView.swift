@@ -79,6 +79,12 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Whether the quick-controls tray is open.
     @State private var showsTray = false
 
+    /// Whether the last photo's details are shown (issue #53).
+    @State private var showsPhotoDetails = false
+
+    /// Opens Photos, or `nil` when the app can't.
+    @Environment(\.openPhotosApp) private var openPhotosApp
+
     /// The photos the last good save added this session, or `nil` before the first.
     @State private var sessionPhotos: [SavedPhoto]?
 
@@ -161,7 +167,16 @@ struct CameraReadyView<Viewfinder: View>: View {
                     .presentationDetents([.large])
             }
         }
-        .onChange(of: showsProTools || showsFormats) { _, isPresenting in presentsSheet(isPresenting) }
+        .adaptivePresentation(isPresented: $showsPhotoDetails) {
+            PhotoDetailsSheet(photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } })
+                .frame(idealWidth: 420, idealHeight: 640)
+                .presentationBackground(.background)
+                // Full height, as for the format sheet: at half height (issue #68 suggests medium
+                // and large) the accessibility audit reports the rows at the sheet's lower edge as
+                // clipped text.
+                .presentationDetents([.large])
+        }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails) { _, isPresenting in presentsSheet(isPresenting) }
         .onChange(of: model.captureStatus) { _, status in record(status) }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -416,7 +431,10 @@ struct CameraReadyView<Viewfinder: View>: View {
         } else {
             ThumbnailSlot(
                 photos: sessionPhotos,
-                isBusy: model.captureStatus == .capturing || model.captureStatus == .saving
+                image: sessionPhotos?.last?.thumbnail.flatMap(Image.photo),
+                isBusy: model.captureStatus == .capturing || model.captureStatus == .saving,
+                openPhoto: openPhotosApp.map { open in { open() } },
+                showDetails: { showsPhotoDetails = true }
             )
             .uprightUnit()
             .transition(reduceMotion ? .opacity : .move(edge: .leading).combined(with: .opacity))

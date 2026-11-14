@@ -41,6 +41,11 @@ extension EnvironmentValues {
     /// `UIApplication.openSettingsURLString`.
     @Entry public var openAppSettings: CameraAction?
 
+    /// Opens the Photos app, for the last-photo thumbnail (issue #36). `nil` makes a tap on the
+    /// thumbnail show the photo's details instead, and hides Open in Photos. The app target sets
+    /// it; it runs only when the person taps.
+    @Entry public var openPhotosApp: CameraAction?
+
     /// Called with `true` when the camera screen presents Settings or another sheet, and `false`
     /// when it closes. The iPhone app keeps the camera layout in portrait and lets sheets rotate
     /// (issue #68, "Settings and sheets rotate normally"); it uses this to allow rotation while a

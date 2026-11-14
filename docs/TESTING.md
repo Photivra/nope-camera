@@ -169,6 +169,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | Scenario | Test |
 |---|---|
 | `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the chip into its warning; full auto shows only the default controls; the camera flip; the format chip's sheet; the quick-controls tray (closes on the shutter and on ⋯); signing off in Settings shows the "Not Signed" chip, also in clean view; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
+| `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; its long-press menu offers Open in Photos and Photo Details; "What's in This Photo" lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail brings the Photos app to the front; with `manual` and a bracket, the details' Photo picker shows each frame |
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the fallback chip and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
@@ -258,6 +259,18 @@ iPad:
   plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
+- last photo and its details (`ImageIOThumbnailer`, `PhotoDetails`, `openPhotosApp`): after a
+  RAW + HEIF, a RAW-only, a RAW + JPEG and a no-RAW photo, the thumbnail shows the photo upright
+  in portrait and landscape (time how long a RAW-only thumbnail takes: it decodes the DNG);
+  tapping it opens Photos, where the new photo is the newest item (the `photos-redirect://` URL
+  opens Photos, not a chosen asset; Apple documents no way to open one asset, and the URL itself
+  isn't documented by Apple); the long-press menu and the VoiceOver actions offer Open in Photos
+  and Photo Details; for each photo, the details match `exiftool -a -G1 -s` of the files exported
+  from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
+  for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
+  `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
+  file sizes, and the tag list; with signing on, c2patool shows the same claim generator and
+  description; the timings look plausible;
 - manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
   controls turned on: see "Manual controls on a device" below;
 - rotation (`PreviewRotation`, `AppDelegate`, `DeviceOrientation`): on an iPhone 16 Pro Max in
