@@ -16,4 +16,8 @@ public enum CaptureEvent: Equatable, Sendable {
 
     /// The camera stopped because of an error, such as a media services reset.
     case failed
+
+    /// The system made the torch unavailable or turned it off, for example because the device
+    /// is too hot (`AVCaptureDevice.isTorchAvailable`).
+    case torchUnavailable
 }

@@ -31,4 +31,7 @@ public enum CameraIntent: Equatable, Sendable {
     /// Turn clean view on or off. Clean view hides every control that isn't essential, leaving
     /// the viewfinder and the shutter; it never changes a setting.
     case setCleanView(Bool)
+
+    /// Change the flash or the torch: see ``LightIntent``.
+    case light(LightIntent)
 }

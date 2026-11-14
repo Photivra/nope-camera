@@ -40,6 +40,9 @@ public final class CameraModel {
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
+    /// The flash and the torch. Their intents arrive as ``CameraIntent/light(_:)``.
+    public let light: LightModel
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -58,7 +61,8 @@ public final class CameraModel {
     ///   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
     ///   - now: Reads the clock that times each capture. Tests pass a scripted one.
     ///
-    /// A ``ManualCaptureBackend`` also gets manual controls (``manual``).
+    /// A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
+    /// ``LightCaptureBackend`` a torch (``light``).
     public init(
         backend: any CaptureBackend, saver: PhotoSaver? = nil,
         sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
@@ -68,6 +72,7 @@ public final class CameraModel {
         self.saver = saver
         self.now = now
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
+        light = LightModel(backend: backend as? any LightCaptureBackend)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -122,6 +127,8 @@ public final class CameraModel {
             await manual.handle(intent) { [weak self] in await self?.capture() }
         case .setCleanView(let isOn):
             isCleanView = isOn
+        case .light(let intent):
+            await light.handle(intent)
         }
     }
 
@@ -143,6 +150,7 @@ public final class CameraModel {
         switch event {
         case .interrupted(let reason):
             sessionStatus = .interrupted(reason)
+            await light.cameraDidPause()
         case .interruptionEnded:
             if case .interrupted = sessionStatus { sessionStatus = .running }
         case .heat(let level):
@@ -151,6 +159,8 @@ public final class CameraModel {
             // Apple's guidance for runtime errors such as a media services reset is to restart
             // the session (AVCaptureSession.runtimeErrorNotification).
             await startSession()
+        case .torchUnavailable:
+            light.systemMadeTorchUnavailable()
         }
     }
 
@@ -162,6 +172,7 @@ public final class CameraModel {
         if level.requiresPause {
             guard sessionStatus != .pausedForHeat, selectedLensID != nil else { return }
             sessionStatus = .pausedForHeat
+            await light.cameraDidPause()
             await backend.stopSession()
         } else if sessionStatus == .pausedForHeat {
             await startSession()
@@ -208,12 +219,14 @@ public final class CameraModel {
         }
         sessionStatus = .starting
         manual.lensWillStart(lens)
+        light.lensWillStart(lens)
         do {
             try await backend.startSession(CaptureRequest(lens: lens))
             // An interruption or heat event may have arrived while starting; it wins.
             if sessionStatus == .starting { sessionStatus = .running }
             // Starting the camera returns its controls to automatic; apply the manual ones again.
             await manual.sessionDidStart()
+            await light.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
         }
@@ -228,7 +241,7 @@ public final class CameraModel {
         captureStatus = .capturing
         let settings = saveSettings
         let plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
-        let request = CaptureRequest(lens: lens, metadata: plan)
+        let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
         if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
             await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
             return

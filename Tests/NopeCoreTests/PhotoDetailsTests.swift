@@ -143,6 +143,11 @@ struct PhotoDetailsTests {
         #expect(whiteBalance(1) == .manual)
         #expect(PhotoDetails.exposure(in: MetadataInventory(tags: [Tag(directory: .exif, tag: 0xA403, values: [5])])) == nil)
         #expect(PhotoDetails.exposure(in: MetadataInventory(tags: [Tag(directory: .exif, tag: 0x8827, values: [50])]))?.iso == 50)
+        func flash(_ value: Double) -> Bool? {
+            PhotoDetails.exposure(in: MetadataInventory(tags: [Tag(directory: .exif, tag: 0x9209, values: [value])]))?.flashFired
+        }
+        #expect(flash(0x10) == false)
+        #expect(flash(0x19) == true)
     }
 
     @Test func itemsAreRemovedWrittenOrHaveNothingToWrite() {

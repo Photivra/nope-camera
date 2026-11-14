@@ -64,6 +64,13 @@ actor FakeHardware: CaptureHardware {
 
     func discoverCameras() async -> [CameraDeviceDescription] { cameras }
 
+    private(set) var torchRequests: [Double?] = []
+
+    func setTorch(level: Double?) async -> TorchStatus {
+        torchRequests.append(level)
+        return level.map { .on(level: $0) } ?? .off
+    }
+
     func configure(_ configuration: SessionConfiguration) async throws(CaptureError) {
         configurations.append(configuration)
         if let configureError { throw configureError }

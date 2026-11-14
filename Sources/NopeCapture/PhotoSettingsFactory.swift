@@ -12,8 +12,9 @@ enum PhotoSettingsFactory {
     ///   processed image and no embedded thumbnail.
     /// - A fallback plan gives one HEVC (HEIF) or JPEG image in its file container.
     ///
-    /// Every photo uses the plan's prioritization (`.speed`), the flash off, and content-aware
-    /// distortion correction and constant color off. No location is supplied, so no GPS
+    /// Every photo uses the plan's prioritization (`.speed`), the plan's flash mode (off unless
+    /// the person chose the flash, issue #38), and content-aware distortion correction and
+    /// constant color off. No location is supplied, so no GPS
     /// metadata is written by the app.
     ///
     /// - Parameters:

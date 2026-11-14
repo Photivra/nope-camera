@@ -16,16 +16,23 @@ public struct CaptureRequest: Equatable, Sendable {
     /// metadata.
     public let metadata: MetadataPlan
 
+    /// When the flash fires for this photo. ``FlashMode/off`` for starting the camera, and
+    /// whenever ``LightModel/flashModeForCapture`` says so (no flash on the lens, or the torch
+    /// is on). A bracket never uses the flash: AVFoundation doesn't support it in brackets.
+    public let flashMode: FlashMode
+
     /// Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
     ///
     /// - Parameters:
     ///   - lens: The lens to use.
     ///   - metadata: The metadata plan. Defaults to the first-launch settings: every optional
     ///     detail removed.
-    public init(lens: Lens, metadata: MetadataPlan = MetadataPlan()) {
+    ///   - flashMode: When the flash fires. Defaults to off.
+    public init(lens: Lens, metadata: MetadataPlan = MetadataPlan(), flashMode: FlashMode = .off) {
         self.lens = lens
         self.format = CaptureFormat(for: lens)
         self.metadata = metadata
+        self.flashMode = flashMode
     }
 
     /// Creates a request for a lens with an explicit format.
@@ -42,5 +49,6 @@ public struct CaptureRequest: Equatable, Sendable {
         self.lens = lens
         self.format = format
         self.metadata = metadata
+        self.flashMode = .off
     }
 }

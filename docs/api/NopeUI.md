@@ -275,6 +275,52 @@ Creates an action.
 
 - Parameter handler: Performs the action, on the main actor.
 
+## `CameraColor`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+struct CameraColor
+```
+
+A camera color that becomes night mode's red (issue #61): teal and amber have too little red
+to show after ``NightModeStyle`` keeps only the red channel, so in night mode they resolve
+to white, which turns into the full night red.
+
+## `CameraColor/color`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+let color: Color
+```
+
+The color outside night mode.
+
+## `CameraColor/init(_:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+init(_ color: Color)
+```
+
+Creates a camera color.
+
+- Parameter color: The color outside night mode.
+
+## `CameraColor/resolve(in:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+func resolve(in environment: EnvironmentValues) -> Color
+```
+
+The color for the environment: white in night mode (shown as red), otherwise ``color``.
+
+- Parameter environment: The view's environment.
+
 ## `CameraCommands`
 
 public, declared in `Sources/NopeUI/CameraCommands.swift`
@@ -778,7 +824,8 @@ The camera screen's colors and backings, one meaning each (issue #68, "Colors").
 - A filled white capsule with bold text marks the selected item.
 
 There is no yellow. Every state also has a symbol or words, so nothing depends on color
-alone (AGENTS.md, "Vision settings").
+alone (AGENTS.md, "Vision settings"). In night mode both teal and amber become the night
+red (``NightStyle``); the symbols and words still tell them apart.
 
 ## `CameraStyle/cornerRadius`
 
@@ -795,7 +842,7 @@ The corner radius of chips, pills and banners, in points.
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-static var fact: Color { get }
+static var fact: CameraColor { get }
 ```
 
 A verified fact, such as the seal on a single-frame RAW.
@@ -809,6 +856,17 @@ static var minimumTarget: CGFloat { get }
 ```
 
 The minimum size of every touch target, in points (AGENTS.md, "Touch targets").
+
+## `CameraStyle/secondaryText`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static var secondaryText: SecondaryText { get }
+```
+
+Secondary text, such as an explanation under a setting: the system's secondary style,
+and in night mode the full night red, because a dimmer red falls below 4.5:1 contrast.
 
 ## `CameraStyle/targetSpacing`
 
@@ -825,7 +883,7 @@ The space between neighboring touch targets, in points (issue #68, "Point budget
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-static var warning: Color { get }
+static var warning: CameraColor { get }
 ```
 
 A warning: something that changes what the photo is, or a failure.
@@ -923,6 +981,21 @@ The warnings that apply now, in display order.
 - Parameters:
   - context: The model and settings.
   - lastSignature: The signature of the last photo saved this session, or `nil`.
+
+## `CameraWarnings/lightUnavailable(_:lastSignature:)`
+
+internal, declared in `Sources/NopeUI/CameraWarnings.swift`
+
+```swift
+@MainActor static func lightUnavailable(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
+```
+
+"Light Unavailable" while the system refuses the light the person turned on, or turned it
+off, for example because the device is too warm (issue #38).
+
+- Parameters:
+  - context: The model and settings.
+  - lastSignature: Not used.
 
 ## `CameraWarnings/signing(_:lastSignature:)`
 
@@ -1552,6 +1625,17 @@ var cameraUprightRotation: UprightRotation { get set }
 Which way up the person holds the iPhone, for the camera layout's upright icons and text.
 ``UprightRotation/portrait`` by default.
 
+## `EnvironmentValues/isNightMode`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+var isNightMode: Bool { get set }
+```
+
+Whether night mode is on, for views that need a different color in it
+(``CameraColor``). Set by ``NightModeStyle``.
+
 ## `EnvironmentValues/openAppSettings`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -1801,6 +1885,40 @@ internal, declared in `Sources/NopeUI/FirstRunView.swift`
 ```
 
 Asks for camera access.
+
+## `FlashText`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+enum FlashText
+```
+
+The words and symbols for flash modes.
+
+## `FlashText/name(of:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static func name(of mode: FlashMode) -> Text
+```
+
+A flash mode's name, as in the Flash menu.
+
+- Parameter mode: The flash mode.
+
+## `FlashText/systemImage(for:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static func systemImage(for mode: FlashMode) -> String
+```
+
+The SF Symbol for a flash mode.
+
+- Parameter mode: The flash mode.
 
 ## `FormatChip`
 
@@ -2846,6 +2964,141 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 
 Whether Pro Tools is shown; the camera screen presents it.
 
+## `NaturalViewfinderFrame`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+struct NaturalViewfinderFrame
+```
+
+Where the ready camera reserves room for a viewfinder in natural colors while night mode is
+on, for ``CameraScreen`` to draw it behind the red interface (issue #61). `nil` otherwise.
+
+## `NaturalViewfinderFrame/defaultValue`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static var defaultValue: Anchor<CGRect>? { get }
+```
+
+No frame: the viewfinder is drawn in place.
+
+## `NaturalViewfinderFrame/init()`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+init()
+```
+
+Creates the key. It holds no state.
+
+## `NaturalViewfinderFrame/reduce(value:nextValue:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
+```
+
+Keeps the first frame reported.
+
+- Parameters:
+  - value: The frame so far.
+  - nextValue: The next frame reported.
+
+## `NightModeStyle`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeStyle
+```
+
+Draws a view in night mode's red on black when night mode is on, and leaves it unchanged
+otherwise (issue #61).
+
+The view's structure stays the same in both modes, so switching keeps each view's state.
+System menus, alerts and the keyboard are drawn by the system outside nope.'s views and keep
+the system's dark appearance; the system's Color Filters (red tint) cover them too.
+
+## `NightModeStyle/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The view, in red on black when night mode is on.
+
+- Parameter content: The view.
+
+## `NightModeStyle/init(isOn:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init(isOn: Bool)
+```
+
+Creates the style.
+
+- Parameter isOn: Whether night mode is on.
+
+## `NightModeStyle/isOn`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor let isOn: Bool
+```
+
+Whether night mode is on.
+
+## `NightStyle`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+enum NightStyle
+```
+
+Night mode's look (issue #61): red on black, with no white, blue or yellow light, to keep
+eyes used to the dark.
+
+``NightModeStyle`` multiplies everything nope. draws by pure red, so white becomes red,
+grays become darker reds and black stays black. Pure sRGB red on black has a contrast of
+5.25:1 (WCAG 2.2 relative luminance 0.2126), above the 4.5:1 text minimum, so every text
+style is drawn at the full red: secondary and tertiary text are drawn like primary text,
+because a dimmer red would fall below 4.5:1.
+
+nope. never changes the screen's brightness; people dim it with the device's own controls.
+
+## `NightStyle/controlTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static var controlTint: Color { get }
+```
+
+The tint of system controls in night mode, before the multiply: a mid gray, which shows
+as a dark red, so a switch's white knob (shown red) stays visible on its track.
+
+## `NightStyle/red`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static var red: Color { get }
+```
+
+The one color of night mode: pure sRGB red.
+
 ## `PhotoDetailsSections`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -3459,6 +3712,19 @@ The tray's items for the current state, in display order.
 
 - Parameter context: The model and settings.
 
+## `QuickControls/flash(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func flash(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Flash: Off, Auto or On (issue #38). Shown only on a lens with a flash, with the modes the
+lens supports.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/hideControls(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -3469,6 +3735,32 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Hide Controls: clean view, which leaves only the shutter, a Show Controls button and any
 warnings.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/light(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func light(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Light: the torch, a steady light for close subjects in the dark (issue #38). Shown only
+on a lens with a torch. Its brightness is on the Light pill that appears while it is on.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/night(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func night(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Night: red and black screens for working in the dark (issue #61). Remembered between
+launches; nope. never changes the screen's brightness.
 
 - Parameter context: The model and settings.
 
@@ -3634,6 +3926,39 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 ```
 
 The camera model.
+
+## `SecondaryText`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+struct SecondaryText
+```
+
+The style of secondary text: `.secondary` normally, white in night mode (shown as the full
+night red by ``NightModeStyle``). See ``CameraStyle/secondaryText``.
+
+## `SecondaryText/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+init()
+```
+
+Creates the style. It holds no state.
+
+## `SecondaryText/resolve(in:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+func resolve(in environment: EnvironmentValues) -> AnyShapeStyle
+```
+
+The style for the environment.
+
+- Parameter environment: The view's environment.
 
 ## `SelectableCapsuleStyle`
 
@@ -3845,7 +4170,7 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 The settings: a short inset grouped list in a navigation stack, opened from the camera
 (issue #68, "Settings"): Photos (formats, look), Privacy (the master switch, signing, the
-details), Camera (manual controls, clean view) and More (Accessibility, Honesty, About).
+details), Camera (manual controls, clean view, night mode) and More (Accessibility, Honesty, About).
 
 One line per row; each switch's explanation is in a footer or on its detail screen. Each
 row shows its current value, so the state reads at a glance. The screen renders a
@@ -4249,12 +4574,12 @@ let id: String
 
 A stable identifier, such as "manual".
 
-## `StatePill/init(id:systemImage:text:label:actions:)`
+## `StatePill/init(id:systemImage:text:label:actions:value:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
 
 ```swift
-init(id: String, systemImage: String, text: Text, label: Text, actions: [Action])
+init(id: String, systemImage: String, text: Text, label: Text, actions: [Action], value: Text? = nil)
 ```
 
 Creates a pill.
@@ -4265,6 +4590,7 @@ Creates a pill.
   - text: The short visible text.
   - label: The full name for VoiceOver and Voice Control.
   - actions: What the pill can do; at least one.
+  - value: The state VoiceOver reads after the name, or `nil`.
 
 ## `StatePill/label`
 
@@ -4295,6 +4621,16 @@ let text: Text
 ```
 
 The short visible text, such as "M" or "AE/AF".
+
+## `StatePill/value`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+let value: Text?
+```
+
+The state VoiceOver reads after the name, such as "25%" for the light, or `nil`.
 
 ## `StatePillButton`
 
@@ -4415,6 +4751,29 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 Every pill builder, in display order. Add a feature's builder here.
 
+## `StatePills/cleanView(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func cleanView(_ context: CameraControlContext) -> [StatePill]
+```
+
+The pills shown in clean view, in display order.
+
+- Parameter context: The model and settings.
+
+## `StatePills/cleanViewBuilders`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static let cleanViewBuilders: [@MainActor (CameraControlContext) -> StatePill?]
+```
+
+The builders whose pills stay in clean view: the light, so it can always be turned off
+in one tap (issue #38).
+
 ## `StatePills/current(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -4424,6 +4783,32 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 ```
 
 The pills for settings not at their defaults, in display order.
+
+- Parameter context: The model and settings.
+
+## `StatePills/flash(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func flash(_ context: CameraControlContext) -> StatePill?
+```
+
+The flash mode while it is Auto or On and applies to the next photo; its action turns
+the flash off.
+
+- Parameter context: The model and settings.
+
+## `StatePills/light(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func light(_ context: CameraControlContext) -> StatePill?
+```
+
+The light's brightness while the torch is on, such as "25%"; its menu turns the light
+off or picks another brightness, which is remembered.
 
 - Parameter context: The model and settings.
 
@@ -4862,6 +5247,19 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 Turns off the soft fade iOS 26 draws where scrolling content meets the screen's edges, so
 text scrolled under the status bar keeps its contrast (the iPad audit reported faded text
 at the top of the scrolling camera layout). Earlier versions have no such effect.
+
+## `View/nightModeStyle(_:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func nightModeStyle(_ isOn: Bool) -> some View
+
+```
+
+Draws the view in night mode's red on black while `isOn` is `true`.
+
+- Parameter isOn: Whether night mode is on.
 
 ## `View/pillShape()`
 

@@ -104,6 +104,8 @@ public struct PhotoDetails: Equatable, Sendable {
         public let exposureBias: Double?
         /// `WhiteBalance`: automatic or manual.
         public let whiteBalance: WhiteBalanceSetting?
+        /// Whether the flash fired: bit 0 of the EXIF `Flash` tag (EXIF 3.0, tag `0x9209`).
+        public let flashFired: Bool?
 
         /// Creates the exposure details.
         ///
@@ -114,9 +116,10 @@ public struct PhotoDetails: Equatable, Sendable {
         ///   - focalLength: The focal length in millimeters.
         ///   - exposureBias: The exposure bias in EV.
         ///   - whiteBalance: The white balance setting.
+        ///   - flashFired: Whether the flash fired. Defaults to `nil` (not recorded).
         public init(
             exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?,
-            whiteBalance: WhiteBalanceSetting?
+            whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil
         ) {
             self.exposureTime = exposureTime
             self.iso = iso
@@ -124,6 +127,7 @@ public struct PhotoDetails: Equatable, Sendable {
             self.focalLength = focalLength
             self.exposureBias = exposureBias
             self.whiteBalance = whiteBalance
+            self.flashFired = flashFired
         }
     }
 
@@ -256,6 +260,8 @@ extension PhotoDetails {
         static let focalLength: UInt16 = 0x920A
         /// `WhiteBalance`.
         static let whiteBalance: UInt16 = 0xA403
+        /// `Flash`.
+        static let flash: UInt16 = 0x9209
         /// `PixelXDimension`.
         static let pixelXDimension: UInt16 = 0xA002
         /// `PixelYDimension`.
@@ -379,9 +385,10 @@ extension PhotoDetails {
             }
         let exposure = Exposure(
             exposureTime: exif(Tag.exposureTime), iso: exif(Tag.iso), fNumber: exif(Tag.fNumber),
-            focalLength: exif(Tag.focalLength), exposureBias: exif(Tag.exposureBias), whiteBalance: whiteBalance)
+            focalLength: exif(Tag.focalLength), exposureBias: exif(Tag.exposureBias), whiteBalance: whiteBalance,
+            flashFired: exif(Tag.flash).map { Int($0) & 1 == 1 })
         let isEmpty = [exposure.exposureTime, exposure.iso, exposure.fNumber, exposure.focalLength, exposure.exposureBias]
-            .allSatisfy { $0 == nil } && whiteBalance == nil
+            .allSatisfy { $0 == nil } && whiteBalance == nil && exposure.flashFired == nil
         return isEmpty ? nil : exposure
     }
 

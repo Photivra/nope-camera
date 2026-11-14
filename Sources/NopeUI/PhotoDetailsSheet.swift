@@ -181,6 +181,13 @@ struct PhotoDetailsSections: View {
                 if let bias = exposure.exposureBias {
                     DetailRow(title: Text(ControlText.name(.exposureCompensation)), value: Text(verbatim: ControlText.meter(bias)))
                 }
+                if let fired = exposure.flashFired {
+                    DetailRow(
+                        title: Text("Flash", bundle: .module, comment: "Camera menu and its Voice Control name: when the flash fires (Off, Auto, On)."),
+                        value: fired
+                            ? Text("Fired", bundle: .module, comment: "In the photo details, the flash as the file records it: the flash fired for this photo.")
+                            : Text("Didn't fire", bundle: .module, comment: "In the photo details, the flash as the file records it: the flash didn't fire for this photo."))
+                }
                 if let whiteBalance = exposure.whiteBalance {
                     DetailRow(title: Text(ControlText.name(.whiteBalance)), value: Text(verbatim: ControlText.mode(isManual: whiteBalance == .manual)))
                 }
@@ -215,7 +222,7 @@ struct PhotoDetailsSections: View {
                             comment: "In the photo details: the software the Content Credentials manifest names as its claim generator. The values are a name and a version, such as Photivra Nope Camera 0.2.0.")
                         // The manifest's own words, which are part of the file and stay in English.
                         Text(verbatim: credentials.actionDescription)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(CameraStyle.secondaryText)
                         Text(
                             "Manifest SHA-256: \(credentials.manifestSHA256)", tableName: "Honesty", bundle: .module,
                             comment: "In the photo details: the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.")
@@ -300,7 +307,7 @@ struct FileDetailsRows: View {
                 Text(verbatim: FormatsSettingsView.name(of: file.format)).font(.headline)
                 Spacer(minLength: 8)
                 Text(verbatim: file.byteCount.formatted(.byteCount(style: .file)))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CameraStyle.secondaryText)
             }
             if let width = file.pixelWidth, let height = file.pixelHeight {
                 Text(
@@ -365,11 +372,11 @@ struct DetailRow: View {
             HStack(alignment: .firstTextBaseline) {
                 title
                 Spacer(minLength: 8)
-                value.foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+                value.foregroundStyle(CameraStyle.secondaryText).multilineTextAlignment(.trailing)
             }
             VStack(alignment: .leading, spacing: 2) {
                 title
-                value.foregroundStyle(.secondary)
+                value.foregroundStyle(CameraStyle.secondaryText)
             }
         }
         .accessibilityElement(children: .combine)
