@@ -7,13 +7,18 @@ import SwiftUI
 /// - A filled white capsule with bold text marks the selected item.
 ///
 /// There is no yellow. Every state also has a symbol or words, so nothing depends on color
-/// alone (AGENTS.md, "Vision settings").
+/// alone (AGENTS.md, "Vision settings"). In night mode both teal and amber become the night
+/// red (``NightStyle``); the symbols and words still tell them apart.
 enum CameraStyle {
     /// A verified fact, such as the seal on a single-frame RAW.
-    static var fact: Color { .teal }
+    static var fact: CameraColor { CameraColor(.teal) }
 
     /// A warning: something that changes what the photo is, or a failure.
-    static var warning: Color { .orange }
+    static var warning: CameraColor { CameraColor(.orange) }
+
+    /// Secondary text, such as an explanation under a setting: the system's secondary style,
+    /// and in night mode the full night red, because a dimmer red falls below 4.5:1 contrast.
+    static var secondaryText: SecondaryText { SecondaryText() }
 
     /// The corner radius of chips, pills and banners, in points.
     static var cornerRadius: CGFloat { 10 }
@@ -179,5 +184,107 @@ extension View {
         } else {
             self
         }
+    }
+}
+
+/// A camera color that becomes night mode's red (issue #61): teal and amber have too little red
+/// to show after ``NightModeStyle`` keeps only the red channel, so in night mode they resolve
+/// to white, which turns into the full night red.
+struct CameraColor: ShapeStyle {
+    /// The color outside night mode.
+    let color: Color
+
+    /// Creates a camera color.
+    ///
+    /// - Parameter color: The color outside night mode.
+    init(_ color: Color) {
+        self.color = color
+    }
+
+    /// The color for the environment: white in night mode (shown as red), otherwise ``color``.
+    ///
+    /// - Parameter environment: The view's environment.
+    func resolve(in environment: EnvironmentValues) -> Color {
+        environment.isNightMode ? .white : color
+    }
+}
+
+/// Night mode's look (issue #61): red on black, with no white, blue or yellow light, to keep
+/// eyes used to the dark.
+///
+/// ``NightModeStyle`` multiplies everything nope. draws by pure red, so white becomes red,
+/// grays become darker reds and black stays black. Pure sRGB red on black has a contrast of
+/// 5.25:1 (WCAG 2.2 relative luminance 0.2126), above the 4.5:1 text minimum, so every text
+/// style is drawn at the full red: secondary and tertiary text are drawn like primary text,
+/// because a dimmer red would fall below 4.5:1.
+///
+/// nope. never changes the screen's brightness; people dim it with the device's own controls.
+enum NightStyle {
+    /// The one color of night mode: pure sRGB red.
+    static var red: Color { Color(.sRGB, red: 1, green: 0, blue: 0) }
+
+    /// The tint of system controls in night mode, before the multiply: a mid gray, which shows
+    /// as a dark red, so a switch's white knob (shown red) stays visible on its track.
+    static var controlTint: Color { Color(white: 0.5) }
+}
+
+extension EnvironmentValues {
+    /// Whether night mode is on, for views that need a different color in it
+    /// (``CameraColor``). Set by ``NightModeStyle``.
+    @Entry var isNightMode = false
+}
+
+/// Draws a view in night mode's red on black when night mode is on, and leaves it unchanged
+/// otherwise (issue #61).
+///
+/// The view's structure stays the same in both modes, so switching keeps each view's state.
+/// System menus, alerts and the keyboard are drawn by the system outside nope.'s views and keep
+/// the system's dark appearance; the system's Color Filters (red tint) cover them too.
+struct NightModeStyle: ViewModifier {
+    /// Whether night mode is on.
+    let isOn: Bool
+
+    /// Creates the style.
+    ///
+    /// - Parameter isOn: Whether night mode is on.
+    init(isOn: Bool) {
+        self.isOn = isOn
+    }
+
+    /// The view, in red on black when night mode is on.
+    ///
+    /// - Parameter content: The view.
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(
+                isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.primary),
+                isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary),
+                isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.tertiary))
+            .tint(isOn ? NightStyle.controlTint : nil)
+            .environment(\.isNightMode, isOn)
+            .colorMultiply(isOn ? NightStyle.red : .white)
+    }
+}
+
+extension View {
+    /// Draws the view in night mode's red on black while `isOn` is `true`.
+    ///
+    /// - Parameter isOn: Whether night mode is on.
+    func nightModeStyle(_ isOn: Bool) -> some View {
+        modifier(NightModeStyle(isOn: isOn))
+    }
+}
+
+/// The style of secondary text: `.secondary` normally, white in night mode (shown as the full
+/// night red by ``NightModeStyle``). See ``CameraStyle/secondaryText``.
+struct SecondaryText: ShapeStyle {
+    /// Creates the style. It holds no state.
+    init() {}
+
+    /// The style for the environment.
+    ///
+    /// - Parameter environment: The view's environment.
+    func resolve(in environment: EnvironmentValues) -> AnyShapeStyle {
+        environment.isNightMode ? AnyShapeStyle(Color.white) : AnyShapeStyle(.secondary)
     }
 }

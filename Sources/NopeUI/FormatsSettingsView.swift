@@ -107,7 +107,7 @@ struct FormatsSettingsView: View {
                     if !isAvailable {
                         Text("Not available on this device", bundle: .module, comment: "Shown under the RAW format on a device without RAW.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(CameraStyle.secondaryText)
                     }
                 }
                 Spacer()

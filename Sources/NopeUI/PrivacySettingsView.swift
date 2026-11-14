@@ -142,7 +142,7 @@ struct PrivacySettingsView: View {
                     SettingLabel(title: Text(Self.title(of: item)), explanation: Text(Self.explanation(of: item)))
                     Spacer()
                     Image(systemName: "lock.fill")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(CameraStyle.secondaryText)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityValue(Text("Locked", tableName: "Honesty", bundle: .module, comment: "VoiceOver: this detail is always saved and can't be turned off."))
@@ -270,7 +270,7 @@ struct SettingLabel: View {
             title
             explanation
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CameraStyle.secondaryText)
         }
         .fixedSize(horizontal: false, vertical: true)
     }

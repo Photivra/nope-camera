@@ -60,6 +60,9 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
 
+    /// Whether nope. is in the foreground, to turn the light off when it leaves.
+    @Environment(\.scenePhase) private var scenePhase
+
     /// The screen's content for the current state.
     public var body: some View {
         // Outside the ready camera, the Settings button sits above the content, not over it, so
@@ -76,19 +79,43 @@ public struct CameraScreen<Viewfinder: View>: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .nightModeStyle(settings.isNightModeOn)
+        // Night mode with natural colors: the viewfinder is drawn behind the red screen, in the
+        // frame the ready camera reserves for it, so only nope.'s own interface turns red.
+        .backgroundPreferenceValue(NaturalViewfinderFrame.self) { anchor in
+            if let anchor, let source = model.previewSource {
+                GeometryReader { proxy in
+                    let frame = proxy[anchor]
+                    viewfinder(source)
+                        .frame(width: frame.width, height: frame.height)
+                        .clipped()
+                        .offset(x: frame.minX, y: frame.minY)
+                }
+                .accessibilityHidden(true)
+            }
+        }
         .background(.background)
         // A popover on iPad; on iPhone the system shows it as a sheet.
         .adaptivePresentation(isPresented: $showsSettings) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location)
+                .nightModeStyle(settings.isNightModeOn)
+                .preferredColorScheme(settings.isNightModeOn ? .dark : nil)
                 .frame(idealWidth: 480, idealHeight: 720)
                 // Opaque: a translucent popover lets the camera through and fails the contrast
                 // audit.
                 .presentationBackground(.background)
         }
         .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
+        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery").
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { Task { await model.send(.light(.setTorch(false))) } }
+        }
         .preferredColorScheme(.dark)
+        // Night mode: the home indicator, a white system bar, fades away until the screen is
+        // touched.
+        .persistentSystemOverlays(settings.isNightModeOn ? .hidden : .automatic)
         .task { await model.send(.start) }
         .task { await model.observeEvents() }
         .task { await model.manual.observeReadings() }

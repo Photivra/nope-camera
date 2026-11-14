@@ -108,7 +108,7 @@ struct FileOptionsSettingsView: View {
             "Lower quality makes smaller files, with visible compression in fine detail.", bundle: .module,
             comment: "Explains the compression pickers.")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(CameraStyle.secondaryText)
     }
 
     /// The HEIF bit depth picker.
@@ -135,7 +135,7 @@ struct FileOptionsSettingsView: View {
             "10-bit keeps smoother gradients. 8-bit files are smaller.", bundle: .module,
             comment: "Explains the HEIF bit depth picker.")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(CameraStyle.secondaryText)
     }
 
     /// The color space picker.
@@ -162,7 +162,7 @@ struct FileOptionsSettingsView: View {
             "Display P3 keeps the camera's colors. sRGB suits sites and screens that show only sRGB; colors outside it are clipped.",
             bundle: .module, comment: "Explains the color space picker. Display P3 and sRGB are color space names; keep them unchanged.")
             .font(.footnote)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(CameraStyle.secondaryText)
     }
 
     /// A compression's name.

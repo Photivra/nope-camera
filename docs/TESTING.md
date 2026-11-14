@@ -188,6 +188,9 @@ UI test launches store settings in their own `UserDefaults` suite, emptied at ea
 settings are never touched.
 | `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the M pill; the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; the lock pill after AE-L, which unlocks; the M pill turns manual controls off; interval progress and Stop; clean view from the tray; the list at the largest text size; right-to-left |
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
+| `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
+| `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
+| `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from the tray and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
@@ -272,6 +275,24 @@ iPad:
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size), including the turned icons and text on an iPhone held sideways, the failure
   banner taking VoiceOver focus, and the low-priority "Saved and signed" announcement.
+
+### Flash, light and night mode on a device
+
+- the Light and Flash controls appear on each rear lens that has them and never on the front
+  camera; record which lenses report a torch and which flash modes on each test device;
+- light on at 10%, 25% and 100%: it stays on, without blinking, through framing, focusing,
+  single RAW (DNG) photos, RAW + HEIF, a bracket and an interval series, and the photos are
+  lit by it; a Bayer RAW photo with Flash On and Auto fires the flash, is saved and passes the
+  read-back (`docs/PRIVACY.md`, "Device checks"); does Flash On keep a locked focus (capability
+  survey, question 6)?
+- the light turns off when nope. goes to the background, on a phone call or another camera
+  app, on a lens without a light, and at a critical heat level; warm the device and check the
+  "Light Unavailable" warning and that a lower level can be chosen;
+- night mode at night: no white or blue element in nope.'s own screens (camera, tray, pills,
+  manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
+  popovers); list what the system still draws (status bar, menus, alerts); nope. never changes
+  the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
+  Viewfinder; energy with the red viewfinder on (Instruments).
 
 ### Manual controls on a device
 

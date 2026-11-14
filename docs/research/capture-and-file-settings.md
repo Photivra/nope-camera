@@ -61,7 +61,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Pro Tools; each frame a separate single-frame photo. |
 | Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by nope.; it is documented for low-light frame rates, and its effect on photos isn't measured. |
 | Global tone mapping, video HDR, Center Stage | Not offered | Video and preview processing, not the RAW. |
-| Flash and torch level (`flashMode`, `setTorchModeOn(level:)`) | Separate issue | Flash and torch are built in their own issue for 0.2.0. |
+| Flash and torch (`flashMode`, `setTorchModeOn(level:)`) | Offered | Issue #38: the Flash menu (the modes the photo output reports for the lens) and the Light switch in the quick-controls tray. |
 | Zoom (`videoZoomFactor`) | Fixed 1.0 | Bayer RAW requires a zoom factor of 1.0 ("Bayer RAW rules", `AVCapturePhotoOutput.h`); each lens is its own button. |
 
 ## Files must open
