@@ -23,9 +23,9 @@ on iPad the controls are in a trailing column. ``SettingsScreen`` is a short gro
 Photos, Privacy, Camera and More (Accessibility, Honesty, About and licenses).
 
 The app target supplies ``CameraCommands`` (the Space bar takes a photo) and three environment
-values: ``SwiftUI/EnvironmentValues/cameraUprightRotation``,
-``SwiftUI/EnvironmentValues/cameraPresentsSheet`` and
-``SwiftUI/EnvironmentValues/openAppSettings``.
+values: ``SwiftUICore/EnvironmentValues/cameraUprightRotation``,
+``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` and
+``SwiftUICore/EnvironmentValues/openAppSettings``.
 
 The live viewfinder view is supplied by the app target, because `NopeUI` imports only `NopeCore`
 and SwiftUI. The

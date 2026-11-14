@@ -38,11 +38,19 @@ struct DarkBacking<S: Shape>: ViewModifier {
     /// Whether Increase Contrast is on.
     @Environment(\.colorSchemeContrast) private var contrast
 
-    /// The opacity of the black over the material. Over a pure white frame the backing is at
-    /// most a 25% gray, which white text passes against with a wide margin (WCAG 2.2, 1.4.3,
+    /// Creates the backing.
+    ///
+    /// - Parameter shape: The backing's shape.
+    init(shape: S) {
+        self.shape = shape
+    }
+
+    /// The opacity of the black over the material. The iPad accessibility audit reported text
+    /// on a 75% backing as low contrast, so it is 90%. Over a pure white frame the backing is at
+    /// most a 10% gray, which white text passes against with a wide margin (WCAG 2.2, 1.4.3,
     /// 4.5:1). The camera screen is audited over a black viewfinder in the Simulator; the white
     /// and yellow frames are a device check (docs/TESTING.md).
-    private static var dimming: Double { 0.75 }
+    private static var dimming: Double { 0.9 }
 
     /// Puts the backing behind the content.
     ///
@@ -78,14 +86,21 @@ struct SelectableCapsuleStyle: ButtonStyle {
     /// Whether the button shows the selected item.
     let isSelected: Bool
 
+    /// The space on each side of the label, in points.
+    let horizontalPadding: CGFloat
+
     /// Whether the button is enabled.
     @Environment(\.isEnabled) private var isEnabled
 
     /// Creates the style.
     ///
-    /// - Parameter isSelected: Whether the button shows the selected item.
-    init(isSelected: Bool) {
+    /// - Parameters:
+    ///   - isSelected: Whether the button shows the selected item.
+    ///   - horizontalPadding: The space on each side of the label, in points; smaller for the
+    ///     manual readouts, so seven fit in a row.
+    init(isSelected: Bool, horizontalPadding: CGFloat = 10) {
         self.isSelected = isSelected
+        self.horizontalPadding = horizontalPadding
     }
 
     /// The styled button.
@@ -95,7 +110,7 @@ struct SelectableCapsuleStyle: ButtonStyle {
         configuration.label
             .fontWeight(isSelected ? .bold : .regular)
             .foregroundStyle(isSelected ? Color.black : Color.white)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, horizontalPadding)
             .frame(minWidth: CameraStyle.minimumTarget, minHeight: CameraStyle.minimumTarget)
             .background(isSelected ? Color.white : Color(white: 0.2), in: .capsule)
             .opacity(configuration.isPressed ? 0.7 : (isEnabled ? 1 : 0.5))
@@ -119,6 +134,16 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// The window's horizontal size class.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    /// Creates the modifier.
+    ///
+    /// - Parameters:
+    ///   - isPresented: Whether the content is shown.
+    ///   - presented: The presented content.
+    init(isPresented: Binding<Bool>, presented: @escaping () -> Presented) {
+        _isPresented = isPresented
+        self.presented = presented
+    }
+
     /// Attaches the popover or the sheet.
     ///
     /// - Parameter content: The presenting view.
@@ -141,5 +166,18 @@ extension View {
         isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> Presented
     ) -> some View {
         modifier(AdaptivePresentation(isPresented: isPresented, presented: content))
+    }
+}
+
+extension View {
+    /// Turns off the soft fade iOS 26 draws where scrolling content meets the screen's edges, so
+    /// text scrolled under the status bar keeps its contrast (the iPad audit reported faded text
+    /// at the top of the scrolling camera layout). Earlier versions have no such effect.
+    @ViewBuilder func hardScrollEdges() -> some View {
+        if #available(iOS 26, *) {
+            scrollEdgeEffectStyle(.hard, for: .all)
+        } else {
+            self
+        }
     }
 }

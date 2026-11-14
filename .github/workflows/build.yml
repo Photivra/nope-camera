@@ -175,7 +175,8 @@ jobs:
 
   # The same UI tests on an iPad, in their own job: running both Simulators in one job stalled
   # the test runner before the second destination's first test.
-  # The Settings screen tests are skipped here until they pass on iPad (docs/TESTING.md).
+  # The source link test is skipped here: on iPad the link isn't found in the Settings popover
+  # (docs/TESTING.md).
   ui-tests-ipad:
     name: ui-tests-ipad
     needs: c2pa-lib
@@ -197,9 +198,6 @@ jobs:
           -project App/NopeCamera.xcodeproj
           -scheme NopeApp
           -destination "$IPAD_SIMULATOR"
-          -skip-testing:NopeAppUITests/NopeAppUITests/testSettingsScreensPassAccessibilityAudits
-          -skip-testing:NopeAppUITests/NopeAppUITests/testSettingsAtTheLargestTextSize
-          -skip-testing:NopeAppUITests/NopeAppUITests/testSettingsInRightToLeftLayout
           -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
           -derivedDataPath DerivedData
           -resultBundlePath ui-tests-ipad.xcresult

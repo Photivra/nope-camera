@@ -3,7 +3,7 @@ import SwiftUI
 /// Which way up the person holds an iPhone whose camera layout stays in portrait, so icons and
 /// text blocks can turn to read upright (issue #68, "Landscape (iPhone)").
 ///
-/// The app target sets it from the device's orientation with ``SwiftUI/EnvironmentValues/cameraUprightRotation``.
+/// The app target sets it from the device's orientation with ``SwiftUICore/EnvironmentValues/cameraUprightRotation``.
 /// On iPad the interface itself rotates, so the app leaves it at ``portrait``.
 public enum UprightRotation: Equatable, Sendable {
     /// Upright in portrait: nothing turns.
@@ -103,6 +103,14 @@ struct UprightUnit: ViewModifier {
 
     /// The content's measured size before turning.
     @State private var size: CGSize = .zero
+
+    /// Creates the modifier.
+    ///
+    /// - Parameter sidewaysWidth: The width the content wraps at while sideways, or `nil` for
+    ///   its natural width.
+    init(sidewaysWidth: CGFloat?) {
+        self.sidewaysWidth = sidewaysWidth
+    }
 
     /// The content, turned when the device is on its side.
     ///

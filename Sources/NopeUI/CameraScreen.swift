@@ -16,9 +16,9 @@ import SwiftUI
 /// state, so settings and the Honesty screen are reachable before the camera is allowed. Before
 /// camera access is asked, ``FirstRunView`` says what nope. does, then asks.
 ///
-/// The app target can set ``SwiftUI/EnvironmentValues/openAppSettings`` (Open Settings buttons),
-/// ``SwiftUI/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
-/// ``SwiftUI/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
+/// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
+/// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
+/// ``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
 ///
 /// ```swift
 /// CameraScreen(model: model, settings: settings) { source in
@@ -81,6 +81,9 @@ public struct CameraScreen<Viewfinder: View>: View {
         .adaptivePresentation(isPresented: $showsSettings) {
             SettingsScreen(settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
                 .frame(idealWidth: 480, idealHeight: 720)
+                // Opaque: a translucent popover lets the camera through and fails the contrast
+                // audit.
+                .presentationBackground(.background)
         }
         .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
         .preferredColorScheme(.dark)

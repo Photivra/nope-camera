@@ -30,7 +30,9 @@ struct SessionStatusView: View {
             .foregroundStyle(.white)
             .multilineTextAlignment(.center)
             .padding()
-            .darkBacking()
+            // Solid black: over the material backing the iPad audit reported this text as low
+            // contrast.
+            .background(.black, in: .rect(cornerRadius: CameraStyle.cornerRadius))
             .accessibilityElement(children: .combine)
             .padding()
         } else if status == .starting {

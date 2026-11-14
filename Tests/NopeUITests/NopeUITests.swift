@@ -117,6 +117,7 @@ struct CameraLayoutTests {
         #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: true, isRegularSize: false) == .column)
         let iPadPortrait = CGSize(width: 820, height: 1160)
         #expect(CameraLayout.arrangement(for: iPadPortrait, isAccessibilitySize: false, isRegularSize: true) == .column)
+        #expect(CameraLayout.arrangement(for: iPadPortrait, isAccessibilitySize: true, isRegularSize: true) == .scrolling)
     }
 
     @Test func bandsFitBelowThePictureOnALargePhoneButOverlayOnA47InchPhone() {
@@ -143,6 +144,7 @@ struct CameraLayoutTests {
     }
 }
 
+@MainActor
 struct CaptureFeedbackTests {
     static let signed = SavedPhoto(formats: [.raw, .heif], isProcessedFallback: false, signature: .signed, metadata: [:])
     static let unsigned = SavedPhoto(

@@ -31,18 +31,43 @@ struct ManualReadoutRow: View {
         _showsProTools = showsProTools
     }
 
-    /// The row.
+    /// The row, or two rows when seven readouts don't fit side by side (narrow phones, larger
+    /// text). Values never break inside a number.
     var body: some View {
-        HStack(spacing: 4) {
-            ForEach(ManualControl.allCases, id: \.self) { control in
-                ControlReadout(model: model, control: control, isOpen: openControl == control) {
-                    openControl = openControl == control ? nil : control
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 4) { readouts }
+            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+                GridRow { readouts(Array(ManualControl.allCases.prefix(4))) }
+                GridRow {
+                    readouts(Array(ManualControl.allCases.dropFirst(4)))
+                    optionsMenu
                 }
-                .uprightUnit()
             }
-            ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                .uprightUnit()
         }
+    }
+
+    /// Every readout and the options menu, in order.
+    @ViewBuilder private var readouts: some View {
+        readouts(ManualControl.allCases)
+        optionsMenu
+    }
+
+    /// The readouts of some controls.
+    ///
+    /// - Parameter controls: The controls, in order.
+    private func readouts(_ controls: [ManualControl]) -> some View {
+        ForEach(controls, id: \.self) { control in
+            ControlReadout(model: model, control: control, isOpen: openControl == control) {
+                openControl = openControl == control ? nil : control
+            }
+            .uprightUnit()
+        }
+    }
+
+    /// "All Auto" and Pro Tools.
+    private var optionsMenu: some View {
+        ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
+            .uprightUnit()
     }
 }
 
@@ -166,11 +191,10 @@ struct ControlReadout: View {
                 Text(verbatim: visibleValue)
                     .font(.footnote.monospacedDigit())
             }
-            // Wraps instead of truncating, so no value is clipped at larger text sizes.
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
+            // Never truncated or broken inside a number: the row becomes two rows instead.
+            .fixedSize()
         }
-        .buttonStyle(SelectableCapsuleStyle(isSelected: isOpen))
+        .buttonStyle(SelectableCapsuleStyle(isSelected: isOpen, horizontalPadding: 6))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: ControlText.name(control)))
         .accessibilityValue(Text(verbatim: SlotValue.spoken(for: control, in: manual)))

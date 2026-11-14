@@ -149,6 +149,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                     settings: settings, format: format,
                     deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
                     .frame(idealWidth: 420, idealHeight: 560)
+                    // Opaque: a translucent sheet or popover lets the live picture through and
+                    // fails the contrast audit.
+                    .presentationBackground(.background)
                     // Full height: at half height the explanation is cut off at large text sizes.
                     .presentationDetents([.large])
             }
@@ -176,6 +179,7 @@ struct CameraReadyView<Viewfinder: View>: View {
             StackedMiddle(
                 bandsHeight: bandsHeight,
                 picture: { pictureArea(clusterOverPicture: rotation.isSideways) },
+                dial: { stackedDial },
                 bands: {
                     bands
                         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
@@ -200,6 +204,14 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Everything but the shutter row, scrolling.
     private var scrollingContent: some View {
         ScrollView {
+            scrollingStack
+        }
+        .hardScrollEdges()
+    }
+
+    /// The scrolling layout's parts, top to bottom.
+    private var scrollingStack: some View {
+        Group {
             VStack(spacing: 12) {
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: CameraStyle.targetSpacing) { topBarItems }
@@ -240,6 +252,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                                     QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
                                 }
                                 if model.manual.isEnabled && !dynamicTypeSize.isAccessibilitySize {
+                                    if let openControl {
+                                        ControlDial(model: model, control: openControl)
+                                    }
                                     ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
                                         .padding(4)
                                         .darkBacking()
@@ -283,6 +298,9 @@ struct CameraReadyView<Viewfinder: View>: View {
         .frame(minWidth: ShutterButton.diameter + 2 * CameraStyle.targetSpacing)
         .padding(.vertical)
         .padding(.horizontal, CameraStyle.targetSpacing)
+        // The column takes the width its controls need at the current text size; the picture
+        // gets the rest.
+        .fixedSize(horizontal: true, vertical: false)
     }
 
     // MARK: - Parts
@@ -427,13 +445,17 @@ struct CameraReadyView<Viewfinder: View>: View {
                 .padding(CameraStyle.targetSpacing)
             }
             .overlay(alignment: .bottom) {
-                if showsControls, let openControl, model.manual.isEnabled, !dynamicTypeSize.isAccessibilitySize {
-                    ControlDial(model: model, control: openControl)
-                        .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
-                        .padding(CameraStyle.targetSpacing)
-                        .padding(.bottom, layout == .column ? 64 : 0)
-                }
             }
+    }
+
+    /// The open dial in the stacked layout, which places it over the picture's bottom, above
+    /// the bands when they overlay the picture. The column layout puts it above the readout row.
+    @ViewBuilder private var stackedDial: some View {
+        if showsControls, let openControl, model.manual.isEnabled, !dynamicTypeSize.isAccessibilitySize {
+            ControlDial(model: model, control: openControl)
+                .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
+                .padding(CameraStyle.targetSpacing)
+        }
     }
 
     /// The width text blocks wrap at while the iPhone is on its side: the picture's height,
@@ -564,13 +586,17 @@ struct CameraReadyView<Viewfinder: View>: View {
 }
 
 /// The middle of the stacked layout: the whole picture with the bands below it when they fit,
-/// otherwise the bands over the bottom of the picture on a dark backing (4.7-inch iPhones).
-struct StackedMiddle<Picture: View, Bands: View>: View {
+/// otherwise the bands over the bottom of the picture on a dark backing (4.7-inch iPhones). The
+/// open dial sits over the bottom of the picture, above the bands.
+struct StackedMiddle<Picture: View, Dial: View, Bands: View>: View {
     /// The measured height of the bands.
     let bandsHeight: CGFloat
 
     /// The picture with its overlays.
     let picture: Picture
+
+    /// The open manual dial, or nothing.
+    let dial: Dial
 
     /// The lens row and the manual readout.
     let bands: Bands
@@ -583,10 +609,15 @@ struct StackedMiddle<Picture: View, Bands: View>: View {
     /// - Parameters:
     ///   - bandsHeight: The measured height of the bands.
     ///   - picture: The picture with its overlays.
+    ///   - dial: The open manual dial, or nothing.
     ///   - bands: The lens row and the manual readout.
-    init(bandsHeight: CGFloat, @ViewBuilder picture: () -> Picture, @ViewBuilder bands: () -> Bands) {
+    init(
+        bandsHeight: CGFloat, @ViewBuilder picture: () -> Picture, @ViewBuilder dial: () -> Dial,
+        @ViewBuilder bands: () -> Bands
+    ) {
         self.bandsHeight = bandsHeight
         self.picture = picture()
+        self.dial = dial()
         self.bands = bands()
     }
 
@@ -598,13 +629,17 @@ struct StackedMiddle<Picture: View, Bands: View>: View {
                     picture
                         .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    bands
-                        .darkBacking(Rectangle())
+                    VStack(spacing: 0) {
+                        dial
+                        bands
+                            .darkBacking(Rectangle())
+                    }
                 }
             } else {
                 VStack(spacing: 0) {
                     picture
                         .frame(width: space.width, height: CameraLayout.pictureHeight(forWidth: space.width))
+                        .overlay(alignment: .bottom) { dial }
                     bands
                     Spacer(minLength: 0)
                 }

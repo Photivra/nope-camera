@@ -7,7 +7,7 @@ import SwiftUI
 /// orientation and window size:
 /// - a space taller than wide, on a phone-sized screen, stacks the bands: top bar, picture, lens
 ///   row, manual readout and shutter row (``stacked``), or scrolls them at accessibility text
-///   sizes (``scrolling``);
+///   sizes (``scrolling``, also on a portrait iPad);
 /// - a space wider than tall, or a full-size iPad window, puts the picture beside a control
 ///   column on the trailing edge with the shutter centered (``column``).
 ///
@@ -47,8 +47,11 @@ enum CameraLayout: Equatable {
     ///   - isRegularSize: Whether both size classes are regular, as in a full-size iPad window.
     /// - Returns: The arrangement.
     static func arrangement(for size: CGSize, isAccessibilitySize: Bool, isRegularSize: Bool) -> CameraLayout {
-        if size.width > size.height || isRegularSize { return .column }
-        return isAccessibilitySize ? .scrolling : .stacked
+        if size.width > size.height { return .column }
+        // At accessibility sizes a portrait iPad scrolls like the iPhone: the column is too
+        // narrow for the enlarged manual controls list.
+        if isAccessibilitySize { return .scrolling }
+        return isRegularSize ? .column : .stacked
     }
 
     /// Whether the lens row and manual readout must overlay the bottom of the picture, on a dark

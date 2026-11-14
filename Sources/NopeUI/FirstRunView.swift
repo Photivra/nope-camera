@@ -47,28 +47,35 @@ struct FirstRunView: View {
                                 "nope. never connects to the internet and keeps nothing about you.", tableName: "Honesty", bundle: .module,
                                 comment: "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English."))
                     }
-                    Spacer(minLength: 0)
-                    Button(action: requestAccess) {
-                        Text("Continue", bundle: .module, comment: "Button on the first-run screen: goes on to the system camera access prompt.")
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity)
-                    }
-                    // The bordered style, not the prominent one: white text on the system blue
-                    // fill fails the accessibility audit's contrast check in dark mode.
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                     Text(
                         "Next, iOS asks for camera access. Photos access is asked the first time you save.", bundle: .module,
                         comment: "Note under Continue on the first-run screen. iOS is a product name; keep it unchanged.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
                 }
                 .padding(24)
                 .frame(maxWidth: 560, minHeight: proxy.size.height, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)
+            // Continue stays pinned below the scrolling text, so it is always in reach.
+            .safeAreaInset(edge: .bottom) {
+                Button(action: requestAccess) {
+                    Text("Continue", bundle: .module, comment: "Button on the first-run screen: goes on to the system camera access prompt.")
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                }
+                // The bordered style, not the prominent one: white text on the system blue fill
+                // fails the accessibility audit's contrast check in dark mode.
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .frame(maxWidth: 512)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(.background)
+            }
         }
     }
 

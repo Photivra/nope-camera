@@ -150,28 +150,28 @@ struct FormatDetailsSheet: View {
         }
     }
 
-    /// What the next photo is, in plain words.
-    @ViewBuilder private var explanation: some View {
-        if format.isBayerRAW {
-            Label {
-                Text(
-                    "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it.",
-                    tableName: "Honesty", bundle: .module,
-                    comment: "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero.")
-            } icon: {
-                Image(systemName: "checkmark.seal.fill")
-                    .foregroundStyle(CameraStyle.fact)
+    /// What the next photo is, in plain words, after a teal seal or an amber warning symbol.
+    private var explanation: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Image(systemName: format.isBayerRAW ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                .foregroundStyle(format.isBayerRAW ? CameraStyle.fact : CameraStyle.warning)
+                .accessibilityHidden(true)
+            Group {
+                if format.isBayerRAW {
+                    Text(
+                        "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero.")
+                } else {
+                    Text(
+                        "This lens can't save unprocessed RAW. Its photos have some device processing.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.")
+                }
             }
-        } else {
-            Label {
-                Text(
-                    "This lens can't save unprocessed RAW. Its photos have some device processing.",
-                    tableName: "Honesty", bundle: .module,
-                    comment: "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.")
-            } icon: {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(CameraStyle.warning)
-            }
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
