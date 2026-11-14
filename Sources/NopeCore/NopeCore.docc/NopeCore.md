@@ -143,6 +143,14 @@ Related documentation in the repository:
 - ``SeriesScreenKeeper``
 - ``ScreenControlling``
 
+### Full-auto aids
+
+- ``AutoControlIntent``
+- ``FastShutter``
+- ``FocusTarget``
+- ``FramePoint``
+- ``AssistSettings``
+
 ### Hardware
 
 - ``CaptureBackend``

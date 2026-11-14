@@ -4,9 +4,9 @@ import Foundation
 ///
 /// Use it in tests, SwiftUI previews and UI tests. It never shows a system prompt, has no
 /// video, and returns a small placeholder instead of a real photo. As a
-/// ``ManualCaptureBackend`` it accepts every control without changing anything, reports
-/// ``placeholderReading`` when readings are turned on, and returns one placeholder per bracket
-/// frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
+/// ``ManualCaptureBackend`` it accepts every control without changing anything, reports its
+/// ``reading`` (``placeholderReading`` by default) when readings are turned on, and returns one
+/// placeholder per bracket frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
 /// ``TorchStatus/unavailable`` when created with `torchAvailable: false`.
 ///
 /// ```swift
@@ -60,8 +60,15 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// Feeds ``events``.
     private let continuation: AsyncStream<CaptureEvent>.Continuation
 
-    /// The readings stream: ``placeholderReading`` each time readings are turned on.
+    /// The readings stream: ``reading``, ``readingCount`` times, each time readings are turned
+    /// on.
     public let exposureReadings: AsyncStream<ExposureReading>
+
+    /// The reading sent when readings are turned on.
+    public let reading: ExposureReading
+
+    /// How many times ``reading`` is sent when readings are turned on.
+    public let readingCount: Int
 
     /// Feeds ``exposureReadings``.
     private let readingsContinuation: AsyncStream<ExposureReading>.Continuation
@@ -76,6 +83,10 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///   - startError: The error starting the camera throws, or `nil` to succeed.
     ///   - captureError: The error taking a photo throws, or `nil` to succeed.
     ///   - eventsAfterStart: Events to emit each time the camera starts.
+    ///   - reading: The reading to report, for example a dim scene. Defaults to
+    ///     ``placeholderReading``.
+    ///   - readingCount: How many times to report it when readings turn on, for example enough
+    ///     for the close-up suggestion. Defaults to 1.
     ///   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
     public init(
         permission: CameraPermission,
@@ -84,8 +95,12 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         startError: CaptureError? = nil,
         captureError: CaptureError? = nil,
         eventsAfterStart: [CaptureEvent] = [],
+        reading: ExposureReading = placeholderReading,
+        readingCount: Int = 1,
         torchAvailable: Bool = true
     ) {
+        self.reading = reading
+        self.readingCount = readingCount
         self.permission = permission
         self.permissionAfterRequest = permissionAfterRequest ?? permission
         self.capabilities = capabilities
@@ -165,11 +180,12 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// - Parameter controls: Ignored.
     public func applyControls(_ controls: DeviceControls) async throws(CaptureError) {}
 
-    /// Sends ``placeholderReading`` when readings are turned on.
+    /// Sends ``reading``, ``readingCount`` times, when readings are turned on.
     ///
     /// - Parameter enabled: Whether readings are on.
     public func setExposureReadingsEnabled(_ enabled: Bool) async {
-        if enabled { readingsContinuation.yield(Self.placeholderReading) }
+        guard enabled else { return }
+        for _ in 0..<max(readingCount, 0) { readingsContinuation.yield(reading) }
     }
 
     /// Returns one placeholder photo per frame, with the frame's ISO and duration, or throws

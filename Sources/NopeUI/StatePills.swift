@@ -14,6 +14,10 @@ struct CameraControlContext {
     /// The person's settings.
     let settings: NopeSettings
 
+    /// Whether the full-auto exposure dial is open, for the Exposure tray item. The camera
+    /// screen sets it; a constant `false` elsewhere.
+    var showsExposureDial: Binding<Bool> = .constant(false)
+
     /// Creates a context.
     ///
     /// - Parameters:
@@ -118,6 +122,10 @@ enum StatePills {
         flash,
         manual,
         locks,
+        exposure,
+        fastShutter,
+        closeUp,
+        magnifier,
         drive,
     ]
 
@@ -216,16 +224,17 @@ enum StatePills {
             ])
     }
 
-    /// A lock while auto exposure or autofocus is locked (AE-L, AF-L); its action unlocks both.
-    ///
-    /// Tap to focus (issue #35) can show the same pill after a lock from the viewfinder.
+    /// A lock while auto exposure or autofocus is locked (AE-L, AF-L), or both are locked at a
+    /// tapped point (issue #35); its action unlocks everything.
     ///
     /// - Parameter context: The model and settings.
     static func locks(_ context: CameraControlContext) -> StatePill? {
         let manual = context.model.manual
-        guard manual.isEnabled, manual.settings.exposureLocked || manual.settings.focusLocked else { return nil }
+        let locksAtPoint = manual.focusTarget?.isLocked == true
+        guard locksAtPoint || (manual.isEnabled && (manual.settings.exposureLocked || manual.settings.focusLocked))
+        else { return nil }
         let text: String =
-            switch (manual.settings.exposureLocked, manual.settings.focusLocked) {
+            switch (manual.settings.exposureLocked || locksAtPoint, manual.settings.focusLocked || locksAtPoint) {
             case (true, true): "AE/AF"
             case (true, false): "AE-L"
             default: "AF-L"
@@ -239,6 +248,83 @@ enum StatePills {
                 ) {
                     context.send(.manual(.setExposureLock(false)))
                     context.send(.manual(.setFocusLock(false)))
+                    context.send(.auto(.unlockFocusAndExposure))
+                }
+            ])
+    }
+
+    /// The exposure compensation in full auto, such as "−0.7", while it isn't 0 (issue #41);
+    /// its action resets it. With manual controls on, the readout row shows it instead.
+    ///
+    /// - Parameter context: The model and settings.
+    static func exposure(_ context: CameraControlContext) -> StatePill? {
+        let manual = context.model.manual
+        let compensation = manual.settings.exposureCompensation
+        guard !manual.isEnabled, compensation != 0 else { return nil }
+        return StatePill(
+            id: "exposure", systemImage: "plusminus.circle",
+            text: Text(verbatim: ControlText.value(compensation, of: .exposureCompensation)),
+            label: Text("Exposure", bundle: .module, comment: "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial."),
+            actions: [
+                StatePill.Action(
+                    id: "reset", title: Text("Reset Exposure", bundle: .module, comment: "Action of the exposure pill on the camera: returns exposure compensation to 0.")
+                ) {
+                    context.send(.auto(.setExposureCompensation(0)))
+                }
+            ])
+    }
+
+    /// The fast shutter choice in full auto while it isn't Standard (issue #56); its action
+    /// returns it to Standard.
+    ///
+    /// - Parameter context: The model and settings.
+    static func fastShutter(_ context: CameraControlContext) -> StatePill? {
+        let choice = context.settings.fastShutter
+        guard !context.model.manual.isEnabled, let shutter = choice.slowestShutter else { return nil }
+        let settings = context.settings
+        return StatePill(
+            id: "fastShutter", systemImage: "hare", text: Text(verbatim: ControlText.shutter(shutter)),
+            label: FastShutterText.title,
+            actions: [
+                StatePill.Action(
+                    id: "standard", title: Text("Use Standard Shutter", bundle: .module, comment: "Action of the fast shutter pill on the camera: returns the fast shutter choice to Standard.")
+                ) {
+                    settings.setFastShutter(.handheld)
+                }
+            ])
+    }
+
+    /// "Close-Up" while autofocus is limited to near subjects (issue #51); its action turns
+    /// the limit off.
+    ///
+    /// - Parameter context: The model and settings.
+    static func closeUp(_ context: CameraControlContext) -> StatePill? {
+        guard context.model.manual.nearFocusLimit else { return nil }
+        return StatePill(
+            id: "closeUp", systemImage: "camera.macro", text: CloseUpText.title, label: CloseUpText.title,
+            actions: [
+                StatePill.Action(
+                    id: "off", title: Text("Turn Off Close-Up", bundle: .module, comment: "Action of the Close-Up pill on the camera: lets autofocus focus at any distance again.")
+                ) {
+                    context.send(.auto(.setNearFocusLimit(false)))
+                }
+            ])
+    }
+
+    /// "3×" while the focus magnifier is on (issue #51); its action turns it off.
+    ///
+    /// - Parameter context: The model and settings.
+    static func magnifier(_ context: CameraControlContext) -> StatePill? {
+        guard context.model.isMagnifying else { return nil }
+        return StatePill(
+            id: "magnifier", systemImage: "plus.magnifyingglass",
+            text: Text(verbatim: FocusMagnifier.scale.formatted(.number.precision(.fractionLength(0))) + "×"),
+            label: MagnifierText.title,
+            actions: [
+                StatePill.Action(
+                    id: "off", title: Text("Turn Off Magnifier", bundle: .module, comment: "Action of the magnifier pill on the camera: shows the whole viewfinder again.")
+                ) {
+                    context.send(.auto(.setMagnifier(false)))
                 }
             ])
     }

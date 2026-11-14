@@ -8,7 +8,8 @@ struct ManualControlSupportTests {
     static let everything = ManualControlSupport(
         customExposure: true, continuousAutoExposure: true, lockedExposure: true, shutterPriority: true,
         isoPriority: true, aperturePriority: true, exposureBiasRange: -8...8, continuousAutoFocus: true,
-        lockedFocus: true, lensPositionFocus: true, customWhiteBalance: true, exposureRegion: true)
+        lockedFocus: true, lensPositionFocus: true, customWhiteBalance: true, exposureRegion: true, focusPoint: true,
+        exposurePoint: true, focusRangeRestriction: true)
 
     @Test func everyAnswerBecomesACapability() {
         let capabilities = Self.everything.capabilities
@@ -23,6 +24,20 @@ struct ManualControlSupportTests {
         #expect(capabilities.supportsManualFocus)
         #expect(capabilities.supportsManualWhiteBalance)
         #expect(capabilities.meteringModes == [.center, .spot, .wholeFrame])
+        #expect(capabilities.supportsFocusPoint)
+        #expect(capabilities.supportsExposurePoint)
+        #expect(capabilities.supportsNearFocusLimit)
+    }
+
+    @Test func pointsAndTheRangeNeedTheAutoModes() {
+        let fixedFocus = ManualControlSupport(
+            customExposure: false, continuousAutoExposure: false, lockedExposure: false, shutterPriority: false,
+            isoPriority: false, aperturePriority: false, exposureBiasRange: 0...0, continuousAutoFocus: false,
+            lockedFocus: false, lensPositionFocus: false, customWhiteBalance: false, exposureRegion: false,
+            focusPoint: true, exposurePoint: true, focusRangeRestriction: true)
+        #expect(!fixedFocus.capabilities.supportsFocusPoint)
+        #expect(!fixedFocus.capabilities.supportsExposurePoint)
+        #expect(!fixedFocus.capabilities.supportsNearFocusLimit)
     }
 
     @Test func meteringAndCompensationNeedAutoExposure() {

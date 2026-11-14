@@ -23,6 +23,7 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
 | 15 | App Store build versus the source | Essentially accurate (inferred from App Store distribution) | "Apple encrypts and re-signs App Store apps, so there's no standard way to confirm a download was built from our public source. On Android, F-Droid verifies reproducible builds." |
 | 16 | Face framing stays on the device | Inferred; Apple's Vision documentation doesn't say "on device" | "Face framing uses Apple's Vision framework on your iPhone, and nope. makes no network connections." Never quote Apple as saying "on device". |
 | 17 | A privacy policy | Required by both stores, even for apps that collect no data | A privacy policy link in the App Store and Google Play listings, and inside the app |
+| 18 | Face detection for autofocus | Mechanism confirmed in `AVCaptureDevice.h`: face-driven autofocus is on by default for apps linked on or after iOS 15.4 when the camera supports autofocus (`isFaceDrivenAutoFocusEnabled`); nope. never reads face results (it has no metadata output) | "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found." Don't say faces leave no trace in the file until item 9 below is checked: EXIF `SubjectArea` is kept when the exposure settings switch is on. |
 
 ## Notes
 
@@ -89,6 +90,7 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
 6. The share sheet's Options defaults, and what metadata survives AirDrop, Messages and Mail.
 7. Android: the merged manifest has no `INTERNET`, and the permission views show none.
 8. The Xcode privacy report shows no missing required-reason warnings on upload.
+9. With a face in the frame and the exposure settings switch on, what EXIF `SubjectArea` holds in the saved files (a focus area, or a face rectangle).
 
 ## Sources
 

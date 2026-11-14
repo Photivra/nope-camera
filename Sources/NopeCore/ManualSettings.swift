@@ -25,6 +25,9 @@ public struct ExposureReading: Equatable, Sendable {
     /// The white balance in use, or `nil` when the camera can't convert its gains.
     public let whiteBalance: WhiteBalance?
 
+    /// Whether autofocus is moving the lens to find focus (`AVCaptureDevice.isAdjustingFocus`).
+    public let isAdjustingFocus: Bool
+
     /// Creates a reading.
     ///
     /// - Parameters:
@@ -34,9 +37,10 @@ public struct ExposureReading: Equatable, Sendable {
     ///   - lensPosition: The relative focus position, 0 to 1.
     ///   - aperture: The aperture in use, as an f-number.
     ///   - whiteBalance: The white balance in use, or `nil`.
+    ///   - isAdjustingFocus: Whether autofocus is moving the lens. Defaults to `false`.
     public init(
         iso: Double, exposureDuration: Double, exposureOffset: Double, lensPosition: Double, aperture: Double,
-        whiteBalance: WhiteBalance?
+        whiteBalance: WhiteBalance?, isAdjustingFocus: Bool = false
     ) {
         self.iso = iso
         self.exposureDuration = exposureDuration
@@ -44,6 +48,7 @@ public struct ExposureReading: Equatable, Sendable {
         self.lensPosition = lensPosition
         self.aperture = aperture
         self.whiteBalance = whiteBalance
+        self.isAdjustingFocus = isAdjustingFocus
     }
 }
 

@@ -34,6 +34,10 @@ public final class NopeSettings {
     /// and honesty warnings. Off by default.
     public private(set) var startsInCleanView: Bool
 
+    /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default; the camera
+    /// screen applies it with ``AutoControlIntent/setFastShutter(_:)``.
+    public private(set) var fastShutter: FastShutter
+
     /// When the flash fires, remembered between launches. ``FlashMode/off`` by default. The app
     /// passes it to ``CameraModel/light`` with ``LightIntent/setFlashMode(_:)``.
     public private(set) var flashMode: FlashMode
@@ -73,6 +77,8 @@ public final class NopeSettings {
         // string, which `bool(forKey:)` reads; a missing value is the default, off.
         showsManualControls = defaults.bool(forKey: Key.showsManualControls)
         startsInCleanView = defaults.bool(forKey: Key.startsInCleanView)
+        // An unknown stored value, for example from a later version, falls back to the default.
+        fastShutter = defaults.string(forKey: Key.fastShutter).flatMap(FastShutter.init(rawValue:)) ?? .handheld
         flashMode = defaults.string(forKey: Key.flashMode).flatMap(FlashMode.init(rawValue:)) ?? .off
         torchLevel = defaults.object(forKey: Key.torchLevel) == nil
             ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
@@ -209,6 +215,14 @@ public final class NopeSettings {
         defaults.set(isOn, forKey: Key.startsInCleanView)
     }
 
+    /// Sets how fast a shutter full auto prefers, and saves the change.
+    ///
+    /// - Parameter choice: The choice.
+    public func setFastShutter(_ choice: FastShutter) {
+        fastShutter = choice
+        defaults.set(choice.rawValue, forKey: Key.fastShutter)
+    }
+
     /// Sets when the flash fires, and saves the change.
     ///
     /// - Parameter mode: The flash mode.
@@ -268,6 +282,8 @@ public final class NopeSettings {
         static let legacyManualControls = "manualControlsEnabled"
         /// Whether the camera starts in clean view, a Boolean.
         static let startsInCleanView = "NopeSettings.startsInCleanView"
+        /// How fast a shutter full auto prefers, a ``FastShutter`` raw value.
+        static let fastShutter = "NopeSettings.fastShutter"
         /// When the flash fires, a ``FlashMode`` raw value.
         static let flashMode = "NopeSettings.flashMode"
         /// The torch's brightness, a number from 0.01 to 1.

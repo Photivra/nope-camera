@@ -39,6 +39,11 @@ public enum CameraIntent: Equatable, Sendable {
     /// shutter button: see ``DriveIntent``.
     case drive(DriveIntent)
 
+    /// Use an aid that works in full auto too: tap to focus and expose, the focus and exposure
+    /// lock, exposure compensation, Close-Up, the fast shutter rule and the focus magnifier. See
+    /// ``AutoControlIntent``.
+    case auto(AutoControlIntent)
+
     /// Change the flash or the torch: see ``LightIntent``.
     case light(LightIntent)
 }

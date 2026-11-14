@@ -64,6 +64,11 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// The manual controls the lens supports. ``ManualCapabilities/none`` when unknown.
     public let manualControls: ManualCapabilities
 
+    /// The lens's focal length as it would be on a 35 mm film camera with the same angle of
+    /// view, in millimeters, or `nil` when unknown. Computed from the field of view, so it is
+    /// approximate. Full auto uses it for the handheld shutter rule (``AutoShutter``).
+    public let equivalentFocalLength: Double?
+
     /// The flash modes the lens supports, as the photo output reported them for this camera.
     /// Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
     /// camera: nope. uses no screen flash (issue #38).
@@ -87,6 +92,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
     ///   - photoDimensions: The supported photo sizes, smallest first.
     ///   - manualControls: The manual controls the lens supports. Defaults to none.
+    ///   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
     ///   - flashModes: The flash modes the lens supports. Defaults to none.
     ///   - hasTorch: Whether the lens has a torch. Defaults to `false`.
     public init(
@@ -101,6 +107,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
         maxBracketedPhotoCount: Int = 0,
         photoDimensions: [PhotoDimensions] = [],
         manualControls: ManualCapabilities = .none,
+        equivalentFocalLength: Double? = nil,
         flashModes: [FlashMode] = [],
         hasTorch: Bool = false
     ) {
@@ -115,6 +122,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
         self.manualControls = manualControls
+        self.equivalentFocalLength = equivalentFocalLength
         self.flashModes = flashModes
         self.hasTorch = hasTorch
     }
