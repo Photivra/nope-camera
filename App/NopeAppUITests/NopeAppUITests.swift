@@ -15,15 +15,15 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// The launch arguments for the largest accessibility text size.
-    private static let largestTextSize = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+    static let largestTextSize = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
 
     /// The launch arguments for right-to-left layout.
-    private static let rightToLeft = ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
+    static let rightToLeft = ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
 
     /// Whether the tests run on an iPad, where the interface rotates and the controls are in a
     /// trailing column.
     @MainActor
-    private var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     /// Turns the simulated device and waits for the app to follow: on iPad until the window has
     /// the new shape, on iPhone (whose camera layout stays in portrait) for the icons to turn.
@@ -75,7 +75,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Opens the quick-controls tray and presses one of its items.
     @MainActor
-    private func quickControl(_ app: XCUIApplication, _ name: String) {
+    func quickControl(_ app: XCUIApplication, _ name: String) {
         let tray = app.buttons["Quick Controls"]
         XCTAssertTrue(tray.waitForExistence(timeout: 20))
         tray.tap()
@@ -109,7 +109,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Launches the app with a simulated camera scenario (`SimulatedCameraLaunch.Scenario`).
     @MainActor
-    private func launch(_ scenario: String, extraArguments: [String] = []) -> XCUIApplication {
+    func launch(_ scenario: String, extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-NopeSimulatedCamera", scenario] + extraArguments
         app.launch()
@@ -118,7 +118,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Any element whose accessibility label contains the text.
     @MainActor
-    private func element(_ app: XCUIApplication, containing text: String) -> XCUIElement {
+    func element(_ app: XCUIApplication, containing text: String) -> XCUIElement {
         app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
     }
 
@@ -142,7 +142,7 @@ final class NopeAppUITests: XCTestCase {
     /// handler, because querying the app from inside the handler can make the audit time out;
     /// and a failing audit is run once more after the layout settles again.
     @MainActor
-    private func auditScrollingScreen(
+    func auditScrollingScreen(
         _ app: XCUIApplication, checksContrast: Bool = true, file: StaticString = #filePath, line: UInt = #line
     ) throws {
         scrollToTop(app)
@@ -381,7 +381,7 @@ final class NopeAppUITests: XCTestCase {
     /// Opens Settings from the camera screen and audits every settings screen: Settings,
     /// Formats, Privacy, Honesty, About and the license text.
     @MainActor
-    private func auditSettingsScreens(_ app: XCUIApplication, checksDynamicType: Bool = true, checksContrast: Bool = true) throws {
+    func auditSettingsScreens(_ app: XCUIApplication, checksDynamicType: Bool = true, checksContrast: Bool = true) throws {
         let settingsButton = app.buttons["Settings"]
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
         settingsButton.tap()
@@ -442,7 +442,7 @@ final class NopeAppUITests: XCTestCase {
     ///   element, and issues on an element whose frame no longer matches the element found by
     ///   the same label now. Every other issue fails the test.
     @MainActor
-    private func audit(
+    func audit(
         _ app: XCUIApplication, afterScrolling: Bool = false, checksDynamicType: Bool = true,
         checksContrast: Bool = true, file: StaticString = #filePath, line: UInt = #line
     ) throws {
@@ -483,7 +483,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Waits for animations to finish.
     @MainActor
-    private func settle() {
+    func settle() {
         _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Animations finish")], timeout: 3)
     }
 
@@ -937,7 +937,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Passes the first-run screen and waits for the camera.
     @MainActor
-    private func continuePastFirstRun(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+    func continuePastFirstRun(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let next = app.buttons["Continue"]
         XCTAssertTrue(next.waitForExistence(timeout: 10), file: file, line: line)
         next.tap()

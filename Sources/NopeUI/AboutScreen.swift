@@ -48,7 +48,7 @@ struct AboutScreen: View {
                 Text(
                     "nope. is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
                     comment: "Plain summary of the GPL. Keep \"nope.\" unchanged.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CameraStyle.secondaryText)
             } header: {
                 Text("License", bundle: .module, comment: "Title of the screen showing the full license text.")
             }

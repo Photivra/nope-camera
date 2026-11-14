@@ -83,6 +83,9 @@ struct StatePill: Identifiable {
     /// What the pill can do. The first is the pill's own action when there is only one.
     let actions: [Action]
 
+    /// The state VoiceOver reads after the name, such as "25%" for the light, or `nil`.
+    let value: Text?
+
     /// Creates a pill.
     ///
     /// - Parameters:
@@ -91,12 +94,14 @@ struct StatePill: Identifiable {
     ///   - text: The short visible text.
     ///   - label: The full name for VoiceOver and Voice Control.
     ///   - actions: What the pill can do; at least one.
-    init(id: String, systemImage: String, text: Text, label: Text, actions: [Action]) {
+    ///   - value: The state VoiceOver reads after the name, or `nil`.
+    init(id: String, systemImage: String, text: Text, label: Text, actions: [Action], value: Text? = nil) {
         self.id = id
         self.systemImage = systemImage
         self.text = text
         self.label = label
         self.actions = actions
+        self.value = value
     }
 }
 
@@ -109,9 +114,17 @@ struct StatePill: Identifiable {
 enum StatePills {
     /// Every pill builder, in display order. Add a feature's builder here.
     static let builders: [@MainActor (CameraControlContext) -> StatePill?] = [
+        light,
+        flash,
         manual,
         locks,
         drive,
+    ]
+
+    /// The builders whose pills stay in clean view: the light, so it can always be turned off
+    /// in one tap (issue #38).
+    static let cleanViewBuilders: [@MainActor (CameraControlContext) -> StatePill?] = [
+        light,
     ]
 
     /// The pills for settings not at their defaults, in display order.
@@ -119,6 +132,69 @@ enum StatePills {
     /// - Parameter context: The model and settings.
     static func current(_ context: CameraControlContext) -> [StatePill] {
         builders.compactMap { $0(context) }
+    }
+
+    /// The pills shown in clean view, in display order.
+    ///
+    /// - Parameter context: The model and settings.
+    static func cleanView(_ context: CameraControlContext) -> [StatePill] {
+        cleanViewBuilders.compactMap { $0(context) }
+    }
+
+    /// The light's brightness while the torch is on, such as "25%"; its menu turns the light
+    /// off or picks another brightness, which is remembered.
+    ///
+    /// - Parameter context: The model and settings.
+    static func light(_ context: CameraControlContext) -> StatePill? {
+        let light = context.model.light
+        guard case .on(let level) = light.torch else { return nil }
+        let settings = context.settings
+        let percent = Text(level, format: .percent.precision(.fractionLength(0)))
+        let levels = LightModel.torchLevels.map { choice in
+            StatePill.Action(
+                id: "level-\(choice)",
+                title: Text(
+                    "Brightness \(Text(choice, format: .percent.precision(.fractionLength(0))))", bundle: .module,
+                    comment: "Action of the Light pill on the camera: sets the light's brightness. The value is a percentage such as 25%.")
+            ) {
+                settings.setTorchLevel(choice)
+            }
+        }
+        return StatePill(
+            id: "light", systemImage: "flashlight.on.fill", text: percent,
+            label: Text("Light", bundle: .module, comment: "Camera switch and its Voice Control name: turns on the phone's light (torch) and keeps it on while taking photos."),
+            actions: [
+                StatePill.Action(
+                    id: "off", title: Text("Turn Off Light", bundle: .module, comment: "Action of the Light pill on the camera: turns the light (torch) off.")
+                ) {
+                    context.send(.light(.setTorch(false)))
+                }
+            ] + levels,
+            value: percent)
+    }
+
+    /// The flash mode while it is Auto or On and applies to the next photo; its action turns
+    /// the flash off.
+    ///
+    /// - Parameter context: The model and settings.
+    static func flash(_ context: CameraControlContext) -> StatePill? {
+        let mode = context.model.light.flashModeForCapture
+        guard mode != .off else { return nil }
+        let settings = context.settings
+        return StatePill(
+            id: "flash", systemImage: FlashText.systemImage(for: mode),
+            // Their own keys: "Auto" alone is the manual controls' Auto.
+            text: mode == .auto
+                ? Text(String(localized: "Flash pill: Auto", defaultValue: "Auto", bundle: .module, comment: "Short text of the flash pill on the camera: the camera decides whether the flash fires."))
+                : Text(String(localized: "Flash pill: On", defaultValue: "On", bundle: .module, comment: "Short text of the flash pill on the camera: the flash fires for every photo.")),
+            label: FlashText.name(of: mode),
+            actions: [
+                StatePill.Action(
+                    id: "off", title: Text("Turn Off Flash", bundle: .module, comment: "Action of the flash pill on the camera: the flash no longer fires.")
+                ) {
+                    settings.setFlashMode(.off)
+                }
+            ])
     }
 
     /// "M" while manual controls are on; its action turns them off.
@@ -249,6 +325,7 @@ struct StatePillButton: View {
             }
         }
         .accessibilityLabel(pill.label)
+        .accessibilityValue(pill.value ?? Text(verbatim: ""))
         .accessibilityInputLabels([pill.label, pill.text])
         .accessibilityShowsLargeContentViewer()
     }

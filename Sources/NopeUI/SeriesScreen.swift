@@ -17,6 +17,9 @@ struct SeriesScreen: ViewModifier {
     /// The camera model.
     let model: CameraModel
 
+    /// Whether night mode is on, so the Brighten Screen button is red on black too.
+    let isNightMode: Bool
+
     /// The keeper the app gives, or `nil`.
     @Environment(\.seriesScreenKeeper) private var keeper
 
@@ -25,9 +28,12 @@ struct SeriesScreen: ViewModifier {
 
     /// Creates the modifier.
     ///
-    /// - Parameter model: The camera model.
-    init(model: CameraModel) {
+    /// - Parameters:
+    ///   - model: The camera model.
+    ///   - isNightMode: Whether night mode is on.
+    init(model: CameraModel, isNightMode: Bool) {
         self.model = model
+        self.isNightMode = isNightMode
     }
 
     /// Whether an interval series runs.
@@ -43,6 +49,7 @@ struct SeriesScreen: ViewModifier {
             .overlay {
                 if let keeper, keeper.isDimmed {
                     BrightenScreenButton { keeper.brighten() }
+                        .nightModeStyle(isNightMode)
                 }
             }
             .onChange(of: isSeriesRunning, initial: true) { update() }
@@ -131,8 +138,10 @@ extension View {
     /// Keeps the screen awake and dimmed during an interval series, and stops a countdown or
     /// burst when the camera screen goes away (``SeriesScreen``).
     ///
-    /// - Parameter model: The camera model.
-    func seriesScreen(_ model: CameraModel) -> some View {
-        modifier(SeriesScreen(model: model))
+    /// - Parameters:
+    ///   - model: The camera model.
+    ///   - isNightMode: Whether night mode is on.
+    func seriesScreen(_ model: CameraModel, isNightMode: Bool) -> some View {
+        modifier(SeriesScreen(model: model, isNightMode: isNightMode))
     }
 }

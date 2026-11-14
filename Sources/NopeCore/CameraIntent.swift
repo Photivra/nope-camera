@@ -38,4 +38,7 @@ public enum CameraIntent: Equatable, Sendable {
     /// Change the drive mode, start or cancel the self-timer, stop a burst, or report a hardware
     /// shutter button: see ``DriveIntent``.
     case drive(DriveIntent)
+
+    /// Change the flash or the torch: see ``LightIntent``.
+    case light(LightIntent)
 }

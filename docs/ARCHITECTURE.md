@@ -147,6 +147,34 @@ system's battery and power state notifications. `CameraModel.storageWarning` com
 space with `PhotoSizeEstimate` for the selected lens and formats; `DeviceStatus.batteryWarning`
 applies at 20% unplugged. `NopeUI` shows them as `CameraWarnings` chips and announces them.
 
+### Flash and light (issue #38)
+
+`CameraModel.light` (`LightModel`) holds the flash mode and the torch, and receives
+`CameraIntent.light(LightIntent)`. The flash is per photo: the model puts
+`LightModel.flashModeForCapture` into `CaptureRequest.flashMode` (off when the lens has no flash
+or the torch is on), and `AVFoundationCaptureBackend` applies it to that photo's settings only
+(`CapturePolicy.photoSettings(_:flashMode:)`), so the session's configuration and prepared
+settings never depend on it. Brackets never use it (`AVCapturePhotoBracketSettings` doesn't
+support it). The torch goes through `LightCaptureBackend.setTorch(level:)`, which
+`SystemCaptureHardware` implements with `setTorchModeOn(level:)`; it turns the torch off before
+a camera leaves the session and reports `CaptureEvent.torchUnavailable` when `isTorchAvailable`
+turns false. The model turns it off on interruptions, heat pauses and lenses without a torch,
+re-applies it after a restart of a lens with one, and `CameraScreen` turns it off when the scene
+goes to the background. `Lens.flashModes` (from `supportedFlashModes` with the camera attached;
+none for the front camera) and `Lens.hasTorch` are capabilities as data. The remembered flash
+mode and brightness are `NopeSettings.flashMode` and `torchLevel`, passed in by the app target.
+
+### Night mode (issue #61)
+
+`NopeSettings.isNightModeOn` (and `setNightMode(_:)`, for features such as the Astro helper) and
+`tintsViewfinderInNightMode`. `NopeUI` applies `NightModeStyle` at the root of the camera screen
+and of each sheet: every text style is drawn white, then everything is multiplied by pure red,
+so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
+turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
+colors, the ready camera leaves its frame clear and reports it (`NaturalViewfinderFrame`), and
+`CameraScreen` draws the viewfinder there, behind the red interface. System menus, alerts, the
+keyboard and the status bar are drawn by the system and keep its dark appearance.
+
 ### The viewfinder
 
 `NopeUI` may import only `NopeCore` and SwiftUI, and `NopeCapture` may not import UIKit, so the

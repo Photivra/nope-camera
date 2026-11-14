@@ -52,6 +52,9 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; each save takes half a second, so a burst runs long enough
         /// for the UI tests to see and stop it.
         case slowSaving
+        /// Access already allowed; the four lenses, but the system refuses the light, as on a
+        /// device too hot for it.
+        case lightUnavailable
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -59,10 +62,13 @@ enum SimulatedCameraLaunch {
     }
 
     /// Four lenses like an iPhone Pro's: ultra wide, wide and front with Bayer RAW, and a 5×
-    /// telephoto without it, to show the labeled fallback.
+    /// telephoto without it, to show the labeled fallback. The wide lens has a flash and a
+    /// torch; the others have neither.
     static let lenses: [Lens] = [
         Lens(id: "simulated-ultra-wide", kind: .ultraWide, bayerRAWFormat: "rgg4", magnification: 0.5),
-        Lens(id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1),
+        Lens(
+            id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1, flashModes: FlashMode.allCases,
+            hasTorch: true),
         Lens(id: "simulated-telephoto", kind: .telephoto, bayerRAWFormat: nil, magnification: 5),
         Lens(id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4"),
     ]
@@ -179,6 +185,8 @@ enum SimulatedCameraLaunch {
         case .noRAW:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: lensesWithoutRAW))
+        case .lightUnavailable:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, torchAvailable: false)
         case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:

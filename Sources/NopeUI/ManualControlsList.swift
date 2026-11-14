@@ -77,7 +77,7 @@ struct ControlRow: View {
                 .accessibilityValue(Text(verbatim: SlotValue.spoken(for: control, in: manual)))
             } else {
                 Text(verbatim: SlotValue.spoken(for: control, in: manual))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CameraStyle.secondaryText)
             }
         }
     }
