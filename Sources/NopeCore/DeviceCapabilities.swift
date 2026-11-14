@@ -30,6 +30,12 @@ public struct DeviceCapabilities: Equatable, Sendable {
         lenses.contains { $0.supportsBayerRAW }
     }
 
+    /// Whether the device has a front camera, so front camera options such as
+    /// ``SaveSettings/mirrorsFrontCamera`` apply.
+    public var hasFrontCamera: Bool {
+        lenses.contains { $0.kind == .front }
+    }
+
     /// The lens the camera starts with: the rear wide camera when there is one, otherwise the
     /// first lens. `nil` when there are no lenses.
     public var defaultLens: Lens? {

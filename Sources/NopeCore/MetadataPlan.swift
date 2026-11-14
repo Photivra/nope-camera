@@ -93,6 +93,17 @@ public struct MetadataPlan: Equatable, Sendable {
     /// ``MetadataItem/appNameAndVersion`` is on.
     public let appVersion: String
 
+    /// Whether the photo is saved mirrored left to right: a front camera photo with
+    /// ``SaveSettings/mirrorsFrontCamera`` on (issue #45). The mirroring is done only through
+    /// the orientation value (``mirroredOrientation(_:)``): the sensor data is never changed.
+    /// ``CameraModel`` sets it for each capture. Off by default.
+    public var mirrorsHorizontally = false
+
+    /// Where the photo was taken, written when ``MetadataItem/location`` is on, or `nil` for no
+    /// location (issue #43). ``CameraModel`` sets it for each capture from ``LocationTagging``;
+    /// nothing else supplies a location, and the system's own metadata carries none.
+    public var location: PhotoLocation?
+
     /// Creates a plan.
     ///
     /// - Parameters:
@@ -187,11 +198,10 @@ public struct MetadataPlan: Equatable, Sendable {
             for (field, name) in Self.xmpMirrors where written.contains(field) { xmp.insert(name) }
             if !xmp.isEmpty { blocks.insert(Self.heifXMPBlock) }
         }
-        if settings.isOn(.location) { wildcardDictionaries.insert(MetadataField.gps) }
         if settings.isOn(.makerNotes) { wildcardDictionaries.insert(MetadataField.makerApple) }
         let imageIOKeys = Set(fields.flatMap(\.imageIOKeys) + Self.derivedImageIOKeys.map { ImageIOKey(nil, $0) })
         return MetadataAllowlist(
-            format: format, tags: tags, wildcardDirectories: settings.isOn(.location) ? [.gps] : [], blocks: blocks,
+            format: format, tags: tags, wildcardDirectories: [], blocks: blocks,
             xmpProperties: xmp, imageIOKeys: imageIOKeys, wildcardImageIODictionaries: wildcardDictionaries,
             requiredTags: format == .raw ? Self.requiredDNGTags : [], textRules: textRules,
             xmpTextRules: [
@@ -205,8 +215,8 @@ public struct MetadataPlan: Equatable, Sendable {
     ///
     /// Privacy rule: the result starts empty, and only allowlisted values are copied in
     /// (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
-    /// and the person's name and copyright are written by nope.; everything else is the system's
-    /// own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+    /// the person's name and copyright, the ``location`` and a mirrored orientation
+    /// (``mirrorsHorizontally``) are written by nope.; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
     /// string for each one whose switch is off.
     ///
     /// - Parameters:
@@ -224,10 +234,13 @@ public struct MetadataPlan: Equatable, Sendable {
                 if let value = Self.value(of: key, in: source) { Self.put(value, at: key, in: &result) }
             }
         }
-        for (item, dictionary) in [(MetadataItem.location, MetadataField.gps), (.makerNotes, MetadataField.makerApple)]
-        where settings.isOn(item) {
-            if let value = source[dictionary] { result[dictionary] = value }
+        if settings.isOn(.makerNotes), let value = source[MetadataField.makerApple] {
+            result[MetadataField.makerApple] = value
         }
+        // Privacy rule (issue #43): the GPS directory is built from the plan's location only,
+        // with the fields of `MetadataField.gpsFields`; a developed copy takes the same fields
+        // from its DNG through the catalog loop above.
+        if settings.isOn(.location), let location { result[MetadataField.gps] = location.gpsProperties }
         let sourceSoftware = Self.value(of: ImageIOKey(MetadataField.tiff, "Software"), in: source) as? String
         if let software = softwareValue(systemSoftware: Self.systemVersion(fromSoftware: sourceSoftware)) {
             Self.put(software, at: ImageIOKey(MetadataField.tiff, "Software"), in: &result)
@@ -243,6 +256,11 @@ public struct MetadataPlan: Equatable, Sendable {
         }
         if let orientation {
             for key in MetadataField.orientation.imageIOKeys { Self.put(orientation, at: key, in: &result) }
+        } else if mirrorsHorizontally {
+            let current = MetadataField.orientation.imageIOKeys.lazy.compactMap { Self.value(of: $0, in: source) as? Int }
+                .first
+            let mirrored = Self.mirroredOrientation(current ?? 1)
+            for key in MetadataField.orientation.imageIOKeys { Self.put(mirrored, at: key, in: &result) }
         }
         if format == .raw {
             // AVFoundation writes no DNG without these four keys (issue #65): an empty string
@@ -252,6 +270,23 @@ public struct MetadataPlan: Equatable, Sendable {
             }
         }
         return result
+    }
+
+    /// The orientation that shows a photo mirrored left to right, for an EXIF/TIFF orientation
+    /// value (issue #45).
+    ///
+    /// TIFF 6.0 (`Orientation`, tag 274) and EXIF 3.0 define eight values: 1 upright, 2 mirrored,
+    /// 3 turned 180°, 4 turned 180° and mirrored, 5 mirrored and turned 90° counterclockwise
+    /// (a transpose), 6 turned 90° clockwise, 7 mirrored and turned 90° clockwise (a transverse)
+    /// and 8 turned 90° counterclockwise. Mirroring the upright result left to right swaps each
+    /// pair: 1↔2, 3↔4, 5↔6 and 7↔8. The sensor data is never changed.
+    ///
+    /// - Parameter orientation: The orientation the photo would be shown with, 1 to 8. Any other
+    ///   value is treated as 1, upright.
+    /// - Returns: The mirrored orientation, 1 to 8.
+    public static func mirroredOrientation(_ orientation: Int) -> Int {
+        let value = (1...8).contains(orientation) ? orientation : 1
+        return value.isMultiple(of: 2) ? value - 1 : value + 1
     }
 
     /// The system's version in a `Software` value: the value itself when the system wrote it, the

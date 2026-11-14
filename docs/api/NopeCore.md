@@ -417,6 +417,18 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether clean view is on: the interface hides every control that isn't essential. Off by
 default. Warnings that change what the photo is are never hidden.
 
+## `CameraModel/location`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var location: LocationTagging? { get set }
+```
+
+Location tagging (issue #43), which gives each photo its location while the Location
+switch is on, or `nil` when the app has no location service (previews, tests). The app
+sets it once.
+
 ## `CameraModel/manual`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1300,6 +1312,71 @@ For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wr
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
 
+## `CompressionQuality`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+enum CompressionQuality
+```
+
+The lossy compression quality of a developed copy.
+
+The values are ImageIO's `kCGImageDestinationLossyCompressionQuality`, which Apple documents
+as 0.0 to 1.0, where 1.0 is maximum image quality
+([documentation](https://developer.apple.com/documentation/imageio/kcgimagedestinationlossycompressionquality)).
+
+## `CompressionQuality/high`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case high
+```
+
+High quality (0.9).
+
+## `CompressionQuality/lossyCompressionQuality`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var lossyCompressionQuality: Double? { get }
+```
+
+The value for `kCGImageDestinationLossyCompressionQuality`, or `nil` for the encoder's
+default.
+
+## `CompressionQuality/maximum`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case maximum
+```
+
+Maximum quality (1.0): the largest files.
+
+## `CompressionQuality/medium`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case medium
+```
+
+Medium quality (0.7): smaller files, with visible compression in fine detail.
+
+## `CompressionQuality/systemDefault`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case systemDefault
+```
+
+No quality is passed, so the system encoder uses its own default.
+
 ## `ControlAvailability`
 
 public, declared in `Sources/NopeCore/ManualControl.swift`
@@ -1576,6 +1653,102 @@ let values: [Double]
 
 The values, smallest first. Never empty.
 
+## `DevelopedFileOptions`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+struct DevelopedFileOptions
+```
+
+How the HEIF and JPEG copies nope. develops from the RAW are encoded: compression, HEIF bit
+depth and color space (issue #57, "File").
+
+Owner principle (issue #57): anything about the file that the device lets an app control is
+the person's to choose, behind the advanced options, with the defaults working on their own.
+The defaults are the encoding nope. has always used: HEIF at the system encoder's own
+quality and 10 bits per channel, JPEG at maximum quality, both in Display P3. None of the
+options change the RAW, the metadata or the signature, and every combination is encoded and
+opened again by the unit tests (`NopeDevelopTests`), because a setting that makes a file
+that doesn't open isn't offered.
+
+``SaveSettings/fileOptions`` holds the choice; `NopeDevelop` turns it into ImageIO options.
+
+## `DevelopedFileOptions/colorSpace`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var colorSpace: OutputColorSpace
+```
+
+The color space of both copies. ``OutputColorSpace/displayP3`` by default.
+
+## `DevelopedFileOptions/heifBitDepth`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var heifBitDepth: HEIFBitDepth
+```
+
+The bits per color channel of the HEIF copy. ``HEIFBitDepth/ten`` by default. JPEG is
+always 8 bits per channel: the format has no other depth in ImageIO.
+
+## `DevelopedFileOptions/heifQuality`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var heifQuality: CompressionQuality
+```
+
+The compression of the HEIF copy. ``CompressionQuality/systemDefault`` by default.
+
+## `DevelopedFileOptions/init()`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+init()
+```
+
+The defaults: the encoding nope. used before these options existed.
+
+## `DevelopedFileOptions/isDefault`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var isDefault: Bool { get }
+```
+
+Whether every option is at its default.
+
+## `DevelopedFileOptions/jpegQuality`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var jpegQuality: CompressionQuality
+```
+
+The compression of the JPEG copy. ``CompressionQuality/maximum`` by default.
+
+## `DevelopedFileOptions/quality(for:)`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+func quality(for format: PhotoFormat) -> CompressionQuality
+```
+
+The compression chosen for a developed format.
+
+- Parameter format: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
+- Returns: The format's quality; ``CompressionQuality/maximum`` for RAW, which is never
+  re-encoded.
+
 ## `DevelopedLook`
 
 public, declared in `Sources/NopeCore/DevelopedLook.swift`
@@ -1650,6 +1823,17 @@ var hasCamera: Bool { get }
 ```
 
 Whether the device has at least one camera nope. can use.
+
+## `DeviceCapabilities/hasFrontCamera`
+
+public, declared in `Sources/NopeCore/DeviceCapabilities.swift`
+
+```swift
+var hasFrontCamera: Bool { get }
+```
+
+Whether the device has a front camera, so front camera options such as
+``SaveSettings/mirrorsFrontCamera`` apply.
 
 ## `DeviceCapabilities/init(lenses:)`
 
@@ -2120,6 +2304,36 @@ let whiteBalance: WhiteBalance?
 ```
 
 The white balance in use, or `nil` when the camera can't convert its gains.
+
+## `HEIFBitDepth`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+enum HEIFBitDepth
+```
+
+The bits per color channel of the developed HEIF.
+
+## `HEIFBitDepth/eight`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case eight
+```
+
+8 bits per channel: smaller files that every viewer opens.
+
+## `HEIFBitDepth/ten`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case ten
+```
+
+10 bits per channel: smoother gradients. The default.
 
 ## `HEIFReader`
 
@@ -2857,6 +3071,241 @@ var supportsBayerRAW: Bool { get }
 ```
 
 Whether this lens delivers single-frame Bayer RAW.
+
+## `LocationAccess`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+enum LocationAccess
+```
+
+Whether nope. may use the device's location.
+
+## `LocationAccess/allowed`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+case allowed
+```
+
+Allowed while nope. is in use.
+
+## `LocationAccess/denied`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+case denied
+```
+
+The person declined, or turned location off for nope. or for the whole device.
+
+## `LocationAccess/isAllowed`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+var isAllowed: Bool { get }
+```
+
+Whether a location can be read.
+
+## `LocationAccess/notDetermined`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+case notDetermined
+```
+
+The person hasn't been asked yet.
+
+## `LocationAccess/restricted`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+case restricted
+```
+
+A restriction, such as Screen Time or a device profile, doesn't allow it.
+
+## `LocationProviding`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+protocol LocationProviding : Sendable
+```
+
+The device's location service, behind a protocol so ``LocationTagging`` is tested with a
+fake. The app implements it with Core Location.
+
+Privacy rule (issue #43; AGENTS.md, "No network"): the location is read on the device and
+written only into the person's own photos. Nothing is sent anywhere, and only "while using
+the app" access is ever asked for.
+
+## `LocationProviding/currentAccess()`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+func currentAccess() async -> LocationAccess
+```
+
+The current access, without asking.
+
+## `LocationProviding/locations()`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+func locations() -> AsyncStream<PhotoLocation>
+```
+
+The device's locations, as they arrive. Updates run only while the sequence is iterated
+and stop as soon as the iterating task is cancelled (AGENTS.md, "Battery").
+
+## `LocationProviding/requestAccess()`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+func requestAccess() async -> LocationAccess
+```
+
+Asks for "while using the app" access if the person hasn't been asked yet, and returns
+the access afterwards.
+
+Side effects: may show the system location prompt (the localized
+`NSLocationWhenInUseUsageDescription`).
+
+## `LocationTagging`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor final class LocationTagging
+```
+
+Location tagging for photos (issue #43): asks for access when the person turns Location on,
+follows the location only while the camera is running, and gives each photo the latest one.
+
+The rules live here, so any interface only calls these methods:
+
+- Location is off by default (``MetadataItem/location``). ``turnOn(in:)`` asks for access
+  first and turns the switch on only if access is allowed.
+- Location updates run only while the switch is on, access is allowed and the camera is
+  running (``update(isOn:cameraIsRunning:)``). They stop otherwise, and the last location is
+  forgotten, so a photo never gets a location from an earlier session.
+- A photo taken before the first location arrives is saved without a location.
+
+```swift
+let tagging = LocationTagging(provider: provider)
+await tagging.turnOn(in: settings)
+await tagging.update(isOn: settings.metadata.isOn(.location), cameraIsRunning: true)
+model.location = tagging
+```
+
+## `LocationTagging/access`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor var access: LocationAccess { get set }
+```
+
+Whether nope. may use the location, as last read.
+
+## `LocationTagging/init(provider:)`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor init(provider: any LocationProviding)
+```
+
+Creates location tagging with no updates running.
+
+- Parameter provider: The device's location service, or a fake in tests.
+
+## `LocationTagging/isUpdating`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor var isUpdating: Bool { get }
+```
+
+Whether location updates are running.
+
+## `LocationTagging/latestLocation`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor var latestLocation: PhotoLocation? { get set }
+```
+
+The latest location while updates run, or `nil`.
+
+## `LocationTagging/location(isOn:)`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor func location(isOn: Bool) -> PhotoLocation?
+```
+
+The location to write into a photo taken now.
+
+- Parameter isOn: Whether the Location switch is on.
+- Returns: The latest location when the switch is on and updates run; otherwise `nil`.
+
+## `LocationTagging/refreshAccess()`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor func refreshAccess() async
+```
+
+Reads the current access again, for example when the app comes back from Settings.
+
+## `LocationTagging/turnOn(in:)`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@discardableResult @MainActor func turnOn(in settings: NopeSettings) async -> Bool
+```
+
+Turns the Location switch on, after asking for access.
+
+Side effects: may show the system location prompt. Saves the switch through `settings`.
+
+- Parameter settings: The settings to change.
+- Returns: `true` if Location is now on; `false` if access isn't allowed, in which case
+  the switch stays off and an interface explains how to allow it (``access``).
+
+## `LocationTagging/update(isOn:cameraIsRunning:)`
+
+public, declared in `Sources/NopeCore/LocationTagging.swift`
+
+```swift
+@MainActor func update(isOn: Bool, cameraIsRunning: Bool) async
+```
+
+Starts or stops location updates to match the camera and the switch.
+
+Call it whenever either changes. Updates run only when `isOn`, `cameraIsRunning` and
+access is allowed; otherwise they stop and ``latestLocation`` is cleared.
+
+- Parameters:
+  - isOn: Whether the Location switch is on.
+  - cameraIsRunning: Whether the camera session is running.
 
 ## `LockedMetadata`
 
@@ -4510,6 +4959,20 @@ static let gps: String
 
 ImageIO's GPS dictionary, `kCGImagePropertyGPSDictionary`.
 
+## `MetadataField/gpsFields`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let gpsFields: [MetadataField]
+```
+
+The GPS tags a photo may carry when location is on (issue #43; EXIF 3.0, 4.6.6): the
+latitude, longitude and altitude with their reference tags, and the directory's version,
+which EXIF requires in a GPS directory, so a writer may add it (``PhotoLocation/versionKey``). Nothing else from the GPS directory
+(speed, direction, accuracy, time, date) is ever written or accepted. `MetadataPlan`
+writes their values from a ``PhotoLocation`` (``PhotoLocation/gpsProperties``).
+
 ## `MetadataField/gpsPointer`
 
 internal, declared in `Sources/NopeCore/MetadataField.swift`
@@ -4518,8 +4981,7 @@ internal, declared in `Sources/NopeCore/MetadataField.swift`
 static let gpsPointer: MetadataField
 ```
 
-The GPS directory pointer (`0x8825`). The GPS directory's own tags are allowed as a
-whole when location is on (``MetadataPlan``).
+The GPS directory pointer (`0x8825`). The GPS directory may hold only ``gpsFields``.
 
 ## `MetadataField/group`
 
@@ -5038,9 +5500,10 @@ var isOfferedInSettings: Bool { get }
 
 Whether settings offer a switch for the item yet.
 
-Location needs its own explanation and the system location prompt, and the name and
-copyright need text entry; neither flow is built, so those switches aren't shown and the
-items stay off. Interfaces show a switch only where this is `true`.
+The name and copyright need text entry, which isn't built, so that switch isn't shown
+and the item stays off. Location is offered: turning it on goes through
+``LocationTagging/turnOn(in:)``, which asks for location access first. Interfaces show a
+switch only where this is `true`.
 
 ## `MetadataItem/isOnWhenCustomizing`
 
@@ -5082,8 +5545,9 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 case location
 ```
 
-Location, altitude and direction (the EXIF GPS directory). nope. doesn't capture a
-location yet, so with this item on no location is written either.
+Where the photo was taken: latitude, longitude and altitude (the EXIF GPS directory,
+``MetadataField/gpsFields``). Written only while the person has allowed location access,
+from ``LocationTagging`` (issue #43). Direction and speed are never written.
 
 ## `MetadataItem/makerNotes`
 
@@ -5326,6 +5790,52 @@ static let jpegBlocks: Set<String>
 The JPEG segments every JPEG may have: structure, the EXIF block, the color profile and
 ImageIO's empty IPTC record (``JPEGReader/emptyIPTCSegment``).
 
+## `MetadataPlan/location`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+var location: PhotoLocation?
+```
+
+Where the photo was taken, written when ``MetadataItem/location`` is on, or `nil` for no
+location (issue #43). ``CameraModel`` sets it for each capture from ``LocationTagging``;
+nothing else supplies a location, and the system's own metadata carries none.
+
+## `MetadataPlan/mirroredOrientation(_:)`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static func mirroredOrientation(_ orientation: Int) -> Int
+```
+
+The orientation that shows a photo mirrored left to right, for an EXIF/TIFF orientation
+value (issue #45).
+
+TIFF 6.0 (`Orientation`, tag 274) and EXIF 3.0 define eight values: 1 upright, 2 mirrored,
+3 turned 180°, 4 turned 180° and mirrored, 5 mirrored and turned 90° counterclockwise
+(a transpose), 6 turned 90° clockwise, 7 mirrored and turned 90° clockwise (a transverse)
+and 8 turned 90° counterclockwise. Mirroring the upright result left to right swaps each
+pair: 1↔2, 3↔4, 5↔6 and 7↔8. The sensor data is never changed.
+
+- Parameter orientation: The orientation the photo would be shown with, 1 to 8. Any other
+  value is treated as 1, upright.
+- Returns: The mirrored orientation, 1 to 8.
+
+## `MetadataPlan/mirrorsHorizontally`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+var mirrorsHorizontally: Bool
+```
+
+Whether the photo is saved mirrored left to right: a front camera photo with
+``SaveSettings/mirrorsFrontCamera`` on (issue #45). The mirroring is done only through
+the orientation value (``mirroredOrientation(_:)``): the sensor data is never changed.
+``CameraModel`` sets it for each capture. Off by default.
+
 ## `MetadataPlan/photoshopNamespace`
 
 public, declared in `Sources/NopeCore/MetadataPlan.swift`
@@ -5348,8 +5858,8 @@ Builds the ImageIO property dictionary to write a file with, from the system's m
 
 Privacy rule: the result starts empty, and only allowlisted values are copied in
 (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
-and the person's name and copyright are written by nope.; everything else is the system's
-own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+the person's name and copyright, the ``location`` and a mirrored orientation
+(``mirrorsHorizontally``) are written by nope.; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
 string for each one whose switch is off.
 
 - Parameters:
@@ -6035,6 +6545,16 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 How the HEIF and JPEG copies are developed from the RAW. ``DevelopedLook/standard`` by
 default. The RAW is never changed by it.
 
+## `NopeSettings/fileOptions`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var fileOptions: DevelopedFileOptions { get }
+```
+
+How the HEIF and JPEG copies are encoded. ``DevelopedFileOptions/init()`` by default.
+
 ## `NopeSettings/formats`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -6087,6 +6607,31 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 Which optional metadata items each file carries. The default removes them all.
 
+## `NopeSettings/mirrorsFrontCamera`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var mirrorsFrontCamera: Bool { get }
+```
+
+Whether front camera photos are saved mirrored, as the viewfinder shows them. Off by
+default.
+
+## `NopeSettings/offersRAWPairingChoice(deviceSupportsBayerRAW:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func offersRAWPairingChoice(deviceSupportsBayerRAW: Bool) -> Bool
+```
+
+Whether the choice of ``rawPairing`` applies: RAW, HEIF and JPEG are all selected and
+the device has Bayer RAW.
+
+- Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+- Returns: `true` when an interface should offer the choice.
+
 ## `NopeSettings/orderedFormats`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -6096,6 +6641,17 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 ```
 
 The selected formats in display order: RAW, HEIF, JPEG.
+
+## `NopeSettings/rawPairing`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var rawPairing: RAWPairing { get }
+```
+
+Which processed copy is paired with the RAW in Photos when RAW, HEIF and JPEG are all
+saved. ``RAWPairing/heif`` by default.
 
 ## `NopeSettings/save`
 
@@ -6142,6 +6698,18 @@ Sets how the HEIF and JPEG copies are developed, and saves the change.
 
 - Parameter look: The look.
 
+## `NopeSettings/setFileOptions(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setFileOptions(_ options: DevelopedFileOptions)
+```
+
+Sets how the HEIF and JPEG copies are encoded, and saves the change.
+
+- Parameter options: The options.
+
 ## `NopeSettings/setFormat(_:isSelected:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -6171,6 +6739,30 @@ Turns one metadata item on or off, and saves the change.
 - Parameters:
   - item: The item. See ``MetadataSettings/set(_:isOn:)``.
   - isIncluded: Whether files should carry the item.
+
+## `NopeSettings/setMirrorsFrontCamera(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setMirrorsFrontCamera(_ isOn: Bool)
+```
+
+Sets whether front camera photos are saved mirrored, and saves the change.
+
+- Parameter isOn: Whether they are mirrored.
+
+## `NopeSettings/setRAWPairing(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setRAWPairing(_ pairing: RAWPairing)
+```
+
+Sets which processed copy is paired with the RAW, and saves the change.
+
+- Parameter pairing: The copy to pair.
 
 ## `NopeSettings/setRemovesAllOptionalDetails(_:)`
 
@@ -6253,6 +6845,36 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Whether the camera screen starts in clean view, with only the viewfinder, the shutter
 and honesty warnings. Off by default.
 
+## `OutputColorSpace`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+enum OutputColorSpace
+```
+
+The color space the developed copies are encoded in.
+
+## `OutputColorSpace/displayP3`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case displayP3
+```
+
+Display P3, the color space the camera reports. The default.
+
+## `OutputColorSpace/sRGB`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case sRGB
+```
+
+sRGB, for sites and screens that show only sRGB. Colors outside sRGB are clipped to it.
+
 ## `PhotoDeveloping`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -6282,6 +6904,25 @@ Develops a file from the RAW, with metadata built from the plan.
   - metadata: The plan the new file's metadata is built from.
 - Returns: The developed file.
 - Throws: ``CaptureError/developmentFailed`` if the RAW can't be developed or encoded.
+
+## `PhotoDeveloping/develop(_:to:look:options:metadata:)`
+
+public, declared in `Sources/NopeCore/PhotoFile.swift`
+
+```swift
+func develop(_ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, options: DevelopedFileOptions, metadata: MetadataPlan) async throws(CaptureError) -> PhotoFile
+```
+
+Develops a file without encoding options: calls ``develop(_:to:look:metadata:)``.
+
+- Parameters:
+  - raw: The DNG.
+  - format: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
+  - look: The tone of the developed file.
+  - options: Ignored.
+  - metadata: The plan the new file's metadata is built from.
+- Returns: The developed file.
+- Throws: Whatever ``develop(_:to:look:metadata:)`` throws.
 
 ## `PhotoDimensions`
 
@@ -6514,12 +7155,12 @@ let alternate: PhotoFile?
 
 The processed file paired with a RAW, or `nil`.
 
-## `PhotoLibraryAsset/assets(for:)`
+## `PhotoLibraryAsset/assets(for:pairing:)`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
 
 ```swift
-static func assets(for files: [PhotoFile]) -> [PhotoLibraryAsset]
+static func assets(for files: [PhotoFile], pairing: RAWPairing = .heif) -> [PhotoLibraryAsset]
 ```
 
 Groups a photo's files into Photos assets.
@@ -6529,9 +7170,13 @@ the DNG as its main resource and the processed file as its alternate, as Apple d
 for RAW plus processed captures ("Capturing Photos in RAW and Apple ProRAW Formats", "Save
 the photos to the photos library":
 https://developer.apple.com/documentation/avfoundation/capturing-photos-in-raw-and-apple-proraw-formats).
-Any other file is its own asset.
+Any other file is its own asset. When both a HEIF and a JPEG are saved, `pairing` says
+which one is paired with the RAW (issue #50); the other is its own asset.
 
-- Parameter files: The photo's files.
+- Parameters:
+  - files: The photo's files.
+  - pairing: The processed copy to pair with the RAW when there are two. Defaults to
+    ``RAWPairing/heif``.
 - Returns: The assets to create, in one change.
 
 ## `PhotoLibraryAsset/init(primary:alternate:)`
@@ -6558,6 +7203,158 @@ let primary: PhotoFile
 
 The asset's main file: the DNG of a RAW pair, otherwise the only file.
 
+## `PhotoLocation`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+struct PhotoLocation
+```
+
+Where a photo was taken: the only location values nope. ever writes (issue #43).
+
+Privacy rule (`docs/PRIVACY.md`, "Location"): a photo carries a location only when the person
+turned the Location switch on and allowed location access. Then it carries exactly the
+latitude, the longitude and, when the system knows it, the altitude, each with its EXIF
+reference tag. No speed, direction, accuracy, satellite data, GPS time or date is written.
+The values are the system's own, not rounded or changed.
+
+## `PhotoLocation/altitude`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+let altitude: Double?
+```
+
+The altitude in meters above (positive) or below (negative) sea level, or `nil` when the
+system has no valid altitude.
+
+## `PhotoLocation/altitudeKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let altitudeKey: String
+```
+
+`kCGImagePropertyGPSAltitude`.
+
+## `PhotoLocation/altitudeRefKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let altitudeRefKey: String
+```
+
+`kCGImagePropertyGPSAltitudeRef`.
+
+## `PhotoLocation/gpsProperties`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+var gpsProperties: [String : Any] { get }
+```
+
+The ImageIO GPS dictionary (`kCGImagePropertyGPSDictionary`) for the location.
+
+EXIF 3.0, 4.6.6 ("GPS Attribute Information"): latitude and longitude are written as
+positive values with a reference of `N`/`S` and `E`/`W` (`GPSLatitudeRef`,
+`GPSLongitudeRef`), and altitude as a positive value with a reference of 0 (above sea
+level) or 1 (below) (`GPSAltitudeRef`). The keys are the values of ImageIO's
+`kCGImagePropertyGPS…` constants (`CGImageProperties.h`), checked against the constants
+by `NopeDevelopTests`.
+
+## `PhotoLocation/init(latitude:longitude:altitude:)`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+init(latitude: Double, longitude: Double, altitude: Double? = nil)
+```
+
+Creates a location.
+
+- Parameters:
+  - latitude: The latitude in degrees, WGS 84.
+  - longitude: The longitude in degrees, WGS 84.
+  - altitude: The altitude in meters relative to sea level, or `nil`.
+
+## `PhotoLocation/latitude`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+let latitude: Double
+```
+
+The latitude in degrees, WGS 84, from −90 (south) to 90 (north).
+
+## `PhotoLocation/latitudeKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let latitudeKey: String
+```
+
+`kCGImagePropertyGPSLatitude`.
+
+## `PhotoLocation/latitudeRefKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let latitudeRefKey: String
+```
+
+`kCGImagePropertyGPSLatitudeRef`.
+
+## `PhotoLocation/longitude`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+let longitude: Double
+```
+
+The longitude in degrees, WGS 84, from −180 (west) to 180 (east).
+
+## `PhotoLocation/longitudeKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let longitudeKey: String
+```
+
+`kCGImagePropertyGPSLongitude`.
+
+## `PhotoLocation/longitudeRefKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let longitudeRefKey: String
+```
+
+`kCGImagePropertyGPSLongitudeRef`.
+
+## `PhotoLocation/versionKey`
+
+public, declared in `Sources/NopeCore/PhotoLocation.swift`
+
+```swift
+static let versionKey: String
+```
+
+`kCGImagePropertyGPSVersion`, the GPS directory's version tag (`GPSVersionID`). nope.
+never writes it, but EXIF 3.0 makes it mandatory in a GPS directory, so the writer may add
+it: ImageIO on the iOS 27.2 Simulator didn't for HEIF or JPEG; whether AVFoundation does
+for a DNG is a device check (docs/PRIVACY.md, "Location").
+
 ## `PhotoSaver`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
@@ -6581,7 +7378,8 @@ The order is fixed, and each step is a protocol so the whole pipeline is tested 
    which passed, is saved instead, and the status says it isn't signed
    (``SignatureStatus/UnsignedReason/signedFileFailedCheck``).
 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
-   file as one asset (``PhotoLibraryAsset/assets(for:)``).
+   file as one asset (``PhotoLibraryAsset/assets(for:pairing:)``, with the person's
+   ``SaveSettings/rawPairing``).
 
 ## `PhotoSaver/appVersion`
 
@@ -6711,6 +7509,53 @@ case jpeg
 
 JPEG, for a lens that offers no HEIF encoding.
 
+## `RAWPairing`
+
+public, declared in `Sources/NopeCore/RAWPairing.swift`
+
+```swift
+enum RAWPairing
+```
+
+Which processed copy Photos keeps together with the RAW when RAW, HEIF and JPEG are all
+saved (issue #50).
+
+A Photos asset holds one main resource and one alternate (`PHAssetResourceType.photo` and
+`.alternatePhoto`), so a RAW can be paired with only one processed copy; the other one is
+saved as its own asset. The choice changes nothing about how each file is developed, what
+metadata it carries, or how it is signed. ``SaveSettings/rawPairing`` holds it.
+
+## `RAWPairing/format`
+
+public, declared in `Sources/NopeCore/RAWPairing.swift`
+
+```swift
+var format: PhotoFormat { get }
+```
+
+The format of the paired copy.
+
+## `RAWPairing/heif`
+
+public, declared in `Sources/NopeCore/RAWPairing.swift`
+
+```swift
+case heif
+```
+
+The HEIF is paired with the RAW and the JPEG is its own photo. The default.
+
+## `RAWPairing/jpeg`
+
+public, declared in `Sources/NopeCore/RAWPairing.swift`
+
+```swift
+case jpeg
+```
+
+The JPEG is paired with the RAW and the HEIF is its own photo, for sharing to places
+that accept JPEG only.
+
 ## `SaveSettings`
 
 public, declared in `Sources/NopeCore/SaveSettings.swift`
@@ -6736,6 +7581,17 @@ var developedLook: DevelopedLook
 
 How HEIF and JPEG are developed from the RAW: ``DevelopedLook/standard`` (the default)
 or ``DevelopedLook/flat``. Never affects the RAW.
+
+## `SaveSettings/fileOptions`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var fileOptions: DevelopedFileOptions { get set }
+```
+
+How the HEIF and JPEG copies are encoded (issue #57). ``DevelopedFileOptions/init()``
+by default. Never affects the RAW.
 
 ## `SaveSettings/formats`
 
@@ -6767,6 +7623,41 @@ var metadata: MetadataSettings
 ```
 
 The metadata choices, including the signature switch.
+
+## `SaveSettings/mirrorsFrontCamera`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var mirrorsFrontCamera: Bool { get set }
+```
+
+Whether photos from the front camera are saved mirrored, as the viewfinder shows them
+(issue #45). Off by default (owner decision): photos are saved as others see you, so
+text reads correctly. The mirroring is an orientation value only; no pixel of the RAW
+changes (``MetadataPlan/mirroredOrientation(_:)``).
+
+## `SaveSettings/offersRAWPairingChoice`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var offersRAWPairingChoice: Bool { get }
+```
+
+Whether a choice of ``rawPairing`` applies: RAW, HEIF and JPEG are all selected.
+
+## `SaveSettings/rawPairing`
+
+public, declared in `Sources/NopeCore/SaveSettings.swift`
+
+```swift
+var rawPairing: RAWPairing { get set }
+```
+
+Which processed copy Photos keeps with the RAW when RAW, HEIF and JPEG are all saved
+(issue #50). ``RAWPairing/heif`` by default. Applies only while
+``offersRAWPairingChoice`` is `true`; otherwise the one processed copy is paired.
 
 ## `SaveSettings/setFormat(_:isSelected:)`
 

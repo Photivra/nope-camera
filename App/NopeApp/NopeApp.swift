@@ -23,6 +23,9 @@ struct NopeApp: App {
     /// The person's settings, stored on the device only.
     @State private var settings = NopeSettings(defaults: Self.makeSettingsStore())
 
+    /// Location tagging for photos (issue #43): off until the person turns Location on.
+    @State private var location = LocationTagging(provider: Self.makeLocationProvider())
+
     /// Keeps the iPhone camera in portrait while sheets rotate.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
@@ -86,6 +89,13 @@ struct NopeApp: App {
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save
         }
+        // Location runs only while the Location switch is on and the camera is running
+        // (AGENTS.md, "Battery"); LocationTagging holds the rule.
+        .task(id: [settings.metadata.isOn(.location), model.sessionStatus == .running]) {
+            model.location = location
+            await location.update(
+                isOn: settings.metadata.isOn(.location), cameraIsRunning: model.sessionStatus == .running)
+        }
         // The "Manual controls" option from Settings shows or hides the manual controls.
         .task(id: settings.showsManualControls) {
             await model.send(.manual(.setEnabled(settings.showsManualControls)))
@@ -104,6 +114,15 @@ struct NopeApp: App {
         if let store = SimulatedCameraLaunch.settingsStore() { return store }
         #endif
         return .standard
+    }
+
+    /// The location service for this launch: a simulated one for a UI test scenario in Debug
+    /// builds, otherwise Core Location.
+    private static func makeLocationProvider() -> any LocationProviding {
+        #if DEBUG
+        if let provider = SimulatedLocationLaunch.provider() { return provider }
+        #endif
+        return CoreLocationProvider()
     }
 
     /// The save pipeline for this launch: simulated steps for a UI test scenario in Debug builds,

@@ -25,6 +25,48 @@ public struct SaveSettings: Equatable, Codable, Sendable {
         developedLook = .standard
     }
 
+    /// Which processed copy is paired with the RAW in Photos when RAW, HEIF and JPEG are all
+    /// saved. Stored as an optional so settings saved before it existed still decode; read
+    /// ``rawPairing``.
+    private var storedRAWPairing: RAWPairing?
+
+    /// Whether front camera photos are saved mirrored. Stored as an optional so settings saved
+    /// before it existed still decode; read ``mirrorsFrontCamera``.
+    private var storedMirrorsFrontCamera: Bool?
+
+    /// How the HEIF and JPEG copies are encoded. Stored as an optional so settings saved before
+    /// it existed still decode; read ``fileOptions``.
+    private var storedFileOptions: DevelopedFileOptions?
+
+    /// Which processed copy Photos keeps with the RAW when RAW, HEIF and JPEG are all saved
+    /// (issue #50). ``RAWPairing/heif`` by default. Applies only while
+    /// ``offersRAWPairingChoice`` is `true`; otherwise the one processed copy is paired.
+    public var rawPairing: RAWPairing {
+        get { storedRAWPairing ?? .heif }
+        set { storedRAWPairing = newValue == .heif ? nil : newValue }
+    }
+
+    /// Whether a choice of ``rawPairing`` applies: RAW, HEIF and JPEG are all selected.
+    public var offersRAWPairingChoice: Bool {
+        formats.isSuperset(of: [.raw, .heif, .jpeg])
+    }
+
+    /// Whether photos from the front camera are saved mirrored, as the viewfinder shows them
+    /// (issue #45). Off by default (owner decision): photos are saved as others see you, so
+    /// text reads correctly. The mirroring is an orientation value only; no pixel of the RAW
+    /// changes (``MetadataPlan/mirroredOrientation(_:)``).
+    public var mirrorsFrontCamera: Bool {
+        get { storedMirrorsFrontCamera ?? false }
+        set { storedMirrorsFrontCamera = newValue ? true : nil }
+    }
+
+    /// How the HEIF and JPEG copies are encoded (issue #57). ``DevelopedFileOptions/init()``
+    /// by default. Never affects the RAW.
+    public var fileOptions: DevelopedFileOptions {
+        get { storedFileOptions ?? DevelopedFileOptions() }
+        set { storedFileOptions = newValue.isDefault ? nil : newValue }
+    }
+
     /// Selects or deselects a format. Deselecting the last selected format does nothing, so at
     /// least one format is always saved.
     ///

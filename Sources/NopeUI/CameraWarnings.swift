@@ -30,12 +30,13 @@ struct CameraWarning: Identifiable {
 }
 
 /// The registry of warning chips: each cause adds one function here that returns its warning,
-/// or `nil` when it doesn't apply. Location tagging (issue #43) adds "Location On".
+/// or `nil` when it doesn't apply.
 @MainActor
 enum CameraWarnings {
     /// Every warning builder, in display order. Add a cause's builder here.
     static let builders: [@MainActor (CameraControlContext, SignatureStatus?) -> CameraWarning?] = [
         signing,
+        location,
     ]
 
     /// The warnings that apply now, in display order.
@@ -67,6 +68,34 @@ enum CameraWarnings {
         return CameraWarning(
             id: "signing",
             title: Text("Not Signed", tableName: "Honesty", bundle: .module, comment: "Warning chip on the camera: photos are saved without a Content Credentials signature. Honesty wording: never imply photos are signed."),
+            explanation: explanation)
+    }
+}
+
+extension CameraWarnings {
+    /// "Location On" while the Location switch is on (issue #43), so a photo's location is
+    /// never added without the person seeing it on the camera.
+    ///
+    /// - Parameters:
+    ///   - context: The model and settings.
+    ///   - lastSignature: Unused.
+    static func location(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning? {
+        guard context.settings.metadata.isOn(.location) else { return nil }
+        let explanation: Text
+        if context.model.location?.access.isAllowed == true {
+            explanation = Text(
+                "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Choose Details in Settings.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Explanation of the Location On chip on the camera: new photos include their location. Must not claim more than the English.")
+        } else {
+            explanation = Text(
+                "Location is on, but location access is off, so photos are saved without a location.", tableName: "Honesty",
+                bundle: .module,
+                comment: "Explanation of the Location On chip when the person turned Location on but location access is off in the system settings. Must not claim more than the English.")
+        }
+        return CameraWarning(
+            id: "location",
+            title: Text("Location On", tableName: "Honesty", bundle: .module, comment: "Warning chip on the camera: new photos include where they were taken."),
             explanation: explanation)
     }
 }

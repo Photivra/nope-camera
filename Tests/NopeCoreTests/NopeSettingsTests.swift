@@ -21,11 +21,11 @@ final class ScratchDefaults {
 }
 
 struct MetadataPresentationTests {
-    @Test func locationAndNameAreNotOfferedYet() {
-        #expect(!MetadataItem.location.isOfferedInSettings)
+    @Test func locationIsOfferedAndNameIsNotYet() {
+        #expect(MetadataItem.location.isOfferedInSettings)
         #expect(!MetadataItem.nameAndCopyright.isOfferedInSettings)
-        #expect(MetadataItem.offeredInSettings.count == MetadataItem.allCases.count - 2)
-        #expect(MetadataItem.offeredInSettings.first == .dateAndTime)
+        #expect(MetadataItem.offeredInSettings.count == MetadataItem.allCases.count - 1)
+        #expect(MetadataItem.offeredInSettings.first == .location)
     }
 
     @Test func lockedItemsMatchThePrivacyPlan() {

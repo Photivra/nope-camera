@@ -69,6 +69,9 @@ extension ImageIOTests {
                 kCGImagePropertyDNGActiveArea, kCGImagePropertyDNGNoiseReductionApplied, kCGImagePropertyDNGNoiseProfile,
                 kCGImagePropertyDNGOpcodeList1, kCGImagePropertyDNGOpcodeList2, kCGImagePropertyDNGOpcodeList3,
                 kCGImagePropertyDNGLensInfo, kCGImagePropertyIPTCByline, kCGImagePropertyIPTCCopyrightNotice,
+                kCGImagePropertyGPSVersion, kCGImagePropertyGPSLatitudeRef, kCGImagePropertyGPSLatitude,
+                kCGImagePropertyGPSLongitudeRef, kCGImagePropertyGPSLongitude, kCGImagePropertyGPSAltitudeRef,
+                kCGImagePropertyGPSAltitude,
             ].reduce(into: []) { $0.insert($1 as String) }
             for field in MetadataField.catalog {
                 for key in field.imageIOKeys {

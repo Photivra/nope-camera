@@ -898,7 +898,7 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The registry of warning chips: each cause adds one function here that returns its warning,
-or `nil` when it doesn't apply. Location tagging (issue #43) adds "Location On".
+or `nil` when it doesn't apply.
 
 ## `CameraWarnings/builders`
 
@@ -923,6 +923,21 @@ The warnings that apply now, in display order.
 - Parameters:
   - context: The model and settings.
   - lastSignature: The signature of the last photo saved this session, or `nil`.
+
+## `CameraWarnings/location(_:lastSignature:)`
+
+internal, declared in `Sources/NopeUI/CameraWarnings.swift`
+
+```swift
+@MainActor static func location(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
+```
+
+"Location On" while the Location switch is on (issue #43), so a photo's location is
+never added without the person seeing it on the camera.
+
+- Parameters:
+  - context: The model and settings.
+  - lastSignature: Unused.
 
 ## `CameraWarnings/signing(_:lastSignature:)`
 
@@ -1631,6 +1646,118 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 Takes the photo again.
+
+## `FileOptionsSettingsView`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor struct FileOptionsSettingsView
+```
+
+How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth and color
+space, each a native picker with a one-line explanation, and a button that restores the
+defaults.
+
+Advanced options: Settings links to this screen only while HEIF or JPEG is selected, and the
+defaults need no change (owner principle: full auto by default, every file setting the
+device allows behind the advanced options). The rules and values are in
+`DevelopedFileOptions`; this view only shows them.
+
+## `FileOptionsSettingsView/body`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `FileOptionsSettingsView/init(settings:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor init(settings: NopeSettings)
+```
+
+Creates the file options.
+
+- Parameter settings: The settings to show and change.
+
+## `FileOptionsSettingsView/link(settings:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static func link(settings: NopeSettings) -> some View
+
+```
+
+A navigation row to the file options, showing whether they are at their defaults.
+
+- Parameter settings: The settings.
+
+## `FileOptionsSettingsView/name(of:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static func name(of space: OutputColorSpace) -> String
+```
+
+A color space's name. Color space names are the same in every language, so they aren't
+translated.
+
+- Parameter space: The color space.
+- Returns: "Display P3" or "sRGB".
+
+## `FileOptionsSettingsView/rowTitle`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static var rowTitle: Text { get }
+```
+
+The row and screen title, "File Options".
+
+## `FileOptionsSettingsView/settings`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings to show and change.
+
+## `FileOptionsSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static func title(of depth: HEIFBitDepth) -> Text
+```
+
+A bit depth's name.
+
+- Parameter depth: The bit depth.
+- Returns: "10-bit" or "8-bit", localized.
+
+## `FileOptionsSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static func title(of quality: CompressionQuality) -> Text
+```
+
+A compression's name.
+
+- Parameter quality: The compression.
+- Returns: Its localized name.
 
 ## `FirstRunView`
 
@@ -2763,17 +2890,30 @@ What an optional item is for, and what turning it off costs (`docs/PRIVACY.md`).
 - Parameter item: The item.
 - Returns: A localized explanation from `Honesty.xcstrings`.
 
-## `PrivacySettingsView/init(settings:)`
+## `PrivacySettingsView/init(settings:location:)`
 
 internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings)
+@MainActor init(settings: NopeSettings, location: LocationTagging? = nil)
 ```
 
 Creates the privacy settings.
 
-- Parameter settings: The settings to show and change.
+- Parameters:
+  - settings: The settings to show and change.
+  - location: Location tagging, or `nil` to hide the Location switch.
+
+## `PrivacySettingsView/location`
+
+internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
+
+```swift
+@MainActor let location: LocationTagging?
+```
+
+Location tagging, or `nil` when the app has no location service; the Location switch is
+shown only with it (issue #43).
 
 ## `PrivacySettingsView/settings`
 
@@ -3564,8 +3704,8 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 ```
 
 The settings: a short inset grouped list in a navigation stack, opened from the camera
-(issue #68, "Settings"): Photos (formats, look), Privacy (the master switch, signing, the
-details), Camera (manual controls, clean view) and More (Accessibility, Honesty, About).
+(issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
+signing, the details), Camera (manual controls, clean view, front camera mirroring) and More (Accessibility, Honesty, About).
 
 One line per row; each switch's explanation is in a footer or on its detail screen. Each
 row shows its current value, so the state reads at a glance. The screen renders a
@@ -3588,12 +3728,12 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 The form and its toolbar.
 
-## `SettingsScreen/init(settings:deviceSupportsBayerRAW:)`
+## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:)`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool)
+@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil)
 ```
 
 Creates the settings screen.
@@ -3602,6 +3742,11 @@ Creates the settings screen.
   - settings: The settings to show and change.
   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW
     (`DeviceCapabilities/supportsBayerRAW`). Pass `true` when it isn't known yet.
+  - deviceHasFrontCamera: Whether the device has a front camera
+    (`DeviceCapabilities/hasFrontCamera`), which shows the "Mirror Front Camera" switch.
+    Pass `true` when it isn't known yet.
+  - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
+    location service, which hides the Location switch.
 
 ## `SheetPresentationAction`
 

@@ -2179,6 +2179,72 @@
         }
       }
     },
+    "Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.": {
+      "comment": "What the Location item writes into each photo, and what turning it off costs. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Breitengrad, Längengrad und Höhe, solange die Kamera geöffnet ist. Aus: Es geht nichts verloren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Latitud, longitud y altitud, mientras la cámara está abierta. Desactivado: no se pierde nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Latitude, longitude et altitude, tant que l’appareil photo est ouvert. Désactivé : rien n’est perdu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Latitudine, longitudine e altitudine, mentre la fotocamera è aperta. Disattivato: non si perde nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラを開いている間の緯度、経度、高度。オフ：失われるものはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 열려 있는 동안의 위도, 경도, 고도. 끔: 잃는 것은 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Breedtegraad, lengtegraad en hoogte, zolang de camera open is. Uit: er gaat niets verloren."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Latitude, longitude e altitude, enquanto a câmera está aberta. Desativado: nada é perdido."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机打开时的纬度、经度和海拔。关闭：不会损失任何内容。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機開啟時的緯度、經度和海拔。關閉：不會損失任何內容。"
+          }
+        }
+      }
+    },
     "Lens Correction Instructions": {
       "comment": "Metadata item: instructions editors can use to correct lens distortion. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -2443,6 +2509,402 @@
         }
       }
     },
+    "Location On": {
+      "comment": "Warning chip on the camera: new photos include where they were taken.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standort an"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ubicación activada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Position activée"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Posizione attiva"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置情報オン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "위치 켬"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Locatie aan"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localização ativada"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置已开"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置已開"
+          }
+        }
+      }
+    },
+    "Location Only If You Turn It On": {
+      "comment": "Honesty heading: photos include a location only when the person turns Location on.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standort nur, wenn du ihn einschaltest"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ubicación solo si la activas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Position uniquement si vous l’activez"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Posizione solo se la attivi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置情報はオンにしたときだけ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "켤 때만 위치 포함"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Locatie alleen als je die aanzet"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localização só se você ativar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "仅在你打开时才记录位置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "僅在你開啟時才記錄位置"
+          }
+        }
+      }
+    },
+    "Location access is off for nope., so photos can't include a location. To add one, allow location access in Settings.": {
+      "comment": "Shown under the Location switch when the person declined location access. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Der Standortzugriff ist für nope. aus, daher können Fotos keinen Standort enthalten. Um einen hinzuzufügen, erlaube den Standortzugriff in den Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El acceso a la ubicación está desactivado para nope., así que las fotos no pueden incluir una ubicación. Para añadirla, permite el acceso a la ubicación en Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’accès à la position est désactivé pour nope., les photos ne peuvent donc pas inclure de position. Pour en ajouter une, autorisez l’accès à la position dans Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’accesso alla posizione è disattivato per nope., quindi le foto non possono includere una posizione. Per aggiungerla, consenti l’accesso alla posizione in Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. の位置情報へのアクセスがオフのため、写真に位置情報を含めることはできません。追加するには、設定で位置情報へのアクセスを許可してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.의 위치 접근이 꺼져 있어 사진에 위치를 포함할 수 없습니다. 위치를 추가하려면 설정에서 위치 접근을 허용하십시오."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toegang tot locatie staat uit voor nope., dus foto’s kunnen geen locatie bevatten. Sta toegang tot locatie toe in Instellingen om er een toe te voegen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O acesso à localização está desativado para o nope., então as fotos não podem incluir uma localização. Para adicioná-la, permita o acesso à localização em Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 的位置访问已关闭，因此照片无法包含位置。如需添加，请在“设置”中允许位置访问。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 的位置取用權限已關閉，因此照片無法包含位置。如需加入，請在「設定」中允許取用位置。"
+          }
+        }
+      }
+    },
+    "Location access isn't allowed on this device, so photos can't include a location.": {
+      "comment": "Shown under the Location switch when a restriction, such as Screen Time, doesn't allow location access. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standortzugriff ist auf diesem Gerät nicht erlaubt, daher können Fotos keinen Standort enthalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El acceso a la ubicación no está permitido en este dispositivo, así que las fotos no pueden incluir una ubicación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’accès à la position n’est pas autorisé sur cet appareil, les photos ne peuvent donc pas inclure de position."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’accesso alla posizione non è consentito su questo dispositivo, quindi le foto non possono includere una posizione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このデバイスでは位置情報へのアクセスが許可されていないため、写真に位置情報を含めることはできません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 기기에서는 위치 접근이 허용되지 않으므로 사진에 위치를 포함할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toegang tot locatie is op dit apparaat niet toegestaan, dus foto’s kunnen geen locatie bevatten."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O acesso à localização não é permitido neste dispositivo, então as fotos não podem incluir uma localização."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此设备不允许访问位置，因此照片无法包含位置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此裝置不允許取用位置，因此照片無法包含位置。"
+          }
+        }
+      }
+    },
+    "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.": {
+      "comment": "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standort ist aus, bis du ihn in den Einstellungen von nope. unter „Details auswählen“ einschaltest. Dann verwendet nope. deinen Standort nur, solange die Kamera geöffnet ist, und jedes Foto erhält Breitengrad, Längengrad und Höhe. Richtung, Geschwindigkeit und GPS-Zeit werden nicht geschrieben, und der Standort wird nie irgendwohin gesendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ubicación está desactivada salvo que la actives en Elegir detalles, en los ajustes de nope. Entonces nope. usa tu ubicación solo mientras la cámara está abierta, y cada foto recibe su latitud, longitud y altitud. No se escribe dirección, velocidad ni hora GPS, y la ubicación nunca se envía a ningún sitio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Position est désactivé, sauf si vous l’activez sous Choisir les détails dans les réglages de nope. nope. utilise alors votre position uniquement tant que l’appareil photo est ouvert, et chaque photo reçoit sa latitude, sa longitude et son altitude. Aucune direction, vitesse ni heure GPS n’est écrite, et la position n’est jamais envoyée nulle part."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Posizione è disattivata, a meno che tu non la attivi in Scegli i dettagli nelle impostazioni di nope. Allora nope. usa la tua posizione solo mentre la fotocamera è aperta, e ogni foto riceve latitudine, longitudine e altitudine. Non vengono scritti direzione, velocità né ora GPS, e la posizione non viene mai inviata da nessuna parte."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置情報は、nope. の設定の「詳細を選択」でオンにしない限りオフです。オンにすると、nope. はカメラを開いている間だけ位置情報を使い、各写真に緯度、経度、高度を記録します。方角、速度、GPS時刻は書き込まれず、位置情報がどこかに送信されることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "위치는 nope. 설정의 세부 정보 선택에서 켜지 않는 한 꺼져 있습니다. 켜면 nope.는 카메라가 열려 있는 동안에만 위치를 사용하며, 각 사진에 위도, 경도, 고도가 기록됩니다. 방향, 속도, GPS 시간은 기록되지 않으며 위치는 어디로도 전송되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Locatie staat uit, tenzij je die aanzet onder Kies details in de instellingen van nope. Dan gebruikt nope. je locatie alleen zolang de camera open is, en krijgt elke foto zijn breedtegraad, lengtegraad en hoogte. Er wordt geen richting, snelheid of GPS-tijd geschreven, en de locatie wordt nooit ergens heen gestuurd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localização fica desativada, a menos que você a ative em Escolher detalhes, nos ajustes do nope. Então o nope. usa sua localização apenas enquanto a câmera está aberta, e cada foto recebe latitude, longitude e altitude. Nenhuma direção, velocidade ou hora do GPS é gravada, e a localização nunca é enviada a lugar nenhum."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "除非你在 nope. 设置的“选择详细信息”中打开位置，否则位置保持关闭。打开后，nope. 仅在相机打开时使用你的位置，每张照片会记录纬度、经度和海拔。不会写入方向、速度或 GPS 时间，位置也绝不会发送到任何地方。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "除非你在 nope. 設定的「選擇詳細資訊」中開啟位置，否則位置保持關閉。開啟後，nope. 僅在相機開啟時使用你的位置，每張照片會記錄緯度、經度和海拔。不會寫入方向、速度或 GPS 時間，位置也絕不會傳送到任何地方。"
+          }
+        }
+      }
+    },
+    "Location is on, but location access is off, so photos are saved without a location.": {
+      "comment": "Explanation of the Location On chip when the person turned Location on but location access is off in the system settings. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standort ist an, aber der Standortzugriff ist aus, daher werden Fotos ohne Standort gesichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ubicación está activada, pero el acceso a la ubicación está desactivado, así que las fotos se guardan sin ubicación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Position est activé, mais l’accès à la position est désactivé, les photos sont donc enregistrées sans position."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Posizione è attiva, ma l’accesso alla posizione è disattivato, quindi le foto vengono salvate senza posizione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置情報はオンですが、位置情報へのアクセスがオフのため、写真は位置情報なしで保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "위치가 켜져 있지만 위치 접근이 꺼져 있어 사진이 위치 없이 저장됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Locatie staat aan, maar toegang tot locatie staat uit, dus foto’s worden zonder locatie bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localização está ativada, mas o acesso à localização está desativado, então as fotos são salvas sem localização."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置已打开，但位置访问已关闭，因此照片保存时不含位置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "位置已開啟，但位置取用權限已關閉，因此照片儲存時不含位置。"
+          }
+        }
+      }
+    },
     "Locked": {
       "comment": "VoiceOver: this detail is always saved and can't be turned off. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -2571,6 +3033,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "製造商註記"
+          }
+        }
+      }
+    },
+    "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Choose Details in Settings.": {
+      "comment": "Explanation of the Location On chip on the camera: new photos include their location. Choose Details is the name of nope.'s own settings screen; use its translation. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Neue Fotos enthalten, wo sie aufgenommen wurden: Breitengrad, Längengrad und Höhe. Du kannst Standort in den Einstellungen unter „Details auswählen“ ausschalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Las fotos nuevas incluyen dónde se tomaron: latitud, longitud y altitud. Puedes desactivar Ubicación en Ajustes, en Elegir detalles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les nouvelles photos indiquent où elles ont été prises : latitude, longitude et altitude. Vous pouvez désactiver Position dans les réglages, sous Choisir les détails."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le nuove foto includono dove sono state scattate: latitudine, longitudine e altitudine. Puoi disattivare Posizione nelle impostazioni, in Scegli i dettagli."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新しい写真には撮影場所（緯度、経度、高度）が含まれます。位置情報は設定の「詳細を選択」でオフにできます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "새 사진에는 촬영 위치(위도, 경도, 고도)가 포함됩니다. 설정의 세부 정보 선택에서 위치를 끌 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nieuwe foto’s bevatten waar ze zijn gemaakt: breedtegraad, lengtegraad en hoogte. Je kunt Locatie uitzetten in de instellingen onder Kies details."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "As novas fotos incluem onde foram tiradas: latitude, longitude e altitude. Você pode desativar Localização nos ajustes, em Escolher detalhes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新照片会包含拍摄地点：纬度、经度和海拔。你可以在设置的“选择详细信息”中关闭位置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "新照片會包含拍攝地點：緯度、經度和海拔。你可以在設定的「選擇詳細資訊」中關閉位置。"
           }
         }
       }

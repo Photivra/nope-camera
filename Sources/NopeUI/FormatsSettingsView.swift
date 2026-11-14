@@ -61,6 +61,11 @@ struct FormatsSettingsView: View {
                     }
                 }
             }
+            if settings.offersRAWPairingChoice(deviceSupportsBayerRAW: deviceSupportsBayerRAW) {
+                Section {
+                    pairingPicker
+                }
+            }
             if showsLookLink && settings.savesDevelopedFormat {
                 Section {
                     LookSettingsView.link(settings: settings)
@@ -68,6 +73,22 @@ struct FormatsSettingsView: View {
             }
         }
         .navigationTitle(Text("Formats", bundle: .module, comment: "Settings row and screen title: the file formats each photo is saved in."))
+    }
+
+    /// Which copy Photos keeps with the RAW when RAW, HEIF and JPEG are all saved (issue #50).
+    private var pairingPicker: some View {
+        Picker(selection: Binding(get: { settings.rawPairing }, set: { settings.setRAWPairing($0) })) {
+            ForEach(RAWPairing.allCases, id: \.self) { pairing in
+                Text(verbatim: Self.name(of: pairing.format)).tag(pairing)
+            }
+        } label: {
+            SettingLabel(
+                title: Text("Paired with RAW", bundle: .module, comment: "Picker: which processed copy (HEIF or JPEG) Photos keeps together with the RAW. RAW is a file format name."),
+                explanation: Text(
+                    "Photos keeps one copy with the RAW as a single photo. The other copy is saved as a separate photo.",
+                    bundle: .module,
+                    comment: "Explains why there are two items in Photos when RAW, HEIF and JPEG are all saved. Photos is the system photo library app. RAW is a file format name."))
+        }
     }
 
     /// One format's row: its name, a checkmark when selected, and why it's unavailable.

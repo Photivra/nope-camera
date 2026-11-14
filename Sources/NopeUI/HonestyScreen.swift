@@ -54,6 +54,12 @@ struct HonestyScreen: View {
                     "The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Keep \"nope.\" unchanged. RAW, HEIF and JPEG are file format names. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Location Only If You Turn It On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos include a location only when the person turns Location on."),
+                text: Text(
+                    "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What nope. Never Does", tableName: "Honesty", bundle: .module, comment: "Honesty section header. Keep \"nope.\" unchanged.")
         }

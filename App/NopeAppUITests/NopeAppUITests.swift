@@ -379,7 +379,7 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Opens Settings from the camera screen and audits every settings screen: Settings,
-    /// Formats, Privacy, Honesty, About and the license text.
+    /// Formats, Look, File Options, Privacy, Honesty, About and the license text.
     @MainActor
     private func auditSettingsScreens(_ app: XCUIApplication, checksDynamicType: Bool = true, checksContrast: Bool = true) throws {
         let settingsButton = app.buttons["Settings"]
@@ -395,6 +395,11 @@ final class NopeAppUITests: XCTestCase {
 
         open(app, row: "Look")
         XCTAssertTrue(app.navigationBars["Look"].waitForExistence(timeout: 5))
+        try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
+        goBack(app)
+
+        open(app, row: "File Options")
+        XCTAssertTrue(app.navigationBars["File Options"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
         goBack(app)
 
@@ -1236,6 +1241,189 @@ final class NopeAppUITests: XCTestCase {
             let thumbnail = app.descendants(matching: .any)["Last Photo"].frame
             XCTAssertGreaterThan(thumbnail.minX, shutter.frame.maxX)
         }
+        try audit(app)
+    }
+
+    // MARK: - Pairing, file options, mirroring and location (issues #50, #57, #45, #43)
+
+    /// Opens the menu of a menu-style picker and chooses an option. The option's name may also be
+    /// a row on the screen (the formats are), so the last match, the menu's, is chosen.
+    @MainActor
+    private func choose(_ app: XCUIApplication, _ option: String, inPickerLabeled label: String) {
+        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        let options = app.buttons.matching(NSPredicate(format: "label == %@", option))
+        let rows = Set(options.allElementsBoundByIndex.map(\.frame.debugDescription))
+        picker.tap()
+        // The menu's item is the match that wasn't on the screen before the tap.
+        let deadline = Date().addingTimeInterval(10)
+        var item: XCUIElement?
+        while item == nil && Date() < deadline {
+            item = options.allElementsBoundByIndex.first { !rows.contains($0.frame.debugDescription) && $0.isHittable }
+            if item == nil { Thread.sleep(forTimeInterval: 0.3) }
+        }
+        XCTAssertNotNil(item, "the menu didn't show \(option)")
+        item?.tap()
+        settle()
+    }
+
+    /// Selects JPEG as well, so RAW, HEIF and JPEG are all saved.
+    @MainActor
+    private func openFormatsWithAllThree(_ app: XCUIApplication) {
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        open(app, row: "Formats")
+        let jpeg = app.buttons["JPEG"]
+        XCTAssertTrue(jpeg.waitForExistence(timeout: 5))
+        jpeg.tap()
+        XCTAssertTrue(jpeg.isSelected)
+    }
+
+    @MainActor
+    func testPairedWithRAWAppearsOnlyWithAllThreeFormats() throws {
+        let app = launch("denied")
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        open(app, row: "Formats")
+        XCTAssertTrue(app.buttons["JPEG"].waitForExistence(timeout: 5))
+        XCTAssertFalse(element(app, containing: "Paired with RAW").exists)
+        app.buttons["JPEG"].tap()
+        XCTAssertTrue(element(app, containing: "Paired with RAW").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "The other copy is saved as a separate photo").exists)
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        choose(app, "JPEG", inPickerLabeled: "Paired with RAW")
+        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Paired with RAW")).firstMatch
+        XCTAssertTrue(picker.label.hasSuffix("JPEG"), picker.label)
+        // Without RAW the choice doesn't apply.
+        app.buttons["RAW (DNG)"].tap()
+        XCTAssertFalse(element(app, containing: "Paired with RAW").waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testPairedWithRAWAtTheLargestTextSize() throws {
+        let app = launch("denied", extraArguments: Self.largestTextSize)
+        openFormatsWithAllThree(app)
+        let picker = element(app, containing: "Paired with RAW")
+        var swipes = 0
+        while !(picker.exists && picker.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(picker.exists)
+        try audit(app, afterScrolling: swipes > 0, checksContrast: !isPad)
+    }
+
+    @MainActor
+    func testFileOptionsChangeAndRestore() throws {
+        let app = launch("denied")
+        openFormatsWithAllThree(app)
+        goBack(app)
+        open(app, row: "File Options")
+        XCTAssertTrue(app.navigationBars["File Options"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "HEIF Compression").exists)
+        XCTAssertTrue(element(app, containing: "JPEG Compression").exists)
+        XCTAssertTrue(element(app, containing: "HEIF Bit Depth").exists)
+        XCTAssertFalse(app.buttons["Restore Defaults"].exists)
+        choose(app, "sRGB", inPickerLabeled: "Color Space")
+        let restore = app.buttons["Restore Defaults"]
+        XCTAssertTrue(restore.waitForExistence(timeout: 5))
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        goBack(app)
+        XCTAssertTrue(element(app, containing: "Custom").waitForExistence(timeout: 5))
+        open(app, row: "File Options")
+        XCTAssertTrue(restore.waitForExistence(timeout: 5))
+        restore.tap()
+        XCTAssertFalse(restore.waitForExistence(timeout: 2))
+    }
+
+    @MainActor
+    func testMirrorFrontCameraIsOffByDefault() throws {
+        let app = launch("denied")
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        let mirror = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Mirror Front Camera")).firstMatch
+        var swipes = 0
+        while !(mirror.exists && mirror.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertEqual(mirror.value as? String, "0")
+        XCTAssertTrue(mirror.label.contains("The viewfinder is mirrored either way"))
+        mirror.switches.firstMatch.tap()
+        XCTAssertEqual(mirror.value as? String, "1")
+        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
+    }
+
+    @MainActor
+    func testLocationAsksThenShowsAPersistentWarning() throws {
+        let app = launch("allow")
+        continuePastFirstRun(app)
+        XCTAssertFalse(app.buttons["Location On"].exists)
+        app.buttons["Settings"].tap()
+        open(app, row: "Choose Details")
+        let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
+        XCTAssertTrue(location.waitForExistence(timeout: 5))
+        XCTAssertEqual(location.value as? String, "0")
+        XCTAssertTrue(location.label.contains("Latitude, longitude and altitude"))
+        location.switches.firstMatch.tap()
+        XCTAssertTrue(hasValue(location, startingWith: "1"))
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        goBack(app)
+        app.buttons["Done"].tap()
+        let warning = app.buttons["Location On"]
+        XCTAssertTrue(warning.waitForExistence(timeout: 5))
+        XCTAssertTrue((warning.value as? String)?.contains("latitude, longitude and altitude") == true)
+        try audit(app)
+        // A photo still saves with location on.
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))
+    }
+
+    @MainActor
+    func testDeclinedLocationStaysOffAndSaysHowToAllowIt() throws {
+        let app = launch("denied", extraArguments: ["-NopeSimulatedLocation", "denied"])
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        open(app, row: "Choose Details")
+        let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
+        XCTAssertTrue(location.waitForExistence(timeout: 5))
+        location.switches.firstMatch.tap()
+        XCTAssertTrue(element(app, containing: "Location access is off for nope.").waitForExistence(timeout: 5))
+        XCTAssertEqual(location.value as? String, "0")
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+    }
+
+    @MainActor
+    func testLocationStatesAtTheLargestTextSize() throws {
+        let app = launch("denied", extraArguments: Self.largestTextSize + ["-NopeSimulatedLocation", "denied"])
+        let settingsButton = app.buttons["Settings"]
+        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
+        settingsButton.tap()
+        open(app, row: "Choose Details")
+        let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
+        XCTAssertTrue(location.waitForExistence(timeout: 5))
+        location.switches.firstMatch.tap()
+        XCTAssertTrue(element(app, containing: "Location access is off for nope.").waitForExistence(timeout: 5))
+        try audit(app, checksContrast: !isPad)
+    }
+
+    @MainActor
+    func testLocationWarningInRightToLeftLayout() throws {
+        let app = launch("allow", extraArguments: Self.rightToLeft)
+        continuePastFirstRun(app)
+        app.buttons["Settings"].tap()
+        open(app, row: "Choose Details")
+        let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
+        XCTAssertTrue(location.waitForExistence(timeout: 5))
+        location.switches.firstMatch.tap()
+        XCTAssertTrue(hasValue(location, startingWith: "1"))
+        goBack(app)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Location On"].waitForExistence(timeout: 5))
         try audit(app)
     }
 }

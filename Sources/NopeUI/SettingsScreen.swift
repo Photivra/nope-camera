@@ -2,8 +2,8 @@ import NopeCore
 import SwiftUI
 
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
-/// (issue #68, "Settings"): Photos (formats, look), Privacy (the master switch, signing, the
-/// details), Camera (manual controls, clean view) and More (Accessibility, Honesty, About).
+/// (issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
+/// signing, the details), Camera (manual controls, clean view, front camera mirroring) and More (Accessibility, Honesty, About).
 ///
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
@@ -23,6 +23,12 @@ public struct SettingsScreen: View {
     /// as unavailable, with the reason.
     private let deviceSupportsBayerRAW: Bool
 
+    /// Whether the device has a front camera, so the mirroring switch applies.
+    private let deviceHasFrontCamera: Bool
+
+    /// Location tagging, or `nil` to hide the Location switch.
+    private let location: LocationTagging?
+
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
 
@@ -32,9 +38,19 @@ public struct SettingsScreen: View {
     ///   - settings: The settings to show and change.
     ///   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW
     ///     (`DeviceCapabilities/supportsBayerRAW`). Pass `true` when it isn't known yet.
-    public init(settings: NopeSettings, deviceSupportsBayerRAW: Bool) {
+    ///   - deviceHasFrontCamera: Whether the device has a front camera
+    ///     (`DeviceCapabilities/hasFrontCamera`), which shows the "Mirror Front Camera" switch.
+    ///     Pass `true` when it isn't known yet.
+    ///   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
+    ///     location service, which hides the Location switch.
+    public init(
+        settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true,
+        location: LocationTagging? = nil
+    ) {
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
+        self.deviceHasFrontCamera = deviceHasFrontCamera
+        self.location = location
     }
 
     /// The form and its toolbar.
@@ -70,6 +86,7 @@ public struct SettingsScreen: View {
             }
             if settings.savesDevelopedFormat {
                 LookSettingsView.link(settings: settings)
+                FileOptionsSettingsView.link(settings: settings)
             }
         } header: {
             // Its own key: "Photos" alone is the photo count picker in Pro Tools, translated as a count.
@@ -89,7 +106,7 @@ public struct SettingsScreen: View {
                 Text("Remove All Optional Details", tableName: "Honesty", bundle: .module, comment: "Master switch: when on, photos keep only the details they need to open.")
             }
             NavigationLink {
-                PrivacySettingsView(settings: settings)
+                PrivacySettingsView(settings: settings, location: location)
             } label: {
                 LabeledContent {
                     PrivacySettingsView.summary(of: settings.metadata)
@@ -132,6 +149,17 @@ public struct SettingsScreen: View {
                     explanation: Text(
                         "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.",
                         bundle: .module, comment: "Explains the clean view switch."))
+            }
+            if deviceHasFrontCamera {
+                Toggle(
+                    isOn: Binding(get: { settings.mirrorsFrontCamera }, set: { settings.setMirrorsFrontCamera($0) })
+                ) {
+                    SettingLabel(
+                        title: Text("Mirror Front Camera", bundle: .module, comment: "Switch: front camera photos are saved mirrored, as the viewfinder shows them."),
+                        explanation: Text(
+                            "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.",
+                            bundle: .module, comment: "Explains the Mirror Front Camera switch."))
+                }
             }
         } header: {
             Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")

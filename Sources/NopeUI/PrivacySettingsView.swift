@@ -13,11 +13,21 @@ struct PrivacySettingsView: View {
     /// The settings to show and change.
     let settings: NopeSettings
 
+    /// Location tagging, or `nil` when the app has no location service; the Location switch is
+    /// shown only with it (issue #43).
+    let location: LocationTagging?
+
+    /// Opens nope.'s page in the Settings app, where location access can be allowed.
+    @Environment(\.openAppSettings) private var openAppSettings
+
     /// Creates the privacy settings.
     ///
-    /// - Parameter settings: The settings to show and change.
-    init(settings: NopeSettings) {
+    /// - Parameters:
+    ///   - settings: The settings to show and change.
+    ///   - location: Location tagging, or `nil` to hide the Location switch.
+    init(settings: NopeSettings, location: LocationTagging? = nil) {
         self.settings = settings
+        self.location = location
     }
 
     /// The form.
@@ -28,6 +38,57 @@ struct PrivacySettingsView: View {
             lockedSection
         }
         .navigationTitle(Self.title)
+        .task { await location?.refreshAccess() }
+    }
+
+    /// The items whose switches are shown: every offered item, without Location when there is no
+    /// location service.
+    private var shownItems: [MetadataItem] {
+        MetadataItem.offeredInSettings.filter { $0 != .location || location != nil }
+    }
+
+    /// Turns an item on or off. Location is turned on through ``LocationTagging/turnOn(in:)``,
+    /// which asks for location access first and leaves the switch off if access isn't allowed.
+    ///
+    /// - Parameters:
+    ///   - item: The item.
+    ///   - isOn: Whether it is written.
+    private func set(_ item: MetadataItem, isOn: Bool) {
+        if item == .location, isOn, let location {
+            let settings = settings
+            Task { await location.turnOn(in: settings) }
+            return
+        }
+        settings.setMetadataItem(item, isIncluded: isOn)
+    }
+
+    /// Why Location can't be turned on, with a button to the Settings app.
+    ///
+    /// - Parameter access: The location access, denied or restricted.
+    @ViewBuilder
+    private func locationAccessRows(_ access: LocationAccess) -> some View {
+        if access == .restricted {
+            Text(
+                "Location access isn't allowed on this device, so photos can't include a location.", tableName: "Honesty",
+                bundle: .module, comment: "Shown under the Location switch when a restriction, such as Screen Time, doesn't allow location access. Must not claim more than the English.")
+                .font(.footnote)
+        } else {
+            Text(
+                "Location access is off for nope., so photos can't include a location. To add one, allow location access in Settings.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Shown under the Location switch when the person declined location access. Keep \"nope.\" unchanged. Must not claim more than the English.")
+                .font(.footnote)
+            if let openAppSettings {
+                Button {
+                    openAppSettings()
+                } label: {
+                    Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
+                }
+                // Primary text: the tinted text of a form button failed the contrast audit on
+                // the dark grouped background.
+                .foregroundStyle(.primary)
+            }
+            }
     }
 
     /// The settings row and screen title, "Choose Details".
@@ -55,13 +116,17 @@ struct PrivacySettingsView: View {
     /// One switch per optional item, each with what turning it off costs.
     private var itemsSection: some View {
         Section {
-            ForEach(MetadataItem.offeredInSettings, id: \.self) { item in
+            ForEach(shownItems, id: \.self) { item in
                 Toggle(
                     isOn: Binding(
                         get: { settings.metadata.isOn(item) },
-                        set: { settings.setMetadataItem(item, isIncluded: $0) })
+                        set: { set(item, isOn: $0) })
                 ) {
                     SettingLabel(title: Text(Self.title(of: item)), explanation: Text(Self.explanation(of: item)))
+                }
+                // Right under the Location switch: why it can't be turned on, and how to allow it.
+                if item == .location, let location, location.access == .denied || location.access == .restricted {
+                    locationAccessRows(location.access)
                 }
             }
         } header: {
@@ -131,7 +196,7 @@ struct PrivacySettingsView: View {
     /// - Returns: A localized explanation from `Honesty.xcstrings`.
     static func explanation(of item: MetadataItem) -> LocalizedStringResource {
         switch item {
-        case .location: LocalizedStringResource("Off: nothing is lost. Location is only added if you turn it on.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off location costs.")
+        case .location: LocalizedStringResource("Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What the Location item writes into each photo, and what turning it off costs. Must not claim more than the English.")
         case .dateAndTime: LocalizedStringResource("Off: Photos sorts it by the date it was saved instead.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the date costs. Photos is the system photo library app.")
         case .subSecondTime: LocalizedStringResource("Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off a metadata item costs: nothing the person can see.")
         case .timeZone: LocalizedStringResource("Off: the photo's local time can't be converted to other time zones.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the time zone costs.")

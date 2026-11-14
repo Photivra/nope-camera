@@ -248,14 +248,20 @@ last format can't be turned off; turning on one item turns the master switch off
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
 network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
 Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
-state. Settings is a short grouped list: Photos (formats, look), Privacy (the master switch,
-"Choose Details", signing), Camera (manual controls, clean view) and More (Accessibility,
-Honesty, About); explanations are in footers and on the detail screens.
+state. Settings is a short grouped list: Photos (formats with the RAW pairing, look, file
+options), Privacy (the master switch, "Choose Details", signing), Camera (manual controls, clean
+view, front camera mirroring) and More (Accessibility, Honesty, About); explanations are in
+footers and on the detail screens.
 
 The app passes `NopeSettings.save` to `CameraModel.saveSettings` whenever it changes, so the
-next photo uses it. Location and the
-name and copyright have no switch yet (`MetadataItem.isOfferedInSettings`): their flows (the
-location prompt, text entry) aren't built, so they stay off.
+next photo uses it. For each capture, `CameraModel` adds two per-photo values to the metadata
+plan: `MetadataPlan.mirrorsHorizontally` (a front camera photo with mirroring on) and
+`MetadataPlan.location` (from `CameraModel.location`, a `LocationTagging`, while the Location
+switch is on). `LocationTagging` holds the location rules (ask when the switch is turned on;
+updates only while the camera runs) behind the `LocationProviding` protocol; the app target
+implements it with Core Location (`CoreLocationProvider`) and starts or stops it from
+`.task(id:)` as the switch and the session change. The name and copyright have no switch yet
+(`MetadataItem.isOfferedInSettings`): text entry isn't built, so they stay off.
 
 The Honesty screen and About are static: every Honesty statement comes from
 [`research/privacy-claims.md`](research/privacy-claims.md), and About shows bundled copies of

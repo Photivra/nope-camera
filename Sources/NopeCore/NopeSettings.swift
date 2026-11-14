@@ -167,6 +167,56 @@ public final class NopeSettings {
         store()
     }
 
+    /// Which processed copy is paired with the RAW in Photos when RAW, HEIF and JPEG are all
+    /// saved. ``RAWPairing/heif`` by default.
+    public var rawPairing: RAWPairing {
+        save.rawPairing
+    }
+
+    /// Whether the choice of ``rawPairing`` applies: RAW, HEIF and JPEG are all selected and
+    /// the device has Bayer RAW.
+    ///
+    /// - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+    /// - Returns: `true` when an interface should offer the choice.
+    public func offersRAWPairingChoice(deviceSupportsBayerRAW: Bool) -> Bool {
+        deviceSupportsBayerRAW && save.offersRAWPairingChoice
+    }
+
+    /// Sets which processed copy is paired with the RAW, and saves the change.
+    ///
+    /// - Parameter pairing: The copy to pair.
+    public func setRAWPairing(_ pairing: RAWPairing) {
+        save.rawPairing = pairing
+        store()
+    }
+
+    /// Whether front camera photos are saved mirrored, as the viewfinder shows them. Off by
+    /// default.
+    public var mirrorsFrontCamera: Bool {
+        save.mirrorsFrontCamera
+    }
+
+    /// Sets whether front camera photos are saved mirrored, and saves the change.
+    ///
+    /// - Parameter isOn: Whether they are mirrored.
+    public func setMirrorsFrontCamera(_ isOn: Bool) {
+        save.mirrorsFrontCamera = isOn
+        store()
+    }
+
+    /// How the HEIF and JPEG copies are encoded. ``DevelopedFileOptions/init()`` by default.
+    public var fileOptions: DevelopedFileOptions {
+        save.fileOptions
+    }
+
+    /// Sets how the HEIF and JPEG copies are encoded, and saves the change.
+    ///
+    /// - Parameter options: The options.
+    public func setFileOptions(_ options: DevelopedFileOptions) {
+        save.fileOptions = options
+        store()
+    }
+
     /// Shows or hides the manual controls on the camera screen, and saves the change.
     ///
     /// - Parameter isOn: Whether the manual controls are shown.

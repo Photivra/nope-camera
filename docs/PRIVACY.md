@@ -17,12 +17,15 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
   for camera access when the person presses "Allow Camera Access", and for add-only Photos access
   the first time it saves a photo (`PHPhotoLibrary.requestAuthorization(for: .addOnly)`). Add-only
-  access can't read the library. No location permission is requested, and no location is
-  supplied to the camera.
+  access can't read the library. Location ("while using the app" only,
+  `NSLocationWhenInUseUsageDescription`) is asked for only when the person turns on the Location
+  switch, and never in the background (see "Location").
 - **Photos:** each photo's files are built in memory with metadata from the allowlist (below),
   read back and checked, and added to Photos with add-only access. A RAW and its HEIF (or JPEG)
   are one Photos asset: the DNG is the main resource and the processed file the alternate, as
-  Apple documents ("Capturing Photos in RAW and Apple ProRAW Formats"). The formats are RAW plus
+  Apple documents ("Capturing Photos in RAW and Apple ProRAW Formats"). With RAW, HEIF and JPEG
+  all selected, Settings › Formats › Paired with RAW chooses which copy is the alternate (HEIF by
+  default); the other is its own asset (issue #50). Pairing changes nothing in any file. The formats are RAW plus
   HEIF by default (`SaveSettings`); a lens without RAW saves its labeled processed fallback. If a
   file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
   that the photo holds only the details you chose." Files are never written to disk.
@@ -31,11 +34,15 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
   runs before the read-back, so a signed file is checked like any other (see "Content
   Credentials").
-- **Settings:** the person's choices (formats, metadata switches, signing, the HEIF and JPEG
-  look, manual controls) are stored in the app's own `UserDefaults` on the device. They are
+- **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
+  HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in the app's own `UserDefaults` on the device. They are
   never synced or sent. The name and copyright fields of `SaveSettings` stay empty: Settings
   has no text entry for them yet. The privacy manifest declares the `UserDefaults` required-reason API
   with reason `CA92.1` (the app's own data).
+- **Location:** off by default; see "Location" below. The location is never stored by the app
+  outside the photo itself, never logged and never sent. The privacy manifest declares no
+  collected data: Apple's "collected" means data transmitted off the device, and the location
+  goes only into the person's own photos on the device.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
   nothing. Debug builds include the
@@ -199,7 +206,7 @@ turning the master on clears every item, turning it off always starts from these
 
 | Item | Default | What turning it off costs (shown in the app) | Device tag check |
 |---|---|---|---|
-| Location, altitude and direction | Off | Nothing. Location is only added if you turn it on | Not written by the system |
+| Location (latitude, longitude, altitude) | Off | Nothing. Location is only added if you turn it on | Not written by the system; written by nope. from the device's location (see "Location") |
 | Date and time taken | On | Photos sorts by the date you saved it instead | Present (`DateTime*`, XMP dates) |
 | Sub-second time | Off | Nothing visible | Present (`SubSecTime*`) |
 | Time zone | Off | The photo's local time can't be converted to other zones | Present (`OffsetTime*`) |
@@ -220,9 +227,59 @@ so they have no switch.
 **In the app:** Settings › Privacy shows the master switch, a switch for each item above with its
 "what turning it off costs" text, the signing switch, and the locked items, each with its
 reason (`NopeCore.MetadataSettings`, `NopeUI.PrivacySettingsView`). Location and "Your name and
-copyright" have no switch yet, because their flows (the location prompt, text entry) aren't
-built; they stay off. The app passes the settings to the save pipeline, which applies them to
+copyright" has no switch yet, because text entry isn't built; it stays off. Location has its
+switch and asks for location access when it is turned on (see "Location"). The app passes the settings to the save pipeline, which applies them to
 the next photo.
+
+### Location
+
+The Location switch (issue #43) is off by default and outside nothing: "Remove all optional
+details" turns it off like every other item.
+
+- **Asking:** turning the switch on asks for "while using the app" location access first
+  (`LocationTagging.turnOn(in:)`); if access is declined or restricted, the switch stays off and
+  Choose Details says how to allow it in Settings. nope. never asks for "always" access and has no
+  background mode.
+- **When it runs:** location updates run only while the switch is on, access is allowed and the
+  camera is running (`LocationTagging.update(isOn:cameraIsRunning:)`); they stop on any
+  interruption, in the background and when the camera stops, and the last location is then
+  forgotten, so a photo never gets a location from an earlier session. A photo taken before the
+  first location arrives has none. Core Location's `CLLocationUpdate.liveUpdates()` delivers
+  updates only while it is iterated.
+- **What is written:** exactly the GPS tags `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`,
+  `GPSLongitude` and, when the system reports a valid altitude, `GPSAltitudeRef` and
+  `GPSAltitude` (EXIF 3.0, 4.6.6), with the system's own values (`PhotoLocation`,
+  `MetadataField.gpsFields`). `GPSVersionID` is allowed because EXIF requires it in a GPS
+  directory and a writer may add it; ImageIO on the iOS 27.2 Simulator doesn't add it to HEIF or
+  JPEG. **Not written:** direction, speed, accuracy, satellites, GPS date or time, area or
+  destination. The read-back rejects any other GPS tag (the GPS directory is no longer allowed
+  as a whole).
+- **How:** the DNG and the processed fallback get the location in AVFoundation's replacement
+  metadata, like every other tag; a developed HEIF or JPEG copies the same allowlisted GPS fields
+  from its DNG. The location is never supplied to the camera itself.
+- **On the camera:** while the switch is on, an amber "Location On" chip says so, also in clean
+  view.
+
+### Front camera mirroring
+
+Settings › Camera › Mirror Front Camera (issue #45), off by default (owner decision): photos are
+saved as others see you. When on, a front camera photo is saved as the viewfinder shows it,
+through the Orientation tag only: the mirrored value of the system's orientation (1↔2, 3↔4,
+5↔6, 7↔8; TIFF 6.0 `Orientation`), so the Bayer RAW sensor data is unchanged
+(`MetadataPlan.mirroredOrientation(_:)`). The photo output's own mirroring is turned off
+(`AVCaptureConnection.videoMirrored = false`), so every photo starts unmirrored. The viewfinder
+stays mirrored either way. A developed HEIF or JPEG is rendered from the DNG with its
+orientation applied, so it shows the same direction with Orientation 1, like every developed
+copy. Orientation is a locked item and the read-back accepts all eight values.
+
+### Developed file options
+
+Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
+HEIF bit depth (10 or 8) and the color space (Display P3 or sRGB). They change only how the
+developed copies are encoded, never the RAW or any metadata; the defaults are the earlier
+encoding. Every combination is encoded and read back in the unit tests. The full list of what an
+app can control, and what nope. offers, is in
+[`research/capture-and-file-settings.md`](research/capture-and-file-settings.md).
 
 ### Locked (the photo breaks without these)
 
@@ -251,7 +308,8 @@ allow, from the system's metadata. A tag the system adds that isn't listed here 
   re-encoded by nope. (`docs/ARCHITECTURE.md`, "From capture to Photos").
 - **HEIF and JPEG developed from the RAW:** encoded by ImageIO from a rendered image that has no
   metadata, with the dictionary built from the DNG's (already allowlisted) metadata, orientation
-  "up", and no embedded thumbnail. Both looks (`SaveSettings.developedLook`, owner decision
+  "up", no embedded thumbnail, and the person's file options (compression, HEIF bit depth,
+  color space; see "Developed file options"). Both looks (`SaveSettings.developedLook`, owner decision
   2026-11-12) demosaic the sensor data and apply the file's white balance and color matrices,
   with no noise reduction, sharpening, local contrast, local tone mapping or lens correction:
   - **Standard** (default): one global tone curve, Core Image's default for the camera, so the
@@ -303,7 +361,7 @@ for all 8,192 switch combinations in every format.
 | Locked: orientation | `Orientation` | `Orientation` |
 | Locked: color profile | — | EXIF `ColorSpace`; the ICC profile (JPEG `APP2`, HEIF `colr`) |
 | Exact camera model for RAW editors | `UniqueCameraModel`, always present; "Generic camera" when off | — |
-| Location | the GPS directory and its pointer (nope. supplies no location yet, so none is written) | same |
+| Location | the GPS directory pointer and, in it, only `GPSVersionID`, `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`, `GPSLongitude`, `GPSAltitudeRef`, `GPSAltitude` (see "Location") | same |
 | Date and time taken | `DateTime`, `DateTimeOriginal`, `DateTimeDigitized` | same, plus HEIF XMP `photoshop:DateCreated`, `xmp:CreateDate`, `xmp:ModifyDate` (no fraction or zone unless those switches are on) |
 | Sub-second time | `SubSecTime`, `SubSecTimeOriginal`, `SubSecTimeDigitized` | same |
 | Time zone | `OffsetTime`, `OffsetTimeOriginal`, `OffsetTimeDigitized` | same |
@@ -363,6 +421,13 @@ Simulator has no camera and no real DNG can be made in a unit test:
   without the four TIFF fields, and whether AVFoundation needs them for a processed photo too
   wasn't measured (issue #65 measured RAW only). If it fails ("The photo wasn't taken. Try
   again."), the fallback needs the same empty fields;
+- with Location on and access allowed, the saved DNG, HEIF and JPEG carry exactly the GPS tags
+  in "Location" (note whether AVFoundation adds `GPSVersionID` to the DNG), the location is
+  right in Photos, and with Location off no file has a GPS directory;
+- a mirrored front camera photo (Mirror Front Camera on) shows mirrored, and an unmirrored one
+  (the default) shows as others see you, in Photos and a RAW editor, for the DNG, HEIF, JPEG and
+  the processed fallback, in portrait, both landscapes and upside down; and whether the system
+  mirrored front camera photos before nope. turned the photo output's mirroring off;
 - a signed DNG, HEIF and JPEG are saved and open in Photos and a RAW editor, and validate with
   c2patool (issue #66); with maker notes on, an exiftool dump of the signed DNG's maker note
   matches the unsigned one's (the maker note moves 12 bytes, and its offsets are assumed to be

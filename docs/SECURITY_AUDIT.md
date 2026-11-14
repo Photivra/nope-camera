@@ -151,8 +151,7 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
   `InfoPlist.strings` in every `.lproj`.
 - **Pass:**
   - Usage strings exist only for what the app uses: `NSCameraUsageDescription`,
-    `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` only if the
-    location switch ships. No `NSPhotoLibraryUsageDescription` (full library access), no
+    `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` (the location switch ships in 0.2.0). No `NSPhotoLibraryUsageDescription` (full library access), no
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
   - Each string is accurate, says "nope.", and is translated in all 11 languages.

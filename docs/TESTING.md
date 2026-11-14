@@ -302,6 +302,26 @@ lens without RAW, in the fallback:
 - with VoiceOver: each slot adjusts by swiping up and down, and the eyes-free shutter (volume
   buttons, Camera Control) still works with manual controls on and in clean view.
 
+### File options, pairing, mirroring and location
+
+The rules are unit-tested; every file option combination is encoded and read back on the
+Simulator (`FileOptionsEncodingTests`). On a device:
+
+- **File options** (issue #57): with each compression, HEIF bit depth and color space, a RAW plus
+  HEIF plus JPEG photo is saved, opens in Photos and a RAW editor, and the HEIF's depth and both
+  copies' color profile (exiftool `ProfileDescription`) match the choice;
+- **Paired with RAW** (issue #50): with RAW, HEIF and JPEG selected, Photos shows two items: the
+  RAW paired with the chosen copy, and the other copy on its own; note how Photos labels the
+  paired item and which copy it shows and shares by default, for each choice;
+- **Mirror Front Camera** (issue #45): see `docs/PRIVACY.md`, "Device checks";
+- **Location** (issue #43): turning Location on shows the system prompt with the localized
+  `NSLocationWhenInUseUsageDescription`; Allow turns the switch on and shows "Location On"; Don't
+  Allow leaves it off with the explanation and Open Settings; a photo then carries the location
+  (`docs/PRIVACY.md`, "Device checks"); location services stop (the status bar arrow goes) when
+  the camera is interrupted, the app goes to the background or Location is turned off; with
+  Precise Location off, the approximate location is written; Instruments shows no location
+  activity with Location off.
+
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 
 ## The C2PA library and the networking check

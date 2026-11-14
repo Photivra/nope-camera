@@ -714,6 +714,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         captureDelegates[id] = delegate
         // Every photo, single or bracketed, gets the current capture angle.
         applyCaptureRotation()
+        keepPhotosUnmirrored()
         photoOutput.capturePhoto(with: settings, delegate: delegate)
     }
 
@@ -737,6 +738,20 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             connection.isVideoRotationAngleSupported(angle)
         else { return }
         connection.videoRotationAngle = angle
+    }
+
+    /// Turns off the photo output's own mirroring, so every photo starts unmirrored and a
+    /// front camera photo is mirrored only through its orientation value, when the person asks
+    /// (`MetadataPlan.mirroredOrientation(_:)`, issue #45). The viewfinder's mirroring is
+    /// separate (the preview layer's own connection) and unchanged.
+    ///
+    /// `AVCaptureSession.h` (`AVCaptureConnection`): `videoMirrored` can be set only when
+    /// `automaticallyAdjustsVideoMirroring` is `NO`. Whether the system mirrors a front camera
+    /// photo by default isn't documented, so nope. sets it explicitly. Call only on `queue`.
+    private func keepPhotosUnmirrored() {
+        guard let connection = photoOutput.connection(with: .video), connection.isVideoMirroringSupported else { return }
+        connection.automaticallyAdjustsVideoMirroring = false
+        connection.isVideoMirrored = false
     }
 
     /// Reports interruptions, their end, runtime errors and thermal state changes as events.

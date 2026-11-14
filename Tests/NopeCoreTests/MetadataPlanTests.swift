@@ -41,7 +41,7 @@ enum ExpectedTags {
     /// The tags one switch adds, by format.
     static func item(_ item: MetadataItem, _ format: PhotoFormat) -> Set<ID> {
         switch item {
-        case .location: ids(.primary, [0x8825])
+        case .location: ids(.primary, [0x8825]).union(ids(.gps, [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006]))
         case .dateAndTime: ids(.primary, [0x0132]).union(ids(.exif, [0x9003, 0x9004]))
         case .subSecondTime: ids(.exif, [0x9290, 0x9291, 0x9292])
         case .timeZone: ids(.exif, [0x9010, 0x9011, 0x9012])
@@ -142,7 +142,7 @@ struct MetadataPlanTests {
                         Issue.record("mask \(mask), \(format), signed \(signed): \(allowlist.tags.symmetricDifference(ExpectedTags.all(settings, format, signed: signed)))")
                         return
                     }
-                    #expect(allowlist.wildcardDirectories == (settings.isOn(.location) ? [.gps] : []))
+                    #expect(allowlist.wildcardDirectories.isEmpty)
                     #expect(allowlist.allowsSubSecondDates == settings.isOn(.subSecondTime))
                     #expect(allowlist.allowsTimeZoneDates == settings.isOn(.timeZone))
                 }
@@ -211,14 +211,23 @@ struct MetadataPlanTests {
         #expect(MetadataPlan(settings: settings).allowlist(for: .jpeg, signed: false).xmpProperties.isEmpty)
     }
 
-    @Test func gpsAndMakerNotesAreWildcardImageIODictionaries() {
+    /// Maker notes are a whole ImageIO dictionary; the GPS directory is not (issue #43): only
+    /// the latitude, longitude and altitude with their references and the version.
+    @Test func makerNotesAreAWildcardDictionaryAndGPSIsExact() {
         var settings = MetadataSettings()
         settings.set(.location, isOn: true)
         settings.set(.makerNotes, isOn: true)
         let allowlist = MetadataPlan(settings: settings).allowlist(for: .raw, signed: false)
-        #expect(allowlist.wildcardImageIODictionaries == ["{GPS}", "{MakerApple}"])
-        #expect(allowlist.allows(ImageIOKey("{GPS}", "Latitude")))
+        #expect(allowlist.wildcardImageIODictionaries == ["{MakerApple}"])
+        for key in ["Latitude", "LatitudeRef", "Longitude", "LongitudeRef", "Altitude", "AltitudeRef", "GPSVersion"] {
+            #expect(allowlist.allows(ImageIOKey("{GPS}", key)), "\(key)")
+        }
+        for key in ["Speed", "ImgDirection", "TimeStamp", "DateStamp", "HPositioningError", "Satellites"] {
+            #expect(!allowlist.allows(ImageIOKey("{GPS}", key)), "\(key)")
+        }
         #expect(allowlist.allows(MetadataAllowlist.TagID(.gps, 0x0002)))
+        #expect(!allowlist.allows(MetadataAllowlist.TagID(.gps, 0x0007)))
+        #expect(!allowlist.allows(MetadataAllowlist.TagID(.gps, 0x0011)))
         #expect(!MetadataPlan().allowlist(for: .raw, signed: false).allows(ImageIOKey("{GPS}", "Latitude")))
         #expect(!MetadataPlan().allowlist(for: .raw, signed: false).allows(ImageIOKey(nil, "Unknown")))
         #expect(MetadataPlan().allowlist(for: .raw, signed: false).allows(ImageIOKey(nil, "PixelWidth")))

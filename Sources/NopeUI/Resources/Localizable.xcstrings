@@ -265,6 +265,204 @@
         }
       }
     },
+    "10-bit": {
+      "comment": "HEIF bit depth choice: 10 bits per color channel.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 Bit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bits"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bits"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bit"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10ビット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10비트"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10-bits"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bits"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 位"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 位元"
+          }
+        }
+      }
+    },
+    "10-bit keeps smoother gradients. 8-bit files are smaller.": {
+      "comment": "Explains the HEIF bit depth picker.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 Bit erhält weichere Verläufe. 8-Bit-Dateien sind kleiner."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bits conserva degradados más suaves. Los archivos de 8 bits son más pequeños."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le 10 bits conserve des dégradés plus doux. Les fichiers 8 bits sont plus petits."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bit mantiene sfumature più morbide. I file a 8 bit sono più piccoli."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10ビットはグラデーションがより滑らかです。8ビットはファイルが小さくなります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10비트는 그라데이션이 더 부드럽습니다. 8비트 파일은 더 작습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10-bits behoudt vloeiendere overgangen. 8-bits bestanden zijn kleiner."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 bits mantém gradientes mais suaves. Arquivos de 8 bits são menores."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 位的渐变更平滑。8 位文件更小。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "10 位元的漸層更平滑。8 位元檔案更小。"
+          }
+        }
+      }
+    },
+    "8-bit": {
+      "comment": "HEIF bit depth choice: 8 bits per color channel.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 Bit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 bits"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 bits"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 bit"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8ビット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8비트"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8-bits"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 bits"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 位"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "8 位元"
+          }
+        }
+      }
+    },
     "About and Licenses": {
       "comment": "Settings row and screen title: version, license and third-party notices.",
       "extractionState": "manual",
@@ -1321,6 +1519,72 @@
         }
       }
     },
+    "Color Space": {
+      "comment": "Picker: the color space of the HEIF and JPEG copies (Display P3 or sRGB).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Farbraum"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Espacio de color"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Espace colorimétrique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spazio colore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "色空間"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "색 공간"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kleurruimte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Espaço de cor"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "色彩空间"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "色彩空間"
+          }
+        }
+      }
+    },
     "Continue": {
       "comment": "Button on the first-run screen: goes on to the system camera access prompt.",
       "extractionState": "manual",
@@ -1581,6 +1845,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "關閉"
+          }
+        }
+      }
+    },
+    "Display P3 keeps the camera's colors. sRGB suits sites and screens that show only sRGB; colors outside it are clipped.": {
+      "comment": "Explains the color space picker. Display P3 and sRGB are color space names; keep them unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 behält die Farben der Kamera. sRGB eignet sich für Websites und Bildschirme, die nur sRGB anzeigen; Farben außerhalb davon werden beschnitten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 conserva los colores de la cámara. sRGB es adecuado para sitios y pantallas que solo muestran sRGB; los colores fuera de él se recortan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 conserve les couleurs de l’appareil photo. sRGB convient aux sites et écrans qui n’affichent que le sRGB ; les couleurs hors de cet espace sont écrêtées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 mantiene i colori della fotocamera. sRGB è adatto a siti e schermi che mostrano solo sRGB; i colori al di fuori vengono tagliati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3はカメラの色を保ちます。sRGBはsRGBしか表示できないサイトや画面に適しています。範囲外の色はクリップされます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3는 카메라의 색상을 유지합니다. sRGB는 sRGB만 표시하는 사이트와 화면에 적합하며, 범위를 벗어난 색상은 잘립니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 behoudt de kleuren van de camera. sRGB past bij sites en schermen die alleen sRGB tonen; kleuren daarbuiten worden afgekapt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 mantém as cores da câmera. sRGB é adequado para sites e telas que mostram apenas sRGB; as cores fora dele são cortadas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 保留相机的色彩。sRGB 适合只显示 sRGB 的网站和屏幕；超出范围的颜色会被裁切。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Display P3 保留相機的色彩。sRGB 適合只顯示 sRGB 的網站和螢幕；超出範圍的顏色會被裁切。"
           }
         }
       }
@@ -2175,6 +2505,216 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "回饋"
+          }
+        }
+      }
+    },
+    "File Options": {
+      "comment": "Settings row and screen title: advanced options for how the HEIF and JPEG copies are encoded (compression, bit depth, color space).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dateioptionen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opciones de archivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Options de fichier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opzioni file"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ファイルオプション"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "파일 옵션"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bestandsopties"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opções de arquivo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件选项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "檔案選項"
+          }
+        }
+      }
+    },
+    "File options: Custom": {
+      "comment": "Settings row value: at least one file option was changed from its default.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Eigene"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personalizado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personnalisé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personalizzato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カスタム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사용자 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aangepast"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personalizado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自定义"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自訂"
+          }
+        }
+      }
+    },
+    "File options: Default": {
+      "comment": "Settings row value: every file option is at its default.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predeterminado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Par défaut"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predefinito"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "デフォルト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "기본값"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設"
           }
         }
       }
@@ -2839,6 +3379,138 @@
         }
       }
     },
+    "HEIF Bit Depth": {
+      "comment": "Picker: bits per color channel of the HEIF copy. HEIF is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF-Farbtiefe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Profundidad de bits HEIF"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Profondeur de bits HEIF"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Profondità di bit HEIF"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIFのビット深度"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 비트 심도"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF-bitdiepte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Profundidade de bits HEIF"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 位深度"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 位元深度"
+          }
+        }
+      }
+    },
+    "HEIF Compression": {
+      "comment": "Picker: how much the HEIF copy is compressed. HEIF is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF-Komprimierung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compresión HEIF"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compression HEIF"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compressione HEIF"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIFの圧縮"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 압축"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF-compressie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compressão HEIF"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 压缩"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 壓縮"
+          }
+        }
+      }
+    },
     "HEIF and JPEG Look": {
       "comment": "Picker label: how the HEIF and JPEG copies are developed from the RAW. HEIF and JPEG are file format names.",
       "extractionState": "manual",
@@ -2967,6 +3639,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "隱藏控制項"
+          }
+        }
+      }
+    },
+    "High Quality": {
+      "comment": "Compression choice: high quality, smaller files than maximum.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hohe Qualität"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calidad alta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Haute qualité"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualità alta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高画質"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "고화질"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hoge kwaliteit"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alta qualidade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高质量"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高品質"
           }
         }
       }
@@ -3235,6 +3973,72 @@
         }
       }
     },
+    "JPEG Compression": {
+      "comment": "Picker: how much the JPEG copy is compressed. JPEG is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG-Komprimierung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compresión JPEG"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compression JPEG"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compressione JPEG"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEGの圧縮"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG 압축"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG-compressie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compressão JPEG"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG 压缩"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "JPEG 壓縮"
+          }
+        }
+      }
+    },
     "Last Photo": {
       "comment": "VoiceOver name of the small picture beside the shutter: the last photo taken in this session.",
       "extractionState": "manual",
@@ -3499,6 +4303,72 @@
         }
       }
     },
+    "Lower quality makes smaller files, with visible compression in fine detail.": {
+      "comment": "Explains the compression pickers.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geringere Qualität ergibt kleinere Dateien, mit sichtbarer Komprimierung in feinen Details."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Una calidad menor genera archivos más pequeños, con compresión visible en los detalles finos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Une qualité inférieure donne des fichiers plus petits, avec une compression visible dans les détails fins."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Una qualità inferiore produce file più piccoli, con compressione visibile nei dettagli fini."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "画質を下げるとファイルは小さくなりますが、細部に圧縮が目に見えるようになります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "화질을 낮추면 파일이 작아지지만 세밀한 부분에 압축 흔적이 보입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lagere kwaliteit geeft kleinere bestanden, met zichtbare compressie in fijne details."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualidade menor gera arquivos menores, com compressão visível nos detalhes finos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "降低质量可减小文件，但细节处会出现可见的压缩痕迹。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "降低品質可縮小檔案，但細節處會出現可見的壓縮痕跡。"
+          }
+        }
+      }
+    },
     "Manual": {
       "comment": "A control set by the person, not the camera. Also the M exposure mode.",
       "extractionState": "manual",
@@ -3627,6 +4497,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "手動控制"
+          }
+        }
+      }
+    },
+    "Maximum Quality": {
+      "comment": "Compression choice: the highest quality and largest files.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Maximale Qualität"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calidad máxima"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualité maximale"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualità massima"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最高画質"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "최고 화질"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Maximale kwaliteit"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualidade máxima"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最高质量"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最高品質"
+          }
+        }
+      }
+    },
+    "Medium Quality": {
+      "comment": "Compression choice: medium quality, smaller files.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mittlere Qualität"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Calidad media"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualité moyenne"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualità media"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "中画質"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "중간 화질"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gemiddelde kwaliteit"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualidade média"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "中等质量"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "中等品質"
           }
         }
       }
@@ -3825,6 +4827,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "中"
+          }
+        }
+      }
+    },
+    "Mirror Front Camera": {
+      "comment": "Switch: front camera photos are saved mirrored, as the viewfinder shows them.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Frontkamera spiegeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Reflejar cámara frontal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Effet miroir caméra avant"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Specchia fotocamera anteriore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "前面カメラを反転"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "전면 카메라 좌우 반전"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spiegel camera voorkant"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Espelhar câmera frontal"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "镜像前置相机"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "鏡像前置相機"
           }
         }
       }
@@ -5017,6 +6085,72 @@
         }
       }
     },
+    "Paired with RAW": {
+      "comment": "Picker: which processed copy (HEIF or JPEG) Photos keeps together with the RAW. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mit RAW gekoppelt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Emparejado con RAW"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Associé au RAW"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abbinato al RAW"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAWと組み合わせるコピー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW와 함께 보관"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gekoppeld aan RAW"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pareado com o RAW"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "与 RAW 配对"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "與 RAW 配對"
+          }
+        }
+      }
+    },
     "Photivra, Nope Camera, the app icon and the wordmark are trademarks and aren't covered by the GPL.": {
       "comment": "Trademark statement. Keep Photivra, Nope Camera and GPL unchanged.",
       "extractionState": "manual",
@@ -5145,6 +6279,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "照片"
+          }
+        }
+      }
+    },
+    "Photos keeps one copy with the RAW as a single photo. The other copy is saved as a separate photo.": {
+      "comment": "Explains why there are two items in Photos when RAW, HEIF and JPEG are all saved. Photos is the system photo library app. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos behält eine Kopie zusammen mit dem RAW als ein einziges Foto. Die andere Kopie wird als separates Foto gesichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos guarda una copia junto con el RAW como una sola foto. La otra copia se guarda como una foto aparte."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Photos conserve une copie avec le RAW en une seule photo. L’autre copie est enregistrée comme photo distincte."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto conserva una copia insieme al RAW come un’unica foto. L’altra copia viene salvata come foto separata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真アプリは1つのコピーをRAWと一緒に1枚の写真として保存します。もう1つのコピーは別の写真として保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 앱은 한 사본을 RAW와 함께 하나의 사진으로 보관합니다. 다른 사본은 별도의 사진으로 저장됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foto’s bewaart één kopie samen met de RAW als één foto. De andere kopie wordt als aparte foto bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O app Fotos mantém uma cópia junto com o RAW como uma única foto. A outra cópia é salva como uma foto separada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“照片”会将其中一个副本与 RAW 合为一张照片保存。另一个副本另存为单独的照片。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「照片」會將其中一個副本與 RAW 合為一張照片保存。另一個副本另存為獨立的照片。"
           }
         }
       }
@@ -5545,6 +6745,72 @@
         }
       }
     },
+    "Restore Defaults": {
+      "comment": "Button that sets every file option back to its default.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standardwerte wiederherstellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Restaurar valores predeterminados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rétablir les valeurs par défaut"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ripristina valori predefiniti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "デフォルトに戻す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "기본값으로 복원"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaardwaarden herstellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Restaurar padrões"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "恢复默认设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "回復預設值"
+          }
+        }
+      }
+    },
     "Save Each Photo As": {
       "comment": "Section header above the list of file formats.",
       "extractionState": "manual",
@@ -5607,6 +6873,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "每張照片儲存為"
+          }
+        }
+      }
+    },
+    "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.": {
+      "comment": "Explains the Mirror Front Camera switch.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sichert Fotos der Frontkamera so, wie der Sucher sie zeigt. Aus: Fotos zeigen dich so, wie andere dich sehen, und Text ist richtig lesbar. Der Sucher ist in beiden Fällen gespiegelt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guarda las fotos de la cámara frontal tal como las muestra el visor. Desactivado: las fotos te muestran como te ven los demás y el texto se lee correctamente. El visor se muestra reflejado en ambos casos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistre les photos de la caméra avant telles que le viseur les montre. Désactivé : les photos vous montrent comme les autres vous voient, et le texte se lit correctement. Le viseur est en miroir dans les deux cas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva le foto della fotocamera anteriore come le mostra il mirino. Disattivato: le foto ti mostrano come ti vedono gli altri e il testo si legge correttamente. Il mirino è specchiato in entrambi i casi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "前面カメラの写真をファインダーに表示されたとおりに保存します。オフ：写真は他の人から見たあなたの姿になり、文字も正しく読めます。ファインダーはどちらの場合も反転表示です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "전면 카메라 사진을 뷰파인더에 보이는 그대로 저장합니다. 끔: 사진은 다른 사람이 보는 모습으로 저장되고 글자가 바르게 읽힙니다. 뷰파인더는 어느 쪽이든 반전되어 보입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaart foto’s van de camera aan de voorkant zoals de zoeker ze toont. Uit: foto’s tonen je zoals anderen je zien, en tekst is correct leesbaar. De zoeker is in beide gevallen gespiegeld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva as fotos da câmera frontal como o visor as mostra. Desativado: as fotos mostram você como os outros veem e o texto fica legível. O visor fica espelhado de qualquer forma."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "按取景器中的样子保存前置相机照片。关闭：照片显示别人眼中的你，文字也能正常阅读。无论开关与否，取景器都是镜像显示。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "依觀景窗中的樣子儲存前置相機照片。關閉：照片顯示別人眼中的你，文字也能正常閱讀。無論開關與否，觀景窗都是鏡像顯示。"
           }
         }
       }
@@ -7005,6 +8337,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "切換為手動"
+          }
+        }
+      }
+    },
+    "System Default": {
+      "comment": "Compression choice: the system encoder's own quality.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Systemstandard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predeterminado del sistema"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valeur du système"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predefinito di sistema"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "システムのデフォルト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "시스템 기본값"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Systeemstandaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrão do sistema"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "系统默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "系統預設"
           }
         }
       }

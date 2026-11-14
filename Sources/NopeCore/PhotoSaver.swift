@@ -15,7 +15,8 @@ import Foundation
 ///    which passed, is saved instead, and the status says it isn't signed
 ///    (``SignatureStatus/UnsignedReason/signedFileFailedCheck``).
 /// 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
-///    file as one asset (``PhotoLibraryAsset/assets(for:)``).
+///    file as one asset (``PhotoLibraryAsset/assets(for:pairing:)``, with the person's
+///    ``SaveSettings/rawPairing``).
 public struct PhotoSaver: Sendable {
     /// Develops HEIF and JPEG from the RAW.
     private let developer: any PhotoDeveloping
@@ -93,7 +94,7 @@ public struct PhotoSaver: Sendable {
             finished.append(file)
             metadata[file.format] = unsigned
         }
-        try await library.add(PhotoLibraryAsset.assets(for: finished))
+        try await library.add(PhotoLibraryAsset.assets(for: finished, pairing: settings.rawPairing))
         return SavedPhoto(
             formats: finished.map(\.format), isProcessedFallback: !photo.format.isBayerRAW, signature: status,
             metadata: metadata)
@@ -138,7 +139,8 @@ public struct PhotoSaver: Sendable {
             var files = settings.formats.contains(.raw) ? [raw] : []
             for format in [PhotoFormat.heif, .jpeg] where settings.formats.contains(format) {
                 files.append(
-                    try await developer.develop(raw, to: format, look: settings.developedLook, metadata: plan))
+                    try await developer.develop(
+                        raw, to: format, look: settings.developedLook, options: settings.fileOptions, metadata: plan))
             }
             return files
         }

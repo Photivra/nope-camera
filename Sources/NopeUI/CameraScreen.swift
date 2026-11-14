@@ -79,7 +79,9 @@ public struct CameraScreen<Viewfinder: View>: View {
         .background(.background)
         // A popover on iPad; on iPhone the system shows it as a sheet.
         .adaptivePresentation(isPresented: $showsSettings) {
-            SettingsScreen(settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
+            SettingsScreen(
+                settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
+                deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location)
                 .frame(idealWidth: 480, idealHeight: 720)
                 // Opaque: a translucent popover lets the camera through and fails the contrast
                 // audit.

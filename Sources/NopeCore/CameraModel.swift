@@ -30,6 +30,11 @@ public final class CameraModel {
     /// through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
     public var saveSettings = SaveSettings()
 
+    /// Location tagging (issue #43), which gives each photo its location while the Location
+    /// switch is on, or `nil` when the app has no location service (previews, tests). The app
+    /// sets it once.
+    public var location: LocationTagging?
+
     /// Builds, checks and saves each photo, or `nil` when this model can't save (previews).
     private let saver: PhotoSaver?
 
@@ -221,7 +226,9 @@ public final class CameraModel {
         guard canCapture, let lens = selectedLens else { return }
         captureStatus = .capturing
         let settings = saveSettings
-        let plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
+        var plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
+        plan.location = location?.location(isOn: settings.metadata.isOn(.location))
+        plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
         let request = CaptureRequest(lens: lens, metadata: plan)
         if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
             await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)

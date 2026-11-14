@@ -183,9 +183,23 @@ extension MetadataField {
     /// The EXIF directory pointer (`0x8769`).
     static let exifPointer = locked("ExifIFD", .primary, 0x8769, [], .imageStructure, all)
 
-    /// The GPS directory pointer (`0x8825`). The GPS directory's own tags are allowed as a
-    /// whole when location is on (``MetadataPlan``).
+    /// The GPS directory pointer (`0x8825`). The GPS directory may hold only ``gpsFields``.
     static let gpsPointer = item("GPSInfoIFD", .primary, 0x8825, [], .location, all)
+
+    /// The GPS tags a photo may carry when location is on (issue #43; EXIF 3.0, 4.6.6): the
+    /// latitude, longitude and altitude with their reference tags, and the directory's version,
+    /// which EXIF requires in a GPS directory, so a writer may add it (``PhotoLocation/versionKey``). Nothing else from the GPS directory
+    /// (speed, direction, accuracy, time, date) is ever written or accepted. `MetadataPlan`
+    /// writes their values from a ``PhotoLocation`` (``PhotoLocation/gpsProperties``).
+    public static let gpsFields: [MetadataField] = [
+        item("GPSVersionID", .gps, 0x0000, [ImageIOKey(gps, PhotoLocation.versionKey)], .location, all),
+        item("GPSLatitudeRef", .gps, 0x0001, [ImageIOKey(gps, PhotoLocation.latitudeRefKey)], .location, all),
+        item("GPSLatitude", .gps, 0x0002, [ImageIOKey(gps, PhotoLocation.latitudeKey)], .location, all),
+        item("GPSLongitudeRef", .gps, 0x0003, [ImageIOKey(gps, PhotoLocation.longitudeRefKey)], .location, all),
+        item("GPSLongitude", .gps, 0x0004, [ImageIOKey(gps, PhotoLocation.longitudeKey)], .location, all),
+        item("GPSAltitudeRef", .gps, 0x0005, [ImageIOKey(gps, PhotoLocation.altitudeRefKey)], .location, all),
+        item("GPSAltitude", .gps, 0x0006, [ImageIOKey(gps, PhotoLocation.altitudeKey)], .location, all),
+    ]
 
     /// The maker note (`0x927C`). ImageIO shows Apple's as the `{MakerApple}` dictionary.
     static let makerNote = item("MakerNote", .exif, 0x927C, [], .makerNotes, all)
@@ -195,7 +209,7 @@ extension MetadataField {
     /// tag tables. A tag that isn't here is never written and fails the read-back.
     public static let catalog: [MetadataField] = structure + raw + capture + [
         software, uniqueCameraModel, artist, copyright, orientation, exifPointer, gpsPointer, makerNote,
-    ]
+    ] + gpsFields
 
     /// The locked image structure fields.
     private static let structure: [MetadataField] = [

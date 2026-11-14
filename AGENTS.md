@@ -66,6 +66,11 @@ user. The full design is in issue #1.
   - Brand color is applied only through `tint`. Don't restyle system controls.
 - **The only non-platform dependency is the C2PA library.** Adding a dependency needs the
   maintainer's approval, and it must be GPLv3-compatible.
+- **Every setting the device allows (issue #57).** Anything about the file or the exposure that
+  the device lets an app control is the person's to control, behind the manual or advanced
+  options, with full auto as the default that needs none of it. Every file nope. can save must
+  open: a setting that produces a file that doesn't open isn't shipped. The list of settings and
+  what is offered is in `docs/research/capture-and-file-settings.md`; keep it current.
 - **Progressive enhancement.** Detect each capability at run time; show a feature only where
   the device supports it.
 - **Prevention first:**
