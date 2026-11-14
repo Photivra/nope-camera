@@ -27,5 +27,11 @@ if [[ -n "${BASE_SHA:-}" && -n "${HEAD_SHA:-}" ]]; then
   done < <(git rev-list "$BASE_SHA..$HEAD_SHA")
 fi
 
+# Private test deployments: no host name containing "staging" in tracked files (AGENTS.md rule 6).
+host_pattern='[a-z0-9-]*''staging''[a-z0-9-]*([.][a-z0-9-]+)*[.](com|dev|app|net|org|io)([^a-z0-9-]|$)'
+if hits=$(git grep -n -I -i -E "$host_pattern" -- . ':!scripts/check-repo.sh' 2>/dev/null) && [[ -n "$hits" ]]; then
+  echo "private test deployment host names found (AGENTS.md rule 6):"; echo "$hits"; fail=1
+fi
+
 if [[ $fail -ne 0 ]]; then exit 1; fi
 echo "repository checks passed"
