@@ -1189,6 +1189,600 @@
         }
       }
     },
+    "Astro": {
+      "comment": "Quick control, pill and its Voice Control name on the camera: the helper for night sky photos, which takes a series of single RAW frames for stacking in other software.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空"
+          }
+        }
+      }
+    },
+    "Astro Settings": {
+      "comment": "Button on the camera and title of the sheet with the night sky helper's frame count, start delay and estimates.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-Einstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes de Astro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages Astro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni Astro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空の設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-instellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes do Astro"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空設定"
+          }
+        }
+      }
+    },
+    "Astro finished. Frames saved: %lld": {
+      "comment": "Announced to VoiceOver when the night sky helper has taken all its frames. The number is how many frames were saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro fertig. Gesicherte Bilder: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro terminado. Fotogramas guardados: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro terminé. Images enregistrées : %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro terminato. Fotogrammi salvati: %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空の撮影が終了しました。保存したフレーム：%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 촬영이 끝났습니다. 저장된 프레임: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro klaar. Bewaarde frames: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro concluído. Quadros salvos: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍摄已完成。已存储的帧：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍攝已完成。已儲存的影格：%lld"
+          }
+        }
+      }
+    },
+    "Astro frames started.": {
+      "comment": "Announced to VoiceOver when the night sky helper starts taking its frames.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-Bilder gestartet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogramas de Astro iniciados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Images Astro lancées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogrammi Astro avviati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空のフレームの撮影を開始しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 프레임 촬영을 시작했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-frames gestart."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Quadros do Astro iniciados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已开始拍摄星空帧。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已開始拍攝星空影格。"
+          }
+        }
+      }
+    },
+    "Astro frames: %lld": {
+      "comment": "Shown on the camera while the night sky helper is on: how many frames the shutter will take.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-Bilder: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogramas de Astro: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Images Astro : %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogrammi Astro: %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空のフレーム：%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 프레임: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-frames: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Quadros do Astro: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空帧数：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空影格數：%lld"
+          }
+        }
+      }
+    },
+    "Astro stopped: storage is full. Frames saved: %lld": {
+      "comment": "Announced to VoiceOver when the night sky helper stops because the next frame wouldn't fit in storage. The number is how many frames were saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro beendet: Der Speicher ist voll. Gesicherte Bilder: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro detenido: el almacenamiento está lleno. Fotogramas guardados: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro arrêté : le stockage est plein. Images enregistrées : %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro interrotto: lo spazio di archiviazione è pieno. Fotogrammi salvati: %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空の撮影を停止しました：ストレージがいっぱいです。保存したフレーム：%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 촬영이 중지됨: 저장 공간이 가득 찼습니다. 저장된 프레임: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro gestopt: de opslag is vol. Bewaarde frames: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro parado: o armazenamento está cheio. Quadros salvos: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍摄已停止：储存空间已满。已存储的帧：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍攝已停止：儲存空間已滿。已儲存的影格：%lld"
+          }
+        }
+      }
+    },
+    "Astro stopped: the battery is low. Frames saved: %lld": {
+      "comment": "Announced to VoiceOver when the night sky helper stops because the battery is nearly empty and not charging. The number is how many frames were saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro beendet: Der Akku ist fast leer. Gesicherte Bilder: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro detenido: la batería está baja. Fotogramas guardados: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro arrêté : la batterie est faible. Images enregistrées : %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro interrotto: la batteria è scarica. Fotogrammi salvati: %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空の撮影を停止しました：バッテリー残量が少なくなっています。保存したフレーム：%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 촬영이 중지됨: 배터리가 부족합니다. 저장된 프레임: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro gestopt: de batterij is bijna leeg. Bewaarde frames: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro parado: a bateria está fraca. Quadros salvos: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍摄已停止：电池电量低。已存储的帧：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍攝已停止：電池電量不足。已儲存的影格：%lld"
+          }
+        }
+      }
+    },
+    "Astro stopped: the camera stopped. Frames saved: %lld": {
+      "comment": "Announced to VoiceOver when the night sky helper stops because the camera was interrupted or switched lenses. The number is how many frames were saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro beendet: Die Kamera wurde angehalten. Gesicherte Bilder: %lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro detenido: la cámara se detuvo. Fotogramas guardados: %lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro arrêté : l’appareil photo s’est arrêté. Images enregistrées : %lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro interrotto: la fotocamera si è fermata. Fotogrammi salvati: %lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空の撮影を停止しました：カメラが停止しました。保存したフレーム：%lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 촬영이 중지됨: 카메라가 중지되었습니다. 저장된 프레임: %lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro gestopt: de camera is gestopt. Bewaarde frames: %lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro parado: a câmera parou. Quadros salvos: %lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍摄已停止：相机已停止。已存储的帧：%lld"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空拍攝已停止：相機已停止。已儲存的影格：%lld"
+          }
+        }
+      }
+    },
+    "Astro. Press to start the frames after the start delay.": {
+      "comment": "VoiceOver value of the shutter while the night sky helper is on: one press starts the self-timer, then the series of frames.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro. Drücken, um die Bilder nach der Startverzögerung zu beginnen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro. Pulsa para empezar los fotogramas tras el retardo de inicio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro. Appuyez pour lancer les images après le délai de départ."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro. Premi per avviare i fotogrammi dopo il ritardo iniziale."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空。押すと、開始までの待ち時間の後にフレームの撮影を始めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진. 누르면 시작 지연 후 프레임 촬영을 시작합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro. Druk om de frames te starten na de startvertraging."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro. Pressione para iniciar os quadros após o atraso inicial."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空。按下后，在开始延时结束后开始拍摄帧。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空。按下後，會在開始延遲結束後開始拍攝影格。"
+          }
+        }
+      }
+    },
     "At least one format is required.": {
       "comment": "Explains why the last selected format can't be turned off.",
       "extractionState": "manual",
@@ -4555,6 +5149,72 @@
         }
       }
     },
+    "Each Frame": {
+      "comment": "Section title in the night sky helper's settings: the exposure every frame is taken with.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Bild"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada fotograma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque image"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni fotogramma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各フレーム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 프레임"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elk frame"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada quadro"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每一帧"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每個影格"
+          }
+        }
+      }
+    },
     "Exposure": {
       "comment": "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.",
       "extractionState": "manual",
@@ -4815,6 +5475,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "曝光模式"
+          }
+        }
+      }
+    },
+    "Exposure Time in All": {
+      "comment": "Row in the night sky helper's settings: the shutter time of all frames added together.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Belichtungszeit insgesamt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tiempo de exposición total"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temps d’exposition total"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tempo di esposizione totale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "合計露光時間"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "총 노출 시간"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Totale belichtingstijd"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tempo de exposição total"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "总曝光时间"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "總曝光時間"
           }
         }
       }
@@ -6813,6 +7539,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "格式"
+          }
+        }
+      }
+    },
+    "Frame %lld of %lld": {
+      "comment": "Progress of the night sky helper on the camera: which frame is being taken, of how many. Both numbers are counts of frames.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bild %1$lld von %2$lld"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotograma %1$lld de %2$lld"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Image %1$lld sur %2$lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogramma %1$lld di %2$lld"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フレーム %1$lld/%2$lld"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프레임 %1$lld/%2$lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Frame %1$lld van %2$lld"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Quadro %1$lld de %2$lld"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "第 %1$lld 帧，共 %2$lld 帧"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "第 %1$lld 個影格，共 %2$lld 個"
           }
         }
       }
@@ -11503,6 +12295,72 @@
         }
       }
     },
+    "Not every frame fits in the free storage. The frames stop when storage is full.": {
+      "comment": "Warning in the night sky helper's settings when the frames chosen may not all fit in the free storage.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht alle Bilder passen in den freien Speicher. Die Aufnahme endet, wenn der Speicher voll ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No caben todos los fotogramas en el almacenamiento libre. Los fotogramas se detienen cuando el almacenamiento está lleno."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toutes les images ne tiennent pas dans le stockage libre. Les images s’arrêtent lorsque le stockage est plein."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non tutti i fotogrammi entrano nello spazio libero. I fotogrammi si interrompono quando lo spazio è pieno."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "すべてのフレームが空きストレージに収まりません。ストレージがいっぱいになると撮影は停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "모든 프레임이 남은 저장 공간에 들어가지 않습니다. 저장 공간이 가득 차면 촬영이 중지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet alle frames passen in de vrije opslag. De frames stoppen als de opslag vol is."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nem todos os quadros cabem no armazenamento livre. Os quadros param quando o armazenamento está cheio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "并非所有帧都能放入可用储存空间。储存空间满时会停止拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "並非所有影格都能放入可用儲存空間。儲存空間已滿時會停止拍攝。"
+          }
+        }
+      }
+    },
     "Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app.": {
       "comment": "Shown when the person hasn't allowed the app to add photos to their photo library. Keep the name nope. unchanged, lowercase with its period.",
       "extractionState": "manual",
@@ -14803,6 +15661,72 @@
         }
       }
     },
+    "Set when Astro is turned on: focus at the far end, and the longest shutter and highest ISO this lens allows. Change them with the manual controls.": {
+      "comment": "Explains the exposure in the night sky helper's settings. Astro is the helper's name on the camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Beim Einschalten von Astro festgelegt: Fokus am fernen Ende sowie die längste Belichtungszeit und der höchste ISO-Wert, die dieses Objektiv erlaubt. Ändere sie mit den manuellen Steuerelementen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se ajustan al activar Astro: enfoque en el extremo lejano, y la velocidad de obturación más larga y el ISO más alto que permite este objetivo. Cámbialos con los controles manuales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglés à l’activation d’Astro : mise au point à l’extrémité lointaine, et la vitesse d’obturation la plus longue et l’ISO le plus élevé que permet cet objectif. Modifiez-les avec les commandes manuelles."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostati quando si attiva Astro: messa a fuoco all’estremo lontano, e il tempo di posa più lungo e l’ISO più alto consentiti da questo obiettivo. Modificali con i controlli manuali."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空をオンにしたときに設定されます：ピントは遠い側の端、シャッターとISOはこのレンズで可能な最長と最高の値です。マニュアル操作で変更できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진을 켤 때 설정됩니다: 초점은 먼 쪽 끝, 셔터와 ISO는 이 렌즈가 허용하는 가장 긴 값과 가장 높은 값입니다. 수동 조절로 변경하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ingesteld bij het aanzetten van Astro: focus aan het verre uiteinde, en de langste sluitertijd en hoogste ISO die deze lens toestaat. Wijzig ze met de handmatige bediening."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Definidos ao ativar o Astro: foco no extremo distante, e o obturador mais longo e o ISO mais alto que esta lente permite. Altere-os com os controles manuais."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开星空时设定：对焦在远端，快门和 ISO 为此镜头允许的最长值和最高值。可用手动控制更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開啟星空時設定：對焦在遠端，快門和 ISO 為此鏡頭允許的最長值和最高值。可用手動控制更改。"
+          }
+        }
+      }
+    },
     "Settings": {
       "comment": "Title of the settings screen, and the camera button that opens it.",
       "extractionState": "manual",
@@ -16135,6 +17059,72 @@
         }
       }
     },
+    "Start Delay": {
+      "comment": "Picker in the night sky helper's settings: how long the self-timer waits before the first frame, so touching the phone doesn't shake it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Startverzögerung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Retardo de inicio"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Délai de départ"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ritardo iniziale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開始までの待ち時間"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "시작 지연"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Startvertraging"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Atraso inicial"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "开始延时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開始延遲"
+          }
+        }
+      }
+    },
     "Start in Clean View": {
       "comment": "Switch: the camera opens with only the viewfinder and the shutter.",
       "extractionState": "manual",
@@ -16531,6 +17521,72 @@
         }
       }
     },
+    "Stop Frames": {
+      "comment": "Button that stops the night sky helper's frames. Every frame already taken is saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bilder beenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detener fotogramas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Arrêter les images"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Interrompi fotogrammi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フレームの撮影を停止"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프레임 촬영 중지"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Frames stoppen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Parar quadros"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止拍摄帧"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止拍攝影格"
+          }
+        }
+      }
+    },
     "Storage Full": {
       "comment": "Warning chip on the camera: the device has no room for another photo.",
       "extractionState": "manual",
@@ -16791,6 +17847,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "儲存空間不足。此裝置還能儲存的照片：約 %lld 張。"
+          }
+        }
+      }
+    },
+    "Storage, at Most": {
+      "comment": "Row in the night sky helper's settings: the most storage all frames can take, an upper estimate.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Speicher, höchstens"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Almacenamiento, como máximo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stockage, au maximum"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spazio, al massimo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最大ストレージ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "최대 저장 공간"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opslag, hoogstens"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Armazenamento, no máximo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最多占用的储存空间"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最多佔用的儲存空間"
           }
         }
       }
@@ -17319,6 +18441,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "正在連拍。按下可停止。"
+          }
+        }
+      }
+    },
+    "Taking astro frames. Press to stop.": {
+      "comment": "VoiceOver value of the shutter while the night sky helper takes its frames: pressing the shutter stops them.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-Bilder werden aufgenommen. Zum Beenden drücken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tomando fotogramas de Astro. Pulsa para detener."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise des images Astro. Appuyez pour arrêter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto dei fotogrammi Astro. Premi per interrompere."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空のフレームを撮影中。押すと停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 프레임 촬영 중. 누르면 중지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro-frames worden gemaakt. Druk om te stoppen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Capturando quadros do Astro. Pressione para parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在拍摄星空帧。按下即可停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "正在拍攝星空影格。按下即可停止。"
           }
         }
       }
@@ -18111,6 +19299,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "相機的即時數值，例如快門、ISO、對焦和白平衡。"
+          }
+        }
+      }
+    },
+    "The frames take longer than their exposure time: each one also needs time to save. They stop early if storage runs out, the battery is nearly empty, or the camera stops.": {
+      "comment": "Explains the estimates in the night sky helper's settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Bilder dauern länger als ihre Belichtungszeit: Jedes muss auch gesichert werden. Sie enden früher, wenn der Speicher voll ist, der Akku fast leer ist oder die Kamera anhält."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Los fotogramas tardan más que su tiempo de exposición: cada uno también necesita tiempo para guardarse. Se detienen antes si se acaba el almacenamiento, la batería está casi vacía o la cámara se detiene."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les images prennent plus de temps que leur temps d’exposition : chacune doit aussi être enregistrée. Elles s’arrêtent plus tôt si le stockage est plein, si la batterie est presque vide ou si l’appareil photo s’arrête."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "I fotogrammi richiedono più del loro tempo di esposizione: ognuno deve anche essere salvato. Si interrompono prima se lo spazio finisce, se la batteria è quasi scarica o se la fotocamera si ferma."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フレームの撮影には露光時間より長くかかります：各フレームの保存にも時間が必要です。ストレージが足りなくなった、バッテリーがほぼ空になった、またはカメラが停止した場合は早めに停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프레임 촬영은 노출 시간보다 오래 걸립니다: 각 프레임을 저장하는 데도 시간이 필요합니다. 저장 공간이 부족하거나, 배터리가 거의 없거나, 카메라가 중지되면 일찍 멈춥니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De frames duren langer dan hun belichtingstijd: elk frame moet ook worden bewaard. Ze stoppen eerder als de opslag vol raakt, de batterij bijna leeg is of de camera stopt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Os quadros levam mais tempo que seu tempo de exposição: cada um também precisa de tempo para ser salvo. Eles param antes se o armazenamento acabar, a bateria estiver quase vazia ou a câmera parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍摄所需时间比曝光时间长：每一帧还需要时间存储。如果储存空间用完、电池电量将尽或相机停止，拍摄会提前停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍攝所需時間比曝光時間長：每個影格還需要時間儲存。如果儲存空間用完、電池電量將盡或相機停止，拍攝會提前停止。"
           }
         }
       }
@@ -19369,6 +20623,72 @@
         }
       }
     },
+    "Turn Off Astro": {
+      "comment": "Action of the Astro pill on the camera: turns the night sky helper off.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro ausschalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desactivar Astro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Désactiver Astro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disattiva Astro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空をオフにする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진 끄기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro uitschakelen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desativar Astro"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭星空"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉星空"
+          }
+        }
+      }
+    },
     "Turn Off Close-Up": {
       "comment": "Action of the Close-Up pill on the camera: lets autofocus focus at any distance again.",
       "extractionState": "manual",
@@ -20025,6 +21345,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "使用標準快門"
+          }
+        }
+      }
+    },
+    "Use a tripod. Turn on Magnify to check focus on a bright star or a distant light, and fine-tune it with the Focus control.": {
+      "comment": "Tip in the night sky helper's settings. Magnify and Focus are the names of the camera's focus magnifier and manual focus control.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verwende ein Stativ. Schalte „Vergrößern“ ein, um den Fokus an einem hellen Stern oder einem entfernten Licht zu prüfen, und stelle ihn mit „Fokus“ fein ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Usa un trípode. Activa Ampliar para comprobar el enfoque en una estrella brillante o una luz lejana, y ajústalo con el control Enfoque."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Utilisez un trépied. Activez Agrandir pour vérifier la mise au point sur une étoile brillante ou une lumière lointaine, puis affinez-la avec la commande Mise au point."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Usa un treppiede. Attiva Ingrandisci per controllare la messa a fuoco su una stella luminosa o una luce lontana e regolala con il controllo Messa a fuoco."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "三脚を使ってください。「拡大」をオンにして明るい星や遠くの光でピントを確認し、「フォーカス」で微調整します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "삼각대를 사용하세요. 확대를 켜고 밝은 별이나 멀리 있는 불빛으로 초점을 확인한 다음 초점 조절로 미세 조정하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gebruik een statief. Zet Vergroten aan om de focus te controleren op een heldere ster of een ver licht, en stel hem fijn af met Focus."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Use um tripé. Ative Ampliar para verificar o foco em uma estrela brilhante ou uma luz distante e ajuste-o com o controle Foco."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "请使用三脚架。打开“放大”，在一颗亮星或远处的灯光上检查对焦，再用“对焦”控制微调。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "請使用三腳架。開啟「放大」，在明亮的星星或遠處的燈光上檢查對焦，再用「對焦」控制微調。"
           }
         }
       }

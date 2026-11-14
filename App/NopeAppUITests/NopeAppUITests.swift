@@ -767,7 +767,7 @@ final class NopeAppUITests: XCTestCase {
     ///   of the window while enlarging the text; `testProToolsGrowsWithTheLargestTextSize`
     ///   measures that those rows do grow.
     @MainActor
-    private func auditVisibleElements(_ app: XCUIApplication, skipDynamicType: Bool = false) throws {
+    func auditVisibleElements(_ app: XCUIApplication, skipDynamicType: Bool = false) throws {
         let window = app.windows.firstMatch.frame
         try app.performAccessibilityAudit { issue in
             if skipDynamicType, issue.auditType == .dynamicType { return true }

@@ -32,12 +32,18 @@ struct Viewfinder: View {
 
     /// The simulated backend's picture: dark gray, or in Debug builds the plain color a UI test
     /// asks for with `-NopeSimulatedViewfinder white` or `yellow`, to check contrast over the
-    /// brightest scenes (issue #68, "Contrast").
-    private var placeholder: Color {
+    /// brightest scenes (issue #68, "Contrast"), or with `target` a white square on black, to
+    /// check the focus magnifier enlarges the picture.
+    @ViewBuilder private var placeholder: some View {
         #if DEBUG
-        if let color = SimulatedCameraLaunch.viewfinderColor { return color }
+        if SimulatedCameraLaunch.showsTargetViewfinder {
+            SimulatedCameraLaunch.targetViewfinder
+        } else {
+            SimulatedCameraLaunch.viewfinderColor ?? Color(white: 0.12)
+        }
+        #else
+        Color(white: 0.12)
         #endif
-        return Color(white: 0.12)
     }
 }
 

@@ -151,6 +151,480 @@ static let none: AssistSettings
 
 No aids: the camera's defaults.
 
+## `AstroEstimate`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+struct AstroEstimate
+```
+
+What the next astro run will take, for an interface to show before the shutter is pressed
+(``CameraModel/astroEstimate``).
+
+## `AstroEstimate/bytes`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let bytes: Int64
+```
+
+The most bytes the run's files can take (``PhotoSizeEstimate``, an upper bound).
+
+## `AstroEstimate/fits`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+var fits: Bool { get }
+```
+
+Whether every frame is expected to fit in the free storage. `true` when it is unknown.
+
+## `AstroEstimate/frameCount`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let frameCount: Int
+```
+
+The frames the run takes.
+
+## `AstroEstimate/framesThatFit`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let framesThatFit: Int?
+```
+
+How many frames fit in the free storage, or `nil` when the free storage is unknown.
+
+## `AstroEstimate/init(frameCount:shutter:bytes:framesThatFit:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+init(frameCount: Int, shutter: Double?, bytes: Int64, framesThatFit: Int?)
+```
+
+Creates an estimate.
+
+- Parameters:
+  - frameCount: The frames the run takes.
+  - shutter: Each frame's shutter, in seconds, or `nil`.
+  - bytes: The most bytes the run's files can take.
+  - framesThatFit: How many frames fit, or `nil` when unknown.
+
+## `AstroEstimate/shutter`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let shutter: Double?
+```
+
+Each frame's shutter, in seconds, or `nil` before the camera reports one.
+
+## `AstroEstimate/totalExposureSeconds`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+var totalExposureSeconds: Double? { get }
+```
+
+The exposure time of all frames together, in seconds, or `nil` without a shutter. The run
+takes longer than this: each frame also needs time to be read out and saved, which this
+estimate doesn't know.
+
+## `AstroExposure`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+struct AstroExposure
+```
+
+The exposure the astro helper starts from on a lens (``AstroModel/startingExposure(for:)``).
+
+## `AstroExposure/focus`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let focus: Double
+```
+
+The focus, on the relative scale from 0 (closest) to 1 (far).
+
+## `AstroExposure/init(shutter:iso:focus:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+init(shutter: Double, iso: Double, focus: Double)
+```
+
+Creates the values.
+
+- Parameters:
+  - shutter: The shutter, in seconds.
+  - iso: The ISO.
+  - focus: The focus, from 0 to 1.
+
+## `AstroExposure/iso`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let iso: Double
+```
+
+The ISO.
+
+## `AstroExposure/shutter`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let shutter: Double
+```
+
+The shutter, in seconds.
+
+## `AstroIntent`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+enum AstroIntent
+```
+
+A request about the astro helper, sent as ``CameraIntent/astro(_:)`` (issue #60).
+
+## `AstroIntent/setFrameCount(_:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case setFrameCount(Int)
+```
+
+Choose how many frames the next run takes, one of ``AstroModel/frameCounts``. Ignored
+while a run counts down or runs.
+
+## `AstroIntent/setOn(_:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case setOn(Bool)
+```
+
+Turn the helper on or off. Turning it on is ignored on a lens it can't use
+(``AstroModel/isAvailable(on:)``) and while a photo, countdown or series runs.
+
+## `AstroIntent/setStartDelay(_:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case setStartDelay(SelfTimerDelay)
+```
+
+Choose the delay before the first frame. Ignored while a run counts down or runs.
+
+## `AstroIntent/stop`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case stop
+```
+
+Stop the countdown or the running frames. Every frame already taken is saved.
+
+## `AstroModel`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor final class AstroModel
+```
+
+The astro helper: a consistent series of single Bayer RAW frames of the night sky, to be
+stacked in other software (issue #60).
+
+nope. never stacks, merges or processes the frames: each one is an ordinary single-frame
+photo that goes through the metadata allowlist, read-back and signing like any other
+(AGENTS.md, "Honesty"). The helper only sets up the camera and takes the frames:
+
+- **Turning it on** turns manual controls on if they are off, sets focus to the far end of
+  the lens's range, the shutter to the longest the lens allows and ISO to the highest
+  (``startingExposure(for:)``), turns the light off, returns the drive mode to single and
+  turns bracketing off. After that, every manual control is the person's to change; the
+  helper doesn't change them again until it is turned on again or the lens changes.
+- **The shutter** then starts the self-timer (``startDelay``), so touching the phone doesn't
+  shake the first frame, and takes ``frameCount`` frames back to back, each saved while the
+  next is exposed.
+- **A run stops** when the person stops it, when the next frame wouldn't fit in storage, when
+  the battery is at or below ``stopBatteryLevel`` and not charging, when the camera stops, or
+  at the first frame that can't be taken or saved. Every frame taken before that is saved.
+- **Turning it off** turns manual controls off again if the helper turned them on.
+
+``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
+``AstroIntent`` values. Turning night mode on is the interface's part, through
+``NopeSettings/setNightMode(_:)``, because night mode is a setting of the screens, not of
+the camera. The helper is off at every launch (AGENTS.md, "Cognitive": no surprise modes).
+
+## `AstroModel/beginRun()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func beginRun()
+```
+
+Marks a run as started.
+
+## `AstroModel/defaultFrameCount`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static let defaultFrameCount: Int
+```
+
+The frame count a run starts with.
+
+## `AstroModel/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func endRun(_ end: BurstEnd)
+```
+
+Marks the run as ended.
+
+- Parameter end: Why it ended.
+
+## `AstroModel/frameCount`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var frameCount: Int { get set }
+```
+
+How many frames the next run takes.
+
+## `AstroModel/frameCounts`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static let frameCounts: [Int]
+```
+
+The frame counts a run offers.
+
+## `AstroModel/init()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the helper, off.
+
+## `AstroModel/isAvailable(on:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static func isAvailable(on lens: Lens) -> Bool
+```
+
+Whether the helper can be used on a lens: it has Bayer RAW, manual exposure with a shutter
+and ISO range, and manual focus.
+
+- Parameter lens: A lens.
+- Returns: `true` when ``startingExposure(for:)`` has values for it.
+
+## `AstroModel/isOn`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isOn: Bool { get set }
+```
+
+Whether the helper is on.
+
+## `AstroModel/isRunning`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isRunning: Bool { get }
+```
+
+Whether frames are being taken now.
+
+## `AstroModel/isStopRequested`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get set }
+```
+
+Whether the person asked the running frames to stop.
+
+## `AstroModel/lastRun`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var lastRun: BurstResult? { get set }
+```
+
+How the last run ended, or `nil` before the first one. Cleared when the next starts.
+
+## `AstroModel/progress`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var progress: BurstProgress? { get set }
+```
+
+The running frames, or `nil` when no run is taking frames. The countdown before the
+first frame is ``DriveModel/countdown``.
+
+## `AstroModel/recordSaved()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `AstroModel/recordTaken()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
+
+## `AstroModel/requestStop()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func requestStop()
+```
+
+Asks the running frames to stop after the frame being taken. Called only while they run.
+
+## `AstroModel/setFrameCount(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setFrameCount(_ count: Int)
+```
+
+Chooses the frame count, if it is one of ``frameCounts``.
+
+- Parameter count: The frame count.
+
+## `AstroModel/setOn(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setOn(_ isOn: Bool)
+```
+
+Records the helper as on or off.
+
+- Parameter isOn: Whether it is on.
+
+## `AstroModel/setStartDelay(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setStartDelay(_ delay: SelfTimerDelay)
+```
+
+Chooses the start delay.
+
+- Parameter delay: The delay.
+
+## `AstroModel/startDelay`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var startDelay: SelfTimerDelay { get set }
+```
+
+The delay before the first frame. 10 seconds by default, so the phone is still again
+after the shutter is touched.
+
+## `AstroModel/startingExposure(for:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static func startingExposure(for lens: Lens) -> AstroExposure?
+```
+
+The exposure the helper starts from on a lens: the longest shutter and the highest ISO
+the lens reports, and focus at the far end of its range (lens position 1, the farthest
+the lens focuses; AVFoundation, `AVCaptureDevice.lensPosition`). The lens position isn't
+calibrated to a distance, so the far end may not be exactly sharp at infinity: the person
+checks it with the focus magnifier and fine-tunes it.
+
+- Parameter lens: A lens.
+- Returns: The values, or `nil` when the lens lacks Bayer RAW, manual exposure, a
+  shutter or ISO range, or manual focus.
+
+## `AstroModel/stopBatteryLevel`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static let stopBatteryLevel: Double
+```
+
+At or below this charge, unplugged, a run stops before the next frame: 10%. An
+assumption to be checked on a device: low enough not to stop a run the person can still
+finish, high enough to leave charge for the frames to save and the phone to be used.
+
+## `AstroModel/turnedOnManualControls`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var turnedOnManualControls: Bool { get set }
+```
+
+Whether turning the helper on turned manual controls on, so turning it off turns them
+off again.
+
 ## `AutoControlIntent`
 
 public, declared in `Sources/NopeCore/AutoControls.swift`
@@ -642,6 +1116,17 @@ enum BurstEnd
 
 Why a burst ended.
 
+## `BurstEnd/batteryLow`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case batteryLow
+```
+
+The battery is at or below ``AstroModel/stopBatteryLevel`` and not charging. Only astro
+runs stop for it; a burst is too short to need it.
+
 ## `BurstEnd/cameraStopped`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -793,6 +1278,16 @@ A request an interface sends to ``CameraModel``.
 Intents are the only way an interface changes the camera. They carry no business rules: the
 model decides what each one means.
 
+## `CameraIntent/astro(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case astro(AstroIntent)
+```
+
+Turn the astro helper on or off, choose its frames, or stop a run: see ``AstroIntent``.
+
 ## `CameraIntent/auto(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -839,7 +1334,8 @@ public, declared in `Sources/NopeCore/CameraIntent.swift`
 case light(LightIntent)
 ```
 
-Change the flash or the torch: see ``LightIntent``.
+Change the flash or the torch: see ``LightIntent``. Turning the torch on is ignored while
+the astro helper is on.
 
 ## `CameraIntent/manual(_:)`
 
@@ -916,6 +1412,52 @@ direction of flow").
 
 The model is isolated to the main actor, so an interface can read its properties directly.
 
+## `CameraModel/astro`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let astro: AstroModel
+```
+
+The astro helper (issue #60). Its intents arrive as ``CameraIntent/astro(_:)``.
+
+## `CameraModel/astroEstimate`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var astroEstimate: AstroEstimate? { get }
+```
+
+What the next astro run will take, or `nil` while the helper is off or before the camera
+is ready. Each frame's size is estimated with ``PhotoSizeEstimate`` for the selected
+formats.
+
+## `CameraModel/astroLensDidChange()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func astroLensDidChange() async
+```
+
+Applies the helper to a newly selected lens: its starting values for that lens, or the
+helper turns off on a lens it can't use.
+
+## `CameraModel/astroRefuses(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func astroRefuses(_ intent: LightIntent) -> Bool
+```
+
+Whether a light intent is refused because the helper is on: the light must stay off for
+night sky frames, and it would ruin dark-adapted eyes.
+
+- Parameter intent: The light intent.
+
 ## `CameraModel/backend`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
@@ -945,8 +1487,18 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 @MainActor var canPressShutter: Bool { get }
 ```
 
-Whether the shutter should be enabled: a photo can be taken now, or a countdown or burst
-runs, which pressing the shutter stops.
+Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst
+or astro run runs, which pressing the shutter stops.
+
+## `CameraModel/canUseAstro`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var canUseAstro: Bool { get }
+```
+
+Whether the helper can be turned on with the selected lens.
 
 ## `CameraModel/capabilities`
 
@@ -1024,6 +1576,21 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+
+## `CameraModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func handle(_ intent: AstroIntent) async
+```
+
+Handles one astro intent.
+
+- Parameter intent: The intent.
+
+Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
+ISO, and turns the light off; turning it off may turn manual controls off.
 
 ## `CameraModel/handle(_:)`
 
@@ -1136,6 +1703,20 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
 
+## `CameraModel/manualControlsDidChange(after:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func manualControlsDidChange(after intent: ManualControlIntent) async
+```
+
+Keeps the helper consistent after a manual control intent: turning manual controls off
+turns the helper off, because its frames need them; turning them on from elsewhere (the
+"Manual controls" option) makes them the person's, so the helper leaves them on.
+
+- Parameter intent: The manual control intent that was handled.
+
 ## `CameraModel/now`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1157,6 +1738,17 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Applies the backend's events until its stream ends. Run it for as long as the camera
 screen is visible, for example in a SwiftUI `.task`.
 
+## `CameraModel/pressAstroShutter()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func pressAstroShutter()
+```
+
+The shutter while the helper is on: stops a countdown or a run, or starts the self-timer
+and then the run.
+
 ## `CameraModel/pressShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -1166,7 +1758,8 @@ internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 ```
 
 What the shutter does: stops a running countdown or burst, or else applies the drive mode:
-one photo, the self-timer, or a burst.
+one photo, the self-timer, or a burst. While the astro helper is on, it starts or stops
+an astro run instead (``AstroModel``).
 
 ## `CameraModel/previewSource`
 
@@ -1269,6 +1862,27 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 The storage warning for the next photo with the selected lens and formats, or `nil`
 (issue #44). The photo's size is estimated with ``PhotoSizeEstimate``.
+
+## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool) async
+```
+
+Takes up to `limit` single frames back to back, each saved as its own photo while the
+next is taken: the loop behind a burst and an astro run (``AstroModel``). See
+`takeBurst()` for how frames are saved and when the run stops. Each frame carries the
+location when the Location switch is on, as a single photo does.
+
+- Parameters:
+  - limit: The most frames to take.
+  - tracker: What the run reports its progress to.
+  - stopsOnLowBattery: Whether the run also stops when the battery is at or below
+    ``AstroModel/stopBatteryLevel`` and not charging.
+
+Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
 ## `CameraPermission`
 
@@ -3632,6 +4246,19 @@ Creates the status with nothing read yet.
 
 - Parameter reader: Reads the values, or `nil` for none.
 
+## `DeviceStatus/isBatteryBelow(_:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func isBatteryBelow(_ level: Double) -> Bool
+```
+
+Whether the battery is at or below a charge and not charging. `false` when the charge is
+unknown, so an unknown value never stops an astro run.
+
+- Parameter level: The charge, from 0 to 1.
+
 ## `DeviceStatus/lowBatteryLevel`
 
 public, declared in `Sources/NopeCore/DeviceStatus.swift`
@@ -3868,6 +4495,16 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 Marks a burst as started.
 
+## `DriveModel/beginRun()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func beginRun()
+```
+
+Marks a burst as started.
+
 ## `DriveModel/burstProgress`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -3894,6 +4531,18 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
 @MainActor func endBurst(_ end: BurstEnd)
+```
+
+Marks the burst as ended.
+
+- Parameter end: Why it ended.
+
+## `DriveModel/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func endRun(_ end: BurstEnd)
 ```
 
 Marks the burst as ended.
@@ -3931,6 +4580,16 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 Whether a countdown or a burst runs, so the shutter stops it instead of taking a photo.
+
+## `DriveModel/isStopRequested`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get }
+```
+
+Whether the person asked the running burst to stop.
 
 ## `DriveModel/lastBurst`
 
@@ -4705,6 +5364,69 @@ let y: Double
 ```
 
 The vertical position, from 0 (top) to 1 (bottom).
+
+## `FrameRunTracking`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor protocol FrameRunTracking : AnyObject
+```
+
+What a run of single frames reports to: a burst (``DriveModel``) or the astro helper
+(``AstroModel``). Both runs share one loop in ``CameraModel``.
+
+## `FrameRunTracking/beginRun()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func beginRun()
+```
+
+Marks a run as started.
+
+## `FrameRunTracking/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func endRun(_ end: BurstEnd)
+```
+
+Marks the run as ended.
+
+- Parameter end: Why it ended.
+
+## `FrameRunTracking/isStopRequested`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get }
+```
+
+Whether the person asked the run to stop.
+
+## `FrameRunTracking/recordSaved()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `FrameRunTracking/recordTaken()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
 
 ## `GoldenSpiral`
 

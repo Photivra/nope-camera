@@ -61,6 +61,9 @@ public final class CameraModel {
     /// The flash and the torch. Their intents arrive as ``CameraIntent/light(_:)``.
     public let light: LightModel
 
+    /// The astro helper (issue #60). Its intents arrive as ``CameraIntent/astro(_:)``.
+    public let astro = AstroModel()
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -150,6 +153,7 @@ public final class CameraModel {
             await pressShutter()
         case .manual(let intent):
             await manual.handle(intent) { [weak self] in await self?.capture() }
+            await manualControlsDidChange(after: intent)
         case .setCleanView(let isOn):
             isCleanView = isOn
         case .drive(let intent):
@@ -157,7 +161,9 @@ public final class CameraModel {
         case .auto(let intent):
             await handleAuto(intent)
         case .light(let intent):
-            await light.handle(intent)
+            if !astroRefuses(intent) { await light.handle(intent) }
+        case .astro(let intent):
+            await handle(intent)
         }
     }
 
@@ -291,6 +297,7 @@ public final class CameraModel {
         guard id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
         selectedLensID = id
         await startSession()
+        await astroLensDidChange()
     }
 
     /// Starts or reconfigures the camera for the selected lens, unless the device is too hot.

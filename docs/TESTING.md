@@ -456,6 +456,27 @@ calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max)
 - energy: with the camera screen open in full auto, readings arrive at most four a second
   (Instruments), and nothing is observed after leaving the camera screen.
 
+### Astro helper on a device
+
+The rules (starting exposure, the run, its stop conditions) are unit-tested against a scripted
+backend, and the screens with UI tests; these checks need the iPhone 16 Pro Max at night on a
+tripod (issue #60):
+
+- record each rear lens's `activeFormat.maxExposureDuration` and ISO range for the RAW format
+  here (the Astro Settings sheet shows the shutter and ISO it set); the helper offers no lens
+  without manual focus or Bayer RAW;
+- focus at lens position 1 (the far end): is a bright star sharp, or does it need fine-tuning
+  with Magnify and the Focus control? Lens position isn't calibrated to a distance (AVFoundation,
+  `lensPosition`), so record the result per lens;
+- whether the highest ISO is a useful starting point or should be lower (owner decision);
+- a run of 20 frames with a 10 second start delay: every frame is a separate Bayer RAW (DNG)
+  photo that passes the read-back and is signed, the frames open in a stacking application, and
+  the time per frame beyond the shutter (read-out and saving) is recorded here;
+- the screen stays awake and dims during the run; the light can't be turned on; night mode
+  (natural and red viewfinder) with the magnifier on enlarges the real viewfinder;
+- the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
+  an assumption), and every frame taken before is saved.
+
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 
 ## The C2PA library and the networking check

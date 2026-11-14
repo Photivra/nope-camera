@@ -44,6 +44,10 @@ public enum CameraIntent: Equatable, Sendable {
     /// ``AutoControlIntent``.
     case auto(AutoControlIntent)
 
-    /// Change the flash or the torch: see ``LightIntent``.
+    /// Change the flash or the torch: see ``LightIntent``. Turning the torch on is ignored while
+    /// the astro helper is on.
     case light(LightIntent)
+
+    /// Turn the astro helper on or off, choose its frames, or stop a run: see ``AstroIntent``.
+    case astro(AstroIntent)
 }

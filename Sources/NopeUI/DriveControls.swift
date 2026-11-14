@@ -75,6 +75,9 @@ enum DriveText {
             String(localized: "Burst stopped: storage is full.", bundle: .module, comment: "Announced and shown when a burst stops because the next photo wouldn't fit in the device's free storage.")
         case .cameraStopped:
             String(localized: "Burst stopped: the camera stopped.", bundle: .module, comment: "Announced and shown when a burst stops because the camera was interrupted or switched lenses.")
+        case .batteryLow:
+            // Only astro runs stop for a low battery (AstroText.endMessage).
+            nil
         }
     }
 }
@@ -86,6 +89,8 @@ extension QuickControls {
     /// - Parameter context: The model and settings.
     static func drive(_ context: CameraControlContext) -> QuickControlItem? {
         let drive = context.model.drive
+        // The astro helper's shutter has its own self-timer and frame count (issue #60).
+        guard !context.model.astro.isOn else { return nil }
         return QuickControlItem(
             id: "drive",
             title: Text("Drive", bundle: .module, comment: "Quick control on the camera: a menu that chooses what the shutter does: one photo, a self-timer, or a burst."),
@@ -272,10 +277,11 @@ extension View {
         modifier(DriveFeedback(drive: drive))
     }
 
-    /// Adds what the shutter does in the current drive mode to its VoiceOver value.
+    /// Adds what the shutter does in the current drive mode, or with the astro helper on, to
+    /// its VoiceOver value.
     ///
-    /// - Parameter drive: The drive model.
-    func shutterDriveValue(_ drive: DriveModel) -> some View {
-        accessibilityValue(DriveText.shutterValue(drive) ?? Text(verbatim: ""))
+    /// - Parameter model: The camera model.
+    func shutterDriveValue(_ model: CameraModel) -> some View {
+        accessibilityValue(AstroText.shutterValue(model) ?? DriveText.shutterValue(model.drive) ?? Text(verbatim: ""))
     }
 }

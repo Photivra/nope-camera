@@ -22,7 +22,7 @@ Photos, signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
@@ -170,6 +170,26 @@ the next one is taken, so at most two frames are in memory. The burst stops when
 stops, or at the first frame that can't be taken or saved; frames already taken are still
 saved. It ends as `CaptureStatus.savedBurst` (or `.failed`) and `drive.lastBurst`.
 
+### Astro helper (issue #60)
+
+`CameraModel.astro` (`AstroModel`) receives `CameraIntent.astro(AstroIntent)`. It never stacks
+or processes anything: it sets up the camera and takes a run of single Bayer RAW frames with the
+burst's loop (`takeFrames(limit:tracker:stopsOnLowBattery:)`, the same save pipeline per frame).
+Turning it on (only on a lens where `AstroModel.startingExposure(for:)` has values: Bayer RAW,
+manual exposure with shutter and ISO ranges, manual focus) turns manual controls on if needed,
+sets focus to lens position 1, the longest shutter and the highest ISO the lens reports, turns
+the light off, returns the drive mode to single and turns bracketing off; after that the manual
+controls are the person's. While it is on, the shutter starts `drive.countdown` with
+`astro.startDelay` and then `astro.frameCount` frames; the same shutter (or `.astro(.stop)`)
+stops them. A run also stops before a frame that wouldn't fit in storage, at or below
+`AstroModel.stopBatteryLevel` unplugged (`BurstEnd.batteryLow`), when the camera stops, or at a
+failed frame. `CameraModel.astroEstimate` gives the total exposure time and an upper estimate of
+the storage. Turning it off turns manual controls off again only if it turned them on. The torch
+can't be turned on while it is on, and a lens it can't use turns it off. `NopeUI` turns night
+mode on with it (`NopeSettings.setNightMode(_:)`), shows an Astro tray item, pill and panel and
+an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
+(`SeriesScreenKeeper`).
+
 ### Storage and battery
 
 `CameraModel.deviceStatus` (`DeviceStatus`) reads the free storage and the battery through
@@ -206,7 +226,9 @@ and of each sheet: every text style is drawn white, then everything is multiplie
 so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
 turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
 colors, the ready camera leaves its frame clear and reports it (`NaturalViewfinderFrame`), and
-`CameraScreen` draws the viewfinder there, behind the red interface. System menus, alerts, the
+`CameraScreen` draws the viewfinder there, behind the red interface. The focus magnifier is the
+same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in the ready camera,
+and on the natural-color viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
 keyboard and the status bar are drawn by the system and keep its dark appearance.
 
 ### The viewfinder

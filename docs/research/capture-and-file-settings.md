@@ -60,6 +60,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Aperture (`lensAperture`, iOS 27 variable aperture) | Offered | Where the lens has more than one stop. |
 | Max exposure duration in auto (`activeMaxExposureDuration`) | Offered | Fast Shutter in Settings (issues #35, #41, #51, #56): a shutter limit for auto exposure. |
 | Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Pro Tools; each frame a separate single-frame photo. |
+| Longest exposure (`activeFormat.maxExposureDuration`) | Offered | Through the manual shutter; the Astro helper (issue #60) starts from it. The value per lens is still to be recorded on the test devices (`docs/TESTING.md`, "Astro helper on a device"). |
 | Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by nope.; it is documented for low-light frame rates, and its effect on photos isn't measured. |
 | Global tone mapping, video HDR, Center Stage | Not offered | Video and preview processing, not the RAW. |
 | Flash and torch (`flashMode`, `setTorchModeOn(level:)`) | Offered | Issue #38: the Flash menu (the modes the photo output reports for the lens) and the Light switch in the quick-controls tray. |

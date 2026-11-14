@@ -190,6 +190,15 @@ public final class DeviceStatus {
         return photosThatFit < Self.lowStoragePhotoCount ? .low(photosThatFit: photosThatFit) : nil
     }
 
+    /// Whether the battery is at or below a charge and not charging. `false` when the charge is
+    /// unknown, so an unknown value never stops an astro run.
+    ///
+    /// - Parameter level: The charge, from 0 to 1.
+    public func isBatteryBelow(_ level: Double) -> Bool {
+        guard let battery, let charge = battery.level, !battery.isCharging else { return false }
+        return charge <= level
+    }
+
     /// The battery warning, or `nil` when the battery isn't low, is unknown, or is charging.
     public var batteryWarning: BatteryWarning? {
         guard let battery, let level = battery.level, !battery.isCharging, level <= Self.lowBatteryLevel else {

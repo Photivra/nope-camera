@@ -88,6 +88,10 @@ public enum BurstEnd: Equatable, Sendable {
     /// The camera stopped running, for example because of an interruption or a lens change.
     case cameraStopped
 
+    /// The battery is at or below ``AstroModel/stopBatteryLevel`` and not charging. Only astro
+    /// runs stop for it; a burst is too short to need it.
+    case batteryLow
+
     /// A frame couldn't be taken or saved; ``CameraModel/captureStatus`` holds the error.
     case failed
 }
