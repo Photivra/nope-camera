@@ -34,6 +34,11 @@ public final class NopeSettings {
     /// and honesty warnings. Off by default.
     public private(set) var startsInCleanView: Bool
 
+    /// The viewfinder overlays: grid, level, focus peaking, histogram and live camera readout.
+    /// Every overlay is off by default. Change them with the setters in `OverlayOptions.swift`
+    /// or ``setOverlays(_:)``.
+    public private(set) var overlays: OverlayOptions
+
     /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default; the camera
     /// screen applies it with ``AutoControlIntent/setFastShutter(_:)``.
     public private(set) var fastShutter: FastShutter
@@ -77,6 +82,7 @@ public final class NopeSettings {
         // string, which `bool(forKey:)` reads; a missing value is the default, off.
         showsManualControls = defaults.bool(forKey: Key.showsManualControls)
         startsInCleanView = defaults.bool(forKey: Key.startsInCleanView)
+        overlays = OverlayOptions(defaults: defaults)
         // An unknown stored value, for example from a later version, falls back to the default.
         fastShutter = defaults.string(forKey: Key.fastShutter).flatMap(FastShutter.init(rawValue:)) ?? .handheld
         flashMode = defaults.string(forKey: Key.flashMode).flatMap(FlashMode.init(rawValue:)) ?? .off
@@ -213,6 +219,14 @@ public final class NopeSettings {
     public func setStartsInCleanView(_ isOn: Bool) {
         startsInCleanView = isOn
         defaults.set(isOn, forKey: Key.startsInCleanView)
+    }
+
+    /// Replaces the viewfinder overlay options, and saves the change.
+    ///
+    /// - Parameter options: The new options.
+    public func setOverlays(_ options: OverlayOptions) {
+        overlays = options
+        options.store(in: defaults)
     }
 
     /// Sets how fast a shutter full auto prefers, and saves the change.

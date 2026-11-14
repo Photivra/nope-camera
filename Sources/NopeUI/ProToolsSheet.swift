@@ -16,14 +16,21 @@ struct ProToolsSheet: View {
     /// The camera model.
     let model: CameraModel
 
+    /// The person's settings, for the live aid switches, or `nil` to leave them out.
+    let settings: NopeSettings?
+
     /// Dismisses the sheet.
     @Environment(\.dismiss) private var dismiss
 
     /// Creates the sheet.
     ///
-    /// - Parameter model: The camera model.
-    init(model: CameraModel) {
+    /// - Parameters:
+    ///   - model: The camera model.
+    ///   - settings: The person's settings, for the focus peaking, histogram and live readout
+    ///     switches, or `nil` to leave them out.
+    init(model: CameraModel, settings: NopeSettings? = nil) {
         self.model = model
+        self.settings = settings
     }
 
     /// The manual controls model.
@@ -46,6 +53,9 @@ struct ProToolsSheet: View {
                     bracketSection
                 }
                 intervalSection
+                if let settings {
+                    Section { LiveAidToggles(settings: settings) }
+                }
                 // Done is a row of the form, not a bar button: the accessibility audit can't
                 // measure the contrast of the glass bar button.
                 Section {

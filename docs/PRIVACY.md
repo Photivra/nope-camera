@@ -49,6 +49,10 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   never synced or sent. The name and copyright fields of `SaveSettings` stay empty: Settings
   has no text entry for them yet. The privacy manifest declares the `UserDefaults` required-reason API
   with reason `CA92.1` (the app's own data).
+- **Viewfinder overlays:** the level reads the motion sensors (Core Motion device motion, which
+  needs no permission) only while it is shown; focus peaking and the histogram sample a few
+  reduced preview frames a second in memory only while they are shown; the live camera readout
+  reads values the camera reports. None of this is written to a photo, stored, logged or copied.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
   nothing. Debug builds include the

@@ -117,6 +117,8 @@ public struct CameraScreen<Viewfinder: View>: View {
         .task { await model.send(.start) }
         .task { await model.observeEvents() }
         .task { await model.manual.observeReadings() }
+        .task { await model.live.observeAnalyses() }
+        .task { await model.live.observeStats() }
         // An interval series runs only while the camera screen is shown (AGENTS.md, "Battery").
         .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
         // The screen stays awake and dimmed during a series; a countdown or burst stops here.

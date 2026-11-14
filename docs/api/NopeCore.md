@@ -1104,6 +1104,16 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The flash and the torch. Their intents arrive as ``CameraIntent/light(_:)``.
 
+## `CameraModel/live`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let live: LiveViewModel
+```
+
+The live aids over the viewfinder: histogram, focus peaking and the live camera readout.
+
 ## `CameraModel/manual`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1407,6 +1417,251 @@ case unavailable
 Access is allowed but the device has no camera nope. can use, such as the Simulator.
 
 Say so plainly; there is nothing to retry.
+
+## `CameraStatsReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+struct CameraStatsReading
+```
+
+Everything the live camera readout ("stats for nerds", issue #52) shows that the hardware
+reports: only values AVFoundation already gives, read by key-value observation at a reduced
+rate while the readout is shown. No video is analyzed for it.
+
+Privacy rule: shown on screen only; never logged, stored or copied.
+
+## `CameraStatsReading/aperture`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var aperture: Double
+```
+
+The aperture in use, as an f-number.
+
+## `CameraStatsReading/exposureBias`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var exposureBias: Double
+```
+
+The exposure bias (compensation) set, in EV.
+
+## `CameraStatsReading/exposureDuration`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var exposureDuration: Double
+```
+
+The exposure duration in use, in seconds.
+
+## `CameraStatsReading/exposureMode`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var exposureMode: ExposureModeReading
+```
+
+How exposure is controlled.
+
+## `CameraStatsReading/exposureOffset`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var exposureOffset: Double
+```
+
+The metered offset from the exposure target, in EV.
+
+## `CameraStatsReading/focusMode`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var focusMode: FocusModeReading
+```
+
+How focus is controlled.
+
+## `CameraStatsReading/focusRange`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var focusRange: FocusRangeReading?
+```
+
+The autofocus range restriction, or `nil` when the camera doesn't support one.
+
+## `CameraStatsReading/gains`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var gains: WhiteBalanceGainsReading
+```
+
+The white balance gains in use.
+
+## `CameraStatsReading/init(iso:exposureDuration:exposureBias:exposureOffset:aperture:exposureMode:lensPosition:focusMode:isAdjustingFocus:focusRange:whiteBalance:gains:whiteBalanceMode:zoomFactor:processingOn:isReadyToCapture:systemPressure:isLowPowerMode:torchLevel:)`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+init(iso: Double, exposureDuration: Double, exposureBias: Double, exposureOffset: Double, aperture: Double, exposureMode: ExposureModeReading, lensPosition: Double, focusMode: FocusModeReading, isAdjustingFocus: Bool, focusRange: FocusRangeReading?, whiteBalance: WhiteBalance?, gains: WhiteBalanceGainsReading, whiteBalanceMode: WhiteBalanceModeReading, zoomFactor: Double, processingOn: Set<ProcessingFeature>, isReadyToCapture: Bool, systemPressure: SystemPressureReading, isLowPowerMode: Bool, torchLevel: Double?)
+```
+
+Creates a reading.
+
+- Parameters:
+  - iso: The ISO in use.
+  - exposureDuration: The exposure duration, in seconds.
+  - exposureBias: The exposure bias, in EV.
+  - exposureOffset: The metered offset, in EV.
+  - aperture: The aperture, as an f-number.
+  - exposureMode: How exposure is controlled.
+  - lensPosition: The relative focus position, 0 to 1.
+  - focusMode: How focus is controlled.
+  - isAdjustingFocus: Whether the lens is moving to focus.
+  - focusRange: The autofocus range restriction, or `nil` when unsupported.
+  - whiteBalance: The white balance, or `nil`.
+  - gains: The white balance gains.
+  - whiteBalanceMode: How white balance is controlled.
+  - zoomFactor: The zoom factor.
+  - processingOn: The processing features that are on.
+  - isReadyToCapture: Whether a photo can be taken now.
+  - systemPressure: The pressure level.
+  - isLowPowerMode: Whether Low Power Mode is on.
+  - torchLevel: The torch level, or `nil` without a torch.
+
+## `CameraStatsReading/isAdjustingFocus`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var isAdjustingFocus: Bool
+```
+
+Whether the lens is moving to focus.
+
+## `CameraStatsReading/isLowPowerMode`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var isLowPowerMode: Bool
+```
+
+Whether Low Power Mode is on.
+
+## `CameraStatsReading/isReadyToCapture`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var isReadyToCapture: Bool
+```
+
+Whether the photo output is ready to take a photo now.
+
+## `CameraStatsReading/iso`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var iso: Double
+```
+
+The ISO in use.
+
+## `CameraStatsReading/lensPosition`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var lensPosition: Double
+```
+
+The relative focus position, 0 (closest) to 1 (far). Not a distance.
+
+## `CameraStatsReading/processingOff`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var processingOff: [ProcessingFeature] { get }
+```
+
+The processing features that are off, in a fixed order, for the readout.
+
+## `CameraStatsReading/processingOn`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var processingOn: Set<ProcessingFeature>
+```
+
+The processing features that are on, as the hardware reports them.
+
+## `CameraStatsReading/systemPressure`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var systemPressure: SystemPressureReading
+```
+
+The capture system's pressure level.
+
+## `CameraStatsReading/torchLevel`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var torchLevel: Double?
+```
+
+The torch level, 0 to 1, or `nil` when the camera has no torch.
+
+## `CameraStatsReading/whiteBalance`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var whiteBalance: WhiteBalance?
+```
+
+The white balance in use, or `nil` when the camera can't convert its gains.
+
+## `CameraStatsReading/whiteBalanceMode`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var whiteBalanceMode: WhiteBalanceModeReading
+```
+
+How white balance is controlled.
+
+## `CameraStatsReading/zoomFactor`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+var zoomFactor: Double
+```
+
+The zoom factor in use; nope. keeps it at 1.0, which Bayer RAW requires.
 
 ## `CaptureBackend`
 
@@ -2092,6 +2347,50 @@ let rawImageData: Data?
 For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
+
+## `ClippingState`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct ClippingState
+```
+
+Which highlights and shadows of the live preview are clipped.
+
+## `ClippingState/highlights`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let highlights: Bool
+```
+
+Whether enough of the preview is at full white to count as clipped highlights.
+
+## `ClippingState/init(highlights:shadows:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(highlights: Bool, shadows: Bool)
+```
+
+Creates a clipping state.
+
+- Parameters:
+  - highlights: Whether the highlights are clipped.
+  - shadows: Whether the shadows are clipped.
+
+## `ClippingState/shadows`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let shadows: Bool
+```
+
+Whether enough of the preview is at full black to count as clipped shadows.
 
 ## `CloseUpDetector`
 
@@ -3576,6 +3875,46 @@ case shutterPriority
 
 Shutter priority (S): the person sets the shutter, the camera sets ISO.
 
+## `ExposureModeReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+enum ExposureModeReading
+```
+
+How the camera's exposure is being controlled, as `AVCaptureDevice.exposureMode` reports it.
+
+## `ExposureModeReading/auto`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case auto
+```
+
+Continuous auto exposure.
+
+## `ExposureModeReading/custom`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case custom
+```
+
+A custom ISO and exposure duration (manual).
+
+## `ExposureModeReading/locked`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case locked
+```
+
+Locked at the current values.
+
 ## `ExposureReading`
 
 public, declared in `Sources/NopeCore/ManualSettings.swift`
@@ -3780,6 +4119,187 @@ case on
 The flash fires for every photo, unless the device is too hot for it (the system then
 takes the photo without it).
 
+## `FocusModeReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+enum FocusModeReading
+```
+
+How the camera's focus is being controlled, as `AVCaptureDevice.focusMode` reports it.
+
+## `FocusModeReading/auto`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case auto
+```
+
+One autofocus, then locked.
+
+## `FocusModeReading/continuousAuto`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case continuousAuto
+```
+
+Continuous autofocus.
+
+## `FocusModeReading/locked`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case locked
+```
+
+Locked at a lens position (also manual focus).
+
+## `FocusPeakingMap`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct FocusPeakingMap
+```
+
+Which parts of the live preview are in focus: the cells with the sharpest edges (issue #51,
+"Focus peaking"). Interfaces highlight them over the viewfinder.
+
+## `FocusPeakingMap/cells`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let cells: [Bool]
+```
+
+Whether each cell is in focus, row by row from the top.
+
+## `FocusPeakingMap/hasFocus`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+var hasFocus: Bool { get }
+```
+
+Whether any cell is in focus.
+
+## `FocusPeakingMap/height`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let height: Int
+```
+
+The number of rows.
+
+## `FocusPeakingMap/init(frame:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(frame: LumaFrame)
+```
+
+Finds the in-focus cells of a frame: those at least as sharp as ``minimumEdge`` and among
+the sharpest ``sharpestShare``.
+
+- Parameter frame: The frame.
+
+## `FocusPeakingMap/init(width:height:cells:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(width: Int, height: Int, cells: [Bool])
+```
+
+Creates a map.
+
+- Parameters:
+  - width: The number of columns.
+  - height: The number of rows.
+  - cells: Whether each cell is in focus; `width` × `height` values.
+
+## `FocusPeakingMap/minimumEdge`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let minimumEdge: UInt8
+```
+
+The weakest edge, 0 to 255, ever highlighted, so a scene with nothing in focus shows
+nothing rather than its least blurry part. A tool setting, checked on a device.
+
+## `FocusPeakingMap/sharpestShare`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let sharpestShare: Double
+```
+
+The share of the sharpest cells highlighted when the scene has many sharp edges: the top
+10%, so the highlight marks the plane of focus rather than every texture.
+
+## `FocusPeakingMap/width`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let width: Int
+```
+
+The number of columns.
+
+## `FocusRangeReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+enum FocusRangeReading
+```
+
+The autofocus range restriction, as `AVCaptureDevice.autoFocusRangeRestriction` reports it.
+
+## `FocusRangeReading/far`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case far
+```
+
+Far subjects only.
+
+## `FocusRangeReading/near`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case near
+```
+
+Near subjects only (the near focus limit).
+
+## `FocusRangeReading/none`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case none
+```
+
+The whole range.
+
 ## `FocusTarget`
 
 public, declared in `Sources/NopeCore/AutoControls.swift`
@@ -3834,6 +4354,76 @@ let viewfinderPoint: FramePoint
 ```
 
 The tapped point in the viewfinder, as drawn: where an interface draws the focus square.
+
+## `FrameAnalysis`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct FrameAnalysis
+```
+
+The result of analyzing one live frame.
+
+## `FrameAnalysis/focusPeaking`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let focusPeaking: FocusPeakingMap?
+```
+
+The focus peaking map, or `nil` when it wasn't asked for.
+
+## `FrameAnalysis/histogram`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let histogram: Histogram?
+```
+
+The histogram, or `nil` when it wasn't asked for.
+
+## `FrameAnalysis/init(frame:needs:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(frame: LumaFrame, needs: LiveAnalysisNeeds)
+```
+
+Analyzes a frame for what is needed.
+
+- Parameters:
+  - frame: The frame, as the viewfinder shows it.
+  - needs: What to measure.
+
+## `FrameAnalysis/init(histogram:focusPeaking:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(histogram: Histogram?, focusPeaking: FocusPeakingMap?)
+```
+
+Creates an analysis.
+
+- Parameters:
+  - histogram: The histogram, or `nil`.
+  - focusPeaking: The focus peaking map, or `nil`.
+
+## `FrameAnalysis/keeping(_:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+func keeping(_ needs: LiveAnalysisNeeds) -> FrameAnalysis?
+```
+
+The analysis without the parts that are no longer needed, or `nil` if nothing is left.
+
+- Parameter needs: What is needed now.
 
 ## `FramePoint`
 
@@ -3931,6 +4521,379 @@ let y: Double
 ```
 
 The vertical position, from 0 (top) to 1 (bottom).
+
+## `GoldenSpiral`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+enum GoldenSpiral
+```
+
+The golden (Fibonacci) spiral: quarter circles in the squares that a golden rectangle divides
+into, stretched to fill the picture (issue #40).
+
+It is built in a landscape golden rectangle (phi wide, 1 high): a square is cut from the left,
+then from the top, the right and the bottom of what is left, again and again, and each square
+holds a quarter circle that continues the last one. The points are then scaled to the unit
+square and moved to the ``SpiralPlacement``.
+
+## `GoldenSpiral/place(_:_:)`
+
+internal, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static func place(_ point: GuidePoint, _ placement: SpiralPlacement) -> GuidePoint
+```
+
+Moves a point of the standard spiral to a placement: mirrored left to right first if the
+placement is flipped, then turned clockwise a quarter turn at a time.
+
+- Parameters:
+  - point: A point of the standard spiral.
+  - placement: The placement.
+
+## `GoldenSpiral/points(placement:)`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static func points(placement: SpiralPlacement) -> [GuidePoint]
+```
+
+The spiral as a polyline from its outer end to its center, in unit coordinates.
+
+- Parameter placement: Where the spiral sits.
+- Returns: ``squareCount`` × ``pointsPerQuarter`` + 1 points.
+
+## `GoldenSpiral/pointsPerQuarter`
+
+internal, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static let pointsPerQuarter: Int
+```
+
+The points drawn along each quarter circle; enough for a smooth curve at full screen.
+
+## `GoldenSpiral/squareCount`
+
+internal, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static let squareCount: Int
+```
+
+How many squares the spiral passes through. After ten the squares are smaller than a
+hundredth of the picture, too small to see.
+
+## `GoldenSpiral/unplacedPoints()`
+
+internal, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static func unplacedPoints() -> [GuidePoint]
+```
+
+The spiral in the standard placement, in unit coordinates.
+
+## `GravitySource`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+protocol GravitySource : Sendable
+```
+
+Where the level's gravity readings come from: Core Motion on a device, a fixed reading in UI
+tests. The app target supplies it; `NopeCore` doesn't import Core Motion.
+
+Battery rule (AGENTS.md, "Battery"): motion updates run only while a stream from
+``gravityUpdates()`` is being read, that is while the level is shown, and stop when it ends.
+
+## `GravitySource/gravityUpdates()`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+func gravityUpdates() -> AsyncStream<GravityVector>
+```
+
+Starts motion updates and returns them as a stream. The updates stop when the stream is
+no longer read (its task is cancelled) or the stream ends.
+
+- Returns: Gravity readings, a few dozen a second at most. The stream ends at once on a
+  device without motion sensors.
+
+## `GravityVector`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+struct GravityVector
+```
+
+The direction of gravity in the device's own axes, in units of g, as Core Motion reports it
+(`CMDeviceMotion.gravity`): x toward the right edge of the screen, y toward its top edge, and
+z out of the screen toward the person. A device held upright in portrait reads about
+(0, −1, 0); lying flat, screen up, about (0, 0, −1).
+
+## `GravityVector/init(x:y:z:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+init(x: Double, y: Double, z: Double)
+```
+
+Creates a vector.
+
+- Parameters:
+  - x: Toward the right edge of the screen, in g.
+  - y: Toward the top edge of the screen, in g.
+  - z: Out of the screen, in g.
+
+## `GravityVector/x`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+let x: Double
+```
+
+Toward the right edge of the screen.
+
+## `GravityVector/y`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+let y: Double
+```
+
+Toward the top edge of the screen.
+
+## `GravityVector/z`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+let z: Double
+```
+
+Out of the screen, toward the person.
+
+## `GridGeometry`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+enum GridGeometry
+```
+
+Where each grid style's lines go, in unit coordinates, so every interface draws the same
+guides (issue #40). Guides are on screen only.
+
+## `GridGeometry/goldenRatio`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static let goldenRatio: Double
+```
+
+The golden ratio, phi: (1 + √5) / 2.
+
+## `GridGeometry/lines(for:aspectRatio:)`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static func lines(for style: GridStyle, aspectRatio: Double) -> [GuideLine]
+```
+
+The straight lines of a grid style.
+
+- Parameters:
+  - style: The style. ``GridStyle/goldenSpiral`` has no straight lines; draw
+    ``GoldenSpiral/points(placement:)`` instead.
+  - aspectRatio: The picture's width divided by its height, such as 0.75 for a 4:3
+    picture held upright. Only ``GridStyle/square`` uses it.
+- Returns: The lines, vertical ones first.
+
+## `GridStyle`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+enum GridStyle
+```
+
+The guide lines the grid overlay draws over the viewfinder (issue #40). Guides are drawn on
+screen only and are never written to the photo.
+
+## `GridStyle/fourByFour`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+case fourByFour
+```
+
+Three lines each way, at quarters.
+
+## `GridStyle/goldenRatio`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+case goldenRatio
+```
+
+Two lines each way at the golden ratio (phi): about 38% and 62%.
+
+## `GridStyle/goldenSpiral`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+case goldenSpiral
+```
+
+A golden (Fibonacci) spiral, in one of eight placements (``SpiralPlacement``).
+
+## `GridStyle/square`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+case square
+```
+
+A centered square frame, for photos cropped square later.
+
+## `GridStyle/thirds`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+case thirds
+```
+
+Two lines each way, at thirds: the default.
+
+## `GuideLine`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+struct GuideLine
+```
+
+A straight guide line from one point to another, in unit coordinates.
+
+## `GuideLine/end`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+let end: GuidePoint
+```
+
+Where the line ends.
+
+## `GuideLine/horizontal(at:)`
+
+internal, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static func horizontal(at y: Double) -> GuideLine
+```
+
+A horizontal line across the whole picture.
+
+- Parameter y: Its vertical position, 0 to 1.
+
+## `GuideLine/init(start:end:)`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+init(start: GuidePoint, end: GuidePoint)
+```
+
+Creates a line.
+
+- Parameters:
+  - start: Where the line starts.
+  - end: Where the line ends.
+
+## `GuideLine/start`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+let start: GuidePoint
+```
+
+Where the line starts.
+
+## `GuideLine/vertical(at:)`
+
+internal, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+static func vertical(at x: Double) -> GuideLine
+```
+
+A vertical line across the whole picture.
+
+- Parameter x: Its horizontal position, 0 to 1.
+
+## `GuidePoint`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+struct GuidePoint
+```
+
+A point on the picture in unit coordinates: x from 0 (leading edge) to 1 (trailing edge), y
+from 0 (top) to 1 (bottom). An interface scales it to the size it draws the picture at.
+
+## `GuidePoint/init(x:y:)`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+init(x: Double, y: Double)
+```
+
+Creates a point.
+
+- Parameters:
+  - x: The horizontal position, 0 to 1.
+  - y: The vertical position, 0 (top) to 1 (bottom).
+
+## `GuidePoint/x`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+let x: Double
+```
+
+The horizontal position, 0 to 1.
+
+## `GuidePoint/y`
+
+public, declared in `Sources/NopeCore/GridGeometry.swift`
+
+```swift
+let y: Double
+```
+
+The vertical position, 0 (top) to 1 (bottom).
 
 ## `HEIFReader`
 
@@ -4109,6 +5072,129 @@ case serious
 ```
 
 High; the system may reduce performance.
+
+## `Histogram`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct Histogram
+```
+
+The brightness histogram of the live preview, with its clipping (issue #47).
+
+It is measured on the preview, which the device has already processed, not on the RAW: the
+RAW may hold detail that the preview shows as clipped. Interfaces say so next to it.
+
+## `Histogram/binCount`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let binCount: Int
+```
+
+The number of bins.
+
+## `Histogram/bins`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let bins: [Double]
+```
+
+The share of the preview in each bin, from black to white; the shares add up to 1.
+
+## `Histogram/clippedShare`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let clippedShare: Double
+```
+
+The share of the picture that must be clipped before it is flagged: 1%, so a few
+specular highlights don't flag the whole frame. A tool setting.
+
+## `Histogram/clipping`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+var clipping: ClippingState { get }
+```
+
+Which ends are clipped: more than ``clippedShare`` of the preview at either end.
+
+## `Histogram/highlightShare`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let highlightShare: Double
+```
+
+The share of the preview at or above ``highlightThreshold``.
+
+## `Histogram/highlightThreshold`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let highlightThreshold: UInt8
+```
+
+The lowest brightness, 0 to 255, counted as clipped highlights: the top few codes of the
+8-bit preview. A tool setting, checked on a device.
+
+## `Histogram/init(bins:highlightShare:shadowShare:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(bins: [Double], highlightShare: Double, shadowShare: Double)
+```
+
+Creates a histogram.
+
+- Parameters:
+  - bins: The share in each bin, from black to white.
+  - highlightShare: The share at or above ``highlightThreshold``.
+  - shadowShare: The share at or below ``shadowThreshold``.
+
+## `Histogram/init(luma:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(luma: [UInt8])
+```
+
+Measures the histogram of a frame's brightness.
+
+- Parameter luma: The brightness values, 0 to 255.
+- Returns: The histogram; all bins 0 for no values.
+
+## `Histogram/shadowShare`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let shadowShare: Double
+```
+
+The share of the preview at or below ``shadowThreshold``.
+
+## `Histogram/shadowThreshold`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let shadowThreshold: UInt8
+```
+
+The highest brightness, 0 to 255, counted as clipped shadows.
 
 ## `ImageIOKey`
 
@@ -4806,6 +5892,196 @@ var supportsBayerRAW: Bool { get }
 
 Whether this lens delivers single-frame Bayer RAW.
 
+## `LevelModel`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@MainActor final class LevelModel
+```
+
+The level shown over the viewfinder: reads a ``GravitySource`` while the level is shown and
+publishes ``state``.
+
+Privacy rule: the device's attitude is used on screen only. It is never written to a photo,
+stored or logged (issue #40).
+
+```swift
+.task { await level.run(source) }   // only while the level is shown
+```
+
+## `LevelModel/init()`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates a model with no reading.
+
+## `LevelModel/run(_:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@MainActor func run(_ source: any GravitySource) async
+```
+
+Applies the source's readings until its stream ends or the calling task is cancelled,
+then clears ``state``.
+
+- Parameter source: Where the readings come from.
+
+## `LevelModel/state`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@MainActor var state: LevelState? { get set }
+```
+
+What the level shows, or `nil` while there is no reading.
+
+## `LevelState`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+enum LevelState
+```
+
+What the level shows (issue #40).
+
+## `LevelState/flat(pitchDegrees:rollDegrees:isLevel:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+case flat(pitchDegrees: Double, rollDegrees: Double, isLevel: Bool)
+```
+
+The device points straight down, for a flat-lay photo: a top-down level.
+
+- `pitchDegrees`: how far the top edge is raised (positive) or lowered, in degrees.
+- `rollDegrees`: how far the right edge is raised (positive) or lowered, in degrees.
+- `isLevel`: whether both are within the level tolerance.
+
+## `LevelState/horizon(rotationDegrees:tiltDegrees:isLevel:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+case horizon(rotationDegrees: Double, tiltDegrees: Double, isLevel: Bool)
+```
+
+The device is held up, facing the scene.
+
+- `rotationDegrees`: how far the device is turned clockwise from upright portrait, in
+  degrees, −180 to 180. The horizon bar is drawn turned the other way, so it stays on the
+  real horizon.
+- `tiltDegrees`: how far that is from the nearest upright or sideways position, −45 to 45;
+  positive is clockwise.
+- `isLevel`: whether the tilt is within the level tolerance.
+
+## `LevelState/isLevel`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+var isLevel: Bool { get }
+```
+
+Whether the device is level.
+
+## `LevelTracker`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+struct LevelTracker
+```
+
+Turns gravity readings into what the level shows, with a little hysteresis so the level
+state and its haptic don't flicker at the edge of the tolerance.
+
+The tolerances are tool settings, chosen to match what a person can see on screen: a bar
+within 1 degree of the horizon looks level on a phone screen.
+
+## `LevelTracker/flatEntryAngle`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+static let flatEntryAngle: Double
+```
+
+The angle from straight down within which the flat (top-down) level starts, in degrees.
+
+## `LevelTracker/flatExitAngle`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+static let flatExitAngle: Double
+```
+
+The angle from straight down beyond which the flat level ends, in degrees.
+
+## `LevelTracker/init()`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+init()
+```
+
+Creates a tracker with no reading yet.
+
+## `LevelTracker/levelTolerance`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+static let levelTolerance: Double
+```
+
+The largest tilt that becomes level, in degrees.
+
+## `LevelTracker/releaseTolerance`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+static let releaseTolerance: Double
+```
+
+The tilt that ends level once reached, in degrees, a little wider than
+``levelTolerance``.
+
+## `LevelTracker/state`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+var state: LevelState? { get }
+```
+
+The last state, or `nil` before the first reading.
+
+## `LevelTracker/update(_:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@discardableResult mutating func update(_ gravity: GravityVector) -> LevelState
+```
+
+Applies a gravity reading.
+
+- Parameter gravity: The reading.
+- Returns: The new state.
+
 ## `LightCaptureBackend`
 
 public, declared in `Sources/NopeCore/Light.swift`
@@ -5116,6 +6392,318 @@ nonisolated static let torchLevels: [Double]
 The brightness levels an interface offers, from dim to full. A dim level suits close
 subjects, which a full torch would wash out.
 
+## `LiveAnalysisNeeds`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct LiveAnalysisNeeds
+```
+
+What the live analysis is asked for. Nothing is analyzed while it is empty.
+
+## `LiveAnalysisNeeds/focusPeaking`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let focusPeaking: LiveAnalysisNeeds
+```
+
+Focus peaking.
+
+## `LiveAnalysisNeeds/histogram`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let histogram: LiveAnalysisNeeds
+```
+
+The histogram and clipping indicators.
+
+## `LiveAnalysisNeeds/init(rawValue:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(rawValue: Int)
+```
+
+Creates a value from its bits.
+
+- Parameter rawValue: The bits.
+
+## `LiveAnalysisNeeds/needed(for:manualControlsShown:isCleanView:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static func needed(for options: OverlayOptions, manualControlsShown: Bool, isCleanView: Bool) -> LiveAnalysisNeeds
+```
+
+What the camera screen needs now: the histogram only while it is on and the manual
+controls are shown outside clean view (issue #47: never in full auto), and focus peaking
+whenever it is on.
+
+- Parameters:
+  - options: The overlay options.
+  - manualControlsShown: Whether the manual controls are on.
+  - isCleanView: Whether clean view is on.
+- Returns: The needs; empty when no overlay that needs video is shown.
+
+## `LiveAnalysisNeeds/rawValue`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let rawValue: Int
+```
+
+The value's bits.
+
+## `LiveUpdateRate`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+enum LiveUpdateRate
+```
+
+How often live overlays update, following the battery rules (AGENTS.md, "Battery"): a few
+times a second, half as often in Low Power Mode or when the device is hot, and not at all at
+a critical heat level.
+
+## `LiveUpdateRate/interval(isLowPowerMode:heat:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static func interval(isLowPowerMode: Bool, heat: HeatLevel) -> Double?
+```
+
+The shortest time between two updates.
+
+- Parameters:
+  - isLowPowerMode: Whether Low Power Mode is on (`ProcessInfo.isLowPowerModeEnabled`).
+  - heat: The device's heat level.
+- Returns: The interval in seconds, or `nil` when nothing should update.
+
+## `LiveUpdateRate/normalInterval`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let normalInterval: Double
+```
+
+The normal shortest time between two updates, in seconds: four a second, enough for a
+meter or a focus aid a person reads.
+
+## `LiveUpdateRate/reducedInterval`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+static let reducedInterval: Double
+```
+
+The shortest time between two updates in Low Power Mode or at a serious heat level, in
+seconds: two a second.
+
+## `LiveViewBackend`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+protocol LiveViewBackend : CaptureBackend
+```
+
+A ``CaptureBackend`` that can analyze the live preview at a low rate (histogram and focus
+peaking) and report the camera's values for the live readout.
+
+`NopeCapture`'s AVFoundation backend and ``SimulatedCaptureBackend`` implement it. Both are
+off until asked, so nothing is measured ahead of need (AGENTS.md, "Battery"), and neither
+changes what is captured: the analysis reads reduced preview frames from a separate video
+output, never the photo output.
+
+## `LiveViewBackend/frameAnalyses`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The analyses of live frames, while analysis is on (``setFrameAnalysis(_:)``), a few a
+second at most (``LiveUpdateRate``). ``LiveViewModel/observeAnalyses()`` is its only
+consumer. The stream ends when the backend is released.
+
+## `LiveViewBackend/setFrameAnalysis(_:)`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Starts, changes or stops the live frame analysis.
+
+- Parameter needs: What to measure; empty stops the analysis and removes its video
+  output.
+
+## `LiveViewBackend/setStatsReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Turns the live readout's values on or off.
+
+- Parameter enabled: Whether to send values.
+
+## `LiveViewBackend/statsReadings`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The camera's values for the live readout, while it is on
+(``setStatsReadingsEnabled(_:)``), a few a second at most. ``LiveViewModel/observeStats()``
+is its only consumer. The stream ends when the backend is released.
+
+## `LiveViewModel`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor final class LiveViewModel
+```
+
+The live aids over the viewfinder: the latest frame analysis (histogram, clipping and focus
+peaking) and the live camera readout's values.
+
+An interface tells it what is shown with ``setNeeds(_:)`` and ``setShowsStats(_:)``, and runs
+``observeAnalyses()`` and ``observeStats()`` for as long as the camera screen is visible.
+The model asks the backend for nothing while nothing is shown.
+
+## `LiveViewModel/analysis`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor var analysis: FrameAnalysis? { get set }
+```
+
+The latest analysis, holding only what is needed now, or `nil`.
+
+## `LiveViewModel/init(backend:)`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor init(backend: (any LiveViewBackend)?)
+```
+
+Creates the model.
+
+- Parameter backend: The backend, or `nil` when it has no live view; the model then
+  reports nothing.
+
+## `LiveViewModel/isSupported`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor var isSupported: Bool { get }
+```
+
+Whether the backend can analyze the preview and report values. Interfaces hide the live
+aids' switches when it can't.
+
+## `LiveViewModel/needs`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor var needs: LiveAnalysisNeeds { get set }
+```
+
+What the analysis is asked for now.
+
+## `LiveViewModel/observeAnalyses()`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func observeAnalyses() async
+```
+
+Applies the backend's analyses until its stream ends, keeping only what is needed (an
+analysis started before a change can arrive after it).
+
+## `LiveViewModel/observeStats()`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func observeStats() async
+```
+
+Applies the backend's readout values until its stream ends, while the readout is on.
+
+## `LiveViewModel/setNeeds(_:)`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func setNeeds(_ needs: LiveAnalysisNeeds) async
+```
+
+Asks for what the screen shows now, and drops what it no longer needs.
+
+- Parameter needs: What to measure; see ``LiveAnalysisNeeds/needed(for:manualControlsShown:isCleanView:)``.
+
+Side effect: starts, changes or stops the backend's video analysis.
+
+## `LiveViewModel/setShowsStats(_:)`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor func setShowsStats(_ isOn: Bool) async
+```
+
+Turns the live readout on or off.
+
+- Parameter isOn: Whether the readout is shown.
+
+Side effect: starts or stops the backend's readings; turning off clears ``stats``.
+
+## `LiveViewModel/showsStats`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor var showsStats: Bool { get set }
+```
+
+Whether the live readout is on.
+
+## `LiveViewModel/stats`
+
+public, declared in `Sources/NopeCore/LiveViewModel.swift`
+
+```swift
+@MainActor var stats: CameraStatsReading? { get set }
+```
+
+The latest values for the live readout, or `nil` while it is off or before the first.
+
 ## `LockedMetadata`
 
 public, declared in `Sources/NopeCore/MetadataField.swift`
@@ -5286,6 +6874,98 @@ case orientation
 ```
 
 Orientation.
+
+## `LumaFrame`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct LumaFrame
+```
+
+A small grid sampled from one live preview frame: its brightness and its local sharpness.
+
+The capture adapter samples it from a reduced, preview-sized video frame at a low rate,
+only while the histogram or focus peaking is shown (AGENTS.md, "Battery"). Privacy rule: the
+grid stays in memory for one analysis and is never stored, logged or written to a photo
+(issues #47 and #51).
+
+## `LumaFrame/edges`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let edges: [UInt8]
+```
+
+The local sharpness of each cell, 0 (flat) to 255: the brightness differences between the
+cell's pixel and its neighbors in the full frame, row by row from the top.
+
+## `LumaFrame/height`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let height: Int
+```
+
+The number of rows.
+
+## `LumaFrame/init(width:height:luma:edges:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init(width: Int, height: Int, luma: [UInt8], edges: [UInt8])
+```
+
+Creates a frame.
+
+- Parameters:
+  - width: The number of columns.
+  - height: The number of rows.
+  - luma: The brightness of each cell; `width` × `height` values.
+  - edges: The sharpness of each cell; `width` × `height` values.
+
+## `LumaFrame/luma`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let luma: [UInt8]
+```
+
+The brightness (luma, 0 black to 255 white) of each cell, row by row from the top.
+
+## `LumaFrame/oriented(quarterTurns:mirrored:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+func oriented(quarterTurns: Int, mirrored: Bool) -> LumaFrame
+```
+
+The frame turned and mirrored the way the viewfinder shows it.
+
+Video frames arrive in the sensor's orientation; the viewfinder turns them by its
+rotation angle and mirrors the front camera.
+
+- Parameters:
+  - quarterTurns: Clockwise quarter turns, as the viewfinder's rotation angle divided by
+    90 degrees.
+  - mirrored: Whether the viewfinder mirrors the picture left to right (the front
+    camera).
+- Returns: The turned frame.
+
+## `LumaFrame/width`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+let width: Int
+```
+
+The number of columns.
 
 ## `ManualCapabilities`
 
@@ -8857,6 +10537,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 The selected formats in display order: RAW, HEIF, JPEG.
 
+## `NopeSettings/overlays`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var overlays: OverlayOptions { get set }
+```
+
+The viewfinder overlays: grid, level, focus peaking, histogram and live camera readout.
+Every overlay is off by default. Change them with the setters in `OverlayOptions.swift`
+or ``setOverlays(_:)``.
+
 ## `NopeSettings/save`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -8942,6 +10634,18 @@ Turns a format on or off, and saves the change.
 - Returns: `false`, changing nothing, when the change would leave no format selected.
   Interfaces also check ``canTurnOff(_:deviceSupportsBayerRAW:)`` first.
 
+## `NopeSettings/setGridStyle(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setGridStyle(_ style: GridStyle)
+```
+
+Chooses the grid style, and saves the change.
+
+- Parameter style: The style.
+
 ## `NopeSettings/setMetadataItem(_:isIncluded:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -8968,6 +10672,18 @@ Turns night mode on or off, and saves the change.
 
 - Parameter isOn: Whether nope.'s screens are red on black.
 
+## `NopeSettings/setOverlays(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setOverlays(_ options: OverlayOptions)
+```
+
+Replaces the viewfinder overlay options, and saves the change.
+
+- Parameter options: The new options.
+
 ## `NopeSettings/setRemovesAllOptionalDetails(_:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -8979,6 +10695,66 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Turns the metadata master switch on or off, and saves the change.
 
 - Parameter isOn: See ``MetadataSettings/setRemovesAllOptionalDetails(_:)``.
+
+## `NopeSettings/setShowsFocusPeaking(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setShowsFocusPeaking(_ isOn: Bool)
+```
+
+Turns focus peaking on or off, and saves the change.
+
+- Parameter isOn: Whether in-focus edges are highlighted.
+
+## `NopeSettings/setShowsGrid(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setShowsGrid(_ isOn: Bool)
+```
+
+Shows or hides the grid, and saves the change.
+
+- Parameter isOn: Whether the grid is shown.
+
+## `NopeSettings/setShowsHistogram(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setShowsHistogram(_ isOn: Bool)
+```
+
+Shows or hides the histogram, and saves the change.
+
+- Parameter isOn: Whether the histogram is shown with the manual controls.
+
+## `NopeSettings/setShowsLevel(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setShowsLevel(_ isOn: Bool)
+```
+
+Shows or hides the level, and saves the change.
+
+- Parameter isOn: Whether the level is shown.
+
+## `NopeSettings/setShowsLiveReadout(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setShowsLiveReadout(_ isOn: Bool)
+```
+
+Shows or hides the live camera readout, and saves the change.
+
+- Parameter isOn: Whether the readout is shown.
 
 ## `NopeSettings/setShowsManualControls(_:)`
 
@@ -9095,6 +10871,231 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 The torch's brightness, remembered between launches (the torch itself always starts off).
 ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
 with ``LightIntent/setTorchLevel(_:)``.
+
+## `NopeSettings/turnSpiral()`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func turnSpiral()
+```
+
+Moves the golden spiral to its next placement, and saves the change.
+
+## `OverlayOptions`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+struct OverlayOptions
+```
+
+The viewfinder overlays the person turned on: guides (grid, level) and live aids (focus
+peaking, histogram, live camera readout). Every overlay is off by default (issues #40, #47,
+#51 and #52).
+
+Privacy rule (AGENTS.md, "No network, no analytics"): overlays are on screen only. Nothing
+they show is written to the photo, stored or logged.
+
+## `OverlayOptions/Key`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+enum Key
+```
+
+The `UserDefaults` keys, one per value.
+
+## `OverlayOptions/Key/gridStyle`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let gridStyle: String
+```
+
+The grid style, a ``GridStyle`` raw value.
+
+## `OverlayOptions/Key/showsFocusPeaking`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let showsFocusPeaking: String
+```
+
+Whether focus peaking is shown, a Boolean.
+
+## `OverlayOptions/Key/showsGrid`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let showsGrid: String
+```
+
+Whether the grid is shown, a Boolean.
+
+## `OverlayOptions/Key/showsHistogram`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let showsHistogram: String
+```
+
+Whether the histogram is shown, a Boolean.
+
+## `OverlayOptions/Key/showsLevel`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let showsLevel: String
+```
+
+Whether the level is shown, a Boolean.
+
+## `OverlayOptions/Key/showsLiveReadout`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let showsLiveReadout: String
+```
+
+Whether the live camera readout is shown, a Boolean.
+
+## `OverlayOptions/Key/spiralPlacement`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let spiralPlacement: String
+```
+
+The spiral placement, a ``SpiralPlacement/index``.
+
+## `OverlayOptions/gridStyle`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var gridStyle: GridStyle
+```
+
+Which grid is drawn while ``showsGrid`` is on.
+
+## `OverlayOptions/init()`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+init()
+```
+
+Creates the defaults: every overlay off, the rule-of-thirds grid style and the standard
+spiral placement.
+
+## `OverlayOptions/init(defaults:)`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+init(defaults: UserDefaults)
+```
+
+Loads the options from a store, using the default for any value not stored yet or not
+readable.
+
+Each value has its own key, so a UI test can set one with a launch argument, such as
+`-NopeSettings.overlays.showsGrid YES`.
+
+- Parameter defaults: The store to read.
+
+## `OverlayOptions/isAnyOn`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var isAnyOn: Bool { get }
+```
+
+Whether any overlay is on, for the settings row's summary.
+
+## `OverlayOptions/showsFocusPeaking`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var showsFocusPeaking: Bool
+```
+
+Whether in-focus edges are highlighted (focus peaking).
+
+## `OverlayOptions/showsGrid`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var showsGrid: Bool
+```
+
+Whether the grid is shown.
+
+## `OverlayOptions/showsHistogram`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var showsHistogram: Bool
+```
+
+Whether the live histogram and clipping indicators are shown with the manual controls.
+
+## `OverlayOptions/showsLevel`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var showsLevel: Bool
+```
+
+Whether the level is shown: a horizon bar, or a top-down level when the device points
+straight down.
+
+## `OverlayOptions/showsLiveReadout`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var showsLiveReadout: Bool
+```
+
+Whether the live camera readout ("stats for nerds") is shown.
+
+## `OverlayOptions/spiralPlacement`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var spiralPlacement: SpiralPlacement
+```
+
+Where the golden spiral sits, when ``gridStyle`` is ``GridStyle/goldenSpiral``.
+
+## `OverlayOptions/store(in:)`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+func store(in defaults: UserDefaults)
+```
+
+Writes the options to a store.
+
+- Parameter defaults: The store to write.
 
 ## `PhotoDetails`
 
@@ -10761,6 +12762,136 @@ case jpeg
 
 JPEG, for a lens that offers no HEIF encoding.
 
+## `ProcessingFeature`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+enum ProcessingFeature
+```
+
+A processing feature of the camera or the photo output that nope. keeps off when the device
+allows (`docs/PRIVACY.md`, "Processing"). The live camera readout lists the ones that are
+off, as the hardware reports them.
+
+## `ProcessingFeature/appleProRAW`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case appleProRAW
+```
+
+Apple ProRAW, which is demosaiced and may be multi-frame.
+
+## `ProcessingFeature/constantColor`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case constantColor
+```
+
+Constant color.
+
+## `ProcessingFeature/contentAwareDistortionCorrection`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case contentAwareDistortionCorrection
+```
+
+Content-aware distortion correction.
+
+## `ProcessingFeature/deferredDelivery`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case deferredDelivery
+```
+
+Deferred photo delivery, which finishes processing later.
+
+## `ProcessingFeature/geometricDistortionCorrection`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case geometricDistortionCorrection
+```
+
+Geometric distortion correction.
+
+## `ProcessingFeature/qualityPrioritization`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case qualityPrioritization
+```
+
+Quality prioritization above speed (`AVCapturePhotoOutput.maxPhotoQualityPrioritization`),
+which can mean multi-frame fusion.
+
+## `ProcessingFeature/responsiveCapture`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case responsiveCapture
+```
+
+Responsive capture.
+
+## `ProcessingFeature/zeroShutterLag`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case zeroShutterLag
+```
+
+Zero shutter lag, which takes the photo from frames buffered before the press.
+
+## `RateLimiter`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+struct RateLimiter
+```
+
+Lets through at most one event per interval.
+
+## `RateLimiter/init()`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+init()
+```
+
+Creates a limiter that lets the first event through.
+
+## `RateLimiter/shouldPass(at:interval:)`
+
+public, declared in `Sources/NopeCore/FrameAnalysis.swift`
+
+```swift
+mutating func shouldPass(at time: Double, interval: Double?) -> Bool
+```
+
+Whether an event at a time should be let through, and records it if so.
+
+- Parameters:
+  - time: The event's time, in seconds on any steady clock.
+  - interval: The shortest time between two events, in seconds, or `nil` to let nothing
+    through.
+- Returns: `true` for the first event and for each one at least `interval` after the
+  last one let through.
+
 ## `SaveSettings`
 
 public, declared in `Sources/NopeCore/SaveSettings.swift`
@@ -11402,6 +13533,16 @@ let backend = SimulatedCaptureBackend(
 let model = CameraModel(backend: backend)
 ```
 
+## `SimulatedCaptureBackend/analysesContinuation`
+
+internal, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let analysesContinuation: AsyncStream<FrameAnalysis>.Continuation
+```
+
+Feeds ``frameAnalyses``.
+
 ## `SimulatedCaptureBackend/applyControls(_:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -11540,7 +13681,17 @@ func finishEvents()
 
 Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
 ``ManualControlsModel/observeReadings()`` return once they have applied everything sent
-so far.
+so far. Also ends ``frameAnalyses`` and ``statsReadings``.
+
+## `SimulatedCaptureBackend/frameAnalyses`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let frameAnalyses: AsyncStream<FrameAnalysis>
+```
+
+The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
 ## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:)`
 
@@ -11586,6 +13737,19 @@ let permissionAfterRequest: CameraPermission
 
 The permission reported after ``requestPermission()``.
 
+## `SimulatedCaptureBackend/placeholderAnalysis(for:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+LiveView.swift`
+
+```swift
+static func placeholderAnalysis(for needs: LiveAnalysisNeeds) -> FrameAnalysis
+```
+
+The analysis sent when analysis is asked for: ``placeholderFrame``, analyzed for the
+needs.
+
+- Parameter needs: What was asked for.
+
 ## `SimulatedCaptureBackend/placeholderDimensions`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -11595,6 +13759,29 @@ static let placeholderDimensions: PhotoDimensions
 ```
 
 The size reported for a simulated photo when the lens lists no photo sizes: 12 MP, 4:3.
+
+## `SimulatedCaptureBackend/placeholderFrame`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+LiveView.swift`
+
+```swift
+static var placeholderFrame: LumaFrame { get }
+```
+
+A simulated preview frame: a left-to-right brightness ramp whose brightest columns are
+clipped white, with a sharp vertical edge down the middle. It is analyzed like a real
+frame, so the histogram flags clipped highlights and focus peaking marks the edge.
+
+## `SimulatedCaptureBackend/placeholderFrameSize`
+
+internal, declared in `Sources/NopeCore/SimulatedCaptureBackend+LiveView.swift`
+
+```swift
+static let placeholderFrameSize: (width: Int, height: Int)
+```
+
+The size of the simulated preview grid: 30 × 40 cells, a 4:3 frame held upright, as the
+viewfinder shows it.
 
 ## `SimulatedCaptureBackend/placeholderPhotoData`
 
@@ -11616,6 +13803,17 @@ static let placeholderReading: ExposureReading
 
 The reading sent when readings are turned on: ISO 100, 1/120 s, on target, focus in the
 middle, f/1.8 and 5200 K.
+
+## `SimulatedCaptureBackend/placeholderStats`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+LiveView.swift`
+
+```swift
+static let placeholderStats: CameraStatsReading
+```
+
+The values sent when the live readout is turned on: those of ``placeholderReading``, in
+auto, with every processing feature off, ready, and no pressure.
 
 ## `SimulatedCaptureBackend/previewSource`
 
@@ -11669,6 +13867,30 @@ Sends ``reading``, ``readingCount`` times, when readings are turned on.
 
 - Parameter enabled: Whether readings are on.
 
+## `SimulatedCaptureBackend/setFrameAnalysis(_:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+LiveView.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Sends ``placeholderAnalysis(for:)`` when analysis is asked for; nothing when it stops.
+
+- Parameter needs: What to measure.
+
+## `SimulatedCaptureBackend/setStatsReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend+LiveView.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Sends ``placeholderStats`` when the readout is turned on.
+
+- Parameter enabled: Whether the readout is on.
+
 ## `SimulatedCaptureBackend/setTorch(level:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -11705,6 +13927,26 @@ Throws ``startError`` if set; otherwise emits ``eventsAfterStart``.
 
 - Parameter request: Ignored.
 - Throws: ``startError``.
+
+## `SimulatedCaptureBackend/statsContinuation`
+
+internal, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let statsContinuation: AsyncStream<CameraStatsReading>.Continuation
+```
+
+Feeds ``statsReadings``.
+
+## `SimulatedCaptureBackend/statsReadings`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let statsReadings: AsyncStream<CameraStatsReading>
+```
+
+The live readout's values: ``placeholderStats`` each time they are turned on.
 
 ## `SimulatedCaptureBackend/stopSession()`
 
@@ -11761,6 +14003,120 @@ init()
 
 Creates a simulated preview source.
 
+## `SpiralPlacement`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+struct SpiralPlacement
+```
+
+Where the golden spiral sits: one of its eight placements, four quarter turns each drawn
+plain or flipped (issue #40, "The spiral can be flipped and rotated to any of its 8
+placements").
+
+## `SpiralPlacement/count`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let count: Int
+```
+
+The number of placements: four turns, each plain or flipped.
+
+## `SpiralPlacement/index`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var index: Int { get }
+```
+
+The placement's number, 0 to 7, as stored in the settings.
+
+## `SpiralPlacement/init(index:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+init(index: Int)
+```
+
+The placement with a number.
+
+- Parameter index: Any whole number; it is reduced to 0 through 7.
+
+## `SpiralPlacement/init(quarterTurns:isFlipped:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+init(quarterTurns: Int, isFlipped: Bool)
+```
+
+Creates a placement.
+
+- Parameters:
+  - quarterTurns: Clockwise quarter turns; any whole number, reduced to 0 through 3.
+  - isFlipped: Whether the spiral is mirrored left to right before it is turned.
+
+## `SpiralPlacement/isFlipped`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+let isFlipped: Bool
+```
+
+Whether the spiral is mirrored left to right before it is turned.
+
+## `SpiralPlacement/next`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var next: SpiralPlacement { get }
+```
+
+The next of the eight placements, wrapping back to the first: the "Turn Spiral" button
+and accessibility action step through them.
+
+## `SpiralPlacement/quarterTurns`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+let quarterTurns: Int
+```
+
+Clockwise quarter turns, 0 to 3.
+
+## `SpiralPlacement/standard`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let standard: SpiralPlacement
+```
+
+The placement nope. starts with: no turn, not flipped. The spiral then winds in toward the
+right third of a landscape frame.
+
+## `SpiralPlacement/turned(by:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+func turned(by turns: Int) -> SpiralPlacement
+```
+
+The placement turned by more quarter turns, so the spiral keeps its place relative to the
+horizon while the device is turned and the camera layout stays put.
+
+- Parameter turns: Clockwise quarter turns to add; negative turns counterclockwise.
+- Returns: The turned placement, flipped the same way.
+
 ## `StorageWarning`
 
 public, declared in `Sources/NopeCore/DeviceStatus.swift`
@@ -11790,6 +14146,67 @@ case low(photosThatFit: Int)
 ```
 
 About this many more photos fit, fewer than ``DeviceStatus/lowStoragePhotoCount``.
+
+## `SystemPressureReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+enum SystemPressureReading
+```
+
+The capture system's pressure level, as `AVCaptureDevice.SystemPressureState.Level` reports
+it: how close the camera is to having to slow down or stop because of heat or power.
+
+## `SystemPressureReading/critical`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case critical
+```
+
+Critical: the system will soon lower quality or the frame rate.
+
+## `SystemPressureReading/fair`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case fair
+```
+
+Slightly raised.
+
+## `SystemPressureReading/nominal`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case nominal
+```
+
+Normal.
+
+## `SystemPressureReading/serious`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case serious
+```
+
+High: the system may lower the frame rate.
+
+## `SystemPressureReading/shutdown`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case shutdown
+```
+
+The system is stopping the camera.
 
 ## `TIFFDirectory`
 
@@ -12231,6 +14648,92 @@ static let tintRange: ClosedRange<Double>
 
 The tints nope. offers, from green (negative) to magenta (positive). A tool setting:
 AVFoundation converts any tint, and the camera's gain limit applies as for temperature.
+
+## `WhiteBalanceGainsReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+struct WhiteBalanceGainsReading
+```
+
+The camera's white balance gains, as `AVCaptureDevice.deviceWhiteBalanceGains` reports them.
+
+## `WhiteBalanceGainsReading/blue`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+let blue: Double
+```
+
+The blue gain, 1 or more.
+
+## `WhiteBalanceGainsReading/green`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+let green: Double
+```
+
+The green gain, 1 or more.
+
+## `WhiteBalanceGainsReading/init(red:green:blue:)`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+init(red: Double, green: Double, blue: Double)
+```
+
+Creates a gains reading.
+
+- Parameters:
+  - red: The red gain.
+  - green: The green gain.
+  - blue: The blue gain.
+
+## `WhiteBalanceGainsReading/red`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+let red: Double
+```
+
+The red gain, 1 or more.
+
+## `WhiteBalanceModeReading`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+enum WhiteBalanceModeReading
+```
+
+How the camera's white balance is being controlled, as `AVCaptureDevice.whiteBalanceMode`
+reports it.
+
+## `WhiteBalanceModeReading/auto`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case auto
+```
+
+Continuous auto white balance.
+
+## `WhiteBalanceModeReading/locked`
+
+public, declared in `Sources/NopeCore/CameraStats.swift`
+
+```swift
+case locked
+```
+
+Locked, at the current or custom gains.
 
 ## `WhiteBalancePreset`
 

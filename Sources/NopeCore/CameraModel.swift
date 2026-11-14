@@ -46,6 +46,9 @@ public final class CameraModel {
     /// The device's free storage and battery, for warnings and to stop a burst in time.
     public let deviceStatus: DeviceStatus
 
+    /// The live aids over the viewfinder: histogram, focus peaking and the live camera readout.
+    public let live: LiveViewModel
+
     /// Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
     /// focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
     public private(set) var isMagnifying = false
@@ -87,6 +90,7 @@ public final class CameraModel {
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
         drive = DriveModel(sleep: sleep)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
+        live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)
     }
 

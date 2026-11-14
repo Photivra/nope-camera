@@ -157,7 +157,7 @@ struct CameraReadyView<Viewfinder: View>: View {
         // assistive technologies, so VoiceOver reads only the form.
         .accessibilityHidden(showsProTools)
         .fullScreenCover(isPresented: $showsProTools) {
-            ProToolsSheet(model: model)
+            ProToolsSheet(model: model, settings: settings)
                 .nightModeStyle(isNightMode)
         }
         .adaptivePresentation(isPresented: $showsFormats) {
@@ -262,6 +262,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                 picture
                     .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
+                if LiveAidsPanel.isShown(model) {
+                    LiveAidsPanel(model: model, settings: settings)
+                }
                 if showsControls, showsExposureDial {
                     AutoExposureDial(model: model) { showsExposureDial = false }
                 }
@@ -564,6 +567,7 @@ struct CameraReadyView<Viewfinder: View>: View {
     private var picture: some View {
         ZStack {
             viewfinderLayer
+            ViewfinderOverlays(model: model, settings: settings)
             SessionStatusView(status: model.sessionStatus)
                 .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
             CountdownNumber(drive: model.drive)
@@ -578,6 +582,8 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// mean the same place in the camera.
     private var viewfinderLayer: some View {
         viewfinderContent
+            // Focus peaking is drawn on the picture itself, so the magnifier enlarges it too.
+            .overlay { FocusPeakingLayer(model: model) }
             .scaleEffect(
                 model.isMagnifying ? FocusMagnifier.scale : 1,
                 anchor: magnifierAnchor)

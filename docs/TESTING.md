@@ -53,6 +53,7 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
+| `Sources/NopeCapture/SystemLiveView.swift` | The live analysis video output and the readout's key-value observations need a running camera | On-device check |
 | `Sources/NopeCapture/PreviewRotation.swift` | `AVCaptureDevice.RotationCoordinator` needs a camera device | On-device check |
 | `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
 | `Sources/NopeCapture/PhotoKitLibrary.swift` | Asking for add-only access shows a system prompt, and adding changes the person's library | On-device check |
@@ -285,6 +286,7 @@ iPad:
 - contrast over real scenes: the chip, pills, warnings, banner, dial, thumbnail and shutter ring
   stay readable against a white wall and a yellow surface, with and without Reduce Transparency
   and Increase Contrast; the haptic on a good save is light;
+- viewfinder overlays: see "Viewfinder overlays on a device" below;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
   largest text size), including the turned icons and text on an iPhone held sideways, the failure
   banner taking VoiceOver focus, and the low-priority "Saved and signed" announcement;
@@ -369,6 +371,34 @@ lens without RAW, in the fallback:
   once the camera screen closes (Instruments: no key-value observation callbacks);
 - with VoiceOver: each slot adjusts by swiping up and down, and the eyes-free shutter (volume
   buttons, Camera Control) still works with manual controls on and in clean view.
+
+### Viewfinder overlays on a device
+
+The geometry, level, analysis and rate rules are unit-tested; these checks cover the hardware
+(`SystemLiveView`, `PreviewRotation.previewAngle`, `MotionGravitySource`):
+
+- grid: each style in portrait and both landscape orientations; the spiral keeps its place
+  relative to the horizon when the phone turns; lines stay visible over white, yellow and dark
+  scenes;
+- level: the bar matches a real horizon (or a spirit level) within about 1 degree in portrait
+  and both landscape orientations; the haptic fires once on becoming level; pointing straight
+  down shows the top-down level; Instruments shows no motion updates while the level is off;
+- focus peaking: on the rear and front cameras, in portrait and landscape (and every iPad
+  orientation), the highlight sits on the in-focus edges, not mirrored or turned; a small
+  subject 5 to 15 cm away in front of a busy background shows sharp when focused (issue #51),
+  and the highlight stays on the same edges with the 3× focus magnifier on;
+- histogram: a bright window flags clipped highlights and a dark corner clipped shadows; the
+  thresholds (`Histogram.highlightThreshold`, `shadowThreshold`, `clippedShare`) and
+  `FocusPeakingMap.minimumEdge` look right on real scenes;
+- captures unchanged: with peaking and the histogram on, a DNG and its HEIF from the same scene
+  match ones taken with them off (dimensions, exposure, the metadata dump), and Bayer RAW is still
+  offered on every lens that had it;
+- rate and energy: with Instruments (Energy Log, Time Profiler), the analysis runs at most four
+  times a second (two in Low Power Mode), the video output is gone from the session when every
+  live aid is off, and the energy impact with them on is recorded in the release notes;
+- live camera readout: the values match the saved files' EXIF (ExposureTime, ISOSpeedRatings,
+  FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
+  the torch show when another feature turns them on.
 
 ### Focus, exposure and close-up aids on a device
 

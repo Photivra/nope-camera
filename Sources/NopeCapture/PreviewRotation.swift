@@ -40,6 +40,16 @@ final class PreviewRotation {
     /// The latest capture angle, in degrees, for the capture queue.
     private nonisolated let captureAngleStore = OSAllocatedUnfairLock<CGFloat?>(initialState: nil)
 
+    /// The latest preview angle, in degrees, for the live analysis queue.
+    private nonisolated let previewAngleStore = OSAllocatedUnfairLock<CGFloat?>(initialState: nil)
+
+    /// The angle, in degrees, the viewfinder turns the video by, or `nil` before one is known.
+    /// The live frame analysis turns its frames the same way (``SystemLiveView``). Safe to read
+    /// from any thread.
+    nonisolated var previewAngle: CGFloat? {
+        previewAngleStore.withLock { $0 }
+    }
+
     /// Creates a rotation helper with no camera and no layer.
     nonisolated init() {}
 
@@ -96,6 +106,7 @@ final class PreviewRotation {
     ///
     /// - Parameter angle: The coordinator's preview angle, in degrees.
     private func applyPreviewAngle(_ angle: CGFloat) {
+        previewAngleStore.withLock { $0 = angle }
         guard let connection = previewLayer?.connection, connection.isVideoRotationAngleSupported(angle) else { return }
         connection.videoRotationAngle = angle
     }

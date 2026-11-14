@@ -26,6 +26,9 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     /// The camera calls.
     private let hardware: any CaptureHardware
 
+    /// The live view calls, or `nil` when the hardware has none.
+    nonisolated let liveHardware: (any LiveViewHardware)?
+
     /// Camera permission.
     private let authorization: any CameraAuthorizing
 
@@ -43,6 +46,7 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     init(hardware: any CaptureHardware, authorization: any CameraAuthorizing) {
         self.hardware = hardware
         self.authorization = authorization
+        liveHardware = hardware as? any LiveViewHardware
         events = hardware.events
         exposureReadings = hardware.exposureReadings
         previewSource = hardware.previewSource

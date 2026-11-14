@@ -100,6 +100,8 @@ enum QuickControls {
         flash,
         drive,
         exposure,
+        grid,
+        level,
         fastShutter,
         closeUp,
         magnifier,
