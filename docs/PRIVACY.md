@@ -312,7 +312,7 @@ for all 8,192 switch combinations in every format.
 | Lens make and model | EXIF `LensMake`, `LensModel`, `LensSpecification`; DNG `LensInfo` | EXIF `LensMake`, `LensModel`, `LensSpecification` |
 | Lens correction instructions | `OpcodeList1`, `OpcodeList2`, `OpcodeList3` | — |
 | Exposure settings | EXIF `ExposureTime`, `FNumber`, `ExposureProgram`, `PhotographicSensitivity`, `SensitivityType`, `ShutterSpeedValue`, `ApertureValue`, `BrightnessValue`, `ExposureBiasValue`, `MaxApertureValue`, `MeteringMode`, `Flash`, `FocalLength`, `SubjectArea`, `SensingMethod`, `SceneType`, `ExposureMode`, `WhiteBalance`, `FocalLengthIn35mmFilm`, `SceneCaptureType` | same |
-| iOS version / app name and version | `Software`: "Photivra Nope Camera 0.x.y" (app), the system's version (iOS), or "Photivra Nope Camera 0.x.y (27.2.1)" (both) | same, plus HEIF XMP `xmp:CreatorTool` with the same value |
+| iOS version / app name and version | `Software`: "Photivra Nope Camera 0.x.y" (app), the system's version (iOS), or "Photivra Nope Camera 0.x.y (27.2.1)" (both) | same, plus HEIF XMP `xmp:CreatorTool` with the same value. A HEIF or JPEG developed from the DNG takes the system's version back out of the DNG's value, so it never nests the app's name (`MetadataPlan.systemVersion(fromSoftware:)`) |
 | Maker notes | EXIF `MakerNote` | same |
 | Your name and copyright | `Artist`, `Copyright`, only when entered | same, plus HEIF XMP `dc:creator`, `dc:rights` with the same values |
 | Content Credentials (signed files only) | IFD0 tag `0xCD41` | JPEG `APP11`; HEIF top-level `uuid` box (C2PA 2.1, appendix A) |
@@ -358,6 +358,11 @@ Simulator has no camera and no real DNG can be made in a unit test:
   (issue #65), and the saved DNG's `DateTime`, `Make`, `Model` and `Software` are empty with the
   switches off: note which encoding AVFoundation uses (one NUL, a count of 0, or the tag left
   out), and that the read-back accepts it;
+- on a lens without Bayer RAW, the processed fallback HEIF (and JPEG) is saved with "Remove all
+  optional details" on: it is written through the same `fileDataRepresentation(with:)` call
+  without the four TIFF fields, and whether AVFoundation needs them for a processed photo too
+  wasn't measured (issue #65 measured RAW only). If it fails ("The photo wasn't taken. Try
+  again."), the fallback needs the same empty fields;
 - a signed DNG, HEIF and JPEG are saved and open in Photos and a RAW editor, and validate with
   c2patool (issue #66); with maker notes on, an exiftool dump of the signed DNG's maker note
   matches the unsigned one's (the maker note moves 12 bytes, and its offsets are assumed to be

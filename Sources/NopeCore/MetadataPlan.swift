@@ -228,8 +228,8 @@ public struct MetadataPlan: Equatable, Sendable {
         where settings.isOn(item) {
             if let value = source[dictionary] { result[dictionary] = value }
         }
-        let systemSoftware = Self.value(of: ImageIOKey(MetadataField.tiff, "Software"), in: source) as? String
-        if let software = softwareValue(systemSoftware: systemSoftware) {
+        let sourceSoftware = Self.value(of: ImageIOKey(MetadataField.tiff, "Software"), in: source) as? String
+        if let software = softwareValue(systemSoftware: Self.systemVersion(fromSoftware: sourceSoftware)) {
             Self.put(software, at: ImageIOKey(MetadataField.tiff, "Software"), in: &result)
         }
         if writes(.uniqueCameraModel, in: format) {
@@ -252,6 +252,23 @@ public struct MetadataPlan: Equatable, Sendable {
             }
         }
         return result
+    }
+
+    /// The system's version in a `Software` value: the value itself when the system wrote it, the
+    /// part in parentheses when nope. wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
+    ///
+    /// A HEIF or JPEG is developed from the DNG's metadata, whose `Software` nope. already
+    /// wrote, so reading it as the system's own value would nest the app's name:
+    /// "Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))".
+    ///
+    /// - Parameter software: The source's `Software` value, if any.
+    /// - Returns: The system's version, or `nil` if there is none (also for an empty value).
+    static func systemVersion(fromSoftware software: String?) -> String? {
+        guard let software, !software.isEmpty else { return nil }
+        guard software.hasPrefix(appName) else { return software }
+        guard software.hasSuffix(")"), let open = software.range(of: " (", options: .backwards) else { return nil }
+        let version = software[open.upperBound..<software.index(before: software.endIndex)]
+        return version.isEmpty ? nil : String(version)
     }
 
     /// The `Software` value: the app's name, the system's version, both, or nothing.

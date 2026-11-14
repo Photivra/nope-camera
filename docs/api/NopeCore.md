@@ -5438,6 +5438,24 @@ The `Software` value: the app's name, the system's version, both, or nothing.
 - Parameter systemSoftware: The system's `Software` value, if it wrote one.
 - Returns: The value to write, or `nil` to write none.
 
+## `MetadataPlan/systemVersion(fromSoftware:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static func systemVersion(fromSoftware software: String?) -> String?
+```
+
+The system's version in a `Software` value: the value itself when the system wrote it, the
+part in parentheses when nope. wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
+
+A HEIF or JPEG is developed from the DNG's metadata, whose `Software` nope. already
+wrote, so reading it as the system's own value would nest the app's name:
+"Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))".
+
+- Parameter software: The source's `Software` value, if any.
+- Returns: The system's version, or `nil` if there is none (also for an empty value).
+
 ## `MetadataPlan/value(of:in:)`
 
 internal, declared in `Sources/NopeCore/MetadataPlan.swift`

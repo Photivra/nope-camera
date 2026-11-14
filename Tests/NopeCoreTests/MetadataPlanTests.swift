@@ -344,6 +344,47 @@ struct MetadataPropertiesTests {
         #expect((properties["{TIFF}"] as? [String: Any])?.values.allSatisfy { $0 as? String == "" } == true)
     }
 
+    /// Every format gets exactly the agreed `Software` for the two switches, including a HEIF or
+    /// JPEG developed from a DNG whose `Software` nope. already wrote (it must not nest:
+    /// "Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))"), and the processed
+    /// fallback, written from the system's own metadata.
+    @Test(arguments: [
+        (false, false, nil as String?), (true, false, "Photivra Nope Camera 0.2.0"),
+        (false, true, "27.2.1"), (true, true, "Photivra Nope Camera 0.2.0 (27.2.1)"),
+    ])
+    func softwareIsTheAgreedValueInEveryFormat(app: Bool, system: Bool, expected: String?) {
+        var settings = MetadataSettings()
+        settings.set(.appNameAndVersion, isOn: app)
+        settings.set(.systemVersion, isOn: system)
+        let plan = MetadataPlan(settings: settings, appVersion: "0.2.0")
+        func software(_ properties: [String: Any]) -> String? {
+            (properties["{TIFF}"] as? [String: Any])?["Software"] as? String
+        }
+        let dng = plan.properties(for: .raw, from: MetadataPropertiesTests.systemMetadata)
+        // A DNG always carries Software (issue #65), empty when both switches are off.
+        #expect(software(dng) == (expected ?? ""))
+        for format in [PhotoFormat.heif, .jpeg] {
+            // Developed from the DNG, and developed again from that file: still the same value.
+            let developed = plan.properties(for: format, from: dng, orientation: 1)
+            #expect(software(developed) == expected, "developed \(format)")
+            #expect(software(plan.properties(for: format, from: developed)) == expected, "twice \(format)")
+            // The processed fallback, from the system's own metadata.
+            #expect(software(plan.properties(for: format, from: MetadataPropertiesTests.systemMetadata)) == expected)
+        }
+    }
+
+    /// The system version is taken back out of a value nope. wrote, and an empty or missing one
+    /// counts as none.
+    @Test(arguments: [
+        ("27.2.1" as String?, "27.2.1" as String?), (nil, nil), ("", nil),
+        ("Photivra Nope Camera 0.2.0", nil), ("Photivra Nope Camera 0.2.0 (27.2.1)", "27.2.1"),
+        ("Photivra Nope Camera 0.1.0 (27.2.1)", "27.2.1"), ("Photivra Nope Camera", nil),
+        ("Photivra Nope Camera (27.2.1)", "27.2.1"), ("Photivra Nope Camera 0.2.0 ()", nil),
+    ])
+    func systemVersionIsReadFromAnyWrittenValue(source: String?, expected: String?) {
+        #expect(MetadataPlan.systemVersion(fromSoftware: source) == expected)
+    }
+
     @Test(arguments: [
         (true, false, "27.2.1" as String?, "Photivra Nope Camera" as String?),
         (true, true, nil, "Photivra Nope Camera"),
