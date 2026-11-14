@@ -34,4 +34,14 @@ enum OfflineC2PAContext {
     static func make() throws -> C2PAContext {
         try C2PAContext(settings: C2PASettings(definition: settings))
     }
+
+    /// Creates a new context with ``settings`` that signs with one signer, for the data-hash
+    /// workflow (`Builder.signEmbeddable(format:)` signs with the context's signer).
+    ///
+    /// - Parameter signer: The signer; the context takes ownership of it.
+    /// - Returns: The context.
+    /// - Throws: `C2PAError` if the library rejects the settings or the signer.
+    static func make(signer: sending Signer) throws -> C2PAContext {
+        try C2PAContext(settings: C2PASettings(definition: settings), signer: signer)
+    }
 }

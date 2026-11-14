@@ -13,6 +13,9 @@ public enum SignatureStatus: Equatable, Sendable {
         case unavailable
         /// The signer failed for at least one file.
         case failed
+        /// A signed file failed the read-back, for example because the system can't open it,
+        /// so its unsigned file, which passed, was saved instead (issue #66).
+        case signedFileFailedCheck
     }
 
     /// Every file carries a Content Credentials manifest.

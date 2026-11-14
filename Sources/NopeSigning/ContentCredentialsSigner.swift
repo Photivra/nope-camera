@@ -62,6 +62,10 @@ public struct ContentCredentialsSigner: PhotoSigning {
 
     /// Embeds and signs a manifest with one key.
     ///
+    /// HEIF and JPEG go through the C2PA library's own writer. A DNG goes through
+    /// ``embedInDNG(_:manifest:signer:)`` instead, because the library's DNG writer moves IFD0
+    /// and ImageIO can't open the result (issue #66).
+    ///
     /// - Parameters:
     ///   - data: The file.
     ///   - file: What the file is.
@@ -76,6 +80,7 @@ public struct ContentCredentialsSigner: PhotoSigning {
         let signer = try Signer(algorithm: .es256, certificateChainPEM: certificatePEM, tsa: nil) { claim in
             try key.signatureDER(for: claim)
         }
+        if file.format == .raw { return try embedInDNG(data, manifest: manifest, signer: signer) }
         let builder = try Builder(context: OfflineC2PAContext.make(), manifestJSON: manifest.json())
         let source = InMemoryFile(data)
         let destination = InMemoryFile()
@@ -83,5 +88,33 @@ public struct ContentCredentialsSigner: PhotoSigning {
             format: file.mediaType, source: InMemoryStream.make(source),
             destination: InMemoryStream.make(destination), signer: signer)
         return destination.data
+    }
+
+    /// Signs a DNG with the C2PA data-hash workflow, keeping IFD0 in place.
+    ///
+    /// 1. The library makes a placeholder store of the final size.
+    /// 2. ``DNGManifestSlot`` inserts tag 52545 into IFD0 and puts the placeholder at the end.
+    /// 3. The library hashes the file with the store excluded (`c2pa.hash.data`, C2PA 2.2,
+    ///    section 9.2) and signs the claim.
+    /// 4. The signed store, the same size as the placeholder, replaces it, so the hash still holds.
+    ///
+    /// - Parameters:
+    ///   - data: The DNG.
+    ///   - manifest: The manifest to embed.
+    ///   - signer: The file's one-use signer; the context takes it.
+    /// - Returns: The signed DNG.
+    /// - Throws: Any error from the library, or a ``DNGManifestSlot/Failure``, for example if
+    ///   the signed store isn't the placeholder's size.
+    static func embedInDNG(_ data: Data, manifest: ContentCredentialsManifest, signer: sending Signer) throws -> Data {
+        let format = SignableFile.singleFrameRAW.mediaType
+        let builder = try Builder(context: OfflineC2PAContext.make(signer: signer), manifestJSON: manifest.json())
+        let placeholder = try builder.placeholder(format: format)
+        let bound = try DNGManifestSlot.insert(storeLength: placeholder.count, into: data)
+        let withPlaceholder = try bound.replacingStore(with: placeholder)
+        try builder.setDataHashExclusions([
+            (start: UInt64(bound.storeRange.lowerBound), length: UInt64(bound.storeRange.count))
+        ])
+        try builder.updateHashFromStream(format: format, stream: InMemoryStream.make(InMemoryFile(withPlaceholder)))
+        return try bound.replacingStore(with: builder.signEmbeddable(format: format))
     }
 }

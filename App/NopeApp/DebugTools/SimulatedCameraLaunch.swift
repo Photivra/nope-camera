@@ -41,6 +41,9 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; signing fails, so photos are saved unsigned and the status
         /// says so.
         case signingFails
+        /// Access already allowed; every signed file fails the read-back, so the unsigned files
+        /// are saved and the status says they aren't signed.
+        case signedFileRejected
         /// Access already allowed; lenses with manual controls: the wide lens has every control,
         /// including a variable aperture and S and I modes; the ultra wide has a fixed aperture
         /// and only P and M; the front camera has no manual focus. Pair it with
@@ -108,7 +111,8 @@ enum SimulatedCameraLaunch {
     static func saver(appVersion: String) -> PhotoSaver? {
         guard let scenario else { return nil }
         return PhotoSaver(
-            developer: SimulatedDeveloper(), signer: SimulatedSigner(fails: scenario == .signingFails),
+            developer: SimulatedDeveloper(),
+            signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
             library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied), appVersion: appVersion)
     }
@@ -171,7 +175,7 @@ enum SimulatedCameraLaunch {
         case .noRAW:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: lensesWithoutRAW))
-        case .metadataRejected, .photosDenied, .signingFails:
+        case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual:
             return SimulatedCaptureBackend(

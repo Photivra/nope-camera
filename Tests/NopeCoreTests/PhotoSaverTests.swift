@@ -49,13 +49,18 @@ struct FakeSigner: PhotoSigning {
     var failing: Set<PhotoFormat> = []
     /// Whether signing also changes the RAW image data (it must never do that).
     var changesRawData = false
+    /// Whether the signed files fail the read-back, like a signed DNG ImageIO can't open.
+    var breaksFiles: Set<PhotoFormat> = []
+    /// The settings the RAW was captured with, which the signed RAW is rebuilt for.
+    var rawSettings = MetadataSettings()
 
     func sign(_ file: PhotoFile) async throws -> PhotoFile {
         if failing.contains(file.format) { throw Failure() }
         var data = [UInt8](file.data)
         switch file.format {
         case .raw:
-            let root = CleanFiles.tiff(for: MetadataPlan().allowlist(for: .raw, signed: false))
+            let root = CleanFiles.tiff(
+                for: MetadataPlan(settings: rawSettings, appVersion: "0.2.0").allowlist(for: .raw, signed: false))
             root.entries.append((0xCD41, .bytes(Array("c2pa".utf8))))
             if changesRawData { root.entries.removeAll { $0.0 == 0x0111 }; root.entries.append((0x0111, .blobs([[9]]))) }
             data = TIFFBuilder.build(root)
@@ -64,6 +69,7 @@ struct FakeSigner: PhotoSigning {
         case .heif:
             data += HEIFBuilder.box("uuid", [1, 2])
         }
+        if breaksFiles.contains(file.format) { data = Array(data.prefix(8)) }
         return PhotoFile(format: file.format, data: Data(data))
     }
 }
@@ -136,7 +142,7 @@ struct PhotoSaverTests {
         settings.metadata.setRemovesAllOptionalDetails(false)
         for item in MetadataItem.allCases { settings.metadata.set(item, isOn: true) }
         settings.metadata.ownerName = "A. Person"
-        let saved = try await Self.saver(signer: FakeSigner(), library: library).save(
+        let saved = try await Self.saver(signer: FakeSigner(rawSettings: settings.metadata), library: library).save(
             Self.rawPhoto(settings.metadata), settings: settings)
         #expect(saved.formats == [.raw, .heif, .jpeg])
         #expect(saved.signature == .signed)
@@ -166,13 +172,54 @@ struct PhotoSaverTests {
         #expect(saved.signature == .unsigned(.failed))
     }
 
-    @Test func aSignerThatChangesTheRAWDataIsRejected() async {
+    /// A signed file that changed the RAW data fails the read-back, so it is never saved: the
+    /// unsigned DNG, which passed, is saved instead, and the status says it isn't signed.
+    @Test func aSignerThatChangesTheRAWDataIsNeverSaved() async throws {
         let library = FakeLibrary()
-        await #expect(throws: CaptureError.metadataNotAllowed) {
-            try await Self.saver(signer: FakeSigner(changesRawData: true), library: library).save(
-                Self.rawPhoto(), settings: SaveSettings())
+        let photo = Self.rawPhoto()
+        let saved = try await Self.saver(signer: FakeSigner(changesRawData: true), library: library).save(
+            photo, settings: SaveSettings())
+        #expect(saved.signature == .unsigned(.signedFileFailedCheck))
+        let added = await library.added.first?.first
+        #expect(added?.primary.data == photo.data)
+        // The HEIF signed fine and is saved signed; the photo as a whole says it isn't signed.
+        #expect(added?.alternate?.data.suffix(10) == Data(HEIFBuilder.box("uuid", [1, 2])))
+    }
+
+    /// Issue #66: a signed file that fails the read-back (here one ImageIO couldn't open) is
+    /// replaced by its unsigned file, which already passed; an unreadable file is never saved.
+    @Test(arguments: [PhotoFormat.raw, .heif, .jpeg])
+    func aSignedFileThatFailsTheReadBackFallsBackToItsUnsignedFile(format: PhotoFormat) async throws {
+        let library = FakeLibrary()
+        var settings = SaveSettings()
+        settings.setFormat(.jpeg, isSelected: true)
+        let photo = Self.rawPhoto()
+        let saved = try await Self.saver(signer: FakeSigner(breaksFiles: [format]), library: library).save(
+            photo, settings: settings)
+        #expect(saved.signature == .unsigned(.signedFileFailedCheck))
+        #expect(saved.formats == [.raw, .heif, .jpeg])
+        let files = (await library.added.first ?? []).flatMap { [$0.primary] + ($0.alternate.map { [$0] } ?? []) }
+        #expect(files.count == 3)
+        for file in files {
+            let readBack = MetadataFileReader.read(file.data, format: file.format)
+            #expect(readBack.inventory.problems.isEmpty, "\(file.format)")
+            let isSigned = !readBack.inventory.blocks.filter { $0 == "jpeg:APP11" || $0 == "heif:box:uuid" }.isEmpty
+                || readBack.inventory.tags.contains { $0.tag == 0xCD41 }
+            #expect(isSigned == (file.format != format), "\(file.format)")
         }
-        #expect(await library.added.isEmpty)
+        #expect(saved.metadata[format]?.problems.isEmpty == true)
+    }
+
+    /// The first reason a file isn't signed is the one the status gives.
+    @Test func theFirstUnsignedReasonIsReported() async throws {
+        var settings = SaveSettings()
+        settings.setFormat(.jpeg, isSelected: true)
+        let signer = FakeSigner(failing: [.heif], breaksFiles: [.raw, .jpeg])
+        let saved = try await Self.saver(signer: signer, library: FakeLibrary()).save(Self.rawPhoto(), settings: settings)
+        #expect(saved.signature == .unsigned(.signedFileFailedCheck))
+        let failingFirst = FakeSigner(failing: [.raw], breaksFiles: [.heif])
+        let second = try await Self.saver(signer: failingFirst, library: FakeLibrary()).save(Self.rawPhoto(), settings: settings)
+        #expect(second.signature == .unsigned(.failed))
     }
 
     @Test func aFileWithATagOffTheAllowlistIsNeverSaved() async {

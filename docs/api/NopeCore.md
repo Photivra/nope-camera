@@ -4430,6 +4430,16 @@ static let copyright: MetadataField
 
 The `Copyright` tag (`0x8298`), which ImageIO also reports as IPTC `CopyrightNotice`.
 
+## `MetadataField/dateTime`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let dateTime: MetadataField
+```
+
+The `DateTime` tag (`0x0132`), the date and time the file was written.
+
 ## `MetadataField/directory`
 
 public, declared in `Sources/NopeCore/MetadataField.swift`
@@ -4561,6 +4571,16 @@ static let iptc: String
 ImageIO's IPTC dictionary, `kCGImagePropertyIPTCDictionary`. ImageIO mirrors the artist
 and copyright into it when it writes a HEIF.
 
+## `MetadataField/make`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let make: MetadataField
+```
+
+The `Make` tag (`0x010F`), the camera's manufacturer.
+
 ## `MetadataField/makerApple`
 
 internal, declared in `Sources/NopeCore/MetadataField.swift`
@@ -4580,6 +4600,16 @@ static let makerNote: MetadataField
 ```
 
 The maker note (`0x927C`). ImageIO shows Apple's as the `{MakerApple}` dictionary.
+
+## `MetadataField/model`
+
+public, declared in `Sources/NopeCore/MetadataField.swift`
+
+```swift
+static let model: MetadataField
+```
+
+The `Model` tag (`0x0110`), the camera's model name.
 
 ## `MetadataField/name`
 
@@ -5319,7 +5349,8 @@ Builds the ImageIO property dictionary to write a file with, from the system's m
 Privacy rule: the result starts empty, and only allowlisted values are copied in
 (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
 and the person's name and copyright are written by nope.; everything else is the system's
-own value.
+own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+string for each one whose switch is off.
 
 - Parameters:
   - format: The file's format.
@@ -5355,6 +5386,24 @@ static let requiredDNGTags: Set<MetadataAllowlist.TagID>
 The tags a DNG can't be opened without (DNG 1.7, chapter 4): `CFARepeatPatternDim`,
 `CFAPattern`, `DNGVersion`, `UniqueCameraModel` and `ColorMatrix1`.
 
+## `MetadataPlan/requiredRAWTIFFFields`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let requiredRAWTIFFFields: [MetadataField]
+```
+
+The `{TIFF}` fields a DNG's replacement metadata must always contain: `DateTime`, `Make`,
+`Model` and `Software`.
+
+Measured on an iPhone 16 Pro Max with iOS 27.2.1 (issue #65):
+`AVCapturePhoto.fileDataRepresentation(with:)` returns `nil` for a Bayer RAW photo unless
+the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
+them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
+requirement. Privacy rule: when a field's switch is off, nope. writes an empty string, never
+a placeholder value, so the DNG still says nothing about the date, camera or software.
+
 ## `MetadataPlan/settings`
 
 public, declared in `Sources/NopeCore/MetadataPlan.swift`
@@ -5388,6 +5437,24 @@ The `Software` value: the app's name, the system's version, both, or nothing.
 
 - Parameter systemSoftware: The system's `Software` value, if it wrote one.
 - Returns: The value to write, or `nil` to write none.
+
+## `MetadataPlan/systemVersion(fromSoftware:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static func systemVersion(fromSoftware software: String?) -> String?
+```
+
+The system's version in a `Software` value: the value itself when the system wrote it, the
+part in parentheses when nope. wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
+
+A HEIF or JPEG is developed from the DNG's metadata, whose `Software` nope. already
+wrote, so reading it as the system's own value would nest the app's name:
+"Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))".
+
+- Parameter software: The source's `Software` value, if any.
+- Returns: The system's version, or `nil` if there is none (also for an empty value).
 
 ## `MetadataPlan/value(of:in:)`
 
@@ -6507,9 +6574,12 @@ The order is fixed, and each step is a protocol so the whole pipeline is tested 
 1. Build the files. A Bayer RAW photo's DNG already has its metadata built from the
    allowlist by the capture backend; HEIF and JPEG are developed from it
    (``PhotoDeveloping``). A lens without RAW gives its processed fallback file.
-2. Sign each file (``PhotoSigning``), when signing is on and a signer exists.
-3. Read each file back (``MetadataReading``) and check it with ``MetadataVerifier``.
+2. Read each file back (``MetadataReading``) and check it with ``MetadataVerifier``.
    Any violation rejects the whole photo: nothing is saved (AGENTS.md, "Fail closed").
+3. Sign each file (``PhotoSigning``), when signing is on and a signer exists, and check the
+   signed file the same way. A signed file that fails is never saved: the unsigned file,
+   which passed, is saved instead, and the status says it isn't signed
+   (``SignatureStatus/UnsignedReason/signedFileFailedCheck``).
 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
    file as one asset (``PhotoLibraryAsset/assets(for:)``).
 
@@ -6570,7 +6640,8 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - settings: The formats and metadata choices.
 - Returns: What was saved.
 - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
-  ``CaptureError/metadataNotAllowed`` if any file fails the read-back (nothing is saved),
+  ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
+  saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
 ## `PhotoSigning`
@@ -6911,6 +6982,17 @@ case failed
 ```
 
 The signer failed for at least one file.
+
+## `SignatureStatus/UnsignedReason/signedFileFailedCheck`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+case signedFileFailedCheck
+```
+
+A signed file failed the read-back, for example because the system can't open it,
+so its unsigned file, which passed, was saved instead (issue #66).
 
 ## `SignatureStatus/UnsignedReason/turnedOff`
 
