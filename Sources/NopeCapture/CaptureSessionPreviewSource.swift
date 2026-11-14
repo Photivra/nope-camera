@@ -18,6 +18,10 @@ public final class CaptureSessionPreviewSource: CameraPreviewSource, @unchecked 
     /// tells it which camera that is.
     let rotation = PreviewRotation()
 
+    /// The preview layer connected last, for converting viewfinder points. Main-actor
+    /// isolated, like every layer call.
+    @MainActor private weak var previewLayer: AVCaptureVideoPreviewLayer?
+
     /// Creates a preview handle.
     ///
     /// - Parameter session: The capture session.
@@ -34,6 +38,23 @@ public final class CaptureSessionPreviewSource: CameraPreviewSource, @unchecked 
     /// - Parameter previewLayer: The app's preview layer.
     @MainActor public func connect(_ previewLayer: AVCaptureVideoPreviewLayer) {
         if previewLayer.session !== session { previewLayer.session = session }
+        self.previewLayer = previewLayer
         rotation.connect(previewLayer)
+    }
+
+    /// Converts a viewfinder point into the camera's coordinates with the connected layer's
+    /// `captureDevicePointConverted(fromLayerPoint:)`, which accounts for the layer's video
+    /// gravity, rotation and front-camera mirroring (`AVCaptureVideoPreviewLayer.h`).
+    ///
+    /// - Parameter point: The point in the viewfinder, 0 to 1 across and down as drawn.
+    /// - Returns: The camera point, or `nil` before a layer is connected or while it has no
+    ///   size.
+    @MainActor public func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint? {
+        guard let previewLayer, previewLayer.bounds.width > 0, previewLayer.bounds.height > 0 else { return nil }
+        let layerPoint = CGPoint(
+            x: previewLayer.bounds.minX + point.x * previewLayer.bounds.width,
+            y: previewLayer.bounds.minY + point.y * previewLayer.bounds.height)
+        let converted = previewLayer.captureDevicePointConverted(fromLayerPoint: layerPoint)
+        return FramePoint(x: Double(converted.x), y: Double(converted.y))
     }
 }

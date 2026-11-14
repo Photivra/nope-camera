@@ -242,6 +242,62 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The f-numbers, widest first.
 
+## `AutoExposureDial`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct AutoExposureDial
+```
+
+Exposure compensation in full auto (issue #41): − and + steppers around a native slider over
+thirds of a stop, within the lens's range, and Reset. The slider is adjustable with VoiceOver
+(swipe up or down), and every step has a button for Voice Control and Switch Control.
+
+## `AutoExposureDial/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The dial.
+
+## `AutoExposureDial/close`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the dial.
+
+## `AutoExposureDial/init(model:close:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(model: CameraModel, close: @escaping () -> Void)
+```
+
+Creates the dial.
+
+- Parameters:
+  - model: The camera model.
+  - close: Closes the dial.
+
+## `AutoExposureDial/model`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
 ## `CameraAction`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -383,6 +439,17 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The person's settings.
 
+## `CameraControlContext/showsExposureDial`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var showsExposureDial: Binding<Bool>
+```
+
+Whether the full-auto exposure dial is open, for the Exposure tray item. The camera
+screen sets it; a constant `false` elsewhere.
+
 ## `CameraFlipButton`
 
 internal, declared in `Sources/NopeUI/LensRow.swift`
@@ -425,6 +492,51 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 Creates the button.
 
 - Parameter action: Switches the camera.
+
+## `CameraHints`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct CameraHints
+```
+
+Plain hints over the picture: "Hold it steady or use a tripod." when the shutter is slow
+(issue #56), and the suggestion to switch to the ultra wide lens when the subject seems too
+close to focus (issue #51). They aren't warnings about the photo, so they aren't amber. Each
+is announced once when it appears, and stays while its cause lasts.
+
+## `CameraHints/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hints that apply, or nothing.
+
+## `CameraHints/init(model:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the hints.
+
+- Parameter model: The camera model.
+
+## `CameraHints/model`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
 
 ## `CameraLayout`
 
@@ -1013,6 +1125,81 @@ static func savedPhotos(in status: CaptureStatus) -> [SavedPhoto]?
 The photos a status reports as saved, or `nil` when it reports no save.
 
 - Parameter status: A capture status.
+
+## `CloseUpSuggestion`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct CloseUpSuggestion
+```
+
+"The subject may be too close to focus." with a button that switches to the ultra wide lens
+and one that dismisses the suggestion. nope. never switches by itself.
+
+## `CloseUpSuggestion/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The suggestion.
+
+## `CloseUpSuggestion/init(model:lens:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(model: CameraModel, lens: Lens)
+```
+
+Creates the suggestion.
+
+- Parameters:
+  - model: The camera model.
+  - lens: The lens to suggest.
+
+## `CloseUpSuggestion/lens`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let lens: Lens
+```
+
+The lens to suggest.
+
+## `CloseUpSuggestion/model`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `CloseUpText`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum CloseUpText
+```
+
+The name of the near focus limit.
+
+## `CloseUpText/title`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var title: Text { get }
+```
+
+"Close-Up".
 
 ## `ControlDial`
 
@@ -1632,6 +1819,38 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 Takes the photo again.
 
+## `FastShutterText`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum FastShutterText
+```
+
+The names of the fast shutter choices.
+
+## `FastShutterText/name(_:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static func name(_ choice: FastShutter) -> Text
+```
+
+The name of a choice, such as "Freeze Motion (1/500 s)".
+
+- Parameter choice: The choice.
+
+## `FastShutterText/title`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var title: Text { get }
+```
+
+The title of the setting and tray item: "Fast Shutter".
+
 ## `FirstRunView`
 
 internal, declared in `Sources/NopeUI/FirstRunView.swift`
@@ -1678,6 +1897,244 @@ internal, declared in `Sources/NopeUI/FirstRunView.swift`
 ```
 
 Asks for camera access.
+
+## `FocusLockButton`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct FocusLockButton
+```
+
+The lock button under the focus square: "Lock" after a tap, "AE/AF" with a closed lock once
+focus and exposure are locked; pressing it locks or unlocks.
+
+## `FocusLockButton/action`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let action: () -> Void
+```
+
+Locks or unlocks.
+
+## `FocusLockButton/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The button.
+
+## `FocusLockButton/init(isLocked:action:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(isLocked: Bool, action: @escaping () -> Void)
+```
+
+Creates the button.
+
+- Parameters:
+  - isLocked: Whether focus and exposure are locked.
+  - action: Locks or unlocks.
+
+## `FocusLockButton/isLocked`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let isLocked: Bool
+```
+
+Whether focus and exposure are locked.
+
+## `FocusMagnifier`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum FocusMagnifier
+```
+
+The focus magnifier's settings (issue #51): the viewfinder drawn larger around the focus
+point, for checking focus. Preview only: the photo and the camera's zoom stay unchanged.
+
+## `FocusMagnifier/anchor(for:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static func anchor(for target: FocusTarget?) -> FramePoint
+```
+
+The point the magnifier is centered on: the tapped point, or the center.
+
+- Parameter target: The focus target, or `nil`.
+
+## `FocusMagnifier/scale`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var scale: Double { get }
+```
+
+How much larger the magnifier draws the viewfinder.
+
+## `FocusSquareLayer`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct FocusSquareLayer
+```
+
+The focus square at the tapped point, with the lock button under it (issue #68: "AE/AF lock
+(lock pill after tap to focus)"). The square is 2 points white with a dark outline, so it
+shows on any scene. It isn't drawn while the magnifier is on, where the whole picture is the
+focus point.
+
+## `FocusSquareLayer/Part`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum Part
+```
+
+The two parts of the layer.
+
+## `FocusSquareLayer/Part/lockButton`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+case lockButton
+```
+
+The lock button.
+
+## `FocusSquareLayer/Part/square`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+case square
+```
+
+The square, drawn inside the viewfinder's accessibility element.
+
+## `FocusSquareLayer/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The square or the button, or nothing.
+
+## `FocusSquareLayer/init(model:part:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(model: CameraModel, part: Part)
+```
+
+Creates the layer.
+
+- Parameters:
+  - model: The camera model.
+  - part: The square or the lock button.
+
+## `FocusSquareLayer/model`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `FocusSquareLayer/part`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let part: Part
+```
+
+Whether this layer draws the square, which the viewfinder element contains (so VoiceOver
+reads it as part of the picture), or the lock button, which is its own element.
+
+## `FocusSquareLayer/side`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor static var side: CGFloat { get }
+```
+
+The side of the square, in points.
+
+## `FocusText`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum FocusText
+```
+
+The words of the focus aids, shared by buttons and VoiceOver actions.
+
+## `FocusText/announcement(isLocked:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static func announcement(isLocked: Bool) -> String
+```
+
+The announcement when the lock changes.
+
+- Parameter isLocked: Whether focus and exposure are now locked.
+
+## `FocusText/focusOnCenter`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var focusOnCenter: Text { get }
+```
+
+"Focus on Center".
+
+## `FocusText/lock`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var lock: Text { get }
+```
+
+"Lock Focus and Exposure".
+
+## `FocusText/unlock`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var unlock: Text { get }
+```
+
+"Unlock Focus and Exposure".
 
 ## `FormatChip`
 
@@ -1955,6 +2412,60 @@ using the system list format for the current language.
   - settings: The settings.
   - deviceSupportsBayerRAW: Whether RAW can be chosen on this device.
 - Returns: The available selected formats, in display order.
+
+## `HintLabel`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct HintLabel
+```
+
+One hint: a symbol and a sentence on a dark backing, announced when it appears.
+
+## `HintLabel/body`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hint.
+
+## `HintLabel/init(systemImage:text:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(systemImage: String, text: String)
+```
+
+Creates a hint.
+
+- Parameters:
+  - systemImage: The SF Symbol.
+  - text: The sentence.
+
+## `HintLabel/systemImage`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let systemImage: String
+```
+
+The SF Symbol.
+
+## `HintLabel/text`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let text: String
+```
+
+The sentence.
 
 ## `HonestyScreen`
 
@@ -2525,6 +3036,26 @@ A look's name.
 
 - Parameter look: The look.
 - Returns: "Standard" or "Flat".
+
+## `MagnifierText`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum MagnifierText
+```
+
+The name of the focus magnifier.
+
+## `MagnifierText/title`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var title: Text { get }
+```
+
+"Magnify".
 
 ## `ManualControlsList`
 
@@ -3167,6 +3698,19 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 Every item builder, in display order. Add a feature's builder here, before
 ``hideControls(_:)``.
 
+## `QuickControls/closeUp(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func closeUp(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Close-Up: limits autofocus to near subjects, so it doesn't jump to the background
+(issue #51). Shown where the lens supports it, or while it is on.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/current(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -3176,6 +3720,32 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 The tray's items for the current state, in display order.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/exposure(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func exposure(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Exposure: opens the exposure compensation dial in full auto (issue #41). Shown when the
+lens can compensate and manual controls are off; with them on, the readout row has it.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/fastShutter(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func fastShutter(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Fast Shutter: how fast a shutter full auto prefers (issue #56), the same choice as in
+Settings. Shown while manual controls are off, where it applies.
 
 - Parameter context: The model and settings.
 
@@ -3189,6 +3759,19 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Hide Controls: clean view, which leaves only the shutter, a Show Controls button and any
 warnings.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/magnifier(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func magnifier(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Magnify: shows the viewfinder enlarged around the focus point, for checking focus
+(issue #51). Preview only.
 
 - Parameter context: The model and settings.
 
@@ -4135,6 +4718,19 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 Every pill builder, in display order. Add a feature's builder here.
 
+## `StatePills/closeUp(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func closeUp(_ context: CameraControlContext) -> StatePill?
+```
+
+"Close-Up" while autofocus is limited to near subjects (issue #51); its action turns
+the limit off.
+
+- Parameter context: The model and settings.
+
 ## `StatePills/current(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -4147,6 +4743,32 @@ The pills for settings not at their defaults, in display order.
 
 - Parameter context: The model and settings.
 
+## `StatePills/exposure(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func exposure(_ context: CameraControlContext) -> StatePill?
+```
+
+The exposure compensation in full auto, such as "−0.7", while it isn't 0 (issue #41);
+its action resets it. With manual controls on, the readout row shows it instead.
+
+- Parameter context: The model and settings.
+
+## `StatePills/fastShutter(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func fastShutter(_ context: CameraControlContext) -> StatePill?
+```
+
+The fast shutter choice in full auto while it isn't Standard (issue #56); its action
+returns it to Standard.
+
+- Parameter context: The model and settings.
+
 ## `StatePills/locks(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -4155,9 +4777,20 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor static func locks(_ context: CameraControlContext) -> StatePill?
 ```
 
-A lock while auto exposure or autofocus is locked (AE-L, AF-L); its action unlocks both.
+A lock while auto exposure or autofocus is locked (AE-L, AF-L), or both are locked at a
+tapped point (issue #35); its action unlocks everything.
 
-Tap to focus (issue #35) can show the same pill after a lock from the viewfinder.
+- Parameter context: The model and settings.
+
+## `StatePills/magnifier(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func magnifier(_ context: CameraControlContext) -> StatePill?
+```
+
+"3×" while the focus magnifier is on (issue #51); its action turns it off.
 
 - Parameter context: The model and settings.
 
@@ -4584,6 +5217,119 @@ Turns this block upright as one unit while the iPhone is on its side.
 
 - Parameter sidewaysWidth: The width text wraps at while sideways, or `nil` for the
   natural width.
+
+## `ViewfinderTouches`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor struct ViewfinderTouches
+```
+
+The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
+vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
+swipe. Every one of them also has a button: the lock button, the Hide Controls tray item and
+Show Controls (issue #68, "Gestures always have a button").
+
+## `ViewfinderTouches/allowsDrags`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let allowsDrags: Bool
+```
+
+Whether the swipe and hold are on. In the scrolling layout they would block scrolling,
+so only the tap remains there.
+
+## `ViewfinderTouches/body(content:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with its gestures.
+
+- Parameter content: The viewfinder.
+
+## `ViewfinderTouches/hold`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let hold: (CGPoint) -> Void
+```
+
+Called with the held location, in the view's points.
+
+## `ViewfinderTouches/holdDuration`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor static var holdDuration: Double { get }
+```
+
+How long a press must last to lock, in seconds: the system's usual long press.
+
+## `ViewfinderTouches/init(allowsDrags:tap:hold:swipe:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor init(allowsDrags: Bool, tap: @escaping (CGPoint) -> Void, hold: @escaping (CGPoint) -> Void, swipe: @escaping (CGFloat) -> Void)
+```
+
+Creates the touch handling.
+
+- Parameters:
+  - allowsDrags: Whether the swipe and hold are on.
+  - tap: Called with the tapped location.
+  - hold: Called with the held location.
+  - swipe: Called with the swipe's vertical distance.
+
+## `ViewfinderTouches/swipe`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let swipe: (CGFloat) -> Void
+```
+
+Called with the swipe's vertical distance: positive downward.
+
+## `ViewfinderTouches/swipeDistance`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor static var swipeDistance: CGFloat { get }
+```
+
+The shortest vertical swipe that toggles clean view, in points.
+
+## `ViewfinderTouches/tap`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let tap: (CGPoint) -> Void
+```
+
+Called with the tapped location, in the view's points.
+
+## `ViewfinderTouches/tapSlop`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor static var tapSlop: CGFloat { get }
+```
+
+How far a finger may move and still tap or hold, in points.
 
 ## `WarningChip`
 

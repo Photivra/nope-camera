@@ -133,6 +133,17 @@ public struct SettingsScreen: View {
                         "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.",
                         bundle: .module, comment: "Explains the clean view switch."))
             }
+            Picker(selection: Binding(get: { settings.fastShutter }, set: { settings.setFastShutter($0) })) {
+                ForEach(FastShutter.allCases, id: \.self) { choice in
+                    FastShutterText.name(choice).tag(choice)
+                }
+            } label: {
+                SettingLabel(
+                    title: FastShutterText.title,
+                    explanation: Text(
+                        "In full auto, the camera prefers the fastest shutter that still exposes well, so photos blur less. Standard aims for a speed you can hold by hand. Manual controls are never changed.",
+                        bundle: .module, comment: "Explains the Fast Shutter setting."))
+            }
         } header: {
             Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")
         }

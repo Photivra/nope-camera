@@ -55,7 +55,10 @@ the app target sends `.manual(.setEnabled(_:))` when it changes. Everything abou
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
 exposure modes, bracketing and interval shooting. Send `.manual(...)` intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
-`manual.settings.isAutomatic` is false. Run `manual.observeReadings()` in a second `.task` so the
+`manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
+compensation, Close-Up, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
+intents that work with manual controls off; see the DocC article for what to show. Run
+`manual.observeReadings()` in a second `.task` so the
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
 a warning that changes what the photo is.
 

@@ -31,4 +31,9 @@ public enum CameraIntent: Equatable, Sendable {
     /// Turn clean view on or off. Clean view hides every control that isn't essential, leaving
     /// the viewfinder and the shutter; it never changes a setting.
     case setCleanView(Bool)
+
+    /// Use an aid that works in full auto too: tap to focus and expose, the focus and exposure
+    /// lock, exposure compensation, Close-Up, the fast shutter rule and the focus magnifier. See
+    /// ``AutoControlIntent``.
+    case auto(AutoControlIntent)
 }

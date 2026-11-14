@@ -1717,6 +1717,72 @@
         }
       }
     },
+    "Faces and Autofocus": {
+      "comment": "Honesty heading: iOS may detect faces to choose where to focus.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichter und Autofokus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Caras y enfoque automático"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Visages et mise au point automatique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Volti e messa a fuoco automatica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔とオートフォーカス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴과 자동 초점"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichten en autofocus"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rostos e foco automático"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "人脸与自动对焦"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "人臉與自動對焦"
+          }
+        }
+      }
+    },
     "HEIF with some device processing": {
       "comment": "Spoken format name for the no-RAW fallback. HEIF is a file format name.",
       "extractionState": "manual",
@@ -6729,6 +6795,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "iOS 本身（例如「iCloud 照片」）會自行建立連線。"
+          }
+        }
+      }
+    },
+    "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.": {
+      "comment": "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus, on by default). Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS erkennt im Sucher möglicherweise Gesichter, um zu entscheiden, worauf scharfgestellt wird. nope. liest oder speichert nicht, welche Gesichter erkannt wurden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Es posible que iOS detecte caras en el visor para decidir dónde enfocar. nope. no lee ni guarda qué caras ha encontrado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS peut détecter des visages dans le viseur pour choisir où faire la mise au point. nope. ne lit ni n’enregistre les visages trouvés."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS può rilevare i volti nel mirino per decidere dove mettere a fuoco. nope. non legge né salva quali volti ha trovato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOSはピントを合わせる位置を決めるために、ビューファインダー内の顔を検出することがあります。nope.は検出された顔の情報を読み取ったり保存したりしません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS는 초점을 맞출 위치를 정하기 위해 뷰파인더에서 얼굴을 감지할 수 있습니다. nope.은 감지된 얼굴 정보를 읽거나 저장하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS kan gezichten in de zoeker herkennen om te bepalen waarop wordt scherpgesteld. nope. leest of bewaart niet welke gezichten zijn gevonden."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O iOS pode detectar rostos no visor para decidir onde focar. O nope. não lê nem salva quais rostos foram encontrados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS 可能会在取景器中检测人脸，以决定对焦位置。nope. 不会读取或保存检测到的人脸。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "iOS 可能會在觀景窗中偵測人臉，以決定對焦位置。nope. 不會讀取或儲存偵測到的人臉。"
           }
         }
       }

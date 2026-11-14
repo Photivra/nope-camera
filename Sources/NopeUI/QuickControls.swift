@@ -96,6 +96,10 @@ enum QuickControls {
     /// Every item builder, in display order. Add a feature's builder here, before
     /// ``hideControls(_:)``.
     static let builders: [@MainActor (CameraControlContext) -> QuickControlItem?] = [
+        exposure,
+        fastShutter,
+        closeUp,
+        magnifier,
         hideControls,
     ]
 
@@ -104,6 +108,62 @@ enum QuickControls {
     /// - Parameter context: The model and settings.
     static func current(_ context: CameraControlContext) -> [QuickControlItem] {
         builders.compactMap { $0(context) }
+    }
+
+    /// Exposure: opens the exposure compensation dial in full auto (issue #41). Shown when the
+    /// lens can compensate and manual controls are off; with them on, the readout row has it.
+    ///
+    /// - Parameter context: The model and settings.
+    static func exposure(_ context: CameraControlContext) -> QuickControlItem? {
+        let manual = context.model.manual
+        guard !manual.isEnabled, manual.canAdjustExposureCompensation else { return nil }
+        let isOpen = context.showsExposureDial
+        return QuickControlItem(
+            id: "exposure",
+            title: Text("Exposure", bundle: .module, comment: "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial."),
+            systemImage: "plusminus.circle",
+            kind: .toggle(isOn: isOpen.wrappedValue) { isOpen.wrappedValue = $0 })
+    }
+
+    /// Fast Shutter: how fast a shutter full auto prefers (issue #56), the same choice as in
+    /// Settings. Shown while manual controls are off, where it applies.
+    ///
+    /// - Parameter context: The model and settings.
+    static func fastShutter(_ context: CameraControlContext) -> QuickControlItem? {
+        guard !context.model.manual.isEnabled else { return nil }
+        let settings = context.settings
+        return QuickControlItem(
+            id: "fastShutter", title: FastShutterText.title, systemImage: "hare",
+            kind: .menu(
+                FastShutter.allCases.map { choice in
+                    QuickControlItem.Option(
+                        id: choice.rawValue, title: FastShutterText.name(choice), isSelected: settings.fastShutter == choice
+                    ) {
+                        settings.setFastShutter(choice)
+                    }
+                }))
+    }
+
+    /// Close-Up: limits autofocus to near subjects, so it doesn't jump to the background
+    /// (issue #51). Shown where the lens supports it, or while it is on.
+    ///
+    /// - Parameter context: The model and settings.
+    static func closeUp(_ context: CameraControlContext) -> QuickControlItem? {
+        let manual = context.model.manual
+        guard manual.capabilities.supportsNearFocusLimit || manual.nearFocusLimit else { return nil }
+        return QuickControlItem(
+            id: "closeUp", title: CloseUpText.title, systemImage: "camera.macro",
+            kind: .toggle(isOn: manual.nearFocusLimit) { context.send(.auto(.setNearFocusLimit($0))) })
+    }
+
+    /// Magnify: shows the viewfinder enlarged around the focus point, for checking focus
+    /// (issue #51). Preview only.
+    ///
+    /// - Parameter context: The model and settings.
+    static func magnifier(_ context: CameraControlContext) -> QuickControlItem? {
+        QuickControlItem(
+            id: "magnifier", title: MagnifierText.title, systemImage: "plus.magnifyingglass",
+            kind: .toggle(isOn: context.model.isMagnifying) { context.send(.auto(.setMagnifier($0))) })
     }
 
     /// Hide Controls: clean view, which leaves only the shutter, a Show Controls button and any

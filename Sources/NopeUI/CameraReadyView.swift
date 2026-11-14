@@ -91,8 +91,11 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// The rear lens to return to from the front camera.
     @State private var lastRearLensID: Lens.ID?
 
-    /// The shortest vertical swipe on the picture that toggles clean view, in points.
-    private static var cleanViewSwipeDistance: CGFloat { 60 }
+    /// Whether the full-auto exposure dial is open (the Exposure tray item).
+    @State private var showsExposureDial = false
+
+    /// The viewfinder's size, to turn a touch into a point in the picture.
+    @State private var viewfinderSize = CGSize.zero
 
     /// Creates the ready view.
     ///
@@ -114,7 +117,11 @@ struct CameraReadyView<Viewfinder: View>: View {
     }
 
     /// The registries' context.
-    private var context: CameraControlContext { CameraControlContext(model: model, settings: settings) }
+    private var context: CameraControlContext {
+        var context = CameraControlContext(model: model, settings: settings)
+        context.showsExposureDial = $showsExposureDial
+        return context
+    }
 
     /// The arrangement for the current space.
     private var layout: CameraLayout {
@@ -160,10 +167,22 @@ struct CameraReadyView<Viewfinder: View>: View {
         .onChange(of: model.captureStatus) { _, status in record(status) }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
+            showsExposureDial = false
             if let id, let lens = model.capabilities?.lens(withID: id), lens.kind != .front { lastRearLensID = id }
         }
-        .onChange(of: model.manual.isEnabled) { openControl = nil }
-        .onChange(of: model.isCleanView) { showsTray = false }
+        .onChange(of: model.manual.isEnabled) {
+            openControl = nil
+            showsExposureDial = false
+        }
+        .onChange(of: model.isCleanView) {
+            showsTray = false
+            showsExposureDial = false
+        }
+        .onChange(of: model.manual.focusTarget?.isLocked) { wasLocked, isLocked in
+            // Announced only when the lock itself changes, not on every tap.
+            guard wasLocked == true || isLocked == true else { return }
+            AccessibilityNotification.Announcement(FocusText.announcement(isLocked: isLocked == true)).post()
+        }
         .sensoryFeedback(.impact(weight: .light), trigger: saveCount)
         .sensoryFeedback(.error, trigger: failureCount)
     }
@@ -221,6 +240,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                 picture
                     .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
+                if showsControls, showsExposureDial {
+                    AutoExposureDial(model: model) { showsExposureDial = false }
+                }
                 if showsControls {
                     if model.manual.isEnabled {
                         ManualControlsList(model: model)
@@ -250,6 +272,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                             if showsControls {
                                 if showsTray {
                                     QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
+                                }
+                                if showsExposureDial {
+                                    AutoExposureDial(model: model) { showsExposureDial = false }
                                 }
                                 if model.manual.isEnabled && !dynamicTypeSize.isAccessibilitySize {
                                     if let openControl {
@@ -455,6 +480,10 @@ struct CameraReadyView<Viewfinder: View>: View {
             ControlDial(model: model, control: openControl)
                 .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
                 .padding(CameraStyle.targetSpacing)
+        } else if showsControls, showsExposureDial, !dynamicTypeSize.isAccessibilitySize {
+            AutoExposureDial(model: model) { showsExposureDial = false }
+                .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
+                .padding(CameraStyle.targetSpacing)
         }
     }
 
@@ -500,36 +529,103 @@ struct CameraReadyView<Viewfinder: View>: View {
                 Task { await model.send(.manual(.stopInterval)) }
             }
         }
+        CameraHints(model: model)
     }
 
-    /// The viewfinder with the session's pause message over it.
+    /// The viewfinder with the focus square and the session's pause message over it.
     ///
     /// VoiceOver reads it as one element that names the lens and the format (AGENTS.md,
-    /// "VoiceOver"). Smart Invert leaves it alone. Swiping it is a shortcut for clean view, and
-    /// a tap closes the tray.
+    /// "VoiceOver"), with the actions Focus on Center and Lock (or Unlock) Focus and Exposure.
+    /// Smart Invert leaves it alone. A tap focuses and exposes there (or closes the tray when it
+    /// is open), a press and hold locks, and a vertical swipe is a shortcut for clean view.
     private var picture: some View {
         ZStack {
-            viewfinder
-                .accessibilityIgnoresInvertColors()
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text("Viewfinder", bundle: .module, comment: "VoiceOver name of the live camera view."))
-                .accessibilityValue(viewfinderDescription)
+            viewfinderLayer
             SessionStatusView(status: model.sessionStatus)
                 .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
         }
         .clipped()
         .contentShape(.rect)
-        .gesture(cleanViewSwipe, isEnabled: layout != .scrolling)
-        .simultaneousGesture(TapGesture().onEnded { showsTray = false }, isEnabled: showsTray)
     }
 
-    /// Swipe down on the picture for clean view, up to bring the controls back.
-    private var cleanViewSwipe: some Gesture {
-        DragGesture(minimumDistance: Self.cleanViewSwipeDistance).onEnded { drag in
-            let height = drag.translation.height
-            guard abs(height) >= Self.cleanViewSwipeDistance, abs(height) > abs(drag.translation.width) else { return }
-            Task { await model.send(.setCleanView(height > 0)) }
+    /// The live picture, magnified when the focus magnifier is on, with the focus square. It
+    /// is laid out left to right in every language: it is a picture, and a tapped point must
+    /// mean the same place in the camera.
+    private var viewfinderLayer: some View {
+        viewfinder
+            .scaleEffect(
+                model.isMagnifying ? FocusMagnifier.scale : 1,
+                anchor: magnifierAnchor)
+            .overlay { FocusSquareLayer(model: model, part: .square) }
+            .accessibilityIgnoresInvertColors()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("Viewfinder", bundle: .module, comment: "VoiceOver name of the live camera view."))
+            .accessibilityValue(viewfinderDescription)
+            .accessibilityActions { viewfinderActions }
+            .overlay { FocusSquareLayer(model: model, part: .lockButton) }
+            .onGeometryChange(for: CGSize.self) { $0.size } action: { viewfinderSize = $0 }
+            .contentShape(.rect)
+            .modifier(
+                ViewfinderTouches(
+                    allowsDrags: layout != .scrolling,
+                    tap: { location in
+                        guard !showsTray else {
+                            showsTray = false
+                            return
+                        }
+                        sendFocus(at: location, locks: false)
+                    },
+                    hold: { sendFocus(at: $0, locks: true) },
+                    swipe: { height in Task { await model.send(.setCleanView(height > 0)) } }))
+            .environment(\.layoutDirection, .leftToRight)
+    }
+
+    /// The point the magnifier is centered on.
+    private var magnifierAnchor: UnitPoint {
+        let anchor = FocusMagnifier.anchor(for: model.manual.focusTarget)
+        return UnitPoint(x: anchor.x, y: anchor.y)
+    }
+
+    /// The viewfinder's VoiceOver, Voice Control and Switch Control actions: the same as a tap
+    /// in the middle and the lock button (issue #68, "VoiceOver viewfinder actions").
+    @ViewBuilder private var viewfinderActions: some View {
+        if model.manual.capabilities.supportsTapToFocus {
+            Button {
+                Task { await model.send(.auto(.focusAndExpose(at: .center))) }
+            } label: {
+                FocusText.focusOnCenter
+            }
+            if model.manual.focusTarget?.isLocked == true {
+                Button {
+                    Task { await model.send(.auto(.unlockFocusAndExposure)) }
+                } label: {
+                    FocusText.unlock
+                }
+            } else {
+                Button {
+                    Task { await model.send(.auto(.lockFocusAndExposure(at: nil))) }
+                } label: {
+                    FocusText.lock
+                }
+            }
         }
+    }
+
+    /// Focuses and exposes at a touched location, through the magnifier when it is on.
+    ///
+    /// - Parameters:
+    ///   - location: Where the viewfinder was touched, in its points.
+    ///   - locks: Whether to lock there.
+    private func sendFocus(at location: CGPoint, locks: Bool) {
+        guard
+            var point = FramePoint.normalized(
+                locationX: location.x, locationY: location.y, width: viewfinderSize.width, height: viewfinderSize.height)
+        else { return }
+        if model.isMagnifying {
+            point = point.unmagnified(scale: FocusMagnifier.scale, anchor: FocusMagnifier.anchor(for: model.manual.focusTarget))
+        }
+        let target = point
+        Task { await model.send(.auto(locks ? .lockFocusAndExposure(at: target) : .focusAndExpose(at: target))) }
     }
 
     /// "Lens: Wide. Format: single-frame RAW." for VoiceOver.

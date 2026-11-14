@@ -97,6 +97,12 @@ struct HonestyScreen: View {
                     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language."))
+            HonestyStatement(
+                title: Text("Faces and Autofocus", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may detect faces to choose where to focus."),
+                text: Text(
+                    "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus, on by default). Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What iOS May Still Do", tableName: "Honesty", bundle: .module, comment: "Honesty section header: things iOS does that the app can't change. iOS is a product name.")
         }

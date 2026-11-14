@@ -112,6 +112,14 @@ Related documentation in the repository:
 - ``IntervalSettings``
 - ``IntervalProgress``
 
+### Full-auto aids
+
+- ``AutoControlIntent``
+- ``FastShutter``
+- ``FocusTarget``
+- ``FramePoint``
+- ``AssistSettings``
+
 ### Hardware
 
 - ``CaptureBackend``

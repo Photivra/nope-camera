@@ -40,6 +40,10 @@ public final class CameraModel {
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
+    /// Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
+    /// focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
+    public private(set) var isMagnifying = false
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -116,6 +120,8 @@ public final class CameraModel {
             await manual.handle(intent) { [weak self] in await self?.capture() }
         case .setCleanView(let isOn):
             isCleanView = isOn
+        case .auto(let intent):
+            await handleAuto(intent)
         }
     }
 
@@ -145,7 +151,60 @@ public final class CameraModel {
             // Apple's guidance for runtime errors such as a media services reset is to restart
             // the session (AVCaptureSession.runtimeErrorNotification).
             await startSession()
+        case .subjectAreaChanged:
+            await manual.subjectAreaDidChange()
         }
+    }
+
+    /// The lens to suggest when the subject seems closer than the selected lens can focus: the
+    /// ultra wide lens, from the wide or a telephoto lens, while
+    /// ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
+    /// a button to switch; nope. never switches on its own (issue #51).
+    public var closeUpLens: Lens? {
+        guard manual.suggestsCloseUpLens, let kind = selectedLens?.kind, kind == .wide || kind == .telephoto else {
+            return nil
+        }
+        return capabilities?.lenses.first { $0.kind == .ultraWide }
+    }
+
+    /// Handles an aid that works in full auto too.
+    ///
+    /// - Parameter intent: The intent.
+    ///
+    /// Side effects: may refocus or re-expose the camera.
+    private func handleAuto(_ intent: AutoControlIntent) async {
+        switch intent {
+        case .focusAndExpose(let point):
+            await focus(at: point, locks: false)
+        case .lockFocusAndExposure(let point):
+            await focus(at: point ?? manual.focusTarget?.viewfinderPoint ?? .center, locks: true)
+        case .unlockFocusAndExposure:
+            await manual.unlockFocus()
+        case .setExposureCompensation(let value):
+            await manual.setExposureCompensation(value)
+        case .stepExposureCompensation(let steps):
+            await manual.stepExposureCompensation(by: steps)
+        case .setNearFocusLimit(let isOn):
+            await manual.setNearFocusLimit(isOn)
+        case .setFastShutter(let choice):
+            await manual.setFastShutter(choice)
+        case .dismissCloseUpSuggestion:
+            manual.dismissCloseUpSuggestion()
+        case .setMagnifier(let isOn):
+            isMagnifying = isOn
+        }
+    }
+
+    /// Aims focus and exposure at a viewfinder point, converted to the camera's coordinates by
+    /// the preview. A backend without a preview has no rotation, so the point is used as it is.
+    ///
+    /// - Parameters:
+    ///   - point: The point in the viewfinder.
+    ///   - locks: Whether to lock focus and exposure there.
+    private func focus(at point: FramePoint, locks: Bool) async {
+        let devicePoint = previewSource.map { $0.devicePoint(forViewfinderPoint: point) } ?? point
+        guard let devicePoint else { return }
+        await manual.focus(at: point, devicePoint: devicePoint, locks: locks)
     }
 
     /// Pauses the camera at a critical heat level and resumes it when the device cools down.

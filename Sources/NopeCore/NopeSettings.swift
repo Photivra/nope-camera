@@ -34,6 +34,10 @@ public final class NopeSettings {
     /// and honesty warnings. Off by default.
     public private(set) var startsInCleanView: Bool
 
+    /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default; the camera
+    /// screen applies it with ``AutoControlIntent/setFastShutter(_:)``.
+    public private(set) var fastShutter: FastShutter
+
     /// Where the settings are stored.
     private let defaults: UserDefaults
 
@@ -52,6 +56,8 @@ public final class NopeSettings {
         // string, which `bool(forKey:)` reads; a missing value is the default, off.
         showsManualControls = defaults.bool(forKey: Key.showsManualControls)
         startsInCleanView = defaults.bool(forKey: Key.startsInCleanView)
+        // An unknown stored value, for example from a later version, falls back to the default.
+        fastShutter = defaults.string(forKey: Key.fastShutter).flatMap(FastShutter.init(rawValue:)) ?? .handheld
         migrateManualControlsOption()
     }
 
@@ -183,6 +189,14 @@ public final class NopeSettings {
         defaults.set(isOn, forKey: Key.startsInCleanView)
     }
 
+    /// Sets how fast a shutter full auto prefers, and saves the change.
+    ///
+    /// - Parameter choice: The choice.
+    public func setFastShutter(_ choice: FastShutter) {
+        fastShutter = choice
+        defaults.set(choice.rawValue, forKey: Key.fastShutter)
+    }
+
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
     /// once: a stored value is kept unless this model already has one, and the old key is
     /// removed.
@@ -210,5 +224,7 @@ public final class NopeSettings {
         static let legacyManualControls = "manualControlsEnabled"
         /// Whether the camera starts in clean view, a Boolean.
         static let startsInCleanView = "NopeSettings.startsInCleanView"
+        /// How fast a shutter full auto prefers, a ``FastShutter`` raw value.
+        static let fastShutter = "NopeSettings.fastShutter"
     }
 }

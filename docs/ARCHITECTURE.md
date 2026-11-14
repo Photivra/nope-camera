@@ -22,7 +22,7 @@ Photos, signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem` | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem` | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
@@ -103,10 +103,43 @@ when the camera opens and when the option changes.
   `LensCatalog` turns into `Lens.manualControls`. The interface shows only what the lens offers.
 - **Starting the camera resets its controls** to continuous auto, so `CameraModel` asks
   `ManualControlsModel` to apply its settings again after every start and lens switch.
-- **Readings** (exposure offset, ISO, shutter, focus position, aperture, white balance) come from
-  key-value observation of the camera, at most four a second, only while manual controls are on.
-  No video data output is added, so there is no live histogram; the meter is the camera's own
-  exposure offset.
+- **Readings** (exposure offset, ISO, shutter, focus position, aperture, white balance, whether
+  autofocus is searching) come from key-value observation of the camera, at most four a second,
+  while the camera runs: full auto's fast shutter rule and the close-up hint read them too. They
+  are shown only while manual controls are on. No video data output is added for them; the meter
+  is the camera's own exposure offset.
+
+### Full-auto aids (issues #35, #41, #51, #56)
+
+```
+ NopeUI ── .auto(AutoControlIntent) ──▶ CameraModel ── viewfinder point ──▶ CameraPreviewSource
+                                            │            .devicePoint(forViewfinderPoint:)
+                                            ▼            (captureDevicePointConverted)
+                                  ManualControlsModel: focusTarget, nearFocusLimit,
+                                  fastShutter, AutoShutter limit, hints
+                                            ▼
+                          DeviceControls(settings:lens:assist:)  (aids only where still automatic)
+                                            ▼
+ SystemCaptureHardware: focus/exposurePointOfInterest, .autoFocus/.autoExpose for a lock,
+ isSubjectAreaChangeMonitoringEnabled, autoFocusRangeRestriction, activeMaxExposureDuration
+```
+
+- **Tap to focus** aims autofocus and auto exposure at the tapped point and follows it until
+  `AVCaptureDevice.subjectAreaDidChangeNotification` (`CaptureEvent.subjectAreaChanged`), then
+  returns to continuous auto at the center. A lock adjusts once and then locks (`.autoFocus` and
+  `.autoExpose`), and stays until it is unlocked, another point is tapped, the lens changes or
+  All Auto. With manual controls on, the point aims only what is still automatic.
+- **Fast shutter (full auto only)** sets `activeMaxExposureDuration` so the camera's own auto
+  exposure raises ISO instead of slowing the shutter: no slower than the `FastShutter` choice or
+  1/(2 × the 35 mm-equivalent focal length, computed from the field of view). When even the
+  handheld limit can't expose the scene at the lens's highest ISO (`ISO × time × 2^(−offset)`
+  from the readings), the limit is lifted and the screen says "Hold it steady or use a tripod."
+  With manual controls on nothing is limited; the hint shows when the shutter is slower than the
+  handheld rule.
+- **Close-Up** sets `autoFocusRangeRestriction = .near`. The **close-up hint** suggests the ultra
+  wide lens when the lens stays at its nearest position while autofocus searches; nope. never
+  switches lenses itself. The **magnifier** scales the preview view only.
+- **Focus peaking** is part F's live frame-analysis pipeline; it is not part of these aids.
 - **Bracketing** uses `AVCapturePhotoBracketSettings` with
   `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
   photo, and each is saved through the same pipeline as a single photo

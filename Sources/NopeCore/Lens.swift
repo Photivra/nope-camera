@@ -64,6 +64,11 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// The manual controls the lens supports. ``ManualCapabilities/none`` when unknown.
     public let manualControls: ManualCapabilities
 
+    /// The lens's focal length as it would be on a 35 mm film camera with the same angle of
+    /// view, in millimeters, or `nil` when unknown. Computed from the field of view, so it is
+    /// approximate. Full auto uses it for the handheld shutter rule (``AutoShutter``).
+    public let equivalentFocalLength: Double?
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -79,6 +84,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
     ///   - photoDimensions: The supported photo sizes, smallest first.
     ///   - manualControls: The manual controls the lens supports. Defaults to none.
+    ///   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
     public init(
         id: String,
         kind: Kind,
@@ -90,7 +96,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
         aperture: ApertureRange? = nil,
         maxBracketedPhotoCount: Int = 0,
         photoDimensions: [PhotoDimensions] = [],
-        manualControls: ManualCapabilities = .none
+        manualControls: ManualCapabilities = .none,
+        equivalentFocalLength: Double? = nil
     ) {
         self.id = id
         self.kind = kind
@@ -103,6 +110,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
         self.manualControls = manualControls
+        self.equivalentFocalLength = equivalentFocalLength
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

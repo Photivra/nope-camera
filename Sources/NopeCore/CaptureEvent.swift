@@ -16,4 +16,9 @@ public enum CaptureEvent: Equatable, Sendable {
 
     /// The camera stopped because of an error, such as a media services reset.
     case failed
+
+    /// The scene changed substantially, for example the camera moved
+    /// (`AVCaptureDevice.subjectAreaDidChangeNotification`). Sent only while a tapped point is
+    /// being followed, so autofocus can return to the center.
+    case subjectAreaChanged
 }

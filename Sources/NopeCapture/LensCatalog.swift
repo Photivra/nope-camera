@@ -48,8 +48,33 @@ enum LensCatalog {
             aperture: device.aperture,
             maxBracketedPhotoCount: device.maxBracketedPhotoCount,
             photoDimensions: device.photoDimensions.sorted { $0.pixelCount < $1.pixelCount },
-            manualControls: device.manualControls.capabilities
+            manualControls: device.manualControls.capabilities,
+            equivalentFocalLength: equivalentFocalLength(
+                fieldOfView: device.fieldOfViewDegrees, photoSize: device.photoDimensions.max { $0.pixelCount < $1.pixelCount })
         )
+    }
+
+    /// The diagonal of a 35 mm film frame (36 × 24 mm), in millimeters: the reference for a
+    /// 35 mm-equivalent focal length (CIPA DC-008, `FocalLengthIn35mmFilm`, compares angles of
+    /// view on this frame).
+    static let filmDiagonal = (36.0 * 36.0 + 24.0 * 24.0).squareRoot()
+
+    /// The 35 mm-equivalent focal length of a lens: the focal length that gives a 35 mm film
+    /// frame the same diagonal angle of view, `(diagonal / 2) / tan(diagonal angle / 2)`. The
+    /// diagonal angle comes from the horizontal angle and the photo's shape:
+    /// `tan(diagonal / 2) = tan(horizontal / 2) × diagonal / width`.
+    ///
+    /// - Parameters:
+    ///   - fieldOfView: The horizontal field of view, in degrees (`videoFieldOfView`).
+    ///   - photoSize: The largest photo size, for its shape; 4:3 when `nil`.
+    /// - Returns: The focal length in millimeters, or `nil` if the angle isn't between 0 and
+    ///   180 degrees.
+    static func equivalentFocalLength(fieldOfView: Double, photoSize: PhotoDimensions?) -> Double? {
+        guard fieldOfView > 0, fieldOfView < 180 else { return nil }
+        let width = Double(photoSize?.width ?? 4)
+        let height = Double(photoSize?.height ?? 3)
+        let shape = width > 0 && height > 0 ? (width * width + height * height).squareRoot() / max(width, height) : 1.25
+        return (filmDiagonal / 2) / (tan(fieldOfView * .pi / 360) * shape)
     }
 
     /// The `NopeCore` kind: any front camera is ``Lens/Kind/front``; rear cameras follow their
