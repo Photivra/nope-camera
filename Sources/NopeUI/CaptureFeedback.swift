@@ -211,8 +211,10 @@ struct FailureBanner: View {
 /// until the first photo of the session, never an empty square. Then it shows the last photo with
 /// a teal seal when every file was signed, or an amber mark when one wasn't.
 ///
-/// The last-photo thumbnail that opens the photo (issue #36) fills ``image`` and makes the slot
-/// a button; until then the slot shows a photo symbol.
+/// With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
+/// without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
+/// Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
+/// Control offer both, Open in Photos and Photo Details.
 struct ThumbnailSlot: View {
     /// The photos saved by the last press of the shutter, or `nil` before the first.
     let photos: [SavedPhoto]?
@@ -223,6 +225,12 @@ struct ThumbnailSlot: View {
     /// Whether a photo is being taken or saved now.
     let isBusy: Bool
 
+    /// Opens Photos, or `nil` when the app can't.
+    let openPhoto: (() -> Void)?
+
+    /// Shows the photo's details (issue #53), or `nil` for none.
+    let showDetails: (() -> Void)?
+
     /// The slot's side, in points: larger than the 44-point minimum, smaller than the shutter.
     static var side: CGFloat { 52 }
 
@@ -232,10 +240,17 @@ struct ThumbnailSlot: View {
     ///   - photos: The photos saved by the last press of the shutter, or `nil` before the first.
     ///   - image: The photo's thumbnail, or `nil` to show a photo symbol.
     ///   - isBusy: Whether a photo is being taken or saved now.
-    init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool) {
+    ///   - openPhoto: Opens Photos, or `nil` when the app can't.
+    ///   - showDetails: Shows the photo's details, or `nil` for none.
+    init(
+        photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openPhoto: (() -> Void)? = nil,
+        showDetails: (() -> Void)? = nil
+    ) {
         self.photos = photos
         self.image = image
         self.isBusy = isBusy
+        self.openPhoto = openPhoto
+        self.showDetails = showDetails
     }
 
     /// Whether every saved file is signed.
@@ -253,11 +268,52 @@ struct ThumbnailSlot: View {
             .frame(width: Self.side, height: Self.side)
             .accessibilityLabel(Text("Saving…", bundle: .module, comment: "Shown while a photo that was just taken is being checked and added to the photo library."))
         } else if let photos {
-            thumbnail
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text("Last Photo", bundle: .module, comment: "VoiceOver name of the small picture beside the shutter: the last photo taken in this session."))
-                .accessibilityValue(Text(verbatim: CaptureMessages.message(forSaved: photos)))
-                .accessibilityAddTraits(.isImage)
+            if let action = openPhoto ?? showDetails {
+                Button(action: action) { thumbnail }
+                    .buttonStyle(.plain)
+                    .contextMenu { menuItems }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Self.label)
+                    .accessibilityValue(Text(verbatim: CaptureMessages.message(forSaved: photos)))
+                    .accessibilityAddTraits([.isButton, .isImage])
+                    .accessibilityActions { menuItems }
+                    .accessibilityShowsLargeContentViewer {
+                        Label { Self.label } icon: { Image(systemName: "photo") }
+                    }
+            } else {
+                thumbnail
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Self.label)
+                    .accessibilityValue(Text(verbatim: CaptureMessages.message(forSaved: photos)))
+                    .accessibilityAddTraits(.isImage)
+            }
+        }
+    }
+
+    /// The slot's name for VoiceOver and Voice Control.
+    private static var label: Text {
+        Text("Last Photo", bundle: .module, comment: "VoiceOver name of the small picture beside the shutter: the last photo taken in this session.")
+    }
+
+    /// Open in Photos and Photo Details, for the long-press menu and the accessibility actions.
+    @ViewBuilder private var menuItems: some View {
+        if let openPhoto {
+            Button(action: openPhoto) {
+                Label {
+                    Text("Open in Photos", bundle: .module, comment: "Button that opens the Photos app, where the saved photo is. Photos is the system photo library app.")
+                } icon: {
+                    Image(systemName: "photo.on.rectangle")
+                }
+            }
+        }
+        if let showDetails {
+            Button(action: showDetails) {
+                Label {
+                    Text("Photo Details", bundle: .module, comment: "Button and VoiceOver action on the last-photo thumbnail: shows the facts read back from the photo nope. just saved. Keep nope. unchanged if it appears.")
+                } icon: {
+                    Image(systemName: "info.circle")
+                }
+            }
         }
     }
 

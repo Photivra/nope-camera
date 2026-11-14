@@ -55,6 +55,9 @@ public final class CameraModel {
     /// The hardware the model asks for permission, capabilities and photos.
     let backend: any CaptureBackend
 
+    /// Reads the monotonic clock, to time each capture for the photo's details (issue #53).
+    let now: @Sendable () -> ContinuousClock.Instant
+
     /// Creates a model in the ``CameraState/starting`` state.
     ///
     /// - Parameters:
@@ -63,6 +66,7 @@ public final class CameraModel {
     ///     ``CaptureError/savingUnavailable`` and nothing is saved.
     ///   - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
     ///     pass a faster one.
+    ///   - now: Reads the clock that times each capture. Tests pass a scripted one.
     ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
     ///
     /// A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
@@ -70,10 +74,12 @@ public final class CameraModel {
     public init(
         backend: any CaptureBackend, saver: PhotoSaver? = nil,
         sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
         deviceStatusReader: (any DeviceStatusReading)? = nil
     ) {
         self.backend = backend
         self.saver = saver
+        self.now = now
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
         drive = DriveModel(sleep: sleep)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
@@ -257,7 +263,9 @@ public final class CameraModel {
             return
         }
         do {
-            await save(try await backend.capturePhoto(request), settings: settings)
+            let start = now()
+            let photo = try await backend.capturePhoto(request)
+            await save(photo, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             await recoverFromBlankPicture(request, settings: settings)
         } catch {
@@ -272,14 +280,15 @@ public final class CameraModel {
     /// - Parameters:
     ///   - photo: The captured photo.
     ///   - settings: The settings the photo was taken with.
-    private func save(_ photo: CapturedPhoto, settings: SaveSettings) async {
+    ///   - captureDuration: How long the camera took to return the photo.
+    private func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration) async {
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
         }
         captureStatus = .saving
         do {
-            captureStatus = .saved(try await saver.save(photo, settings: settings))
+            captureStatus = .saved(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
         } catch {
             captureStatus = .failed(error)
         }
@@ -307,7 +316,9 @@ public final class CameraModel {
             return
         }
         do {
-            await save(try await backend.capturePhoto(request), settings: settings)
+            let start = now()
+            let photo = try await backend.capturePhoto(request)
+            await save(photo, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)

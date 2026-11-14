@@ -68,6 +68,20 @@ struct SimulatedSigner: PhotoSigning {
     }
 }
 
+/// Makes a plain gray-blue thumbnail: the simulated backend's photo isn't an image, and
+/// `NopeDevelopTests` cover the ImageIO thumbnailer.
+struct SimulatedThumbnailer: PhotoThumbnailing {
+    /// The thumbnail's side, in pixels.
+    static let side = 8
+
+    /// Returns the same small thumbnail for every file.
+    func thumbnail(of file: PhotoFile) -> PhotoThumbnail? {
+        let pixel: [UInt8] = [70, 90, 120, 255]
+        return PhotoThumbnail(
+            width: Self.side, height: Self.side, rgba: Data(Array(repeating: pixel, count: Self.side * Self.side).joined()))
+    }
+}
+
 /// Accepts or refuses every add, without touching the Simulator's photo library.
 struct SimulatedPhotoLibrary: PhotoLibrary {
     /// Whether adding is allowed.

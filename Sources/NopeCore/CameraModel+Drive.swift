@@ -98,6 +98,9 @@ extension CameraModel {
     /// camera stops, or at the first frame that can't be taken or saved. Every frame taken
     /// before that is still saved; nothing is dropped.
     ///
+    /// A burst never fires the flash, as brackets don't: the flash can't recharge between rapid
+    /// frames.
+    ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     private func takeBurst() async {
         guard canCapture, let lens = selectedLens else { return }
@@ -120,6 +123,7 @@ extension CameraModel {
                 break
             }
             let photo: CapturedPhoto
+            let start = now()
             do {
                 photo = try await backend.capturePhoto(request)
             } catch {
@@ -128,7 +132,10 @@ extension CameraModel {
             }
             drive.recordTaken()
             let previous = pending
-            pending = Task { await Self.saveResult(photo, saver: saver, settings: settings) }
+            let captureDuration = now() - start
+            pending = Task {
+                await Self.saveResult(photo, saver: saver, settings: settings, captureDuration: captureDuration)
+            }
             if let previous, let error = await collect(previous, into: &saved) {
                 failure = error
                 break
@@ -192,12 +199,13 @@ extension CameraModel {
     ///   - photo: The frame.
     ///   - saver: The save pipeline.
     ///   - settings: The settings the burst is taken with.
+    ///   - captureDuration: How long the camera took to return the frame.
     /// - Returns: The saved photo, or the error.
     private nonisolated static func saveResult(
-        _ photo: CapturedPhoto, saver: PhotoSaver, settings: SaveSettings
+        _ photo: CapturedPhoto, saver: PhotoSaver, settings: SaveSettings, captureDuration: Duration
     ) async -> Result<SavedPhoto, CaptureError> {
         do {
-            return .success(try await saver.save(photo, settings: settings))
+            return .success(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
         } catch {
             return .failure(error)
         }

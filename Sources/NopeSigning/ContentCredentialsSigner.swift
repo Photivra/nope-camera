@@ -1,4 +1,5 @@
 import C2PA
+import CryptoKit
 import Foundation
 import NopeCore
 
@@ -39,7 +40,8 @@ public struct ContentCredentialsSigner: PhotoSigning {
     ///
     /// - Parameter file: The complete file, with its final metadata.
     /// - Returns: The same file with a Content Credentials manifest embedded in the one place
-    ///   its format allows (see `SignableFile.mediaType`); nothing else in the file changes.
+    ///   its format allows (see `SignableFile.mediaType`); nothing else in the file changes. Its
+    ///   `contentCredentials` summarizes the manifest for the "What's in this photo" details.
     /// - Throws: ``PhotoSigningError/keyCreationFailed`` if no key could be created, or
     ///   ``PhotoSigningError/signingFailed`` if the certificate, the claim signature or the
     ///   C2PA library failed, for example because the bytes aren't a valid file of that kind.
@@ -54,9 +56,43 @@ public struct ContentCredentialsSigner: PhotoSigning {
         do {
             let manifest = ContentCredentialsManifest(file: kind, generator: generator, instanceID: UUID())
             let signed = try Self.embed(file.data, as: kind, manifest: manifest, key: key)
-            return PhotoFile(format: file.format, data: signed, isProcessedByDevice: file.isProcessedByDevice)
+            return PhotoFile(
+                format: file.format, data: signed.file, isProcessedByDevice: file.isProcessedByDevice,
+                contentCredentials: summary(of: kind, manifestStore: signed.manifestStore))
         } catch {
             throw .signingFailed
+        }
+    }
+
+    /// What the details show about a file's manifest: the claim generator, the manifest's
+    /// description, and the SHA-256 hash of the manifest store the C2PA library returned.
+    ///
+    /// - Parameters:
+    ///   - file: What the file is.
+    ///   - manifestStore: The signed manifest store's bytes.
+    /// - Returns: The summary.
+    func summary(of file: SignableFile, manifestStore: Data) -> ContentCredentialsSummary {
+        let hash = SHA256.hash(data: manifestStore).map { String(format: "%02x", $0) }.joined()
+        return ContentCredentialsSummary(
+            generatorName: generator.name, generatorVersion: generator.version,
+            actionDescription: ContentCredentialsManifest.description(of: file), manifestSHA256: hash)
+    }
+
+    /// A signed file and the manifest store embedded in it.
+    struct SignedData {
+        /// The signed file's bytes.
+        let file: Data
+        /// The manifest store's bytes, as the C2PA library returned them.
+        let manifestStore: Data
+
+        /// Pairs a signed file with its manifest store.
+        ///
+        /// - Parameters:
+        ///   - file: The signed file's bytes.
+        ///   - manifestStore: The manifest store's bytes.
+        init(file: Data, manifestStore: Data) {
+            self.file = file
+            self.manifestStore = manifestStore
         }
     }
 
@@ -71,11 +107,11 @@ public struct ContentCredentialsSigner: PhotoSigning {
     ///   - file: What the file is.
     ///   - manifest: The manifest to embed.
     ///   - key: The file's one-use key.
-    /// - Returns: The signed file.
+    /// - Returns: The signed file and its manifest store.
     /// - Throws: Any error from the certificate, the key or the C2PA library.
     static func embed(
         _ data: Data, as file: SignableFile, manifest: ContentCredentialsManifest, key: any PerPhotoSigningKey
-    ) throws -> Data {
+    ) throws -> SignedData {
         let certificatePEM = try SelfIssuedCertificate.pem(for: key)
         let signer = try Signer(algorithm: .es256, certificateChainPEM: certificatePEM, tsa: nil) { claim in
             try key.signatureDER(for: claim)
@@ -84,10 +120,10 @@ public struct ContentCredentialsSigner: PhotoSigning {
         let builder = try Builder(context: OfflineC2PAContext.make(), manifestJSON: manifest.json())
         let source = InMemoryFile(data)
         let destination = InMemoryFile()
-        try builder.sign(
+        let store = try builder.sign(
             format: file.mediaType, source: InMemoryStream.make(source),
             destination: InMemoryStream.make(destination), signer: signer)
-        return destination.data
+        return SignedData(file: destination.data, manifestStore: store)
     }
 
     /// Signs a DNG with the C2PA data-hash workflow, keeping IFD0 in place.
@@ -102,10 +138,12 @@ public struct ContentCredentialsSigner: PhotoSigning {
     ///   - data: The DNG.
     ///   - manifest: The manifest to embed.
     ///   - signer: The file's one-use signer; the context takes it.
-    /// - Returns: The signed DNG.
+    /// - Returns: The signed DNG and its manifest store.
     /// - Throws: Any error from the library, or a ``DNGManifestSlot/Failure``, for example if
     ///   the signed store isn't the placeholder's size.
-    static func embedInDNG(_ data: Data, manifest: ContentCredentialsManifest, signer: sending Signer) throws -> Data {
+    static func embedInDNG(
+        _ data: Data, manifest: ContentCredentialsManifest, signer: sending Signer
+    ) throws -> SignedData {
         let format = SignableFile.singleFrameRAW.mediaType
         let builder = try Builder(context: OfflineC2PAContext.make(signer: signer), manifestJSON: manifest.json())
         let placeholder = try builder.placeholder(format: format)
@@ -115,6 +153,7 @@ public struct ContentCredentialsSigner: PhotoSigning {
             (start: UInt64(bound.storeRange.lowerBound), length: UInt64(bound.storeRange.count))
         ])
         try builder.updateHashFromStream(format: format, stream: InMemoryStream.make(InMemoryFile(withPlaceholder)))
-        return try bound.replacingStore(with: builder.signEmbeddable(format: format))
+        let store = try builder.signEmbeddable(format: format)
+        return SignedData(file: try bound.replacingStore(with: store), manifestStore: store)
     }
 }
