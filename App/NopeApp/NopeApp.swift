@@ -92,7 +92,8 @@ struct NopeApp: App {
         // Location runs only while the Location switch is on and the camera is running
         // (AGENTS.md, "Battery"); LocationTagging holds the rule.
         .task(id: [settings.metadata.isOn(.location), model.sessionStatus == .running]) {
-            model.location = location
+            // Set once: assigning an observed property, even the same object, redraws the camera.
+            if model.location !== location { model.location = location }
             await location.update(
                 isOn: settings.metadata.isOn(.location), cameraIsRunning: model.sessionStatus == .running)
         }
