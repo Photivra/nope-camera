@@ -7,8 +7,8 @@ extension EnvironmentValues {
     @Entry public var cameraGravitySource: (any GravitySource)?
 }
 
-/// The guides and live aids drawn over the viewfinder: the grid, focus peaking and the level,
-/// and, at standard text sizes, the histogram and the live camera readout (``LiveAidsPanel``).
+/// The guides and live aids drawn over the viewfinder: the grid and the level, and, at standard
+/// text sizes, the histogram and the live camera readout (``LiveAidsPanel``).
 ///
 /// Everything here is on screen only and never written to the photo (issues #40, #47, #51 and
 /// #52). Nothing takes touches, so the viewfinder's own gestures still work. The guides stay in
@@ -69,15 +69,10 @@ struct ViewfinderOverlays: View {
         ZStack {
             // Drawn shapes only, so nothing here is an accessibility element. (Marking them
             // hidden made SwiftUI expose an unlabeled element instead.)
-            ZStack {
-                if options.showsGrid {
-                    GridOverlay(style: options.gridStyle, placement: spiralPlacement)
-                }
-                if needs.contains(.focusPeaking), let map = model.live.analysis?.focusPeaking {
-                    FocusPeakingOverlay(map: map)
-                }
+            if options.showsGrid {
+                GridOverlay(style: options.gridStyle, placement: spiralPlacement)
+                    .allowsHitTesting(false)
             }
-            .allowsHitTesting(false)
             if options.showsLevel, let gravitySource {
                 LevelOverlay(state: level.state)
                     .allowsHitTesting(false)
@@ -119,6 +114,29 @@ struct ViewfinderOverlays: View {
         case .portrait: return .topTrailing
         case .landscapeLeft: return isRightToLeft ? .bottomLeading : .bottomTrailing
         case .landscapeRight: return isRightToLeft ? .topTrailing : .topLeading
+        }
+    }
+}
+
+/// Focus peaking over the live picture, while the live analysis measures it. The camera puts it
+/// on the picture itself, under the focus magnifier's enlargement, so the highlight stays on the
+/// edges it marks.
+struct FocusPeakingLayer: View {
+    /// The camera model.
+    let model: CameraModel
+
+    /// Creates the layer.
+    ///
+    /// - Parameter model: The camera model.
+    init(model: CameraModel) {
+        self.model = model
+    }
+
+    /// The highlight, or nothing.
+    var body: some View {
+        if model.live.needs.contains(.focusPeaking), let map = model.live.analysis?.focusPeaking {
+            FocusPeakingOverlay(map: map)
+                .allowsHitTesting(false)
         }
     }
 }

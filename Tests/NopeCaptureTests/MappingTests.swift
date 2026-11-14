@@ -94,6 +94,20 @@ struct DeviceMappingTests {
         #expect(layer.session === session)
         #expect(source.rotation.captureAngle == nil)
     }
+
+    @MainActor
+    @Test func viewfinderPointsNeedALayerWithASize() throws {
+        let source = CaptureSessionPreviewSource(session: AVCaptureSession())
+        #expect(source.devicePoint(forViewfinderPoint: .center) == nil)
+        let layer = AVCaptureVideoPreviewLayer()
+        source.connect(layer)
+        #expect(source.devicePoint(forViewfinderPoint: .center) == nil)
+        layer.bounds = CGRect(x: 0, y: 0, width: 300, height: 400)
+        // Without a camera connection the layer has no rotation to undo; the result is still a
+        // point inside the camera's 0-to-1 frame. The real mapping is a device check.
+        let point = try #require(source.devicePoint(forViewfinderPoint: FramePoint(x: 0.25, y: 0.75)))
+        #expect((0...1).contains(point.x) && (0...1).contains(point.y))
+    }
 }
 
 struct CaptureReadinessTests {

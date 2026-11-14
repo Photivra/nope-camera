@@ -333,8 +333,9 @@ lens without RAW, in the fallback:
 - interval shooting: 3 photos 5 s apart; Stop ends it; leaving the camera screen ends it;
 - switching lenses and an interruption: the manual settings are applied again afterwards;
 - "All Auto" and turning the option off return the camera to continuous auto;
-- readings: the meter and the Auto values update while manual controls are on, and nothing is
-  observed while they are off (Instruments: no key-value observation callbacks);
+- readings: the meter and the Auto values update while manual controls are on; with them off
+  the readings still arrive (for full auto's aids) but aren't shown, and nothing is observed
+  once the camera screen closes (Instruments: no key-value observation callbacks);
 - with VoiceOver: each slot adjusts by swiping up and down, and the eyes-free shutter (volume
   buttons, Camera Control) still works with manual controls on and in clean view.
 
@@ -351,7 +352,8 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   down shows the top-down level; Instruments shows no motion updates while the level is off;
 - focus peaking: on the rear and front cameras, in portrait and landscape (and every iPad
   orientation), the highlight sits on the in-focus edges, not mirrored or turned; a small
-  subject 5 to 15 cm away in front of a busy background shows sharp when focused (issue #51);
+  subject 5 to 15 cm away in front of a busy background shows sharp when focused (issue #51),
+  and the highlight stays on the same edges with the 3× focus magnifier on;
 - histogram: a bright window flags clipped highlights and a dark corner clipped shadows; the
   thresholds (`Histogram.highlightThreshold`, `shadowThreshold`, `clippedShare`) and
   `FocusPeakingMap.minimumEdge` look right on real scenes;
@@ -364,6 +366,42 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
 - live camera readout: the values match the saved files' EXIF (ExposureTime, ISOSpeedRatings,
   FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
   the torch show when another feature turns them on.
+
+### Focus, exposure and close-up aids on a device
+
+The rules (point handling, the lock, the fast shutter limit and its hysteresis, the hint and the
+close-up trigger) are unit-tested against a scripted backend; these checks cover the hardware
+calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max) and the iPad:
+
+- tap to focus: the focus square appears where tapped and the camera focuses and exposes there,
+  in portrait and with the iPhone turned, on the front camera too (its preview is mirrored; the
+  point must still match); moving the phone returns focus to the center; a lens without a focus
+  point (some front cameras) only re-exposes;
+- press and hold (and the Lock button) lock focus and exposure: they stay when the phone points
+  elsewhere; the AE/AF pill and the button unlock; VoiceOver's Focus on Center and Lock Focus
+  and Exposure actions do the same, and the lock change is announced;
+- exposure compensation in full auto: the tray's Exposure dial brightens and darkens the
+  viewfinder over the lens's range, the pill resets it, and the DNG's `ExposureBiasValue` follows
+  (with exposure settings kept);
+- fast shutter: on each lens in bright light the DNG's `ExposureTime` is no slower than
+  1/(2 × focal length) (wide about 1/50, ultra wide about 1/26, 5× about 1/240), and no slower
+  than 1/500 or 1/1000 with Freeze Motion; in dim light the shutter gets slower than that only
+  when ISO is at the lens's highest, the hint "Hold it steady or use a tripod." appears once, is
+  spoken by VoiceOver, and goes when the light comes back without flickering (the half-stop
+  margin is an assumption to check); the focal lengths computed from the field of view match
+  Apple's published ones within a few millimeters;
+- manual controls: a manual shutter slower than the handheld rule shows the hint and is never
+  changed; P mode isn't limited;
+- Close-Up: a small subject 5 to 15 cm away in front of a busy background focuses with Close-Up
+  on and a tap, and the pill turns it off;
+- close-up hint: below the wide lens's minimum focus distance the suggestion to switch to Ultra
+  Wide appears within about two seconds (the thresholds, `lensPosition` ≤ 0.05 for eight readings
+  while autofocus searches, are assumptions to tune), never switches by itself, and Dismiss hides
+  it until the lens changes;
+- the magnifier enlarges the viewfinder around the focus point and the saved photo isn't
+  zoomed (its dimensions and field of view are the same);
+- energy: with the camera screen open in full auto, readings arrive at most four a second
+  (Instruments), and nothing is observed after leaving the camera screen.
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 

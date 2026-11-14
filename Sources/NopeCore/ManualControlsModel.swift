@@ -26,7 +26,7 @@ public final class ManualControlsModel {
     public private(set) var isEnabled = false
 
     /// The person's settings. ``ManualSettings/automatic`` (full auto) by default.
-    public private(set) var settings = ManualSettings.automatic
+    public internal(set) var settings = ManualSettings.automatic
 
     /// What the camera is using now, or `nil` before the first reading or while manual controls
     /// are off.
@@ -45,13 +45,52 @@ public final class ManualControlsModel {
     public private(set) var lens: Lens?
 
     /// The hardware, or `nil` when the backend has no manual controls.
-    private let backend: (any ManualCaptureBackend)?
+    let backend: (any ManualCaptureBackend)?
 
     /// Waits between interval photos; the time is in seconds.
     private let sleep: @Sendable (Double) async throws -> Void
 
     /// The running interval series.
     private var intervalTask: Task<Void, Never>?
+
+    // MARK: Automatic aids (ManualControlsModel+Auto.swift)
+
+    /// Where autofocus and auto exposure are aimed after a tap, and whether they are locked
+    /// there, or `nil` for continuous auto at the center. Cleared when the scene changes (unless
+    /// locked), on a lens change and by All Auto.
+    public internal(set) var focusTarget: FocusTarget?
+
+    /// Whether autofocus is limited to near subjects (Close-Up). Off by default; reset by All
+    /// Auto.
+    public internal(set) var nearFocusLimit = false
+
+    /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default.
+    public internal(set) var fastShutter = FastShutter.handheld
+
+    /// Whether the camera should say "Hold it steady or use a tripod": in full auto when the
+    /// light is too low for a handheld-safe shutter, and with manual controls when the shutter
+    /// chosen or in use is slower than that.
+    public internal(set) var showsSteadyHint = false
+
+    /// Whether the subject seems closer than the lens can focus, so an interface may suggest
+    /// the ultra wide lens (``CameraModel/closeUpLens``).
+    public internal(set) var suggestsCloseUpLens = false
+
+    /// The longest shutter full auto allows now, in seconds, or `nil` when the limit is lifted
+    /// or the lens has none (``AutoShutter``).
+    var longestAutoShutter: Double?
+
+    /// The camera's last reading, in full auto too, for the fast shutter rule and the hints.
+    var lastReading: ExposureReading?
+
+    /// Watches for a subject that is too close to focus.
+    var closeUpDetector = CloseUpDetector()
+
+    /// Whether the person dismissed the close-up suggestion on this lens.
+    var closeUpDismissed = false
+
+    /// Whether the readings were turned on.
+    var readingsStarted = false
 
     /// Creates the model.
     ///
@@ -166,6 +205,7 @@ public final class ManualControlsModel {
         guard lens != self.lens else { return }
         if self.lens != nil { reading = nil }
         self.lens = lens
+        resetAidsForNewLens()
         if let bracket, !BracketSettings.frameCounts(for: lens).contains(bracket.frameCount) {
             self.bracket = nil
         }
@@ -174,7 +214,8 @@ public final class ManualControlsModel {
     /// Applies the settings again after the camera started, because starting it returns every
     /// control to automatic. Does nothing in full auto.
     func sessionDidStart() async {
-        guard isEnabled, !settings.isAutomatic else { return }
+        await startReadings()
+        guard let lens, DeviceControls(settings: settings, lens: lens, assist: assist) != .automatic else { return }
         await apply(restoringOnFailure: settings)
     }
 
@@ -196,10 +237,14 @@ public final class ManualControlsModel {
 
     /// Applies the backend's readings until its stream ends. Interfaces
     /// run it in a `.task` while the camera is visible. Returns at once without manual controls.
+    ///
+    /// ``reading`` shows a reading only while manual controls are on; in full auto the readings
+    /// drive the fast shutter rule and the hints (``record(_:)``).
     public func observeReadings() async {
         guard let backend else { return }
-        for await reading in backend.exposureReadings where isEnabled {
-            self.reading = reading
+        for await reading in backend.exposureReadings {
+            if isEnabled { self.reading = reading }
+            await record(reading)
         }
     }
 
@@ -253,11 +298,16 @@ public final class ManualControlsModel {
             if !locked || canLockFocus { next.focusLocked = locked }
         case .allAuto:
             next = .automatic
+            if isEnabled, resetAids(), next == settings {
+                await applyCurrentControls()
+                return
+            }
         }
         guard isEnabled, next != settings else { return }
         let previous = settings
         settings = next
         await apply(restoringOnFailure: previous)
+        updateSteadyHint()
     }
 
     // MARK: - Rules
@@ -268,14 +318,18 @@ public final class ManualControlsModel {
     private func setEnabled(_ enabled: Bool) async {
         guard enabled != isEnabled else { return }
         isEnabled = enabled
-        await backend?.setExposureReadingsEnabled(enabled)
-        guard !enabled else { return }
+        defer { updateSteadyHint() }
+        guard !enabled else {
+            // Full auto's limit doesn't apply to manual controls; P is the camera's own exposure.
+            if longestAutoShutter != nil { await applyCurrentControls() }
+            return
+        }
         stopInterval()
         bracket = nil
         reading = nil
         let previous = settings
         settings = .automatic
-        if previous != settings { await apply(restoringOnFailure: previous) }
+        if previous != settings || longestAutoShutter != nil { await apply(restoringOnFailure: previous) }
     }
 
     /// Turns bracketing on with settings the lens supports, or off.
@@ -403,10 +457,10 @@ public final class ManualControlsModel {
     /// what they were; if it isn't running, they are applied when it starts.
     ///
     /// - Parameter previous: The settings to restore when the camera refuses.
-    private func apply(restoringOnFailure previous: ManualSettings) async {
+    func apply(restoringOnFailure previous: ManualSettings) async {
         guard let backend, let lens else { return }
         do {
-            try await backend.applyControls(DeviceControls(settings: settings, lens: lens))
+            try await backend.applyControls(DeviceControls(settings: settings, lens: lens, assist: assist))
         } catch .configurationFailed {
             settings = previous
         } catch {

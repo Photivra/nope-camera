@@ -101,6 +101,11 @@ struct NopeApp: App {
         .task(id: settings.showsManualControls) {
             await model.send(.manual(.setEnabled(settings.showsManualControls)))
         }
+        // "Fast Shutter": full auto's shutter rule, applied when the camera opens and whenever the
+        // choice changes (in Settings or the quick-controls tray).
+        .task(id: settings.fastShutter) {
+            await model.send(.auto(.setFastShutter(settings.fastShutter)))
+        }
         // "Start in clean view": applied when the camera opens and whenever the option changes;
         // the camera's own button still toggles clean view at any time.
         .task(id: settings.startsInCleanView) {

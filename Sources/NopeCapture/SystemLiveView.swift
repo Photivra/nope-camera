@@ -40,8 +40,9 @@ extension SystemCaptureHardware: LiveViewHardware {
 ///   only about 160 × 120 pixels (``LumaSampler``), at most four a second (`LiveUpdateRate`).
 ///   No frame is stored. The photo output and its settings are not touched, so what is captured
 ///   doesn't change; a device check confirms it (docs/TESTING.md).
-/// - **Live readout.** Key-value observation of the attached camera while the readout is shown,
-///   at most four values a second. No video is read for it.
+/// - **Live readout.** Built from the camera readings' own key-value observations
+///   (``SystemCaptureHardware``, at most four a second), only while the readout is shown; no second
+///   set of observations and no video.
 ///
 /// `@unchecked Sendable`: every mutable property is confined to the session `queue`, and the
 /// video delegate keeps its own state behind a lock.
@@ -80,15 +81,9 @@ final class SystemLiveView: @unchecked Sendable {
     /// The attached camera, or `nil`. Queue-confined.
     private var device: AVCaptureDevice?
 
-    /// Whether the readout is on. Queue-confined.
-    private var statsEnabled = false
-
-    /// The readout's key-value observations. Queue-confined.
-    private var statsObservations: [NSKeyValueObservation] = []
-
-    /// Limits the readout to four values a second. Touched from key-value observation callbacks,
-    /// which may arrive on any thread, so it is locked.
-    private let statsLimiter = OSAllocatedUnfairLock(initialState: RateLimiter())
+    /// Whether the readout is on. Read from key-value observation callbacks, which may arrive on
+    /// any thread, so it is locked.
+    private let statsEnabled = OSAllocatedUnfairLock(initialState: false)
 
     /// Creates the live view for a session.
     ///
@@ -118,7 +113,6 @@ final class SystemLiveView: @unchecked Sendable {
     }
 
     deinit {
-        statsObservations.forEach { $0.invalidate() }
         delegate.finish()
         statsContinuation.finish()
     }
@@ -165,47 +159,22 @@ final class SystemLiveView: @unchecked Sendable {
     func cameraDidChange(_ device: AVCaptureDevice?) {
         self.device = device
         delegate.update(mirrored: device?.position == .front)
-        observeStats()
     }
 
-    /// Starts or stops the readout, on `queue`.
+    /// Starts or stops the readout.
     ///
     /// - Parameter enabled: Whether to send values.
     func setStatsEnabled(_ enabled: Bool) async {
-        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
-            queue.async {
-                self.statsEnabled = enabled
-                self.observeStats()
-                continuation.resume()
-            }
-        }
+        statsEnabled.withLock { $0 = enabled }
     }
 
-    /// Observes the attached camera while the readout is on, and stops observing otherwise.
-    /// Call only on `queue`.
+    /// Sends the readout's values for a camera reading, while the readout is on. Called from the
+    /// camera readings' key-value observation, after their throttle.
     ///
-    /// Any of the exposure offset (which changes as the meter updates), the lens position, the
-    /// focus activity, the torch or the system pressure triggers one reading of every value, at
-    /// most four times a second.
-    private func observeStats() {
-        statsObservations.forEach { $0.invalidate() }
-        statsObservations = []
-        guard statsEnabled, let device else { return }
-        let send: @Sendable (AVCaptureDevice) -> Void = { [weak self] device in
-            guard let self else { return }
-            let now = ProcessInfo.processInfo.systemUptime
-            guard statsLimiter.withLock({ $0.shouldPass(at: now, interval: LiveUpdateRate.normalInterval) }) else {
-                return
-            }
-            statsContinuation.yield(Self.reading(of: device, photoOutput: photoOutput))
-        }
-        statsObservations = [
-            device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in send(device) },
-            device.observe(\.lensPosition) { device, _ in send(device) },
-            device.observe(\.isAdjustingFocus) { device, _ in send(device) },
-            device.observe(\.torchLevel) { device, _ in send(device) },
-            device.observe(\.systemPressureState) { device, _ in send(device) },
-        ]
+    /// - Parameter device: The attached camera.
+    func readingDidArrive(from device: AVCaptureDevice) {
+        guard statsEnabled.withLock({ $0 }) else { return }
+        statsContinuation.yield(Self.reading(of: device, photoOutput: photoOutput))
     }
 
     /// Everything the readout shows that the camera and the photo output report now.

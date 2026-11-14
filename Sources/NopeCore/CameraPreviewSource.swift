@@ -9,7 +9,29 @@ import Foundation
 /// inside the handle (AGENTS.md, "Architecture: interface separate from logic").
 ///
 /// The live preview is processed by the system; it is a framing guide, not the photo.
-public protocol CameraPreviewSource: AnyObject, Sendable {}
+public protocol CameraPreviewSource: AnyObject, Sendable {
+    /// Converts a point in the viewfinder, as drawn, into the camera's own coordinates, the
+    /// space `focusPointOfInterest` and `exposurePointOfInterest` use: the sensor's unrotated
+    /// landscape frame, which differs from the screen when the preview is rotated or mirrored.
+    ///
+    /// ``CameraModel`` calls it for tap to focus (``AutoControlIntent/focusAndExpose(at:)``);
+    /// an interface doesn't. On the main actor, because the conversion reads the preview view.
+    ///
+    /// - Parameter point: The point in the viewfinder, 0 to 1 across and down as drawn.
+    /// - Returns: The point in the camera's coordinates, or `nil` when no viewfinder is shown
+    ///   yet. The default implementation, for a source without video, returns `point`.
+    @MainActor func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint?
+}
+
+extension CameraPreviewSource {
+    /// Returns the point unchanged: a source without video has no rotation or mirroring.
+    ///
+    /// - Parameter point: The point in the viewfinder.
+    /// - Returns: `point`.
+    @MainActor public func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint? {
+        point
+    }
+}
 
 /// The preview source of ``SimulatedCaptureBackend``: it has no video.
 ///

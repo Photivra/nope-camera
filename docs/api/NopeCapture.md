@@ -1036,6 +1036,22 @@ which also gives the angle written to each photo's orientation.
 
 - Parameter previewLayer: The app's preview layer.
 
+## `CaptureSessionPreviewSource/devicePoint(forViewfinderPoint:)`
+
+public, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
+
+```swift
+@MainActor func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint?
+```
+
+Converts a viewfinder point into the camera's coordinates with the connected layer's
+`captureDevicePointConverted(fromLayerPoint:)`, which accounts for the layer's video
+gravity, rotation and front-camera mirroring (`AVCaptureVideoPreviewLayer.h`).
+
+- Parameter point: The point in the viewfinder, 0 to 1 across and down as drawn.
+- Returns: The camera point, or `nil` before a layer is connected or while it has no
+  size.
+
 ## `CaptureSessionPreviewSource/init(session:)`
 
 public, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
@@ -1341,6 +1357,37 @@ Rules (capability survey, item 1, and AGENTS.md, "Honesty"):
 - lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front;
 - the front camera gets no flash modes: nope. uses no screen flash (issue #38).
 
+## `LensCatalog/equivalentFocalLength(fieldOfView:photoSize:)`
+
+internal, declared in `Sources/NopeCapture/LensCatalog.swift`
+
+```swift
+static func equivalentFocalLength(fieldOfView: Double, photoSize: PhotoDimensions?) -> Double?
+```
+
+The 35 mm-equivalent focal length of a lens: the focal length that gives a 35 mm film
+frame the same diagonal angle of view, `(diagonal / 2) / tan(diagonal angle / 2)`. The
+diagonal angle comes from the horizontal angle and the photo's shape:
+`tan(diagonal / 2) = tan(horizontal / 2) × diagonal / width`.
+
+- Parameters:
+  - fieldOfView: The horizontal field of view, in degrees (`videoFieldOfView`).
+  - photoSize: The largest photo size, for its shape; 4:3 when `nil`.
+- Returns: The focal length in millimeters, or `nil` if the angle isn't between 0 and
+  180 degrees.
+
+## `LensCatalog/filmDiagonal`
+
+internal, declared in `Sources/NopeCapture/LensCatalog.swift`
+
+```swift
+static let filmDiagonal: Double
+```
+
+The diagonal of a 35 mm film frame (36 × 24 mm), in millimeters: the reference for a
+35 mm-equivalent focal length (CIPA DC-008, `FocalLengthIn35mmFilm`, compares angles of
+view on this frame).
+
 ## `LensCatalog/lenses(from:)`
 
 internal, declared in `Sources/NopeCapture/LensCatalog.swift`
@@ -1614,7 +1661,8 @@ var capabilities: ManualCapabilities { get }
 
 The `NopeCore` capabilities. Metering modes need auto exposure; spot and whole frame
 also need the exposure region of interest. Exposure compensation needs auto exposure and
-a bias range wider than 0.
+a bias range wider than 0. The focus point and the range restriction need autofocus, and
+the exposure point needs auto exposure.
 
 ## `ManualControlSupport/continuousAutoExposure`
 
@@ -1666,6 +1714,16 @@ let exposureBiasRange: ClosedRange<Double>
 
 `minExposureTargetBias` to `maxExposureTargetBias`, in EV.
 
+## `ManualControlSupport/exposurePoint`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let exposurePoint: Bool
+```
+
+`isExposurePointOfInterestSupported`.
+
 ## `ManualControlSupport/exposureRegion`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
@@ -1676,12 +1734,32 @@ let exposureRegion: Bool
 
 iOS 26: `isExposureRectOfInterestSupported`.
 
-## `ManualControlSupport/init(customExposure:continuousAutoExposure:lockedExposure:shutterPriority:isoPriority:aperturePriority:exposureBiasRange:continuousAutoFocus:lockedFocus:lensPositionFocus:customWhiteBalance:exposureRegion:)`
+## `ManualControlSupport/focusPoint`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
 
 ```swift
-init(customExposure: Bool, continuousAutoExposure: Bool, lockedExposure: Bool, shutterPriority: Bool, isoPriority: Bool, aperturePriority: Bool, exposureBiasRange: ClosedRange<Double>, continuousAutoFocus: Bool, lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool)
+let focusPoint: Bool
+```
+
+`isFocusPointOfInterestSupported`.
+
+## `ManualControlSupport/focusRangeRestriction`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let focusRangeRestriction: Bool
+```
+
+`isAutoFocusRangeRestrictionSupported`.
+
+## `ManualControlSupport/init(customExposure:continuousAutoExposure:lockedExposure:shutterPriority:isoPriority:aperturePriority:exposureBiasRange:continuousAutoFocus:lockedFocus:lensPositionFocus:customWhiteBalance:exposureRegion:focusPoint:exposurePoint:focusRangeRestriction:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+init(customExposure: Bool, continuousAutoExposure: Bool, lockedExposure: Bool, shutterPriority: Bool, isoPriority: Bool, aperturePriority: Bool, exposureBiasRange: ClosedRange<Double>, continuousAutoFocus: Bool, lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool, focusPoint: Bool = false, exposurePoint: Bool = false, focusRangeRestriction: Bool = false)
 ```
 
 Creates a description; each parameter is the AVFoundation answer of the same name above.
@@ -1699,6 +1777,9 @@ Creates a description; each parameter is the AVFoundation answer of the same nam
   - lensPositionFocus: Focus locked at a lens position.
   - customWhiteBalance: White balance locked with custom gains.
   - exposureRegion: The exposure region of interest.
+  - focusPoint: The focus point of interest. Defaults to `false`.
+  - exposurePoint: The exposure point of interest. Defaults to `false`.
+  - focusRangeRestriction: The autofocus range restriction. Defaults to `false`.
 
 ## `ManualControlSupport/isoPriority`
 
@@ -2970,8 +3051,9 @@ focus peaking (issues #47 and #51), and the live readout's values (issue #52).
   only about 160 × 120 pixels (``LumaSampler``), at most four a second (`LiveUpdateRate`).
   No frame is stored. The photo output and its settings are not touched, so what is captured
   doesn't change; a device check confirms it (docs/TESTING.md).
-- **Live readout.** Key-value observation of the attached camera while the readout is shown,
-  at most four values a second. No video is read for it.
+- **Live readout.** Built from the camera readings' own key-value observations
+  (``SystemCaptureHardware``, at most four a second), only while the readout is shown; no second
+  set of observations and no video.
 
 `@unchecked Sendable`: every mutable property is confined to the session `queue`, and the
 video delegate keeps its own state behind a lock.
@@ -3014,6 +3096,19 @@ Creates the live view for a session.
   - queue: The session queue.
   - rotation: The viewfinder's rotation, which the analysis follows.
 
+## `SystemLiveView/readingDidArrive(from:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func readingDidArrive(from device: AVCaptureDevice)
+```
+
+Sends the readout's values for a camera reading, while the readout is on. Called from the
+camera readings' key-value observation, after their throttle.
+
+- Parameter device: The attached camera.
+
 ## `SystemLiveView/setNeeds(_:)`
 
 internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
@@ -3034,7 +3129,7 @@ internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
 func setStatsEnabled(_ enabled: Bool) async
 ```
 
-Starts or stops the readout, on `queue`.
+Starts or stops the readout.
 
 - Parameter enabled: Whether to send values.
 

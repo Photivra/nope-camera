@@ -6,7 +6,7 @@ import NopeCore
 actor ScriptedManualBackend: ManualCaptureBackend {
     nonisolated let events: AsyncStream<CaptureEvent>
     nonisolated let exposureReadings: AsyncStream<ExposureReading>
-    nonisolated let previewSource: (any CameraPreviewSource)? = nil
+    nonisolated let previewSource: (any CameraPreviewSource)?
     private nonisolated let eventContinuation: AsyncStream<CaptureEvent>.Continuation
     private nonisolated let readingContinuation: AsyncStream<ExposureReading>.Continuation
 
@@ -20,7 +20,11 @@ actor ScriptedManualBackend: ManualCaptureBackend {
     private(set) var brackets: [[BracketFrame]] = []
     private(set) var captureCount = 0
 
-    init(lenses: [Lens], applyErrors: [CaptureError?] = [], bracketError: CaptureError? = nil) {
+    init(
+        lenses: [Lens], applyErrors: [CaptureError?] = [], bracketError: CaptureError? = nil,
+        previewSource: (any CameraPreviewSource)? = nil
+    ) {
+        self.previewSource = previewSource
         capabilities = DeviceCapabilities(lenses: lenses)
         self.applyErrors = applyErrors
         self.bracketError = bracketError
@@ -34,6 +38,14 @@ actor ScriptedManualBackend: ManualCaptureBackend {
 
     nonisolated func finishReadings() {
         readingContinuation.finish()
+    }
+
+    nonisolated func emitEvent(_ events: CaptureEvent...) {
+        for event in events { eventContinuation.yield(event) }
+    }
+
+    nonisolated func finishEvents() {
+        eventContinuation.finish()
     }
 
     func currentPermission() async -> CameraPermission { .authorized }

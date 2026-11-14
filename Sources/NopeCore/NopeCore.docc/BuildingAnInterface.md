@@ -76,7 +76,28 @@ is `true`, read ``CameraModel/manual``:
   `false`.
 
 Run ``ManualControlsModel/observeReadings()`` in another `.task`, so the values the camera is
-using reach the interface. Clean view is ``CameraModel/isCleanView``, set with
+using reach the interface. In full auto the readings drive the fast shutter rule and the hints,
+so run it whether or not manual controls are on.
+
+### Offer the full-auto aids
+
+These work with manual controls off, and never change a manual setting
+(``AutoControlIntent``):
+
+- tap to focus: send ``AutoControlIntent/focusAndExpose(at:)`` with the tapped point divided by
+  the viewfinder's size (``FramePoint/normalized(locationX:locationY:width:height:)``), and draw
+  a focus mark at ``ManualControlsModel/focusTarget``; offer a lock button that sends
+  ``AutoControlIntent/lockFocusAndExposure(at:)`` and, once
+  ``FocusTarget/isLocked``, ``AutoControlIntent/unlockFocusAndExposure``. Show these only where
+  ``ManualCapabilities/supportsTapToFocus``;
+- exposure compensation: while ``ManualControlsModel/canAdjustExposureCompensation``, send
+  ``AutoControlIntent/setExposureCompensation(_:)`` or
+  ``AutoControlIntent/stepExposureCompensation(by:)``;
+- Close-Up: where ``ManualCapabilities/supportsNearFocusLimit``, send
+  ``AutoControlIntent/setNearFocusLimit(_:)``;
+- show "Hold it steady or use a tripod." while ``ManualControlsModel/showsSteadyHint``, and offer
+  a button to switch to ``CameraModel/closeUpLens`` when it isn't `nil`;
+- send the person's ``NopeSettings/fastShutter`` with ``AutoControlIntent/setFastShutter(_:)``. Clean view is ``CameraModel/isCleanView``, set with
 ``CameraIntent/setCleanView(_:)``; it never hides a warning that changes what the photo is, such
 as the no-RAW badge.
 

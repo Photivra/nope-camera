@@ -133,6 +133,7 @@ public struct SettingsScreen: View {
                         "The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.",
                         bundle: .module, comment: "Explains the clean view switch."))
             }
+            FastShutterSettingsView.link(settings: settings)
             OverlaySettingsView.link(settings: settings)
             Toggle(isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) })) {
                 SettingLabel(

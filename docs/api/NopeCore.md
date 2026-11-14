@@ -84,6 +84,293 @@ let recommendedStops: [Double]
 
 The f-numbers the system recommends offering, widest first.
 
+## `AssistSettings`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+struct AssistSettings
+```
+
+The automatic aids ``DeviceControls/init(settings:lens:assist:)`` adds to the person's
+settings: the tapped point, the near focus limit and the longest auto exposure.
+
+## `AssistSettings/focusTarget`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+var focusTarget: FocusTarget?
+```
+
+Where autofocus and auto exposure are aimed, or `nil` for the center.
+
+## `AssistSettings/init(focusTarget:nearFocusLimit:longestShutter:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+init(focusTarget: FocusTarget? = nil, nearFocusLimit: Bool = false, longestShutter: Double? = nil)
+```
+
+Creates aids. With no arguments, none.
+
+- Parameters:
+  - focusTarget: The tapped point, or `nil`.
+  - nearFocusLimit: Whether autofocus is limited to near subjects.
+  - longestShutter: The longest auto exposure in seconds, or `nil`.
+
+## `AssistSettings/longestShutter`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+var longestShutter: Double?
+```
+
+The longest shutter auto exposure may use, in seconds, or `nil` for the camera's own
+default.
+
+## `AssistSettings/nearFocusLimit`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+var nearFocusLimit: Bool
+```
+
+Whether autofocus is limited to near subjects.
+
+## `AssistSettings/none`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let none: AssistSettings
+```
+
+No aids: the camera's defaults.
+
+## `AutoControlIntent`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+enum AutoControlIntent
+```
+
+A request that works in full auto as well as with manual controls, wrapped in
+``CameraIntent/auto(_:)``: tap to focus and expose, the focus and exposure lock, exposure
+compensation, the Close-Up focus limit, the fast shutter rule, the close-up suggestion and
+the focus magnifier.
+
+None of them changes a manual setting: while a control is set manually, the camera keeps the
+person's value, and a tap only aims what is still automatic (issue #56, "Manual controls: up
+to the person").
+
+## `AutoControlIntent/dismissCloseUpSuggestion`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case dismissCloseUpSuggestion
+```
+
+Hide the suggestion to switch to the ultra wide lens until the lens changes.
+
+## `AutoControlIntent/focusAndExpose(at:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case focusAndExpose(at: FramePoint)
+```
+
+Aim autofocus and auto exposure at a point in the viewfinder (a tap). Autofocus keeps
+following that point until the scene changes, then returns to the center
+(`AVCaptureDevice.subjectAreaDidChangeNotification`). Clears a lock.
+
+- Parameter point: The point in the viewfinder, 0 to 1 across and down as drawn.
+
+## `AutoControlIntent/lockFocusAndExposure(at:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case lockFocusAndExposure(at: FramePoint?)
+```
+
+Focus and expose at a point once, then lock both (press and hold, or the lock button):
+AE/AF lock. The lock stays when the scene changes, until it is unlocked, another point is
+tapped, the lens changes, or All Auto.
+
+- Parameter point: The point in the viewfinder, or `nil` for the point already in use
+  (the center when there is none).
+
+## `AutoControlIntent/setExposureCompensation(_:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case setExposureCompensation(Double)
+```
+
+Set exposure compensation, in EV, moved inside the lens's range (the Exposure control
+in full auto). 0 is none.
+
+## `AutoControlIntent/setFastShutter(_:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case setFastShutter(FastShutter)
+```
+
+Choose how fast a shutter full auto prefers.
+
+## `AutoControlIntent/setMagnifier(_:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case setMagnifier(Bool)
+```
+
+Show or hide the focus magnifier: an enlarged part of the viewfinder. Preview only: the
+photo and the camera's zoom don't change.
+
+## `AutoControlIntent/setNearFocusLimit(_:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case setNearFocusLimit(Bool)
+```
+
+Limit autofocus to near subjects, or lift the limit (Close-Up).
+
+## `AutoControlIntent/stepExposureCompensation(by:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case stepExposureCompensation(by: Int)
+```
+
+Move exposure compensation a number of steps along its scale (VoiceOver's adjustable
+action and the − and + buttons send ±1).
+
+## `AutoControlIntent/unlockFocusAndExposure`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case unlockFocusAndExposure
+```
+
+Return focus and exposure to continuous auto at the center, unlocking them.
+
+## `AutoShutter`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+enum AutoShutter
+```
+
+The fast shutter rule of full auto, and when to say "Hold it steady or use a tripod"
+(issue #56).
+
+Full auto lets the camera's auto exposure choose, but no slower than the shortest shutter
+that still exposes well, from the shortest of: the ``FastShutter`` choice, and the handheld
+rule. When even the handheld limit can't expose the scene at the lens's highest ISO, the
+limit is lifted, so the photo is still exposed well, and the person is told to hold the
+camera steady.
+
+The brightness the scene needs is the product of ISO and exposure time corrected by the
+meter's offset: `ISO × time × 2^(−offset)` (`AVCaptureDevice.exposureTargetOffset` is in EV,
+negative when the picture is darker than the target). The product doesn't depend on how the
+camera splits it between ISO and time, so it can be compared with what a limit allows:
+`highest ISO × limit`. The aperture is fixed on every lens nope. uses in full auto.
+
+## `AutoShutter/handheldLimit(for:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func handheldLimit(for lens: Lens) -> Double?
+```
+
+The handheld rule: 1/(2 × 35 mm-equivalent focal length) seconds, inside the lens's
+shutter range.
+
+- Parameter lens: The lens.
+- Returns: The slowest handheld-safe shutter in seconds, or `nil` when the lens reports
+  no focal length or no shutter range.
+
+## `AutoShutter/limits(for:fastShutter:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func limits(for lens: Lens, fastShutter: FastShutter) -> [Double]
+```
+
+The limits full auto tries, shortest first: the fast shutter choice, then the handheld
+rule. Each is inside the lens's shutter range.
+
+- Parameters:
+  - lens: The lens.
+  - fastShutter: The person's choice.
+- Returns: The limits; empty when the lens reports no shutter range.
+
+## `AutoShutter/longestShutter(for:lens:fastShutter:current:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func longestShutter(for reading: ExposureReading, lens: Lens, fastShutter: FastShutter, current: Double?) -> Double?
+```
+
+The longest shutter full auto allows for a reading.
+
+- Parameters:
+  - reading: What the camera is using now.
+  - lens: The lens.
+  - fastShutter: The person's choice.
+  - current: The limit in use now, or `nil` when it is lifted.
+- Returns: The first limit the scene is bright enough for, or `nil` to lift the limit
+  (too dark, or a lens without an ISO range or shutter limits).
+
+## `AutoShutter/returnMargin`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let returnMargin: Double
+```
+
+How much brighter than needed a limit must be before a lifted limit comes back: half a
+stop, so the limit doesn't switch on and off when the light is near the threshold. A
+tool setting, chosen to be larger than the meter's frame-to-frame changes (an
+assumption, checked on the device: docs/TESTING.md).
+
+## `AutoShutter/risksBlur(_:on:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func risksBlur(_ duration: Double, on lens: Lens) -> Bool
+```
+
+Whether a shutter is slow enough to risk blur from hand shake, for the hint in manual
+controls.
+
+- Parameters:
+  - duration: The shutter in use or chosen, in seconds.
+  - lens: The lens.
+- Returns: `true` when it is longer than ``handheldLimit(for:)``; `false` without a limit.
+
 ## `BracketFrame`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -259,6 +546,18 @@ A request an interface sends to ``CameraModel``.
 Intents are the only way an interface changes the camera. They carry no business rules: the
 model decides what each one means.
 
+## `CameraIntent/auto(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case auto(AutoControlIntent)
+```
+
+Use an aid that works in full auto too: tap to focus and expose, the focus and exposure
+lock, exposure compensation, Close-Up, the fast shutter rule and the focus magnifier. See
+``AutoControlIntent``.
+
 ## `CameraIntent/capture`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -398,6 +697,19 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The state of the most recent capture.
 
+## `CameraModel/closeUpLens`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var closeUpLens: Lens? { get }
+```
+
+The lens to suggest when the subject seems closer than the selected lens can focus: the
+ultra wide lens, from the wide or a telephoto lens, while
+``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
+a button to switch; nope. never switches on its own (issue #51).
+
 ## `CameraModel/init(backend:saver:sleep:now:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -428,6 +740,17 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether clean view is on: the interface hides every control that isn't essential. Off by
 default. Warnings that change what the photo is are never hidden.
+
+## `CameraModel/isMagnifying`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isMagnifying: Bool { get set }
+```
+
+Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
+focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
 
 ## `CameraModel/light`
 
@@ -621,6 +944,19 @@ concrete type, turns it into a view (for the AVFoundation backend, a view backed
 inside the handle (AGENTS.md, "Architecture: interface separate from logic").
 
 The live preview is processed by the system; it is a framing guide, not the photo.
+
+## `CameraPreviewSource/devicePoint(forViewfinderPoint:)`
+
+public, declared in `Sources/NopeCore/CameraPreviewSource.swift`
+
+```swift
+@MainActor func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint?
+```
+
+Returns the point unchanged: a source without video has no rotation or mirroring.
+
+- Parameter point: The point in the viewfinder.
+- Returns: `point`.
 
 ## `CameraState`
 
@@ -1246,6 +1582,18 @@ case interruptionEnded
 
 The system resumed the camera after an interruption.
 
+## `CaptureEvent/subjectAreaChanged`
+
+public, declared in `Sources/NopeCore/CaptureEvent.swift`
+
+```swift
+case subjectAreaChanged
+```
+
+The scene changed substantially, for example the camera moved
+(`AVCaptureDevice.subjectAreaDidChangeNotification`). Sent only while a tapped point is
+being followed, so autofocus can return to the center.
+
 ## `CaptureEvent/torchUnavailable`
 
 public, declared in `Sources/NopeCore/CaptureEvent.swift`
@@ -1644,6 +1992,66 @@ let shadows: Bool
 ```
 
 Whether enough of the preview is at full black to count as clipped shadows.
+
+## `CloseUpDetector`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+struct CloseUpDetector
+```
+
+Notices when the subject seems closer than the lens can focus: the lens stays at its nearest
+position while autofocus keeps searching (issue #51, "Close-up assist").
+
+It only suggests the ultra wide lens; nope. never switches lenses on its own. The thresholds
+are assumptions to check on the device (docs/TESTING.md, "Close-up focus aids"):
+`lensPosition` is relative (0 is the nearest the lens can focus), not a distance.
+
+## `CloseUpDetector/init()`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+init()
+```
+
+Creates a detector with no readings.
+
+## `CloseUpDetector/nearestPosition`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let nearestPosition: Double
+```
+
+How near the nearest position the lens must be, on the 0-to-1 relative scale.
+
+## `CloseUpDetector/record(_:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+mutating func record(_ reading: ExposureReading) -> Bool
+```
+
+Records a reading.
+
+- Parameter reading: The camera's reading.
+- Returns: Whether the subject seems too close: the lens stayed at its nearest position
+  for ``requiredReadings`` readings in a row, and autofocus searched during them.
+
+## `CloseUpDetector/requiredReadings`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let requiredReadings: Int
+```
+
+How many readings in a row must find the lens there: two seconds at four readings a
+second (``ExposureReading`` rate).
 
 ## `ContentCredentialsSummary`
 
@@ -2136,7 +2544,7 @@ struct DeviceControls
 What a ``ManualCaptureBackend`` sets on the camera: exposure, focus, white balance and
 metering, already checked against the lens.
 
-``ManualControlsModel`` builds it with ``init(settings:lens:)``, which holds every rule
+``ManualControlsModel`` builds it with ``init(settings:lens:assist:)``, which holds every rule
 about which combination a lens supports and keeps each value inside the lens's range. A
 backend only applies it.
 
@@ -2262,6 +2670,76 @@ case value(Double)
 
 A fixed value: an ISO, a duration in seconds or an f-number.
 
+## `DeviceControls/PointOfInterest`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+struct PointOfInterest
+```
+
+Where autofocus and auto exposure aim after a tap (`focusPointOfInterest` and
+`exposurePointOfInterest`, in the camera's 0-to-1 coordinates).
+
+## `DeviceControls/PointOfInterest/exposes`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let exposes: Bool
+```
+
+Whether auto exposure meters there: exposure is automatic and the lens supports an
+exposure point.
+
+## `DeviceControls/PointOfInterest/focuses`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let focuses: Bool
+```
+
+Whether autofocus aims there: focus is automatic and the lens supports a focus point.
+
+## `DeviceControls/PointOfInterest/init(point:focuses:exposes:locks:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+init(point: FramePoint, focuses: Bool, exposes: Bool, locks: Bool)
+```
+
+Creates a point of interest.
+
+- Parameters:
+  - point: The point, in the camera's coordinates.
+  - focuses: Whether autofocus aims there.
+  - exposes: Whether auto exposure meters there.
+  - locks: Whether focus and exposure lock after adjusting.
+
+## `DeviceControls/PointOfInterest/locks`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let locks: Bool
+```
+
+Whether focus and exposure adjust once and then lock (`AVCaptureDevice.FocusMode.autoFocus`
+and `ExposureMode.autoExpose`), rather than keep following the point until the scene
+changes.
+
+## `DeviceControls/PointOfInterest/point`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let point: FramePoint
+```
+
+The point, in the camera's coordinates.
+
 ## `DeviceControls/WhiteBalanceControl`
 
 public, declared in `Sources/NopeCore/DeviceControls.swift`
@@ -2322,28 +2800,31 @@ let focus: Focus
 
 The focus.
 
-## `DeviceControls/init(exposure:focus:whiteBalance:metering:)`
+## `DeviceControls/init(exposure:focus:whiteBalance:metering:pointOfInterest:nearFocusLimit:longestAutoExposure:)`
 
 public, declared in `Sources/NopeCore/DeviceControls.swift`
 
 ```swift
-init(exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode)
+init(exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode, pointOfInterest: PointOfInterest? = nil, nearFocusLimit: Bool = false, longestAutoExposure: Double? = nil)
 ```
 
-Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:lens:)``.
+Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:lens:assist:)``.
 
 - Parameters:
   - exposure: The exposure.
   - focus: The focus.
   - whiteBalance: The white balance.
   - metering: The metering mode.
+  - pointOfInterest: The tapped point, or `nil`. Defaults to `nil`.
+  - nearFocusLimit: Whether autofocus is limited to near subjects. Defaults to `false`.
+  - longestAutoExposure: The longest auto exposure in seconds, or `nil`. Defaults to `nil`.
 
-## `DeviceControls/init(settings:lens:)`
+## `DeviceControls/init(settings:lens:assist:)`
 
 public, declared in `Sources/NopeCore/DeviceControls.swift`
 
 ```swift
-init(settings: ManualSettings, lens: Lens)
+init(settings: ManualSettings, lens: Lens, assist: AssistSettings = .none)
 ```
 
 Builds the controls for settings on a lens.
@@ -2355,9 +2836,26 @@ Builds the controls for settings on a lens.
 - Exposure compensation is dropped when ISO and shutter are both set, because the camera
   has nothing left to adjust (`AVCaptureDevice.exposureTargetBias`).
 
+- The automatic aids apply only to what is automatic: the tapped point aims autofocus
+  only while focus is automatic, and auto exposure only while exposure is automatic; the
+  near focus limit needs autofocus; the longest shutter needs auto exposure. Each needs
+  the lens to support it.
+
 - Parameters:
   - settings: The person's settings.
   - lens: The selected lens.
+  - assist: The automatic aids. Defaults to none.
+
+## `DeviceControls/longestAutoExposure`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let longestAutoExposure: Double?
+```
+
+The longest shutter auto exposure may use, in seconds (`activeMaxExposureDuration`), or
+`nil` for the camera's default. Set only with ``Exposure/automatic(compensation:)``.
 
 ## `DeviceControls/metering`
 
@@ -2368,6 +2866,26 @@ let metering: MeteringMode
 ```
 
 The metering mode.
+
+## `DeviceControls/nearFocusLimit`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let nearFocusLimit: Bool
+```
+
+Whether autofocus is limited to near subjects (`autoFocusRangeRestriction = .near`).
+
+## `DeviceControls/pointOfInterest`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let pointOfInterest: PointOfInterest?
+```
+
+The tapped point, or `nil` for the camera's default (the center).
 
 ## `DeviceControls/whiteBalance`
 
@@ -2530,12 +3048,12 @@ How far the scene's metered exposure is from the camera's target, in EV
 (`AVCaptureDevice.exposureTargetOffset`): 0 when the exposure matches the meter, negative
 when the photo will be darker than the meter's reading.
 
-## `ExposureReading/init(iso:exposureDuration:exposureOffset:lensPosition:aperture:whiteBalance:)`
+## `ExposureReading/init(iso:exposureDuration:exposureOffset:lensPosition:aperture:whiteBalance:isAdjustingFocus:)`
 
 public, declared in `Sources/NopeCore/ManualSettings.swift`
 
 ```swift
-init(iso: Double, exposureDuration: Double, exposureOffset: Double, lensPosition: Double, aperture: Double, whiteBalance: WhiteBalance?)
+init(iso: Double, exposureDuration: Double, exposureOffset: Double, lensPosition: Double, aperture: Double, whiteBalance: WhiteBalance?, isAdjustingFocus: Bool = false)
 ```
 
 Creates a reading.
@@ -2547,6 +3065,17 @@ Creates a reading.
   - lensPosition: The relative focus position, 0 to 1.
   - aperture: The aperture in use, as an f-number.
   - whiteBalance: The white balance in use, or `nil`.
+  - isAdjustingFocus: Whether autofocus is moving the lens. Defaults to `false`.
+
+## `ExposureReading/isAdjustingFocus`
+
+public, declared in `Sources/NopeCore/ManualSettings.swift`
+
+```swift
+let isAdjustingFocus: Bool
+```
+
+Whether autofocus is moving the lens to find focus (`AVCaptureDevice.isAdjustingFocus`).
 
 ## `ExposureReading/iso`
 
@@ -2577,6 +3106,61 @@ let whiteBalance: WhiteBalance?
 ```
 
 The white balance in use, or `nil` when the camera can't convert its gains.
+
+## `FastShutter`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+enum FastShutter
+```
+
+How fast a shutter full auto prefers (issue #56). The camera's auto exposure still chooses
+the shutter and ISO; nope. only sets the longest shutter it may use
+(`AVCaptureDevice.activeMaxExposureDuration`), so it raises ISO instead of slowing the
+shutter. Manual controls are never changed by it.
+
+## `FastShutter/freezeFastMotion`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case freezeFastMotion
+```
+
+At least 1/1000 s, to freeze fast motion such as insects or sports.
+
+## `FastShutter/freezeMotion`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case freezeMotion
+```
+
+At least 1/500 s, to freeze people and pets in motion.
+
+## `FastShutter/handheld`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case handheld
+```
+
+At least 1/(2 × the lens's 35 mm-equivalent focal length), a common rule for a sharp
+handheld photo. The default.
+
+## `FastShutter/slowestShutter`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+var slowestShutter: Double? { get }
+```
+
+The slowest shutter this choice allows on its own, in seconds, or `nil` for
+``handheld``, which depends on the lens.
 
 ## `FlashMode`
 
@@ -2804,6 +3388,61 @@ case none
 
 The whole range.
 
+## `FocusTarget`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+struct FocusTarget
+```
+
+Where autofocus and auto exposure are aimed after a tap, and whether they are locked there.
+
+## `FocusTarget/devicePoint`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+let devicePoint: FramePoint
+```
+
+The same point in the camera's coordinates, as the hardware uses it.
+
+## `FocusTarget/init(viewfinderPoint:devicePoint:isLocked:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+init(viewfinderPoint: FramePoint, devicePoint: FramePoint, isLocked: Bool)
+```
+
+Creates a target.
+
+- Parameters:
+  - viewfinderPoint: The tapped point in the viewfinder.
+  - devicePoint: The point in the camera's coordinates.
+  - isLocked: Whether focus and exposure are locked there.
+
+## `FocusTarget/isLocked`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+let isLocked: Bool
+```
+
+Whether focus and exposure are locked at the point (AE/AF lock).
+
+## `FocusTarget/viewfinderPoint`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+let viewfinderPoint: FramePoint
+```
+
+The tapped point in the viewfinder, as drawn: where an interface draws the focus square.
+
 ## `FrameAnalysis`
 
 public, declared in `Sources/NopeCore/FrameAnalysis.swift`
@@ -2873,6 +3512,103 @@ func keeping(_ needs: LiveAnalysisNeeds) -> FrameAnalysis?
 The analysis without the parts that are no longer needed, or `nil` if nothing is left.
 
 - Parameter needs: What is needed now.
+
+## `FramePoint`
+
+public, declared in `Sources/NopeCore/FramePoint.swift`
+
+```swift
+struct FramePoint
+```
+
+A point in a picture, in normalized coordinates: (0, 0) is the top-left corner and (1, 1) the
+bottom-right corner.
+
+An interface sends a point in the viewfinder's own coordinates (where the person tapped,
+divided by the viewfinder's size) with ``AutoControlIntent/focusAndExpose(at:)``.
+``CameraModel`` turns it into the camera's coordinates with
+``CameraPreviewSource/devicePoint(forViewfinderPoint:)`` before it reaches the hardware
+(`focusPointOfInterest` and `exposurePointOfInterest` use the same 0-to-1 range).
+
+## `FramePoint/center`
+
+public, declared in `Sources/NopeCore/FramePoint.swift`
+
+```swift
+static let center: FramePoint
+```
+
+The middle of the picture.
+
+## `FramePoint/init(x:y:)`
+
+public, declared in `Sources/NopeCore/FramePoint.swift`
+
+```swift
+init(x: Double, y: Double)
+```
+
+Creates a point, moving each coordinate inside 0 through 1, so a tap at the very edge
+(or a rounding error just past it) is still a valid point of interest.
+
+- Parameters:
+  - x: The horizontal position, 0 to 1.
+  - y: The vertical position, 0 to 1.
+
+## `FramePoint/normalized(locationX:locationY:width:height:)`
+
+public, declared in `Sources/NopeCore/FramePoint.swift`
+
+```swift
+static func normalized(locationX: Double, locationY: Double, width: Double, height: Double) -> FramePoint?
+```
+
+The point for a location inside a frame of a size, for example a tap in the viewfinder.
+
+- Parameters:
+  - locationX: The horizontal location, in points from the left edge.
+  - locationY: The vertical location, in points from the top edge.
+  - width: The frame's width, in points.
+  - height: The frame's height, in points.
+- Returns: The normalized point, or `nil` for an empty frame.
+
+## `FramePoint/unmagnified(scale:anchor:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+func unmagnified(scale: Double, anchor: FramePoint) -> FramePoint
+```
+
+The point in the unmagnified viewfinder under a point in the magnified one.
+
+The focus magnifier draws the viewfinder scaled around an anchor; a tap on it lands on
+`anchor + (point − anchor) / scale` of the real viewfinder.
+
+- Parameters:
+  - scale: The magnification, greater than 0.
+  - anchor: The point the magnifier is centered on.
+- Returns: The point in the unmagnified viewfinder.
+
+## `FramePoint/x`
+
+public, declared in `Sources/NopeCore/FramePoint.swift`
+
+```swift
+let x: Double
+```
+
+The horizontal position, from 0 (leading edge as drawn, left) to 1 (right).
+
+## `FramePoint/y`
+
+public, declared in `Sources/NopeCore/FramePoint.swift`
+
+```swift
+let y: Double
+```
+
+The vertical position, from 0 (top) to 1 (bottom).
 
 ## `GoldenSpiral`
 
@@ -4032,6 +4768,18 @@ The four-character code of the lens's single-frame Bayer RAW pixel format, such 
 When it's `nil`, the lens can only give ``processedFallback``, which has some device
 processing, and the interface must say so (issue #1, "No-RAW fallback").
 
+## `Lens/equivalentFocalLength`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let equivalentFocalLength: Double?
+```
+
+The lens's focal length as it would be on a 35 mm film camera with the same angle of
+view, in millimeters, or `nil` when unknown. Computed from the field of view, so it is
+approximate. Full auto uses it for the handheld shutter rule (``AutoShutter``).
+
 ## `Lens/exposureDurationRange`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -4077,12 +4825,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:flashModes:hasTorch:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false)
 ```
 
 Creates a lens description.
@@ -4100,6 +4848,7 @@ Creates a lens description.
   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
   - photoDimensions: The supported photo sizes, smallest first.
   - manualControls: The manual controls the lens supports. Defaults to none.
+  - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
   - flashModes: The flash modes the lens supports. Defaults to none.
   - hasTorch: Whether the lens has a torch. Defaults to `false`.
 
@@ -5301,12 +6050,12 @@ var exposureModes: [ExposureMode] { get }
 The exposure modes the lens supports, in the order P, S, I, M. Program is always
 offered: it is the camera's own auto exposure.
 
-## `ManualCapabilities/init(supportsManualExposure:supportsShutterPriority:supportsISOPriority:supportsAperturePriority:exposureCompensationRange:supportsExposureLock:supportsAutoFocus:supportsFocusLock:supportsManualFocus:supportsManualWhiteBalance:meteringModes:)`
+## `ManualCapabilities/init(supportsManualExposure:supportsShutterPriority:supportsISOPriority:supportsAperturePriority:exposureCompensationRange:supportsExposureLock:supportsAutoFocus:supportsFocusLock:supportsManualFocus:supportsManualWhiteBalance:meteringModes:supportsFocusPoint:supportsExposurePoint:supportsNearFocusLimit:)`
 
 public, declared in `Sources/NopeCore/ManualCapabilities.swift`
 
 ```swift
-init(supportsManualExposure: Bool, supportsShutterPriority: Bool, supportsISOPriority: Bool, supportsAperturePriority: Bool, exposureCompensationRange: ClosedRange<Double>?, supportsExposureLock: Bool, supportsAutoFocus: Bool, supportsFocusLock: Bool, supportsManualFocus: Bool, supportsManualWhiteBalance: Bool, meteringModes: [MeteringMode])
+init(supportsManualExposure: Bool, supportsShutterPriority: Bool, supportsISOPriority: Bool, supportsAperturePriority: Bool, exposureCompensationRange: ClosedRange<Double>?, supportsExposureLock: Bool, supportsAutoFocus: Bool, supportsFocusLock: Bool, supportsManualFocus: Bool, supportsManualWhiteBalance: Bool, meteringModes: [MeteringMode], supportsFocusPoint: Bool = false, supportsExposurePoint: Bool = false, supportsNearFocusLimit: Bool = false)
 ```
 
 Creates a capability description.
@@ -5323,6 +6072,11 @@ Creates a capability description.
   - supportsManualFocus: Whether the focus can be set to a lens position.
   - supportsManualWhiteBalance: Whether the white balance can be set.
   - meteringModes: The metering modes offered.
+  - supportsFocusPoint: Whether autofocus can aim at a chosen point. Defaults to `false`.
+  - supportsExposurePoint: Whether auto exposure can meter a chosen point. Defaults to
+    `false`.
+  - supportsNearFocusLimit: Whether autofocus can be limited to near subjects. Defaults
+    to `false`.
 
 ## `ManualCapabilities/meteringModes`
 
@@ -5377,6 +6131,17 @@ let supportsExposureLock: Bool
 
 Whether auto exposure can be locked (`AVCaptureDevice.ExposureMode.locked`).
 
+## `ManualCapabilities/supportsExposurePoint`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsExposurePoint: Bool
+```
+
+Whether auto exposure can meter a chosen point (`isExposurePointOfInterestSupported`), for
+tap to expose.
+
 ## `ManualCapabilities/supportsFocusLock`
 
 public, declared in `Sources/NopeCore/ManualCapabilities.swift`
@@ -5386,6 +6151,17 @@ let supportsFocusLock: Bool
 ```
 
 Whether autofocus can be locked (`AVCaptureDevice.FocusMode.locked`).
+
+## `ManualCapabilities/supportsFocusPoint`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsFocusPoint: Bool
+```
+
+Whether autofocus can aim at a chosen point (`isFocusPointOfInterestSupported`), for tap
+to focus. Some front cameras have a fixed focus and can't.
 
 ## `ManualCapabilities/supportsISOPriority`
 
@@ -5429,6 +6205,17 @@ let supportsManualWhiteBalance: Bool
 
 Whether the white balance can be set (`isLockingWhiteBalanceWithCustomDeviceGainsSupported`).
 
+## `ManualCapabilities/supportsNearFocusLimit`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+let supportsNearFocusLimit: Bool
+```
+
+Whether autofocus can be limited to near subjects
+(`isAutoFocusRangeRestrictionSupported`), for the Close-Up focus limit.
+
 ## `ManualCapabilities/supportsShutterPriority`
 
 public, declared in `Sources/NopeCore/ManualCapabilities.swift`
@@ -5439,6 +6226,17 @@ let supportsShutterPriority: Bool
 
 Whether the shutter can be set while the camera keeps setting ISO (iOS 27 and later,
 `AVCaptureDevice.autoISO`, checked per format).
+
+## `ManualCapabilities/supportsTapToFocus`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+var supportsTapToFocus: Bool { get }
+```
+
+Whether tapping the viewfinder can do anything on this lens: aim autofocus or auto
+exposure at the tapped point.
 
 ## `ManualCaptureBackend`
 
@@ -5510,8 +6308,10 @@ public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
 func setExposureReadingsEnabled(_ enabled: Bool) async
 ```
 
-Turns the readings on or off. They are off by default and are on only while manual
-controls are shown, so nothing is measured ahead of need (AGENTS.md, "Battery").
+Turns the readings on or off. They are off by default. ``ManualControlsModel`` turns them
+on once the camera runs, because full auto's fast shutter rule and the close-up hint read
+them (issue #56); they arrive at a reduced rate and stop with the camera, so nothing is
+measured while the camera screen isn't in use (AGENTS.md, "Battery").
 
 - Parameter enabled: Whether to send readings.
 
@@ -5777,6 +6577,42 @@ sends ``ManualControlIntent`` values through ``CameraModel/send(_:)`` as
 modes combine. Full auto is the default, and manual controls stay hidden until the "Manual
 controls" option turns them on (``isEnabled``).
 
+## `ManualControlsModel/apply(restoringOnFailure:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func apply(restoringOnFailure previous: ManualSettings) async
+```
+
+Sends the settings to the camera. If the camera refuses them, the settings go back to
+what they were; if it isn't running, they are applied when it starts.
+
+- Parameter previous: The settings to restore when the camera refuses.
+
+## `ManualControlsModel/applyCurrentControls()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func applyCurrentControls() async
+```
+
+Sends the settings and aids to the camera. If it refuses, nothing is kept from the
+change except what the interface shows; if it isn't running, the controls are applied
+when it starts.
+
+## `ManualControlsModel/assist`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor var assist: AssistSettings { get }
+```
+
+The aids to send with the person's settings. The fast shutter limit is full auto's alone:
+with manual controls on, the person decides.
+
 ## `ManualControlsModel/availability(of:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -5789,6 +6625,16 @@ Whether a control can be used on the selected lens now, and if not, why.
 
 - Parameter control: A control.
 - Returns: The control's availability.
+
+## `ManualControlsModel/backend`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor let backend: (any ManualCaptureBackend)?
+```
+
+The hardware, or `nil` when the backend has no manual controls.
 
 ## `ManualControlsModel/bracket`
 
@@ -5825,6 +6671,16 @@ yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that does
 The base exposure is the person's ISO and shutter where set, otherwise the camera's
 reading, which already includes exposure compensation.
 
+## `ManualControlsModel/canAdjustExposureCompensation`
+
+public, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor var canAdjustExposureCompensation: Bool { get }
+```
+
+Whether the selected lens can set exposure compensation now.
+
 ## `ManualControlsModel/canLockExposure`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -5854,6 +6710,36 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 The selected lens's manual capabilities.
+
+## `ManualControlsModel/closeUpDetector`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var closeUpDetector: CloseUpDetector { get set }
+```
+
+Watches for a subject that is too close to focus.
+
+## `ManualControlsModel/closeUpDismissed`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var closeUpDismissed: Bool { get set }
+```
+
+Whether the person dismissed the close-up suggestion on this lens.
+
+## `ManualControlsModel/dismissCloseUpSuggestion()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func dismissCloseUpSuggestion()
+```
+
+Hides the close-up suggestion until the lens changes.
 
 ## `ManualControlsModel/exposureModes`
 
@@ -5894,6 +6780,45 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 Shutter to start from before the first reading, in seconds: 1/60 s.
+
+## `ManualControlsModel/fastShutter`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var fastShutter: FastShutter { get set }
+```
+
+How fast a shutter full auto prefers. ``FastShutter/handheld`` by default.
+
+## `ManualControlsModel/focus(at:devicePoint:locks:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func focus(at viewfinderPoint: FramePoint, devicePoint: FramePoint, locks: Bool) async
+```
+
+Aims autofocus and auto exposure at a point.
+
+- Parameters:
+  - viewfinderPoint: The point in the viewfinder, as drawn.
+  - devicePoint: The same point in the camera's coordinates.
+  - locks: Whether to lock focus and exposure there once they have adjusted.
+
+Does nothing on a lens without a focus or exposure point (some front cameras).
+
+## `ManualControlsModel/focusTarget`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var focusTarget: FocusTarget? { get set }
+```
+
+Where autofocus and auto exposure are aimed after a tap, and whether they are locked
+there, or `nil` for continuous auto at the center. Cleared when the scene changes (unless
+locked), on a lens change and by All Auto.
 
 ## `ManualControlsModel/handle(_:capture:)`
 
@@ -5966,6 +6891,16 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 Whether the backend offers manual controls at all. When it's `false`, an interface
 shouldn't offer the "Manual controls" option.
 
+## `ManualControlsModel/lastReading`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lastReading: ExposureReading? { get set }
+```
+
+The camera's last reading, in full auto too, for the fast shutter rule and the hints.
+
 ## `ManualControlsModel/lens`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -5989,6 +6924,28 @@ reading, which belonged to the old lens, and a bracket longer than the new lens 
 
 - Parameter lens: The selected lens.
 
+## `ManualControlsModel/longestAutoShutter`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var longestAutoShutter: Double? { get set }
+```
+
+The longest shutter full auto allows now, in seconds, or `nil` when the limit is lifted
+or the lens has none (``AutoShutter``).
+
+## `ManualControlsModel/nearFocusLimit`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var nearFocusLimit: Bool { get set }
+```
+
+Whether autofocus is limited to near subjects (Close-Up). Off by default; reset by All
+Auto.
+
 ## `ManualControlsModel/observeReadings()`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -6000,6 +6957,9 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 Applies the backend's readings until its stream ends. Interfaces
 run it in a `.task` while the camera is visible. Returns at once without manual controls.
 
+``reading`` shows a reading only while manual controls are on; in full auto the readings
+drive the fast shutter rule and the hints (``record(_:)``).
+
 ## `ManualControlsModel/reading`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -6010,6 +6970,53 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 What the camera is using now, or `nil` before the first reading or while manual controls
 are off.
+
+## `ManualControlsModel/readingsStarted`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var readingsStarted: Bool { get set }
+```
+
+Whether the readings were turned on.
+
+## `ManualControlsModel/record(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func record(_ reading: ExposureReading) async
+```
+
+Applies one reading to the aids: the fast shutter limit in full auto, the steady hint and
+the close-up suggestion.
+
+- Parameter reading: What the camera is using now.
+
+## `ManualControlsModel/resetAids()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func resetAids() -> Bool
+```
+
+Clears the tapped point and the near focus limit, for All Auto.
+
+- Returns: Whether anything changed.
+
+## `ManualControlsModel/resetAidsForNewLens()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func resetAidsForNewLens()
+```
+
+Clears what belonged to the previous lens: the tapped point, the close-up state and the
+hint, and starts the new lens at its fastest fast-shutter limit until it reports a
+reading.
 
 ## `ManualControlsModel/scale(for:)`
 
@@ -6034,6 +7041,56 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 Applies the settings again after the camera started, because starting it returns every
 control to automatic. Does nothing in full auto.
 
+## `ManualControlsModel/setExposureCompensation(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func setExposureCompensation(_ value: Double) async
+```
+
+Sets exposure compensation, in EV, inside the lens's range. Works in full auto (issue
+#41) as well as with manual controls.
+
+- Parameter value: The compensation, in EV.
+
+## `ManualControlsModel/setFastShutter(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func setFastShutter(_ choice: FastShutter) async
+```
+
+Chooses how fast a shutter full auto prefers, and applies the new limit.
+
+- Parameter choice: The choice.
+
+## `ManualControlsModel/setLongestAutoShutter(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func setLongestAutoShutter(_ limit: Double?) async
+```
+
+Sets the full-auto limit and applies it when it changed.
+
+- Parameter limit: The longest shutter in seconds, or `nil` to lift the limit.
+
+## `ManualControlsModel/setNearFocusLimit(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func setNearFocusLimit(_ isOn: Bool) async
+```
+
+Turns the near focus limit on or off.
+
+- Parameter isOn: Whether autofocus is limited to near subjects. Turning it on does
+  nothing on a lens that can't limit its range.
+
 ## `ManualControlsModel/settings`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -6043,6 +7100,62 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 The person's settings. ``ManualSettings/automatic`` (full auto) by default.
+
+## `ManualControlsModel/showsSteadyHint`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var showsSteadyHint: Bool { get set }
+```
+
+Whether the camera should say "Hold it steady or use a tripod": in full auto when the
+light is too low for a handheld-safe shutter, and with manual controls when the shutter
+chosen or in use is slower than that.
+
+## `ManualControlsModel/startReadings()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func startReadings() async
+```
+
+Turns the camera's readings on, once.
+
+## `ManualControlsModel/stepExposureCompensation(by:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func stepExposureCompensation(by steps: Int) async
+```
+
+Moves exposure compensation a number of steps along its scale.
+
+- Parameter steps: How many steps, negative for darker.
+
+## `ManualControlsModel/subjectAreaDidChange()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func subjectAreaDidChange() async
+```
+
+Returns autofocus and exposure to the center when the scene changed, unless they are
+locked (`AVCaptureDevice.subjectAreaDidChangeNotification`, issue #35).
+
+## `ManualControlsModel/suggestsCloseUpLens`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var suggestsCloseUpLens: Bool { get set }
+```
+
+Whether the subject seems closer than the lens can focus, so an interface may suggest
+the ultra wide lens (``CameraModel/closeUpLens``).
 
 ## `ManualControlsModel/tint`
 
@@ -6054,6 +7167,30 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 The white balance tint in use: the person's when white balance is Manual, otherwise the
 camera's reading, otherwise 0.
+
+## `ManualControlsModel/unlockFocus()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func unlockFocus() async
+```
+
+Returns focus and exposure to continuous auto at the center.
+
+## `ManualControlsModel/updateSteadyHint()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func updateSteadyHint()
+```
+
+Decides whether to show "Hold it steady or use a tripod".
+
+- Full auto: when the fast shutter limit had to be lifted past the handheld rule.
+- Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
+  than the handheld rule. nope. changes nothing; it only says so.
 
 ## `ManualControlsModel/value(of:)`
 
@@ -8228,6 +9365,16 @@ enum Key
 
 The `UserDefaults` keys.
 
+## `NopeSettings/Key/fastShutter`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let fastShutter: String
+```
+
+How fast a shutter full auto prefers, a ``FastShutter`` raw value.
+
 ## `NopeSettings/Key/flashMode`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -8336,6 +9483,17 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 How the HEIF and JPEG copies are developed from the RAW. ``DevelopedLook/standard`` by
 default. The RAW is never changed by it.
+
+## `NopeSettings/fastShutter`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var fastShutter: FastShutter { get set }
+```
+
+How fast a shutter full auto prefers. ``FastShutter/handheld`` by default; the camera
+screen applies it with ``AutoControlIntent/setFastShutter(_:)``.
 
 ## `NopeSettings/flashMode`
 
@@ -8481,6 +9639,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Sets how the HEIF and JPEG copies are developed, and saves the change.
 
 - Parameter look: The look.
+
+## `NopeSettings/setFastShutter(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setFastShutter(_ choice: FastShutter)
+```
+
+Sets how fast a shutter full auto prefers, and saves the change.
+
+- Parameter choice: The choice.
 
 ## `NopeSettings/setFlashMode(_:)`
 
@@ -11129,9 +12299,9 @@ A ``CaptureBackend`` that returns fixed answers instead of talking to hardware.
 
 Use it in tests, SwiftUI previews and UI tests. It never shows a system prompt, has no
 video, and returns a small placeholder instead of a real photo. As a
-``ManualCaptureBackend`` it accepts every control without changing anything, reports
-``placeholderReading`` when readings are turned on, and returns one placeholder per bracket
-frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
+``ManualCaptureBackend`` it accepts every control without changing anything, reports its
+``reading`` (``placeholderReading`` by default) when readings are turned on, and returns one
+placeholder per bracket frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
 ``TorchStatus/unavailable`` when created with `torchAvailable: false`.
 
 ```swift
@@ -11278,7 +12448,8 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 let exposureReadings: AsyncStream<ExposureReading>
 ```
 
-The readings stream: ``placeholderReading`` each time readings are turned on.
+The readings stream: ``reading``, ``readingCount`` times, each time readings are turned
+on.
 
 ## `SimulatedCaptureBackend/finishEvents()`
 
@@ -11302,12 +12473,12 @@ let frameAnalyses: AsyncStream<FrameAnalysis>
 
 The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:torchAvailable:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], torchAvailable: Bool = true)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true)
 ```
 
 Creates a simulated backend.
@@ -11320,6 +12491,10 @@ Creates a simulated backend.
   - startError: The error starting the camera throws, or `nil` to succeed.
   - captureError: The error taking a photo throws, or `nil` to succeed.
   - eventsAfterStart: Events to emit each time the camera starts.
+  - reading: The reading to report, for example a dim scene. Defaults to
+    ``placeholderReading``.
+  - readingCount: How many times to report it when readings turn on, for example enough
+    for the close-up suggestion. Defaults to 1.
   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
 
 ## `SimulatedCaptureBackend/permission`
@@ -11430,6 +12605,26 @@ let previewSource: (any CameraPreviewSource)?
 
 A ``SimulatedPreviewSource``: there is no video.
 
+## `SimulatedCaptureBackend/reading`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let reading: ExposureReading
+```
+
+The reading sent when readings are turned on.
+
+## `SimulatedCaptureBackend/readingCount`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let readingCount: Int
+```
+
+How many times ``reading`` is sent when readings are turned on.
+
 ## `SimulatedCaptureBackend/requestPermission()`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -11448,7 +12643,7 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 func setExposureReadingsEnabled(_ enabled: Bool) async
 ```
 
-Sends ``placeholderReading`` when readings are turned on.
+Sends ``reading``, ``readingCount`` times, when readings are turned on.
 
 - Parameter enabled: Whether readings are on.
 
@@ -11564,6 +12759,19 @@ final class SimulatedPreviewSource
 The preview source of ``SimulatedCaptureBackend``: it has no video.
 
 An app shows a plain placeholder for it.
+
+## `SimulatedPreviewSource/devicePoint(forViewfinderPoint:)`
+
+public, declared in `Sources/NopeCore/CameraPreviewSource.swift`
+
+```swift
+@MainActor func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint?
+```
+
+Returns the point unchanged: a source without video has no rotation or mirroring.
+
+- Parameter point: The point in the viewfinder.
+- Returns: `point`.
 
 ## `SimulatedPreviewSource/init()`
 

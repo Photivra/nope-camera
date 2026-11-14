@@ -49,6 +49,13 @@ enum SimulatedCameraLaunch {
         /// and only P and M; the front camera has no manual focus. Pair it with
         /// `-NopeSettings.showsManualControls YES` to show the controls.
         case manual
+        /// Access already allowed; lenses with the full-auto aids (tap to focus, exposure
+        /// compensation, Close-Up) and focal lengths, in bright light.
+        case aids
+        /// As `aids`, in light too low for a handheld shutter: "Hold it steady or use a tripod".
+        case dimLight
+        /// As `aids`, with the wide lens stuck at its nearest focus: the ultra wide suggestion.
+        case tooClose
         /// Access already allowed; the four lenses, but the system refuses the light, as on a
         /// device too hot for it.
         case lightUnavailable
@@ -158,6 +165,45 @@ enum SimulatedCameraLaunch {
                 supportsManualWhiteBalance: true, meteringModes: [.center])),
     ]
 
+    /// Every control and every full-auto aid, as on a recent rear camera.
+    static let aidCapabilities = ManualCapabilities(
+        supportsManualExposure: true, supportsShutterPriority: true, supportsISOPriority: true,
+        supportsAperturePriority: false, exposureCompensationRange: -8...8, supportsExposureLock: true,
+        supportsAutoFocus: true, supportsFocusLock: true, supportsManualFocus: true, supportsManualWhiteBalance: true,
+        meteringModes: [.center], supportsFocusPoint: true, supportsExposurePoint: true, supportsNearFocusLimit: true)
+
+    /// The lenses of the aid scenarios: ultra wide and wide with every aid, and a fixed-focus
+    /// front camera that can only meter a tapped point.
+    static let aidLenses: [Lens] = [
+        Lens(
+            id: "simulated-ultra-wide", kind: .ultraWide, bayerRAWFormat: "rgg4", magnification: 0.5,
+            isoRange: 32...3200, exposureDurationRange: 0.000_014...1, aperture: .fixed(2.2),
+            manualControls: aidCapabilities, equivalentFocalLength: 13),
+        Lens(
+            id: "simulated-wide", kind: .wide, bayerRAWFormat: "bgg4", magnification: 1, isoRange: 50...6400,
+            exposureDurationRange: 0.000_014...1, aperture: .fixed(1.8), manualControls: aidCapabilities,
+            equivalentFocalLength: 24),
+        Lens(
+            id: "simulated-front", kind: .front, bayerRAWFormat: "bgg4", isoRange: 20...2000,
+            exposureDurationRange: 0.000_014...0.5, aperture: .fixed(1.9),
+            manualControls: ManualCapabilities(
+                supportsManualExposure: false, supportsShutterPriority: false, supportsISOPriority: false,
+                supportsAperturePriority: false, exposureCompensationRange: -8...8, supportsExposureLock: true,
+                supportsAutoFocus: false, supportsFocusLock: false, supportsManualFocus: false,
+                supportsManualWhiteBalance: false, meteringModes: [.center], supportsExposurePoint: true),
+            equivalentFocalLength: 23),
+    ]
+
+    /// A scene too dark for a handheld shutter on the wide lens: ISO 6400 at 1/48 s, 2 EV under.
+    static let dimReading = ExposureReading(
+        iso: 6400, exposureDuration: 1.0 / 48.0, exposureOffset: -2, lensPosition: 0.5, aperture: 1.8,
+        whiteBalance: WhiteBalance(temperature: 3200))
+
+    /// Autofocus searching at the lens's nearest position.
+    static let tooCloseReading = ExposureReading(
+        iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: 0, aperture: 1.8,
+        whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: true)
+
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
     static func backend() -> SimulatedCaptureBackend? {
         guard let scenario else { return nil }
@@ -189,6 +235,16 @@ enum SimulatedCameraLaunch {
         case .manual:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
+        case .aids:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses))
+        case .dimLight:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: dimReading)
+        case .tooClose:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: tooCloseReading,
+                // More than the readings in a row the close-up detector needs (eight, two seconds).
+                readingCount: 12)
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:

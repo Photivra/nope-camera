@@ -416,7 +416,10 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             lockedFocus: device.isFocusModeSupported(.locked),
             lensPositionFocus: device.isLockingFocusWithCustomLensPositionSupported,
             customWhiteBalance: device.isLockingWhiteBalanceWithCustomDeviceGainsSupported,
-            exposureRegion: exposureRegion)
+            exposureRegion: exposureRegion,
+            focusPoint: device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.autoFocus),
+            exposurePoint: device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.autoExpose),
+            focusRangeRestriction: device.isAutoFocusRangeRestrictionSupported)
     }
 
     /// Applies controls to the attached camera. Call only on `queue`.
@@ -437,9 +440,20 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             return .failure(.configurationFailed)
         }
         defer { device.unlockForConfiguration() }
+        let point = controls.pointOfInterest
         applyMetering(controls.metering, to: device)
-        applyExposure(controls.exposure, to: device)
-        applyFocus(controls.focus, to: device)
+        // A tapped point replaces the metering region; setting the point resets the region to
+        // its default size (AVCaptureDevice.h, exposurePointOfInterest).
+        if let point, point.exposes, device.isExposurePointOfInterestSupported {
+            device.exposurePointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
+        }
+        applyExposure(controls.exposure, locksAtPoint: point.map { $0.exposes && $0.locks } ?? false, to: device)
+        applyLongestAutoExposure(controls.longestAutoExposure, to: device)
+        applyFocusAids(controls, to: device)
+        applyFocus(controls.focus, locksAtPoint: point.map { $0.focuses && $0.locks } ?? false, to: device)
+        // Following a tapped point ends when the scene changes; a lock doesn't
+        // (AVCaptureDevice.subjectAreaDidChangeNotification).
+        device.isSubjectAreaChangeMonitoringEnabled = point.map { !$0.locks } ?? false
         applyWhiteBalance(controls.whiteBalance, to: device)
         return .success(())
     }
@@ -471,10 +485,17 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// - Parameters:
     ///   - exposure: The exposure.
     ///   - device: The camera.
-    private func applyExposure(_ exposure: DeviceControls.Exposure, to device: AVCaptureDevice) {
+    ///   - locksAtPoint: Whether auto exposure adjusts once at the tapped point and then locks
+    ///     (`.autoExpose`), for AE/AF lock.
+    private func applyExposure(_ exposure: DeviceControls.Exposure, locksAtPoint: Bool, to device: AVCaptureDevice) {
         switch exposure {
         case .automatic(let compensation):
-            if device.isExposureModeSupported(.continuousAutoExposure) { device.exposureMode = .continuousAutoExposure }
+            if locksAtPoint, device.isExposureModeSupported(.autoExpose) {
+                device.exposureMode = .autoExpose
+            } else if device.isExposureModeSupported(.continuousAutoExposure) {
+                // Setting the mode also applies a new point of interest (AVCaptureDevice.h).
+                device.exposureMode = .continuousAutoExposure
+            }
             setBias(compensation, on: device)
         case .locked:
             if device.isExposureModeSupported(.locked) { device.exposureMode = .locked }
@@ -499,6 +520,43 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                     duration: Self.duration(duration, format: format), iso: Self.iso(iso, format: format),
                     completionHandler: nil)
             }
+        }
+    }
+
+    /// Sets the longest shutter auto exposure may use (full auto's fast shutter rule), limited to
+    /// the format's range, or the device's default with `kCMTimeInvalid` (AVCaptureDevice.h,
+    /// `activeMaxExposureDuration`). Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - seconds: The longest shutter, or `nil` for the default.
+    ///   - device: The camera.
+    private func applyLongestAutoExposure(_ seconds: Double?, to device: AVCaptureDevice) {
+        guard let seconds else {
+            device.activeMaxExposureDuration = .invalid
+            return
+        }
+        let format = device.activeFormat
+        let time = CMTime(seconds: seconds, preferredTimescale: PhotoSettingsFactory.durationTimescale)
+        device.activeMaxExposureDuration = CMTimeClampToRange(
+            time, range: CMTimeRange(start: format.minExposureDuration, end: format.maxExposureDuration))
+    }
+
+    /// Sets the autofocus range restriction and the focus point before the focus mode, which
+    /// applies them (AVCaptureDevice.h: setting either alone "does not initiate a focus
+    /// operation"). Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - controls: The controls.
+    ///   - device: The camera.
+    private func applyFocusAids(_ controls: DeviceControls, to device: AVCaptureDevice) {
+        if device.isAutoFocusRangeRestrictionSupported {
+            device.autoFocusRangeRestriction = controls.nearFocusLimit ? .near : .none
+        }
+        guard device.isFocusPointOfInterestSupported else { return }
+        if let point = controls.pointOfInterest, point.focuses {
+            device.focusPointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
+        } else {
+            device.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
         }
     }
 
@@ -564,10 +622,16 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// - Parameters:
     ///   - focus: The focus.
     ///   - device: The camera.
-    private func applyFocus(_ focus: DeviceControls.Focus, to device: AVCaptureDevice) {
+    ///   - locksAtPoint: Whether autofocus scans once at the tapped point and then locks
+    ///     (`.autoFocus`), for AE/AF lock.
+    private func applyFocus(_ focus: DeviceControls.Focus, locksAtPoint: Bool, to device: AVCaptureDevice) {
         switch focus {
         case .automatic:
-            if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
+            if locksAtPoint, device.isFocusModeSupported(.autoFocus) {
+                device.focusMode = .autoFocus
+            } else if device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusMode = .continuousAutoFocus
+            }
         case .locked:
             if device.isFocusModeSupported(.locked) { device.focusMode = .locked }
         case .lensPosition(let position):
@@ -612,10 +676,12 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         readingObservations.forEach { $0.invalidate() }
         readingObservations = []
         guard readingsEnabled, let device = currentInput?.device else { return }
-        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation] device in
+        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation, live] device in
             let now = ProcessInfo.processInfo.systemUptime
             guard throttle.withLock({ $0.shouldSend(at: now) }) else { return }
             readingsContinuation.yield(Self.reading(of: device))
+            // The live camera readout is built from the same observations, not a second set.
+            live.readingDidArrive(from: device)
         }
         readingObservations = [
             device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in send(device) },
@@ -641,7 +707,8 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         return ExposureReading(
             iso: Double(device.iso), exposureDuration: device.exposureDuration.seconds,
             exposureOffset: Double(device.exposureTargetOffset), lensPosition: Double(device.lensPosition),
-            aperture: Double(device.lensAperture), whiteBalance: whiteBalance)
+            aperture: Double(device.lensAperture), whiteBalance: whiteBalance,
+            isAdjustingFocus: device.isAdjustingFocus)
     }
 
 
@@ -840,6 +907,11 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             },
             center.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: nil) { _ in
                 continuation.yield(.heat(HeatLevel(ProcessInfo.processInfo.thermalState)))
+            },
+            // Sent only while monitoring is on, which it is only while a tapped point is
+            // followed (applyControls); nope. uses one camera at a time.
+            center.addObserver(forName: AVCaptureDevice.subjectAreaDidChangeNotification, object: nil, queue: nil) { _ in
+                continuation.yield(.subjectAreaChanged)
             },
         ]
     }
