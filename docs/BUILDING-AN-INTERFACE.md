@@ -1,9 +1,9 @@
 # Building an interface
 
-nope.'s interface is a replaceable layer. You can write your own (minimal, accessibility-first,
-iPad-specific or experimental) without touching capture, privacy, signing or development code.
-This guide explains how in plain English. The full walkthrough, with a compiled example, is the
-DocC article "Building an interface" in `NopeCore`
+Photivra Nope Camera's interface is a replaceable layer. You can write your own (minimal,
+accessibility-first, iPad-specific or experimental) without touching capture, privacy, signing or
+development code. This guide explains how in plain English. The full walkthrough, with a compiled
+example, is the DocC article "Building an interface" in `NopeCore`
 ([`Sources/NopeCore/NopeCore.docc/BuildingAnInterface.md`](../Sources/NopeCore/NopeCore.docc/BuildingAnInterface.md)).
 
 ## The contract
@@ -55,9 +55,40 @@ the app target sends `.manual(.setEnabled(_:))` when it changes. Everything abou
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
 exposure modes, bracketing and interval shooting. Send `.manual(...)` intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
-`manual.settings.isAutomatic` is false. Run `manual.observeReadings()` in a second `.task` so the
+`manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
+compensation, Close-Up, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
+intents that work with manual controls off; see the DocC article for what to show. Run
+`manual.observeReadings()` in a second `.task` so the
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
 a warning that changes what the photo is.
+
+## Drive modes, storage and battery
+
+The shutter, and every hardware shutter, sends `.capture`; the model applies `drive.mode`
+(single, a 3 or 10 second self-timer, or burst), and the same intent stops a running countdown
+or burst. Enable the shutter with `canPressShutter`, not `canCapture`, so it can stop them. Show
+`drive.countdown.remainingSeconds` and `drive.burstProgress` with a visible way to stop each
+(`.drive(.cancelTimer)`, `.drive(.stopBurst)`), and announce them. Pass the hardware buttons'
+phases as `.drive(.hardwareButton(_:))`. Pass a `DeviceStatusReading` to `CameraModel` and show
+`storageWarning` and `deviceStatus.batteryWarning`. During an interval series, call
+`SeriesScreenKeeper.update(isSeriesRunning:isInForeground:)` so the screen stays awake and is
+dimmed, with a visible way to brighten it.
+
+To take requests from Siri and Shortcuts, run `serveShortcuts(from:)` with the app's
+`ShortcutInbox` in a `.task` while the camera is shown; the intents call `submit(_:)`.
+
+## The standard camera layout
+
+`NopeUI`'s camera screen is one interface on this contract, following the approved layout in
+[`design/ux-v3.html`](design/ux-v3.html). If you extend it rather than replace it, add camera
+toggles to `QuickControls.builders`, non-default states to `StatePills.builders` and persistent
+warnings to `CameraWarnings.builders`; the layout places them. The app target supplies four
+environment values: `cameraUprightRotation` (which way up the iPhone is held),
+`cameraPresentsSheet` (so the app can rotate sheets while the camera stays in portrait),
+`openAppSettings` (Open Settings buttons; leave it `nil` and they are hidden) and
+`openPhotosApp` (the last-photo thumbnail's Open in Photos; leave it `nil` and a tap shows the
+photo's details instead). Each `SavedPhoto` carries its `thumbnail` and `details` for your own
+last-photo view.
 
 ## Rules that still apply
 

@@ -10,9 +10,9 @@ import Foundation
 /// or hostile file produces ``MetadataInventory/problems`` and never a crash. The fuzz tests in
 /// `NopeCoreTests` feed it random and mutated files.
 struct TIFFReader {
-    /// The most directories a file may have. nope.'s DNG has two (IFD0 and EXIF).
+    /// The most directories a file may have. The app's DNG has two (IFD0 and EXIF).
     static let maximumDirectories = 64
-    /// The most entries one directory may have. nope.'s largest has about 40.
+    /// The most entries one directory may have. The app's largest has about 40.
     static let maximumEntriesPerDirectory = 1024
 
     /// TIFF field types and their sizes in bytes (TIFF 6.0 section 2, and type 13, IFD, from
@@ -23,6 +23,21 @@ struct TIFFReader {
 
     /// The ASCII field type.
     static let asciiType: UInt16 = 2
+
+    /// The most numeric values recorded for one tag (``MetadataInventory/Tag/values``). The
+    /// details screen needs a handful (a 3 × 3 color matrix has 9); longer arrays, such as strip
+    /// offsets, aren't shown, so they aren't copied.
+    static let maximumRecordedValues = 16
+
+    /// Tags whose values are byte offsets into the file (image data, child directories and an
+    /// embedded JPEG), so they change whenever the layout does. They mean nothing to a person
+    /// and aren't recorded, so a change of layout alone, such as the signer inserting its tag,
+    /// leaves the recorded tags as they were.
+    static let offsetTags: Set<UInt16> = [
+        Tag.stripOffsets, Tag.tileOffsets, Tag.subIFDs, Tag.exifPointer, Tag.gpsPointer, Tag.interoperabilityPointer,
+        // JPEGInterchangeFormat, the offset of an embedded JPEG (TIFF 6.0, section 22).
+        0x0201,
+    ]
 
     /// Tag numbers this reader follows or uses.
     enum Tag {
@@ -49,7 +64,7 @@ struct TIFFReader {
         /// Every tag found, and any problem.
         var inventory = MetadataInventory()
         /// The bytes of IFD0's image data (its tiles or strips, concatenated in order), or
-        /// `nil` when IFD0 has none. For nope.'s DNG this is the compressed RAW sensor data.
+        /// `nil` when IFD0 has none. For the app's DNG this is the compressed RAW sensor data.
         var primaryImageData: Data?
 
         /// Creates an empty result: no tags, no problems and no image data.
@@ -147,7 +162,8 @@ struct TIFFReader {
         let entries = (0..<count).map { entry(at: offset + 2 + $0 * 12) }
         for entry in entries {
             result.inventory.tags.append(
-                MetadataInventory.Tag(directory: directory, tag: entry.tag, text: text(of: entry)))
+                MetadataInventory.Tag(
+                    directory: directory, tag: entry.tag, text: text(of: entry), values: numbers(of: entry)))
         }
         for entry in entries {
             follow(entry, from: directory)
@@ -217,6 +233,36 @@ struct TIFFReader {
         switch entry.type {
         case 3: return (0..<entry.count).compactMap { u16(start + $0 * 2).map(Int.init) }
         case 4, 13: return (0..<entry.count).compactMap { u32(start + $0 * 4).map(Int.init) }
+        default: return []
+        }
+    }
+
+    /// The numeric values of an entry, for ``MetadataInventory/Tag/values``: BYTE (1), SHORT (3),
+    /// LONG (4), RATIONAL (5), SBYTE (6), SSHORT (8), SLONG (9) and SRATIONAL (10), as TIFF 6.0
+    /// section 2 defines them. Other types, out-of-bounds values, a zero denominator and more
+    /// than ``maximumRecordedValues`` values give none, and so do the ``offsetTags``.
+    ///
+    /// - Parameter entry: The entry.
+    /// - Returns: The values, in file order.
+    private func numbers(of entry: Entry) -> [Double] {
+        guard let start = entry.valueOffset, entry.count <= Self.maximumRecordedValues, !Self.offsetTags.contains(entry.tag)
+        else { return [] }
+        let indices = 0..<entry.count
+        switch entry.type {
+        case 1: return indices.map { Double(bytes[start + $0]) }
+        case 6: return indices.map { Double(Int8(bitPattern: bytes[start + $0])) }
+        case 3: return indices.map { Double(u16(inBounds: start + $0 * 2)) }
+        case 8: return indices.map { Double(Int16(bitPattern: u16(inBounds: start + $0 * 2))) }
+        case 4: return indices.map { Double(u32(inBounds: start + $0 * 4)) }
+        case 9: return indices.map { Double(Int32(bitPattern: u32(inBounds: start + $0 * 4))) }
+        case 5, 10:
+            let pairs = indices.map { (u32(inBounds: start + $0 * 8), u32(inBounds: start + $0 * 8 + 4)) }
+            guard pairs.allSatisfy({ $0.1 != 0 }) else { return [] }
+            return pairs.map { numerator, denominator in
+                entry.type == 5
+                    ? Double(numerator) / Double(denominator)
+                    : Double(Int32(bitPattern: numerator)) / Double(Int32(bitPattern: denominator))
+            }
         default: return []
         }
     }

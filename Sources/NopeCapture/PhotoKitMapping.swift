@@ -29,7 +29,7 @@ enum PhotoKitMapping {
         }
     }
 
-    /// Whether an add-only authorization status lets nope. add photos.
+    /// Whether an add-only authorization status lets the app add photos.
     ///
     /// `PHAuthorizationStatus.limited` is reported only for read-write access, so for add-only
     /// access `.authorized` is the only status that allows adding (`PHPhotoLibrary.h`); both are

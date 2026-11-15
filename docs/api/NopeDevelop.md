@@ -80,10 +80,11 @@ public, declared in `Sources/NopeDevelop/EncodingSettings.swift`
 struct EncodingSettings
 ```
 
-How nope. encodes a developed photo with the system encoders.
+How the app encodes a developed photo with the system encoders.
 
-Values follow issue #1, "Formats": HEIF at 10 bits per channel and JPEG at maximum quality.
-HEIF is written only with the system HEIF encoder; nope. never bundles an encoder
+The defaults follow issue #1, "Formats": HEIF at 10 bits per channel and JPEG at maximum
+quality, in Display P3. The person may choose others (`DevelopedFileOptions`, issue #57).
+HEIF is written only with the system HEIF encoder; the app never bundles an encoder
 (AGENTS.md, "Encoders").
 
 ## `EncodingSettings/bitsPerChannel`
@@ -96,6 +97,26 @@ let bitsPerChannel: Int
 
 Bits per color channel in the encoded file.
 
+## `EncodingSettings/colorSpace`
+
+public, declared in `Sources/NopeDevelop/EncodingSettings.swift`
+
+```swift
+let colorSpace: OutputColorSpace
+```
+
+The color space the image is encoded in.
+
+## `EncodingSettings/colorSpaceName`
+
+internal, declared in `Sources/NopeDevelop/EncodingSettings.swift`
+
+```swift
+var colorSpaceName: CFString { get }
+```
+
+The Core Graphics name of ``colorSpace``.
+
 ## `EncodingSettings/format`
 
 public, declared in `Sources/NopeDevelop/EncodingSettings.swift`
@@ -105,6 +126,18 @@ let format: PhotoFormat
 ```
 
 The format these settings encode.
+
+## `EncodingSettings/imageBitsPerComponent`
+
+internal, declared in `Sources/NopeDevelop/EncodingSettings.swift`
+
+```swift
+var imageBitsPerComponent: Int { get }
+```
+
+The bits per component of the image handed to the encoder: 8 for an 8-bit HEIF, and
+otherwise the renderer's 16, as before these options existed. ImageIO writes a 16-bit
+image as a 10-bit HEIF (see `PhotoEncoder`) and as an 8-bit JPEG, the format's only depth.
 
 ## `EncodingSettings/imageDestinationOptions()`
 
@@ -126,11 +159,28 @@ public, declared in `Sources/NopeDevelop/EncodingSettings.swift`
 init?(format: PhotoFormat)
 ```
 
-Creates the encoding settings for a developed format.
+Creates the default encoding settings for a developed format: HEIF at 10 bits and the
+encoder's quality, JPEG at maximum quality, both in Display P3.
 
 - Parameter format: The format to encode.
 - Returns: `nil` for `PhotoFormat.raw`, which is saved as the camera's DNG
   and never re-encoded.
+
+## `EncodingSettings/init(format:options:)`
+
+public, declared in `Sources/NopeDevelop/EncodingSettings.swift`
+
+```swift
+init?(format: PhotoFormat, options: DevelopedFileOptions)
+```
+
+Creates the encoding settings for a developed format with the person's options.
+
+- Parameters:
+  - format: The format to encode.
+  - options: The compression, HEIF bit depth and color space.
+- Returns: `nil` for `PhotoFormat.raw`, which is saved as the camera's DNG and never
+  re-encoded.
 
 ## `EncodingSettings/lossyCompressionQuality`
 
@@ -142,7 +192,8 @@ let lossyCompressionQuality: Double?
 
 The lossy compression quality, from 0.0 to 1.0, or `nil` to use the encoder's default.
 
-HEIF quality isn't decided yet, so HEIF uses the system default until it is measured.
+By default HEIF uses the system encoder's default and JPEG the maximum; the person can
+choose another (`DevelopedFileOptions`, issue #57).
 
 ## `EncodingSettings/maximumJPEGQuality`
 
@@ -197,6 +248,20 @@ The uniform type identifier ImageIO must report for a format
 - Parameter format: The file's format.
 - Returns: The type identifier.
 
+## `ImageIOReadBack/imageProperties(of:)`
+
+internal, declared in `Sources/NopeDevelop/ImageIOReadBack.swift`
+
+```swift
+static func imageProperties(of properties: [String : Any]) -> ImageProperties
+```
+
+The image's size and bit depth from its ImageIO properties, for the details.
+
+- Parameter properties: The image's properties.
+- Returns: `kCGImagePropertyPixelWidth`, `kCGImagePropertyPixelHeight` and
+  `kCGImagePropertyDepth`, each `nil` if absent.
+
 ## `ImageIOReadBack/init()`
 
 public, declared in `Sources/NopeDevelop/ImageIOReadBack.swift`
@@ -235,6 +300,73 @@ Reads a file back.
 - Returns: The byte reader's result and ImageIO's property keys.
 - Throws: `CaptureError.metadataNotAllowed` if ImageIO can't open the file as exactly one
   image of its format.
+
+## `ImageIOThumbnailer`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+struct ImageIOThumbnailer
+```
+
+Makes the last-photo thumbnail from a saved file with ImageIO, in memory (issue #36).
+
+`CGImageSourceCreateThumbnailAtIndex` decodes the file at a small size, turned upright by its
+orientation tag (`kCGImageSourceCreateThumbnailWithTransform`). The image is always made from
+the full image (`kCGImageSourceCreateThumbnailFromImageAlways`): the app's files embed no
+thumbnail. The result is drawn into an sRGB RGBA bitmap, the layout `PhotoThumbnail`
+describes.
+
+Privacy: nothing is cached or written to disk (`kCGImageSourceShouldCache` is off); the
+pixels stay in memory (AGENTS.md, "Photos never linger").
+
+## `ImageIOThumbnailer/defaultMaximumPixelSize`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+static let defaultMaximumPixelSize: Int
+```
+
+The longest side of the thumbnail, in pixels: the 52-point slot at 3× scale.
+
+## `ImageIOThumbnailer/init(maximumPixelSize:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+init(maximumPixelSize: Int = Self.defaultMaximumPixelSize)
+```
+
+Creates a thumbnailer.
+
+- Parameter maximumPixelSize: The longest side of the thumbnail, in pixels.
+
+## `ImageIOThumbnailer/maximumPixelSize`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+let maximumPixelSize: Int
+```
+
+The longest side of the thumbnail, in pixels.
+
+## `ImageIOThumbnailer/thumbnail(of:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+func thumbnail(of file: PhotoFile) -> PhotoThumbnail?
+```
+
+Makes a thumbnail.
+
+The thumbnail is drawn into a bitmap context that owns its memory, and the pixels are
+copied out through the image it makes, so no pointer is handled here.
+
+- Parameter file: A saved DNG, HEIF or JPEG.
+- Returns: The thumbnail, upright, or `nil` if ImageIO can't decode the file.
 
 ## `PhotoEncoder`
 
@@ -289,6 +421,46 @@ Encodes an image with ImageIO.
 - Throws: `CaptureError.developmentFailed` if ImageIO can't create the file type or
   finish the file.
 
+## `PhotoEncoder/prepare(_:bitsPerComponent:colorSpaceName:)`
+
+internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
+
+```swift
+static func prepare(_ image: CGImage, bitsPerComponent bits: Int, colorSpaceName: CFString) throws(CaptureError) -> CGImage
+```
+
+Converts an image to a depth and a named color space, or returns it unchanged when it
+already has them.
+
+- Parameters:
+  - image: The image.
+  - bits: The bits per component, 8 or 16.
+  - colorSpaceName: A Core Graphics color space name, such as `CGColorSpace.sRGB`.
+- Returns: The image to encode.
+- Throws: `CaptureError.developmentFailed` if the color space or the conversion fails.
+
+## `PhotoEncoder/prepare(_:for:)`
+
+internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
+
+```swift
+static func prepare(_ image: CGImage, for settings: EncodingSettings) throws(CaptureError) -> CGImage
+```
+
+Converts an image to the depth and color space the settings ask for, or returns it
+unchanged when it already has them.
+
+Core Graphics converts colors when it draws into a context of another color space
+(Quartz 2D Programming Guide, "Color and Color Spaces"), so an sRGB file gets sRGB colors,
+not Display P3 values relabeled. The image's size and pixels are otherwise unchanged; this
+is encoding, not development.
+
+- Parameters:
+  - image: The developed image, 16 bits per channel in Display P3.
+  - settings: The encoding settings.
+- Returns: The image to encode.
+- Throws: `CaptureError.developmentFailed` if the conversion fails.
+
 ## `RAWDeveloper`
 
 public, declared in `Sources/NopeDevelop/RAWDeveloper.swift`
@@ -319,6 +491,26 @@ Develops a HEIF or JPEG from a DNG.
   - raw: The DNG.
   - format: `PhotoFormat.heif` or `PhotoFormat.jpeg`.
   - look: The tone of the developed file.
+  - metadata: The plan the file's metadata is built from.
+- Returns: The developed file.
+- Throws: `CaptureError.developmentFailed` if `format` is RAW, or rendering or encoding
+  fails.
+
+## `RAWDeveloper/develop(_:to:look:options:metadata:)`
+
+public, declared in `Sources/NopeDevelop/RAWDeveloper.swift`
+
+```swift
+func develop(_ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, options: DevelopedFileOptions, metadata: MetadataPlan) async throws(CaptureError) -> PhotoFile
+```
+
+Develops a HEIF or JPEG from a DNG with the person's encoding options.
+
+- Parameters:
+  - raw: The DNG.
+  - format: `PhotoFormat.heif` or `PhotoFormat.jpeg`.
+  - look: The tone of the developed file.
+  - options: The compression, HEIF bit depth and color space (issue #57).
   - metadata: The plan the file's metadata is built from.
 - Returns: The developed file.
 - Throws: `CaptureError.developmentFailed` if `format` is RAW, or rendering or encoding

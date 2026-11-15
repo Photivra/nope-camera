@@ -4,12 +4,12 @@ import Foundation
 /// AVFoundation converts to and from the camera's gains
 /// (`AVCaptureDevice.WhiteBalanceTemperatureAndTintValues`).
 public struct WhiteBalance: Equatable, Sendable {
-    /// The temperatures nope. offers, in kelvin: 2500 K to 10,000 K, the range in the manual
+    /// The temperatures the app offers, in kelvin: 2500 K to 10,000 K, the range in the manual
     /// controls design. AVFoundation converts any temperature; values the camera's gains can't
     /// reach are limited to the nearest gains it accepts.
     public static let temperatureRange: ClosedRange<Double> = 2500...10_000
 
-    /// The tints nope. offers, from green (negative) to magenta (positive). A tool setting:
+    /// The tints the app offers, from green (negative) to magenta (positive). A tool setting:
     /// AVFoundation converts any tint, and the camera's gain limit applies as for temperature.
     public static let tintRange: ClosedRange<Double> = -150...150
 

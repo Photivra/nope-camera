@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Honesty screen: what nope. never does, what iOS may still do outside nope.'s control,
+/// The Honesty screen: what the app never does, what iOS may still do outside the app's control,
 /// and what no app can remove.
 ///
 /// Every statement uses the wording of `docs/research/privacy-claims.md` and is backed by the
@@ -28,7 +28,7 @@ struct HonestyScreen: View {
         .navigationTitle(Text("Honesty", tableName: "Honesty", bundle: .module, comment: "Settings row and screen title: what nope. does and doesn't do, and what it can't control."))
     }
 
-    /// What nope. never does, and how to check.
+    /// What the app never does, and how to check.
     private var neverSection: some View {
         HonestySection {
             HonestyStatement(
@@ -54,12 +54,24 @@ struct HonestyScreen: View {
                     "The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Keep \"nope.\" unchanged. RAW, HEIF and JPEG are file format names. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Location Only If You Turn It On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos include a location only when the person turns Location on."),
+                text: Text(
+                    "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("The Comparison Photo Is Never Saved", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the phone-processed photo of the comparison shot is never saved."),
+                text: Text(
+                    "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What nope. Never Does", tableName: "Honesty", bundle: .module, comment: "Honesty section header. Keep \"nope.\" unchanged.")
         }
     }
 
-    /// What iOS and Photos may still do, outside nope.'s control.
+    /// What iOS and Photos may still do, outside the app's control.
     private var iOSSection: some View {
         HonestySection {
             HonestyStatement(
@@ -97,6 +109,12 @@ struct HonestyScreen: View {
                     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language."))
+            HonestyStatement(
+                title: Text("Faces and Autofocus", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may detect faces to choose where to focus."),
+                text: Text(
+                    "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus, on by default). Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What iOS May Still Do", tableName: "Honesty", bundle: .module, comment: "Honesty section header: things iOS does that the app can't change. iOS is a product name.")
         }
@@ -147,7 +165,7 @@ struct HonestyStatement: View {
             title
                 .font(.headline)
             text
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CameraStyle.secondaryText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .combine)

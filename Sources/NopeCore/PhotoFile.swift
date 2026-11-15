@@ -10,9 +10,12 @@ public struct PhotoFile: Equatable, Sendable {
     /// The file's bytes.
     public let data: Data
     /// Whether the phone's camera processed the file: the HEIF or JPEG of a lens without Bayer
-    /// RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
+    /// RAW. `false` for a DNG and for a HEIF or JPEG the app developed from the RAW. The signer
     /// uses it to describe the file truthfully in its Content Credentials.
     public let isProcessedByDevice: Bool
+    /// What the file's Content Credentials manifest says, set by the signer on the file it
+    /// returns; `nil` for an unsigned file. The "What's in this photo" details show it.
+    public let contentCredentials: ContentCredentialsSummary?
 
     /// Creates a file.
     ///
@@ -21,10 +24,16 @@ public struct PhotoFile: Equatable, Sendable {
     ///   - data: The file's bytes.
     ///   - isProcessedByDevice: Whether the phone's camera processed it (the fallback of a lens
     ///     without Bayer RAW). Defaults to `false`.
-    public init(format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false) {
+    ///   - contentCredentials: What the file's manifest says, for a signed file. Defaults to
+    ///     `nil`.
+    public init(
+        format: PhotoFormat, data: Data, isProcessedByDevice: Bool = false,
+        contentCredentials: ContentCredentialsSummary? = nil
+    ) {
         self.format = format
         self.data = data
         self.isProcessedByDevice = isProcessedByDevice
+        self.contentCredentials = contentCredentials
     }
 }
 
@@ -35,15 +44,20 @@ public struct MetadataReadBack: Equatable, Sendable {
     public let file: MetadataFileReader.Result
     /// Every key in ImageIO's property dictionaries for the image, as ``ImageIOKey`` values.
     public let imageIOKeys: [ImageIOKey]
+    /// The image's size and bit depth as ImageIO reports them, or `nil` when the reader doesn't
+    /// supply them.
+    public let image: ImageProperties?
 
     /// Creates a read-back result.
     ///
     /// - Parameters:
     ///   - file: The project reader's result.
     ///   - imageIOKeys: ImageIO's keys.
-    public init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey]) {
+    ///   - image: ImageIO's size and bit depth, or `nil`.
+    public init(file: MetadataFileReader.Result, imageIOKeys: [ImageIOKey], image: ImageProperties? = nil) {
         self.file = file
         self.imageIOKeys = imageIOKeys
+        self.image = image
     }
 }
 
@@ -75,6 +89,43 @@ public protocol PhotoDeveloping: Sendable {
     /// - Throws: ``CaptureError/developmentFailed`` if the RAW can't be developed or encoded.
     func develop(_ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, metadata: MetadataPlan)
         async throws(CaptureError) -> PhotoFile
+
+    /// Develops a file from the RAW with the person's encoding options (issue #57).
+    ///
+    /// ``PhotoSaver`` calls this one. The default implementation ignores `options` and calls
+    /// ``develop(_:to:look:metadata:)``, for developers that have no options, such as test fakes.
+    ///
+    /// - Parameters:
+    ///   - raw: The DNG, with its metadata already built from the allowlist.
+    ///   - format: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
+    ///   - look: The tone of the developed file.
+    ///   - options: The compression, HEIF bit depth and color space.
+    ///   - metadata: The plan the new file's metadata is built from.
+    /// - Returns: The developed file.
+    /// - Throws: ``CaptureError/developmentFailed`` if the RAW can't be developed or encoded.
+    func develop(
+        _ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, options: DevelopedFileOptions,
+        metadata: MetadataPlan
+    ) async throws(CaptureError) -> PhotoFile
+}
+
+extension PhotoDeveloping {
+    /// Develops a file without encoding options: calls ``develop(_:to:look:metadata:)``.
+    ///
+    /// - Parameters:
+    ///   - raw: The DNG.
+    ///   - format: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
+    ///   - look: The tone of the developed file.
+    ///   - options: Ignored.
+    ///   - metadata: The plan the new file's metadata is built from.
+    /// - Returns: The developed file.
+    /// - Throws: Whatever ``develop(_:to:look:metadata:)`` throws.
+    public func develop(
+        _ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, options: DevelopedFileOptions,
+        metadata: MetadataPlan
+    ) async throws(CaptureError) -> PhotoFile {
+        try await develop(raw, to: format, look: look, metadata: metadata)
+    }
 }
 
 /// The hook where Content Credentials signing plugs in: after the files are built and before
@@ -121,15 +172,20 @@ public struct PhotoLibraryAsset: Equatable, Sendable {
     /// for RAW plus processed captures ("Capturing Photos in RAW and Apple ProRAW Formats", "Save
     /// the photos to the photos library":
     /// https://developer.apple.com/documentation/avfoundation/capturing-photos-in-raw-and-apple-proraw-formats).
-    /// Any other file is its own asset.
+    /// Any other file is its own asset. When both a HEIF and a JPEG are saved, `pairing` says
+    /// which one is paired with the RAW (issue #50); the other is its own asset.
     ///
-    /// - Parameter files: The photo's files.
+    /// - Parameters:
+    ///   - files: The photo's files.
+    ///   - pairing: The processed copy to pair with the RAW when there are two. Defaults to
+    ///     ``RAWPairing/heif``.
     /// - Returns: The assets to create, in one change.
-    public static func assets(for files: [PhotoFile]) -> [PhotoLibraryAsset] {
+    public static func assets(for files: [PhotoFile], pairing: RAWPairing = .heif) -> [PhotoLibraryAsset] {
         guard let raw = files.first(where: { $0.format == .raw }) else {
             return files.map { PhotoLibraryAsset(primary: $0) }
         }
-        let partner = files.first { $0.format == .heif } ?? files.first { $0.format == .jpeg }
+        let other: PhotoFormat = pairing == .heif ? .jpeg : .heif
+        let partner = files.first { $0.format == pairing.format } ?? files.first { $0.format == other }
         let others = files.filter { $0 != raw && $0 != partner }
         return [PhotoLibraryAsset(primary: raw, alternate: partner)] + others.map { PhotoLibraryAsset(primary: $0) }
     }
@@ -138,7 +194,7 @@ public struct PhotoLibraryAsset: Equatable, Sendable {
 /// Adds photos to the library with add-only access.
 ///
 /// `NopeCapture` implements it with PhotoKit (`PhotoKitLibrary`). Add-only access can't read
-/// the library, including nope.'s own photos.
+/// the library, including the app's own photos.
 public protocol PhotoLibrary: Sendable {
     /// Asks for add-only access if needed, then adds every asset in one change.
     ///

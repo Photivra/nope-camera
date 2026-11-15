@@ -12,7 +12,7 @@ public enum CameraState: Equatable, Sendable {
 
     /// The person hasn't decided about camera access yet.
     ///
-    /// Explain why nope. needs the camera and offer one button that sends
+    /// Explain why the app needs the camera and offer one button that sends
     /// ``CameraIntent/requestPermission``.
     case needsPermission
 
@@ -22,7 +22,7 @@ public enum CameraState: Equatable, Sendable {
     /// the prompt a second time.
     case permissionDenied
 
-    /// Access is allowed but the device has no camera nope. can use, such as the Simulator.
+    /// Access is allowed but the device has no camera the app can use, such as the Simulator.
     ///
     /// Say so plainly; there is nothing to retry.
     case unavailable

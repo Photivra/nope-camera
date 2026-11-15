@@ -48,14 +48,14 @@ struct StatusMessageView<Actions: View>: View {
         VStack(spacing: 16) {
             Image(systemName: systemImage)
                 .font(.largeTitle)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CameraStyle.secondaryText)
                 .accessibilityHidden(true)
             title
                 .font(.title2.bold())
                 .accessibilityAddTraits(.isHeader)
             message
                 .font(.body)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CameraStyle.secondaryText)
             actions
         }
         .multilineTextAlignment(.center)

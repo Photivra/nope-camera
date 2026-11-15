@@ -158,7 +158,7 @@ struct HEIFReaderTests {
         ] + (dataInMediaBox ? [] : ["heif:meta:idat"])
         let items = ["heif:item:hvc1", "heif:item:Exif", "heif:item:mime:application/rdf+xml"]
         #expect(Set(inventory.blocks) == Set(topLevel + meta + items))
-        #expect(inventory.tags == [MetadataInventory.Tag(directory: .primary, tag: 0x0112)])
+        #expect(inventory.tags.map { "\($0.directory):\($0.tag)" } == ["primary:274"])
         #expect(
             inventory.xmpProperties == [
                 MetadataInventory.XMPProperty(

@@ -7,11 +7,11 @@ import Foundation
 /// (`AVCapturePhotoBracketSettings` with `AVCaptureManualExposureBracketedStillImageSettings`),
 /// so each frame's ISO and shutter are set exactly.
 public struct BracketSettings: Equatable, Hashable, Sendable {
-    /// The frame counts nope. offers: 3, 5 or 7, each up to the lens's
+    /// The frame counts the app offers: 3, 5 or 7, each up to the lens's
     /// ``Lens/maxBracketedPhotoCount``.
     public static let frameCounts = [3, 5, 7]
 
-    /// The steps between frames nope. offers, in EV: 1/3, 2/3, 1 and 2 stops.
+    /// The steps between frames the app offers, in EV: 1/3, 2/3, 1 and 2 stops.
     public static let steps: [Double] = [1.0 / 3.0, 2.0 / 3.0, 1, 2]
 
     /// The number of frames.
@@ -101,12 +101,12 @@ public struct BracketFrame: Equatable, Sendable {
 /// Interval shooting: a series of separate photos at a fixed interval.
 ///
 /// Each photo is an ordinary single capture; nothing is combined into a video or merged. The
-/// timer runs only while a series is running and nope. is open (AGENTS.md, "Battery").
+/// timer runs only while a series is running and the app is open (AGENTS.md, "Battery").
 public struct IntervalSettings: Equatable, Sendable {
-    /// The intervals nope. offers, in seconds: 1 second to 1 hour.
+    /// The intervals the app offers, in seconds: 1 second to 1 hour.
     public static let intervalRange: ClosedRange<Double> = 1...3600
 
-    /// The photo counts nope. offers: 2 to 999.
+    /// The photo counts the app offers: 2 to 999.
     public static let countRange: ClosedRange<Int> = 2...999
 
     /// The time from one photo to the next, in seconds.

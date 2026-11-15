@@ -1,7 +1,7 @@
 import AVFoundation
 import NopeCore
 
-/// The processing switches nope. applies to every session and photo, as plain values.
+/// The processing switches the app applies to every session and photo, as plain values.
 ///
 /// They follow docs/research/capability-survey.md, item 12 ("Avoiding processing"), and Apple's
 /// Bayer RAW rules in `AVCapturePhotoOutput.h` (`capturePhoto(with:delegate:)`): Bayer RAW
@@ -28,12 +28,15 @@ struct ProcessingSwitches: Equatable, Sendable {
     let contentAwareDistortionCorrection: Bool
     /// The device's geometric distortion correction. Off where it can be turned off.
     let geometricDistortionCorrection: Bool
-    /// The device zoom factor. 1.0: Bayer RAW requires it, and nope. never zooms digitally.
+    /// The device zoom factor. 1.0: Bayer RAW requires it, and the app never zooms digitally.
     let videoZoomFactor: Double
-    /// The flash. Off in this version.
+    /// The flash. Off for starting the camera and for brackets (which don't support it,
+    /// `AVCapturePhotoBracketSettings`); a single photo takes the request's mode
+    /// (``CapturePolicy/photoSettings(_:flashMode:)``). The flash only adds light: no
+    /// processing switch changes with it.
     let flashMode: AVCaptureDevice.FlashMode
 
-    /// Creates a set of switches. nope. uses only ``leastProcessing``.
+    /// Creates a set of switches. The app uses only ``leastProcessing``.
     ///
     /// - Parameters:
     ///   - qualityPrioritization: The output's maximum and every photo's prioritization.
@@ -63,7 +66,20 @@ struct ProcessingSwitches: Equatable, Sendable {
         self.flashMode = flashMode
     }
 
-    /// The switches nope. uses.
+    /// The same switches with another flash mode.
+    ///
+    /// - Parameter mode: The flash mode.
+    /// - Returns: A copy with `flashMode` replaced.
+    func withFlashMode(_ mode: AVCaptureDevice.FlashMode) -> ProcessingSwitches {
+        ProcessingSwitches(
+            qualityPrioritization: qualityPrioritization, appleProRAW: appleProRAW, zeroShutterLag: zeroShutterLag,
+            responsiveCapture: responsiveCapture, deferredDelivery: deferredDelivery, constantColor: constantColor,
+            contentAwareDistortionCorrection: contentAwareDistortionCorrection,
+            geometricDistortionCorrection: geometricDistortionCorrection, videoZoomFactor: videoZoomFactor,
+            flashMode: mode)
+    }
+
+    /// The switches the app uses.
     static let leastProcessing = ProcessingSwitches(
         qualityPrioritization: .speed,
         appleProRAW: false,
@@ -138,7 +154,7 @@ enum CapturePolicy {
     /// The photo size is the lens's smallest supported size: on 48 MP sensors that is the
     /// native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
     /// Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-    /// delivery, which nope. turns off (`AVCapturePhotoOutput.h`).
+    /// delivery, which the app turns off (`AVCapturePhotoOutput.h`).
     ///
     /// - Parameter request: The lens and format.
     /// - Returns: The configuration, or `nil` if the request's RAW format code is invalid.
@@ -150,6 +166,22 @@ enum CapturePolicy {
             photoSettings: plan,
             switches: .leastProcessing
         )
+    }
+
+    /// A photo plan with the request's flash mode. The session is configured and prepared with
+    /// the flash off, so the session configuration never depends on the flash; each photo
+    /// takes the mode it was asked for. Bayer RAW supports the flash: the RAW rules in
+    /// `AVCapturePhotoOutput.h` don't restrict it; the mode must be one of the output's
+    /// `supportedFlashModes`, which `Lens.flashModes` lists.
+    ///
+    /// - Parameters:
+    ///   - plan: The session's photo plan.
+    ///   - flashMode: When the flash fires.
+    /// - Returns: The plan with the flash mode applied.
+    static func photoSettings(_ plan: PhotoSettingsPlan, flashMode: FlashMode) -> PhotoSettingsPlan {
+        PhotoSettingsPlan(
+            rawPixelFormat: plan.rawPixelFormat, processedFormat: plan.processedFormat,
+            switches: plan.switches.withFlashMode(flashMode.captureFlashMode))
     }
 
     /// The format of the file a plan produces: DNG for RAW, otherwise the processed format.

@@ -41,7 +41,25 @@ public struct RAWDeveloper: PhotoDeveloping {
     public func develop(
         _ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, metadata: MetadataPlan
     ) async throws(CaptureError) -> PhotoFile {
-        guard let settings = EncodingSettings(format: format) else { throw .developmentFailed }
+        try await develop(raw, to: format, look: look, options: DevelopedFileOptions(), metadata: metadata)
+    }
+
+    /// Develops a HEIF or JPEG from a DNG with the person's encoding options.
+    ///
+    /// - Parameters:
+    ///   - raw: The DNG.
+    ///   - format: `PhotoFormat.heif` or `PhotoFormat.jpeg`.
+    ///   - look: The tone of the developed file.
+    ///   - options: The compression, HEIF bit depth and color space (issue #57).
+    ///   - metadata: The plan the file's metadata is built from.
+    /// - Returns: The developed file.
+    /// - Throws: `CaptureError.developmentFailed` if `format` is RAW, or rendering or encoding
+    ///   fails.
+    public func develop(
+        _ raw: PhotoFile, to format: PhotoFormat, look: DevelopedLook, options: DevelopedFileOptions,
+        metadata: MetadataPlan
+    ) async throws(CaptureError) -> PhotoFile {
+        guard let settings = EncodingSettings(format: format, options: options) else { throw .developmentFailed }
         let rendered = try renderer.render(raw.data, look: look)
         let properties = metadata.properties(
             for: format, from: rendered.properties, orientation: Self.uprightOrientation)

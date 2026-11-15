@@ -11,9 +11,9 @@ contributors.
 
 ## Why it is vendored
 
-nope. links no networking code (AGENTS.md, "No network, no analytics"). The upstream wrapper
-contains `URLSession` code, so it is copied here without it, and it links the network-free C2PA
-library built by `scripts/build-c2pa-lib.sh` (`c2pa-lib/README.md`) instead of upstream's
+Photivra Nope Camera links no networking code (AGENTS.md, "No network, no analytics"). The upstream
+wrapper contains `URLSession` code, so it is copied here without it, and it links the network-free
+C2PA library built by `scripts/build-c2pa-lib.sh` (`c2pa-lib/README.md`) instead of upstream's
 prebuilt one.
 
 ## Changes from upstream v0.1.0
@@ -24,7 +24,7 @@ Changed files carry a `nope.:` comment where code was removed.
 - `C2PAContext.swift`: removed the initializer that resolves HTTP requests with a `URLSession`
   (`init(settings:signer:onProgress:urlSession:)`) and its documentation link.
 - `Builder.swift` and `Manifest/ManifestValidator.swift`: removed the `NSLog` calls that logged
-  manifest validation warnings and errors. nope. logs nothing about photos or their metadata.
+  manifest validation warnings and errors. The app logs nothing about photos or their metadata.
 - `Signer.swift`: removed the documentation link to `WebServiceSigner`.
 - Documentation examples in `Reader.swift`, `C2PAContext.swift`,
   `Manifest/ManifestValidationResult.swift` and `Manifest/ManifestValidator.swift`: `print(` is

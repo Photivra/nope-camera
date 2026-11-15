@@ -6,7 +6,7 @@ import Foundation
 /// allowlist and the read-back both name a tag by its directory and number. Directories follow
 /// TIFF 6.0 (section 2), EXIF 3.0 (section 4.6) and DNG 1.7 (chapter 3).
 public enum TIFFDirectory: String, CaseIterable, Codable, Hashable, Sendable {
-    /// The first image directory (IFD0). In nope.'s DNG it holds the RAW image itself.
+    /// The first image directory (IFD0). In the app's DNG it holds the RAW image itself.
     case primary
     /// The EXIF directory, reached through tag `0x8769`.
     case exif
@@ -36,6 +36,12 @@ public struct MetadataInventory: Equatable, Sendable {
         public let tag: UInt16
         /// The value of an ASCII tag, without the trailing NUL, or `nil` for other types.
         public let text: String?
+        /// The values of a numeric tag (BYTE, SHORT, LONG, RATIONAL and their signed forms), in
+        /// file order, with each rational divided out; empty for other types, for a rational
+        /// with a zero denominator, and for a tag with more than
+        /// ``TIFFReader/maximumRecordedValues`` values. The "What's in this photo" details
+        /// (``PhotoDetails``) read the exposure, size and levels from them.
+        public let values: [Double]
 
         /// Creates a tag record.
         ///
@@ -43,10 +49,12 @@ public struct MetadataInventory: Equatable, Sendable {
         ///   - directory: The directory the tag is in.
         ///   - tag: The tag number.
         ///   - text: The ASCII value, or `nil`.
-        public init(directory: TIFFDirectory, tag: UInt16, text: String? = nil) {
+        ///   - values: The numeric values, or none.
+        public init(directory: TIFFDirectory, tag: UInt16, text: String? = nil, values: [Double] = []) {
             self.directory = directory
             self.tag = tag
             self.text = text
+            self.values = values
         }
     }
 

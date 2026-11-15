@@ -28,6 +28,13 @@ public enum CaptureStatus: Equatable, Sendable {
     /// say why, as for ``saved(_:)``. Announce it to VoiceOver.
     case savedBracket([SavedPhoto])
 
+    /// A burst was taken and every frame was saved as its own photo: separate single-frame
+    /// photos, nothing merged, in the order they were taken (``DriveMode/burst``).
+    ///
+    /// Say how many photos were saved, and whether all of them are signed; when one isn't,
+    /// say why, as for ``saved(_:)``. Announce it to VoiceOver.
+    case savedBurst([SavedPhoto])
+
     /// The photo wasn't taken or wasn't saved. Present the error as its documentation says, and
     /// announce it.
     case failed(CaptureError)

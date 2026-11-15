@@ -13,6 +13,7 @@ scripts/test-check-architecture.sh && scripts/check-architecture.sh
 scripts/test-check-localization.sh && scripts/check-localization.sh
 scripts/test-check-coverage.sh
 scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
+scripts/test-check-file-compat.sh
 ```
 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
@@ -25,9 +26,21 @@ The logic modules are tested with Swift Testing, against fakes of the hardware p
 ```sh
 xcodebuild test -scheme NopeKit-Package \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
-  -derivedDataPath DerivedData -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO
+  -derivedDataPath DerivedData -enableCodeCoverage YES CODE_SIGNING_ALLOWED=NO \
+  'OTHER_SWIFT_FLAGS=$(inherited) -Xllvm -instrprof-atomic-counter-update-all'
 scripts/check-coverage.sh DerivedData
 ```
+
+Keep the `OTHER_SWIFT_FLAGS` line (CI passes it too). Swift Testing runs tests in parallel, and
+coverage counters are plain, non-atomic increments by default, so two threads running the same
+code can lose a count. Swift's coverage data derives some regions by subtraction (for example the
+`else` arm is the parent's count minus the `then` arm's), so a lost count in the parent can make
+a region that ran show as 0. That is why the gate sometimes reported
+`HEIFReader.swift: 134/135 regions` (issue #59), and `LensCatalog.swift: 36/37` in a local run
+without the flag, though a test does run that code. `-instrprof-atomic-counter-update-all` makes
+every counter update atomic (LLVM's `InstrProfiling` pass option, the same as Clang's
+`-fprofile-update=atomic`), so the counts are exact; it changes only coverage builds. With it,
+the unit tests and the gate passed 5 times in a row locally with 100% each time (2026-11-14).
 
 `check-coverage.sh` requires 100% of lines and regions in `NopeCore`, `NopeCapture`,
 `NopeDevelop` and `NopeSigning`. Swift's coverage data records each branch arm (each `switch`
@@ -41,6 +54,8 @@ The only files excluded are hardware adapters listed in `scripts/coverage-exclus
 |---|---|---|
 | `Sources/NopeCapture/SystemCameraAuthorization.swift` | Requesting access shows a system prompt | On-device check |
 | `Sources/NopeCapture/SystemCaptureHardware.swift` | The capture session, camera input and photo output need camera hardware | On-device check |
+| `Sources/NopeCapture/SystemLiveView.swift` | The live analysis video output and the readout's key-value observations need a running camera | On-device check |
+| `Sources/NopeCapture/PreviewRotation.swift` | `AVCaptureDevice.RotationCoordinator` needs a camera device | On-device check |
 | `Sources/NopeSigning/SecureEnclaveSigningKey.swift` | The Simulator has no Secure Enclave (the key, its signing and `SecureEnclaveKeyProvider`) | On-device check |
 | `Sources/NopeCapture/PhotoKitLibrary.swift` | Asking for add-only access shows a system prompt, and adding changes the person's library | On-device check |
 | `Sources/NopeDevelop/CoreImageRAWRenderer.swift` | Core Image's RAW filter needs a real Bayer DNG; ImageIO and Core Image don't decode a hand-built one | On-device check |
@@ -70,6 +85,22 @@ decisions are in `PhotoKitMapping` (resource types and access), and `RAWDevelope
   in the Simulator and read them back clean for the first-launch and all-on settings. `NopeUI` is not part of
 the coverage gate: it is covered by UI tests and accessibility audits instead.
 
+### RAW not saved without four TIFF fields (issue #65)
+
+**How it was found.** On an iPhone 16 Pro Max (iOS 27.2.1), every Bayer RAW capture failed
+("The photo wasn't taken. Try again.") with the default "Remove all optional details". Debug
+runs on the device showed that `AVCapturePhoto.fileDataRepresentation(with:)` returned `nil`:
+it needs `DateTime`, `Make`, `Model` and `Software` in the replacement metadata's `{TIFF}`
+dictionary. Leaving out any one fails; an empty text for each works; `NSNull` doesn't.
+
+**Tests.** `MetadataPropertiesTests.rawPropertiesAlwaysHoldTheFourTIFFFields` checks, for all
+8,192 switch combinations, that a DNG's dictionary has the four keys, each the system's value
+when its switch is on and empty when it is off, and that HEIF and JPEG don't get them.
+`MetadataVerifierTests.emptyTIFFFieldsInADNGAreAcceptedInEveryEncoding` checks that the read-back
+accepts every way a TIFF writer can store an empty text (one NUL, a count of 0, several NULs)
+and the tag left out, and rejects a space, any text and a non-text value. Which encoding
+AVFoundation writes is a device check (`docs/PRIVACY.md`, "Device checks").
+
 ### Developed looks
 
 The RAW renderer can't run on a hand-built DNG, so one test needs a real DNG and is skipped
@@ -85,12 +116,182 @@ Display P3: with the Flat look every mid-tone value doubles (no tone curve); wit
 look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
 check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
 
+## File compatibility (issue #58)
+
+Every file the app can save must open (AGENTS.md, "Every setting the device allows"). This has two
+parts: an automated matrix of generated files, and a recorded table of manual checks in other
+apps.
+
+### The automated matrix
+
+`FileCompatibilityTests` (`Tests/NopeSigningTests`) saves every format and setting the app
+offers through the real save pipeline: `PhotoSaver` with `RAWDeveloper`, the system HEIF and
+JPEG encoders, `ImageIOReadBack`, the metadata allowlist and `ContentCredentialsSigner` with the
+Simulator's software key. Only the camera is replaced. No device files or anyone's photos are
+used:
+
+- the DNG is written by a test-only writer (`FixtureDNG`) from exactly the replacement metadata
+  `MetadataPlan` builds for it, as AVFoundation does on a device, with generic camera and lens
+  names;
+- the RAW renderer is a stand-in that returns a flat 256 × 256, 16-bit Display P3 image with the
+  DNG's own ImageIO properties, as `CoreImageRAWRenderer` does;
+- the processed fallback HEIF and JPEG are written by the system encoder with the dictionary the
+  capture backend gives AVFoundation.
+
+The cases (260 files; `theMatrixCoversEveryOption` fails if an option is added without one):
+
+| Group | Cases | Files |
+|---|---|---|
+| Metadata switch classes | first launch, each of the 13 items alone (with a name and copyright for "Your name and copyright", a location for "Location"), and every item on; each signed and unsigned | DNG, HEIF, JPEG |
+| Lenses | ultra wide, wide, telephoto and front, every item on, signed | DNG, HEIF, JPEG |
+| File options | each compression (system default, maximum, high, medium) × HEIF 8 and 10 bits × Display P3 and sRGB × Standard and Flat, signed | HEIF, JPEG |
+| Processed fallback | HEIF and JPEG, first launch and every item on, signed and unsigned | HEIF or JPEG |
+| Orientation | all eight orientations, as taken (wide) and mirrored (front); a mirrored fallback HEIF and JPEG | DNG, HEIF, JPEG |
+| Location | on with a southern, western, below-sea-level location; on without an altitude; off with a location available | DNG, HEIF, JPEG |
+| Series | bracket frames at −2, 0 and +2 EV, three burst frames, three Astro frames (10 s, ISO 3200), with exposure settings, date and sub-second time on | DNG, HEIF, JPEG |
+
+Each saved file must:
+
+- open in ImageIO as its own type (`com.adobe.raw-image`, `public.heic`, `public.jpeg`) with
+  exactly one image;
+- report the expected orientation: the system's, mirrored for a mirrored photo
+  (`MetadataPlan.mirroredOrientation(_:)`), and 1 for a developed copy;
+- report the expected bit depth (16 for the DNG, the chosen 8 or 10 for a developed HEIF, 10 for
+  the fallback HEIF, 8 for JPEG), and for HEIF and JPEG decode at 256 × 256 in the chosen color
+  space with an ICC profile (`ProfileName`);
+- carry exactly its allowlisted tags: no read-back violation, and every non-empty value the plan
+  wrote is in the file (compared with the project's tag reader: ImageIO doesn't report an empty
+  `Make` in a DNG, or `OffsetTimeOriginal` in a DNG without `DateTimeOriginal`, though both are
+  in the file; iOS 27.2 Simulator, 2026-11-14);
+- when signed, validate with the C2PA library's reader: `Valid`, the hash assertion matches,
+  and `signingCredential.untrusted` (the anonymous per-photo certificate) is the only failure;
+  when unsigned, carry no manifest.
+
+If a photo isn't saved at all, the test records each file's read-back violations.
+
+**What it found.** With "Lens make and model" on and a HEIF or JPEG selected, no photo was
+saved: ImageIO reports a DNG's `LensSpecification` and `LensModel` again under `{ExifAux}`, the
+developed copy copied those keys, and ImageIO wrote them into the HEIF and JPEG as XMP
+(`aux:LensInfo`, `aux:Lens`), which the read-back rejects. Fixed: a HEIF or JPEG never gets
+`{ExifAux}` values (`MetadataPlan.isWritten(_:in:)`); the EXIF lens tags carry the same values.
+Every other combination passed before the fix. Whether a camera DNG makes ImageIO report
+`{ExifAux}` the same way is a device check below.
+
+**What it can't show.** The DNG's layout comes from AVFoundation on a device, not from
+`FixtureDNG`; ImageIO doesn't decode a hand-built DNG's pixels, so DNG colors, exposure and
+editing are checked by hand; the Standard and Flat looks differ only in the rendered pixels,
+which the stand-in renderer doesn't make (the looks are checked by "Developed looks" above); the lens correction opcodes and the contents of Apple's maker note come only from
+the camera, so the fixtures have none (the maker note fixture is an opaque block).
+
+### External validators
+
+Run the tests with `TEST_RUNNER_NOPE_COMPAT_FIXTURES=<directory>` to also write every file there
+with a `manifest.tsv` (name, format, signed, device-processed), then:
+
+```sh
+TEST_RUNNER_NOPE_COMPAT_FIXTURES=$PWD/compat-fixtures xcodebuild test -scheme NopeKit-Package \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
+  -only-testing:NopeSigningTests/FileCompatibilityTests
+scripts/check-file-compat.sh compat-fixtures          # every validator that is installed
+scripts/check-file-compat.sh --require "c2patool exiftool dng_validate" compat-fixtures
+```
+
+`check-file-compat.sh` runs c2patool on every file (signed: `Valid` with
+`signingCredential.untrusted` the only failure; unsigned: no manifest), `exiftool -validate` on
+every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG. None of
+them is a project dependency, and none is in `security/allowed-dependencies.txt`. CI writes the
+fixtures in `unit-tests`; the `file-compat` job runs the validators only after the maintainer
+approves them by setting the repository variable `NOPE_FILE_VALIDATORS` to the approved list
+(for example `c2patool exiftool`), and fails if a listed validator is missing. `dng_validate`
+has no install step yet: it is built from Adobe's DNG SDK, whose license must be reviewed first.
+`scripts/test-check-file-compat.sh` tests the script with stand-in validators.
+
+**Run locally on 2026-11-14** (Mac with macOS 27.2.1, iOS 27.2 Simulator), on the 260 files:
+c2patool 0.29.0 (installed on the Mac by hand) reported every signed file `Valid` with
+`signingCredential.untrusted` the only failure and found no manifest in any unsigned file; `sips`
+on macOS opened every file as its type (62 DNG, 99 HEIC, 99 JPEG). exiftool and `dng_validate`
+weren't installed, so they haven't been run on these files.
+
+### Manual checks in other apps
+
+Record each result with the file it was checked on (a photo taken on a device with the release's
+build), the app and its version, the date, and what was seen: opens, orientation, colors and
+exposure, metadata as in `docs/PRIVACY.md`, and the signature where the app shows it. Write only
+what was observed; a cell stays "not yet checked" until someone checks it.
+
+Files: **DNG** (each lens, signed), **DNG unsigned**, **HEIF 10-bit P3**, **HEIF 8-bit sRGB**,
+**JPEG**, **Fallback** (a lens without Bayer RAW), **Mirrored** (front camera, Mirror Front
+Camera on), **Series** (a bracket, burst or Astro frame).
+
+Release 0.2.0:
+
+| App | DNG | DNG unsigned | HEIF 10-bit P3 | HEIF 8-bit sRGB | JPEG | Fallback | Mirrored | Series |
+|---|---|---|---|---|---|---|---|---|
+| Photos on iPhone (including editing the RAW) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Photos on iPad | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Photos on Mac (including editing the RAW) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Preview on Mac | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| RAW editor 1 (for example Lightroom) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| RAW editor 2 (for example darktable or RawTherapee) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Google Photos | — | — | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Windows Photos | — | — | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Upload to a sharing site (for example iNaturalist, JPEG) | — | — | — | — | not yet checked | — | — | — |
+| exiftool `-validate` on the device files | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| `dng_validate` on the device files | not yet checked | not yet checked | — | — | — | — | — | not yet checked |
+| c2patool on the device files | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+
+"—" means the issue's matrix doesn't ask for that combination. If a file fails in an app, open an
+issue; a setting whose files don't open is fixed or stops being offered.
+
+**Device checks for this matrix:** with "Lens make and model" on, a RAW plus HEIF plus JPEG photo
+is saved on each lens (the `{ExifAux}` fix above), and its HEIF and JPEG carry EXIF `LensModel`
+and no XMP `aux:` properties (exiftool `-a -G1`).
+
 ## UI tests and accessibility audits
 
 ```sh
 xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' CODE_SIGNING_ALLOWED=NO
+xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeApp \
+  -destination 'platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2' CODE_SIGNING_ALLOWED=NO
 ```
+
+The same tests run on an iPhone and an iPad Simulator, one at a time (running both at once
+stalled the test runner on the CI runner), in portrait and landscape (`XCUIDevice.orientation`).
+The iPhone camera layout stays in portrait when the device turns, and its icons and text turn
+upright; the tests check that the window stays portrait, the shutter stays below the picture,
+and Settings rotates. On iPad the window rotates and the shutter is in the column beside the
+picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
+4.7-inch layout, where the lens row overlays the bottom of the picture.
+
+`audit(_:)` in `NopeAppUITests.swift` runs every audit with these documented exceptions; every
+other finding fails the test:
+
+- an element cut by the window's edge (a form row below the fold), and a contrast finding with
+  no element, which comes from such a row: the audit measures the clipped edge;
+- a Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges the text
+  past the edge and can't measure it (the same text styles are measured higher up elsewhere);
+- the Settings screens at the default text size and right-to-left skip the Dynamic Type check:
+  the iOS 27.2 Simulator reported system form section headers and footers as "partially
+  unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
+  included, at the largest accessibility text size;
+- open iPad findings, on the manual accessibility pass: the lens buttons' "No RAW" caption in the
+  iPad control column is reported as "Dynamic Type font sizes are partially unsupported",
+  although it is visibly enlarged at the largest size and passes on iPhone; and the Settings and
+  format popovers' section headers are reported as low contrast against the popover's material,
+  and some of their rows as clipped text with no element, so those audits skip the contrast check
+  and element-less clipped-text findings on iPad (they run both on iPhone);
+  three more iPad contrast findings with no visible cause (white text on near-black: the manual
+  dial over a white or yellow picture, and the format chip and the failure banner in the scrolling
+  layout at the largest text size) are skipped on iPad in `testControlsOverWhiteAndYellowFrames`,
+  `testLargestTextSize` and `testBlankPictureAtTheLargestTextSize`, which run every check on
+  iPhone;
+- `testSpaceTakesAPhoto` is skipped on iPad, an open finding: on the iPad Simulator the Space
+  bar reached the focused button instead of the Camera menu's command, and no photo was taken; it
+  passes on iPhone. The device check below covers a hardware keyboard on iPad;
+- on an iPhone held sideways, clipped-text and contrast findings on SwiftUI nodes the audit
+  can't tie to an element: it measures turned text in its unturned frame. The same views pass
+  every check in portrait; the turned layout is on the manual accessibility pass below.
 
 The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
 `-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
@@ -100,24 +301,47 @@ each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | Permission screen; allow; camera ready with the RAW badge and the wide lens selected; shutter gives "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) shows the fallback badge |
+| `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the chip into its warning; full auto shows only the default controls; the camera flip; the format chip's sheet; the quick-controls tray (closes on the shutter and on ⋯); signing off in Settings shows the "Not Signed" chip, also in clean view; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
+| `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; its long-press menu offers Open in Photos and Photo Details; "What's in This Photo" lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail brings the Photos app to the front; with `manual` and a bracket, the details' Photo picker shows each frame |
+| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the fallback chip and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
+| `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
+| `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
-| `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" message |
-| `signingFails` | The signer fails: the photo is saved unsigned, "Saved. Not signed: the signature couldn't be created.", shutter still enabled |
+| `photosDenied` | Adding to Photos isn't allowed: the "isn't allowed to add photos" banner with Open Settings |
+| `signingFails` | The signer fails: the photo is saved unsigned, the last-photo slot and the "Not Signed" chip say "Saved. Not signed: the signature couldn't be created.", shutter still enabled; also right-to-left, with the bottom row mirrored |
+| `signedFileRejected` | Every signed file fails the read-back: the unsigned files are saved, the last-photo slot and the "Not Signed" chip say "Saved. Not signed: the signed file didn't pass the check.", shutter still enabled |
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
-| `captureFails` | The capture failure message |
+| `captureFails` | The capture failure banner: Try Again, Dismiss |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
-| `denied`, `noCamera` | The access-off and no-camera screens |
-| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Privacy (top and bottom), Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG look picker (shown only with HEIF or JPEG selected) and the privacy rules (master switch on by default, one item on makes it "Custom", signing on, locked items read "Locked") |
+| `denied`, `noCamera` | The access-off screen with Open Settings, and the no-camera screen |
+| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Look, Choose Details (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the Look row (shown only with HEIF or JPEG selected) and the privacy rules (master switch and signing on by default, one item on makes it "Custom", locked items read "Locked") |
 
 UI test launches store settings in their own `UserDefaults` suite, emptied at each launch
 (`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
 settings are never touched.
-| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the six slots; a panel with the lens's range; Manual and "All Auto"; P/S/I/M; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; interval progress and Stop; clean view; the list at the largest text size; right-to-left |
-| `allow` (clean view) | The no-RAW badge stays visible in clean view |
+| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the M pill; the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; the lock pill after AE-L, which unlocks; the M pill turns manual controls off; interval progress and Stop; clean view from the tray; the list at the largest text size; right-to-left |
+| `allow` (clean view) | The no-RAW chip stays visible in clean view |
+| `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
+| `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
+| `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from the tray and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
+
+`testBlankPictureAtTheLargestTextSize` failed intermittently on CI with "Contrast failed" on
+the status text (issue #59). The failing runs audited right after the status text appeared,
+while the blank-picture retry could still change the screen, and before the screen had stopped
+scrolling. The test now waits for the final state ("isn't sending a picture"), scrolls to the
+top, and audits only once the layout has stopped moving: the shutter's frame must read the same
+twice in a row, half a second apart (`waitUntilStill`), instead of a fixed pause. Issues are
+judged after the audit rather than inside its handler (querying the app from the handler can
+make the audit time out), and a failing audit is repeated once after the layout settles again.
+It could not be made to fail locally before or after the change (10 runs, 4 of them with every
+CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
+
+`CaptureReadinessTests` use a 600-second timeout: the ready answer comes on a fixed read, so the
+timeout only has to be longer than any CI runner can take (with 5 seconds, `waitsUntilReady`
+failed intermittently while the other tests kept every thread busy).
 
 Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
 Every new screen and state adds an audit.
@@ -140,11 +364,21 @@ the local toolchain). Jobs:
 
 | Job | What it runs |
 |---|---|
-| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator, the coverage gate |
-| `ui-tests` | App build and the UI smoke test with accessibility audits |
+| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
+| `ui-tests` | App build and the UI tests with accessibility audits on the iPhone 18 Pro Simulator |
+| `ui-tests-ipad` | The same UI tests on the iPad Air 11-inch (M4) Simulator, in a separate job, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
+
+### Siri and Shortcuts in the UI tests
+
+XCTest can't speak to Siri or run a shortcut, so Debug builds take
+`-NopeSimulatedShortcut <seconds>`: the app sends a Take Photo request through the same
+`ShortcutInbox` the intent uses and shows what Siri would say (`ShortcutUITests`: a delay with
+the countdown, a cancelled countdown, and no camera access). The request logic is unit tested in
+`ShortcutTests`.
 
 ## On-device checks
 
@@ -158,18 +392,116 @@ iPad:
   `signingCredential.untrusted` failing;
 - capture (`SystemCaptureHardware`): every physical lens appears with the right label; the
   viewfinder shows the scene; the shutter, the volume buttons and the Camera Control each take
-  a photo and show "Saved and signed."; a lens
-  without Bayer RAW shows the fallback badge; a phone call or another camera app shows the interruption message, and
+  a photo and the last-photo slot appears with a teal seal; a lens
+  without Bayer RAW turns the format chip amber; a phone call or another camera app shows the interruption message, and
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
 - saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
-  prompt appears once and declining it shows the "isn't allowed to add photos" message; a RAW
+  prompt appears once and declining it shows the "isn't allowed to add photos" banner, whose
+  Open Settings opens the app's page in the Settings app; a RAW
   plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
+- last photo and its details (`ImageIOThumbnailer`, `PhotoDetails`, `openPhotosApp`): after a
+  RAW + HEIF, a RAW-only, a RAW + JPEG and a no-RAW photo, the thumbnail shows the photo upright
+  in portrait and landscape (time how long a RAW-only thumbnail takes: it decodes the DNG);
+  tapping it opens Photos, where the new photo is the newest item (the `photos-redirect://` URL
+  opens Photos, not a chosen asset; Apple documents no way to open one asset, and the URL itself
+  isn't documented by Apple); the long-press menu and the VoiceOver actions offer Open in Photos
+  and Photo Details; for each photo, the details match `exiftool -a -G1 -s` of the files exported
+  from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
+  for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
+  `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
+  file sizes, and the tag list; with signing on, c2patool shows the same claim generator and
+  description; the timings look plausible;
 - manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
   controls turned on: see "Manual controls on a device" below;
+- rotation (`PreviewRotation`, `AppDelegate`, `DeviceOrientation`): on an iPhone 16 Pro Max in
+  both landscape orientations, mounted on a tripod, the camera layout stays put while the chip,
+  pills, warnings, banners, readouts and buttons turn upright and nothing collides; Settings and
+  the format sheet rotate and the camera returns to its layout when they close; on an iPad Air in
+  all four orientations the interface rotates with the controls in the trailing column; with the
+  rear and front cameras the viewfinder is upright and not stretched, and each saved DNG's
+  Orientation tag (read with `scripts/dump-tags.swift`) shows it upright (the developed HEIF and
+  JPEG are rendered upright and carry Orientation 1); Split View or Stage Manager shows the
+  multitasking pause; a hardware keyboard's Space bar takes a photo;
+- contrast over real scenes: the chip, pills, warnings, banner, dial, thumbnail and shutter ring
+  stay readable against a white wall and a yellow surface, with and without Reduce Transparency
+  and Increase Contrast; the haptic on a good save is light;
+- viewfinder overlays: see "Viewfinder overlays on a device" below;
 - the manual accessibility pass in AGENTS.md (VoiceOver, Voice Control, Switch Control, the
-  largest text size).
+  largest text size), including the turned icons and text on an iPhone held sideways, the failure
+  banner taking VoiceOver focus, and the low-priority "Saved and signed" announcement;
+- hardware shutter (issue #37), on an iPhone 16 Pro Max: volume up, volume down and a Camera
+  Control press each take one photo on release; while the camera is paused (another app using
+  it) the volume buttons change the volume; note what a press does with Settings open; the
+  AirPods camera remote, where available, behaves the same;
+- self-timer (issue #39): 3 s and 10 s count down with a light haptic each second and, with
+  VoiceOver, each number spoken; pressing the shutter, a volume button or Cancel Timer stops it
+  without a photo; Instruments shows no CPU work during the countdown beyond the running camera;
+- burst (issue #46), on each lens for RAW, RAW + HEIF and HEIF: holding a volume button or the
+  Camera Control takes a burst until it is released, and tapping the shutter starts and stops
+  one; record the frames per second (below, "Burst rate"); every saved frame passes the
+  read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
+  Allocations); VoiceOver announces the start and the saved count;
+- storage and battery warnings (issue #44): see "Low storage" below; at 20% battery, unplugged,
+  "Battery Low" shows and is announced, and it goes away when the device is plugged in; Low Power
+  Mode changes the explanation;
+- interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
+  a tap brightens it while the series continues; the brightness and auto-lock come back when the
+  series ends, is stopped, or the app goes to the background, and after the camera screen closes.
+
+### Lock Screen, Control Center, Siri and Shortcuts on a device
+
+Issues #42 and #62. Assumptions to confirm: the capture extension needs no entitlement, can add
+to Photos with the add-only access granted in the app, and can create a Secure Enclave key while
+the device is locked (if it can't, photos are saved unsigned and the "Not Signed" chip says so).
+
+- Control: add "Open nope." in Control Center, on the Lock Screen and to the Action button;
+  each opens the camera; unlocked, it opens the app.
+- Locked: the camera opens without unlocking; a photo is saved to Photos (RAW plus HEIF by
+  default), signed, and passes the read-back; the thumbnail opens the photo's details, not
+  Photos; Settings changes made there don't change the app's settings; the volume buttons take a
+  photo; first use before the app was ever opened (camera and Photos prompts) behaves sensibly.
+- Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
+  signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
+  access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
+- Siri while the iPhone is locked: Siri asks to unlock before opening the app.
+- Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
+  Night Mode on and off, with the app closed and with it open (the screen turns red at once).
+- Check in each of the 11 languages that Siri accepts the localized phrases.
+
+### Low storage
+
+`PhotoSizeEstimate` uses upper bounds that are assumptions until measured: 2 bytes a pixel for
+Bayer RAW, 1 for HEIF, 2.5 for JPEG, and 1 MB a file. On each test device, save a RAW + HEIF and a
+RAW + HEIF + JPEG photo with each lens, compare the file sizes in Photos with the estimate, and
+record them here. Then fill the device until fewer than 25 photos fit and check that "Storage
+Low" shows about the right number, that "Storage Full" shows before a save would fail, and that a
+burst stops with "Burst stopped: storage is full." before it fails.
+
+### Burst rate
+
+Not measured yet. On an iPhone 16 Pro Max, for each lens and RAW, RAW + HEIF and HEIF, hold the
+shutter for a 20-frame burst and record frames per second here (time from the first to the last
+frame, from the photos' capture times).
+
+### Flash, light and night mode on a device
+
+- the Light and Flash controls appear on each rear lens that has them and never on the front
+  camera; record which lenses report a torch and which flash modes on each test device;
+- light on at 10%, 25% and 100%: it stays on, without blinking, through framing, focusing,
+  single RAW (DNG) photos, RAW + HEIF, a bracket and an interval series, and the photos are
+  lit by it; a Bayer RAW photo with Flash On and Auto fires the flash, is saved and passes the
+  read-back (`docs/PRIVACY.md`, "Device checks"); does Flash On keep a locked focus (capability
+  survey, question 6)?
+- the light turns off when the app goes to the background, on a phone call or another camera
+  app, on a lens without a light, and at a critical heat level; warm the device and check the
+  "Light Unavailable" warning and that a lower level can be chosen;
+- night mode at night: no white or blue element in the app's own screens (camera, tray, pills,
+  manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
+  popovers); list what the system still draws (status bar, menus, alerts); the app never changes
+  the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
+  Viewfinder; energy with the red viewfinder on (Instruments).
 
 ### Manual controls on a device
 
@@ -195,10 +527,139 @@ lens without RAW, in the fallback:
 - interval shooting: 3 photos 5 s apart; Stop ends it; leaving the camera screen ends it;
 - switching lenses and an interruption: the manual settings are applied again afterwards;
 - "All Auto" and turning the option off return the camera to continuous auto;
-- readings: the meter and the Auto values update while manual controls are on, and nothing is
-  observed while they are off (Instruments: no key-value observation callbacks);
+- readings: the meter and the Auto values update while manual controls are on; with them off
+  the readings still arrive (for full auto's aids) but aren't shown, and nothing is observed
+  once the camera screen closes (Instruments: no key-value observation callbacks);
 - with VoiceOver: each slot adjusts by swiping up and down, and the eyes-free shutter (volume
   buttons, Camera Control) still works with manual controls on and in clean view.
+
+### File options, pairing, mirroring and location
+
+The rules are unit-tested; every file option combination is encoded and read back on the
+Simulator (`FileOptionsEncodingTests`). On a device:
+
+- **File options** (issue #57): with each compression, HEIF bit depth and color space, a RAW plus
+  HEIF plus JPEG photo is saved, opens in Photos and a RAW editor, and the HEIF's depth and both
+  copies' color profile (exiftool `ProfileDescription`) match the choice;
+- **Paired with RAW** (issue #50): with RAW, HEIF and JPEG selected, Photos shows two items: the
+  RAW paired with the chosen copy, and the other copy on its own; note how Photos labels the
+  paired item and which copy it shows and shares by default, for each choice;
+- **Mirror Front Camera** (issue #45): see `docs/PRIVACY.md`, "Device checks";
+- **Location** (issue #43): turning Location on shows the system prompt with the localized
+  `NSLocationWhenInUseUsageDescription`; Allow turns the switch on and shows "Location On"; Don't
+  Allow leaves it off with the explanation and Open Settings; a photo then carries the location
+  (`docs/PRIVACY.md`, "Device checks"); location services stop (the status bar arrow goes) when
+  the camera is interrupted, the app goes to the background or Location is turned off; with
+  Precise Location off, the approximate location is written; Instruments shows no location
+  activity with Location off.
+
+### Viewfinder overlays on a device
+
+The geometry, level, analysis and rate rules are unit-tested; these checks cover the hardware
+(`SystemLiveView`, `PreviewRotation.previewAngle`, `MotionGravitySource`):
+
+- grid: each style in portrait and both landscape orientations; the spiral keeps its place
+  relative to the horizon when the phone turns; lines stay visible over white, yellow and dark
+  scenes;
+- level: the bar matches a real horizon (or a spirit level) within about 1 degree in portrait
+  and both landscape orientations; the haptic fires once on becoming level; pointing straight
+  down shows the top-down level; Instruments shows no motion updates while the level is off;
+- focus peaking: on the rear and front cameras, in portrait and landscape (and every iPad
+  orientation), the highlight sits on the in-focus edges, not mirrored or turned; a small
+  subject 5 to 15 cm away in front of a busy background shows sharp when focused (issue #51),
+  and the highlight stays on the same edges with the 3× focus magnifier on;
+- histogram: a bright window flags clipped highlights and a dark corner clipped shadows; the
+  thresholds (`Histogram.highlightThreshold`, `shadowThreshold`, `clippedShare`) and
+  `FocusPeakingMap.minimumEdge` look right on real scenes;
+- captures unchanged: with peaking and the histogram on, a DNG and its HEIF from the same scene
+  match ones taken with them off (dimensions, exposure, the metadata dump), and Bayer RAW is still
+  offered on every lens that had it;
+- rate and energy: with Instruments (Energy Log, Time Profiler), the analysis runs at most four
+  times a second (two in Low Power Mode), the video output is gone from the session when every
+  live aid is off, and the energy impact with them on is recorded in the release notes;
+- live camera readout: the values match the saved files' EXIF (ExposureTime, ISOSpeedRatings,
+  FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
+  the torch show when another feature turns them on.
+
+### Comparison shot on a device (issue #55)
+
+The rules (which photos are comparison shots, that only the app's files reach the library, failure
+handling, the metadata grouping and masking) are unit-tested with a scripted backend; the UI tests
+audit the compare view at the default and largest text sizes, right-to-left and in night mode.
+On the iPhone 16 Pro Max, record:
+
+- the time between the two photos (the compare view's "started … after nope.'s"), on the wide,
+  ultra wide and telephoto lenses and the front camera, in good and low light;
+- that the phone-processed side visibly shows the phone's processing (tone, noise reduction,
+  sharpening, multi-frame fusion in low light), and the app's side matches the saved photo;
+- that only the app's files appear in Photos after several comparison shots, and that a following
+  photo with Compare off has the same DNG tags and image data as before (the output's maximum
+  prioritization is back at `.speed`): run the tag check after a comparison shot;
+- memory in Xcode's memory gauge or Instruments: it rises while the compare view is open and
+  returns to the camera's level when Done is pressed;
+- the app switcher shows the hidden-contents cover, not the photos;
+- with the flash set to On, whether the second photo fires the flash again and how long it
+  waits for it;
+- App Privacy Report after a session of comparison shots: no network activity for the app;
+- the masked values in Details (maker notes, `ImageUniqueID`, any serial number) and whether iOS
+  adds location to the phone's file (it shouldn't: the app supplies none).
+
+### Focus, exposure and close-up aids on a device
+
+The rules (point handling, the lock, the fast shutter limit and its hysteresis, the hint and the
+close-up trigger) are unit-tested against a scripted backend; these checks cover the hardware
+calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max) and the iPad:
+
+- tap to focus: the focus square appears where tapped and the camera focuses and exposes there,
+  in portrait and with the iPhone turned, on the front camera too (its preview is mirrored; the
+  point must still match); moving the phone returns focus to the center; a lens without a focus
+  point (some front cameras) only re-exposes;
+- press and hold (and the Lock button) lock focus and exposure: they stay when the phone points
+  elsewhere; the AE/AF pill and the button unlock; VoiceOver's Focus on Center and Lock Focus
+  and Exposure actions do the same, and the lock change is announced;
+- exposure compensation in full auto: the tray's Exposure dial brightens and darkens the
+  viewfinder over the lens's range, the pill resets it, and the DNG's `ExposureBiasValue` follows
+  (with exposure settings kept);
+- fast shutter: on each lens in bright light the DNG's `ExposureTime` is no slower than
+  1/(2 × focal length) (wide about 1/50, ultra wide about 1/26, 5× about 1/240), and no slower
+  than 1/500 or 1/1000 with Freeze Motion; in dim light the shutter gets slower than that only
+  when ISO is at the lens's highest, the hint "Hold it steady or use a tripod." appears once, is
+  spoken by VoiceOver, and goes when the light comes back without flickering (the half-stop
+  margin is an assumption to check); the focal lengths computed from the field of view match
+  Apple's published ones within a few millimeters;
+- manual controls: a manual shutter slower than the handheld rule shows the hint and is never
+  changed; P mode isn't limited;
+- Close-Up: a small subject 5 to 15 cm away in front of a busy background focuses with Close-Up
+  on and a tap, and the pill turns it off;
+- close-up hint: below the wide lens's minimum focus distance the suggestion to switch to Ultra
+  Wide appears within about two seconds (the thresholds, `lensPosition` ≤ 0.05 for eight readings
+  while autofocus searches, are assumptions to tune), never switches by itself, and Dismiss hides
+  it until the lens changes;
+- the magnifier enlarges the viewfinder around the focus point and the saved photo isn't
+  zoomed (its dimensions and field of view are the same);
+- energy: with the camera screen open in full auto, readings arrive at most four a second
+  (Instruments), and nothing is observed after leaving the camera screen.
+
+### Astro helper on a device
+
+The rules (starting exposure, the run, its stop conditions) are unit-tested against a scripted
+backend, and the screens with UI tests; these checks need the iPhone 16 Pro Max at night on a
+tripod (issue #60):
+
+- record each rear lens's `activeFormat.maxExposureDuration` and ISO range for the RAW format
+  here (the Astro Settings sheet shows the shutter and ISO it set); the helper offers no lens
+  without manual focus or Bayer RAW;
+- focus at lens position 1 (the far end): is a bright star sharp, or does it need fine-tuning
+  with Magnify and the Focus control? Lens position isn't calibrated to a distance (AVFoundation,
+  `lensPosition`), so record the result per lens;
+- whether the highest ISO is a useful starting point or should be lower (owner decision);
+- a run of 20 frames with a 10 second start delay: every frame is a separate Bayer RAW (DNG)
+  photo that passes the read-back and is signed, the frames open in a stacking application, and
+  the time per frame beyond the shutter (read-out and saving) is recorded here;
+- the screen stays awake and dims during the run; the light can't be turned on; night mode
+  (natural and red viewfinder) with the magnifier on enlarges the real viewfinder;
+- the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
+  an assumption), and every frame taken before is saved.
 
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 
@@ -217,7 +678,8 @@ scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
 ```
 
 CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
-and runs `scripts/check-no-networking.sh` on both, with no exceptions.
+and runs `scripts/check-no-networking.sh` on both, with no exceptions; for the app it checks the
+app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`).
 
 ## Checking signatures
 
@@ -226,6 +688,48 @@ software key and validate them with the C2PA library's reader, offline: the hash
 claim signature are valid, the only failure is `signingCredential.untrusted`, and a one-bit
 change in the image data or in the claim makes the file invalid. They also check that signing
 adds only the Content Credentials store (`docs/PRIVACY.md`, "Content Credentials").
+
+They also open every signed file in ImageIO, as Photos and other apps do: it must report the
+file's own type (`com.adobe.raw-image`, `public.heic` or `public.jpeg`) with exactly one image
+(`signedFileOpensInImageIOAsItsTypeWithOneImage`, and `ReadBackTests` runs the app's own
+`ImageIOReadBack`). The synthetic DNG is 256 × 256 pixels because ImageIO doesn't recognize the
+same DNG as a DNG at 200 × 200 or smaller (macOS 27, 2026-11-14), and a test needs an unsigned
+DNG that ImageIO opens to show the signed one still does.
+
+### Signed DNG and ImageIO
+
+**How it was found (issue #66).** On an iPhone 16 Pro Max (iOS 27.2.1) with every metadata item
+on, the RAW and HEIF passed the read-back before signing, but after signing the DNG,
+`CGImageSourceCreateWithData` reported `public.tiff` with 0 images instead of
+`com.adobe.raw-image`, so the read-back rejected it and nothing was saved.
+
+**Cause.** The C2PA library's own DNG writer (c2pa-rs 0.92.0) writes a new IFD0, the old tags
+plus tag 52545, at the end of the file and points the header at it; the old IFD0 stays in the
+file unreferenced. Reproduced on a Mac with c2patool 0.28.6, on a camera DNG and on the
+synthetic one: ImageIO reports `public.tiff` for the signed file. On the camera DNG, moving IFD0
+to the end of the file is enough to cause it, with no store at all, and inserting tag 52545 into
+IFD0 where it is keeps `com.adobe.raw-image` (macOS 27, 2026-11-14).
+
+**Fix.** The app inserts the entry into IFD0 in place and appends the store
+(`DNGManifestSlot`), then signs with the C2PA library's data-hash workflow: a placeholder store
+of the final size, the hash over the file with the store excluded, and the signed store written
+over the placeholder (`ContentCredentialsSigner.embedInDNG`). The tests check that every value in
+every directory is unchanged after the insertion, in both byte orders, with IFD0 first or last,
+SubIFDs, EXIF, GPS and interoperability directories, a chained IFD1 and SHORT offsets, plus 400
+seeded random layouts and damaged files (`DNGManifestSlotTests`), and
+`theLibrarysOwnDNGWriterMakesAFileImageIOCantOpenAsDNG` records the library's behavior, so a
+library update that changes it is noticed. Checked by hand on 2026-11-14: c2patool 0.28.6
+reports `Valid` for the signed synthetic DNG, HEIF and JPEG files of every kind from the tests
+(`assertion.dataHash.match` for the DNG and JPEG, `assertion.bmffHash.match` for the HEIF), with
+`signingCredential.untrusted` the only failure, and ImageIO on macOS 27 opens each as its own
+type with one image. A DNG from the camera is signed this way only on a device (`docs/PRIVACY.md`,
+"Device checks").
+
+**Safety net.** If a signed file still fails the read-back for any reason, `PhotoSaver` saves
+the unsigned file, which passed the read-back first, and the status says "Saved. Not signed: the
+signed file didn't pass the check." An unreadable file is never saved.
+
+### Checking a signed file by hand
 
 To check a signed file by hand, use [c2patool](https://github.com/contentauth/c2patool) on a Mac
 (a local tool only; it isn't a project dependency):
@@ -310,7 +814,7 @@ Island): while one is, every app other than Apple's Camera gets blank frames (se
 frames").
 
 1. Copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set your own team ID.
-2. Install a Debug build. Open nope. normally from the Home Screen once and check that the
+2. Install a Debug build. Open the app normally from the Home Screen once and check that the
    viewfinder shows the scene.
 3. Launch the tag check. In Xcode: Product › Scheme › Edit Scheme › Run, keep the Build
    Configuration at Debug, add `-NopeTagCheck` to "Arguments Passed On Launch", and run. From the
@@ -330,7 +834,7 @@ frames").
      --source Documents/TagCheck --destination TagCheckOutput
    ```
    `xcrun devicectl list devices` shows the device identifier.
-6. Open nope. normally again and check that the viewfinder still shows the scene.
+6. Open the app normally again and check that the viewfinder still shows the scene.
 7. Dump the tags:
    ```sh
    swift scripts/dump-tags.swift TagCheckOutput
@@ -367,7 +871,7 @@ such a session runs, the Dynamic Island shows a purple screen-and-person icon, a
 shows "“MacBook Pro” is viewing and controlling this iPhone" with a **Stop Session** button.
 During the session, every app other than Apple's Camera got blank frames, including other
 camera apps from the App Store, while the session ran normally and auto exposure followed
-the room. Tapping **Stop Session** brought nope.'s live viewfinder back at once, with no code
+the room. Tapping **Stop Session** brought the app's live viewfinder back at once, with no code
 change and no restart, and the next tag check produced real images on every lens. The session
 started while the phone was connected to the Mac for development builds; which Mac feature
 starts it has not been isolated. No Apple documentation found describes the blanking.
@@ -380,7 +884,7 @@ again and tap **Trust** to install builds.
 on the old tag check's pipeline (a separate `AVCaptureSession` per lens, an extra
 `AVCaptureVideoDataOutput`, and a bare `stopRunning()`), because a phone restart sometimes
 seemed to clear them. That was not confirmed: after a restart, the main-branch build, a fresh
-bundle identifier and a session with none of nope.'s settings were all blank while the viewing
+bundle identifier and a session with none of the app's settings were all blank while the viewing
 session ran. The changes below are kept because they are simpler and safer, not because they
 fixed the blank frames.
 
@@ -415,7 +919,7 @@ fixed the blank frames.
 ### Debug runs for diagnosis
 
 These Debug-only tools stay for future diagnosis. **Before a run, check that no Mac is viewing
-the phone's screen** (above), and open nope. normally first to check the viewfinder: a run while
+the phone's screen** (above), and open the app normally first to check the viewfinder: a run while
 the camera picture is blanked gives blank frames whatever the pipeline, and proves nothing.
 
 - `-NopeCameraProbe` runs the simplest pipeline from Apple's sample flow

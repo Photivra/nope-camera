@@ -7,7 +7,7 @@ import SwiftUI
 /// (`Resources/GPL-3.0.txt` and `Resources/NOTICE.txt`); a unit test keeps them identical. They
 /// are legal texts, shown exactly as written and not translated (AGENTS.md, "Keep every
 /// notice"). The source address is a link: tapping it hands the `https` address to the system,
-/// which opens it in the browser. nope. itself makes no network request (AGENTS.md,
+/// which opens it in the browser. The app itself makes no network request (AGENTS.md,
 /// "Prevention first").
 struct AboutScreen: View {
     /// The address of the source code.
@@ -48,7 +48,7 @@ struct AboutScreen: View {
                 Text(
                     "nope. is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
                     comment: "Plain summary of the GPL. Keep \"nope.\" unchanged.")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CameraStyle.secondaryText)
             } header: {
                 Text("License", bundle: .module, comment: "Title of the screen showing the full license text.")
             }

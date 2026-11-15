@@ -2,7 +2,7 @@ import Foundation
 
 /// Why the system paused the camera.
 ///
-/// The system resumes the camera by itself when the reason goes away; nope. never restarts it
+/// The system resumes the camera by itself when the reason goes away; the app never restarts it
 /// against the system. Each case says how an interface should present it.
 public enum InterruptionReason: Equatable, Sendable, CaseIterable {
     /// The app moved to the background. Nothing to show: the screen isn't visible.
@@ -16,7 +16,7 @@ public enum InterruptionReason: Equatable, Sendable, CaseIterable {
 
     /// The app shares the screen with other apps (iPad Split View, Slide Over or Stage Manager).
     ///
-    /// Say that the camera works only when nope. fills the screen.
+    /// Say that the camera works only when the app fills the screen.
     case multitasking
 
     /// The device is too hot, or under other system pressure, to run the camera.

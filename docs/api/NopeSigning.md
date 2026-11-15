@@ -13,7 +13,7 @@ struct ClaimGenerator
 The software named in each manifest as the claim generator: Photivra Nope Camera and its version.
 
 The C2PA specification requires `claim_generator_info.name` (C2PA 2.2, §10.2). Privacy rule:
-the name and version are the same for everyone running that version of nope.; no device,
+the name and version are the same for everyone running that version of the app; no device,
 operating system or user detail is added.
 
 ## `ClaimGenerator/appName`
@@ -34,7 +34,7 @@ public, declared in `Sources/NopeSigning/ClaimGenerator.swift`
 init(version: String)
 ```
 
-Creates the claim generator for a version of nope.
+Creates the claim generator for a version of the app.
 
 - Parameter version: The app's marketing version (`CFBundleShortVersionString`), for
   example `0.1.0`.
@@ -67,9 +67,9 @@ internal, declared in `Sources/NopeSigning/ContentCredentialsManifest.swift`
 struct ContentCredentialsManifest
 ```
 
-The manifest nope. writes for one file, as the JSON manifest definition the C2PA library takes.
+The manifest the app writes for one file, as the JSON manifest definition the C2PA library takes.
 
-It says only what nope. knows to be true (AGENTS.md, "Honesty"; issue #1, "Signing"):
+It says only what the app knows to be true (AGENTS.md, "Honesty"; issue #1, "Signing"):
 - one `c2pa.created` action, with the IPTC digital source type `digitalCapture` (the image
   was captured from real life by a digital camera) and a plain description of what happened
   to the file;
@@ -375,7 +375,7 @@ static func description(of file: SignableFile) -> String
 The description of what happened to a file, in the manifest's own words.
 
 The manifest is part of the file, not the interface, so this English text isn't localized.
-It claims no more than nope. does: "as little processing as the phone allows", never "no
+It claims no more than the app does: "as little processing as the phone allows", never "no
 processing".
 
 - Parameter file: What the file is.
@@ -466,23 +466,95 @@ as untrusted; the signature proves the file is unchanged, not who took it.
 Threading: the work is synchronous and CPU-bound (it hashes the whole file); call it off the
 main actor. The type holds no mutable state, so one signer can serve concurrent calls.
 
+## `ContentCredentialsSigner/SignedData`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+struct SignedData
+```
+
+A signed file and the manifest store embedded in it.
+
+## `ContentCredentialsSigner/SignedData/file`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+let file: Data
+```
+
+The signed file's bytes.
+
+## `ContentCredentialsSigner/SignedData/init(file:manifestStore:)`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+init(file: Data, manifestStore: Data)
+```
+
+Pairs a signed file with its manifest store.
+
+- Parameters:
+  - file: The signed file's bytes.
+  - manifestStore: The manifest store's bytes.
+
+## `ContentCredentialsSigner/SignedData/manifestStore`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+let manifestStore: Data
+```
+
+The manifest store's bytes, as the C2PA library returned them.
+
 ## `ContentCredentialsSigner/embed(_:as:manifest:key:)`
 
 internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
 
 ```swift
-static func embed(_ data: Data, as file: SignableFile, manifest: ContentCredentialsManifest, key: any PerPhotoSigningKey) throws -> Data
+static func embed(_ data: Data, as file: SignableFile, manifest: ContentCredentialsManifest, key: any PerPhotoSigningKey) throws -> SignedData
 ```
 
 Embeds and signs a manifest with one key.
+
+HEIF and JPEG go through the C2PA library's own writer. A DNG goes through
+``embedInDNG(_:manifest:signer:)`` instead, because the library's DNG writer moves IFD0
+and ImageIO can't open the result (issue #66).
 
 - Parameters:
   - data: The file.
   - file: What the file is.
   - manifest: The manifest to embed.
   - key: The file's one-use key.
-- Returns: The signed file.
+- Returns: The signed file and its manifest store.
 - Throws: Any error from the certificate, the key or the C2PA library.
+
+## `ContentCredentialsSigner/embedInDNG(_:manifest:signer:)`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+static func embedInDNG(_ data: Data, manifest: ContentCredentialsManifest, signer: sending Signer) throws -> SignedData
+```
+
+Signs a DNG with the C2PA data-hash workflow, keeping IFD0 in place.
+
+1. The library makes a placeholder store of the final size.
+2. ``DNGManifestSlot`` inserts tag 52545 into IFD0 and puts the placeholder at the end.
+3. The library hashes the file with the store excluded (`c2pa.hash.data`, C2PA 2.2,
+   section 9.2) and signs the claim.
+4. The signed store, the same size as the placeholder, replaces it, so the hash still holds.
+
+- Parameters:
+  - data: The DNG.
+  - manifest: The manifest to embed.
+  - signer: The file's one-use signer; the context takes it.
+- Returns: The signed DNG and its manifest store.
+- Throws: Any error from the library, or a ``DNGManifestSlot/Failure``, for example if
+  the signed store isn't the placeholder's size.
 
 ## `ContentCredentialsSigner/init(keyProvider:generator:)`
 
@@ -510,10 +582,467 @@ Signs one file.
 
 - Parameter file: The complete file, with its final metadata.
 - Returns: The same file with a Content Credentials manifest embedded in the one place
-  its format allows (see `SignableFile.mediaType`); nothing else in the file changes.
+  its format allows (see `SignableFile.mediaType`); nothing else in the file changes. Its
+  `contentCredentials` summarizes the manifest for the "What's in this photo" details.
 - Throws: ``PhotoSigningError/keyCreationFailed`` if no key could be created, or
   ``PhotoSigningError/signingFailed`` if the certificate, the claim signature or the
   C2PA library failed, for example because the bytes aren't a valid file of that kind.
+
+## `ContentCredentialsSigner/summary(of:manifestStore:)`
+
+internal, declared in `Sources/NopeSigning/ContentCredentialsSigner.swift`
+
+```swift
+func summary(of file: SignableFile, manifestStore: Data) -> ContentCredentialsSummary
+```
+
+What the details show about a file's manifest: the claim generator, the manifest's
+description, and the SHA-256 hash of the manifest store the C2PA library returned.
+
+- Parameters:
+  - file: What the file is.
+  - manifestStore: The signed manifest store's bytes.
+- Returns: The summary.
+
+## `DNGManifestSlot`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+enum DNGManifestSlot
+```
+
+Makes room for a Content Credentials store in a DNG while keeping IFD0 where it is.
+
+Why this exists (issue #66): the C2PA library's own DNG writer appends a new copy of IFD0 at
+the end of the file, with tag 52545 added, and points the header at it. ImageIO then no longer
+recognizes the file as a DNG: measured on an iPhone 16 Pro Max with iOS 27.2.1,
+`CGImageSourceCreateWithData` reports `public.tiff` with 0 images, and macOS 27 reports
+`public.tiff` too. A DNG with the same tag inserted into IFD0 in place opens as
+`com.adobe.raw-image` (`docs/TESTING.md`, "Signed DNG and ImageIO").
+
+So the signer inserts the entry itself: tag 52545 (`0xCD41`), type UNDEFINED, in IFD0 at its
+ascending tag position (C2PA 2.2, appendix A.3.3; TIFF 6.0, section 2: "The entries in an IFD
+must be sorted in ascending order by Tag"), with the store at the end of the file. Every byte
+after the new entry moves 12 bytes later, and every offset that points past it moves with it.
+12 keeps every value on the word boundary TIFF requires. The C2PA library's data-hash
+workflow then hashes the file with the store excluded and signs it, and the signed store
+replaces the placeholder byte for byte (``ContentCredentialsSigner``).
+
+Privacy rule: this adds the Content Credentials store and its entry and changes nothing else.
+It never removes or rewrites a tag (AGENTS.md, "remove metadata through system APIs, never by
+editing bytes"). It is byte-level code, so it is fuzz-tested (`DNGManifestSlotTests`), and the
+signed file is read back against the allowlist like every other file.
+
+Limits, each rejected with ``Failure``: classic TIFF only (not BigTIFF), at most
+``maximumDirectories`` directories, a file that already has tag 52545, a value that crosses
+the insertion point, and an offset stored as SHORT that would no longer fit. Data whose own
+contents hold absolute file offsets can't be fixed up; of the tags the app allows, only the
+Apple maker note (`0x927C`) holds offsets, and those are relative to the maker note's own
+start (an assumption from ExifTool's Apple maker note table, checked on a device with an
+exiftool dump of a signed DNG: `docs/PRIVACY.md`, "Device checks").
+
+## `DNGManifestSlot/Bound`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+struct Bound
+```
+
+A DNG with room for the store.
+
+## `DNGManifestSlot/Bound/file`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let file: Data
+```
+
+The file with the new entry and, at the end, the placeholder store.
+
+## `DNGManifestSlot/Bound/init(file:storeRange:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+init(file: Data, storeRange: Range<Int>)
+```
+
+Creates a bound file.
+
+- Parameters:
+  - file: The file with the entry and the placeholder store.
+  - storeRange: Where the store is in the file.
+
+## `DNGManifestSlot/Bound/replacingStore(with:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+func replacingStore(with store: Data) throws(Failure) -> Data
+```
+
+The file with a store in the slot.
+
+- Parameter store: The placeholder or the signed store.
+- Returns: The file.
+- Throws: ``Failure/storeSizeChanged`` unless the store is exactly the slot's size.
+
+## `DNGManifestSlot/Bound/storeRange`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let storeRange: Range<Int>
+```
+
+Where the store is: what the data hash excludes, and what the signed store replaces.
+
+## `DNGManifestSlot/Failure`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+enum Failure
+```
+
+Why a file can't take a store.
+
+## `DNGManifestSlot/Failure/alreadyHasStore`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+case alreadyHasStore
+```
+
+The file already has a Content Credentials store.
+
+## `DNGManifestSlot/Failure/storeSizeChanged`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+case storeSizeChanged
+```
+
+A store to put in the slot isn't the slot's size, so it would move other bytes.
+
+## `DNGManifestSlot/Failure/tooLarge`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+case tooLarge
+```
+
+An offset stored as SHORT, or the grown file, wouldn't fit its field.
+
+## `DNGManifestSlot/Failure/unreadable`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+case unreadable
+```
+
+The bytes aren't a classic TIFF, or a directory or value lies outside the file.
+
+## `DNGManifestSlot/Failure/valueCrossesInsertionPoint`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+case valueCrossesInsertionPoint
+```
+
+A value starts before the insertion point and ends after it.
+
+## `DNGManifestSlot/Layout`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+struct Layout
+```
+
+The parsed file: its byte order, IFD0, and every offset field found by the walk.
+
+## `DNGManifestSlot/Layout/bigEndian`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let bigEndian: Bool
+```
+
+Whether the file is big-endian (`MM`).
+
+## `DNGManifestSlot/Layout/bytes`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let bytes: [UInt8]
+```
+
+The file.
+
+## `DNGManifestSlot/Layout/firstDirectory`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let firstDirectory: Int
+```
+
+Where IFD0 starts.
+
+## `DNGManifestSlot/Layout/init(bytes:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+init(bytes: [UInt8]) throws(Failure)
+```
+
+Reads the header.
+
+- Parameter bytes: The file.
+- Throws: ``Failure/unreadable`` for anything but a classic TIFF header.
+
+## `DNGManifestSlot/Layout/insert(storeLength:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+func insert(storeLength: Int) throws(Failure) -> Bound
+```
+
+Builds the new file.
+
+- Parameter storeLength: The store's length.
+- Returns: The file and the store's range.
+- Throws: ``Failure`` if a value crosses the insertion point or a field overflows.
+
+## `DNGManifestSlot/Layout/insertionPoint`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+var insertionPoint: Int { get }
+```
+
+The insertion point: after IFD0's entries with a lower tag number.
+
+## `DNGManifestSlot/Layout/offsets`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+var offsets: [Offset] { get }
+```
+
+Every offset field.
+
+## `DNGManifestSlot/Layout/u16(_:_:bigEndian:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static func u16(_ bytes: [UInt8], _ offset: Int, bigEndian: Bool) -> Int
+```
+
+A 16-bit value in a byte order.
+
+- Parameters:
+  - bytes: The file.
+  - offset: Where the value starts; `offset + 2` is within the file.
+  - bigEndian: The byte order.
+
+## `DNGManifestSlot/Layout/u32(_:_:bigEndian:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static func u32(_ bytes: [UInt8], _ offset: Int, bigEndian: Bool) -> Int
+```
+
+A 32-bit value in a byte order.
+
+- Parameters:
+  - bytes: The file.
+  - offset: Where the value starts; `offset + 4` is within the file.
+  - bigEndian: The byte order.
+
+## `DNGManifestSlot/Layout/values`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+var values: [Range<Int>] { get }
+```
+
+Every out-of-line value, as a byte range, to check none crosses the insertion point.
+
+## `DNGManifestSlot/Layout/walk()`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+mutating func walk() throws(Failure)
+```
+
+Walks every directory reachable from the header, recording offsets and values.
+
+- Throws: ``Failure`` for an unreadable directory or value, or an existing store.
+
+## `DNGManifestSlot/Offset`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+struct Offset
+```
+
+One 4-byte offset somewhere in the file, and the value it holds.
+
+## `DNGManifestSlot/Offset/init(position:isShort:value:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+init(position: Int, isShort: Bool, value: Int)
+```
+
+Records an offset field.
+
+- Parameters:
+  - position: Where the field is, in bytes from the start of the file.
+  - isShort: Whether the field is a SHORT.
+  - value: The offset it holds, in bytes from the start of the file.
+
+## `DNGManifestSlot/Offset/isShort`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let isShort: Bool
+```
+
+Whether the field is a SHORT (2 bytes) rather than a LONG.
+
+## `DNGManifestSlot/Offset/position`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let position: Int
+```
+
+Where the field is.
+
+## `DNGManifestSlot/Offset/value`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+let value: Int
+```
+
+The offset it holds.
+
+## `DNGManifestSlot/dataOffsetTags`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let dataOffsetTags: Set<UInt16>
+```
+
+Tags whose values are offsets of image data: StripOffsets, FreeOffsets, TileOffsets and
+JPEGInterchangeFormat (TIFF 6.0, sections 3, 8, 15 and 22).
+
+## `DNGManifestSlot/directoryPointerTags`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let directoryPointerTags: Set<UInt16>
+```
+
+Pointer tags whose values are offsets of child directories (TIFF 6.0 and its supplements,
+EXIF 3.0): SubIFDs, the EXIF, GPS and interoperability directories.
+
+## `DNGManifestSlot/entrySize`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let entrySize: Int
+```
+
+The size of one IFD entry, and so how far every later byte moves.
+
+## `DNGManifestSlot/insert(storeLength:into:)`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static func insert(storeLength: Int, into dng: Data) throws(Failure) -> Bound
+```
+
+Inserts tag 52545 into IFD0 and appends a store of zeros.
+
+- Parameters:
+  - storeLength: The store's exact length in bytes, more than 4 (the placeholder's length).
+  - dng: The DNG, as written and read back.
+- Returns: The new file and where the store is in it.
+- Throws: ``Failure`` if the file can't take the store safely.
+
+## `DNGManifestSlot/maximumDirectories`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let maximumDirectories: Int
+```
+
+More directories than any DNG the app writes; a file with more is rejected, so a loop or a
+hostile file can't make the walk unbounded.
+
+## `DNGManifestSlot/storeTag`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let storeTag: UInt16
+```
+
+The Content Credentials tag, 52545 (C2PA 2.2, appendix A.3.3).
+
+## `DNGManifestSlot/typeSizes`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let typeSizes: [UInt16 : Int]
+```
+
+Bytes per value of each TIFF field type (TIFF 6.0, section 2; type 13, IFD, from the
+TIFF supplement 1).
+
+## `DNGManifestSlot/undefinedType`
+
+internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
+
+```swift
+static let undefinedType: UInt16
+```
+
+The UNDEFINED field type (TIFF 6.0, section 2).
 
 ## `InMemoryFile`
 
@@ -751,10 +1280,10 @@ internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
 enum OfflineC2PAContext
 ```
 
-Builds the C2PA library context nope. signs with: fully offline, no thumbnail, no timestamp.
+Builds the C2PA library context the app signs with: fully offline, no thumbnail, no timestamp.
 
-Privacy and network rule: nope. makes no network calls and links no networking code
-(AGENTS.md, "No network, no analytics"). The C2PA library nope. links is built without any
+Privacy and network rule: the app makes no network calls and links no networking code
+(AGENTS.md, "No network, no analytics"). The C2PA library the app links is built without any
 network feature (`c2pa-lib/README.md`), so it has no HTTP client to call. The settings also
 turn off every fetch and allow no network host (`core.allowed_network_hosts` set to an empty
 list blocks all traffic), so the library never asks for one.
@@ -771,6 +1300,21 @@ Creates a new context with ``settings``.
 
 - Returns: The context.
 - Throws: `C2PAError` if the library rejects the settings.
+
+## `OfflineC2PAContext/make(signer:)`
+
+internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
+
+```swift
+static func make(signer: sending Signer) throws -> C2PAContext
+```
+
+Creates a new context with ``settings`` that signs with one signer, for the data-hash
+workflow (`Builder.signEmbeddable(format:)` signs with the context's signer).
+
+- Parameter signer: The signer; the context takes ownership of it.
+- Returns: The context.
+- Throws: `C2PAError` if the library rejects the settings or the signer.
 
 ## `OfflineC2PAContext/settings`
 
@@ -944,7 +1488,7 @@ Builds the anonymous, self-issued X.509 certificate that carries one file's publ
 The certificate is signed by the file's own one-use key, so it isn't chained to any
 certificate authority. Validators therefore show the signer as untrusted or unknown
 (C2PA specification 2.2, §15.7, `signingCredential.untrusted`). That is expected and honest:
-the signature proves the file hasn't changed since nope. signed it, not who took it
+the signature proves the file hasn't changed since the app signed it, not who took it
 (docs/research/c2pa-signing.md, "Certificates and trust").
 
 Privacy rule: every field except the key and the random serial number is the same for every
@@ -1028,7 +1572,7 @@ internal, declared in `Sources/NopeSigning/SignableFile.swift`
 enum SignableFile
 ```
 
-The kinds of file nope. signs, each with the honest description its manifest carries.
+The kinds of file the app signs, each with the honest description its manifest carries.
 
 Derived from a `PhotoFile`: its format, and whether the phone's camera processed it.
 
@@ -1040,7 +1584,7 @@ internal, declared in `Sources/NopeSigning/SignableFile.swift`
 case developedHEIF
 ```
 
-HEIF developed by nope. from a single-frame RAW.
+HEIF developed by the app from a single-frame RAW.
 
 ## `SignableFile/developedJPEG`
 
@@ -1050,7 +1594,7 @@ internal, declared in `Sources/NopeSigning/SignableFile.swift`
 case developedJPEG
 ```
 
-JPEG developed by nope. from a single-frame RAW.
+JPEG developed by the app from a single-frame RAW.
 
 ## `SignableFile/deviceProcessedHEIF`
 

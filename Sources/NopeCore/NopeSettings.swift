@@ -34,6 +34,36 @@ public final class NopeSettings {
     /// and honesty warnings. Off by default.
     public private(set) var startsInCleanView: Bool
 
+    /// The viewfinder overlays: grid, level, focus peaking, histogram and live camera readout.
+    /// Every overlay is off by default. Change them with the setters in `OverlayOptions.swift`
+    /// or ``setOverlays(_:)``.
+    public private(set) var overlays: OverlayOptions
+
+    /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default; the camera
+    /// screen applies it with ``AutoControlIntent/setFastShutter(_:)``.
+    public private(set) var fastShutter: FastShutter
+
+    /// When the flash fires, remembered between launches. ``FlashMode/off`` by default. The app
+    /// passes it to ``CameraModel/light`` with ``LightIntent/setFlashMode(_:)``.
+    public private(set) var flashMode: FlashMode
+
+    /// The torch's brightness, remembered between launches (the torch itself always starts off).
+    /// ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
+    /// with ``LightIntent/setTorchLevel(_:)``.
+    public private(set) var torchLevel: Double
+
+    /// Whether night mode is on: every screen of the app in red on black, to keep eyes used to the
+    /// dark (issue #61). Off by default, remembered between launches, never switched on or off
+    /// automatically. The app never changes the screen's brightness; people use the device's own
+    /// brightness control.
+    ///
+    /// Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
+    public private(set) var isNightModeOn: Bool
+
+    /// Whether night mode also tints the live viewfinder red. Off by default: the viewfinder
+    /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
+    public private(set) var tintsViewfinderInNightMode: Bool
+
     /// Where the settings are stored.
     private let defaults: UserDefaults
 
@@ -52,6 +82,14 @@ public final class NopeSettings {
         // string, which `bool(forKey:)` reads; a missing value is the default, off.
         showsManualControls = defaults.bool(forKey: Key.showsManualControls)
         startsInCleanView = defaults.bool(forKey: Key.startsInCleanView)
+        overlays = OverlayOptions(defaults: defaults)
+        // An unknown stored value, for example from a later version, falls back to the default.
+        fastShutter = defaults.string(forKey: Key.fastShutter).flatMap(FastShutter.init(rawValue:)) ?? .handheld
+        flashMode = defaults.string(forKey: Key.flashMode).flatMap(FlashMode.init(rawValue:)) ?? .off
+        torchLevel = defaults.object(forKey: Key.torchLevel) == nil
+            ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
+        isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
+        tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
         migrateManualControlsOption()
     }
 
@@ -114,7 +152,7 @@ public final class NopeSettings {
         selectedFormats(deviceSupportsBayerRAW: deviceSupportsBayerRAW) != [format]
     }
 
-    /// Whether any selected format is developed by nope. from the RAW (HEIF or JPEG).
+    /// Whether any selected format is developed by the app from the RAW (HEIF or JPEG).
     public var savesDevelopedFormat: Bool {
         formats.contains(where: \.isDevelopedFromRAW)
     }
@@ -167,6 +205,56 @@ public final class NopeSettings {
         store()
     }
 
+    /// Which processed copy is paired with the RAW in Photos when RAW, HEIF and JPEG are all
+    /// saved. ``RAWPairing/heif`` by default.
+    public var rawPairing: RAWPairing {
+        save.rawPairing
+    }
+
+    /// Whether the choice of ``rawPairing`` applies: RAW, HEIF and JPEG are all selected and
+    /// the device has Bayer RAW.
+    ///
+    /// - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+    /// - Returns: `true` when an interface should offer the choice.
+    public func offersRAWPairingChoice(deviceSupportsBayerRAW: Bool) -> Bool {
+        deviceSupportsBayerRAW && save.offersRAWPairingChoice
+    }
+
+    /// Sets which processed copy is paired with the RAW, and saves the change.
+    ///
+    /// - Parameter pairing: The copy to pair.
+    public func setRAWPairing(_ pairing: RAWPairing) {
+        save.rawPairing = pairing
+        store()
+    }
+
+    /// Whether front camera photos are saved mirrored, as the viewfinder shows them. Off by
+    /// default.
+    public var mirrorsFrontCamera: Bool {
+        save.mirrorsFrontCamera
+    }
+
+    /// Sets whether front camera photos are saved mirrored, and saves the change.
+    ///
+    /// - Parameter isOn: Whether they are mirrored.
+    public func setMirrorsFrontCamera(_ isOn: Bool) {
+        save.mirrorsFrontCamera = isOn
+        store()
+    }
+
+    /// How the HEIF and JPEG copies are encoded. ``DevelopedFileOptions/init()`` by default.
+    public var fileOptions: DevelopedFileOptions {
+        save.fileOptions
+    }
+
+    /// Sets how the HEIF and JPEG copies are encoded, and saves the change.
+    ///
+    /// - Parameter options: The options.
+    public func setFileOptions(_ options: DevelopedFileOptions) {
+        save.fileOptions = options
+        store()
+    }
+
     /// Shows or hides the manual controls on the camera screen, and saves the change.
     ///
     /// - Parameter isOn: Whether the manual controls are shown.
@@ -181,6 +269,54 @@ public final class NopeSettings {
     public func setStartsInCleanView(_ isOn: Bool) {
         startsInCleanView = isOn
         defaults.set(isOn, forKey: Key.startsInCleanView)
+    }
+
+    /// Replaces the viewfinder overlay options, and saves the change.
+    ///
+    /// - Parameter options: The new options.
+    public func setOverlays(_ options: OverlayOptions) {
+        overlays = options
+        options.store(in: defaults)
+    }
+
+    /// Sets how fast a shutter full auto prefers, and saves the change.
+    ///
+    /// - Parameter choice: The choice.
+    public func setFastShutter(_ choice: FastShutter) {
+        fastShutter = choice
+        defaults.set(choice.rawValue, forKey: Key.fastShutter)
+    }
+
+    /// Sets when the flash fires, and saves the change.
+    ///
+    /// - Parameter mode: The flash mode.
+    public func setFlashMode(_ mode: FlashMode) {
+        flashMode = mode
+        defaults.set(mode.rawValue, forKey: Key.flashMode)
+    }
+
+    /// Sets the torch's brightness, and saves the change.
+    ///
+    /// - Parameter level: The brightness, moved inside ``LightModel/torchLevelRange``.
+    public func setTorchLevel(_ level: Double) {
+        torchLevel = LightModel.clampedTorchLevel(level)
+        defaults.set(torchLevel, forKey: Key.torchLevel)
+    }
+
+    /// Turns night mode on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether the app's screens are red on black.
+    public func setNightMode(_ isOn: Bool) {
+        isNightModeOn = isOn
+        defaults.set(isOn, forKey: Key.isNightModeOn)
+    }
+
+    /// Sets whether night mode tints the live viewfinder red, and saves the change.
+    ///
+    /// - Parameter isOn: Whether the viewfinder is tinted in night mode.
+    public func setTintsViewfinderInNightMode(_ isOn: Bool) {
+        tintsViewfinderInNightMode = isOn
+        defaults.set(isOn, forKey: Key.tintsViewfinderInNightMode)
     }
 
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
@@ -210,5 +346,15 @@ public final class NopeSettings {
         static let legacyManualControls = "manualControlsEnabled"
         /// Whether the camera starts in clean view, a Boolean.
         static let startsInCleanView = "NopeSettings.startsInCleanView"
+        /// How fast a shutter full auto prefers, a ``FastShutter`` raw value.
+        static let fastShutter = "NopeSettings.fastShutter"
+        /// When the flash fires, a ``FlashMode`` raw value.
+        static let flashMode = "NopeSettings.flashMode"
+        /// The torch's brightness, a number from 0.01 to 1.
+        static let torchLevel = "NopeSettings.torchLevel"
+        /// Whether night mode is on, a Boolean.
+        static let isNightModeOn = "NopeSettings.isNightModeOn"
+        /// Whether night mode tints the viewfinder, a Boolean.
+        static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
     }
 }

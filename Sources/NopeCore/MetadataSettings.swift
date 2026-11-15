@@ -7,8 +7,9 @@ import Foundation
 /// case here (``MetadataField/Group/locked(_:)``). The Content Credentials signature has its own
 /// switch outside this list (``MetadataSettings/signsPhotos``).
 public enum MetadataItem: String, CaseIterable, Codable, Hashable, Sendable {
-    /// Location, altitude and direction (the EXIF GPS directory). nope. doesn't capture a
-    /// location yet, so with this item on no location is written either.
+    /// Where the photo was taken: latitude, longitude and altitude (the EXIF GPS directory,
+    /// ``MetadataField/gpsFields``). Written only while the person has allowed location access,
+    /// from ``LocationTagging`` (issue #43). Direction and speed are never written.
     case location
     /// The date and time the photo was taken.
     case dateAndTime
@@ -21,7 +22,7 @@ public enum MetadataItem: String, CaseIterable, Codable, Hashable, Sendable {
     /// The lens's make and model, and its focal length and aperture range.
     case lensMakeAndModel
     /// The exact camera model for RAW editors (DNG `UniqueCameraModel`). The DNG standard
-    /// requires the tag, so when this item is off nope. writes
+    /// requires the tag, so when this item is off the app writes
     /// ``MetadataPlan/genericUniqueCameraModel`` instead of removing it.
     case exactCameraModel
     /// The lens correction instructions in a DNG (opcode lists). The pixels are never corrected

@@ -1,6 +1,6 @@
 import Foundation
 
-/// How nope. develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itself is never
+/// How the app develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itself is never
 /// affected.
 ///
 /// Both looks demosaic the sensor data and apply the file's own white balance and color

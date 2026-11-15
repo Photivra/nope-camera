@@ -3,12 +3,13 @@ import Foundation
 extension MetadataItem {
     /// Whether settings offer a switch for the item yet.
     ///
-    /// Location needs its own explanation and the system location prompt, and the name and
-    /// copyright need text entry; neither flow is built, so those switches aren't shown and the
-    /// items stay off. Interfaces show a switch only where this is `true`.
+    /// The name and copyright need text entry, which isn't built, so that switch isn't shown
+    /// and the item stays off. Location is offered: turning it on goes through
+    /// ``LocationTagging/turnOn(in:)``, which asks for location access first. Interfaces show a
+    /// switch only where this is `true`.
     public var isOfferedInSettings: Bool {
         switch self {
-        case .location, .nameAndCopyright: false
+        case .nameAndCopyright: false
         default: true
         }
     }

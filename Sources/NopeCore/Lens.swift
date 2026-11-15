@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Lenses are discovered at run time by a ``CaptureBackend``; an interface renders them without
 /// knowing the hardware (AGENTS.md, "Capabilities are data"). Every range is what the camera
-/// reported for the format nope. uses, so it can differ between devices and iOS versions.
+/// reported for the format the app uses, so it can differ between devices and iOS versions.
 public struct Lens: Identifiable, Equatable, Sendable {
     /// Where a lens sits and how wide it sees.
     public enum Kind: Equatable, Sendable, CaseIterable {
@@ -41,7 +41,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// front camera, which has no rear wide camera to compare with.
     ///
     /// It is computed from each camera's field of view, so it is approximate. It is for labels
-    /// only: nope. never zooms digitally.
+    /// only: the app never zooms digitally.
     public let magnification: Double?
 
     /// The ISO values the lens supports in its photo format, or `nil` when unknown.
@@ -64,6 +64,19 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// The manual controls the lens supports. ``ManualCapabilities/none`` when unknown.
     public let manualControls: ManualCapabilities
 
+    /// The lens's focal length as it would be on a 35 mm film camera with the same angle of
+    /// view, in millimeters, or `nil` when unknown. Computed from the field of view, so it is
+    /// approximate. Full auto uses it for the handheld shutter rule (``AutoShutter``).
+    public let equivalentFocalLength: Double?
+
+    /// The flash modes the lens supports, as the photo output reported them for this camera.
+    /// Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
+    /// camera: the app uses no screen flash (issue #38).
+    public let flashModes: [FlashMode]
+
+    /// Whether the lens has a torch: a light that can stay on while framing and taking photos.
+    public let hasTorch: Bool
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -79,6 +92,9 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture, or 0.
     ///   - photoDimensions: The supported photo sizes, smallest first.
     ///   - manualControls: The manual controls the lens supports. Defaults to none.
+    ///   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
+    ///   - flashModes: The flash modes the lens supports. Defaults to none.
+    ///   - hasTorch: Whether the lens has a torch. Defaults to `false`.
     public init(
         id: String,
         kind: Kind,
@@ -90,7 +106,10 @@ public struct Lens: Identifiable, Equatable, Sendable {
         aperture: ApertureRange? = nil,
         maxBracketedPhotoCount: Int = 0,
         photoDimensions: [PhotoDimensions] = [],
-        manualControls: ManualCapabilities = .none
+        manualControls: ManualCapabilities = .none,
+        equivalentFocalLength: Double? = nil,
+        flashModes: [FlashMode] = [],
+        hasTorch: Bool = false
     ) {
         self.id = id
         self.kind = kind
@@ -103,6 +122,9 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
         self.manualControls = manualControls
+        self.equivalentFocalLength = equivalentFocalLength
+        self.flashModes = flashModes
+        self.hasTorch = hasTorch
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

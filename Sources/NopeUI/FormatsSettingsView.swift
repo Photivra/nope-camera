@@ -5,6 +5,8 @@ import SwiftUI
 ///
 /// At least one format stays selected: `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 /// disables the last one. On a device without Bayer RAW the RAW row stays visible, unavailable, and says why.
+/// The camera's format chip shows the same list under an explanation of the next photo, with a
+/// link to the look (``FormatDetailsSheet``).
 struct FormatsSettingsView: View {
     /// The settings to show and change.
     let settings: NopeSettings
@@ -12,19 +14,37 @@ struct FormatsSettingsView: View {
     /// Whether any camera on the device gives Bayer RAW.
     let deviceSupportsBayerRAW: Bool
 
+    /// An explanation shown above the formats, or `nil`.
+    let explanation: AnyView?
+
+    /// Whether a row links to the HEIF and JPEG look while HEIF or JPEG is selected.
+    let showsLookLink: Bool
+
     /// Creates the formats list.
     ///
     /// - Parameters:
     ///   - settings: The settings to show and change.
     ///   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-    init(settings: NopeSettings, deviceSupportsBayerRAW: Bool) {
+    ///   - explanation: An explanation shown above the formats, or `nil`.
+    ///   - showsLookLink: Whether a row links to the look while HEIF or JPEG is selected.
+    init(
+        settings: NopeSettings, deviceSupportsBayerRAW: Bool, explanation: AnyView? = nil,
+        showsLookLink: Bool = false
+    ) {
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
+        self.explanation = explanation
+        self.showsLookLink = showsLookLink
     }
 
     /// The list of formats.
     var body: some View {
         Form {
+            if let explanation {
+                Section {
+                    explanation
+                }
+            }
             Section {
                 ForEach(PhotoFormat.allCases, id: \.self) { format in
                     row(for: format)
@@ -41,62 +61,36 @@ struct FormatsSettingsView: View {
                     }
                 }
             }
-            if settings.savesDevelopedFormat {
-                lookSection
+            if settings.offersRAWPairingChoice(deviceSupportsBayerRAW: deviceSupportsBayerRAW) {
+                Section {
+                    pairingPicker
+                }
+            }
+            if showsLookLink && settings.savesDevelopedFormat {
+                Section {
+                    LookSettingsView.link(settings: settings)
+                }
             }
         }
         .navigationTitle(Text("Formats", bundle: .module, comment: "Settings row and screen title: the file formats each photo is saved in."))
     }
 
-    /// How HEIF and JPEG are developed: a native inline picker, each look with a one-line
-    /// explanation. Shown only while HEIF or JPEG is selected. The wording is a processing claim,
-    /// so the explanations are in `Honesty.xcstrings`.
-    private var lookSection: some View {
-        Section {
-            Picker(
-                selection: Binding(get: { settings.developedLook }, set: { settings.setDevelopedLook($0) })
-            ) {
-                ForEach(DevelopedLook.allCases, id: \.self) { look in
-                    SettingLabel(title: Self.title(of: look), explanation: Self.explanation(of: look))
-                        .tag(look)
-                }
-            } label: {
-                Text("HEIF and JPEG Look", bundle: .module, comment: "Picker label: how the HEIF and JPEG copies are developed from the RAW. HEIF and JPEG are file format names.")
+    /// Which copy Photos keeps with the RAW when RAW, HEIF and JPEG are all saved (issue #50).
+    private var pairingPicker: some View {
+        Picker(selection: Binding(get: { settings.rawPairing }, set: { settings.setRAWPairing($0) })) {
+            ForEach(RAWPairing.allCases, id: \.self) { pairing in
+                Text(verbatim: Self.name(of: pairing.format)).tag(pairing)
             }
-            .pickerStyle(.inline)
-        } footer: {
-            Text(
-                "This changes only the HEIF and JPEG copies. The RAW is never changed.", tableName: "Honesty", bundle: .module,
-                comment: "Footer under the look picker. RAW, HEIF and JPEG are file format names. Must not claim more than the English.")
+        } label: {
+            SettingLabel(
+                title: Text("Paired with RAW", bundle: .module, comment: "Picker: which processed copy (HEIF or JPEG) Photos keeps together with the RAW. RAW is a file format name."),
+                explanation: Text(
+                    "Photos keeps one copy with the RAW as a single photo. The other copy is saved as a separate photo.",
+                    bundle: .module,
+                    comment: "Explains why there are two items in Photos when RAW, HEIF and JPEG are all saved. Photos is the system photo library app. RAW is a file format name."))
         }
-    }
-
-    /// A look's name.
-    ///
-    /// - Parameter look: The look.
-    /// - Returns: "Standard" or "Flat".
-    static func title(of look: DevelopedLook) -> Text {
-        switch look {
-        case .standard: Text("Standard", bundle: .module, comment: "Developed look: normal-looking HEIF and JPEG.")
-        case .flat: Text("Flat", bundle: .module, comment: "Developed look: no contrast curve, closest to the sensor.")
-        }
-    }
-
-    /// What a look does, in one line.
-    ///
-    /// - Parameter look: The look.
-    /// - Returns: The explanation, from `Honesty.xcstrings`.
-    static func explanation(of look: DevelopedLook) -> Text {
-        switch look {
-        case .standard:
-            Text(
-                "One overall tone curve, so the photo looks normal.", tableName: "Honesty", bundle: .module,
-                comment: "Explains the Standard look: a single global tone curve, nothing local. Must not claim more than the English.")
-        case .flat:
-            Text(
-                "No contrast curve: closest to the sensor, so it looks flat and low in contrast.", tableName: "Honesty", bundle: .module,
-                comment: "Explains the Flat look. Must not claim more than the English.")
-        }
+        // A pushed list, as in File Options: a menu picker failed the night mode color tests.
+        .pickerStyle(.navigationLink)
     }
 
     /// One format's row: its name, a checkmark when selected, and why it's unavailable.
@@ -115,7 +109,7 @@ struct FormatsSettingsView: View {
                     if !isAvailable {
                         Text("Not available on this device", bundle: .module, comment: "Shown under the RAW format on a device without RAW.")
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(CameraStyle.secondaryText)
                     }
                 }
                 Spacer()

@@ -21,8 +21,10 @@ public protocol ManualCaptureBackend: CaptureBackend {
     ///   ``CaptureError/configurationFailed`` if the camera refused the change.
     func applyControls(_ controls: DeviceControls) async throws(CaptureError)
 
-    /// Turns the readings on or off. They are off by default and are on only while manual
-    /// controls are shown, so nothing is measured ahead of need (AGENTS.md, "Battery").
+    /// Turns the readings on or off. They are off by default. ``ManualControlsModel`` turns them
+    /// on once the camera runs, because full auto's fast shutter rule and the close-up hint read
+    /// them (issue #56); they arrive at a reduced rate and stop with the camera, so nothing is
+    /// measured while the camera screen isn't in use (AGENTS.md, "Battery").
     ///
     /// - Parameter enabled: Whether to send readings.
     func setExposureReadingsEnabled(_ enabled: Bool) async

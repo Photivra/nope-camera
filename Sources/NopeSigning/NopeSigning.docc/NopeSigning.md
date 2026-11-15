@@ -11,11 +11,11 @@ For each file (DNG, HEIF or JPEG) it:
    in software in the Simulator only (``SimulatorSoftwareKeyProvider``, compiled only for the
    Simulator);
 2. issues an anonymous certificate to that key, signed by the key itself;
-3. embeds a manifest that says only what nope. did, and signs it with the key (ES256), with no
-   timestamp authority and no network;
+3. embeds a manifest that says only what Photivra Nope Camera did, and signs it with the key
+   (ES256), with no timestamp authority and no network;
 4. releases the key, which is never stored or used again.
 
-The signature proves the file hasn't changed since nope. signed it. Because the certificate
+The signature proves the file hasn't changed since the app signed it. Because the certificate
 isn't chained to a trusted certificate authority, validators report the signer as untrusted;
 that is expected. Nothing in the signature identifies the person or the device, and no two
 files share a key.
