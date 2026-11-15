@@ -230,7 +230,7 @@ public struct MetadataPlan: Equatable, Sendable {
         var result: [String: Any] = [:]
         let special: [MetadataField] = [.software, .uniqueCameraModel, .artist, .copyright]
         for field in MetadataField.catalog where writes(field, in: format) && !special.contains(field) {
-            for key in field.imageIOKeys {
+            for key in field.imageIOKeys where Self.isWritten(key, in: format) {
                 if let value = Self.value(of: key, in: source) { Self.put(value, at: key, in: &result) }
             }
         }
@@ -270,6 +270,25 @@ public struct MetadataPlan: Equatable, Sendable {
             }
         }
         return result
+    }
+
+    /// Whether a value under an ImageIO key is copied into a file of a format.
+    ///
+    /// A HEIF or JPEG never gets the `{ExifAux}` dictionary (issue #58). ImageIO reports a DNG's
+    /// `LensSpecification` and `LensModel` again as `{ExifAux}` `LensInfo` and `LensModel`, so
+    /// a developed copy's source has both; written back, ImageIO stores the `{ExifAux}` values
+    /// as XMP `aux:LensInfo` and `aux:Lens` properties, which no allowlist permits, and the
+    /// read-back rejected the photo: with "Lens make and model" on and a HEIF or JPEG selected,
+    /// nothing was saved (`FileCompatibilityTests`, iOS 27.2 Simulator, 2026-11-14). The same
+    /// values are still written as the EXIF `LensSpecification` and `LensModel` tags. A DNG keeps
+    /// every key: its metadata is written by AVFoundation, which the device tag check covers.
+    ///
+    /// - Parameters:
+    ///   - key: The ImageIO key.
+    ///   - format: The file's format.
+    /// - Returns: `false` for an `{ExifAux}` key in a HEIF or JPEG; otherwise `true`.
+    static func isWritten(_ key: ImageIOKey, in format: PhotoFormat) -> Bool {
+        format == .raw || key.dictionary != MetadataField.exifAux
     }
 
     /// The orientation that shows a photo mirrored left to right, for an EXIF/TIFF orientation

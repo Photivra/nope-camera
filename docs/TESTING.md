@@ -13,6 +13,7 @@ scripts/test-check-architecture.sh && scripts/check-architecture.sh
 scripts/test-check-localization.sh && scripts/check-localization.sh
 scripts/test-check-coverage.sh
 scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
+scripts/test-check-file-compat.sh
 ```
 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
@@ -114,6 +115,137 @@ TEST_RUNNER_NOPE_TEST_DNG=/path/to/photo.dng xcodebuild test -scheme NopeKit-Pac
 Display P3: with the Flat look every mid-tone value doubles (no tone curve); with the Standard
 look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
 check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
+
+## File compatibility (issue #58)
+
+Every file nope. can save must open (AGENTS.md, "Every setting the device allows"). This has two
+parts: an automated matrix of generated files, and a recorded table of manual checks in other
+apps.
+
+### The automated matrix
+
+`FileCompatibilityTests` (`Tests/NopeSigningTests`) saves every format and setting the app
+offers through the real save pipeline: `PhotoSaver` with `RAWDeveloper`, the system HEIF and
+JPEG encoders, `ImageIOReadBack`, the metadata allowlist and `ContentCredentialsSigner` with the
+Simulator's software key. Only the camera is replaced. No device files or anyone's photos are
+used:
+
+- the DNG is written by a test-only writer (`FixtureDNG`) from exactly the replacement metadata
+  `MetadataPlan` builds for it, as AVFoundation does on a device, with generic camera and lens
+  names;
+- the RAW renderer is a stand-in that returns a flat 256 × 256, 16-bit Display P3 image with the
+  DNG's own ImageIO properties, as `CoreImageRAWRenderer` does;
+- the processed fallback HEIF and JPEG are written by the system encoder with the dictionary the
+  capture backend gives AVFoundation.
+
+The cases (260 files; `theMatrixCoversEveryOption` fails if an option is added without one):
+
+| Group | Cases | Files |
+|---|---|---|
+| Metadata switch classes | first launch, each of the 13 items alone (with a name and copyright for "Your name and copyright", a location for "Location"), and every item on; each signed and unsigned | DNG, HEIF, JPEG |
+| Lenses | ultra wide, wide, telephoto and front, every item on, signed | DNG, HEIF, JPEG |
+| File options | each compression (system default, maximum, high, medium) × HEIF 8 and 10 bits × Display P3 and sRGB × Standard and Flat, signed | HEIF, JPEG |
+| Processed fallback | HEIF and JPEG, first launch and every item on, signed and unsigned | HEIF or JPEG |
+| Orientation | all eight orientations, as taken (wide) and mirrored (front); a mirrored fallback HEIF and JPEG | DNG, HEIF, JPEG |
+| Location | on with a southern, western, below-sea-level location; on without an altitude; off with a location available | DNG, HEIF, JPEG |
+| Series | bracket frames at −2, 0 and +2 EV, three burst frames, three Astro frames (10 s, ISO 3200), with exposure settings, date and sub-second time on | DNG, HEIF, JPEG |
+
+Each saved file must:
+
+- open in ImageIO as its own type (`com.adobe.raw-image`, `public.heic`, `public.jpeg`) with
+  exactly one image;
+- report the expected orientation: the system's, mirrored for a mirrored photo
+  (`MetadataPlan.mirroredOrientation(_:)`), and 1 for a developed copy;
+- report the expected bit depth (16 for the DNG, the chosen 8 or 10 for a developed HEIF, 10 for
+  the fallback HEIF, 8 for JPEG), and for HEIF and JPEG decode at 256 × 256 in the chosen color
+  space with an ICC profile (`ProfileName`);
+- carry exactly its allowlisted tags: no read-back violation, and every non-empty value the plan
+  wrote is in the file (compared with the project's tag reader: ImageIO doesn't report an empty
+  `Make` in a DNG, or `OffsetTimeOriginal` in a DNG without `DateTimeOriginal`, though both are
+  in the file; iOS 27.2 Simulator, 2026-11-14);
+- when signed, validate with the C2PA library's reader: `Valid`, the hash assertion matches,
+  and `signingCredential.untrusted` (the anonymous per-photo certificate) is the only failure;
+  when unsigned, carry no manifest.
+
+If a photo isn't saved at all, the test records each file's read-back violations.
+
+**What it found.** With "Lens make and model" on and a HEIF or JPEG selected, no photo was
+saved: ImageIO reports a DNG's `LensSpecification` and `LensModel` again under `{ExifAux}`, the
+developed copy copied those keys, and ImageIO wrote them into the HEIF and JPEG as XMP
+(`aux:LensInfo`, `aux:Lens`), which the read-back rejects. Fixed: a HEIF or JPEG never gets
+`{ExifAux}` values (`MetadataPlan.isWritten(_:in:)`); the EXIF lens tags carry the same values.
+Every other combination passed before the fix. Whether a camera DNG makes ImageIO report
+`{ExifAux}` the same way is a device check below.
+
+**What it can't show.** The DNG's layout comes from AVFoundation on a device, not from
+`FixtureDNG`; ImageIO doesn't decode a hand-built DNG's pixels, so DNG colors, exposure and
+editing are checked by hand; the Standard and Flat looks differ only in the rendered pixels,
+which the stand-in renderer doesn't make (the looks are checked by "Developed looks" above); the lens correction opcodes and the contents of Apple's maker note come only from
+the camera, so the fixtures have none (the maker note fixture is an opaque block).
+
+### External validators
+
+Run the tests with `TEST_RUNNER_NOPE_COMPAT_FIXTURES=<directory>` to also write every file there
+with a `manifest.tsv` (name, format, signed, device-processed), then:
+
+```sh
+TEST_RUNNER_NOPE_COMPAT_FIXTURES=$PWD/compat-fixtures xcodebuild test -scheme NopeKit-Package \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
+  -only-testing:NopeSigningTests/FileCompatibilityTests
+scripts/check-file-compat.sh compat-fixtures          # every validator that is installed
+scripts/check-file-compat.sh --require "c2patool exiftool dng_validate" compat-fixtures
+```
+
+`check-file-compat.sh` runs c2patool on every file (signed: `Valid` with
+`signingCredential.untrusted` the only failure; unsigned: no manifest), `exiftool -validate` on
+every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG. None of
+them is a project dependency, and none is in `security/allowed-dependencies.txt`. CI writes the
+fixtures in `unit-tests`; the `file-compat` job runs the validators only after the maintainer
+approves them by setting the repository variable `NOPE_FILE_VALIDATORS` to the approved list
+(for example `c2patool exiftool`), and fails if a listed validator is missing. `dng_validate`
+has no install step yet: it is built from Adobe's DNG SDK, whose license must be reviewed first.
+`scripts/test-check-file-compat.sh` tests the script with stand-in validators.
+
+**Run locally on 2026-11-14** (Mac with macOS 27.2.1, iOS 27.2 Simulator), on the 260 files:
+c2patool 0.29.0 (installed on the Mac by hand) reported every signed file `Valid` with
+`signingCredential.untrusted` the only failure and found no manifest in any unsigned file; `sips`
+on macOS opened every file as its type (62 DNG, 99 HEIC, 99 JPEG). exiftool and `dng_validate`
+weren't installed, so they haven't been run on these files.
+
+### Manual checks in other apps
+
+Record each result with the file it was checked on (a photo taken on a device with the release's
+build), the app and its version, the date, and what was seen: opens, orientation, colors and
+exposure, metadata as in `docs/PRIVACY.md`, and the signature where the app shows it. Write only
+what was observed; a cell stays "not yet checked" until someone checks it.
+
+Files: **DNG** (each lens, signed), **DNG unsigned**, **HEIF 10-bit P3**, **HEIF 8-bit sRGB**,
+**JPEG**, **Fallback** (a lens without Bayer RAW), **Mirrored** (front camera, Mirror Front
+Camera on), **Series** (a bracket, burst or Astro frame).
+
+Release 0.2.0:
+
+| App | DNG | DNG unsigned | HEIF 10-bit P3 | HEIF 8-bit sRGB | JPEG | Fallback | Mirrored | Series |
+|---|---|---|---|---|---|---|---|---|
+| Photos on iPhone (including editing the RAW) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Photos on iPad | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Photos on Mac (including editing the RAW) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Preview on Mac | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| RAW editor 1 (for example Lightroom) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| RAW editor 2 (for example darktable or RawTherapee) | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Google Photos | — | — | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Windows Photos | — | — | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| Upload to a sharing site (for example iNaturalist, JPEG) | — | — | — | — | not yet checked | — | — | — |
+| exiftool `-validate` on the device files | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+| `dng_validate` on the device files | not yet checked | not yet checked | — | — | — | — | — | not yet checked |
+| c2patool on the device files | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked | not yet checked |
+
+"—" means the issue's matrix doesn't ask for that combination. If a file fails in an app, open an
+issue; a setting whose files don't open is fixed or stops being offered.
+
+**Device checks for this matrix:** with "Lens make and model" on, a RAW plus HEIF plus JPEG photo
+is saved on each lens (the `{ExifAux}` fix above), and its HEIF and JPEG carry EXIF `LensModel`
+and no XMP `aux:` properties (exiftool `-a -G1`).
 
 ## UI tests and accessibility audits
 
@@ -232,9 +364,10 @@ the local toolchain). Jobs:
 
 | Job | What it runs |
 |---|---|
-| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator, the coverage gate |
+| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
 | `ui-tests` | App build and the UI tests with accessibility audits on the iPhone 18 Pro Simulator |
 | `ui-tests-ipad` | The same UI tests on the iPad Air 11-inch (M4) Simulator, in a separate job, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.

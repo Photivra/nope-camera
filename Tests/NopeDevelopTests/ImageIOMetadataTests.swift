@@ -262,3 +262,30 @@ extension ImageIOTests {
         }
     }
 }
+
+/// Issue #58: a developed copy's source is the DNG's ImageIO properties, which repeat the lens
+/// tags under `{ExifAux}`. Written into a HEIF or JPEG, those became XMP the read-back rejects,
+/// so with "Lens make and model" on nothing was saved. The copy now reads back clean.
+extension ImageIOTests {
+    struct LensFromDNGTests {
+        @Test(arguments: [PhotoFormat.heif, .jpeg])
+        func lensValuesFromADNGReadBackClean(format: PhotoFormat) throws {
+            var settings = MetadataSettings()
+            settings.set(.lensMakeAndModel, isOn: true)
+            let plan = MetadataPlan(settings: settings)
+            let source: [String: Any] = [
+                "{Exif}": ["LensMake": "Apple", "LensModel": "back camera", "LensSpecification": [6.8, 6.8, 1.78, 1.78]]
+                    as [String: Any],
+                "{ExifAux}": ["LensModel": "back camera", "LensInfo": [6.8, 6.8, 1.78, 1.78]] as [String: Any],
+            ]
+            let encoding = try #require(EncodingSettings(format: format))
+            let data = try PhotoEncoder.encode(
+                try testImage(), settings: encoding, properties: plan.properties(for: format, from: source, orientation: 1))
+            let readBack = try ImageIOReadBack().readBack(PhotoFile(format: format, data: data))
+            let violations = MetadataVerifier.violations(
+                in: readBack, allowlist: plan.allowlist(for: format, signed: false), expectedRawImageData: nil)
+            #expect(violations.isEmpty, "\(violations)")
+            #expect(readBack.file.inventory.tags.contains { $0.directory == .exif && $0.tag == 0xA434 })
+        }
+    }
+}

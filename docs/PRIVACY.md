@@ -384,7 +384,7 @@ for all 8,192 switch combinations in every format.
 | Time zone | `OffsetTime`, `OffsetTimeOriginal`, `OffsetTimeDigitized` | same |
 | Camera make and model | `Make`, `Model`, `HostComputer` | same |
 | Always in a DNG, empty when their switch is off | `DateTime`, `Make`, `Model`, `Software`: the value above when the switch is on, an empty text when it is off (see below) | — (left out when off) |
-| Lens make and model | EXIF `LensMake`, `LensModel`, `LensSpecification`; DNG `LensInfo` | EXIF `LensMake`, `LensModel`, `LensSpecification` |
+| Lens make and model | EXIF `LensMake`, `LensModel`, `LensSpecification`; DNG `LensInfo` | EXIF `LensMake`, `LensModel`, `LensSpecification` (never ImageIO's `{ExifAux}` copies, which it would write as XMP `aux:` properties) |
 | Lens correction instructions | `OpcodeList1`, `OpcodeList2`, `OpcodeList3` | — |
 | Exposure settings | EXIF `ExposureTime`, `FNumber`, `ExposureProgram`, `PhotographicSensitivity`, `SensitivityType`, `ShutterSpeedValue`, `ApertureValue`, `BrightnessValue`, `ExposureBiasValue`, `MaxApertureValue`, `MeteringMode`, `Flash`, `FocalLength`, `SubjectArea`, `SensingMethod`, `SceneType`, `ExposureMode`, `WhiteBalance`, `FocalLengthIn35mmFilm`, `SceneCaptureType` | same |
 | iOS version / app name and version | `Software`: "Photivra Nope Camera 0.x.y" (app), the system's version (iOS), or "Photivra Nope Camera 0.x.y (27.2.1)" (both) | same, plus HEIF XMP `xmp:CreatorTool` with the same value. A HEIF or JPEG developed from the DNG takes the system's version back out of the DNG's value, so it never nests the app's name (`MetadataPlan.systemVersion(fromSoftware:)`) |
