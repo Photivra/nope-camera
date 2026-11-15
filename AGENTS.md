@@ -68,14 +68,14 @@ user. The full design is in issue #1.
   maintainer's approval, and it must be GPLv3-compatible.
 - **Every setting the device allows (issue #57).** Anything about the file or the exposure that
   the device lets an app control is the person's to control, behind the manual or advanced
-  options, with full auto as the default that needs none of it. Every file nope. can save must
+  options, with full auto as the default that needs none of it. Every file the app can save must
   open: a setting that produces a file that doesn't open isn't shipped. The list of settings and
   what is offered is in `docs/research/capture-and-file-settings.md`; keep it current.
 - **Progressive enhancement.** Detect each capability at run time; show a feature only where
   the device supports it.
 - **Prevention first:**
   - no web views, custom URL schemes, clipboard access or file import; an `https` link may
-    open in the system browser only when the person taps it, and nope. itself makes no network
+    open in the system browser only when the person taps it, and the app itself makes no network
     request;
   - no code loaded at run time;
   - no private APIs;
@@ -118,9 +118,9 @@ user. The full design is in issue #1.
 
 ## Accessibility
 
-Nope aims to be fully usable by everyone, including blind, low-vision, deaf, and motor- and
+Photivra Nope Camera aims to be fully usable by everyone, including blind, low-vision, deaf, and motor- and
 cognitively-impaired photographers. The baseline is Apple's Human Interface Guidelines for
-accessibility and WCAG 2.2 AA. Nope must qualify for every App Store Accessibility Nutrition
+accessibility and WCAG 2.2 AA. The app must qualify for every App Store Accessibility Nutrition
 Label that applies to it: VoiceOver, Voice Control, Larger Text, Dark Interface, Differentiate
 Without Color Alone, Sufficient Contrast and Reduced Motion.
 
@@ -141,7 +141,7 @@ Without Color Alone, Sufficient Contrast and Reduced Motion.
     disclosed on the Honesty screen.
 - **Voice Control, Switch Control and Full Keyboard Access.** Every action is reachable. Voice
   Control names match the visible labels ("Take photo", "Settings"). App Intents provide "Take a
-  photo with Nope" for Siri and Shortcuts.
+  photo with nope." for Siri and Shortcuts.
 - **Larger Text.**
   - All text uses Dynamic Type, up to the largest accessibility sizes, with no clipping or
     truncation of essential text.
@@ -183,7 +183,7 @@ files, data, specifications, documentation and tools.
   version, license, source, use).
 - **Follow each license's conditions,** including attribution, notice files, share-alike terms,
   trademark limits and usage terms. Specifically:
-  - **Adobe DNG.** nope. writes DNG files, so it carries the notice required by Adobe's DNG
+  - **Adobe DNG.** The app writes DNG files, so it carries the notice required by Adobe's DNG
     specification patent license: "This product includes DNG technology under license by
     Adobe." It appears in `NOTICE`, the README and the Licenses screen.
   - **SF Symbols and system fonts.** They are used only in the app's interface on Apple
@@ -210,7 +210,8 @@ files, data, specifications, documentation and tools.
   and anywhere the full product name is needed.
 - **Standalone name:** when the name is used alone, it is always written "nope.", lowercase with
   a period, even at the start of a sentence. That covers the home screen label
-  (`CFBundleDisplayName`), permission prompts, interface text and documentation.
+  (`CFBundleDisplayName`), permission prompts and interface text, and quotes of them elsewhere.
+- **Documentation uses the full name,** not "nope." (see "Writing in this repository").
 - **Wordmark lockup:** "nope." set large, with "Photivra Nope Camera" beneath it.
 - **The tagline is the exception:** in "Processing? Nope. Tracking? Nope. Network? Nope.",
   "Nope" is an answer, not the name, so it keeps its capital.
@@ -407,3 +408,9 @@ This repository is public.
   goal, scope, decisions, and when it's done. No taglines, hype or asides.
 - Keep personal, business, legal and cost details out of the repository.
 - Responses are concise, neutral and evidence-based.
+- **Name the app in full in documentation.** README, `docs/`, CONTRIBUTING, SECURITY, new
+  CHANGELOG entries, `llms.txt`, DocC articles and symbol comments call it "Photivra Nope
+  Camera", or "the app" after the first use in a passage; never "nope.". Keep "nope." only in
+  quoted interface text (a button label, a Siri phrase), the Home Screen name, the string
+  catalogs and the name and wordmark rules ("Name and wordmark"). Past CHANGELOG entries stay
+  as written.
