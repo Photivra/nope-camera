@@ -141,6 +141,41 @@ Presents content as a popover in a regular-width window (iPad) and as a sheet ot
 sheet rather than a popover adapted to one: in the adapted form the accessibility audit
 reported form headers and footers as not following Dynamic Type.
 
+With `prefersSheet` (night mode) it is a sheet on iPad too: the iPad popover is translucent
+glass whatever its presentation background, so the picture and the system's colors showed
+through night mode's red on black. The style is chosen when the content opens and kept
+while it is open, so turning night mode on or off inside it doesn't close it.
+
+## `AdaptivePresentation/Style`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+enum Style
+```
+
+How the content is shown.
+
+## `AdaptivePresentation/Style/popover`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+case popover
+```
+
+A popover (iPad).
+
+## `AdaptivePresentation/Style/sheet`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+case sheet
+```
+
+A sheet.
+
 ## `AdaptivePresentation/body(content:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -150,22 +185,23 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```
 
-Attaches the popover or the sheet.
+Attaches the popover and the sheet; only the chosen one is ever shown.
 
 - Parameter content: The presenting view.
 
-## `AdaptivePresentation/init(isPresented:presented:)`
+## `AdaptivePresentation/init(isPresented:prefersSheet:presented:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@MainActor init(isPresented: Binding<Bool>, presented: @escaping () -> Presented)
+@MainActor init(isPresented: Binding<Bool>, prefersSheet: Bool, presented: @escaping () -> Presented)
 ```
 
 Creates the modifier.
 
 - Parameters:
   - isPresented: Whether the content is shown.
+  - prefersSheet: Whether a sheet is wanted in a regular-width window too.
   - presented: The presented content.
 
 ## `AdaptivePresentation/isPresented`
@@ -177,6 +213,16 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 ```
 
 Whether the content is shown.
+
+## `AdaptivePresentation/prefersSheet`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor let prefersSheet: Bool
+```
+
+Whether a sheet is wanted in a regular-width window too.
 
 ## `AdaptivePresentation/presented`
 
@@ -6881,7 +6927,9 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 The quick-controls tray: one scrolling row of items that takes the lens row's place while it
-is open. It closes when an item's action runs, on the shutter, or on a tap outside.
+is open, or, over the picture in the iPad column layout, rows that wrap so every item shows
+whole (a row scrolled under the picture's edge cut the last item there). It closes when an
+item's action runs, on the shutter, or on a tap outside.
 
 ## `QuickControlsTray/body`
 
@@ -6891,7 +6939,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 @MainActor var body: some View { get }
 ```
 
-The row.
+The row, or the wrapped rows.
 
 ## `QuickControlsTray/close`
 
@@ -6903,18 +6951,19 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Closes the tray.
 
-## `QuickControlsTray/init(items:close:)`
+## `QuickControlsTray/init(items:wraps:close:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-@MainActor init(items: [QuickControlItem], close: @escaping () -> Void)
+@MainActor init(items: [QuickControlItem], wraps: Bool = false, close: @escaping () -> Void)
 ```
 
 Creates the tray.
 
 - Parameters:
   - items: The items, in display order.
+  - wraps: Whether the items wrap into rows instead of scrolling.
   - close: Closes the tray.
 
 ## `QuickControlsTray/items`
@@ -6926,6 +6975,16 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 The items, in display order.
+
+## `QuickControlsTray/wraps`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor let wraps: Bool
+```
+
+Whether the items wrap into rows instead of scrolling.
 
 ## `ResourceWarningAnnouncements`
 
@@ -8451,19 +8510,21 @@ internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
 
 The width the content wraps at while sideways, or `nil` for its natural width.
 
-## `View/adaptivePresentation(isPresented:content:)`
+## `View/adaptivePresentation(isPresented:prefersSheet:content:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@MainActor func adaptivePresentation<Presented>(isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> Presented) -> some View where Presented : View
+@MainActor func adaptivePresentation<Presented>(isPresented: Binding<Bool>, prefersSheet: Bool = false, @ViewBuilder content: @escaping () -> Presented) -> some View where Presented : View
 
 ```
 
-Presents content as a popover on iPad and as a sheet on iPhone.
+Presents content as a popover on iPad and as a sheet on iPhone, or as a sheet on both
+with `prefersSheet`.
 
 - Parameters:
   - isPresented: Whether the content is shown.
+  - prefersSheet: Whether a sheet is wanted on iPad too, as in night mode.
   - content: The presented content.
 
 ## `View/announcesResourceWarnings(_:)`
@@ -8861,3 +8922,68 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The warning.
+
+## `WrappingRows`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+struct WrappingRows
+```
+
+Lays its views out left to right (in reading order) in rows that wrap at the proposed width,
+each row centered.
+
+## `WrappingRows/init(spacing:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+init(spacing: CGFloat)
+```
+
+Creates the layout.
+
+- Parameter spacing: The space between views and between rows.
+
+## `WrappingRows/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Places the views row by row, each row centered in the bounds.
+
+- Parameters:
+  - bounds: Where to place the views.
+  - proposal: The proposed size.
+  - subviews: The views.
+  - cache: Unused.
+
+## `WrappingRows/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The size of the rows at the proposed width.
+
+- Parameters:
+  - proposal: The proposed size.
+  - subviews: The views.
+  - cache: Unused.
+- Returns: The rows' size.
+
+## `WrappingRows/spacing`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+let spacing: CGFloat
+```
+
+The space between views and between rows.

@@ -237,10 +237,15 @@ enum QuickControls {
 }
 
 /// The quick-controls tray: one scrolling row of items that takes the lens row's place while it
-/// is open. It closes when an item's action runs, on the shutter, or on a tap outside.
+/// is open, or, over the picture in the iPad column layout, rows that wrap so every item shows
+/// whole (a row scrolled under the picture's edge cut the last item there). It closes when an
+/// item's action runs, on the shutter, or on a tap outside.
 struct QuickControlsTray: View {
     /// The items, in display order.
     let items: [QuickControlItem]
+
+    /// Whether the items wrap into rows instead of scrolling.
+    let wraps: Bool
 
     /// Closes the tray.
     let close: () -> Void
@@ -249,26 +254,123 @@ struct QuickControlsTray: View {
     ///
     /// - Parameters:
     ///   - items: The items, in display order.
+    ///   - wraps: Whether the items wrap into rows instead of scrolling.
     ///   - close: Closes the tray.
-    init(items: [QuickControlItem], close: @escaping () -> Void) {
+    init(items: [QuickControlItem], wraps: Bool = false, close: @escaping () -> Void) {
         self.items = items
+        self.wraps = wraps
         self.close = close
     }
 
-    /// The row.
+    /// The row, or the wrapped rows.
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: CameraStyle.targetSpacing) {
-                ForEach(items) { item in
-                    QuickControlButton(item: item, close: close)
-                        .uprightUnit()
+        Group {
+            if wraps {
+                WrappingRows(spacing: CameraStyle.targetSpacing) { buttons }
+            } else {
+                ScrollView(.horizontal) {
+                    HStack(spacing: CameraStyle.targetSpacing) { buttons }
+                        .padding(.horizontal, CameraStyle.targetSpacing)
                 }
+                .scrollIndicators(.hidden)
             }
-            .padding(.horizontal, CameraStyle.targetSpacing)
         }
-        .scrollIndicators(.hidden)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("Quick Controls", bundle: .module, comment: "VoiceOver and Voice Control name of the button at the end of the lens row that opens a row of camera toggles, and of that row."))
+    }
+
+    /// One button per item.
+    private var buttons: some View {
+        ForEach(items) { item in
+            QuickControlButton(item: item, close: close)
+                .uprightUnit()
+        }
+    }
+}
+
+/// Lays its views out left to right (in reading order) in rows that wrap at the proposed width,
+/// each row centered.
+struct WrappingRows: Layout {
+    /// The space between views and between rows.
+    let spacing: CGFloat
+
+    /// Creates the layout.
+    ///
+    /// - Parameter spacing: The space between views and between rows.
+    init(spacing: CGFloat) {
+        self.spacing = spacing
+    }
+
+    /// The size of the rows at the proposed width.
+    ///
+    /// - Parameters:
+    ///   - proposal: The proposed size.
+    ///   - subviews: The views.
+    ///   - cache: Unused.
+    /// - Returns: The rows' size.
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(for: subviews, width: proposal.width ?? .infinity)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: width, height: height)
+    }
+
+    /// Places the views row by row, each row centered in the bounds.
+    ///
+    /// - Parameters:
+    ///   - bounds: Where to place the views.
+    ///   - proposal: The proposed size.
+    ///   - subviews: The views.
+    ///   - cache: Unused.
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in rows(for: subviews, width: bounds.width) {
+            var x = bounds.minX + (bounds.width - row.width) / 2
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(
+                    at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    /// One row: the indexes of its views, its width and its height.
+    private struct Row {
+        /// The indexes of the row's views.
+        var indices: [Int] = []
+
+        /// The row's width.
+        var width: CGFloat = 0
+
+        /// The row's height.
+        var height: CGFloat = 0
+    }
+
+    /// Splits the views into rows no wider than the width (a view wider than it gets a row of
+    /// its own).
+    ///
+    /// - Parameters:
+    ///   - subviews: The views.
+    ///   - width: The widest a row may be.
+    /// - Returns: The rows.
+    private func rows(for subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = []
+        var row = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            if !row.indices.isEmpty && needed > width {
+                rows.append(row)
+                row = Row()
+            }
+            row.width = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+        }
+        if !row.indices.isEmpty { rows.append(row) }
+        return rows
     }
 }
 

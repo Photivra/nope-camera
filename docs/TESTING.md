@@ -269,6 +269,10 @@ other finding fails the test:
 
 - an element cut by the window's edge (a form row below the fold), and a contrast finding with
   no element, which comes from such a row: the audit measures the clipped edge;
+- in `OverlayUITests`, a finding on text that was below the fold before the audit: the audit
+  scrolls such text into view itself and measures it while the scroll view moves (on iPad at the
+  largest text size it reported a manual control row 1,324 points down as low contrast at the
+  place it scrolled it to);
 - a Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges the text
   past the edge and can't measure it (the same text styles are measured higher up elsewhere);
 - the Settings screens at the default text size and right-to-left skip the Dynamic Type check:
@@ -280,7 +284,14 @@ other finding fails the test:
   although it is visibly enlarged at the largest size and passes on iPhone; and the Settings and
   format popovers' section headers are reported as low contrast against the popover's material,
   and some of their rows as clipped text with no element, so those audits skip the contrast check
-  and element-less clipped-text findings on iPad (they run both on iPhone);
+  and element-less clipped-text findings on iPad (they run both on iPhone), the Viewfinder
+  Overlays screen in Settings included. The popover is translucent glass whatever its
+  presentation background, so in night mode Settings and the format sheet open as sheets on
+  iPad too (red on black needs an opaque background), and the last photo's details and the astro
+  settings are sheets on iPad always (their audits run every check on iPad). The audits that
+  skip contrast on iPad also skip Dynamic Type findings with no element: in the night-mode
+  Settings sheet at the largest text size the audit reported one on the long Choose Details list
+  (findings tied to a row still fail);
   three more iPad contrast findings with no visible cause (white text on near-black: the manual
   dial over a white or yellow picture, and the format chip and the failure banner in the scrolling
   layout at the largest text size) are skipped on iPad in `testControlsOverWhiteAndYellowFrames`,
@@ -289,9 +300,18 @@ other finding fails the test:
 - `testSpaceTakesAPhoto` is skipped on iPad, an open finding: on the iPad Simulator the Space
   bar reached the focused button instead of the Camera menu's command, and no photo was taken; it
   passes on iPhone. The device check below covers a hardware keyboard on iPad;
+- the press-and-hold step of `testTapToFocusLocksWithTheButtonAndUnlocksWithThePill` is skipped
+  on iPad, an open finding: on the iPad Simulator the test's 1.2-second press arrived as a tap
+  (the focus square moved to the pressed point, unlocked), at the center and off it; it passes
+  on iPhone. The device check below covers press and hold on iPad;
 - on an iPhone held sideways, clipped-text and contrast findings on SwiftUI nodes the audit
   can't tie to an element: it measures turned text in its unturned frame. The same views pass
-  every check in portrait; the turned layout is on the manual accessibility pass below.
+  every check in portrait; the turned layout is on the manual accessibility pass below;
+- on an iPhone held sideways, a contrast finding on turned text itself (an element taller than
+  it is wide). The format chip turned over the Simulator's dark gray picture failed the contrast
+  check although its pixels are white text on a 20% gray capsule (12.6:1, measured in the
+  failing screenshot); the same chip passed turned over a black and over a white picture, and
+  unturned over the same gray on iPad. Every other finding on a turned element still fails.
 
 The Simulator has no camera, so `NopeAppUITests` launches Debug builds with
 `-NopeSimulatedCamera <scenario>` (`App/NopeApp/DebugTools/SimulatedCameraLaunch.swift`), which
@@ -365,12 +385,33 @@ the local toolchain). Jobs:
 | Job | What it runs |
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
-| `ui-tests` | App build and the UI tests with accessibility audits on the iPhone 18 Pro Simulator |
-| `ui-tests-ipad` | The same UI tests on the iPad Air 11-inch (M4) Simulator, in a separate job, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
+| `ui-tests 1/4` … `4/4` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/4` … `4/4` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
+
+### UI test shards
+
+The UI suite takes about an hour on one Simulator, so CI runs it in four shards per device,
+each job with a 25-minute limit. `scripts/ui-test-shards.txt` lists every UI test with its
+shard and its measured time in seconds; the shards are balanced by those times (longest test
+first, into the shard with the least time so far). `scripts/ui-test-shards.sh args <n>` prints
+the `-only-testing` arguments of shard n. `scripts/ui-test-shards.sh check`, in `repo-checks`,
+fails when a test in `App/NopeAppUITests` is in no shard or in two, when a listed test doesn't
+exist, or when the shard matrices in `build.yml` don't match the list, so a new test can't be
+skipped silently: add it to the shard with the least time, with its time from a local run.
+To run one shard locally:
+
+```sh
+xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeApp \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
+xcodebuild test-without-building -xctestrun DerivedData/Build/Products/*.xctestrun \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' $(scripts/ui-test-shards.sh args 1)
+```
 
 ### Siri and Shortcuts in the UI tests
 
@@ -423,7 +464,8 @@ iPad:
   rear and front cameras the viewfinder is upright and not stretched, and each saved DNG's
   Orientation tag (read with `scripts/dump-tags.swift`) shows it upright (the developed HEIF and
   JPEG are rendered upright and carry Orientation 1); Split View or Stage Manager shows the
-  multitasking pause; a hardware keyboard's Space bar takes a photo;
+  multitasking pause; a hardware keyboard's Space bar takes a photo; pressing and holding the
+  picture locks focus and exposure;
 - contrast over real scenes: the chip, pills, warnings, banner, dial, thumbnail and shutter ring
   stay readable against a white wall and a yellow surface, with and without Reduce Transparency
   and Increase Contrast; the haptic on a good save is light;

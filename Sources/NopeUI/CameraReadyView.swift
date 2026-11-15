@@ -164,7 +164,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                 .nightModeStyle(isNightMode)
         }
         .comparisonCover(model, isNightMode: isNightMode)
-        .adaptivePresentation(isPresented: $showsFormats) {
+        .adaptivePresentation(isPresented: $showsFormats, prefersSheet: isNightMode) {
             if let format = model.captureFormat {
                 FormatDetailsSheet(
                     settings: settings, format: format,
@@ -178,21 +178,30 @@ struct CameraReadyView<Viewfinder: View>: View {
                     .presentationDetents([.large])
             }
         }
-        .adaptivePresentation(isPresented: $showsPhotoDetails) {
+        // A sheet on iPad too, as the astro settings below: in the iPad popover, translucent
+        // glass, the audit reported the list's rows as low contrast and as not following Dynamic
+        // Type at the largest size, and a swipe outside the small popover didn't scroll it.
+        .sheet(isPresented: $showsPhotoDetails) {
             PhotoDetailsSheet(photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } })
-                .frame(idealWidth: 420, idealHeight: 640)
                 .presentationBackground(.background)
+                // Page sized on iPad: in the shorter form sheet the list's last rows sat at the
+                // sheet's lower edge, where the audit measured them against the dimmed camera.
+                .presentationSizing(.page)
                 // Full height, as for the format sheet: at half height (issue #68 suggests medium
                 // and large) the accessibility audit reports the rows at the sheet's lower edge as
                 // clipped text.
                 .presentationDetents([.large])
         }
-        .adaptivePresentation(isPresented: $showsAstroSettings) {
+        // A sheet on iPad too, not a popover: the iPad popover is translucent glass whatever its
+        // presentation background, so the picture showed through the red-on-black settings and
+        // their text failed the contrast audit. Page sized on iPad, so the estimates show
+        // without scrolling, as on iPhone.
+        .sheet(isPresented: $showsAstroSettings) {
             AstroSheet(model: model)
                 .nightModeStyle(isNightMode)
-                .frame(idealWidth: 420, idealHeight: 640)
                 .presentationBackground(.background)
                 .presentationDetents([.large])
+                .presentationSizing(.page)
         }
         .onChange(of: model.astro.isOn) { _, isOn in if !isOn { showsAstroSettings = false } }
         .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
@@ -272,7 +281,11 @@ struct CameraReadyView<Viewfinder: View>: View {
                     VStack(spacing: CameraStyle.targetSpacing) { topBarItems }
                 }
                 warningsAndBanner(sidewaysWidth: nil)
-                picture
+                // The session's message goes above the short picture here, not over it: at
+                // these text sizes it is taller than the picture and overlapped the banner and
+                // the lens buttons.
+                SessionStatusView(status: model.sessionStatus)
+                picture(showsStatus: false)
                     .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
                 if LiveAidsPanel.isShown(model) {
@@ -309,7 +322,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                         VStack(spacing: CameraStyle.targetSpacing) {
                             if showsControls {
                                 if showsTray {
-                                    QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
+                                    QuickControlsTray(items: QuickControls.current(context), wraps: true) { showsTray = false }
                                 }
                                 if showsExposureDial {
                                     AutoExposureDial(model: model) { showsExposureDial = false }
@@ -501,6 +514,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                             StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
                             formatChip
                         }
+                        // At its natural width: in the iPad column layout the row was laid out
+                        // narrower than the picture's room and cut the Astro pill to "As…".
+                        .fixedSize()
                     }
                     warningsAndBanner(sidewaysWidth: sidewaysBannerWidth)
                 }
@@ -579,11 +595,21 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Smart Invert leaves it alone. A tap focuses and exposes there (or closes the tray when it
     /// is open), a press and hold locks, and a vertical swipe is a shortcut for clean view.
     private var picture: some View {
+        picture(showsStatus: true)
+    }
+
+    /// The viewfinder, with or without the session's message over it (see ``picture``).
+    ///
+    /// - Parameter showsStatus: Whether the session's message is drawn over the picture; the
+    ///   scrolling layout shows it above the picture instead.
+    private func picture(showsStatus: Bool) -> some View {
         ZStack {
             viewfinderLayer
             ViewfinderOverlays(model: model, settings: settings)
-            SessionStatusView(status: model.sessionStatus)
-                .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
+            if showsStatus {
+                SessionStatusView(status: model.sessionStatus)
+                    .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
+            }
             CountdownNumber(drive: model.drive)
                 .uprightUnit()
         }

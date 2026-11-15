@@ -7157,6 +7157,12 @@
             "value": "Auto"
           }
         },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        },
         "es": {
           "stringUnit": {
             "state": "needs_review",
@@ -7221,6 +7227,12 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Ein"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On"
           }
         },
         "es": {

@@ -98,8 +98,8 @@ public struct CameraScreen<Viewfinder: View>: View {
             }
         }
         .background(.background)
-        // A popover on iPad; on iPhone the system shows it as a sheet.
-        .adaptivePresentation(isPresented: $showsSettings) {
+        // A popover on iPad (a sheet in night mode, see AdaptivePresentation); a sheet on iPhone.
+        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location)

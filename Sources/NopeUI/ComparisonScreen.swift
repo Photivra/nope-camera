@@ -193,6 +193,16 @@ struct ComparisonPicturesView: View {
     /// Whether the images have been made.
     @State private var hasPictures = false
 
+    /// The height of the scroll view, to keep the controls in view below the pictures.
+    @State private var viewportHeight: CGFloat = 0
+
+    /// The height of the controls below the pictures.
+    @State private var controlsHeight: CGFloat = 0
+
+    /// The window's horizontal size class: the pictures' height is limited only in a regular
+    /// width window (iPad).
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     /// The largest zoom: 4×, enough to see noise and sharpening at the photos' full size.
     static let maximumZoom = 4.0
 
@@ -227,20 +237,38 @@ struct ComparisonPicturesView: View {
                     // on the left, as its label says. Text elsewhere follows the language.
                     .environment(\.layoutDirection, .leftToRight)
                     .aspectRatio(aspectRatio, contentMode: .fit)
+                    .frame(maxWidth: maximumPictureWidth)
                     .frame(maxWidth: .infinity)
                 controls
                     .padding(.horizontal)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { controlsHeight = $0 }
                 ComparisonSidesDescription(result: result)
                     .padding(.horizontal)
             }
             .padding(.vertical)
         }
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom
+        } action: { viewportHeight = $0 }
         .task {
             // Made once: each image holds the photo's full-size pixels.
             nopePicture = result.nopeImage.flatMap(Image.photo)
             phonePicture = result.phoneImage.flatMap(Image.photo)
             hasPictures = true
         }
+    }
+
+    /// The widest the pictures may be in a regular width window (iPad): narrow enough for their
+    /// full height to leave the controls in view below them; a full-width portrait photo pushed
+    /// the divider's slider and the zoom buttons off screen there. At least half the scroll
+    /// view's height, so at large text sizes the pictures stay large and the screen scrolls
+    /// instead. On iPhone the pictures keep the full width.
+    private var maximumPictureWidth: CGFloat {
+        guard horizontalSizeClass == .regular, viewportHeight > 0 else { return .infinity }
+        // The vertical padding and the space between the pictures and the controls.
+        let spacing: CGFloat = 16 * 3
+        let height = max(viewportHeight - controlsHeight - spacing, viewportHeight / 2)
+        return height * aspectRatio
     }
 
     /// The photos' width over their height, from the app's picture, else the phone's, else 3:4.

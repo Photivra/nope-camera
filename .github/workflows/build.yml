@@ -154,8 +154,15 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  ui-tests:
-    name: ui-tests
+  # The UI tests are built once, then run in shards: four on the iPhone Simulator and four on
+  # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
+  # shard, balanced by measured test time; repo checks fail when a test is in no shard or in two
+  # (docs/TESTING.md, "Continuous integration"). The iPhone and iPad Simulators run in separate
+  # jobs: running both in one job stalled the test runner before the second destination's first
+  # test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
+  # required status checks keep their names.
+  ui-build:
+    name: ui-build
     needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 30
@@ -169,59 +176,119 @@ jobs:
           name: C2PAC.xcframework
       - name: Unpack the C2PA library
         run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
-      - name: Build the app and run the UI smoke test with accessibility audits
+      - name: Build the app and the UI tests
         run: >
-          xcodebuild test
+          xcodebuild build-for-testing
           -project App/NopeCamera.xcodeproj
           -scheme NopeApp
           -destination "$SIMULATOR"
           -derivedDataPath DerivedData
-          -resultBundlePath ui-tests.xcresult
           CODE_SIGNING_ALLOWED=NO
-      - name: Upload test results
-        if: failure()
+      - name: Pack the test run and the apps
+        run: |
+          cd DerivedData/Build/Products
+          tar -czf "$GITHUB_WORKSPACE/ui-tests-build.tgz" *.xctestrun \
+            Debug-iphonesimulator/*.app Debug-iphonesimulator/*.appex \
+            $(ls -d Debug-iphonesimulator/PackageFrameworks 2>/dev/null)
+      - name: Upload the build
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ui-tests-xcresult
-          path: ui-tests.xcresult
-          retention-days: 7
+          name: ui-tests-build
+          path: ui-tests-build.tgz
+          retention-days: 1
 
-  # The same UI tests on an iPad, in their own job: running both Simulators in one job stalled
-  # the test runner before the second destination's first test.
-  # The source link test is skipped here: on iPad the link isn't found in the Settings popover
-  # (docs/TESTING.md).
-  ui-tests-ipad:
-    name: ui-tests-ipad
-    needs: c2pa-lib
+  ui-tests-shard:
+    name: ui-tests ${{ matrix.shard }}/4
+    needs: ui-build
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Get the C2PA library built from source
+      - name: Get the build
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          name: C2PAC.xcframework
-      - name: Unpack the C2PA library
-        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
-      - name: Build the app and run the UI tests with accessibility audits on iPad
-        run: >
-          xcodebuild test
-          -project App/NopeCamera.xcodeproj
-          -scheme NopeApp
-          -destination "$IPAD_SIMULATOR"
-          -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
-          -derivedDataPath DerivedData
-          -resultBundlePath ui-tests-ipad.xcresult
-          CODE_SIGNING_ALLOWED=NO
+          name: ui-tests-build
+      - name: Unpack the build
+        run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
+      - name: Run the UI tests of this shard with accessibility audits
+        run: |
+          read -r -a tests < <(scripts/ui-test-shards.sh args "${{ matrix.shard }}" | tr '\n' ' ')
+          xcodebuild test-without-building \
+            -xctestrun products/*.xctestrun \
+            -destination "$SIMULATOR" \
+            "${tests[@]}" \
+            -resultBundlePath ui-tests.xcresult
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ui-tests-ipad-xcresult
+          name: ui-tests-${{ matrix.shard }}-xcresult
+          path: ui-tests.xcresult
+          retention-days: 7
+
+  ui-tests:
+    name: ui-tests
+    needs: ui-tests-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All iPhone shards passed
+        run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
+
+  # The source link test is skipped on iPad: there the link isn't found in the Settings popover
+  # (docs/TESTING.md).
+  ui-tests-ipad-shard:
+    name: ui-tests-ipad ${{ matrix.shard }}/4
+    needs: ui-build
+    runs-on: xcode-27
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-tests-build
+      - name: Unpack the build
+        run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
+      - name: Run the UI tests of this shard with accessibility audits on iPad
+        run: |
+          read -r -a tests < <(scripts/ui-test-shards.sh args "${{ matrix.shard }}" | tr '\n' ' ')
+          xcodebuild test-without-building \
+            -xctestrun products/*.xctestrun \
+            -destination "$IPAD_SIMULATOR" \
+            "${tests[@]}" \
+            -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink \
+            -resultBundlePath ui-tests-ipad.xcresult
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-ipad-${{ matrix.shard }}-xcresult
           path: ui-tests-ipad.xcresult
           retention-days: 7
+
+  ui-tests-ipad:
+    name: ui-tests-ipad
+    needs: ui-tests-ipad-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All iPad shards passed
+        run: '[[ "${{ needs.ui-tests-ipad-shard.result }}" == success ]]'
 
   # External validators on the pipeline-generated fixtures (issue #58): c2patool, exiftool
   # -validate and Adobe's dng_validate. None is approved yet (security/allowed-dependencies.txt),

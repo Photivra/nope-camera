@@ -97,6 +97,11 @@ struct SelectableCapsuleStyle: ButtonStyle {
     /// Whether the button is enabled.
     @Environment(\.isEnabled) private var isEnabled
 
+    /// Whether night mode is on: the dark fill is darker there, because night mode's red
+    /// multiply turns white text on the 20% gray into red on dark red at only about 4.6:1, which
+    /// the audit reported for small readout text; on an 8% gray it is about 5.2:1.
+    @Environment(\.isNightMode) private var isNightMode
+
     /// Creates the style.
     ///
     /// - Parameters:
@@ -117,7 +122,7 @@ struct SelectableCapsuleStyle: ButtonStyle {
             .foregroundStyle(isSelected ? Color.black : Color.white)
             .padding(.horizontal, horizontalPadding)
             .frame(minWidth: CameraStyle.minimumTarget, minHeight: CameraStyle.minimumTarget)
-            .background(isSelected ? Color.white : Color(white: 0.2), in: .capsule)
+            .background(isSelected ? Color.white : Color(white: isNightMode ? 0.08 : 0.2), in: .capsule)
             .opacity(configuration.isPressed ? 0.7 : (isEnabled ? 1 : 0.5))
             .contentShape(.capsule)
             .contentShape(.hoverEffect, .capsule)
@@ -129,9 +134,25 @@ struct SelectableCapsuleStyle: ButtonStyle {
 /// (iPhone), as issue #68 asks ("popovers instead of sheets" on iPad). On iPhone it is a real
 /// sheet rather than a popover adapted to one: in the adapted form the accessibility audit
 /// reported form headers and footers as not following Dynamic Type.
+///
+/// With `prefersSheet` (night mode) it is a sheet on iPad too: the iPad popover is translucent
+/// glass whatever its presentation background, so the picture and the system's colors showed
+/// through night mode's red on black. The style is chosen when the content opens and kept
+/// while it is open, so turning night mode on or off inside it doesn't close it.
 struct AdaptivePresentation<Presented: View>: ViewModifier {
+    /// How the content is shown.
+    enum Style {
+        /// A popover (iPad).
+        case popover
+        /// A sheet.
+        case sheet
+    }
+
     /// Whether the content is shown.
     @Binding var isPresented: Bool
+
+    /// Whether a sheet is wanted in a regular-width window too.
+    let prefersSheet: Bool
 
     /// The presented content.
     let presented: () -> Presented
@@ -139,38 +160,61 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// The window's horizontal size class.
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
+    /// The style chosen when the content opened, or `nil` while it is closed.
+    @State private var openStyle: Style?
+
     /// Creates the modifier.
     ///
     /// - Parameters:
     ///   - isPresented: Whether the content is shown.
+    ///   - prefersSheet: Whether a sheet is wanted in a regular-width window too.
     ///   - presented: The presented content.
-    init(isPresented: Binding<Bool>, presented: @escaping () -> Presented) {
+    init(isPresented: Binding<Bool>, prefersSheet: Bool, presented: @escaping () -> Presented) {
         _isPresented = isPresented
+        self.prefersSheet = prefersSheet
         self.presented = presented
     }
 
-    /// Attaches the popover or the sheet.
+    /// The style for the current window and preference.
+    private var currentStyle: Style {
+        horizontalSizeClass == .regular && !prefersSheet ? .popover : .sheet
+    }
+
+    /// Attaches the popover and the sheet; only the chosen one is ever shown.
     ///
     /// - Parameter content: The presenting view.
     func body(content: Content) -> some View {
-        if horizontalSizeClass == .regular {
-            content.popover(isPresented: $isPresented, content: presented)
-        } else {
-            content.sheet(isPresented: $isPresented, content: presented)
+        content
+            .popover(isPresented: shown(as: .popover), content: presented)
+            .sheet(isPresented: shown(as: .sheet), content: presented)
+            .onChange(of: isPresented, initial: true) { _, isOpen in openStyle = isOpen ? currentStyle : nil }
+    }
+
+    /// Whether the content is shown in the style.
+    ///
+    /// - Parameter style: A style.
+    /// - Returns: A binding that is `true` while the content is shown in that style.
+    private func shown(as style: Style) -> Binding<Bool> {
+        Binding {
+            isPresented && (openStyle ?? currentStyle) == style
+        } set: { isOpen in
+            if !isOpen { isPresented = false }
         }
     }
 }
 
 extension View {
-    /// Presents content as a popover on iPad and as a sheet on iPhone.
+    /// Presents content as a popover on iPad and as a sheet on iPhone, or as a sheet on both
+    /// with `prefersSheet`.
     ///
     /// - Parameters:
     ///   - isPresented: Whether the content is shown.
+    ///   - prefersSheet: Whether a sheet is wanted on iPad too, as in night mode.
     ///   - content: The presented content.
     func adaptivePresentation<Presented: View>(
-        isPresented: Binding<Bool>, @ViewBuilder content: @escaping () -> Presented
+        isPresented: Binding<Bool>, prefersSheet: Bool = false, @ViewBuilder content: @escaping () -> Presented
     ) -> some View {
-        modifier(AdaptivePresentation(isPresented: isPresented, presented: content))
+        modifier(AdaptivePresentation(isPresented: isPresented, prefersSheet: prefersSheet, presented: content))
     }
 }
 
