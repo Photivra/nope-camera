@@ -125,6 +125,9 @@ jobs:
       - name: Test the tag dumper's TIFF walker
         run: scripts/test-dump-tags.sh
       - name: Build and test NopeKit
+        env:
+          # The file compatibility tests also write their fixtures here (docs/TESTING.md).
+          TEST_RUNNER_NOPE_COMPAT_FIXTURES: ${{ github.workspace }}/compat-fixtures
         run: >
           xcodebuild test
           -scheme NopeKit-Package
@@ -136,6 +139,13 @@ jobs:
           'OTHER_SWIFT_FLAGS=$(inherited) -Xllvm -instrprof-atomic-counter-update-all'
       - name: Coverage gate (100% lines and branches of logic modules)
         run: scripts/check-coverage.sh DerivedData
+      - name: Upload the file compatibility fixtures for the external validators
+        if: vars.NOPE_FILE_VALIDATORS != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: compat-fixtures
+          path: compat-fixtures
+          retention-days: 7
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -212,6 +222,43 @@ jobs:
           name: ui-tests-ipad-xcresult
           path: ui-tests-ipad.xcresult
           retention-days: 7
+
+  # External validators on the pipeline-generated fixtures (issue #58): c2patool, exiftool
+  # -validate and Adobe's dng_validate. None is approved yet (security/allowed-dependencies.txt),
+  # so this job runs only once the maintainer sets the repository variable NOPE_FILE_VALIDATORS
+  # to the approved list, for example "c2patool exiftool". scripts/check-file-compat.sh then
+  # fails if a listed validator is missing. dng_validate has no install step: it is built from
+  # Adobe's DNG SDK, whose license must be reviewed first.
+  file-compat:
+    name: file-compat
+    needs: unit-tests
+    if: vars.NOPE_FILE_VALIDATORS != ''
+    runs-on: xcode-27
+    timeout-minutes: 20
+    env:
+      NOPE_FILE_VALIDATORS: ${{ vars.NOPE_FILE_VALIDATORS }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the fixtures
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: compat-fixtures
+          path: compat-fixtures
+      - name: Install exiftool
+        if: contains(vars.NOPE_FILE_VALIDATORS, 'exiftool')
+        run: brew install exiftool
+      - name: Install c2patool
+        if: contains(vars.NOPE_FILE_VALIDATORS, 'c2patool')
+        run: brew install c2patool
+      - name: Show validator versions
+        run: |
+          for tool in $NOPE_FILE_VALIDATORS; do echo "$tool: $(command -v "$tool" || echo missing)"; done
+          if command -v exiftool >/dev/null; then exiftool -ver; fi
+          if command -v c2patool >/dev/null; then c2patool --version; fi
+      - name: Validate every fixture
+        run: scripts/check-file-compat.sh --require "$NOPE_FILE_VALIDATORS" compat-fixtures
 
   docs:
     name: docs

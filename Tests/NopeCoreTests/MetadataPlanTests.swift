@@ -410,3 +410,28 @@ struct MetadataPropertiesTests {
         #expect((properties["{TIFF}"] as? [String: Any])?["Software"] as? String == expected)
     }
 }
+
+extension MetadataPropertiesTests {
+    /// Issue #58: ImageIO reports a DNG's lens tags again under `{ExifAux}`, and writes those
+    /// into a HEIF or JPEG as XMP that no allowlist permits, so a developed copy never gets them;
+    /// the EXIF tags carry the same values. A DNG keeps every key.
+    @Test func lensValuesUnderExifAuxAreNotCopiedIntoHEIFOrJPEG() {
+        var settings = MetadataSettings()
+        settings.set(.lensMakeAndModel, isOn: true)
+        let plan = MetadataPlan(settings: settings)
+        let source: [String: Any] = [
+            "{Exif}": ["LensModel": "back camera", "LensSpecification": [6.8, 6.8, 1.78, 1.78]] as [String: Any],
+            "{ExifAux}": ["LensModel": "back camera", "LensInfo": [6.8, 6.8, 1.78, 1.78]] as [String: Any],
+        ]
+        for format in [PhotoFormat.heif, .jpeg] {
+            let keys = Self.keys(plan.properties(for: format, from: source, orientation: 1))
+            #expect(keys.isSuperset(of: ["{Exif}.LensModel", "{Exif}.LensSpecification"]), "\(format)")
+            #expect(!keys.contains { $0.hasPrefix("{ExifAux}") }, "\(format): \(keys)")
+        }
+        let raw = Self.keys(plan.properties(for: .raw, from: source))
+        #expect(raw.isSuperset(of: ["{ExifAux}.LensModel", "{ExifAux}.LensInfo", "{Exif}.LensModel"]))
+        #expect(MetadataPlan.isWritten(ImageIOKey("{ExifAux}", "LensInfo"), in: .raw))
+        #expect(!MetadataPlan.isWritten(ImageIOKey("{ExifAux}", "LensInfo"), in: .heif))
+        #expect(MetadataPlan.isWritten(ImageIOKey("{Exif}", "LensModel"), in: .jpeg))
+    }
+}
