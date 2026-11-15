@@ -6,6 +6,7 @@ check="$(cd "$(dirname "$0")" && pwd)/check-localization.sh"
 failures=0
 
 # catalog "<comment>" "<english value>" "<translation>" "<state>" [skip-locale]
+# A translation starting with "set:" is an App Shortcuts string set, its phrases separated by "|".
 catalog() {
   python3 -I -c '
 import json, sys
@@ -14,7 +15,10 @@ locales = ["ja","es","fr","de","ko","zh-Hant","zh-Hans","pt-BR","it","nl"]
 loc = {"en": {"stringUnit": {"state": "translated", "value": english}}}
 for l in locales:
     if l != skip:
-        loc[l] = {"stringUnit": {"state": state, "value": value}}
+        if value.startswith("set:"):  # an App Shortcuts string set: phrases separated by "|"
+            loc[l] = {"stringSet": {"state": state, "values": [v for v in value[4:].split("|")]}}
+        else:
+            loc[l] = {"stringUnit": {"state": state, "value": value}}
 print(json.dumps({"sourceLanguage": "en", "version": "1.0",
                   "strings": {"key": {"comment": comment, "localizations": loc}}}))
 ' "$@"
@@ -35,6 +39,11 @@ expect fail "missing a launch language" "Button title." "Allow" "Erlauben" needs
 expect fail "new, unreviewed state" "Button title." "Allow" "Erlauben" new
 expect pass "name kept in translation" "Prompt." "nope. uses the camera." "nope. nutzt die Kamera." needs_review
 expect fail "name changed in translation" "Prompt." "nope. uses the camera." "Nope nutzt die Kamera." needs_review
+expect pass "phrase set needing review" "Siri phrase." "Take a photo" "set:Mach ein Foto|Nimm ein Foto auf" needs_review
+expect fail "phrase set with an empty phrase" "Siri phrase." "Take a photo" "set:Mach ein Foto|" needs_review
+expect fail "phrase set with no phrases" "Siri phrase." "Take a photo" "set:" needs_review
+expect fail "phrase set, new state" "Siri phrase." "Take a photo" "set:Mach ein Foto" new
+expect fail "phrase set changes the name" "Siri phrase." "Open nope." "set:nope. öffnen|Nope öffnen" needs_review
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all localization check tests passed"

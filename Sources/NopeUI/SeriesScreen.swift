@@ -36,9 +36,10 @@ struct SeriesScreen: ViewModifier {
         self.isNightMode = isNightMode
     }
 
-    /// Whether an interval series runs.
+    /// Whether an interval series or the astro helper's frames run (issue #60): a run of long
+    /// frames outlasts the auto-lock.
     private var isSeriesRunning: Bool {
-        model.manual.intervalProgress != nil
+        model.manual.intervalProgress != nil || model.astro.isRunning
     }
 
     /// The content with the dimming button over it.
@@ -66,6 +67,7 @@ struct SeriesScreen: ViewModifier {
                 Task {
                     await model.send(.drive(.cancelTimer))
                     await model.send(.drive(.stopBurst))
+                    await model.send(.astro(.stop))
                 }
             }
     }

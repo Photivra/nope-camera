@@ -165,9 +165,11 @@ public final class ComparisonModel {
     /// The compare view's content.
     public private(set) var state: State = .idle
 
-    /// Decodes both photos into pictures for the compare view, or `nil` for none (the view then
-    /// shows the metadata only). The app sets it once; `NopeDevelop`'s `ImageIOThumbnailer`
-    /// with a large size does it with ImageIO, in memory.
+    /// Decodes both photos into pictures for the compare view, or `nil` for none: the comparison
+    /// shot is then not offered (``isAvailable``). The app sets it once; `NopeDevelop`'s
+    /// `ImageIOThumbnailer` with a large size does it with ImageIO, in memory. The Lock Screen
+    /// capture extension sets none, so the comparison shot isn't offered on a locked device,
+    /// where an extension's memory is limited and photos shouldn't be shown at full size.
     public var renderer: (any PhotoThumbnailing)?
 
     /// Takes the phone's version, or `nil` when the backend can't.
@@ -180,9 +182,10 @@ public final class ComparisonModel {
         self.backend = backend
     }
 
-    /// Whether this device and build can take the comparison shot. Interfaces show the switch
-    /// only where it is `true`.
-    public var isAvailable: Bool { backend != nil }
+    /// Whether this device and build can take the comparison shot: the backend can take the
+    /// second photo and a ``renderer`` is set. Interfaces show the switch only where it is
+    /// `true`.
+    public var isAvailable: Bool { backend != nil && renderer != nil }
 
     /// Whether the compare view is open: preparing, ready or showing the failure. The camera
     /// takes no photo while it is.

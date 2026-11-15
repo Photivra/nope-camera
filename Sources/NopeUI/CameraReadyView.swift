@@ -103,6 +103,9 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Whether the full-auto exposure dial is open (the Exposure tray item).
     @State private var showsExposureDial = false
 
+    /// Whether the astro helper's settings are shown (issue #60).
+    @State private var showsAstroSettings = false
+
     /// The viewfinder's size, to turn a touch into a point in the picture.
     @State private var viewfinderSize = CGSize.zero
 
@@ -184,7 +187,15 @@ struct CameraReadyView<Viewfinder: View>: View {
                 // clipped text.
                 .presentationDetents([.large])
         }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        .adaptivePresentation(isPresented: $showsAstroSettings) {
+            AstroSheet(model: model)
+                .nightModeStyle(isNightMode)
+                .frame(idealWidth: 420, idealHeight: 640)
+                .presentationBackground(.background)
+                .presentationDetents([.large])
+        }
+        .onChange(of: model.astro.isOn) { _, isOn in if !isOn { showsAstroSettings = false } }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
         .onChange(of: model.captureStatus) { _, status in record(status) }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -207,6 +218,7 @@ struct CameraReadyView<Viewfinder: View>: View {
         .sensoryFeedback(.impact(weight: .light), trigger: saveCount)
         .sensoryFeedback(.error, trigger: failureCount)
         .driveFeedback(model.drive)
+        .astroFeedback(model.astro)
         .announcesResourceWarnings(model)
     }
 
@@ -443,7 +455,7 @@ struct CameraReadyView<Viewfinder: View>: View {
             showsTray = false
             Task { await model.send(.capture) }
         }
-        .shutterDriveValue(model.drive)
+        .shutterDriveValue(model)
         .accessibilityActions {
             if model.isCleanView {
                 Button {
@@ -556,6 +568,7 @@ struct CameraReadyView<Viewfinder: View>: View {
             }
         }
         DriveProgressView(model: model)
+        AstroPanel(model: model, showsControls: showsControls) { showsAstroSettings = true }
         CameraHints(model: model)
     }
 
@@ -585,9 +598,10 @@ struct CameraReadyView<Viewfinder: View>: View {
         viewfinderContent
             // Focus peaking is drawn on the picture itself, so the magnifier enlarges it too.
             .overlay { FocusPeakingLayer(model: model) }
-            .scaleEffect(
-                model.isMagnifying ? FocusMagnifier.scale : 1,
-                anchor: magnifierAnchor)
+            .focusMagnified(model)
+            // Reported outside the enlargement, so CameraScreen gets the picture's own frame and
+            // enlarges the natural-color viewfinder the same way (FocusMagnifier).
+            .background { naturalViewfinderFrame }
             .overlay { FocusSquareLayer(model: model, part: .square) }
             .accessibilityIgnoresInvertColors()
             .accessibilityElement(children: .ignore)
@@ -610,12 +624,6 @@ struct CameraReadyView<Viewfinder: View>: View {
                     hold: { sendFocus(at: $0, locks: true) },
                     swipe: { height in Task { await model.send(.setCleanView(height > 0)) } }))
             .environment(\.layoutDirection, .leftToRight)
-    }
-
-    /// The point the magnifier is centered on.
-    private var magnifierAnchor: UnitPoint {
-        let anchor = FocusMagnifier.anchor(for: model.manual.focusTarget)
-        return UnitPoint(x: anchor.x, y: anchor.y)
     }
 
     /// The viewfinder's VoiceOver, Voice Control and Switch Control actions: the same as a tap
@@ -643,14 +651,27 @@ struct CameraReadyView<Viewfinder: View>: View {
         }
     }
 
-    /// The live viewfinder; in night mode with natural colors, a clear frame that
-    /// ``CameraScreen`` fills from behind the red interface (``NaturalViewfinderFrame``), so the
-    /// red tint doesn't reach the picture. The photo is never changed either way.
+    /// Whether the viewfinder is drawn by ``CameraScreen`` behind the red interface: night mode
+    /// with natural colors, so the red tint doesn't reach the picture. The photo is never
+    /// changed either way.
+    private var drawsNaturalViewfinder: Bool {
+        isNightMode && !settings.tintsViewfinderInNightMode
+    }
+
+    /// The live viewfinder, or a clear area where ``CameraScreen`` draws it from behind.
     @ViewBuilder private var viewfinderContent: some View {
-        if isNightMode && !settings.tintsViewfinderInNightMode {
-            Color.clear.anchorPreference(key: NaturalViewfinderFrame.self, value: .bounds) { $0 }
+        if drawsNaturalViewfinder {
+            Color.clear
         } else {
             viewfinder
+        }
+    }
+
+    /// The frame ``CameraScreen`` fills with the natural-color viewfinder
+    /// (``NaturalViewfinderFrame``), or nothing.
+    @ViewBuilder private var naturalViewfinderFrame: some View {
+        if drawsNaturalViewfinder {
+            Color.clear.anchorPreference(key: NaturalViewfinderFrame.self, value: .bounds) { $0 }
         }
     }
 

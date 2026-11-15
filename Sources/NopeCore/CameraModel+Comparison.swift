@@ -3,11 +3,13 @@ import Foundation
 /// The comparison shot (issue #55): nope.'s photo, then the phone's fully processed version.
 extension CameraModel {
     /// Whether the next photo is a comparison shot: the comparison is on, and the shutter takes
-    /// one photo (single or self-timer, not a burst, a bracket or an interval series). An
+    /// one photo (single or self-timer, not a burst, a bracket, an interval series or an astro
+    /// run). An
     /// interface shows "Hold the camera steady or use a tripod. Two photos are taken, a moment
     /// apart." while it is `true`.
     public var comparisonAppliesToNextPhoto: Bool {
-        comparison.isOn && drive.mode != .burst && manual.intervalProgress == nil && manual.bracketFrames() == nil
+        comparison.isOn && drive.mode != .burst && !astro.isOn && manual.intervalProgress == nil
+            && manual.bracketFrames() == nil
     }
 
     /// The backend that takes the phone's version when the next photo is a comparison shot,

@@ -127,6 +127,7 @@ enum StatePills {
         closeUp,
         magnifier,
         drive,
+        astro,
         compare,
     ]
 

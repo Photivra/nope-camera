@@ -164,6 +164,13 @@ public final class DeviceStatus {
         self.reader = reader
     }
 
+    /// Whether this build reads the storage and battery at all. The Lock Screen capture
+    /// extension and previews have no reader, so nothing that needs the readings (the astro
+    /// helper's stops) is offered there.
+    public var canRead: Bool {
+        reader != nil
+    }
+
     /// Reads the storage and battery again.
     public func refresh() {
         availableStorageBytes = reader?.availableStorageBytes()
@@ -188,6 +195,15 @@ public final class DeviceStatus {
         let photosThatFit = Int(availableStorageBytes / bytesPerPhoto)
         if photosThatFit < 1 { return .full }
         return photosThatFit < Self.lowStoragePhotoCount ? .low(photosThatFit: photosThatFit) : nil
+    }
+
+    /// Whether the battery is at or below a charge and not charging. `false` when the charge is
+    /// unknown, so an unknown value never stops an astro run.
+    ///
+    /// - Parameter level: The charge, from 0 to 1.
+    public func isBatteryBelow(_ level: Double) -> Bool {
+        guard let battery, let charge = battery.level, !battery.isCharging else { return false }
+        return charge <= level
     }
 
     /// The battery warning, or `nil` when the battery isn't low, is unknown, or is charging.

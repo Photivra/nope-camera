@@ -206,16 +206,12 @@ struct ComparisonTests {
         #expect(comparison.mirrorsPhoneImage)
     }
 
-    @Test func withoutARendererTheCompareViewHasNoPictures() async {
+    @Test func withoutARendererItIsntOffered() async {
+        // As in the Lock Screen capture extension, which sets no renderer.
         let model = await Self.model(ScriptedComparisonBackend(capabilities: Self.lenses), renderer: nil)
+        #expect(!model.comparison.isAvailable)
         await model.send(.comparison(.setOn(true)))
-        await model.send(.capture)
-        guard case .ready(let comparison) = model.comparison.state else {
-            Issue.record("expected the compare view, got \(model.comparison.state)")
-            return
-        }
-        #expect(comparison.nopeImage == nil)
-        #expect(comparison.phoneImage == nil)
+        #expect(!model.comparison.isOn)
     }
 
     @Test func whenTheSecondPhotoFailsNopesPhotoIsStillSaved() async {
@@ -310,6 +306,7 @@ struct ComparisonTests {
 
     @Test func rendersNothingWithoutAFile() async {
         #expect(await ComparisonModel.render(nil, with: RecordingRenderer()) == nil)
+        #expect(await ComparisonModel.render(PhotoFile(format: .heif, data: Data()), with: nil) == nil)
     }
 
     @Test func comparesAnEmptyInventoryWithoutAFile() {

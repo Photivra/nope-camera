@@ -14,7 +14,10 @@ Photos, signed with Content Credentials when signing is on.
 | `Sources/<Module>/` | One folder per module, each with a DocC catalog (`<Module>.docc`) |
 | `Tests/<Module>Tests/` | Swift Testing unit tests for each module |
 | `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests |
-| `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy` |
+| `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy`; `Intents/` holds the Siri and Shortcuts App Intents and `AppShortcuts.xcstrings` |
+| `App/NopeCaptureExtension/` | The Lock Screen camera (LockedCameraCapture capture extension), with its own privacy manifest |
+| `App/NopeControls/` | The "Open nope." control (WidgetKit control extension), with its own privacy manifest |
+| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent` and `Localizable.xcstrings` |
 | `Config/Base.xcconfig` | Shared build settings; includes the untracked `Config/Local.xcconfig` |
 | `docs/api/` | The API exported as Markdown from the DocC comments (generated) |
 
@@ -22,12 +25,13 @@ Photos, signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
-| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, and hosts `NopeUI` | Everything |
+| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents | Everything |
+| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the control uses only AppIntents, WidgetKit and SwiftUI |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -170,6 +174,28 @@ the next one is taken, so at most two frames are in memory. The burst stops when
 stops, or at the first frame that can't be taken or saved; frames already taken are still
 saved. It ends as `CaptureStatus.savedBurst` (or `.failed`) and `drive.lastBurst`.
 
+### Astro helper (issue #60)
+
+`CameraModel.astro` (`AstroModel`) receives `CameraIntent.astro(AstroIntent)`. It never stacks
+or processes anything: it sets up the camera and takes a run of single Bayer RAW frames with the
+burst's loop (`takeFrames(limit:tracker:stopsOnLowBattery:)`, the same save pipeline per frame).
+Turning it on (only on a lens where `AstroModel.startingExposure(for:)` has values: Bayer RAW,
+manual exposure with shutter and ISO ranges, manual focus) turns manual controls on if needed,
+sets focus to lens position 1, the longest shutter and the highest ISO the lens reports, turns
+the light off, returns the drive mode to single and turns bracketing off; after that the manual
+controls are the person's. While it is on, the shutter starts `drive.countdown` with
+`astro.startDelay` and then `astro.frameCount` frames; the same shutter (or `.astro(.stop)`)
+stops them. A run also stops before a frame that wouldn't fit in storage, at or below
+`AstroModel.stopBatteryLevel` unplugged (`BurstEnd.batteryLow`), when the camera stops, or at a
+failed frame. `CameraModel.astroEstimate` gives the total exposure time and an upper estimate of
+the storage. Turning it off turns manual controls off again only if it turned them on. The torch
+can't be turned on while it is on, and a lens it can't use turns it off. It is offered only
+where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen capture extension has
+no storage and battery reader, so it has no Astro. `NopeUI` turns night
+mode on with it (`NopeSettings.setNightMode(_:)`), shows an Astro tray item, pill and panel and
+an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
+(`SeriesScreenKeeper`).
+
 ### Storage and battery
 
 `CameraModel.deviceStatus` (`DeviceStatus`) reads the free storage and the battery through
@@ -206,8 +232,35 @@ and of each sheet: every text style is drawn white, then everything is multiplie
 so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
 turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
 colors, the ready camera leaves its frame clear and reports it (`NaturalViewfinderFrame`), and
-`CameraScreen` draws the viewfinder there, behind the red interface. System menus, alerts, the
+`CameraScreen` draws the viewfinder there, behind the red interface. The focus magnifier is the
+same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in the ready camera,
+and on the natural-color viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
 keyboard and the status bar are drawn by the system and keep its dark appearance.
+
+### Siri, Shortcuts, Control Center and the Lock Screen (issues #42, #62)
+
+The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
+none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
+parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
+outcome. The camera screen runs `CameraModel.serveShortcuts(from:)` while it is shown: the model
+waits for the camera to start (at most `ShortcutInbox.startTimeoutSeconds`, following its
+observable state, without polling), switches the lens if asked, then takes one photo at once or
+starts the self-timer with `.drive(.startTimer(seconds:))`, and reports a `ShortcutOutcome`:
+saved and signed or not, or why not. Siri says it (`ShortcutDialog`); nothing about the photo's
+content or metadata leaves the model. `SetNightModeIntent` calls `NopeSettings.setNightMode(_:)`
+without opening the app. The app registers its `ShortcutInbox` and `NopeSettings` with
+`AppDependencyManager`, and `NopeShortcuts` lists the Siri phrases.
+
+`OpenCameraIntent` is a `CameraCaptureIntent`, compiled into the app, the capture extension and
+the control extension (`App/Shared`), as Apple requires. The `NopeControls` extension offers it
+as the "Open nope." control for Control Center, the Lock Screen and the Action button. On a
+locked device the system opens `NopeCaptureExtension`, which runs the same `CameraModel` and
+`PhotoSaver` as the app (RAW, the allowlist and read-back, a signature per photo, add-only
+saving). It sees only its own container, so it keeps its own settings, starting from the
+defaults, and offers no button that opens another app; it has no storage and battery warnings
+(their system reader uses API that extensions can't use). It shares `CameraPreviewView.swift`
+and `MotionGravitySource.swift` with the app through the project's file membership, with the
+`NOPE_CAPTURE_EXTENSION` compilation condition leaving out the Debug UI-test scenarios.
 
 ### The viewfinder
 
@@ -386,7 +439,8 @@ The C2PA library is c2pa-rs built from source with every network feature off
 `CameraModel.comparison` (`ComparisonModel`) holds whether Compare is on (off at launch, not
 remembered) and the compare view's content (`ComparisonModel.State`); its intents arrive as
 `CameraIntent.comparison(ComparisonIntent)`. It is offered only with a
-`ComparisonCaptureBackend` (`ComparisonModel.isAvailable`).
+`ComparisonCaptureBackend` and a renderer for the pictures (`ComparisonModel.isAvailable`); the
+Lock Screen capture extension sets no renderer, so it isn't offered on a locked device.
 
 ```
  shutter ──▶ CameraModel.capture()

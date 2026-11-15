@@ -130,7 +130,8 @@ archive (`Products/Applications/NopeApp.app`).
 ### 4. Entitlements
 
 MASVS-PLATFORM, least privilege. Allowed keys are in `security/allowed-entitlements.txt`
-(today only `com.apple.developer.locked-camera-capture`, for the lock-screen capture extension).
+(today only `com.apple.developer.locked-camera-capture`, kept for the lock-screen capture
+extension; no target requests it or any other entitlement as of 0.2.0).
 
 - **Run:**
   - `scripts/check-security.sh` (source `.entitlements` files).
@@ -394,7 +395,9 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   import, clipboard reads (`UIPasteboard`), drag-and-drop receivers or code loaded at run
   time. Any byte-level parser (the project's own tag reader) has fuzz tests, and every
   `Unsafe` use is in `security/allowed-unsafe.txt` (`scripts/check-security.sh`). App Intents
-  parameters are validated by `NopeCore`.
+  parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds;
+  an unknown lens takes no photo), and the intents return only whether a photo was saved and
+  signed, never image data or metadata.
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis

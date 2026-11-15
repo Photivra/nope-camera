@@ -15,6 +15,20 @@ enum FocusMagnifier {
     }
 }
 
+extension View {
+    /// Draws the view enlarged around the magnifier's point while the focus magnifier is on.
+    /// The ready camera applies it to the picture and focus peaking, and ``CameraScreen`` to the
+    /// natural-color viewfinder it draws behind the red interface in night mode, so all three
+    /// stay aligned. The layout frame doesn't change, so the caller clips it.
+    ///
+    /// - Parameter model: The camera model.
+    func focusMagnified(_ model: CameraModel) -> some View {
+        let anchor = FocusMagnifier.anchor(for: model.manual.focusTarget)
+        return scaleEffect(
+            model.isMagnifying ? FocusMagnifier.scale : 1, anchor: UnitPoint(x: anchor.x, y: anchor.y))
+    }
+}
+
 /// The focus square at the tapped point, with the lock button under it (issue #68: "AE/AF lock
 /// (lock pill after tap to focus)"). The square is 2 points white with a dark outline, so it
 /// shows on any scene. It isn't drawn while the magnifier is on, where the whole picture is the

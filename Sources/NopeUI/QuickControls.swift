@@ -105,6 +105,7 @@ enum QuickControls {
         fastShutter,
         closeUp,
         magnifier,
+        astro,
         compare,
         night,
         hideControls,
@@ -179,7 +180,8 @@ enum QuickControls {
     /// - Parameter context: The model and settings.
     static func light(_ context: CameraControlContext) -> QuickControlItem? {
         let light = context.model.light
-        guard light.supportsTorch else { return nil }
+        // The light stays off while the astro helper is on (issue #60).
+        guard light.supportsTorch, !context.model.astro.isOn else { return nil }
         return QuickControlItem(
             id: "light",
             title: Text("Light", bundle: .module, comment: "Camera switch and its Voice Control name: turns on the phone's light (torch) and keeps it on while taking photos."),

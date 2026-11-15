@@ -151,6 +151,480 @@ static let none: AssistSettings
 
 No aids: the camera's defaults.
 
+## `AstroEstimate`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+struct AstroEstimate
+```
+
+What the next astro run will take, for an interface to show before the shutter is pressed
+(``CameraModel/astroEstimate``).
+
+## `AstroEstimate/bytes`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let bytes: Int64
+```
+
+The most bytes the run's files can take (``PhotoSizeEstimate``, an upper bound).
+
+## `AstroEstimate/fits`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+var fits: Bool { get }
+```
+
+Whether every frame is expected to fit in the free storage. `true` when it is unknown.
+
+## `AstroEstimate/frameCount`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let frameCount: Int
+```
+
+The frames the run takes.
+
+## `AstroEstimate/framesThatFit`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let framesThatFit: Int?
+```
+
+How many frames fit in the free storage, or `nil` when the free storage is unknown.
+
+## `AstroEstimate/init(frameCount:shutter:bytes:framesThatFit:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+init(frameCount: Int, shutter: Double?, bytes: Int64, framesThatFit: Int?)
+```
+
+Creates an estimate.
+
+- Parameters:
+  - frameCount: The frames the run takes.
+  - shutter: Each frame's shutter, in seconds, or `nil`.
+  - bytes: The most bytes the run's files can take.
+  - framesThatFit: How many frames fit, or `nil` when unknown.
+
+## `AstroEstimate/shutter`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let shutter: Double?
+```
+
+Each frame's shutter, in seconds, or `nil` before the camera reports one.
+
+## `AstroEstimate/totalExposureSeconds`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+var totalExposureSeconds: Double? { get }
+```
+
+The exposure time of all frames together, in seconds, or `nil` without a shutter. The run
+takes longer than this: each frame also needs time to be read out and saved, which this
+estimate doesn't know.
+
+## `AstroExposure`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+struct AstroExposure
+```
+
+The exposure the astro helper starts from on a lens (``AstroModel/startingExposure(for:)``).
+
+## `AstroExposure/focus`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let focus: Double
+```
+
+The focus, on the relative scale from 0 (closest) to 1 (far).
+
+## `AstroExposure/init(shutter:iso:focus:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+init(shutter: Double, iso: Double, focus: Double)
+```
+
+Creates the values.
+
+- Parameters:
+  - shutter: The shutter, in seconds.
+  - iso: The ISO.
+  - focus: The focus, from 0 to 1.
+
+## `AstroExposure/iso`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let iso: Double
+```
+
+The ISO.
+
+## `AstroExposure/shutter`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+let shutter: Double
+```
+
+The shutter, in seconds.
+
+## `AstroIntent`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+enum AstroIntent
+```
+
+A request about the astro helper, sent as ``CameraIntent/astro(_:)`` (issue #60).
+
+## `AstroIntent/setFrameCount(_:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case setFrameCount(Int)
+```
+
+Choose how many frames the next run takes, one of ``AstroModel/frameCounts``. Ignored
+while a run counts down or runs.
+
+## `AstroIntent/setOn(_:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case setOn(Bool)
+```
+
+Turn the helper on or off. Turning it on is ignored on a lens it can't use
+(``AstroModel/isAvailable(on:)``) and while a photo, countdown or series runs.
+
+## `AstroIntent/setStartDelay(_:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case setStartDelay(SelfTimerDelay)
+```
+
+Choose the delay before the first frame. Ignored while a run counts down or runs.
+
+## `AstroIntent/stop`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+case stop
+```
+
+Stop the countdown or the running frames. Every frame already taken is saved.
+
+## `AstroModel`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor final class AstroModel
+```
+
+The astro helper: a consistent series of single Bayer RAW frames of the night sky, to be
+stacked in other software (issue #60).
+
+nope. never stacks, merges or processes the frames: each one is an ordinary single-frame
+photo that goes through the metadata allowlist, read-back and signing like any other
+(AGENTS.md, "Honesty"). The helper only sets up the camera and takes the frames:
+
+- **Turning it on** turns manual controls on if they are off, sets focus to the far end of
+  the lens's range, the shutter to the longest the lens allows and ISO to the highest
+  (``startingExposure(for:)``), turns the light off, returns the drive mode to single and
+  turns bracketing off. After that, every manual control is the person's to change; the
+  helper doesn't change them again until it is turned on again or the lens changes.
+- **The shutter** then starts the self-timer (``startDelay``), so touching the phone doesn't
+  shake the first frame, and takes ``frameCount`` frames back to back, each saved while the
+  next is exposed.
+- **A run stops** when the person stops it, when the next frame wouldn't fit in storage, when
+  the battery is at or below ``stopBatteryLevel`` and not charging, when the camera stops, or
+  at the first frame that can't be taken or saved. Every frame taken before that is saved.
+- **Turning it off** turns manual controls off again if the helper turned them on.
+
+``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
+``AstroIntent`` values. Turning night mode on is the interface's part, through
+``NopeSettings/setNightMode(_:)``, because night mode is a setting of the screens, not of
+the camera. The helper is off at every launch (AGENTS.md, "Cognitive": no surprise modes).
+
+## `AstroModel/beginRun()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func beginRun()
+```
+
+Marks a run as started.
+
+## `AstroModel/defaultFrameCount`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static let defaultFrameCount: Int
+```
+
+The frame count a run starts with.
+
+## `AstroModel/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func endRun(_ end: BurstEnd)
+```
+
+Marks the run as ended.
+
+- Parameter end: Why it ended.
+
+## `AstroModel/frameCount`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var frameCount: Int { get set }
+```
+
+How many frames the next run takes.
+
+## `AstroModel/frameCounts`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static let frameCounts: [Int]
+```
+
+The frame counts a run offers.
+
+## `AstroModel/init()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the helper, off.
+
+## `AstroModel/isAvailable(on:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static func isAvailable(on lens: Lens) -> Bool
+```
+
+Whether the helper can be used on a lens: it has Bayer RAW, manual exposure with a shutter
+and ISO range, and manual focus.
+
+- Parameter lens: A lens.
+- Returns: `true` when ``startingExposure(for:)`` has values for it.
+
+## `AstroModel/isOn`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isOn: Bool { get set }
+```
+
+Whether the helper is on.
+
+## `AstroModel/isRunning`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isRunning: Bool { get }
+```
+
+Whether frames are being taken now.
+
+## `AstroModel/isStopRequested`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get set }
+```
+
+Whether the person asked the running frames to stop.
+
+## `AstroModel/lastRun`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var lastRun: BurstResult? { get set }
+```
+
+How the last run ended, or `nil` before the first one. Cleared when the next starts.
+
+## `AstroModel/progress`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var progress: BurstProgress? { get set }
+```
+
+The running frames, or `nil` when no run is taking frames. The countdown before the
+first frame is ``DriveModel/countdown``.
+
+## `AstroModel/recordSaved()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `AstroModel/recordTaken()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
+
+## `AstroModel/requestStop()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func requestStop()
+```
+
+Asks the running frames to stop after the frame being taken. Called only while they run.
+
+## `AstroModel/setFrameCount(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setFrameCount(_ count: Int)
+```
+
+Chooses the frame count, if it is one of ``frameCounts``.
+
+- Parameter count: The frame count.
+
+## `AstroModel/setOn(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setOn(_ isOn: Bool)
+```
+
+Records the helper as on or off.
+
+- Parameter isOn: Whether it is on.
+
+## `AstroModel/setStartDelay(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setStartDelay(_ delay: SelfTimerDelay)
+```
+
+Chooses the start delay.
+
+- Parameter delay: The delay.
+
+## `AstroModel/startDelay`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var startDelay: SelfTimerDelay { get set }
+```
+
+The delay before the first frame. 10 seconds by default, so the phone is still again
+after the shutter is touched.
+
+## `AstroModel/startingExposure(for:)`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static func startingExposure(for lens: Lens) -> AstroExposure?
+```
+
+The exposure the helper starts from on a lens: the longest shutter and the highest ISO
+the lens reports, and focus at the far end of its range (lens position 1, the farthest
+the lens focuses; AVFoundation, `AVCaptureDevice.lensPosition`). The lens position isn't
+calibrated to a distance, so the far end may not be exactly sharp at infinity: the person
+checks it with the focus magnifier and fine-tunes it.
+
+- Parameter lens: A lens.
+- Returns: The values, or `nil` when the lens lacks Bayer RAW, manual exposure, a
+  shutter or ISO range, or manual focus.
+
+## `AstroModel/stopBatteryLevel`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor static let stopBatteryLevel: Double
+```
+
+At or below this charge, unplugged, a run stops before the next frame: 10%. An
+assumption to be checked on a device: low enough not to stop a run the person can still
+finish, high enough to leave charge for the frames to save and the phone to be used.
+
+## `AstroModel/turnedOnManualControls`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var turnedOnManualControls: Bool { get set }
+```
+
+Whether turning the helper on turned manual controls on, so turning it off turns them
+off again.
+
 ## `AutoControlIntent`
 
 public, declared in `Sources/NopeCore/AutoControls.swift`
@@ -642,6 +1116,17 @@ enum BurstEnd
 
 Why a burst ended.
 
+## `BurstEnd/batteryLow`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case batteryLow
+```
+
+The battery is at or below ``AstroModel/stopBatteryLevel`` and not charging. Only astro
+runs stop for it; a burst is too short to need it.
+
 ## `BurstEnd/cameraStopped`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -793,6 +1278,16 @@ A request an interface sends to ``CameraModel``.
 Intents are the only way an interface changes the camera. They carry no business rules: the
 model decides what each one means.
 
+## `CameraIntent/astro(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case astro(AstroIntent)
+```
+
+Turn the astro helper on or off, choose its frames, or stop a run: see ``AstroIntent``.
+
 ## `CameraIntent/auto(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -849,7 +1344,8 @@ public, declared in `Sources/NopeCore/CameraIntent.swift`
 case light(LightIntent)
 ```
 
-Change the flash or the torch: see ``LightIntent``.
+Change the flash or the torch: see ``LightIntent``. Turning the torch on is ignored while
+the astro helper is on.
 
 ## `CameraIntent/manual(_:)`
 
@@ -926,6 +1422,52 @@ direction of flow").
 
 The model is isolated to the main actor, so an interface can read its properties directly.
 
+## `CameraModel/astro`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let astro: AstroModel
+```
+
+The astro helper (issue #60). Its intents arrive as ``CameraIntent/astro(_:)``.
+
+## `CameraModel/astroEstimate`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var astroEstimate: AstroEstimate? { get }
+```
+
+What the next astro run will take, or `nil` while the helper is off or before the camera
+is ready. Each frame's size is estimated with ``PhotoSizeEstimate`` for the selected
+formats.
+
+## `CameraModel/astroLensDidChange()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func astroLensDidChange() async
+```
+
+Applies the helper to a newly selected lens: its starting values for that lens, or the
+helper turns off on a lens it can't use.
+
+## `CameraModel/astroRefuses(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func astroRefuses(_ intent: LightIntent) -> Bool
+```
+
+Whether a light intent is refused because the helper is on: the light must stay off for
+night sky frames, and it would ruin dark-adapted eyes.
+
+- Parameter intent: The light intent.
+
 ## `CameraModel/backend`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
@@ -955,8 +1497,20 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 @MainActor var canPressShutter: Bool { get }
 ```
 
-Whether the shutter should be enabled: a photo can be taken now, or a countdown or burst
-runs, which pressing the shutter stops.
+Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst
+or astro run runs, which pressing the shutter stops.
+
+## `CameraModel/canUseAstro`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var canUseAstro: Bool { get }
+```
+
+Whether the helper can be turned on: the selected lens suits it, and the storage and
+battery can be read, so a run can stop before either runs out (not in the Lock Screen
+capture extension, which has no reader).
 
 ## `CameraModel/capabilities`
 
@@ -1034,7 +1588,8 @@ public, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
 ```
 
 Whether the next photo is a comparison shot: the comparison is on, and the shutter takes
-one photo (single or self-timer, not a burst, a bracket or an interval series). An
+one photo (single or self-timer, not a burst, a bracket, an interval series or an astro
+run). An
 interface shows "Hold the camera steady or use a tripod. Two photos are taken, a moment
 apart." while it is `true`.
 
@@ -1068,6 +1623,21 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+
+## `CameraModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func handle(_ intent: AstroIntent) async
+```
+
+Handles one astro intent.
+
+- Parameter intent: The intent.
+
+Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
+ISO, and turns the light off; turning it off may turn manual controls off.
 
 ## `CameraModel/handle(_:)`
 
@@ -1180,6 +1750,20 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
 
+## `CameraModel/manualControlsDidChange(after:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func manualControlsDidChange(after intent: ManualControlIntent) async
+```
+
+Keeps the helper consistent after a manual control intent: turning manual controls off
+turns the helper off, because its frames need them; turning them on from elsewhere (the
+"Manual controls" option) makes them the person's, so the helper leaves them on.
+
+- Parameter intent: The manual control intent that was handled.
+
 ## `CameraModel/now`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1201,6 +1785,45 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Applies the backend's events until its stream ends. Run it for as long as the camera
 screen is visible, for example in a SwiftUI `.task`.
 
+## `CameraModel/outcome(of:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func outcome(of status: CaptureStatus) -> ShortcutOutcome
+```
+
+The outcome a capture status reports.
+
+- Parameter status: The status after the photo.
+- Returns: The outcome.
+
+## `CameraModel/perform(_:inbox:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func perform(_ request: ShortcutRequest, inbox: ShortcutInbox) async -> ShortcutOutcome
+```
+
+Performs one request.
+
+- Parameters:
+  - request: What was asked for.
+  - inbox: The inbox, for its waits and timeouts.
+- Returns: How it ended.
+
+## `CameraModel/pressAstroShutter()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func pressAstroShutter()
+```
+
+The shutter while the helper is on: stops a countdown or a run, or starts the self-timer
+and then the run.
+
 ## `CameraModel/pressShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -1210,7 +1833,8 @@ internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 ```
 
 What the shutter does: stops a running countdown or burst, or else applies the drive mode:
-one photo, the self-timer, or a burst.
+one photo, the self-timer, or a burst. While the astro helper is on, it starts or stops
+an astro run instead (``AstroModel``).
 
 ## `CameraModel/previewSource`
 
@@ -1308,6 +1932,22 @@ Side effects: ``CameraIntent/requestPermission`` may show the system camera prom
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
 
+## `CameraModel/serveShortcuts(from:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func serveShortcuts(from inbox: ShortcutInbox) async
+```
+
+Performs each request from the inbox in turn, until the calling task is cancelled. Run it
+for as long as the camera screen is shown, for example in a SwiftUI `.task`.
+
+Side effects: as ``CameraIntent/capture`` and ``CameraIntent/selectLens(_:)``; a request
+may switch the lens, start the self-timer, take a photo and add it to Photos.
+
+- Parameter inbox: Where the app's App Intents leave their requests.
+
 ## `CameraModel/sessionStatus`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1339,6 +1979,27 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 The storage warning for the next photo with the selected lens and formats, or `nil`
 (issue #44). The photo's size is estimated with ``PhotoSizeEstimate``.
+
+## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool) async
+```
+
+Takes up to `limit` single frames back to back, each saved as its own photo while the
+next is taken: the loop behind a burst and an astro run (``AstroModel``). See
+`takeBurst()` for how frames are saved and when the run stops. Each frame carries the
+location when the Location switch is on, as a single photo does.
+
+- Parameters:
+  - limit: The most frames to take.
+  - tracker: What the run reports its progress to.
+  - stopsOnLowBattery: Whether the run also stops when the battery is at or below
+    ``AstroModel/stopBatteryLevel`` and not charging.
+
+Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
 ## `CameraPermission`
 
@@ -1744,6 +2405,58 @@ var zoomFactor: Double
 ```
 
 The zoom factor in use; nope. keeps it at 1.0, which Bayer RAW requires.
+
+## `CameraUnavailability`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum CameraUnavailability
+```
+
+Why the camera couldn't take a photo for a ``ShortcutRequest``.
+
+## `CameraUnavailability/needsPermission`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case needsPermission
+```
+
+The person hasn't been asked for camera access yet. Say to open nope. to allow it.
+
+## `CameraUnavailability/noCamera`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case noCamera
+```
+
+The device has no camera nope. can use. Say so.
+
+## `CameraUnavailability/notRunning`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case notRunning
+```
+
+The camera didn't start or isn't running: it is starting too slowly, in use by another
+app, paused for heat, failed, or the camera screen isn't open. Say the camera isn't
+available right now.
+
+## `CameraUnavailability/permissionDenied`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case permissionDenied
+```
+
+Camera access is declined or restricted. Say it can be turned on in the Settings app.
 
 ## `CaptureBackend`
 
@@ -2430,6 +3143,58 @@ For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wr
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
 
+## `ChangeWaiter`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class ChangeWaiter
+```
+
+Wakes a waiting task when observable state it read changes, or when its timeout passes.
+
+## `ChangeWaiter/expire()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func expire()
+```
+
+Marks the timeout as passed and wakes the waiting task.
+
+## `ChangeWaiter/init()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates a waiter that isn't waiting.
+
+## `ChangeWaiter/isExpired`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var isExpired: Bool { get }
+```
+
+Whether the timeout passed.
+
+## `ChangeWaiter/waitForChange(of:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func waitForChange(of condition: @escaping @MainActor () -> Bool) async
+```
+
+Waits until a value the condition reads changes, or ``expire()``.
+
+- Parameter condition: The condition whose observable reads are tracked.
+
 ## `ClippingState`
 
 public, declared in `Sources/NopeCore/FrameAnalysis.swift`
@@ -2730,8 +3495,9 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 @MainActor var isAvailable: Bool { get }
 ```
 
-Whether this device and build can take the comparison shot. Interfaces show the switch
-only where it is `true`.
+Whether this device and build can take the comparison shot: the backend can take the
+second photo and a ``renderer`` is set. Interfaces show the switch only where it is
+`true`.
 
 ## `ComparisonModel/isOn`
 
@@ -2798,9 +3564,11 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 @MainActor var renderer: (any PhotoThumbnailing)? { get set }
 ```
 
-Decodes both photos into pictures for the compare view, or `nil` for none (the view then
-shows the metadata only). The app sets it once; `NopeDevelop`'s `ImageIOThumbnailer`
-with a large size does it with ImageIO, in memory.
+Decodes both photos into pictures for the compare view, or `nil` for none: the comparison
+shot is then not offered (``isAvailable``). The app sets it once; `NopeDevelop`'s
+`ImageIOThumbnailer` with a large size does it with ImageIO, in memory. The Lock Screen
+capture extension sets none, so the comparison shot isn't offered on a locked device,
+where an extension's memory is limited and photos shouldn't be shown at full size.
 
 ## `ComparisonModel/shownFile(in:)`
 
@@ -3984,6 +4752,18 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 
 The battery warning, or `nil` when the battery isn't low, is unknown, or is charging.
 
+## `DeviceStatus/canRead`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor var canRead: Bool { get }
+```
+
+Whether this build reads the storage and battery at all. The Lock Screen capture
+extension and previews have no reader, so nothing that needs the readings (the astro
+helper's stops) is offered there.
+
 ## `DeviceStatus/fits(bytes:)`
 
 public, declared in `Sources/NopeCore/DeviceStatus.swift`
@@ -4008,6 +4788,19 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 Creates the status with nothing read yet.
 
 - Parameter reader: Reads the values, or `nil` for none.
+
+## `DeviceStatus/isBatteryBelow(_:)`
+
+public, declared in `Sources/NopeCore/DeviceStatus.swift`
+
+```swift
+@MainActor func isBatteryBelow(_ level: Double) -> Bool
+```
+
+Whether the battery is at or below a charge and not charging. `false` when the charge is
+unknown, so an unknown value never stops an astro run.
+
+- Parameter level: The charge, from 0 to 1.
 
 ## `DeviceStatus/lowBatteryLevel`
 
@@ -4245,6 +5038,16 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 Marks a burst as started.
 
+## `DriveModel/beginRun()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func beginRun()
+```
+
+Marks a burst as started.
+
 ## `DriveModel/burstProgress`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -4271,6 +5074,18 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
 @MainActor func endBurst(_ end: BurstEnd)
+```
+
+Marks the burst as ended.
+
+- Parameter end: Why it ended.
+
+## `DriveModel/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func endRun(_ end: BurstEnd)
 ```
 
 Marks the burst as ended.
@@ -4308,6 +5123,16 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 Whether a countdown or a burst runs, so the shutter stops it instead of taking a photo.
+
+## `DriveModel/isStopRequested`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get }
+```
+
+Whether the person asked the running burst to stop.
 
 ## `DriveModel/lastBurst`
 
@@ -5082,6 +5907,69 @@ let y: Double
 ```
 
 The vertical position, from 0 (top) to 1 (bottom).
+
+## `FrameRunTracking`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor protocol FrameRunTracking : AnyObject
+```
+
+What a run of single frames reports to: a burst (``DriveModel``) or the astro helper
+(``AstroModel``). Both runs share one loop in ``CameraModel``.
+
+## `FrameRunTracking/beginRun()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func beginRun()
+```
+
+Marks a run as started.
+
+## `FrameRunTracking/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func endRun(_ end: BurstEnd)
+```
+
+Marks the run as ended.
+
+- Parameter end: Why it ended.
+
+## `FrameRunTracking/isStopRequested`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get }
+```
+
+Whether the person asked the run to stop.
+
+## `FrameRunTracking/recordSaved()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `FrameRunTracking/recordTaken()`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
 
 ## `GoldenSpiral`
 
@@ -12615,6 +13503,74 @@ Writes the options to a store.
 
 - Parameter defaults: The store to write.
 
+## `PendingShortcut`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class PendingShortcut
+```
+
+One request in a ``ShortcutInbox``, with the intent's wait for its outcome.
+
+## `PendingShortcut/finish(_:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func finish(_ outcome: ShortcutOutcome)
+```
+
+Ends the intent's wait with the outcome. Later calls do nothing.
+
+- Parameter outcome: How the request ended.
+
+## `PendingShortcut/init(request:continuation:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init(request: ShortcutRequest, continuation: CheckedContinuation<ShortcutOutcome, Never>)
+```
+
+Creates a pending request.
+
+- Parameters:
+  - request: What was asked for.
+  - continuation: The intent's wait for the outcome.
+
+## `PendingShortcut/pickedUp()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func pickedUp() -> PendingShortcut
+```
+
+Marks the request as taken by a camera screen, so it no longer times out.
+
+- Returns: This request.
+
+## `PendingShortcut/request`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor let request: ShortcutRequest
+```
+
+What was asked for.
+
+## `PendingShortcut/timeout`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var timeout: Task<Void, Never>?
+```
+
+The timeout for a camera screen to take the request, cancelled when one does.
+
 ## `PhoneProcessedPhoto`
 
 public, declared in `Sources/NopeCore/Comparison.swift`
@@ -14387,6 +15343,83 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
 - Returns: What was saved, and the saved files in the order they were built.
 - Throws: The same errors as ``save(_:settings:captureDuration:)``.
 
+## `PhotoShortcut`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+struct PhotoShortcut
+```
+
+The parameters of a "Take Photo" request: the delay before the shot and the lens.
+
+Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
+is.
+
+## `PhotoShortcut/delaySeconds`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let delaySeconds: Int
+```
+
+The delay before the photo, in seconds, from 0 (none) to ``maximumDelaySeconds``. A delay
+runs the self-timer, with its countdown on screen and announced.
+
+## `PhotoShortcut/init(delaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+```
+
+Creates a request.
+
+- Parameters:
+  - delaySeconds: The delay in seconds. Values below 0 become 0, and values above
+    ``maximumDelaySeconds`` become ``maximumDelaySeconds``.
+  - lensKind: The kind of lens, or `nil` for the lens already selected.
+
+## `PhotoShortcut/init(timer:customDelaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil)
+```
+
+Creates a request from a preset delay and an optional custom one, as the "Take Photo"
+intent offers them: a custom delay, when given, replaces the preset.
+
+- Parameters:
+  - timer: The preset delay, or `nil` for none.
+  - customDelaySeconds: A custom delay in seconds, or `nil` to use the preset.
+  - lensKind: The kind of lens, or `nil` for the lens already selected.
+
+## `PhotoShortcut/lensKind`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let lensKind: Lens.Kind?
+```
+
+The kind of lens to use, or `nil` for the lens already selected.
+
+## `PhotoShortcut/maximumDelaySeconds`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static let maximumDelaySeconds: Int
+```
+
+The longest delay a request may ask for, in seconds. A product choice for issue #62, not
+a platform limit: Siri waits for the result, and a minute keeps that wait short. Longer
+requests are shortened to it.
+
 ## `PhotoSigning`
 
 public, declared in `Sources/NopeCore/PhotoFile.swift`
@@ -15423,6 +16456,226 @@ case stopped
 ```
 
 The camera hasn't started yet. Show the viewfinder area empty, without a message.
+
+## `ShortcutInbox`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor final class ShortcutInbox
+```
+
+Hands requests from Siri and Shortcuts (issue #62) to the camera screen, and their outcomes
+back.
+
+The app owns one inbox for its lifetime. An App Intent calls ``submit(_:)`` and waits for the
+outcome; the camera screen runs ``CameraModel/serveShortcuts(from:)`` while it is shown, which
+takes each request in turn and performs it.
+
+```swift
+// In an App Intent:
+let outcome = await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 10)))
+// On the camera screen:
+.task { await model.serveShortcuts(from: inbox) }
+```
+
+Battery rule (AGENTS.md, "Battery"): nothing here polls. Waiting follows the model's
+observable state, and the only timers are one-shot timeouts that end with the request.
+
+## `ShortcutInbox/init(sleep:)`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) })
+```
+
+Creates an empty inbox.
+
+- Parameter sleep: Waits a number of seconds, throwing when cancelled. Tests pass their
+  own; the default is `Task.sleep`.
+
+## `ShortcutInbox/next()`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func next() async -> PendingShortcut?
+```
+
+The next request, waiting until one arrives. Only one camera screen serves at a time: a
+second caller replaces the first, whose wait ends with `nil`.
+
+- Returns: The request, or `nil` when the calling task is cancelled.
+
+## `ShortcutInbox/sleep`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor let sleep: @Sendable (Double) async throws -> Void
+```
+
+Waits a number of seconds, for the timeouts. Tests pass their own.
+
+## `ShortcutInbox/startTimeoutSeconds`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor static let startTimeoutSeconds: Double
+```
+
+How long a request waits for the camera screen to take it, and for the camera to start,
+in seconds, before it ends as ``CameraUnavailability/notRunning``. An assumption, to be
+confirmed on a device: the camera usually starts well within a second, and Siri opens
+nope. before the intent runs, so ten seconds leaves room for a slow start.
+
+## `ShortcutInbox/submit(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func submit(_ request: ShortcutRequest) async -> ShortcutOutcome
+```
+
+Hands a request to the camera screen and waits until it is done.
+
+- Parameter request: What Siri or Shortcuts asks for.
+- Returns: How it ended. When no camera screen takes the request within
+  ``startTimeoutSeconds``, ``ShortcutOutcome/cameraUnavailable(_:)`` with
+  ``CameraUnavailability/notRunning``.
+
+## `ShortcutInbox/wait(timeoutSeconds:until:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor func wait(timeoutSeconds: Double? = nil, until condition: @escaping @MainActor () -> Bool) async -> Bool
+```
+
+Waits, without polling, until the condition holds, or until the timeout passes.
+
+The condition is checked again each time a value it read changes (Observation,
+`withObservationTracking`), so it must read only observable state.
+
+- Parameters:
+  - timeoutSeconds: The longest wait in seconds, or `nil` to wait until it holds.
+  - condition: What to wait for.
+- Returns: Whether the condition holds at the end.
+
+## `ShortcutOutcome`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum ShortcutOutcome
+```
+
+How a ``ShortcutRequest`` ended, for Siri or Shortcuts to say.
+
+It reports only whether photos were saved and signed, never image data or metadata
+(issue #62, "Privacy"). Each case says what an intent should say.
+
+## `ShortcutOutcome/busy`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case busy
+```
+
+A photo, countdown or burst was already in progress. Say so; nothing changed.
+
+## `ShortcutOutcome/cameraUnavailable(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case cameraUnavailable(CameraUnavailability)
+```
+
+The camera can't take a photo now. Say why, from the reason.
+
+## `ShortcutOutcome/cancelled`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case cancelled
+```
+
+The countdown was cancelled on the device, so no photo was taken. Say so.
+
+## `ShortcutOutcome/lensUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lensUnavailable
+```
+
+The device has no lens of the kind asked for. Say so; nothing was taken.
+
+## `ShortcutOutcome/notSaved(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case notSaved(CaptureError)
+```
+
+The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved, and
+that nope. shows why.
+
+## `ShortcutOutcome/saved(isSigned:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case saved(isSigned: Bool)
+```
+
+One photo was saved. Say "Photo saved and signed." or, when `isSigned` is false, "Photo
+saved. It isn't signed."
+
+## `ShortcutOutcome/savedSeveral(allSigned:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case savedSeveral(allSigned: Bool)
+```
+
+An exposure bracket was saved, each frame its own photo, because bracketing is on in
+the manual controls. Say "Photos saved and signed." or "Photos saved. Not all of them are
+signed."
+
+## `ShortcutRequest`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum ShortcutRequest
+```
+
+A request from outside the camera screen: Siri, the Shortcuts app, or another system entry
+point that runs one of the app's App Intents (issue #62).
+
+The app's intents hold no rules of their own (AGENTS.md, "Siri and Shortcuts"): an intent
+turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports the
+``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:)`` performs it with the same intents
+as the on-screen controls.
+
+## `ShortcutRequest/takePhoto(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case takePhoto(PhotoShortcut)
+```
+
+Take one photo, after an optional delay, with an optional lens.
 
 ## `SignatureStatus`
 

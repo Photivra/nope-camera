@@ -242,6 +242,230 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The f-numbers, widest first.
 
+## `AstroFeedback`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor struct AstroFeedback
+```
+
+Announcements for the astro helper without looking at the screen: the start and the end of
+the frames (AGENTS.md, "Taking photos without seeing the screen"). The countdown before the
+first frame has the self-timer's own ticks and numbers (``DriveFeedback``).
+
+## `AstroFeedback/astro`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor let astro: AstroModel
+```
+
+The astro helper.
+
+## `AstroFeedback/body(content:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the feedback attached.
+
+- Parameter content: The camera.
+
+## `AstroFeedback/init(astro:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor init(astro: AstroModel)
+```
+
+Creates the feedback.
+
+- Parameter astro: The astro helper.
+
+## `AstroPanel`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor struct AstroPanel
+```
+
+The astro helper over the picture while it is on: the frames the shutter will take and a
+button for the settings, or while the frames run, the count and a Stop button. The running
+count stays in clean view, so stopping never depends on a gesture.
+
+## `AstroPanel/body`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row, or nothing.
+
+## `AstroPanel/init(model:showsControls:openSettings:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor init(model: CameraModel, showsControls: Bool, openSettings: @escaping () -> Void)
+```
+
+Creates the panel.
+
+- Parameters:
+  - model: The camera model.
+  - showsControls: Whether the other controls are shown.
+  - openSettings: Opens the astro settings.
+
+## `AstroPanel/model`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `AstroPanel/openSettings`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor let openSettings: () -> Void
+```
+
+Opens the astro settings.
+
+## `AstroPanel/showsControls`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor let showsControls: Bool
+```
+
+Whether the other controls are shown (not clean view).
+
+## `AstroSheet`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor struct AstroSheet
+```
+
+The astro helper's settings: what nope. does with the frames, the frame count and start
+delay, each frame's exposure, and what the run will take. A standard form with pushed-list
+pickers.
+
+## `AstroSheet/body`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `AstroSheet/init(model:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameter model: The camera model.
+
+## `AstroSheet/model`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `AstroText`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor enum AstroText
+```
+
+The words of the astro helper (issue #60). The claims about what nope. does with the frames
+are in the Honesty table.
+
+## `AstroText/endMessage(_:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static func endMessage(_ result: BurstResult) -> String?
+```
+
+What to announce when a run ends, or `nil` when the person stopped it or a frame failed
+(the failure banner says why).
+
+- Parameter result: How the run ended.
+
+## `AstroText/honesty`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static var honesty: Text { get }
+```
+
+What nope. does with the frames, and what it doesn't.
+
+## `AstroText/settings`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static var settings: Text { get }
+```
+
+"Astro Settings".
+
+## `AstroText/shutterValue(_:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static func shutterValue(_ model: CameraModel) -> Text?
+```
+
+What the shutter does while the helper is on, for VoiceOver, or `nil` while it is off.
+
+- Parameter model: The camera model.
+
+## `AstroText/title`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static var title: Text { get }
+```
+
+"Astro".
+
 ## `AutoExposureDial`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -6404,6 +6628,20 @@ settings (`nil` hides an item the device can't do).
 The planned order is Light, Flash, Drive, Exposure, Grid, Level, Fast Shutter, Night, then
 Hide Controls last (issue #68).
 
+## `QuickControls/astro(_:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static func astro(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Astro: the night sky helper (issue #60). Shown on a lens it can use, or while it is on.
+Turning it on also turns night mode on (issue #60: "turns it on by default"); turning it
+off leaves night mode as it is.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/builders`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -7671,6 +7909,18 @@ that returns its pill, or `nil` at the default.
 The order of ``builders`` is the order on screen; ``StatePillRow`` shows the first
 ``StatePillRow/maximumVisible`` and folds the rest into "+n".
 
+## `StatePills/astro(_:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static func astro(_ context: CameraControlContext) -> StatePill?
+```
+
+"Astro" while the night sky helper is on; its action turns it off.
+
+- Parameter context: The model and settings.
+
 ## `StatePills/builders`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -8229,6 +8479,19 @@ Announces storage and battery warnings (``ResourceWarningAnnouncements``).
 
 - Parameter model: The camera model.
 
+## `View/astroFeedback(_:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor func astroFeedback(_ astro: AstroModel) -> some View
+
+```
+
+Adds the astro helper's announcements (``AstroFeedback``).
+
+- Parameter astro: The astro helper.
+
 ## `View/comparisonCover(_:isNightMode:)`
 
 internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
@@ -8281,6 +8544,22 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 Adds the self-timer and burst feedback (``DriveFeedback``).
 
 - Parameter drive: The drive model.
+
+## `View/focusMagnified(_:)`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor func focusMagnified(_ model: CameraModel) -> some View
+
+```
+
+Draws the view enlarged around the magnifier's point while the focus magnifier is on.
+The ready camera applies it to the picture and focus peaking, and ``CameraScreen`` to the
+natural-color viewfinder it draws behind the red interface in night mode, so all three
+stay aligned. The layout frame doesn't change, so the caller clips it.
+
+- Parameter model: The camera model.
 
 ## `View/hardScrollEdges()`
 
@@ -8341,13 +8620,14 @@ burst when the camera screen goes away (``SeriesScreen``).
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor func shutterDriveValue(_ drive: DriveModel) -> some View
+@MainActor func shutterDriveValue(_ model: CameraModel) -> some View
 
 ```
 
-Adds what the shutter does in the current drive mode to its VoiceOver value.
+Adds what the shutter does in the current drive mode, or with the astro helper on, to
+its VoiceOver value.
 
-- Parameter drive: The drive model.
+- Parameter model: The camera model.
 
 ## `View/uprightUnit(sidewaysWidth:)`
 

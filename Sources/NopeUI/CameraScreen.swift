@@ -81,13 +81,16 @@ public struct CameraScreen<Viewfinder: View>: View {
         }
         .nightModeStyle(settings.isNightModeOn)
         // Night mode with natural colors: the viewfinder is drawn behind the red screen, in the
-        // frame the ready camera reserves for it, so only nope.'s own interface turns red.
+        // frame the ready camera reserves for it, so only nope.'s own interface turns red. The
+        // focus magnifier enlarges it here, as it enlarges the picture and focus peaking there.
         .backgroundPreferenceValue(NaturalViewfinderFrame.self) { anchor in
             if let anchor, let source = model.previewSource {
                 GeometryReader { proxy in
                     let frame = proxy[anchor]
                     viewfinder(source)
                         .frame(width: frame.width, height: frame.height)
+                        .focusMagnified(model)
+                        .environment(\.layoutDirection, .leftToRight)
                         .clipped()
                         .offset(x: frame.minX, y: frame.minY)
                 }

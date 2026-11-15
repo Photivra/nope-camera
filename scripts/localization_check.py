@@ -18,15 +18,21 @@ for path in sys.argv[1:]:
         localizations = entry.get("localizations", {})
         english = localizations.get("en", {}).get("stringUnit", {}).get("value", key)
         for locale in LOCALES:
-            unit = localizations.get(locale, {}).get("stringUnit")
-            if locale == "en" and unit is None:
+            localization = localizations.get(locale, {})
+            unit = localization.get("stringUnit")
+            # App Shortcuts phrases (AppShortcuts.xcstrings) are string sets: one or more
+            # phrases per language, all with the same state.
+            string_set = localization.get("stringSet")
+            if locale == "en" and unit is None and string_set is None:
                 continue  # The key itself is the English text.
-            if unit is None or not unit.get("value", "").strip():
+            values = [unit.get("value", "")] if unit is not None else (string_set or {}).get("values", [])
+            state = (unit if unit is not None else string_set or {}).get("state")
+            if not values or not all(value.strip() for value in values):
                 failures.append(f"{path}: '{key}' has no {locale} translation")
                 continue
-            if unit.get("state") not in STATES:
-                failures.append(f"{path}: '{key}' in {locale} has state '{unit.get('state')}'")
-            if NAME in english and NAME not in unit["value"]:
+            if state not in STATES:
+                failures.append(f"{path}: '{key}' in {locale} has state '{state}'")
+            if NAME in english and not all(NAME in value for value in values):
                 failures.append(f"{path}: '{key}' in {locale} must keep the name '{NAME}' unchanged")
 
 if failures:

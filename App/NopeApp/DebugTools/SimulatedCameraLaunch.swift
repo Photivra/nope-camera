@@ -52,6 +52,9 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; each save takes half a second, so a burst runs long enough
         /// for the UI tests to see and stop it.
         case slowSaving
+        /// As `manual`, and each save takes half a second, so the astro helper's frames run long
+        /// enough for the UI tests to see and stop them.
+        case astro
         /// Access already allowed; lenses with the full-auto aids (tap to focus, exposure
         /// compensation, Close-Up) and focal lengths, in bright light.
         case aids
@@ -123,6 +126,24 @@ enum SimulatedCameraLaunch {
         }
     }
 
+    /// Whether the launch arguments ask for the target viewfinder: `-NopeSimulatedViewfinder target`.
+    static var showsTargetViewfinder: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: viewfinderArgument), index + 1 < arguments.count else { return false }
+        return arguments[index + 1] == "target"
+    }
+
+    /// The target viewfinder: black, with a white square of a third of each side in the middle.
+    /// A point a quarter of the way across is black, and white once the 3× focus magnifier
+    /// enlarges the middle.
+    static var targetViewfinder: some View {
+        GeometryReader { proxy in
+            Color.black.overlay {
+                Color.white.frame(width: proxy.size.width / 3, height: proxy.size.height / 3)
+            }
+        }
+    }
+
     /// The simulated save pipeline for the scenario in the launch arguments, or `nil` without
     /// one. Nothing touches the Simulator's photo library.
     ///
@@ -133,7 +154,7 @@ enum SimulatedCameraLaunch {
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
-            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving ? 0.5 : 0),
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving || scenario == .astro ? 0.5 : 0),
             appVersion: appVersion, thumbnailer: SimulatedThumbnailer())
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
@@ -240,7 +261,7 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, comparisonError: .captureFailed)
         case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
-        case .manual:
+        case .manual, .astro:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
         case .aids:

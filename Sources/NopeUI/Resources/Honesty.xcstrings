@@ -9703,6 +9703,72 @@
         }
       }
     },
+    "nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software.": {
+      "comment": "Explains the night sky (astro) helper. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the frames are never combined. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. nimmt einzelne RAW-Bilder nacheinander auf und sichert jedes als eigenes Foto. Es stapelt, kombiniert oder bearbeitet sie nicht: Stapele sie in anderer Software."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. toma fotogramas RAW individuales uno tras otro y guarda cada uno como su propia foto. No los apila, combina ni procesa: apílalos en otro software."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. prend des images RAW uniques l’une après l’autre et enregistre chacune comme une photo distincte. Il ne les empile pas, ne les fusionne pas et ne les traite pas : empilez-les dans un autre logiciel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. scatta singoli fotogrammi RAW uno dopo l’altro e salva ciascuno come foto a sé. Non li impila, non li unisce e non li elabora: impilali in un altro software."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. は単一のRAWフレームを1枚ずつ撮影し、それぞれを個別の写真として保存します。スタック、合成、処理は行いません。スタックはほかのソフトウェアで行ってください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.는 단일 RAW 프레임을 하나씩 촬영해 각각을 별도의 사진으로 저장합니다. 프레임을 스태킹하거나 합치거나 처리하지 않습니다. 스태킹은 다른 소프트웨어에서 하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. maakt losse RAW-frames na elkaar en bewaart elk als een eigen foto. Het stapelt, combineert of bewerkt ze niet: stapel ze in andere software."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. captura quadros RAW únicos, um após o outro, e salva cada um como uma foto separada. Ele não os empilha, combina nem processa: empilhe-os em outro software."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 逐一拍摄单个 RAW 帧，并将每一帧存储为单独的照片。它不会对这些帧进行堆栈、合并或处理：请在其他软件中进行堆栈。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 逐一拍攝單一 RAW 影格，並將每個影格儲存為單獨的照片。它不會對這些影格進行堆疊、合併或處理：請在其他軟體中進行堆疊。"
+          }
+        }
+      }
+    },
     "nope.'s Content Credentials signature.": {
       "comment": "Compare view: this item of nope.'s file is its Content Credentials signature. Keep \"nope.\" unchanged.",
       "extractionState": "manual",

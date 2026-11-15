@@ -80,12 +80,15 @@ jobs:
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-link \
             CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
           scripts/check-no-networking.sh DerivedData-link/Build/Products/Release-iphoneos/NopeSigningLinkCheck
-      - name: No networking code in the app (Release, device)
+      - name: No networking code in the app and its extensions (Release, device)
         run: |
           xcodebuild build -quiet -project App/NopeCamera.xcodeproj -scheme NopeApp -configuration Release \
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-app \
             CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
-          scripts/check-no-networking.sh DerivedData-app/Build/Products/Release-iphoneos/nope.app/nope
+          app=DerivedData-app/Build/Products/Release-iphoneos/nope.app
+          scripts/check-no-networking.sh "$app/nope" \
+            "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
+            "$app/PlugIns/NopeControls.appex/NopeControls"
       - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
         env:
           NOPE_C2PA_LIB_FROM_SOURCE: ""
