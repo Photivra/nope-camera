@@ -218,7 +218,11 @@ jobs:
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
       - name: Run the UI tests of this shard with accessibility audits
         run: |
-          read -r -a tests < <(scripts/ui-test-shards.sh args "${{ matrix.shard }}" | tr '\n' ' ')
+          # One argument per line. (read -a on a line without a newline exits 1 and stops the step.)
+          args=$(scripts/ui-test-shards.sh args "${{ matrix.shard }}")
+          tests=()
+          while IFS= read -r arg; do tests+=("$arg"); done <<< "$args"
+          [ "${#tests[@]}" -gt 0 ] || { echo "error: shard ${{ matrix.shard }} has no tests"; exit 1; }
           xcodebuild test-without-building \
             -xctestrun products/*.xctestrun \
             -destination "$SIMULATOR" \
@@ -265,7 +269,11 @@ jobs:
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
       - name: Run the UI tests of this shard with accessibility audits on iPad
         run: |
-          read -r -a tests < <(scripts/ui-test-shards.sh args "${{ matrix.shard }}" | tr '\n' ' ')
+          # One argument per line. (read -a on a line without a newline exits 1 and stops the step.)
+          args=$(scripts/ui-test-shards.sh args "${{ matrix.shard }}")
+          tests=()
+          while IFS= read -r arg; do tests+=("$arg"); done <<< "$args"
+          [ "${#tests[@]}" -gt 0 ] || { echo "error: shard ${{ matrix.shard }} has no tests"; exit 1; }
           xcodebuild test-without-building \
             -xctestrun products/*.xctestrun \
             -destination "$IPAD_SIMULATOR" \
