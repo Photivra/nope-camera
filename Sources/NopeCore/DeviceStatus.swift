@@ -164,6 +164,13 @@ public final class DeviceStatus {
         self.reader = reader
     }
 
+    /// Whether this build reads the storage and battery at all. The Lock Screen capture
+    /// extension and previews have no reader, so nothing that needs the readings (the astro
+    /// helper's stops) is offered there.
+    public var canRead: Bool {
+        reader != nil
+    }
+
     /// Reads the storage and battery again.
     public func refresh() {
         availableStorageBytes = reader?.availableStorageBytes()

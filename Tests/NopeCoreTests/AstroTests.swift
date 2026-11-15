@@ -52,7 +52,7 @@ struct AstroTests {
         lenses: [Lens] = [AstroTests.wide],
         saver: PhotoSaver? = CameraModelTests.saver(),
         sleep: @escaping @Sendable (Double) async throws -> Void = { _ in },
-        reader: (any DeviceStatusReading)? = nil
+        reader: (any DeviceStatusReading)? = FakeStatusReader(bytes: nil)
     ) async -> (CameraModel, HookedManualBackend) {
         let backend = HookedManualBackend(ScriptedManualBackend(lenses: lenses))
         let model = CameraModel(backend: backend, saver: saver, sleep: sleep, deviceStatusReader: reader)
@@ -201,8 +201,16 @@ struct AstroTests {
         await model.send(.manual(.stopInterval))
     }
 
+    @Test func notWithoutStorageAndBatteryReadings() async {
+        let (model, _) = await makeModel(reader: nil)
+        #expect(!model.deviceStatus.canRead)
+        #expect(!model.canUseAstro)
+        await model.send(.astro(.setOn(true)))
+        #expect(!model.astro.isOn)
+    }
+
     @Test func notBeforeTheCameraIsReady() async {
-        let model = CameraModel(backend: ScriptedManualBackend(lenses: [Self.wide]))
+        let model = CameraModel(backend: ScriptedManualBackend(lenses: [Self.wide]), deviceStatusReader: FakeStatusReader(bytes: nil))
         #expect(!model.canUseAstro)
         await model.send(.astro(.setOn(true)))
         #expect(!model.astro.isOn)
@@ -358,7 +366,8 @@ struct AstroTests {
 
     @Test func noFramesWhileTheCameraIsPaused() async {
         let backend = ScriptedManualBackend(lenses: [Self.wide])
-        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), sleep: { _ in })
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in }, deviceStatusReader: FakeStatusReader(bytes: nil))
         await model.send(.start)
         await model.send(.astro(.setOn(true)))
         let events = Task { await model.observeEvents() }

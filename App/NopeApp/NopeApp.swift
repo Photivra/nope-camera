@@ -1,4 +1,5 @@
 import AVKit
+import AppIntents
 import NopeCapture
 import NopeCore
 import NopeDevelop
@@ -25,7 +26,14 @@ struct NopeApp: App {
     @State private var screenKeeper = SeriesScreenKeeper(screen: SystemScreen())
 
     /// The person's settings, stored on the device only.
-    @State private var settings = NopeSettings(defaults: Self.makeSettingsStore())
+    @State private var settings = Self.sharedSettings
+
+    /// The settings object, created once so the App Intents change the same one the camera
+    /// screen shows (``SetNightModeIntent``).
+    private static let sharedSettings = NopeSettings(defaults: makeSettingsStore())
+
+    /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
+    private static let shortcuts = ShortcutInbox()
 
     /// Location tagging for photos (issue #43): off until the person turns Location on.
     @State private var location = LocationTagging(provider: Self.makeLocationProvider())
@@ -35,6 +43,15 @@ struct NopeApp: App {
 
     /// Which way up the person holds the iPhone, for the camera's upright icons.
     @State private var orientation = DeviceOrientation()
+
+    /// Registers what the App Intents need: the settings and the Siri and Shortcuts inbox
+    /// (App Intents, `AppDependencyManager`).
+    init() {
+        let settings = Self.sharedSettings
+        let shortcuts = Self.shortcuts
+        AppDependencyManager.shared.add(dependency: settings)
+        AppDependencyManager.shared.add(dependency: shortcuts)
+    }
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -109,6 +126,13 @@ struct NopeApp: App {
             Task { await model.send(.drive(.hardwareButton(phase))) }
         }
         .environment(\.seriesScreenKeeper, screenKeeper)
+        // Siri and Shortcuts requests are performed while the camera screen is shown.
+        .task { await model.serveShortcuts(from: Self.shortcuts) }
+        #if DEBUG
+        // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
+        .task { await SimulatedShortcut.run(with: Self.shortcuts) }
+        .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
+        #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
         // nothing polls (AGENTS.md, "Battery").
         .task { await refreshDeviceStatus(on: UIDevice.batteryLevelDidChangeNotification) }

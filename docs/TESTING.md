@@ -239,6 +239,14 @@ the local toolchain). Jobs:
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
 
+### Siri and Shortcuts in the UI tests
+
+XCTest can't speak to Siri or run a shortcut, so Debug builds take
+`-NopeSimulatedShortcut <seconds>`: the app sends a Take Photo request through the same
+`ShortcutInbox` the intent uses and shows what Siri would say (`ShortcutUITests`: a delay with
+the countdown, a cancelled countdown, and no camera access). The request logic is unit tested in
+`ShortcutTests`.
+
 ## On-device checks
 
 Some behavior can only be checked on hardware. Before a release, on at least one iPhone and one
@@ -308,6 +316,26 @@ iPad:
 - interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
   a tap brightens it while the series continues; the brightness and auto-lock come back when the
   series ends, is stopped, or nope. goes to the background, and after the camera screen closes.
+
+### Lock Screen, Control Center, Siri and Shortcuts on a device
+
+Issues #42 and #62. Assumptions to confirm: the capture extension needs no entitlement, can add
+to Photos with the add-only access granted in the app, and can create a Secure Enclave key while
+the device is locked (if it can't, photos are saved unsigned and the "Not Signed" chip says so).
+
+- Control: add "Open nope." in Control Center, on the Lock Screen and to the Action button;
+  each opens the nope. camera; unlocked, it opens the app.
+- Locked: the camera opens without unlocking; a photo is saved to Photos (RAW plus HEIF by
+  default), signed, and passes the read-back; the thumbnail opens the photo's details, not
+  Photos; Settings changes made there don't change the app's settings; the volume buttons take a
+  photo; first use before the app was ever opened (camera and Photos prompts) behaves sensibly.
+- Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
+  signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
+  access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
+- Siri while the iPhone is locked: Siri asks to unlock before opening nope.
+- Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
+  Night Mode on and off, with nope. closed and with it open (the screen turns red at once).
+- Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Low storage
 
@@ -494,7 +522,8 @@ scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
 ```
 
 CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
-and runs `scripts/check-no-networking.sh` on both, with no exceptions.
+and runs `scripts/check-no-networking.sh` on both, with no exceptions; for the app it checks the
+app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`).
 
 ## Checking signatures
 

@@ -1,0 +1,436 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Take a photo in ${delay} with ${applicationName}": {
+      "comment": "A Siri phrase that takes a photo after a delay. ${delay} is \"3 Seconds\" or \"10 Seconds\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Nimm in ${delay} ein Foto mit ${applicationName} auf"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Toma una foto en ${delay} con ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Prends une photo dans ${delay} avec ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Scatta una foto tra ${delay} con ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}で${delay}後に写真を撮って"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}로 ${delay} 후에 사진 찍어 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Maak over ${delay} een foto met ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Tire uma foto em ${delay} com o ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}在${delay}后拍照"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}在${delay}後拍照"
+            ]
+          }
+        }
+      }
+    },
+    "Take a photo with ${applicationName}": {
+      "comment": "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Nimm ein Foto mit ${applicationName} auf"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Toma una foto con ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Prends une photo avec ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Scatta una foto con ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}で写真を撮って"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}로 사진 찍어 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Maak een foto met ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Tire uma foto com o ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}拍照"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}拍照"
+            ]
+          }
+        }
+      }
+    },
+    "Take a picture with ${applicationName}": {
+      "comment": "Another Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Mach ein Foto mit ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Saca una foto con ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Fais une photo avec ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Fai una foto con ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}で撮影して"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}로 촬영해 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Neem een foto met ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Bata uma foto com o ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}拍一张照片"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}拍一張照片"
+            ]
+          }
+        }
+      }
+    },
+    "Turn off night mode in ${applicationName}": {
+      "comment": "A Siri phrase that turns nope.'s night mode off. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Schalte den Nachtmodus in ${applicationName} aus"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Desactiva el modo nocturno en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Désactive le mode nuit dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Disattiva la modalità notte in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}のナイトモードをオフにして"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 야간 모드 꺼 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Zet nachtmodus uit in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Desative o modo noturno no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "关闭${applicationName}的夜间模式"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "關閉${applicationName}的夜間模式"
+            ]
+          }
+        }
+      }
+    },
+    "Turn on night mode in ${applicationName}": {
+      "comment": "A Siri phrase that turns nope.'s night mode on. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Schalte den Nachtmodus in ${applicationName} ein"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Activa el modo nocturno en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Active le mode nuit dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Attiva la modalità notte in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}のナイトモードをオンにして"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 야간 모드 켜 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Zet nachtmodus aan in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Ative o modo noturno no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "打开${applicationName}的夜间模式"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "開啟${applicationName}的夜間模式"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

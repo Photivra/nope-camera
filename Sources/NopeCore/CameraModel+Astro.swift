@@ -14,9 +14,11 @@ extension CameraModel {
             bytes: bytesPerFrame * Int64(astro.frameCount), framesThatFit: framesThatFit)
     }
 
-    /// Whether the helper can be turned on with the selected lens.
+    /// Whether the helper can be turned on: the selected lens suits it, and the storage and
+    /// battery can be read, so a run can stop before either runs out (not in the Lock Screen
+    /// capture extension, which has no reader).
     public var canUseAstro: Bool {
-        selectedLens.map(AstroModel.isAvailable(on:)) ?? false
+        deviceStatus.canRead && (selectedLens.map(AstroModel.isAvailable(on:)) ?? false)
     }
 
     /// Handles one astro intent.
@@ -29,8 +31,10 @@ extension CameraModel {
         let isIdle = !drive.isBusy && !astro.isRunning
         switch intent {
         case .setOn(true):
-            guard !astro.isOn, isIdle, canCapture, manual.intervalProgress == nil else { return }
-            await turnOnAstro()
+            guard !astro.isOn, isIdle, canCapture, deviceStatus.canRead, manual.intervalProgress == nil,
+                let lens = selectedLens, let exposure = AstroModel.startingExposure(for: lens)
+            else { return }
+            await turnOnAstro(exposure)
         case .setOn(false):
             await turnOffAstro()
         case .setFrameCount(let count):
@@ -43,8 +47,9 @@ extension CameraModel {
     }
 
     /// Turns the helper on and sets up the camera for it.
-    private func turnOnAstro() async {
-        guard let lens = selectedLens, let exposure = AstroModel.startingExposure(for: lens) else { return }
+    ///
+    /// - Parameter exposure: The helper's starting values for the selected lens.
+    private func turnOnAstro(_ exposure: AstroExposure) async {
         drive.setMode(.single)
         await light.handle(.setTorch(false))
         if !manual.isEnabled {

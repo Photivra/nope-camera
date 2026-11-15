@@ -35,7 +35,8 @@ struct Viewfinder: View {
     /// brightest scenes (issue #68, "Contrast"), or with `target` a white square on black, to
     /// check the focus magnifier enlarges the picture.
     @ViewBuilder private var placeholder: some View {
-        #if DEBUG
+        // The Lock Screen capture extension shares this file but not the UI-test scenarios.
+        #if DEBUG && !NOPE_CAPTURE_EXTENSION
         if SimulatedCameraLaunch.showsTargetViewfinder {
             SimulatedCameraLaunch.targetViewfinder
         } else {

@@ -12,6 +12,13 @@
 		A10000000000000000000103 /* NopeCapture in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000203 /* NopeCapture */; };
 		A10000000000000000000106 /* NopeDevelop in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000206 /* NopeDevelop */; };
 		A10000000000000000000107 /* NopeSigning in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000207 /* NopeSigning */; };
+		A1000000000000000000010A /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000208 /* NopeCore */; };
+		A1000000000000000000010B /* NopeUI in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000209 /* NopeUI */; };
+		A1000000000000000000010C /* NopeCapture in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020A /* NopeCapture */; };
+		A1000000000000000000010D /* NopeDevelop in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020B /* NopeDevelop */; };
+		A1000000000000000000010E /* NopeSigning in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020C /* NopeSigning */; };
+		A10000000000000000000108 /* NopeControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000506 /* NopeControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A10000000000000000000109 /* NopeCaptureExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000505 /* NopeCaptureExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -22,18 +29,88 @@
 			remoteGlobalIDString = A10000000000000000000401;
 			remoteInfo = NopeApp;
 		};
+		A10000000000000000000302 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000403;
+			remoteInfo = NopeCaptureExtension;
+		};
+		A10000000000000000000303 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000404;
+			remoteInfo = NopeControls;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		A10000000000000000000F01 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A10000000000000000000108 /* NopeControls.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000F02 /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				A10000000000000000000109 /* NopeCaptureExtension.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000501 /* nope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000502 /* NopeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000503 /* NopeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeApp.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000504 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = ../Config/Base.xcconfig; sourceTree = "<group>"; };
+		A10000000000000000000505 /* NopeCaptureExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = NopeCaptureExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000506 /* NopeControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NopeControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A10000000000000000000E01 /* Exceptions for "NopeApp" folder in "NopeCaptureExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Camera/CameraPreviewView.swift,
+				Camera/MotionGravitySource.swift,
+				InfoPlist.xcstrings,
+			);
+			target = A10000000000000000000403 /* NopeCaptureExtension */;
+		};
+		A10000000000000000000E02 /* Exceptions for "NopeCaptureExtension" folder in "NopeCaptureExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A10000000000000000000403 /* NopeCaptureExtension */;
+		};
+		A10000000000000000000E03 /* Exceptions for "NopeControls" folder in "NopeControls" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A10000000000000000000404 /* NopeControls */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A10000000000000000000601 /* NopeApp */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeApp; sourceTree = "<group>"; };
+		A10000000000000000000601 /* NopeApp */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E01 /* Exceptions for "NopeApp" folder in "NopeCaptureExtension" target */, ); path = NopeApp; sourceTree = "<group>"; };
 		A10000000000000000000602 /* NopeAppUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = NopeAppUITests; sourceTree = "<group>"; };
+		A10000000000000000000603 /* Shared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Shared; sourceTree = "<group>"; };
+		A10000000000000000000604 /* NopeCaptureExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E02 /* Exceptions for "NopeCaptureExtension" folder in "NopeCaptureExtension" target */, ); path = NopeCaptureExtension; sourceTree = "<group>"; };
+		A10000000000000000000605 /* NopeControls */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (A10000000000000000000E03 /* Exceptions for "NopeControls" folder in "NopeControls" target */, ); path = NopeControls; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -56,6 +133,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000703 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000000000000000000010A /* NopeCore in Frameworks */,
+				A1000000000000000000010B /* NopeUI in Frameworks */,
+				A1000000000000000000010C /* NopeCapture in Frameworks */,
+				A1000000000000000000010D /* NopeDevelop in Frameworks */,
+				A1000000000000000000010E /* NopeSigning in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000704 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -66,6 +162,9 @@
 				A10000000000000000000503 /* NopeApp.entitlements */,
 				A10000000000000000000601 /* NopeApp */,
 				A10000000000000000000602 /* NopeAppUITests */,
+				A10000000000000000000603 /* Shared */,
+				A10000000000000000000604 /* NopeCaptureExtension */,
+				A10000000000000000000605 /* NopeControls */,
 				A10000000000000000000802 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -75,6 +174,8 @@
 			children = (
 				A10000000000000000000501 /* nope.app */,
 				A10000000000000000000502 /* NopeAppUITests.xctest */,
+				A10000000000000000000505 /* NopeCaptureExtension.appex */,
+				A10000000000000000000506 /* NopeControls.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -89,13 +190,18 @@
 				A10000000000000000000901 /* Sources */,
 				A10000000000000000000701 /* Frameworks */,
 				A10000000000000000000903 /* Resources */,
+				A10000000000000000000F01 /* Embed Foundation Extensions */,
+				A10000000000000000000F02 /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A10000000000000000000B02 /* PBXTargetDependency */,
+				A10000000000000000000B03 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A10000000000000000000601 /* NopeApp */,
+				A10000000000000000000603 /* Shared */,
 			);
 			name = NopeApp;
 			packageProductDependencies = (
@@ -132,6 +238,57 @@
 			productReference = A10000000000000000000502 /* NopeAppUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		A10000000000000000000403 /* NopeCaptureExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000A04 /* Build configuration list for PBXNativeTarget "NopeCaptureExtension" */;
+			buildPhases = (
+				A10000000000000000000905 /* Sources */,
+				A10000000000000000000703 /* Frameworks */,
+				A10000000000000000000906 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000604 /* NopeCaptureExtension */,
+				A10000000000000000000603 /* Shared */,
+			);
+			name = NopeCaptureExtension;
+			packageProductDependencies = (
+				A10000000000000000000208 /* NopeCore */,
+				A10000000000000000000209 /* NopeUI */,
+				A1000000000000000000020A /* NopeCapture */,
+				A1000000000000000000020B /* NopeDevelop */,
+				A1000000000000000000020C /* NopeSigning */,
+			);
+			productName = NopeCaptureExtension;
+			productReference = A10000000000000000000505 /* NopeCaptureExtension.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
+		A10000000000000000000404 /* NopeControls */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000A05 /* Build configuration list for PBXNativeTarget "NopeControls" */;
+			buildPhases = (
+				A10000000000000000000907 /* Sources */,
+				A10000000000000000000704 /* Frameworks */,
+				A10000000000000000000908 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000605 /* NopeControls */,
+				A10000000000000000000603 /* Shared */,
+			);
+			name = NopeControls;
+			packageProductDependencies = (
+			);
+			productName = NopeControls;
+			productReference = A10000000000000000000506 /* NopeControls.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -148,6 +305,12 @@
 					A10000000000000000000402 = {
 						CreatedOnToolsVersion = 27.2;
 						TestTargetID = A10000000000000000000401;
+					};
+					A10000000000000000000403 = {
+						CreatedOnToolsVersion = 27.2;
+					};
+					A10000000000000000000404 = {
+						CreatedOnToolsVersion = 27.2;
 					};
 				};
 			};
@@ -180,6 +343,8 @@
 			targets = (
 				A10000000000000000000401 /* NopeApp */,
 				A10000000000000000000402 /* NopeAppUITests */,
+				A10000000000000000000403 /* NopeCaptureExtension */,
+				A10000000000000000000404 /* NopeControls */,
 			);
 		};
 /* End PBXProject section */
@@ -193,6 +358,20 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000904 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000906 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000908 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -216,6 +395,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000905 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000907 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -223,6 +416,16 @@
 			isa = PBXTargetDependency;
 			target = A10000000000000000000401 /* NopeApp */;
 			targetProxy = A10000000000000000000301 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000B02 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000403 /* NopeCaptureExtension */;
+			targetProxy = A10000000000000000000302 /* PBXContainerItemProxy */;
+		};
+		A10000000000000000000B03 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000404 /* NopeControls */;
+			targetProxy = A10000000000000000000303 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -314,6 +517,80 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000D07 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				INFOPLIST_FILE = NopeCaptureExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).capture";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOPE_CAPTURE_EXTENSION";
+			};
+			name = Debug;
+		};
+		A10000000000000000000D08 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				INFOPLIST_FILE = NopeCaptureExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).capture";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NOPE_CAPTURE_EXTENSION";
+			};
+			name = Release;
+		};
+		A10000000000000000000D09 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				INFOPLIST_FILE = NopeControls/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		A10000000000000000000D0A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				INFOPLIST_FILE = NopeControls/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = nope.;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(NOPE_BUNDLE_IDENTIFIER).controls";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -340,6 +617,24 @@
 			buildConfigurations = (
 				A10000000000000000000D05 /* Debug */,
 				A10000000000000000000D06 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000A04 /* Build configuration list for PBXNativeTarget "NopeCaptureExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000D07 /* Debug */,
+				A10000000000000000000D08 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000A05 /* Build configuration list for PBXNativeTarget "NopeControls" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000D09 /* Debug */,
+				A10000000000000000000D0A /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -371,6 +666,26 @@
 			productName = NopeDevelop;
 		};
 		A10000000000000000000207 /* NopeSigning */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeSigning;
+		};
+		A10000000000000000000208 /* NopeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeCore;
+		};
+		A10000000000000000000209 /* NopeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeUI;
+		};
+		A1000000000000000000020A /* NopeCapture */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeCapture;
+		};
+		A1000000000000000000020B /* NopeDevelop */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeDevelop;
+		};
+		A1000000000000000000020C /* NopeSigning */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NopeSigning;
 		};
