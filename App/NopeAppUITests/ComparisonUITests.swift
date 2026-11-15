@@ -55,7 +55,13 @@ extension NopeAppUITests {
         // The divider has a slider (and is adjustable with VoiceOver), and each full picture has
         // its own button.
         app.sliders["Divider"].adjust(toNormalizedSliderPosition: 0.8)
-        XCTAssertTrue((picture.value as? String)?.hasPrefix("Split: 8") == true)
+        // The picture's value follows the slider a moment later; on the CI runner it was read
+        // before it had changed.
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "Split: 8"), object: picture)],
+                timeout: 10) == .completed,
+            String(describing: picture.value))
         app.buttons["nope. Only"].tap()
         XCTAssertTrue(app.buttons["nope. Only"].isSelected)
         XCTAssertEqual(picture.value as? String, "nope. Only")

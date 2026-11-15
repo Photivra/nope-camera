@@ -418,8 +418,20 @@ while preparing to run tests", after 7 to 9 minutes of "Testing started"), and t
 two others failed to launch the app within its time limit; both happened on a Simulator the test
 runner had to boot itself. The script retries a shard once, after rebooting the Simulator, only
 when the test runner failed before any test started; a run in which a test started is never
-retried. `scripts/test-ui-test-shards.sh` tests both scripts. To run one shard locally, with a
-Simulator named as in CI:
+retried. `scripts/test-ui-test-shards.sh` tests both scripts.
+
+On the runner the tests wait for state rather than assume speed: a new launch waits until the
+previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
+`terminate()` sometimes waited out XCTest's minute for a process ID), a tap on the viewfinder
+waits until the camera runs, and a value is awaited with a predicate instead of read once. When
+an accessibility audit can't finish within XCTest's fixed time ("Audit failed to complete in
+time", error -56; XCTest has no setting for it), `performCompleteAccessibilityAudit` runs the same
+checks again as one smaller audit per type, so every check still runs. In the second sharded run
+the app showed no crash report, and the spindump XCTest took at a failed launch shows the app's
+main thread idle in its run loop with 0.014 s of CPU in 75 s while its threads waited to run: the
+runner, not the app, was stalled.
+
+To run one shard locally, with a Simulator named as in CI:
 
 ```sh
 xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeApp \

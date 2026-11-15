@@ -112,7 +112,7 @@ final class NopeAppUITests: XCTestCase {
     func launch(_ scenario: String, extraArguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-NopeSimulatedCamera", scenario] + extraArguments
-        app.launch()
+        app.launchAfterThePreviousRunExits()
         return app
     }
 
@@ -482,7 +482,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     private func reportedIssues(_ app: XCUIApplication) throws -> [XCUIAccessibilityAuditIssue] {
         var issues: [XCUIAccessibilityAuditIssue] = []
-        try app.performAccessibilityAudit { issue in
+        try app.performCompleteAccessibilityAudit { issue in
             issues.append(issue)
             return true
         }
@@ -782,7 +782,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func auditVisibleElements(_ app: XCUIApplication, skipDynamicType: Bool = false) throws {
         let window = app.windows.firstMatch.frame
-        try app.performAccessibilityAudit { issue in
+        try app.performCompleteAccessibilityAudit { issue in
             if skipDynamicType, issue.auditType == .dynamicType { return true }
             if Self.isOpenIPadFinding(issue) { return true }
             // A contrast issue with no element comes from the row cut off at the bottom edge, which
@@ -1196,7 +1196,7 @@ final class NopeAppUITests: XCTestCase {
         // Contrast is left out too: on iPad Settings is a popover (an open finding, see
         // audit(_:)), and on the 4.7-inch iPhone the audit reported a contrast finding in the
         // rotated sheet whose cause wasn't found. Settings' contrast is checked in portrait.
-        try app.performAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting([.dynamicType, .textClipped, .contrast]))
+        try app.performCompleteAccessibilityAudit(for: XCUIAccessibilityAuditType.all.subtracting([.dynamicType, .textClipped, .contrast])) { _ in false }
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 5))
         Thread.sleep(forTimeInterval: 1.5)
@@ -1467,10 +1467,20 @@ final class NopeAppUITests: XCTestCase {
         app.otherElements["Viewfinder"]
     }
 
+    /// Waits until the camera is running (the shutter is enabled), so a tap on the viewfinder
+    /// reaches a running camera: on the CI runner the viewfinder was on screen, and tapped, before
+    /// the simulated camera had started, and no focus square came.
+    @MainActor
+    private func waitForTheCamera(_ app: XCUIApplication) {
+        let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: app.buttons["Take Photo"])
+        XCTAssertEqual(XCTWaiter().wait(for: [enabled], timeout: 30), .completed, "the camera didn't start")
+    }
+
     @MainActor
     func testTapToFocusLocksWithTheButtonAndUnlocksWithThePill() throws {
         let app = launch("aids")
         XCTAssertTrue(viewfinder(app).waitForExistence(timeout: 20))
+        waitForTheCamera(app)
         viewfinder(app).tap()
         let lock = app.buttons["Lock Focus and Exposure"]
         XCTAssertTrue(lock.waitForExistence(timeout: 10))
@@ -1577,6 +1587,7 @@ final class NopeAppUITests: XCTestCase {
     func testFocusAidsAtTheLargestTextSize() throws {
         let app = launch("dimLight", extraArguments: Self.largestTextSize)
         XCTAssertTrue(viewfinder(app).waitForExistence(timeout: 20))
+        waitForTheCamera(app)
         viewfinder(app).tap()
         XCTAssertTrue(app.buttons["Lock Focus and Exposure"].waitForExistence(timeout: 10))
         XCTAssertTrue(element(app, containing: "Hold it steady").exists)
@@ -1587,6 +1598,7 @@ final class NopeAppUITests: XCTestCase {
     func testFocusAidsRightToLeft() throws {
         let app = launch("dimLight", extraArguments: Self.rightToLeft)
         XCTAssertTrue(viewfinder(app).waitForExistence(timeout: 20))
+        waitForTheCamera(app)
         viewfinder(app).tap()
         XCTAssertTrue(app.buttons["Lock Focus and Exposure"].waitForExistence(timeout: 10))
         quickControl(app, "Exposure")

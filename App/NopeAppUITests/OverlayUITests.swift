@@ -27,7 +27,7 @@ final class OverlayUITests: XCTestCase {
     private func launch(_ scenario: String = "manual", _ arguments: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedGravity", "tilted"] + arguments
-        app.launch()
+        app.launchAfterThePreviousRunExits()
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
         return app
     }
@@ -48,7 +48,7 @@ final class OverlayUITests: XCTestCase {
         let belowTheFold = Set(
             app.staticTexts.allElementsBoundByIndex.filter { !windowBeforeAudit.contains($0.frame) }.map(\.label))
         var issues: [XCUIAccessibilityAuditIssue] = []
-        try app.performAccessibilityAudit { issue in
+        try app.performCompleteAccessibilityAudit { issue in
             issues.append(issue)
             return true
         }
@@ -131,7 +131,7 @@ final class OverlayUITests: XCTestCase {
     func testFlatLevelSaysItPointsDown() throws {
         let app = XCUIApplication()
         app.launchArguments = ["-NopeSimulatedCamera", "manual", "-NopeSimulatedGravity", "flat", "-NopeSettings.overlays.showsLevel", "YES"]
-        app.launch()
+        app.launchAfterThePreviousRunExits()
         let level = app.descendants(matching: .any).matching(NSPredicate(format: "value CONTAINS 'Pointing straight down'")).firstMatch
         XCTAssertTrue(level.waitForExistence(timeout: 20))
     }

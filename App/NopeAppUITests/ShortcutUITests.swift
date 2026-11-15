@@ -13,7 +13,7 @@ final class ShortcutUITests: XCTestCase {
     func launch(_ scenario: String, delaySeconds: Int) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", String(delaySeconds)]
-        app.launch()
+        app.launchAfterThePreviousRunExits()
         return app
     }
 
@@ -25,7 +25,9 @@ final class ShortcutUITests: XCTestCase {
 
     @MainActor
     func testARequestWithADelayCountsDownThenSaysThePhotoWasSaved() {
-        let app = launch("noRAW", delaySeconds: 3)
+        // Ten seconds, so the countdown is still running when it is checked: on the CI runner a
+        // three-second countdown had ended before the shutter's value was read.
+        let app = launch("noRAW", delaySeconds: 10)
         // The self-timer runs as it does from the shutter, with its countdown on screen.
         XCTAssertTrue(app.buttons["Cancel Timer"].waitForExistence(timeout: 20))
         XCTAssertEqual(app.buttons["Take Photo"].value as? String, "Counting down. Press to cancel.")
