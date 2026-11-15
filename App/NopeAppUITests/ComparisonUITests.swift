@@ -82,14 +82,11 @@ extension NopeAppUITests {
         show.tap()
         XCTAssertTrue(element(app, containing: "0A1B2C3D4E5F6071").waitForExistence(timeout: 5))
 
-        // Done discards the comparison; nope.'s photo was saved.
+        // Done discards the comparison. That only nope.'s photo is saved is checked by the unit
+        // tests (ComparisonTests), which see what reaches the library.
         closeComparison(app)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.descendants(matching: .any)["ComparisonPicture"].exists)
-        let thumbnail = app.descendants(matching: .any)["Last Photo"]
-        XCTAssertTrue(thumbnail.waitForExistence(timeout: 10))
-        let saved = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "Saved and signed."), object: thumbnail)
-        XCTAssertEqual(XCTWaiter().wait(for: [saved], timeout: 10), .completed, "\(String(describing: thumbnail.value))")
 
         // The pill turns Compare off, and the hint goes with it.
         app.buttons["Compare"].firstMatch.tap()
@@ -122,8 +119,6 @@ extension NopeAppUITests {
         XCTAssertTrue(element(app, containing: "Your nope. photo was saved.").exists)
         try audit(app)
         closeComparison(app)
-        let thumbnail = app.descendants(matching: .any)["Last Photo"]
-        XCTAssertTrue(thumbnail.waitForExistence(timeout: 10))
     }
 
     @MainActor

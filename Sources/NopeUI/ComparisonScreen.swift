@@ -830,7 +830,9 @@ struct ComparisonCover: ViewModifier {
                 let model = model
                 Task { @MainActor in isShown = model.comparison.isPresented }
             }
-            .fullScreenCover(isPresented: $isShown) {
+            // The camera's elements changed while they were covered (the new thumbnail); tell
+            // VoiceOver and the other assistive technologies to read the screen again.
+            .fullScreenCover(isPresented: $isShown, onDismiss: { AccessibilityNotification.ScreenChanged().post() }) {
                 ComparisonScreen(model: model)
                     .nightModeStyle(isNightMode)
             }
