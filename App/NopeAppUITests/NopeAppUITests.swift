@@ -1758,7 +1758,8 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(thumbnail.waitForExistence(timeout: 5), file: file, line: line)
         thumbnail.press(forDuration: 1.2)
         let details = app.buttons["Photo Details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 5), file: file, line: line)
+        // The context menu opens after the press; on the CI runner it took longer than 5 seconds.
+        XCTAssertTrue(details.waitForExistence(timeout: 15), file: file, line: line)
         XCTAssertTrue(app.buttons["Open in Photos"].exists, file: file, line: line)
         details.tap()
         XCTAssertTrue(app.navigationBars["What's in This Photo"].waitForExistence(timeout: 5), file: file, line: line)
@@ -1824,7 +1825,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 30))
         app.buttons["Last Photo"].press(forDuration: 1.2)
         let details = app.buttons["Photo Details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        XCTAssertTrue(details.waitForExistence(timeout: 15))
         details.tap()
         let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
