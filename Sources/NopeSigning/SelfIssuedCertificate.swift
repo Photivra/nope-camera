@@ -7,7 +7,7 @@ import X509
 /// The certificate is signed by the file's own one-use key, so it isn't chained to any
 /// certificate authority. Validators therefore show the signer as untrusted or unknown
 /// (C2PA specification 2.2, §15.7, `signingCredential.untrusted`). That is expected and honest:
-/// the signature proves the file hasn't changed since nope. signed it, not who took it
+/// the signature proves the file hasn't changed since the app signed it, not who took it
 /// (docs/research/c2pa-signing.md, "Certificates and trust").
 ///
 /// Privacy rule: every field except the key and the random serial number is the same for every

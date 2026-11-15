@@ -10,7 +10,7 @@ public struct CapturedPhoto: Equatable, Sendable {
     /// plan; ``PhotoSaver`` reads them back before saving.
     public let data: Data
 
-    /// For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
+    /// For Bayer RAW, the RAW image data of the system's own DNG, taken before the app wrote its
     /// metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
     /// it, so a changed pixel rejects the photo.
     public let rawImageData: Data?

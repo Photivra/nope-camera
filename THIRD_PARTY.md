@@ -16,7 +16,7 @@ The C2PA library (c2pa-rs and its Swift wrapper) is the only non-platform depend
 
 ## Notices and terms that apply
 
-- **Adobe DNG.** nope. writes DNG files. Notice required by Adobe's DNG specification patent license: "This product includes DNG technology under license by Adobe." It appears in `NOTICE`, `README.md` and the app's Licenses screen.
+- **Adobe DNG.** Photivra Nope Camera writes DNG files. Notice required by Adobe's DNG specification patent license: "This product includes DNG technology under license by Adobe." It appears in `NOTICE`, `README.md` and the app's Licenses screen.
 - **SF Symbols and Apple system fonts.** Used only in the app's interface, as Apple's terms allow. Never in logos, the icon or artwork.
 
 Apple and Android platform frameworks are part of the operating system. They aren't bundled with the app, so they aren't listed.

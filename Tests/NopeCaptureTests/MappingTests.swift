@@ -81,6 +81,33 @@ struct DeviceMappingTests {
         let session = AVCaptureSession()
         #expect(CaptureSessionPreviewSource(session: session).session === session)
     }
+
+    @MainActor
+    @Test func connectingALayerShowsTheSessionOnce() {
+        let session = AVCaptureSession()
+        let source = CaptureSessionPreviewSource(session: session)
+        let layer = AVCaptureVideoPreviewLayer()
+        source.connect(layer)
+        #expect(layer.session === session)
+        // Connecting the same layer again keeps the session and has no camera to rotate for.
+        source.connect(layer)
+        #expect(layer.session === session)
+        #expect(source.rotation.captureAngle == nil)
+    }
+
+    @MainActor
+    @Test func viewfinderPointsNeedALayerWithASize() throws {
+        let source = CaptureSessionPreviewSource(session: AVCaptureSession())
+        #expect(source.devicePoint(forViewfinderPoint: .center) == nil)
+        let layer = AVCaptureVideoPreviewLayer()
+        source.connect(layer)
+        #expect(source.devicePoint(forViewfinderPoint: .center) == nil)
+        layer.bounds = CGRect(x: 0, y: 0, width: 300, height: 400)
+        // Without a camera connection the layer has no rotation to undo; the result is still a
+        // point inside the camera's 0-to-1 frame. The real mapping is a device check.
+        let point = try #require(source.devicePoint(forViewfinderPoint: FramePoint(x: 0.25, y: 0.75)))
+        #expect((0...1).contains(point.x) && (0...1).contains(point.y))
+    }
 }
 
 struct CaptureReadinessTests {
@@ -96,12 +123,15 @@ struct CaptureReadinessTests {
     }
 
     @Test func readyAtOnce() async throws {
-        #expect(try await CaptureReadiness.waitUntilReady(timeout: 1, interval: 0.001) { .ready })
+        #expect(try await CaptureReadiness.waitUntilReady(timeout: 600, interval: 0.001) { .ready })
     }
 
+    /// The timeout is far longer than the test can take, so a slow CI runner can't make it give
+    /// up early (issue #59: with 5 s, the test failed intermittently while the other tests kept
+    /// every thread busy). The ready answer comes on the fourth read whatever the timing.
     @Test func waitsUntilReady() async throws {
         let reads = Counter()
-        let ready = try await CaptureReadiness.waitUntilReady(timeout: 5, interval: 0.001) {
+        let ready = try await CaptureReadiness.waitUntilReady(timeout: 600, interval: 0.001) {
             await reads.next() < 3 ? .notReady : .ready
         }
         #expect(ready)
@@ -114,7 +144,7 @@ struct CaptureReadinessTests {
 
     @Test func stopsWhenTheSessionIsntRunning() async {
         await #expect(throws: CaptureError.notRunning) {
-            try await CaptureReadiness.waitUntilReady(timeout: 1, interval: 0.001) { .sessionNotRunning }
+            try await CaptureReadiness.waitUntilReady(timeout: 600, interval: 0.001) { .sessionNotRunning }
         }
     }
 }

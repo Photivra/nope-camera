@@ -21,6 +21,7 @@ concurrency:
 env:
   DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
   SIMULATOR: platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2
+  IPAD_SIMULATOR: platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2
   # Every job builds against the C2PA library built from source in the c2pa-lib job, whose
   # checksum must equal the one Package.swift pins for the published asset (c2pa-lib/README.md).
   NOPE_C2PA_LIB_FROM_SOURCE: "1"
@@ -79,12 +80,15 @@ jobs:
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-link \
             CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
           scripts/check-no-networking.sh DerivedData-link/Build/Products/Release-iphoneos/NopeSigningLinkCheck
-      - name: No networking code in the app (Release, device)
+      - name: No networking code in the app and its extensions (Release, device)
         run: |
           xcodebuild build -quiet -project App/NopeCamera.xcodeproj -scheme NopeApp -configuration Release \
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-app \
             CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
-          scripts/check-no-networking.sh DerivedData-app/Build/Products/Release-iphoneos/nope.app/nope
+          app=DerivedData-app/Build/Products/Release-iphoneos/nope.app
+          scripts/check-no-networking.sh "$app/nope" \
+            "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
+            "$app/PlugIns/NopeControls.appex/NopeControls"
       - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
         env:
           NOPE_C2PA_LIB_FROM_SOURCE: ""
@@ -121,6 +125,9 @@ jobs:
       - name: Test the tag dumper's TIFF walker
         run: scripts/test-dump-tags.sh
       - name: Build and test NopeKit
+        env:
+          # The file compatibility tests also write their fixtures here (docs/TESTING.md).
+          TEST_RUNNER_NOPE_COMPAT_FIXTURES: ${{ github.workspace }}/compat-fixtures
         run: >
           xcodebuild test
           -scheme NopeKit-Package
@@ -129,8 +136,16 @@ jobs:
           -resultBundlePath unit-tests.xcresult
           -enableCodeCoverage YES
           CODE_SIGNING_ALLOWED=NO
+          'OTHER_SWIFT_FLAGS=$(inherited) -Xllvm -instrprof-atomic-counter-update-all'
       - name: Coverage gate (100% lines and branches of logic modules)
         run: scripts/check-coverage.sh DerivedData
+      - name: Upload the file compatibility fixtures for the external validators
+        if: vars.NOPE_FILE_VALIDATORS != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: compat-fixtures
+          path: compat-fixtures
+          retention-days: 7
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -139,8 +154,15 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  ui-tests:
-    name: ui-tests
+  # The UI tests are built once, then run in shards: eight on the iPhone Simulator and eight on
+  # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
+  # shard, balanced by test time measured on the runner; repo checks fail when a test is in no
+  # shard or in two (docs/TESTING.md, "UI test shards"). The iPhone and iPad Simulators run in
+  # separate jobs: running both in one job stalled the test runner before the second
+  # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
+  # required status checks keep their names.
+  ui-build:
+    name: ui-build
     needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 30
@@ -154,22 +176,148 @@ jobs:
           name: C2PAC.xcframework
       - name: Unpack the C2PA library
         run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
-      - name: Build the app and run the UI smoke test with accessibility audits
+      - name: Build the app and the UI tests
         run: >
-          xcodebuild test
+          xcodebuild build-for-testing
           -project App/NopeCamera.xcodeproj
           -scheme NopeApp
           -destination "$SIMULATOR"
           -derivedDataPath DerivedData
-          -resultBundlePath ui-tests.xcresult
           CODE_SIGNING_ALLOWED=NO
+      - name: Pack the test run and the apps
+        run: |
+          cd DerivedData/Build/Products
+          tar -czf "$GITHUB_WORKSPACE/ui-tests-build.tgz" *.xctestrun \
+            Debug-iphonesimulator/*.app Debug-iphonesimulator/*.appex \
+            $(ls -d Debug-iphonesimulator/PackageFrameworks 2>/dev/null)
+      - name: Upload the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-build
+          path: ui-tests-build.tgz
+          retention-days: 1
+
+  ui-tests-shard:
+    name: ui-tests ${{ matrix.shard }}/8
+    needs: ui-build
+    runs-on: xcode-27
+    # About 10.5 minutes of tests on the runner and 5 of setup, so a setup retry still fits.
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-tests-build
+      - name: Unpack the build
+        run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
+      # Boots the Simulator and waits for it, launches the app once, then runs the shard; it
+      # retries once only when the test runner fails before any test starts.
+      - name: Run the UI tests of this shard with accessibility audits
+        run: scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPhone 18 Pro" products ui-tests.xcresult
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: ui-tests-xcresult
+          name: ui-tests-${{ matrix.shard }}-xcresult
           path: ui-tests.xcresult
           retention-days: 7
+
+  ui-tests:
+    name: ui-tests
+    needs: ui-tests-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All iPhone shards passed
+        run: '[[ "${{ needs.ui-tests-shard.result }}" == success ]]'
+
+  # The source link test is skipped on iPad: there the link isn't found in the Settings popover
+  # (docs/TESTING.md).
+  ui-tests-ipad-shard:
+    name: ui-tests-ipad ${{ matrix.shard }}/8
+    needs: ui-build
+    runs-on: xcode-27
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ui-tests-build
+      - name: Unpack the build
+        run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
+      - name: Run the UI tests of this shard with accessibility audits on iPad
+        run: >
+          scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
+          -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-ipad-${{ matrix.shard }}-xcresult
+          path: ui-tests-ipad.xcresult
+          retention-days: 7
+
+  ui-tests-ipad:
+    name: ui-tests-ipad
+    needs: ui-tests-ipad-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All iPad shards passed
+        run: '[[ "${{ needs.ui-tests-ipad-shard.result }}" == success ]]'
+
+  # External validators on the pipeline-generated fixtures (issue #58): c2patool, exiftool
+  # -validate and Adobe's dng_validate. None is approved yet (security/allowed-dependencies.txt),
+  # so this job runs only once the maintainer sets the repository variable NOPE_FILE_VALIDATORS
+  # to the approved list, for example "c2patool exiftool". scripts/check-file-compat.sh then
+  # fails if a listed validator is missing. dng_validate has no install step: it is built from
+  # Adobe's DNG SDK, whose license must be reviewed first.
+  file-compat:
+    name: file-compat
+    needs: unit-tests
+    if: vars.NOPE_FILE_VALIDATORS != ''
+    runs-on: xcode-27
+    timeout-minutes: 20
+    env:
+      NOPE_FILE_VALIDATORS: ${{ vars.NOPE_FILE_VALIDATORS }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the fixtures
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: compat-fixtures
+          path: compat-fixtures
+      - name: Install exiftool
+        if: contains(vars.NOPE_FILE_VALIDATORS, 'exiftool')
+        run: brew install exiftool
+      - name: Install c2patool
+        if: contains(vars.NOPE_FILE_VALIDATORS, 'c2patool')
+        run: brew install c2patool
+      - name: Show validator versions
+        run: |
+          for tool in $NOPE_FILE_VALIDATORS; do echo "$tool: $(command -v "$tool" || echo missing)"; done
+          if command -v exiftool >/dev/null; then exiftool -ver; fi
+          if command -v c2patool >/dev/null; then c2patool --version; fi
+      - name: Validate every fixture
+        run: scripts/check-file-compat.sh --require "$NOPE_FILE_VALIDATORS" compat-fixtures
 
   docs:
     name: docs

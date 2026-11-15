@@ -1,6 +1,6 @@
 import Foundation
 
-/// Whether nope. may use the camera, as reported by the system.
+/// Whether the app may use the camera, as reported by the system.
 ///
 /// A ``CaptureBackend`` reports this value; ``CameraModel`` turns it into a ``CameraState``.
 /// Interfaces never read it directly: they render the resulting state.

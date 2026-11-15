@@ -12,7 +12,7 @@ public enum HeatLevel: Equatable, Comparable, Sendable, CaseIterable {
     case fair
     /// High; the system may reduce performance.
     case serious
-    /// Critical; nope. pauses the camera until the device cools down.
+    /// Critical; the app pauses the camera until the device cools down.
     case critical
 
     /// Whether the camera must pause at this level: `true` only for ``critical``.

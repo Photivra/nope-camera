@@ -145,8 +145,8 @@ enum CleanFiles {
         }
     }
 
-    /// The directories of a TIFF structure holding every allowed tag of the allowlist (and, for a
-    /// wildcard GPS directory, two GPS tags), plus any extra tags.
+    /// The directories of a TIFF structure holding every allowed tag of the allowlist, plus any
+    /// extra tags.
     static func tiff(
         for allowlist: MetadataAllowlist, extra: [(TIFFDirectory, UInt16)] = [], includeRawData: Bool = true
     ) -> TIFFBuilder.Directory {
@@ -158,9 +158,6 @@ enum CleanFiles {
             byDirectory[id.directory, default: []].append((id.tag, value))
         }
         for (directory, tag) in extra { byDirectory[directory, default: []].append((tag, .short([7]))) }
-        if allowlist.wildcardDirectories.contains(.gps) {
-            byDirectory[.gps, default: []] += [(0x0001, .ascii("N")), (0x0002, .short([1, 2, 3]))]
-        }
         var primary = byDirectory[.primary] ?? []
         if includeRawData && allowlist.format == .raw {
             primary += [(0x0111, .blobs([rawImageData])), (0x0117, .long([UInt32(rawImageData.count)]))]

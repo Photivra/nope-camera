@@ -1,7 +1,8 @@
 import NopeCore
 import SwiftUI
 
-/// Metering, AE and AF locks, exposure bracketing and interval shooting, in a standard form.
+/// The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
+/// standard form, opened from the last button of the manual controls row.
 ///
 /// Each section appears only when the selected lens supports it. The sheet follows the system
 /// appearance.
@@ -9,20 +10,27 @@ struct ProToolsSheet: View {
     /// The intervals offered, in seconds: 1 second to 1 hour.
     static let intervals: [Double] = [1, 2, 3, 5, 10, 15, 20, 30, 60, 120, 300, 600, 900, 1800, 3600]
 
-    /// The photo counts offered for a series, from 2 to the 999 nope. allows.
+    /// The photo counts offered for a series, from 2 to the 999 the app allows.
     static let photoCounts = [2, 3, 5, 10, 20, 30, 50, 100, 200, 500, 999]
 
     /// The camera model.
     let model: CameraModel
+
+    /// The person's settings, for the live aid switches, or `nil` to leave them out.
+    let settings: NopeSettings?
 
     /// Dismisses the sheet.
     @Environment(\.dismiss) private var dismiss
 
     /// Creates the sheet.
     ///
-    /// - Parameter model: The camera model.
-    init(model: CameraModel) {
+    /// - Parameters:
+    ///   - model: The camera model.
+    ///   - settings: The person's settings, for the focus peaking, histogram and live readout
+    ///     switches, or `nil` to leave them out.
+    init(model: CameraModel, settings: NopeSettings? = nil) {
         self.model = model
+        self.settings = settings
     }
 
     /// The manual controls model.
@@ -32,6 +40,9 @@ struct ProToolsSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                if manual.exposureModes.count > 1 {
+                    exposureModeSection
+                }
                 if manual.capabilities.meteringModes.count > 1 {
                     meteringSection
                 }
@@ -42,6 +53,9 @@ struct ProToolsSheet: View {
                     bracketSection
                 }
                 intervalSection
+                if let settings {
+                    Section { LiveAidToggles(settings: settings) }
+                }
                 // Done is a row of the form, not a bar button: the accessibility audit can't
                 // measure the contrast of the glass bar button.
                 Section {
@@ -62,6 +76,22 @@ struct ProToolsSheet: View {
     /// - Parameter intent: The intent.
     private func send(_ intent: ManualControlIntent) {
         Task { await model.send(.manual(intent)) }
+    }
+
+    /// The exposure mode picker: P, S, I or M, as the lens supports.
+    private var exposureModeSection: some View {
+        Section {
+            Picker(
+                selection: Binding(get: { manual.settings.exposureMode }, set: { send(.setExposureMode($0)) })
+            ) {
+                ForEach(manual.exposureModes, id: \.self) { mode in
+                    Text(verbatim: ControlText.name(mode)).tag(mode)
+                }
+            } label: {
+                Text("Exposure Mode", bundle: .module, comment: "Name of the picker for the exposure mode: P, S, I or M.")
+            }
+            .accessibilityIdentifier("exposure-mode")
+        }
     }
 
     /// The metering mode picker.

@@ -39,7 +39,20 @@ public struct ImageIOReadBack: MetadataReading {
             let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any]
         else { throw .metadataNotAllowed }
         return MetadataReadBack(
-            file: MetadataFileReader.read(file.data, format: file.format), imageIOKeys: Self.keys(of: properties))
+            file: MetadataFileReader.read(file.data, format: file.format), imageIOKeys: Self.keys(of: properties),
+            image: Self.imageProperties(of: properties))
+    }
+
+    /// The image's size and bit depth from its ImageIO properties, for the details.
+    ///
+    /// - Parameter properties: The image's properties.
+    /// - Returns: `kCGImagePropertyPixelWidth`, `kCGImagePropertyPixelHeight` and
+    ///   `kCGImagePropertyDepth`, each `nil` if absent.
+    static func imageProperties(of properties: [String: Any]) -> ImageProperties {
+        func integer(_ key: CFString) -> Int? { (properties[key as String] as? NSNumber)?.intValue }
+        return ImageProperties(
+            pixelWidth: integer(kCGImagePropertyPixelWidth), pixelHeight: integer(kCGImagePropertyPixelHeight),
+            depth: integer(kCGImagePropertyDepth))
     }
 
     /// Every key of an ImageIO property dictionary: top-level keys, and each key of a

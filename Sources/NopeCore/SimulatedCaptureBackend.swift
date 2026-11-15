@@ -4,9 +4,10 @@ import Foundation
 ///
 /// Use it in tests, SwiftUI previews and UI tests. It never shows a system prompt, has no
 /// video, and returns a small placeholder instead of a real photo. As a
-/// ``ManualCaptureBackend`` it accepts every control without changing anything, reports
-/// ``placeholderReading`` when readings are turned on, and returns one placeholder per bracket
-/// frame.
+/// ``ManualCaptureBackend`` it accepts every control without changing anything, reports its
+/// ``reading`` (``placeholderReading`` by default) when readings are turned on, and returns one
+/// placeholder per bracket frame. As a ``LightCaptureBackend`` it reports the torch on at the level asked for, or
+/// ``TorchStatus/unavailable`` when created with `torchAvailable: false`.
 ///
 /// ```swift
 /// let backend = SimulatedCaptureBackend(
@@ -16,7 +17,7 @@ import Foundation
 /// )
 /// let model = CameraModel(backend: backend)
 /// ```
-public struct SimulatedCaptureBackend: ManualCaptureBackend {
+public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend {
     /// The bytes of every simulated photo. They are not an image file.
     public static let placeholderPhotoData = Data("nope. simulated photo".utf8)
 
@@ -47,6 +48,12 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     /// Events emitted each time ``startSession(_:)`` succeeds, for example an interruption.
     public let eventsAfterStart: [CaptureEvent]
 
+    /// Whether the system allows the torch; `false` simulates a device too hot for it.
+    public let torchAvailable: Bool
+
+    /// The error ``captureComparison(_:)`` throws, or `nil` to succeed.
+    public let comparisonError: CaptureError?
+
     /// The event stream. It carries ``eventsAfterStart`` and anything sent with ``emit(_:)``.
     public let events: AsyncStream<CaptureEvent>
 
@@ -56,11 +63,30 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     /// Feeds ``events``.
     private let continuation: AsyncStream<CaptureEvent>.Continuation
 
-    /// The readings stream: ``placeholderReading`` each time readings are turned on.
+    /// The readings stream: ``reading``, ``readingCount`` times, each time readings are turned
+    /// on.
     public let exposureReadings: AsyncStream<ExposureReading>
+
+    /// The reading sent when readings are turned on.
+    public let reading: ExposureReading
+
+    /// How many times ``reading`` is sent when readings are turned on.
+    public let readingCount: Int
 
     /// Feeds ``exposureReadings``.
     private let readingsContinuation: AsyncStream<ExposureReading>.Continuation
+
+    /// The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
+    public let frameAnalyses: AsyncStream<FrameAnalysis>
+
+    /// Feeds ``frameAnalyses``.
+    let analysesContinuation: AsyncStream<FrameAnalysis>.Continuation
+
+    /// The live readout's values: ``placeholderStats`` each time they are turned on.
+    public let statsReadings: AsyncStream<CameraStatsReading>
+
+    /// Feeds ``statsReadings``.
+    let statsContinuation: AsyncStream<CameraStatsReading>.Continuation
 
     /// Creates a simulated backend.
     ///
@@ -72,22 +98,39 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     ///   - startError: The error starting the camera throws, or `nil` to succeed.
     ///   - captureError: The error taking a photo throws, or `nil` to succeed.
     ///   - eventsAfterStart: Events to emit each time the camera starts.
+    ///   - reading: The reading to report, for example a dim scene. Defaults to
+    ///     ``placeholderReading``.
+    ///   - readingCount: How many times to report it when readings turn on, for example enough
+    ///     for the close-up suggestion. Defaults to 1.
+    ///   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
+    ///   - comparisonError: The error taking the comparison shot's second photo throws, or
+    ///     `nil` to succeed.
     public init(
         permission: CameraPermission,
         permissionAfterRequest: CameraPermission? = nil,
         capabilities: DeviceCapabilities = .none,
         startError: CaptureError? = nil,
         captureError: CaptureError? = nil,
-        eventsAfterStart: [CaptureEvent] = []
+        eventsAfterStart: [CaptureEvent] = [],
+        reading: ExposureReading = placeholderReading,
+        readingCount: Int = 1,
+        torchAvailable: Bool = true,
+        comparisonError: CaptureError? = nil
     ) {
+        self.comparisonError = comparisonError
+        self.reading = reading
+        self.readingCount = readingCount
         self.permission = permission
         self.permissionAfterRequest = permissionAfterRequest ?? permission
         self.capabilities = capabilities
         self.startError = startError
         self.captureError = captureError
         self.eventsAfterStart = eventsAfterStart
+        self.torchAvailable = torchAvailable
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
         (exposureReadings, readingsContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
+        (frameAnalyses, analysesContinuation) = AsyncStream.makeStream(of: FrameAnalysis.self)
+        (statsReadings, statsContinuation) = AsyncStream.makeStream(of: CameraStatsReading.self)
         previewSource = SimulatedPreviewSource()
     }
 
@@ -100,10 +143,12 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
 
     /// Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
     /// ``ManualControlsModel/observeReadings()`` return once they have applied everything sent
-    /// so far.
+    /// so far. Also ends ``frameAnalyses`` and ``statsReadings``.
     public func finishEvents() {
         continuation.finish()
         readingsContinuation.finish()
+        analysesContinuation.finish()
+        statsContinuation.finish()
     }
 
     /// Returns ``permission``.
@@ -158,11 +203,12 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
     /// - Parameter controls: Ignored.
     public func applyControls(_ controls: DeviceControls) async throws(CaptureError) {}
 
-    /// Sends ``placeholderReading`` when readings are turned on.
+    /// Sends ``reading``, ``readingCount`` times, when readings are turned on.
     ///
     /// - Parameter enabled: Whether readings are on.
     public func setExposureReadingsEnabled(_ enabled: Bool) async {
-        if enabled { readingsContinuation.yield(Self.placeholderReading) }
+        guard enabled else { return }
+        for _ in 0..<max(readingCount, 0) { readingsContinuation.yield(reading) }
     }
 
     /// Returns one placeholder photo per frame, with the frame's ISO and duration, or throws
@@ -188,5 +234,15 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend {
                 rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil
             )
         }
+    }
+
+    /// Reports the torch on at `level`, off for `nil`, or ``TorchStatus/unavailable`` when
+    /// ``torchAvailable`` is `false`. There is no light to switch.
+    ///
+    /// - Parameter level: The brightness, or `nil` for off.
+    /// - Returns: The simulated light's state.
+    public func setTorch(level: Double?) async -> TorchStatus {
+        guard let level else { return .off }
+        return torchAvailable ? .on(level: level) : .unavailable
     }
 }

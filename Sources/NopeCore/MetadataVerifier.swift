@@ -8,7 +8,7 @@ public enum MetadataViolation: Hashable, Sendable {
     case unexpectedTag(MetadataAllowlist.TagID)
     /// A tag the file can't be opened without is missing.
     case missingTag(MetadataAllowlist.TagID)
-    /// An allowed tag with a value nope. didn't write, such as an exact camera model when the
+    /// An allowed tag with a value the app didn't write, such as an exact camera model when the
     /// generic one was asked for.
     case unexpectedValue(MetadataAllowlist.TagID)
     /// A container block that isn't on the allowlist, such as an XMP segment or a thumbnail.

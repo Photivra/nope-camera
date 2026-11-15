@@ -14,7 +14,7 @@ Apple lets an app declare a feature only if people can complete **all of the app
 tasks** with it, on each device type, answered separately per device. Common tasks include the
 app's primary function, the first launch experience and settings
 ([Overview of Accessibility Nutrition Labels](https://developer.apple.com/help/app-store-connect/manage-app-accessibility/overview-of-accessibility-nutrition-labels)).
-For nope. the common tasks are:
+For Photivra Nope Camera the common tasks are:
 
 1. First launch: the welcome screen and the camera permission.
 2. Take a photo, including the first save (the Photos add-only permission) and the result
@@ -36,8 +36,8 @@ Same answers for iPhone and iPad, each tested on its own device.
 | Differentiate Without Color Alone | Yes | Every status has text or a symbol (RAW badge, fallback badge, switch states, warnings); tested with the setting on | Badges use text; not tested with the setting on |
 | Sufficient Contrast | Yes | Text 4.5:1 and icons 3:1, including over the viewfinder; audits pass with Increase Contrast on | Audits include the contrast check; Increase Contrast not tested |
 | Reduced Motion | Yes | Crossfades instead of slides, no animated badges, with Reduce Motion on; tested | Not tested |
-| Captions | Not applicable | nope. has no video or audio content | |
-| Audio Descriptions | Not applicable | nope. has no video content | |
+| Captions | Not applicable | The app has no video or audio content | |
+| Audio Descriptions | Not applicable | The app has no video content | |
 
 An accessibility failure is a release blocker (AGENTS.md, "Accessibility"), so the target at
 1.0 is every applicable feature. If a feature misses its evidence at release, the answer for

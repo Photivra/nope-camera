@@ -13,13 +13,11 @@ struct ReadBackTests {
     let signer = ContentCredentialsSigner(
         keyProvider: SimulatorSoftwareKeyProvider(), generator: ClaimGenerator(version: "0.1.0"))
 
-    /// The project's read-back: the project's own reader plus ImageIO's keys. The synthetic DNG
-    /// isn't a DNG ImageIO decodes as RAW, so it is read with the project's reader alone.
+    /// The app's read-back: the project's own reader plus ImageIO, which must open the file as
+    /// exactly one image of its format (issue #66: a DNG signed by the C2PA library's own writer
+    /// opened as `public.tiff` with no image).
     func readBack(_ file: PhotoFile) throws -> MetadataReadBack {
-        if file.format == .raw {
-            return MetadataReadBack(file: MetadataFileReader.read(file.data, format: .raw), imageIOKeys: [])
-        }
-        return try ImageIOReadBack().readBack(file)
+        try ImageIOReadBack().readBack(file)
     }
 
     @Test(arguments: SignableFile.allCases)

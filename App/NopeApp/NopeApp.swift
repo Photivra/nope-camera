@@ -1,12 +1,14 @@
 import AVKit
+import AppIntents
 import NopeCapture
 import NopeCore
 import NopeDevelop
 import NopeSigning
 import NopeUI
 import SwiftUI
+import UIKit
 
-/// The nope. app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
+/// The Photivra Nope Camera app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
 ///
 /// On a device it uses `AVFoundationCaptureBackend`. Debug builds launched by the UI tests with
 /// `-NopeSimulatedCamera <scenario>` use a simulated backend instead (``SimulatedCameraLaunch``).
@@ -17,10 +19,39 @@ struct NopeApp: App {
     private static let backend = makeBackend()
 
     /// The camera model shared by the app's single scene.
-    @State private var model = CameraModel(backend: Self.backend, saver: Self.makeSaver())
+    @State private var model = CameraModel(
+        backend: Self.backend, saver: Self.makeSaver(), deviceStatusReader: Self.makeDeviceStatusReader())
+
+    /// Keeps the screen awake and dimmed during an interval series.
+    @State private var screenKeeper = SeriesScreenKeeper(screen: SystemScreen())
 
     /// The person's settings, stored on the device only.
-    @State private var settings = NopeSettings(defaults: Self.makeSettingsStore())
+    @State private var settings = Self.sharedSettings
+
+    /// The settings object, created once so the App Intents change the same one the camera
+    /// screen shows (``SetNightModeIntent``).
+    private static let sharedSettings = NopeSettings(defaults: makeSettingsStore())
+
+    /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
+    private static let shortcuts = ShortcutInbox()
+
+    /// Location tagging for photos (issue #43): off until the person turns Location on.
+    @State private var location = LocationTagging(provider: Self.makeLocationProvider())
+
+    /// Keeps the iPhone camera in portrait while sheets rotate.
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    /// Which way up the person holds the iPhone, for the camera's upright icons.
+    @State private var orientation = DeviceOrientation()
+
+    /// Registers what the App Intents need: the settings and the Siri and Shortcuts inbox
+    /// (App Intents, `AppDependencyManager`).
+    init() {
+        let settings = Self.sharedSettings
+        let shortcuts = Self.shortcuts
+        AppDependencyManager.shared.add(dependency: settings)
+        AppDependencyManager.shared.add(dependency: shortcuts)
+    }
 
     /// The app's single window, showing the camera screen.
     var body: some Scene {
@@ -47,34 +78,130 @@ struct NopeApp: App {
             cameraScreen
             #endif
         }
+        // The Camera menu: Space takes a photo from a hardware keyboard, listed in the iPad
+        // menu bar and keyboard shortcuts overlay.
+        .commands { CameraCommands(model: model) }
     }
 
     /// The camera screen with the live viewfinder and the hardware shutter.
     ///
-    /// The volume buttons and the Camera Control take a photo through `onCameraCaptureEvent`
-    /// (AVKit, iOS 18), on release of the button, as the system Camera app does. The system
-    /// delivers these events only while a capture session runs.
+    /// The volume buttons and the Camera Control are the shutter through `onCameraCaptureEvent`
+    /// (AVKit, iOS 18): its single handler gets both the primary and the secondary button
+    /// (`AVCaptureEventInteraction.init(handler:)`). The model takes a photo on release of the
+    /// button, as the system Camera app does, or in burst mode, takes a burst while it is held.
+    /// The system delivers these events only while a capture session runs; while the camera
+    /// isn't running, the interaction is off, so the buttons keep their system behavior.
     private var cameraScreen: some View {
         CameraScreen(model: model, settings: settings) { source in
             Viewfinder(source: source)
         }
-        .onCameraCaptureEvent { event in
-            guard event.phase == .ended else { return }
-            Task { await model.send(.capture) }
+        .environment(\.cameraUprightRotation, orientation.rotation)
+        .environment(\.cameraGravitySource, Self.gravitySource)
+        .environment(\.cameraPresentsSheet, SheetPresentationAction { AppDelegate.setSheetPresented($0) })
+        // Open Settings goes to nope.'s own page in the Settings app (UIKit,
+        // `openSettingsURLString`), opened only when the person taps the button.
+        .environment(
+            \.openAppSettings,
+            CameraAction {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            })
+        // The last-photo thumbnail opens the Photos app (issue #36), only when the person taps
+        // it. Add-only access can't read the library, and iOS has no documented way to open
+        // Photos at one asset, so this opens Photos with its `photos-redirect:` URL, which isn't
+        // documented by Apple either (an owner decision; docs/TESTING.md, "On-device checks").
+        .environment(
+            \.openPhotosApp,
+            CameraAction {
+                guard let url = URL(string: "photos-redirect://") else { return }
+                UIApplication.shared.open(url)
+            })
+        .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
+            let phase: HardwareButtonPhase =
+                switch event.phase {
+                case .began: .pressed
+                case .ended: .released
+                default: .cancelled
+                }
+            Task { await model.send(.drive(.hardwareButton(phase))) }
         }
+        .environment(\.seriesScreenKeeper, screenKeeper)
+        // Siri and Shortcuts requests are performed while the camera screen is shown.
+        .task { await model.serveShortcuts(from: Self.shortcuts) }
+        #if DEBUG
+        // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
+        .task { await SimulatedShortcut.run(with: Self.shortcuts) }
+        .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
+        #endif
+        // The battery and Low Power Mode warnings follow the system's change notifications;
+        // nothing polls (AGENTS.md, "Battery").
+        .task { await refreshDeviceStatus(on: UIDevice.batteryLevelDidChangeNotification) }
+        .task { await refreshDeviceStatus(on: UIDevice.batteryStateDidChangeNotification) }
+        .task { await refreshDeviceStatus(on: .NSProcessInfoPowerStateDidChange) }
+        // The compare view's pictures (issue #55); set once, as for the location below.
+        .task { if model.comparison.renderer == nil { model.comparison.renderer = Self.makeComparisonRenderer() } }
         // The person's save settings (formats, metadata, signing) apply from the next photo.
         .onChange(of: settings.save, initial: true) { _, save in
             model.saveSettings = save
         }
+        // Location runs only while the Location switch is on and the camera is running
+        // (AGENTS.md, "Battery"); LocationTagging holds the rule.
+        .task(id: [settings.metadata.isOn(.location), model.sessionStatus == .running]) {
+            // Set once: assigning an observed property, even the same object, redraws the camera.
+            if model.location !== location { model.location = location }
+            await location.update(
+                isOn: settings.metadata.isOn(.location), cameraIsRunning: model.sessionStatus == .running)
+        }
         // The "Manual controls" option from Settings shows or hides the manual controls.
         .task(id: settings.showsManualControls) {
             await model.send(.manual(.setEnabled(settings.showsManualControls)))
+        }
+        // "Fast Shutter": full auto's shutter rule, applied when the camera opens and whenever the
+        // choice changes (in Settings or the quick-controls tray).
+        .task(id: settings.fastShutter) {
+            await model.send(.auto(.setFastShutter(settings.fastShutter)))
         }
         // "Start in clean view": applied when the camera opens and whenever the option changes;
         // the camera's own button still toggles clean view at any time.
         .task(id: settings.startsInCleanView) {
             await model.send(.setCleanView(settings.startsInCleanView))
         }
+        // The remembered flash mode and light brightness (issue #38); the light itself always
+        // starts off.
+        .task(id: settings.flashMode) {
+            await model.send(.light(.setFlashMode(settings.flashMode)))
+        }
+        .task(id: settings.torchLevel) {
+            await model.send(.light(.setTorchLevel(settings.torchLevel)))
+        }
+    }
+
+    /// Reads the storage and battery again each time the notification is posted, for as long as
+    /// the camera screen is shown.
+    ///
+    /// - Parameter name: A battery or power state notification.
+    private func refreshDeviceStatus(on name: Notification.Name) async {
+        for await _ in NotificationCenter.default.notifications(named: name) {
+            model.deviceStatus.refresh()
+        }
+    }
+
+    /// The storage and battery reader: fixed values for a UI test in Debug builds, otherwise
+    /// the system's.
+    @MainActor private static func makeDeviceStatusReader() -> any DeviceStatusReading {
+        #if DEBUG
+        if let reader = SimulatedDeviceStatus.reader() { return reader }
+        #endif
+        return SystemDeviceStatusReader()
+    }
+
+    /// The level's motion readings: Core Motion, or in Debug builds launched by the UI tests, a
+    /// fixed reading (``SimulatedGravity``), because the Simulator has no motion sensors.
+    private static var gravitySource: any GravitySource {
+        #if DEBUG
+        if let simulated = SimulatedGravity.fromLaunchArguments() { return simulated }
+        #endif
+        return MotionGravitySource()
     }
 
     /// Where settings are stored: the app's standard `UserDefaults`, or in Debug builds launched
@@ -84,6 +211,15 @@ struct NopeApp: App {
         if let store = SimulatedCameraLaunch.settingsStore() { return store }
         #endif
         return .standard
+    }
+
+    /// The location service for this launch: a simulated one for a UI test scenario in Debug
+    /// builds, otherwise Core Location.
+    private static func makeLocationProvider() -> any LocationProviding {
+        #if DEBUG
+        if let provider = SimulatedLocationLaunch.provider() { return provider }
+        #endif
+        return CoreLocationProvider()
     }
 
     /// The save pipeline for this launch: simulated steps for a UI test scenario in Debug builds,
@@ -102,7 +238,18 @@ struct NopeApp: App {
             signer: ContentCredentialsSigner(
                 keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
             reader: ImageIOReadBack(), library: PhotoKitLibrary(),
-            appVersion: version)
+            appVersion: version, thumbnailer: ImageIOThumbnailer())
+    }
+
+    /// Decodes both photos of the comparison shot for the compare view (issue #55): ImageIO, in
+    /// memory, up to 4032 pixels on the long side, the size of the 12 MP photos the app takes
+    /// (`CapturePolicy` picks the lens's smallest photo size), so zooming in shows the photos'
+    /// own pixels. In Debug builds launched by the UI tests, two plain colored pictures.
+    private static func makeComparisonRenderer() -> any PhotoThumbnailing {
+        #if DEBUG
+        if SimulatedCameraLaunch.scenario != nil { return SimulatedComparisonRenderer() }
+        #endif
+        return ImageIOThumbnailer(maximumPixelSize: 4032)
     }
 
     /// The backend for this launch: the simulated one for a UI test scenario in Debug builds,

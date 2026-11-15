@@ -1,9 +1,9 @@
 # The network-free C2PA library
 
-nope. signs photos with the C2PA library (c2pa-rs, through its C interface) and links no
-networking code at all (AGENTS.md, "No network, no analytics"). The library's prebuilt Apple
-release contains an HTTP client (reqwest, hyper, rustls, h2, tokio networking) and socket code,
-so nope. builds its own copy from source with every network feature off, and publishes it here.
+Photivra Nope Camera signs photos with the C2PA library (c2pa-rs, through its C interface) and links
+no networking code at all (AGENTS.md, "No network, no analytics"). The library's prebuilt Apple
+release contains an HTTP client (reqwest, hyper, rustls, h2, tokio networking) and socket code, so
+the project builds its own copy from source with every network feature off, and publishes it here.
 
 ## What is built
 

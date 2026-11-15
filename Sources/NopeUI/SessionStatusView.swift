@@ -17,22 +17,30 @@ struct SessionStatusView: View {
     /// The message, or nothing.
     var body: some View {
         if let message {
-            Label {
-                message
-            } icon: {
+            // A large symbol above the words, so a paused camera reads clearly, also in a reduced
+            // iPad window (issue #68, "iPad").
+            VStack(spacing: 8) {
                 Image(systemName: symbol)
+                    .font(.largeTitle)
+                    .accessibilityHidden(true)
+                message
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .font(.body)
-            .multilineTextAlignment(.leading)
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
             .padding()
-            .background(.black, in: .rect(cornerRadius: 12))
+            // Solid black: over the material backing the iPad audit reported this text as low
+            // contrast.
+            .background(.black, in: .rect(cornerRadius: CameraStyle.cornerRadius))
+            .accessibilityElement(children: .combine)
             .padding()
         } else if status == .starting {
             ProgressView {
                 Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
             }
             .padding()
-            .background(.black, in: .rect(cornerRadius: 12))
+            .darkBacking()
         }
     }
 

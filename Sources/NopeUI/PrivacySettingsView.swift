@@ -5,19 +5,29 @@ import SwiftUI
 /// "Metadata plan".
 ///
 /// The master switch comes first, then one switch per optional item with what turning it off
-/// costs, then signing (outside the master switch), then the items every file keeps, each
-/// marked locked with the reason. All wording is a privacy claim, so it lives in
+/// costs, then the items every file keeps, each marked locked with the reason. The signing switch
+/// is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
 /// `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 /// `MetadataSettings`; this view only shows them.
 struct PrivacySettingsView: View {
     /// The settings to show and change.
     let settings: NopeSettings
 
+    /// Location tagging, or `nil` when the app has no location service; the Location switch is
+    /// shown only with it (issue #43).
+    let location: LocationTagging?
+
+    /// Opens the app's page in the Settings app, where location access can be allowed.
+    @Environment(\.openAppSettings) private var openAppSettings
+
     /// Creates the privacy settings.
     ///
-    /// - Parameter settings: The settings to show and change.
-    init(settings: NopeSettings) {
+    /// - Parameters:
+    ///   - settings: The settings to show and change.
+    ///   - location: Location tagging, or `nil` to hide the Location switch.
+    init(settings: NopeSettings, location: LocationTagging? = nil) {
         self.settings = settings
+        self.location = location
     }
 
     /// The form.
@@ -25,10 +35,65 @@ struct PrivacySettingsView: View {
         Form {
             masterSection
             itemsSection
-            signingSection
             lockedSection
         }
-        .navigationTitle(Text("Privacy", bundle: .module, comment: "Settings row and screen title: which details are saved in each photo, and signing."))
+        .navigationTitle(Self.title)
+        .task { await location?.refreshAccess() }
+    }
+
+    /// The items whose switches are shown: every offered item, without Location when there is no
+    /// location service.
+    private var shownItems: [MetadataItem] {
+        MetadataItem.offeredInSettings.filter { $0 != .location || location != nil }
+    }
+
+    /// Turns an item on or off. Location is turned on through ``LocationTagging/turnOn(in:)``,
+    /// which asks for location access first and leaves the switch off if access isn't allowed.
+    ///
+    /// - Parameters:
+    ///   - item: The item.
+    ///   - isOn: Whether it is written.
+    private func set(_ item: MetadataItem, isOn: Bool) {
+        if item == .location, isOn, let location {
+            let settings = settings
+            Task { await location.turnOn(in: settings) }
+            return
+        }
+        settings.setMetadataItem(item, isIncluded: isOn)
+    }
+
+    /// Why Location can't be turned on, with a button to the Settings app.
+    ///
+    /// - Parameter access: The location access, denied or restricted.
+    @ViewBuilder
+    private func locationAccessRows(_ access: LocationAccess) -> some View {
+        if access == .restricted {
+            Text(
+                "Location access isn't allowed on this device, so photos can't include a location.", tableName: "Honesty",
+                bundle: .module, comment: "Shown under the Location switch when a restriction, such as Screen Time, doesn't allow location access. Must not claim more than the English.")
+                .font(.footnote)
+        } else {
+            Text(
+                "Location access is off for nope., so photos can't include a location. To add one, allow location access in Settings.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Shown under the Location switch when the person declined location access. Keep \"nope.\" unchanged. Must not claim more than the English.")
+                .font(.footnote)
+            if let openAppSettings {
+                Button {
+                    openAppSettings()
+                } label: {
+                    Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
+                }
+                // Primary text: the tinted text of a form button failed the contrast audit on
+                // the dark grouped background.
+                .foregroundStyle(.primary)
+            }
+            }
+    }
+
+    /// The settings row and screen title, "Choose Details".
+    static var title: Text {
+        Text("Choose Details", tableName: "Honesty", bundle: .module, comment: "Settings row and screen title: choose which optional details, such as the date or camera model, are saved in each photo.")
     }
 
     /// "Remove all optional details".
@@ -51,33 +116,21 @@ struct PrivacySettingsView: View {
     /// One switch per optional item, each with what turning it off costs.
     private var itemsSection: some View {
         Section {
-            ForEach(MetadataItem.offeredInSettings, id: \.self) { item in
+            ForEach(shownItems, id: \.self) { item in
                 Toggle(
                     isOn: Binding(
                         get: { settings.metadata.isOn(item) },
-                        set: { settings.setMetadataItem(item, isIncluded: $0) })
+                        set: { set(item, isOn: $0) })
                 ) {
                     SettingLabel(title: Text(Self.title(of: item)), explanation: Text(Self.explanation(of: item)))
+                }
+                // Right under the Location switch: why it can't be turned on, and how to allow it.
+                if item == .location, let location, location.access == .denied || location.access == .restricted {
+                    locationAccessRows(location.access)
                 }
             }
         } header: {
             Text("In Each Photo", tableName: "Honesty", bundle: .module, comment: "Section header above the switches for optional details saved in each photo.")
-        }
-    }
-
-    /// The Content Credentials signature, outside the master switch.
-    private var signingSection: some View {
-        Section {
-            Toggle(isOn: Binding(get: { settings.signsPhotos }, set: { settings.setSignsPhotos($0) })) {
-                SettingLabel(
-                    title: Text("Sign Each Photo", tableName: "Honesty", bundle: .module, comment: "Switch that adds a Content Credentials signature to each photo."),
-                    explanation: Text(
-                        "Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.",
-                        tableName: "Honesty", bundle: .module,
-                        comment: "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo."))
-            }
-        } header: {
-            Text("Content Credentials", tableName: "Honesty", bundle: .module, comment: "Section header for the photo signature. Content Credentials is the name of the C2PA signature standard's label.")
         }
     }
 
@@ -89,7 +142,7 @@ struct PrivacySettingsView: View {
                     SettingLabel(title: Text(Self.title(of: item)), explanation: Text(Self.explanation(of: item)))
                     Spacer()
                     Image(systemName: "lock.fill")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(CameraStyle.secondaryText)
                 }
                 .accessibilityElement(children: .combine)
                 .accessibilityValue(Text("Locked", tableName: "Honesty", bundle: .module, comment: "VoiceOver: this detail is always saved and can't be turned off."))
@@ -143,7 +196,7 @@ struct PrivacySettingsView: View {
     /// - Returns: A localized explanation from `Honesty.xcstrings`.
     static func explanation(of item: MetadataItem) -> LocalizedStringResource {
         switch item {
-        case .location: LocalizedStringResource("Off: nothing is lost. Location is only added if you turn it on.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off location costs.")
+        case .location: LocalizedStringResource("Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What the Location item writes into each photo, and what turning it off costs. Must not claim more than the English.")
         case .dateAndTime: LocalizedStringResource("Off: Photos sorts it by the date it was saved instead.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the date costs. Photos is the system photo library app.")
         case .subSecondTime: LocalizedStringResource("Off: nothing visible changes.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off a metadata item costs: nothing the person can see.")
         case .timeZone: LocalizedStringResource("Off: the photo's local time can't be converted to other time zones.", table: "Honesty", bundle: .atURL(Bundle.module.bundleURL), comment: "What turning off the time zone costs.")
@@ -217,7 +270,7 @@ struct SettingLabel: View {
             title
             explanation
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CameraStyle.secondaryText)
         }
         .fixedSize(horizontal: false, vertical: true)
     }

@@ -62,7 +62,7 @@ public enum ExposureMode: String, Equatable, Hashable, Sendable, CaseIterable {
 
 /// How the camera measures the scene for auto exposure.
 ///
-/// AVFoundation offers no named metering patterns. nope. offers what the camera's exposure
+/// AVFoundation offers no named metering patterns. The app offers what the camera's exposure
 /// region of interest can express (`AVCaptureDevice.exposureRectOfInterest`, iOS 26 and
 /// later), and names each by the region it measures, not by a pattern it can't promise.
 public enum MeteringMode: String, Equatable, Hashable, Sendable, CaseIterable {

@@ -145,6 +145,78 @@
         }
       }
     },
+    "NSLocationWhenInUseUsageDescription": {
+      "comment": "Location permission prompt, shown only when the person turns Location on in nope.'s settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. fügt hinzu, wo jedes Foto aufgenommen wurde, nur solange Standort in den Einstellungen von nope. an ist. Dein Standort wird nie irgendwohin gesendet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. añade dónde se tomó cada foto, solo mientras Ubicación está activada en los ajustes de nope. Tu ubicación nunca se envía a ningún sitio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. ajoute où chaque photo a été prise, uniquement quand Position est activé dans les réglages de nope. Votre position n’est jamais envoyée nulle part."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. aggiunge dove è stata scattata ogni foto, solo mentre Posizione è attiva nelle impostazioni di nope. La tua posizione non viene mai inviata da nessuna parte."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. は、nope. の設定で位置情報がオンのときだけ、各写真の撮影場所を追加します。位置情報がどこかに送信されることはありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.는 nope. 설정에서 위치가 켜져 있는 동안에만 각 사진의 촬영 위치를 추가합니다. 위치는 어디로도 전송되지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. voegt toe waar elke foto is gemaakt, alleen zolang Locatie aan staat in de instellingen van nope. Je locatie wordt nooit ergens heen gestuurd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. adiciona onde cada foto foi tirada, apenas enquanto Localização estiver ativada nos ajustes do nope. Sua localização nunca é enviada a lugar nenhum."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "仅当 nope. 设置中的位置打开时，nope. 才会添加每张照片的拍摄地点。你的位置绝不会发送到任何地方。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "僅當 nope. 設定中的位置開啟時，nope. 才會加入每張照片的拍攝地點。你的位置絕不會傳送到任何地方。"
+          }
+        }
+      }
+    },
     "NSPhotoLibraryAddUsageDescription": {
       "comment": "Photos add-only permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
       "extractionState": "manual",

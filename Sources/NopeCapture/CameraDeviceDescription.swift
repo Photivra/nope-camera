@@ -111,6 +111,14 @@ struct CameraDeviceDescription: Equatable, Sendable {
     /// The camera's answers about manual control.
     let manualControls: ManualControlSupport
 
+    /// The flash modes the photo output supports with this camera attached
+    /// (`AVCapturePhotoOutput.supportedFlashModes`).
+    let flashModes: [FlashMode]
+
+    /// Whether the camera has a torch that can be turned on (`hasTorch` and
+    /// `isTorchModeSupported(.on)`).
+    let hasTorch: Bool
+
     /// Creates a camera description.
     ///
     /// - Parameters:
@@ -127,11 +135,14 @@ struct CameraDeviceDescription: Equatable, Sendable {
     ///   - photoDimensions: The supported maximum photo sizes, as reported.
     ///   - fieldOfViewDegrees: The horizontal field of view, in degrees.
     ///   - manualControls: The camera's answers about manual control. Defaults to none.
+    ///   - flashModes: The supported flash modes. Defaults to none.
+    ///   - hasTorch: Whether the camera has a torch. Defaults to `false`.
     init(
         uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool,
         rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>,
         exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int,
-        photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none
+        photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none,
+        flashModes: [FlashMode] = [], hasTorch: Bool = false
     ) {
         self.uniqueID = uniqueID
         self.deviceType = deviceType
@@ -146,5 +157,7 @@ struct CameraDeviceDescription: Equatable, Sendable {
         self.photoDimensions = photoDimensions
         self.fieldOfViewDegrees = fieldOfViewDegrees
         self.manualControls = manualControls
+        self.flashModes = flashModes
+        self.hasTorch = hasTorch
     }
 }

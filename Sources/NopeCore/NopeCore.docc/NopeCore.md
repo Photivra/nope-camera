@@ -1,7 +1,7 @@
 # ``NopeCore``
 
-The models, state machine and capability protocols behind nope.: the contract every interface
-builds on.
+The models, state machine and capability protocols behind Photivra Nope Camera: the contract every
+interface builds on.
 
 ## Overview
 
@@ -52,6 +52,14 @@ Related documentation in the repository:
 - ``CameraPermission``
 - ``PhotoFormat``
 
+
+### Flash and light
+
+- ``LightModel``
+- ``LightIntent``
+- ``FlashMode``
+- ``TorchStatus``
+- ``LightCaptureBackend``
 
 ### Capture
 
@@ -111,6 +119,37 @@ Related documentation in the repository:
 - ``BracketFrame``
 - ``IntervalSettings``
 - ``IntervalProgress``
+
+### Drive modes, self-timer and burst
+
+- ``DriveModel``
+- ``DriveMode``
+- ``DriveIntent``
+- ``HardwareButtonPhase``
+- ``SelfTimerDelay``
+- ``Countdown``
+- ``BurstProgress``
+- ``BurstEnd``
+- ``BurstResult``
+
+### Storage, battery and the screen
+
+- ``DeviceStatus``
+- ``DeviceStatusReading``
+- ``BatteryReading``
+- ``BatteryWarning``
+- ``StorageWarning``
+- ``PhotoSizeEstimate``
+- ``SeriesScreenKeeper``
+- ``ScreenControlling``
+
+### Full-auto aids
+
+- ``AutoControlIntent``
+- ``FastShutter``
+- ``FocusTarget``
+- ``FramePoint``
+- ``AssistSettings``
 
 ### Hardware
 

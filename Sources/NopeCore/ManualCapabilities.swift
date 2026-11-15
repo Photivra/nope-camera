@@ -47,6 +47,18 @@ public struct ManualCapabilities: Equatable, Sendable {
     /// interest (iOS 26 and later).
     public let meteringModes: [MeteringMode]
 
+    /// Whether autofocus can aim at a chosen point (`isFocusPointOfInterestSupported`), for tap
+    /// to focus. Some front cameras have a fixed focus and can't.
+    public let supportsFocusPoint: Bool
+
+    /// Whether auto exposure can meter a chosen point (`isExposurePointOfInterestSupported`), for
+    /// tap to expose.
+    public let supportsExposurePoint: Bool
+
+    /// Whether autofocus can be limited to near subjects
+    /// (`isAutoFocusRangeRestrictionSupported`), for the Close-Up focus limit.
+    public let supportsNearFocusLimit: Bool
+
     /// A lens with no manual controls, such as one a backend can't describe.
     public static let none = ManualCapabilities(
         supportsManualExposure: false, supportsShutterPriority: false, supportsISOPriority: false,
@@ -68,11 +80,17 @@ public struct ManualCapabilities: Equatable, Sendable {
     ///   - supportsManualFocus: Whether the focus can be set to a lens position.
     ///   - supportsManualWhiteBalance: Whether the white balance can be set.
     ///   - meteringModes: The metering modes offered.
+    ///   - supportsFocusPoint: Whether autofocus can aim at a chosen point. Defaults to `false`.
+    ///   - supportsExposurePoint: Whether auto exposure can meter a chosen point. Defaults to
+    ///     `false`.
+    ///   - supportsNearFocusLimit: Whether autofocus can be limited to near subjects. Defaults
+    ///     to `false`.
     public init(
         supportsManualExposure: Bool, supportsShutterPriority: Bool, supportsISOPriority: Bool,
         supportsAperturePriority: Bool, exposureCompensationRange: ClosedRange<Double>?, supportsExposureLock: Bool,
         supportsAutoFocus: Bool, supportsFocusLock: Bool, supportsManualFocus: Bool, supportsManualWhiteBalance: Bool,
-        meteringModes: [MeteringMode]
+        meteringModes: [MeteringMode], supportsFocusPoint: Bool = false, supportsExposurePoint: Bool = false,
+        supportsNearFocusLimit: Bool = false
     ) {
         self.supportsManualExposure = supportsManualExposure
         self.supportsShutterPriority = supportsShutterPriority
@@ -85,6 +103,15 @@ public struct ManualCapabilities: Equatable, Sendable {
         self.supportsManualFocus = supportsManualFocus
         self.supportsManualWhiteBalance = supportsManualWhiteBalance
         self.meteringModes = meteringModes
+        self.supportsFocusPoint = supportsFocusPoint
+        self.supportsExposurePoint = supportsExposurePoint
+        self.supportsNearFocusLimit = supportsNearFocusLimit
+    }
+
+    /// Whether tapping the viewfinder can do anything on this lens: aim autofocus or auto
+    /// exposure at the tapped point.
+    public var supportsTapToFocus: Bool {
+        supportsFocusPoint || supportsExposurePoint
     }
 
     /// The exposure modes the lens supports, in the order P, S, I, M. Program is always

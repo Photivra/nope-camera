@@ -41,7 +41,7 @@ public enum CaptureError: Error, Equatable, Sendable, CaseIterable {
     /// only the ones the person chose.
     case metadataNotAllowed
 
-    /// nope. has no permission to add photos.
+    /// The app has no permission to add photos.
     ///
     /// Say that the photo wasn't saved, and that adding photos can be allowed in Settings.
     case photosAccessDenied

@@ -80,13 +80,14 @@ struct ManualControlsModelTests {
     @Test func turningOnStartsReadingsAndOffReturnsToFullAuto() async {
         let (model, backend) = await makeModel()
         await send(model, .setEnabled(true))
+        // Readings start with the camera, for full auto's aids, and stay on.
         #expect(await backend.readingSwitches == [true])
         await send(model, .setValue(.iso, 400), .setBracket(BracketSettings(frameCount: 3, step: 1)))
         await send(model, .setEnabled(false))
         #expect(!model.manual.isEnabled)
         #expect(model.manual.settings == .automatic)
         #expect(model.manual.bracket == nil)
-        #expect(await backend.readingSwitches == [true, false])
+        #expect(await backend.readingSwitches == [true])
         #expect(await backend.applied.last == .automatic)
         let count = await backend.applied.count
         await send(model, .setEnabled(true), .setEnabled(false))

@@ -23,6 +23,16 @@ coverage gate and verified on a device (docs/TESTING.md).
 
 Create it with ``init()`` in the app target.
 
+## `AVFoundationCaptureBackend/activeConfiguration`
+
+internal, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+var activeConfiguration: SessionConfiguration? { get }
+```
+
+The configuration the session runs with, or `nil` when it is stopped.
+
 ## `AVFoundationCaptureBackend/applyControls(_:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -57,6 +67,24 @@ Takes a manual exposure bracket, in memory only, and rejects it if any frame is 
   `CaptureError.blankPicture` if any frame is blank (all are dropped), or the hardware's
   error.
 
+## `AVFoundationCaptureBackend/captureComparison(_:)`
+
+public, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+func captureComparison(_ request: CaptureRequest) async throws(CaptureError) -> PhoneProcessedPhoto
+```
+
+Takes the phone's fully processed photo, in memory only (issue #55).
+
+Privacy: the file keeps the system's own metadata, because showing it is the point; it
+is never saved, signed or logged. Its metadata is read with the project's own tag reader.
+
+- Parameter request: the app's request; must match the last ``startSession(_:)``.
+- Returns: The photo.
+- Throws: `CaptureError.notRunning` if the session isn't configured for this request,
+  `CaptureError.captureFailed` if the hardware can't take it, or the hardware's error.
+
 ## `AVFoundationCaptureBackend/capturePhoto(_:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -67,11 +95,22 @@ func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> Captu
 
 Takes one photo, in memory only, and rejects it if its pixel buffer is blank.
 
-- Parameter request: The lens and format; must match the last ``startSession(_:)``.
+- Parameter request: The lens and format; must match the last ``startSession(_:)``. Its
+  flash mode applies to this photo only.
 - Returns: The photo.
 - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
   `CaptureError.blankPicture` if ``PictureCheck`` finds the photo's buffer zero-filled
   (the photo is dropped), or the hardware's error.
+
+## `AVFoundationCaptureBackend/comparisonHardware`
+
+internal, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+nonisolated let comparisonHardware: (any ComparisonHardware)?
+```
+
+The comparison shot's camera call (issue #55), or `nil` when the hardware has none.
 
 ## `AVFoundationCaptureBackend/currentPermission()`
 
@@ -117,6 +156,17 @@ nonisolated let exposureReadings: AsyncStream<ExposureReading>
 
 What the camera is using now, while readings are on.
 
+## `AVFoundationCaptureBackend/frameAnalyses`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+nonisolated var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The live frame analyses from the hardware; a stream that ends at once if the hardware has
+no live view.
+
 ## `AVFoundationCaptureBackend/init()`
 
 public, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -140,6 +190,16 @@ Creates a backend from its parts. The app uses ``init()``; tests pass fakes.
 - Parameters:
   - hardware: The camera calls.
   - authorization: Camera permission.
+
+## `AVFoundationCaptureBackend/liveHardware`
+
+internal, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+nonisolated let liveHardware: (any LiveViewHardware)?
+```
+
+The live view calls, or `nil` when the hardware has none.
 
 ## `AVFoundationCaptureBackend/previewSource`
 
@@ -173,6 +233,43 @@ Turns the camera's readings on or off.
 
 - Parameter enabled: Whether to send readings.
 
+## `AVFoundationCaptureBackend/setFrameAnalysis(_:)`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Starts, changes or stops the live frame analysis.
+
+- Parameter needs: What to measure; empty stops it.
+
+## `AVFoundationCaptureBackend/setStatsReadingsEnabled(_:)`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Turns the live readout's values on or off.
+
+- Parameter enabled: Whether to send values.
+
+## `AVFoundationCaptureBackend/setTorch(level:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the running lens's torch on at a level, or off.
+
+- Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+- Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+
 ## `AVFoundationCaptureBackend/startSession(_:)`
 
 public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
@@ -186,6 +283,17 @@ Configures the session for the request's lens and format, and starts it.
 - Parameter request: The lens and format.
 - Throws: `CaptureError.configurationFailed` if the lens wasn't discovered, the format is
   invalid, or the hardware can't be configured.
+
+## `AVFoundationCaptureBackend/statsReadings`
+
+public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+nonisolated var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The live readout's values from the hardware; a stream that ends at once if the hardware
+has no live view.
 
 ## `AVFoundationCaptureBackend/stopSession()`
 
@@ -450,12 +558,34 @@ let fieldOfViewDegrees: Double
 
 The active format's horizontal field of view, in degrees (`videoFieldOfView`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:)`
+## `CameraDeviceDescription/flashModes`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none)
+let flashModes: [FlashMode]
+```
+
+The flash modes the photo output supports with this camera attached
+(`AVCapturePhotoOutput.supportedFlashModes`).
+
+## `CameraDeviceDescription/hasTorch`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let hasTorch: Bool
+```
+
+Whether the camera has a torch that can be turned on (`hasTorch` and
+`isTorchModeSupported(.on)`).
+
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:flashModes:hasTorch:)`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
 ```
 
 Creates a camera description.
@@ -474,6 +604,8 @@ Creates a camera description.
   - photoDimensions: The supported maximum photo sizes, as reported.
   - fieldOfViewDegrees: The horizontal field of view, in degrees.
   - manualControls: The camera's answers about manual control. Defaults to none.
+  - flashModes: The supported flash modes. Defaults to none.
+  - hasTorch: Whether the camera has a torch. Defaults to `false`.
 
 ## `CameraDeviceDescription/isVirtual`
 
@@ -577,7 +709,7 @@ init(_ status: AVAuthorizationStatus)
 Converts an AVFoundation authorization status to a `NopeCore` permission.
 
 A status added in a future iOS release is treated as `CameraPermission.restricted`:
-nope. must not assume access it can't confirm, and it must not ask again for a state it
+The app must not assume access it can't confirm, and it must not ask again for a state it
 doesn't understand.
 
 - Parameter status: The value from
@@ -627,7 +759,7 @@ customizer whose `replacementMetadata(for:)` returns
 `MetadataPlan.properties(for:from:orientation:)` for the system's metadata: the header
 says the returned dictionary replaces the photo's metadata (`AVCapturePhotoOutput.h`,
 `AVCapturePhotoFileDataRepresentationCustomizer`). AVFoundation itself writes the RAW
-image data, so the sensor data isn't re-encoded by nope. For a RAW photo the system's
+image data, so the sensor data isn't re-encoded by the app. For a RAW photo the system's
 own DNG is also flattened once, only to keep its RAW image data as a reference.
 
 - Parameters:
@@ -729,6 +861,23 @@ Starts or stops observing the attached camera's exposure, focus and white balanc
 
 - Parameter enabled: Whether to send readings.
 
+## `CaptureHardware/setTorch(level:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the attached camera's torch on at a level, or off.
+
+The system may refuse a level while the device is hot (`AVErrorTorchLevelUnavailable`)
+or make the torch unavailable (`isTorchAvailable`); the light then stays off.
+
+- Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+- Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
+  is attached.
+
 ## `CaptureHardware/stop()`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
@@ -752,6 +901,21 @@ enum CapturePolicy
 
 Turns a `NopeCore` capture request into hardware settings.
 
+## `CapturePolicy/comparisonPlan(for:)`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+static func comparisonPlan(for request: CaptureRequest) -> PhotoSettingsPlan
+```
+
+The settings of the comparison shot's second photo: one processed photo at `.quality`
+prioritization, with the request's flash mode, as HEIF (JPEG on a lens whose fallback is
+JPEG, which offers no HEVC).
+
+- Parameter request: the app's request.
+- Returns: The plan.
+
 ## `CapturePolicy/fileFormat(of:)`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
@@ -764,6 +928,25 @@ The format of the file a plan produces: DNG for RAW, otherwise the processed for
 
 - Parameter plan: The photo plan.
 - Returns: The file's format, which chooses its metadata allowlist.
+
+## `CapturePolicy/photoSettings(_:flashMode:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+static func photoSettings(_ plan: PhotoSettingsPlan, flashMode: FlashMode) -> PhotoSettingsPlan
+```
+
+A photo plan with the request's flash mode. The session is configured and prepared with
+the flash off, so the session configuration never depends on the flash; each photo
+takes the mode it was asked for. Bayer RAW supports the flash: the RAW rules in
+`AVCapturePhotoOutput.h` don't restrict it; the mode must be one of the output's
+`supportedFlashModes`, which `Lens.flashModes` lists.
+
+- Parameters:
+  - plan: The session's photo plan.
+  - flashMode: When the flash fires.
+- Returns: The plan with the flash mode applied.
 
 ## `CapturePolicy/photoSettings(for:)`
 
@@ -792,7 +975,7 @@ The session configuration for a request.
 The photo size is the lens's smallest supported size: on 48 MP sensors that is the
 native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
 Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-delivery, which nope. turns off (`AVCapturePhotoOutput.h`).
+delivery, which the app turns off (`AVCapturePhotoOutput.h`).
 
 - Parameter request: The lens and format.
 - Returns: The configuration, or `nil` if the request's RAW format code is invalid.
@@ -881,13 +1064,46 @@ final class CaptureSessionPreviewSource
 ```
 
 The AVFoundation backend's preview handle: the capture session, for an
-`AVCaptureVideoPreviewLayer` in the app target.
+`AVCaptureVideoPreviewLayer` in the app target, and the rotation that keeps the viewfinder
+and photos upright.
 
-`NopeCapture` can't import UIKit, so the app creates the preview view and assigns
-``session`` to its layer on the main thread, as Apple's AVCam sample does.
+`NopeCapture` can't import UIKit, so the app creates the preview view and passes its layer to
+``connect(_:)`` on the main thread, as Apple's AVCam sample does.
 
 `@unchecked Sendable`: the session is only handed to a preview layer; all configuration
-happens on ``SystemCaptureHardware``'s serial queue.
+happens on ``SystemCaptureHardware``'s serial queue. ``rotation`` is main-actor isolated.
+
+## `CaptureSessionPreviewSource/connect(_:)`
+
+public, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
+
+```swift
+@MainActor func connect(_ previewLayer: AVCaptureVideoPreviewLayer)
+```
+
+Shows the session in a preview layer and keeps the layer upright in every orientation.
+
+Call it once for each new layer, on the main actor; a later layer replaces the earlier
+one for rotation. The rotation comes from `AVCaptureDevice.RotationCoordinator` (iOS 17),
+which also gives the angle written to each photo's orientation.
+
+- Parameter previewLayer: The app's preview layer.
+
+## `CaptureSessionPreviewSource/devicePoint(forViewfinderPoint:)`
+
+public, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
+
+```swift
+@MainActor func devicePoint(forViewfinderPoint point: FramePoint) -> FramePoint?
+```
+
+Converts a viewfinder point into the camera's coordinates with the connected layer's
+`captureDevicePointConverted(fromLayerPoint:)`, which accounts for the layer's video
+gravity, rotation and front-camera mirroring (`AVCaptureVideoPreviewLayer.h`).
+
+- Parameter point: The point in the viewfinder, 0 to 1 across and down as drawn.
+- Returns: The camera point, or `nil` before a layer is connected or while it has no
+  size.
 
 ## `CaptureSessionPreviewSource/init(session:)`
 
@@ -901,6 +1117,17 @@ Creates a preview handle.
 
 - Parameter session: The capture session.
 
+## `CaptureSessionPreviewSource/rotation`
+
+internal, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
+
+```swift
+let rotation: PreviewRotation
+```
+
+Turns the preview and the photos upright for the camera in use; ``SystemCaptureHardware``
+tells it which camera that is.
+
 ## `CaptureSessionPreviewSource/session`
 
 public, declared in `Sources/NopeCapture/CaptureSessionPreviewSource.swift`
@@ -910,6 +1137,118 @@ let session: AVCaptureSession
 ```
 
 The session to show in an `AVCaptureVideoPreviewLayer`.
+
+## `ComparisonCaptureDelegate`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+final class ComparisonCaptureDelegate
+```
+
+Receives the comparison shot's second photo and reports it once the capture finishes.
+
+Privacy: this file keeps the system's own metadata (`fileDataRepresentation()` without a
+customizer), on purpose: the compare view shows what the phone's version carries by default.
+It is never saved, signed, written to disk or logged (issue #55). The app's own photos are
+written by ``PhotoCaptureDelegate`` with the allowlist.
+
+`@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
+capture, and `photo` is only touched in them.
+
+## `ComparisonCaptureDelegate/init(completion:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+init(completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void)
+```
+
+Creates a delegate for one capture.
+
+- Parameter completion: Called once with the result.
+
+## `ComparisonCaptureDelegate/photoOutput(_:didFinishCaptureFor:error:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func photoOutput(_ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings, error: (any Error)?)
+```
+
+Reports the photo, or a failure if the capture failed or no file arrived.
+
+## `ComparisonCaptureDelegate/photoOutput(_:didFinishProcessingPhoto:error:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?)
+```
+
+Keeps the photo's file in memory.
+
+## `ComparisonHardware`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+protocol ComparisonHardware : Sendable
+```
+
+The camera call for the comparison shot's second photo (issue #55), behind a protocol so
+``AVFoundationCaptureBackend`` can be tested with a fake.
+
+``SystemCaptureHardware`` implements it and is verified on a device.
+
+## `ComparisonHardware/captureComparison(_:restoring:)`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+```
+
+Takes the phone's fully processed photo, with the system's own metadata, and then puts
+the photo output back as the app's photos need it.
+
+The photo output's `maxPhotoQualityPrioritization` is `.speed` for the app's own photos
+(Bayer RAW requires it). A `.quality` photo needs the maximum to be at least `.quality`
+(`AVCapturePhotoOutput.h`, `photoQualityPrioritization`), so it is raised only for this
+photo and set back to `.speed` afterwards, before the app's next photo; the session's other
+switches, and the app's photo just taken, are unchanged.
+
+- Parameters:
+  - plan: The comparison photo's settings (``CapturePolicy/comparisonPlan(for:)``).
+  - sessionPlan: The session's own photo settings, prepared again afterwards.
+- Returns: The file bytes from `AVCapturePhoto.fileDataRepresentation()`, with the
+  system's metadata, and the resolved size. No pixel sample and no RAW data.
+- Throws: `CaptureError.notRunning` if the session isn't running, or
+  `CaptureError.captureFailed` if the system reports an error or no file.
+
+## `FlashMode/captureFlashMode`
+
+internal, declared in `Sources/NopeCapture/FlashMode+AVFoundation.swift`
+
+```swift
+var captureFlashMode: AVCaptureDevice.FlashMode { get }
+```
+
+The AVFoundation flash mode for `AVCapturePhotoSettings.flashMode`.
+
+## `FlashMode/init(_:)`
+
+internal, declared in `Sources/NopeCapture/FlashMode+AVFoundation.swift`
+
+```swift
+init?(_ mode: AVCaptureDevice.FlashMode)
+```
+
+Converts an AVFoundation flash mode, such as one of the photo output's
+`supportedFlashModes`.
+
+- Parameter mode: The AVFoundation flash mode.
+- Returns: `nil` for a mode added in a later iOS, which the app doesn't offer.
 
 ## `FourCharacterCode`
 
@@ -949,6 +1288,77 @@ ASCII.
 
 - Parameter code: A pixel format code.
 - Returns: For example `bgg4`, or `0x00000000`.
+
+## `FrameAnalysisDelegate`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+final class FrameAnalysisDelegate
+```
+
+Receives the analysis video output's frames, lets through a few a second, and analyzes them.
+
+`@unchecked Sendable`: frames arrive one at a time on the video queue, and the state set from
+the session queue is behind a lock.
+
+## `FrameAnalysisDelegate/captureOutput(_:didOutput:from:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection)
+```
+
+Analyzes a frame if one is due, and returns at once otherwise.
+
+## `FrameAnalysisDelegate/finish()`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func finish()
+```
+
+Ends the analyses.
+
+## `FrameAnalysisDelegate/init(continuation:rotation:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+init(continuation: AsyncStream<FrameAnalysis>.Continuation, rotation: PreviewRotation)
+```
+
+Creates the delegate.
+
+- Parameters:
+  - continuation: Feeds the analyses.
+  - rotation: The viewfinder's rotation.
+
+## `FrameAnalysisDelegate/update(mirrored:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func update(mirrored: Bool)
+```
+
+Changes whether the viewfinder mirrors the picture.
+
+- Parameter mirrored: Whether it mirrors.
+
+## `FrameAnalysisDelegate/update(needs:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func update(needs: LiveAnalysisNeeds)
+```
+
+Changes what is measured.
+
+- Parameter needs: What to measure.
 
 ## `HardwarePhoto`
 
@@ -1053,7 +1463,7 @@ init(_ state: ProcessInfo.ThermalState)
 Converts the system thermal state.
 
 A state added in a later iOS becomes `HeatLevel.serious`: high enough to be noted, but it
-doesn't stop the camera on a value nope. can't interpret.
+doesn't stop the camera on a value the app can't interpret.
 
 - Parameter state: `ProcessInfo.processInfo.thermalState`.
 
@@ -1085,7 +1495,39 @@ Turns the cameras the hardware reports into the lenses `NopeCore` publishes.
 Rules (capability survey, item 1, and AGENTS.md, "Honesty"):
 - only physical cameras: virtual multi-camera devices and unknown types are dropped;
 - a lens's RAW format is its first Bayer RAW format; Apple ProRAW never counts;
-- lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front.
+- lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front;
+- the front camera gets no flash modes: the app uses no screen flash (issue #38).
+
+## `LensCatalog/equivalentFocalLength(fieldOfView:photoSize:)`
+
+internal, declared in `Sources/NopeCapture/LensCatalog.swift`
+
+```swift
+static func equivalentFocalLength(fieldOfView: Double, photoSize: PhotoDimensions?) -> Double?
+```
+
+The 35 mm-equivalent focal length of a lens: the focal length that gives a 35 mm film
+frame the same diagonal angle of view, `(diagonal / 2) / tan(diagonal angle / 2)`. The
+diagonal angle comes from the horizontal angle and the photo's shape:
+`tan(diagonal / 2) = tan(horizontal / 2) × diagonal / width`.
+
+- Parameters:
+  - fieldOfView: The horizontal field of view, in degrees (`videoFieldOfView`).
+  - photoSize: The largest photo size, for its shape; 4:3 when `nil`.
+- Returns: The focal length in millimeters, or `nil` if the angle isn't between 0 and
+  180 degrees.
+
+## `LensCatalog/filmDiagonal`
+
+internal, declared in `Sources/NopeCapture/LensCatalog.swift`
+
+```swift
+static let filmDiagonal: Double
+```
+
+The diagonal of a 35 mm film frame (36 × 24 mm), in millimeters: the reference for a
+35 mm-equivalent focal length (CIPA DC-008, `FocalLengthIn35mmFilm`, compares angles of
+view on this frame).
 
 ## `LensCatalog/lenses(from:)`
 
@@ -1116,6 +1558,217 @@ the nearest 0.5 from 1× up (for example 0.5×, 1×, 2.5×, 5×).
   - fieldOfView: The lens's horizontal field of view, in degrees.
   - reference: The rear wide camera's horizontal field of view, in degrees.
 - Returns: The magnification, or `nil` if either angle isn't between 0 and 180 degrees.
+
+## `LiveViewHardware`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+protocol LiveViewHardware : Sendable
+```
+
+The hardware calls behind ``AVFoundationCaptureBackend``'s live view: the low-rate frame
+analysis and the live readout's values. A separate protocol from ``CaptureHardware``, so a
+fake without a live view needs nothing extra.
+
+``SystemCaptureHardware`` implements it and is verified on a device.
+
+## `LiveViewHardware/frameAnalyses`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The analyses of live frames, while analysis is on.
+
+## `LiveViewHardware/setFrameAnalysis(_:)`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Adds, changes or removes the video output that the analysis reads.
+
+- Parameter needs: What to measure; empty removes the output.
+
+## `LiveViewHardware/setStatsReadingsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops observing the attached camera for the live readout.
+
+- Parameter enabled: Whether to send values.
+
+## `LiveViewHardware/statsReadings`
+
+internal, declared in `Sources/NopeCapture/LiveViewHardware.swift`
+
+```swift
+var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The live readout's values, while they are on.
+
+## `LumaPlane`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+struct LumaPlane
+```
+
+The brightness plane of one live video frame, read one byte at a time.
+
+``SystemCaptureHardware`` makes it from the Y plane of a preview-sized video frame; tests make
+it from an array. Privacy rule: it is read once for one analysis and never copied whole,
+stored or logged.
+
+## `LumaPlane/brightness(x:y:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+func brightness(x: Int, y: Int) -> Int
+```
+
+The full-range brightness of one pixel, 0 to 255.
+
+- Parameters:
+  - x: The column, 0 to `width` − 1.
+  - y: The row, 0 to `height` − 1.
+
+## `LumaPlane/bytesPerRow`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let bytesPerRow: Int
+```
+
+The bytes from the start of one row to the start of the next.
+
+## `LumaPlane/height`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let height: Int
+```
+
+The height in pixels.
+
+## `LumaPlane/init(width:height:bytesPerRow:isVideoRange:read:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+init(width: Int, height: Int, bytesPerRow: Int, isVideoRange: Bool, read: @escaping (Int) -> UInt8)
+```
+
+Creates a plane.
+
+- Parameters:
+  - width: The width in pixels.
+  - height: The height in pixels.
+  - bytesPerRow: The bytes from the start of one row to the start of the next.
+  - isVideoRange: Whether the plane is video range.
+  - read: Reads the byte at an offset; called only with offsets inside the plane.
+
+## `LumaPlane/isVideoRange`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let isVideoRange: Bool
+```
+
+Whether the plane is video range (16 black to 235 white) rather than full range (0 to
+255), as `kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange` is.
+
+## `LumaPlane/read`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let read: (Int) -> UInt8
+```
+
+Reads the byte at an offset from the start of the plane.
+
+## `LumaPlane/width`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+let width: Int
+```
+
+The width in pixels.
+
+## `LumaSampler`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+enum LumaSampler
+```
+
+Samples a small grid from a live frame's brightness plane, for the histogram and focus
+peaking (issues #47 and #51).
+
+Only about 160 × 120 pixels of a preview-sized frame are read, so an analysis costs little
+(AGENTS.md, "Battery"). Each cell takes the brightness of one pixel and, for its sharpness,
+the brightness differences to its neighbors right and below in the full frame, so fine detail
+still counts although the grid is small.
+
+## `LumaSampler/longSideCells`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+static let longSideCells: Int
+```
+
+The cells along the frame's long side. A tool setting: about 2.5 points per cell on a
+phone's viewfinder, fine enough to show which edges are sharp.
+
+## `LumaSampler/position(of:count:length:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+static func position(of cell: Int, count: Int, length: Int) -> Int
+```
+
+The pixel at the middle of a cell, kept one pixel inside the edges so its neighbors
+exist.
+
+- Parameters:
+  - cell: The cell, 0 to `count` − 1.
+  - count: The cells along this side.
+  - length: The pixels along this side, at least 3.
+
+## `LumaSampler/sample(_:)`
+
+internal, declared in `Sources/NopeCapture/LumaSampler.swift`
+
+```swift
+static func sample(_ plane: LumaPlane) -> LumaFrame
+```
+
+Samples a plane.
+
+- Parameter plane: The plane.
+- Returns: The grid, in the plane's orientation; empty for a plane smaller than 3 × 3
+  pixels.
 
 ## `ManualControlSupport`
 
@@ -1149,7 +1802,8 @@ var capabilities: ManualCapabilities { get }
 
 The `NopeCore` capabilities. Metering modes need auto exposure; spot and whole frame
 also need the exposure region of interest. Exposure compensation needs auto exposure and
-a bias range wider than 0.
+a bias range wider than 0. The focus point and the range restriction need autofocus, and
+the exposure point needs auto exposure.
 
 ## `ManualControlSupport/continuousAutoExposure`
 
@@ -1201,6 +1855,16 @@ let exposureBiasRange: ClosedRange<Double>
 
 `minExposureTargetBias` to `maxExposureTargetBias`, in EV.
 
+## `ManualControlSupport/exposurePoint`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let exposurePoint: Bool
+```
+
+`isExposurePointOfInterestSupported`.
+
 ## `ManualControlSupport/exposureRegion`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
@@ -1211,12 +1875,32 @@ let exposureRegion: Bool
 
 iOS 26: `isExposureRectOfInterestSupported`.
 
-## `ManualControlSupport/init(customExposure:continuousAutoExposure:lockedExposure:shutterPriority:isoPriority:aperturePriority:exposureBiasRange:continuousAutoFocus:lockedFocus:lensPositionFocus:customWhiteBalance:exposureRegion:)`
+## `ManualControlSupport/focusPoint`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
 
 ```swift
-init(customExposure: Bool, continuousAutoExposure: Bool, lockedExposure: Bool, shutterPriority: Bool, isoPriority: Bool, aperturePriority: Bool, exposureBiasRange: ClosedRange<Double>, continuousAutoFocus: Bool, lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool)
+let focusPoint: Bool
+```
+
+`isFocusPointOfInterestSupported`.
+
+## `ManualControlSupport/focusRangeRestriction`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+let focusRangeRestriction: Bool
+```
+
+`isAutoFocusRangeRestrictionSupported`.
+
+## `ManualControlSupport/init(customExposure:continuousAutoExposure:lockedExposure:shutterPriority:isoPriority:aperturePriority:exposureBiasRange:continuousAutoFocus:lockedFocus:lensPositionFocus:customWhiteBalance:exposureRegion:focusPoint:exposurePoint:focusRangeRestriction:)`
+
+internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
+
+```swift
+init(customExposure: Bool, continuousAutoExposure: Bool, lockedExposure: Bool, shutterPriority: Bool, isoPriority: Bool, aperturePriority: Bool, exposureBiasRange: ClosedRange<Double>, continuousAutoFocus: Bool, lockedFocus: Bool, lensPositionFocus: Bool, customWhiteBalance: Bool, exposureRegion: Bool, focusPoint: Bool = false, exposurePoint: Bool = false, focusRangeRestriction: Bool = false)
 ```
 
 Creates a description; each parameter is the AVFoundation answer of the same name above.
@@ -1234,6 +1918,9 @@ Creates a description; each parameter is the AVFoundation answer of the same nam
   - lensPositionFocus: Focus locked at a lens position.
   - customWhiteBalance: White balance locked with custom gains.
   - exposureRegion: The exposure region of interest.
+  - focusPoint: The focus point of interest. Defaults to `false`.
+  - exposurePoint: The exposure point of interest. Defaults to `false`.
+  - focusRangeRestriction: The autofocus range restriction. Defaults to `false`.
 
 ## `ManualControlSupport/isoPriority`
 
@@ -1600,7 +2287,7 @@ internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
 static func canAdd(_ status: PHAuthorizationStatus) -> Bool
 ```
 
-Whether an add-only authorization status lets nope. add photos.
+Whether an add-only authorization status lets the app add photos.
 
 `PHAuthorizationStatus.limited` is reported only for read-write access, so for add-only
 access `.authorized` is the only status that allows adding (`PHPhotoLibrary.h`); both are
@@ -1717,8 +2404,9 @@ Creates settings for one photo. Settings can't be reused, so call it for every c
   processed image and no embedded thumbnail.
 - A fallback plan gives one HEVC (HEIF) or JPEG image in its file container.
 
-Every photo uses the plan's prioritization (`.speed`), the flash off, and content-aware
-distortion correction and constant color off. No location is supplied, so no GPS
+Every photo uses the plan's prioritization (`.speed`), the plan's flash mode (off unless
+the person chose the flash, issue #38), and content-aware distortion correction and
+constant color off. No location is supplied, so no GPS
 metadata is written by the app.
 
 - Parameters:
@@ -1857,6 +2545,91 @@ How many places in the buffer are sampled. An assumption, not a platform value: 
 places spread over the whole buffer can't all land in one flat region of a real scene
 with sensor noise.
 
+## `PreviewRotation`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+@MainActor final class PreviewRotation
+```
+
+Keeps the live viewfinder and captured photos upright in every orientation, with
+`AVCaptureDevice.RotationCoordinator` (iOS 17 and later).
+
+The coordinator reports two angles for the camera in use, relative to gravity
+(`AVCaptureDevice.h`): one for the preview layer, applied to the layer's connection as it
+changes, and one for capture, which ``SystemCaptureHardware`` applies to the photo output's
+connection before each photo. The two can differ for some combinations of device and
+interface orientation, so they are kept apart. Each camera may need a different angle, for
+example a front camera on the landscape edge of an iPad, so a new coordinator is made for each
+camera.
+
+Privacy: setting the photo connection's angle changes no pixels. "In the
+AVCapturePhotoOutput, orientation is handled using Exif tags" (`AVCaptureSession.h`,
+`videoRotationAngle`), so the angle becomes the photo's Orientation, a locked metadata item
+(docs/PRIVACY.md, "Locked").
+
+The coordinator delivers its updates on the main queue, so the class is main-actor isolated;
+only ``captureAngle`` is read from the capture queue, through a lock.
+
+## `PreviewRotation/captureAngle`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+nonisolated var captureAngle: CGFloat? { get }
+```
+
+The angle, in degrees, to apply to the photo output's connection for an upright photo,
+or `nil` when no camera is configured yet. Safe to read from any thread.
+
+## `PreviewRotation/connect(_:)`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+@MainActor func connect(_ previewLayer: AVCaptureVideoPreviewLayer)
+```
+
+Uses a new preview layer.
+
+- Parameter previewLayer: The app's preview layer.
+
+## `PreviewRotation/init()`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+nonisolated init()
+```
+
+Creates a rotation helper with no camera and no layer.
+
+## `PreviewRotation/previewAngle`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+nonisolated var previewAngle: CGFloat? { get }
+```
+
+The angle, in degrees, the viewfinder turns the video by, or `nil` before one is known.
+The live frame analysis turns its frames the same way (``SystemLiveView``). Safe to read
+from any thread.
+
+## `PreviewRotation/use(deviceID:)`
+
+internal, declared in `Sources/NopeCapture/PreviewRotation.swift`
+
+```swift
+@MainActor func use(deviceID: String)
+```
+
+Follows a newly configured camera. Call it after the camera's input is in the session,
+so the preview layer's connection exists.
+
+- Parameter deviceID: The camera's `AVCaptureDevice.uniqueID`.
+
 ## `ProcessingSwitches`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
@@ -1865,7 +2638,7 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 struct ProcessingSwitches
 ```
 
-The processing switches nope. applies to every session and photo, as plain values.
+The processing switches the app applies to every session and photo, as plain values.
 
 They follow docs/research/capability-survey.md, item 12 ("Avoiding processing"), and Apple's
 Bayer RAW rules in `AVCapturePhotoOutput.h` (`capturePhoto(with:delegate:)`): Bayer RAW
@@ -1920,7 +2693,10 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 let flashMode: AVCaptureDevice.FlashMode
 ```
 
-The flash. Off in this version.
+The flash. Off for starting the camera and for brackets (which don't support it,
+`AVCapturePhotoBracketSettings`); a single photo takes the request's mode
+(``CapturePolicy/photoSettings(_:flashMode:)``). The flash only adds light: no
+processing switch changes with it.
 
 ## `ProcessingSwitches/geometricDistortionCorrection`
 
@@ -1940,7 +2716,7 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 init(qualityPrioritization: AVCapturePhotoOutput.QualityPrioritization, appleProRAW: Bool, zeroShutterLag: Bool, responsiveCapture: Bool, deferredDelivery: Bool, constantColor: Bool, contentAwareDistortionCorrection: Bool, geometricDistortionCorrection: Bool, videoZoomFactor: Double, flashMode: AVCaptureDevice.FlashMode)
 ```
 
-Creates a set of switches. nope. uses only ``leastProcessing``.
+Creates a set of switches. The app uses only ``leastProcessing``.
 
 - Parameters:
   - qualityPrioritization: The output's maximum and every photo's prioritization.
@@ -1962,7 +2738,21 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 static let leastProcessing: ProcessingSwitches
 ```
 
-The switches nope. uses.
+The switches the app uses.
+
+## `ProcessingSwitches/phoneProcessing`
+
+internal, declared in `Sources/NopeCapture/ComparisonCapture.swift`
+
+```swift
+static let phoneProcessing: ProcessingSwitches
+```
+
+The switches for the comparison shot's second photo: the phone's processing at its
+highest setting for apps, `.quality` prioritization, which lets the system combine several
+frames where the device does that. Every other switch is the session's
+(``leastProcessing``): they are configured once for the session, so the app's own photos
+stay exactly as they are. This photo is never saved (issue #55).
 
 ## `ProcessingSwitches/qualityPrioritization`
 
@@ -1993,7 +2783,20 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 let videoZoomFactor: Double
 ```
 
-The device zoom factor. 1.0: Bayer RAW requires it, and nope. never zooms digitally.
+The device zoom factor. 1.0: Bayer RAW requires it, and the app never zooms digitally.
+
+## `ProcessingSwitches/withFlashMode(_:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+func withFlashMode(_ mode: AVCaptureDevice.FlashMode) -> ProcessingSwitches
+```
+
+The same switches with another flash mode.
+
+- Parameter mode: The flash mode.
+- Returns: A copy with `flashMode` replaced.
 
 ## `ProcessingSwitches/zeroShutterLag`
 
@@ -2230,6 +3033,18 @@ func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata:
 
 Waits until the output is ready, then takes a manual exposure bracket.
 
+## `SystemCaptureHardware/captureComparison(_:restoring:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan) async throws(CaptureError) -> HardwarePhoto
+```
+
+Waits until the output is ready, raises its maximum prioritization for one `.quality`
+photo, takes it, then sets the maximum back and prepares the session's own photo settings
+again, all on `queue`, before returning.
+
 ## `SystemCaptureHardware/configure(_:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2270,6 +3085,16 @@ let exposureReadings: AsyncStream<ExposureReading>
 
 What the camera is using now, while readings are on.
 
+## `SystemCaptureHardware/frameAnalyses`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+var frameAnalyses: AsyncStream<FrameAnalysis> { get }
+```
+
+The analyses of live frames, while analysis is on.
+
 ## `SystemCaptureHardware/init()`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2281,6 +3106,16 @@ init()
 Creates the hardware adapter and starts observing interruptions, runtime errors and the
 thermal state.
 
+## `SystemCaptureHardware/live`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+let live: SystemLiveView
+```
+
+The live view: the low-rate frame analysis and the live readout (``SystemLiveView``).
+
 ## `SystemCaptureHardware/previewSource`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2291,6 +3126,18 @@ let previewSource: any CameraPreviewSource
 
 The session, for the app's preview layer.
 
+## `SystemCaptureHardware/setFrameAnalysis(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setFrameAnalysis(_ needs: LiveAnalysisNeeds) async
+```
+
+Adds, changes or removes the analysis video output, on the session queue.
+
+- Parameter needs: What to measure; empty removes the output.
+
 ## `SystemCaptureHardware/setReadingsEnabled(_:)`
 
 internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
@@ -2300,6 +3147,38 @@ func setReadingsEnabled(_ enabled: Bool) async
 ```
 
 Starts or stops the readings, on `queue`.
+
+## `SystemCaptureHardware/setStatsReadingsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setStatsReadingsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops observing the camera for the live readout, on the session queue.
+
+- Parameter enabled: Whether to send values.
+
+## `SystemCaptureHardware/setTorch(level:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func setTorch(level: Double?) async -> TorchStatus
+```
+
+Turns the attached camera's torch on at a level, or off, on `queue`.
+
+## `SystemCaptureHardware/statsReadings`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+var statsReadings: AsyncStream<CameraStatsReading> { get }
+```
+
+The live readout's values, while they are on.
 
 ## `SystemCaptureHardware/stop()`
 
@@ -2317,8 +3196,130 @@ Stops the session and tears it down, strictly in order, on `queue`.
 
 The method returns only after both steps, because the caller awaits `perform`. The next
 ``configure(_:)`` re-adds the input and output with the full setup order. This is the
-only way a session is taken down: nope. never creates a second session, and never
+only way a session is taken down: the app never creates a second session, and never
 starts one while another is still stopping (docs/TESTING.md, "Black frames").
+
+## `SystemLiveView`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+final class SystemLiveView
+```
+
+The live view of ``SystemCaptureHardware``: a low-rate frame analysis for the histogram and
+focus peaking (issues #47 and #51), and the live readout's values (issue #52).
+
+- **Frame analysis.** An `AVCaptureVideoDataOutput` is in the session only while the histogram
+  or focus peaking is shown. With the `.photo` preset it delivers preview-sized frames
+  ("it is assumed that video data output buffers are being delivered as a preview proxy",
+  `AVCaptureVideoDataOutput.h`, `automaticallyConfiguresOutputBufferDimensions`). Late frames
+  are dropped, every frame between two analyses is returned at once, and an analysis reads
+  only about 160 × 120 pixels (``LumaSampler``), at most four a second (`LiveUpdateRate`).
+  No frame is stored. The photo output and its settings are not touched, so what is captured
+  doesn't change; a device check confirms it (docs/TESTING.md).
+- **Live readout.** Built from the camera readings' own key-value observations
+  (``SystemCaptureHardware``, at most four a second), only while the readout is shown; no second
+  set of observations and no video.
+
+`@unchecked Sendable`: every mutable property is confined to the session `queue`, and the
+video delegate keeps its own state behind a lock.
+
+## `SystemLiveView/cameraDidChange(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func cameraDidChange(_ device: AVCaptureDevice?)
+```
+
+Follows a newly attached camera, or none. Call only on `queue`.
+
+- Parameter device: The attached camera, or `nil` after the teardown.
+
+## `SystemLiveView/frameAnalyses`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+let frameAnalyses: AsyncStream<FrameAnalysis>
+```
+
+The analyses of live frames.
+
+## `SystemLiveView/init(session:photoOutput:queue:rotation:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+init(session: AVCaptureSession, photoOutput: AVCapturePhotoOutput, queue: DispatchQueue, rotation: PreviewRotation)
+```
+
+Creates the live view for a session.
+
+- Parameters:
+  - session: The capture session.
+  - photoOutput: The photo output.
+  - queue: The session queue.
+  - rotation: The viewfinder's rotation, which the analysis follows.
+
+## `SystemLiveView/readingDidArrive(from:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func readingDidArrive(from device: AVCaptureDevice)
+```
+
+Sends the readout's values for a camera reading, while the readout is on. Called from the
+camera readings' key-value observation, after their throttle.
+
+- Parameter device: The attached camera.
+
+## `SystemLiveView/setNeeds(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setNeeds(_ needs: LiveAnalysisNeeds) async
+```
+
+Asks the analysis for something else, adding or removing the video output, on `queue`.
+
+- Parameter needs: What to measure.
+
+## `SystemLiveView/setStatsEnabled(_:)`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func setStatsEnabled(_ enabled: Bool) async
+```
+
+Starts or stops the readout.
+
+- Parameter enabled: Whether to send values.
+
+## `SystemLiveView/statsReadings`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+let statsReadings: AsyncStream<CameraStatsReading>
+```
+
+The live readout's values.
+
+## `SystemLiveView/updateVideoOutput()`
+
+internal, declared in `Sources/NopeCapture/SystemLiveView.swift`
+
+```swift
+func updateVideoOutput()
+```
+
+Adds the video output while analysis is on and a camera is attached, and removes it
+otherwise. Call only on `queue`, inside a configuration transaction.
 
 ## `WhiteBalanceGains`
 

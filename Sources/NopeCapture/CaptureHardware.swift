@@ -42,7 +42,7 @@ protocol CaptureHardware: Sendable {
     /// `MetadataPlan.properties(for:from:orientation:)` for the system's metadata: the header
     /// says the returned dictionary replaces the photo's metadata (`AVCapturePhotoOutput.h`,
     /// `AVCapturePhotoFileDataRepresentationCustomizer`). AVFoundation itself writes the RAW
-    /// image data, so the sensor data isn't re-encoded by nope. For a RAW photo the system's
+    /// image data, so the sensor data isn't re-encoded by the app. For a RAW photo the system's
     /// own DNG is also flattened once, only to keep its RAW image data as a reference.
     ///
     /// - Parameters:
@@ -82,6 +82,16 @@ protocol CaptureHardware: Sendable {
     ///   `CaptureError.captureFailed` if the system reports an error.
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
         async throws(CaptureError) -> [HardwarePhoto]
+
+    /// Turns the attached camera's torch on at a level, or off.
+    ///
+    /// The system may refuse a level while the device is hot (`AVErrorTorchLevelUnavailable`)
+    /// or make the torch unavailable (`isTorchAvailable`); the light then stays off.
+    ///
+    /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+    /// - Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
+    ///   is attached.
+    func setTorch(level: Double?) async -> TorchStatus
 }
 
 /// One photo as the hardware returned it.

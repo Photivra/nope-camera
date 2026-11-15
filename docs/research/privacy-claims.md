@@ -1,6 +1,6 @@
 # Research: privacy claims and their sources
 
-Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not legal advice. Every privacy statement nope. makes in the app, the store listings or the privacy policy must use the wording below (or stronger evidence) and cite these sources. **Confirmed** = an authoritative source states it. **Inferred** = consistent with the sources but not stated; verify on a device before shipping the wording.
+Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not legal advice. Every privacy statement Photivra Nope Camera makes in the app, the store listings or the privacy policy must use the wording below (or stronger evidence) and cite these sources. **Confirmed** = an authoritative source states it. **Inferred** = consistent with the sources but not stated; verify on a device before shipping the wording.
 
 ## Claims, verdicts and wording
 
@@ -23,6 +23,7 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
 | 15 | App Store build versus the source | Essentially accurate (inferred from App Store distribution) | "Apple encrypts and re-signs App Store apps, so there's no standard way to confirm a download was built from our public source. On Android, F-Droid verifies reproducible builds." |
 | 16 | Face framing stays on the device | Inferred; Apple's Vision documentation doesn't say "on device" | "Face framing uses Apple's Vision framework on your iPhone, and nope. makes no network connections." Never quote Apple as saying "on device". |
 | 17 | A privacy policy | Required by both stores, even for apps that collect no data | A privacy policy link in the App Store and Google Play listings, and inside the app |
+| 18 | Face detection for autofocus | Mechanism confirmed in `AVCaptureDevice.h`: face-driven autofocus is on by default for apps linked on or after iOS 15.4 when the camera supports autofocus (`isFaceDrivenAutoFocusEnabled`); the app never reads face results (it has no metadata output) | "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found." Don't say faces leave no trace in the file until item 9 below is checked: EXIF `SubjectArea` is kept when the exposure settings switch is on. |
 
 ## Notes
 
@@ -30,7 +31,7 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
    - data and sensor access (camera, photos, location and others);
    - network activity and the domains contacted.
 
-   It covers the last 7 days, and only from when it's turned on. It's stored on the device, encrypted. Apple doesn't say whether system services acting on an app's behalf are attributed to that app (inferred: they aren't). nope. will appear for Camera, Photos and, when switched on, Location. That is access, not collection.
+   It covers the last 7 days, and only from when it's turned on. It's stored on the device, encrypted. Apple doesn't say whether system services acting on an app's behalf are attributed to that app (inferred: they aren't). The app will appear for Camera, Photos and, when switched on, Location. That is access, not collection.
 2. **Android:** `INTERNET` is a normal permission, granted at install, and users can't toggle it.
    - **Other apps can still go online:** an intent can hand a task to another app that does, for example opening a link in the browser. That's expected.
    - **Audit the merged manifest:** a library can add `INTERNET` to the build.
@@ -58,7 +59,7 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
    - **Standard EXIF and DNG:** Make, Model, LensMake, LensModel, Software, HostComputer, OffsetTime\*, ImageUniqueID (0xA420), BodySerialNumber, LensSerialNumber, CameraSerialNumber, RawDataUniqueID, UniqueCameraModel.
    - **XMP:** DocumentID and InstanceID.
 
-   Verify what nope.'s output actually contains with `exiftool -a -G1 -u`.
+   Verify what the app's output actually contains with `exiftool -a -G1 -u`.
 9. **The noise fingerprint (PRNU):**
    - Lukáš, Fridrich and Goljan, "Digital Camera Identification from Sensor Pattern Noise", IEEE TIFS 1(2), 2006, doi:10.1109/TIFS.2006.873602.
    - Chen et al., "Determining Image Origin and Integrity Using Sensor Noise", IEEE TIFS 3(1), 2008, doi:10.1109/TIFS.2007.916285.
@@ -81,14 +82,15 @@ Status: research, 2026-11-11 (iOS/iPadOS 27, Android 17). No code. This is not l
 
 ## Must verify on a device
 
-1. App Privacy Report: no domains for nope. after a week of use, while camera, photos and location accesses are recorded.
+1. App Privacy Report: no domains for the app after a week of use, while camera, photos and location accesses are recorded.
 2. ExifTool on DNG, HEIF and JPEG output, before and after stripping, for every switch combination.
 3. With location off there's no GPS block in any output. With it on, the prompt and the arrow appear.
-4. With add-only access, a library fetch returns nothing, including nope.'s own photos.
+4. With add-only access, a library fetch returns nothing, including the app's own photos.
 5. Whether Enhanced Visual Search is on by default on a freshly reset device.
 6. The share sheet's Options defaults, and what metadata survives AirDrop, Messages and Mail.
 7. Android: the merged manifest has no `INTERNET`, and the permission views show none.
 8. The Xcode privacy report shows no missing required-reason warnings on upload.
+9. With a face in the frame and the exposure settings switch on, what EXIF `SubjectArea` holds in the saved files (a focus area, or a face rectangle).
 
 ## Sources
 

@@ -1,33 +1,29 @@
 import NopeCore
 import SwiftUI
 
-/// The manual controls, shown only when the "Manual controls" option is on: the EV meter, the
-/// exposure mode picker, Pro Tools, "All Auto", the six-slot grid and the panel of the open slot.
+/// The manual controls' readout row, shown only when the "Manual controls" option is on: one
+/// button per control in a fixed order (`ManualControl`), each with its short name, A or M, and
+/// the value in use, then a last button with "All Auto" and Pro Tools (issue #68, "Manual").
 ///
-/// The grid always has six slots in the same order (`ManualControl`); a control the lens
-/// can't set stays in its slot. At accessibility text sizes ``ManualControlsList`` replaces the
-/// grid. Every value and rule comes from `ManualControlsModel`.
-struct ManualControlsView: View {
+/// Pressing a readout opens its dial (``ControlDial``) and fills the readout white; pressing it
+/// again closes the dial. A control the lens can't set stays in its place. At accessibility text
+/// sizes ``ManualControlsList`` replaces the row. Every value and rule comes from
+/// `ManualControlsModel`.
+struct ManualReadoutRow: View {
     /// The camera model.
     let model: CameraModel
 
-    /// The control whose panel is open, or `nil`.
+    /// The control whose dial is open, or `nil`.
     @Binding var openControl: ManualControl?
 
     /// Whether Pro Tools is shown; the camera screen presents it.
     @Binding var showsProTools: Bool
 
-    /// Counts "All Auto" presses, to trigger the haptic.
-    @State private var allAutoPresses = 0
-
-    /// The current text size; accessibility sizes switch to the list.
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    /// Creates the manual controls.
+    /// Creates the readout row.
     ///
     /// - Parameters:
     ///   - model: The camera model.
-    ///   - openControl: The control whose panel is open.
+    ///   - openControl: The control whose dial is open.
     ///   - showsProTools: Whether Pro Tools is shown.
     init(model: CameraModel, openControl: Binding<ManualControl?>, showsProTools: Binding<Bool>) {
         self.model = model
@@ -35,139 +31,141 @@ struct ManualControlsView: View {
         _showsProTools = showsProTools
     }
 
-    /// The manual controls model.
-    private var manual: ManualControlsModel { model.manual }
-
-    /// The header, the panel and the grid, or the list at accessibility sizes.
+    /// The row, or two rows when seven readouts don't fit side by side (narrow phones, larger
+    /// text). Values never break inside a number.
     var body: some View {
-        VStack(spacing: 8) {
-            header
-            if dynamicTypeSize.isAccessibilitySize {
-                ManualControlsList(model: model)
-            } else {
-                if let openControl {
-                    ControlPanel(model: model, control: openControl)
-                }
-                grid
-            }
-            if !manual.settings.isAutomatic {
-                allAutoButton
-            }
-        }
-        .sensoryFeedback(.success, trigger: allAutoPresses)
-    }
-
-    /// The EV meter, the exposure mode picker and the Pro Tools button.
-    private var header: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) { headerItems }
-            VStack(spacing: 8) { headerItems }
-        }
-    }
-
-    /// The header's parts.
-    @ViewBuilder private var headerItems: some View {
-        if let reading = manual.reading {
-            Text(ControlText.meter(reading.exposureOffset))
-                .font(.callout.monospacedDigit())
-                .accessibilityLabel(Text("Meter", bundle: .module, comment: "VoiceOver name of the exposure meter: how the exposure compares with the camera's reading."))
-                .accessibilityValue(Text(ControlText.meter(reading.exposureOffset)))
-        }
-        if manual.exposureModes.count > 1 {
-            Picker(
-                selection: Binding(
-                    get: { manual.settings.exposureMode },
-                    set: { mode in Task { await model.send(.manual(.setExposureMode(mode))) } })
-            ) {
-                ForEach(manual.exposureModes, id: \.self) { mode in
-                    Text(verbatim: ControlText.mark(mode))
-                        .accessibilityLabel(Text(verbatim: ControlText.name(mode)))
-                        .tag(mode)
-                }
-            } label: {
-                Text("Exposure Mode", bundle: .module, comment: "Name of the picker for the exposure mode: P, S, I or M.")
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
-            .accessibilityIdentifier("exposure-mode")
-        }
-        Button {
-            showsProTools = true
-        } label: {
-            Label {
-                Text("Pro Tools", bundle: .module, comment: "Button that opens metering, locks, bracketing and interval shooting.")
-            } icon: {
-                Image(systemName: "slider.horizontal.3")
-            }
-            // Primary on the gray fill: the secondary tint fails the contrast audit.
-            .foregroundStyle(.primary)
-        }
-        .buttonStyle(.bordered)
-        .tint(.secondary)
-        .frame(minHeight: 44)
-    }
-
-    /// The six slots, three to a row.
-    private var grid: some View {
-        Grid(horizontalSpacing: 8, verticalSpacing: 8) {
-            ForEach([Array(ManualControl.allCases.prefix(3)), Array(ManualControl.allCases.suffix(3))], id: \.self) { row in
+            HStack(spacing: 4) { readouts }
+            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+                GridRow { readouts(Array(ManualControl.allCases.prefix(4))) }
                 GridRow {
-                    ForEach(row, id: \.self) { control in
-                        ControlSlot(model: model, control: control, isOpen: openControl == control) {
-                            openControl = openControl == control ? nil : control
-                        }
-                    }
+                    readouts(Array(ManualControl.allCases.dropFirst(4)))
+                    optionsMenu
                 }
             }
         }
     }
 
-    /// "All Auto", with how many controls are set manually.
-    private var allAutoButton: some View {
-        Button {
-            allAutoPresses += 1
-            openControl = nil
-            Task {
-                await model.send(.manual(.allAuto))
-                AccessibilityNotification.Announcement(
-                    String(localized: "Full auto", bundle: .module, comment: "Announced after All Auto returned every control to automatic.")
-                ).post()
+    /// Every readout and the options menu, in order.
+    @ViewBuilder private var readouts: some View {
+        readouts(ManualControl.allCases)
+        optionsMenu
+    }
+
+    /// The readouts of some controls.
+    ///
+    /// - Parameter controls: The controls, in order.
+    private func readouts(_ controls: [ManualControl]) -> some View {
+        ForEach(controls, id: \.self) { control in
+            ControlReadout(model: model, control: control, isOpen: openControl == control) {
+                openControl = openControl == control ? nil : control
             }
-        } label: {
-            Text("All Auto", bundle: .module, comment: "Button that returns every manual control to automatic in one tap.")
-                .frame(minHeight: 44)
+            .uprightUnit()
         }
-        .buttonStyle(.bordered)
-        .accessibilityHint(
-            Text("\(manual.settings.manualControlCount) set manually", bundle: .module, comment: "How many manual controls the person has set. The number is a count of controls."))
+    }
+
+    /// "All Auto" and Pro Tools.
+    private var optionsMenu: some View {
+        ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
+            .uprightUnit()
     }
 }
 
-/// One slot of the control grid: the short name, an A or M mark, and the value in use.
+/// The last readout button: "All Auto" and Pro Tools (metering, modes, locks, bracketing,
+/// interval shooting).
+struct ManualOptionsMenu: View {
+    /// The camera model.
+    let model: CameraModel
+
+    /// The control whose dial is open, or `nil`; "All Auto" closes it.
+    @Binding var openControl: ManualControl?
+
+    /// Whether Pro Tools is shown.
+    @Binding var showsProTools: Bool
+
+    /// Counts "All Auto" presses, to trigger the haptic.
+    @State private var allAutoPresses = 0
+
+    /// Creates the menu.
+    ///
+    /// - Parameters:
+    ///   - model: The camera model.
+    ///   - openControl: The control whose dial is open.
+    ///   - showsProTools: Whether Pro Tools is shown.
+    init(model: CameraModel, openControl: Binding<ManualControl?>, showsProTools: Binding<Bool>) {
+        self.model = model
+        _openControl = openControl
+        _showsProTools = showsProTools
+    }
+
+    /// The menu.
+    var body: some View {
+        Menu {
+            Button {
+                allAutoPresses += 1
+                openControl = nil
+                Task {
+                    await model.send(.manual(.allAuto))
+                    AccessibilityNotification.Announcement(
+                        String(localized: "Full auto", bundle: .module, comment: "Announced after All Auto returned every control to automatic.")
+                    ).post()
+                }
+            } label: {
+                Label {
+                    Text("All Auto", bundle: .module, comment: "Button that returns every manual control to automatic in one tap.")
+                } icon: {
+                    Image(systemName: "a.circle")
+                }
+            }
+            .disabled(model.manual.settings.isAutomatic)
+            Button {
+                showsProTools = true
+            } label: {
+                Label {
+                    Text("Pro Tools", bundle: .module, comment: "Button that opens metering, locks, bracketing and interval shooting.")
+                } icon: {
+                    Image(systemName: "slider.horizontal.3")
+                }
+            }
+        } label: {
+            Label {
+                Text("More Manual Controls", bundle: .module, comment: "VoiceOver and Voice Control name of the last button of the manual controls row: opens All Auto and Pro Tools.")
+            } icon: {
+                Image(systemName: "slider.horizontal.3")
+            }
+            .labelStyle(.iconOnly)
+        }
+        .buttonStyle(SelectableCapsuleStyle(isSelected: false))
+        .sensoryFeedback(.success, trigger: allAutoPresses)
+        .accessibilityShowsLargeContentViewer()
+    }
+}
+
+/// One readout of the manual controls row: the short name with A or M, and the value in use.
 ///
 /// For VoiceOver it is one adjustable element: swipe up or down steps the value, double-tap
-/// opens its panel, and actions switch it between Auto and Manual or return everything to
-/// Auto (AGENTS.md, "Manual controls are adjustable elements").
-struct ControlSlot: View {
+/// opens its dial, and actions switch it between Auto and Manual or return everything to Auto
+/// (AGENTS.md, "Manual controls are adjustable elements").
+struct ControlReadout: View {
     /// The camera model.
     let model: CameraModel
 
     /// The control.
     let control: ManualControl
 
-    /// Whether the slot's panel is open.
+    /// Whether the control's dial is open.
     let isOpen: Bool
 
-    /// Opens or closes the panel.
+    /// Opens or closes the dial.
     let toggle: () -> Void
 
-    /// Creates a slot.
+    /// Creates a readout.
     ///
     /// - Parameters:
     ///   - model: The camera model.
     ///   - control: The control.
-    ///   - isOpen: Whether its panel is open.
-    ///   - toggle: Opens or closes the panel.
+    ///   - isOpen: Whether its dial is open.
+    ///   - toggle: Opens or closes the dial.
     init(model: CameraModel, control: ManualControl, isOpen: Bool, toggle: @escaping () -> Void) {
         self.model = model
         self.control = control
@@ -184,27 +182,19 @@ struct ControlSlot: View {
     /// The button.
     var body: some View {
         Button(action: toggle) {
-            VStack(spacing: 2) {
-                Text(verbatim: ControlText.shortName(control))
+            VStack(spacing: 0) {
+                // The letter says A or M, so the mode never depends on color. The control's full
+                // name is the VoiceOver label; the value shows which control it is, as on a
+                // camera's readout ("ISO 200", "1/125", "f/1.8").
+                Text(verbatim: isManual ? "M" : "A")
                     .font(.caption2.weight(.semibold))
-                // One text, so the mark and the value are checked and drawn together. The letter
-                // says A or M; green only adds to it.
-                (Text(verbatim: isManual ? "M " : "A ")
-                    .fontWeight(.bold)
-                    .foregroundStyle(isManual ? Color.green : Color.primary)
-                    + Text(verbatim: SlotValue.text(for: control, in: manual)))
+                Text(verbatim: visibleValue)
                     .font(.footnote.monospacedDigit())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
             }
-            .frame(maxWidth: .infinity, minHeight: 44)
-            // Primary text on the slot's fill: the secondary tint's gray fails the contrast
-            // audit at this small size. The open slot is told apart by its lighter fill and the
-            // selected trait.
-            .foregroundStyle(.primary)
+            // Never truncated or broken inside a number: the row becomes two rows instead.
+            .fixedSize()
         }
-        .buttonStyle(.bordered)
-        .tint(isOpen ? .primary : .secondary)
+        .buttonStyle(SelectableCapsuleStyle(isSelected: isOpen, horizontalPadding: 6))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: ControlText.name(control)))
         .accessibilityValue(Text(verbatim: SlotValue.spoken(for: control, in: manual)))
@@ -228,6 +218,12 @@ struct ControlSlot: View {
         .accessibilityInputLabels([Text(verbatim: ControlText.shortName(control)), Text(verbatim: ControlText.name(control))])
     }
 
+    /// The readout's text: the value, with "ISO" before an ISO value, which is a bare number.
+    private var visibleValue: String {
+        let value = SlotValue.text(for: control, in: manual)
+        return control == .iso ? "ISO " + value : value
+    }
+
     /// "Switch to Auto" or "Switch to Manual".
     private var switchActionName: String {
         isManual
@@ -236,7 +232,7 @@ struct ControlSlot: View {
     }
 }
 
-/// The text a slot shows for a control, from the model.
+/// The text a readout shows for a control, from the model.
 @MainActor
 enum SlotValue {
     /// The visible value: the value in use, "Fixed" values, or "n/a".

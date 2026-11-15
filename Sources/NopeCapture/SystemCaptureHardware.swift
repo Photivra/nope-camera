@@ -33,7 +33,7 @@ extension AVFoundationCaptureBackend {
 /// `@unchecked Sendable`: every mutable property and every session call is confined to
 /// `queue`.
 final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
-    /// The physical camera types nope. uses. Virtual multi-camera devices are never used.
+    /// The physical camera types the app uses. Virtual multi-camera devices are never used.
     private static let physicalDeviceTypes: [AVCaptureDevice.DeviceType] = [
         .builtInWideAngleCamera, .builtInUltraWideCamera, .builtInTelephotoCamera,
     ]
@@ -54,6 +54,12 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
 
     /// The session, for the app's preview layer.
     let previewSource: any CameraPreviewSource
+
+    /// The same preview source, typed, for its rotation.
+    private let preview: CaptureSessionPreviewSource
+
+    /// The live view: the low-rate frame analysis and the live readout (``SystemLiveView``).
+    let live: SystemLiveView
 
     /// Feeds ``events``.
     private let continuation: AsyncStream<CaptureEvent>.Continuation
@@ -91,10 +97,14 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
 
     /// Delegates of captures in progress, keyed by settings `uniqueID`; the photo output keeps
     /// only a weak reference to its delegate. Queue-confined.
-    private var captureDelegates: [Int64: PhotoCaptureDelegate] = [:]
+    private var captureDelegates: [Int64: any AVCapturePhotoCaptureDelegate] = [:]
 
     /// Notification observer tokens, removed on deinit.
     private var observers: [any NSObjectProtocol] = []
+
+    /// Observes `isTorchAvailable` of the camera whose torch is on, or `nil` while the light is
+    /// off. Queue-confined.
+    private var torchObservation: NSKeyValueObservation?
 
     /// Logs failures without values (AGENTS.md, "Logs mark every value private").
     private let logger = Logger(subsystem: "com.photivra.nope", category: "Capture")
@@ -104,7 +114,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     init() {
         (events, continuation) = AsyncStream.makeStream(of: CaptureEvent.self)
         (exposureReadings, readingsContinuation) = AsyncStream.makeStream(of: ExposureReading.self)
-        previewSource = CaptureSessionPreviewSource(session: session)
+        preview = CaptureSessionPreviewSource(session: session)
+        previewSource = preview
+        live = SystemLiveView(session: session, photoOutput: photoOutput, queue: queue, rotation: preview.rotation)
         observeNotifications()
         continuation.yield(.heat(HeatLevel(ProcessInfo.processInfo.thermalState)))
     }
@@ -112,6 +124,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     deinit {
         observers.forEach(NotificationCenter.default.removeObserver)
         readingObservations.forEach { $0.invalidate() }
+        torchObservation?.invalidate()
         continuation.finish()
         readingsContinuation.finish()
     }
@@ -151,7 +164,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///
     /// The method returns only after both steps, because the caller awaits `perform`. The next
     /// ``configure(_:)`` re-adds the input and output with the full setup order. This is the
-    /// only way a session is taken down: nope. never creates a second session, and never
+    /// only way a session is taken down: the app never creates a second session, and never
     /// starts one while another is still stopping (docs/TESTING.md, "Black frames").
     func stop() async {
         await perform { self.tearDown() }
@@ -211,11 +224,76 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         return try result.get()
     }
 
+    /// Turns the attached camera's torch on at a level, or off, on `queue`.
+    func setTorch(level: Double?) async -> TorchStatus {
+        await perform { self.switchTorch(level: level) }
+    }
+
     // MARK: - Queue-confined work
+
+    /// Switches the attached camera's torch. Call only on `queue`.
+    ///
+    /// A level the device can't give right now (it is too hot) fails with
+    /// `AVErrorTorchLevelUnavailable` (`AVCaptureDevice.h`, `setTorchModeOn(level:)`); the light
+    /// is then left off and reported unavailable, rather than silently brighter or dimmer.
+    ///
+    /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+    /// - Returns: The light's state afterwards.
+    private func switchTorch(level: Double?) -> TorchStatus {
+        guard let device = currentInput?.device, device.hasTorch else { return .off }
+        guard let level else {
+            turnTorchOff(device)
+            return .off
+        }
+        guard device.isTorchAvailable, device.isTorchModeSupported(.on) else { return .unavailable }
+        do {
+            try device.lockForConfiguration()
+        } catch {
+            logger.error("Capture: the camera could not be locked for the torch")
+            return .unavailable
+        }
+        defer { device.unlockForConfiguration() }
+        do {
+            try device.setTorchModeOn(level: Float(LightModel.clampedTorchLevel(level)))
+        } catch {
+            logger.error("Capture: the torch level was not available")
+            device.torchMode = .off
+            return .unavailable
+        }
+        observeTorchAvailability(of: device)
+        return .on(level: LightModel.clampedTorchLevel(level))
+    }
+
+    /// Turns a camera's torch off, if it is on, and stops observing its availability. Called
+    /// before the camera leaves the session, so the light never stays on without a session
+    /// (AGENTS.md, "Battery"). Call only on `queue`.
+    ///
+    /// - Parameter device: The camera.
+    private func turnTorchOff(_ device: AVCaptureDevice) {
+        torchObservation?.invalidate()
+        torchObservation = nil
+        guard device.hasTorch, device.torchMode != .off, (try? device.lockForConfiguration()) != nil else { return }
+        device.torchMode = .off
+        device.unlockForConfiguration()
+    }
+
+    /// Reports `CaptureEvent.torchUnavailable` when the system makes the torch unavailable
+    /// while it is on, for example because the device is too hot (`isTorchAvailable` is
+    /// key-value observable). Call only on `queue`.
+    ///
+    /// - Parameter device: The camera whose torch is on.
+    private func observeTorchAvailability(of device: AVCaptureDevice) {
+        let continuation = continuation
+        torchObservation?.invalidate()
+        torchObservation = device.observe(\.isTorchAvailable) { device, _ in
+            if !device.isTorchAvailable { continuation.yield(.torchUnavailable) }
+        }
+    }
 
     /// Stops the session, waits for it to stop, then removes every input and output. Call only
     /// on `queue`.
     private func tearDown() {
+        if let device = currentInput?.device { turnTorchOff(device) }
         if session.isRunning { session.stopRunning() }
         session.beginConfiguration()
         session.inputs.forEach(session.removeInput)
@@ -224,6 +302,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         currentInput = nil
         appliedMaxDimensions = nil
         observeReadings()
+        live.cameraDidChange(nil)
     }
 
     /// Runs work on `queue` and returns its result.
@@ -248,6 +327,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         defer { session.commitConfiguration() }
         if session.canSetSessionPreset(.photo) { session.sessionPreset = .photo }
         if let currentInput {
+            turnTorchOff(currentInput.device)
             session.removeInput(currentInput)
             self.currentInput = nil
         }
@@ -257,6 +337,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         session.addInput(input)
         currentInput = input
         observeReadings()
+        live.cameraDidChange(device)
         if !session.outputs.contains(photoOutput) {
             guard session.canAddOutput(photoOutput) else { return false }
             session.addOutput(photoOutput)
@@ -291,7 +372,11 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                 PhotoDimensions(width: Int($0.width), height: Int($0.height))
             },
             fieldOfViewDegrees: Double(format.videoFieldOfView),
-            manualControls: Self.manualSupport(of: device)
+            manualControls: Self.manualSupport(of: device),
+            // Read with this camera attached: the list is "for the current capture session
+            // configuration" (`AVCapturePhotoOutput.supportedFlashModes`).
+            flashModes: device.hasFlash ? photoOutput.supportedFlashModes.compactMap(FlashMode.init) : [],
+            hasTorch: device.hasTorch && device.isTorchModeSupported(.on)
         )
     }
 
@@ -331,7 +416,10 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             lockedFocus: device.isFocusModeSupported(.locked),
             lensPositionFocus: device.isLockingFocusWithCustomLensPositionSupported,
             customWhiteBalance: device.isLockingWhiteBalanceWithCustomDeviceGainsSupported,
-            exposureRegion: exposureRegion)
+            exposureRegion: exposureRegion,
+            focusPoint: device.isFocusPointOfInterestSupported && device.isFocusModeSupported(.autoFocus),
+            exposurePoint: device.isExposurePointOfInterestSupported && device.isExposureModeSupported(.autoExpose),
+            focusRangeRestriction: device.isAutoFocusRangeRestrictionSupported)
     }
 
     /// Applies controls to the attached camera. Call only on `queue`.
@@ -352,9 +440,20 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             return .failure(.configurationFailed)
         }
         defer { device.unlockForConfiguration() }
+        let point = controls.pointOfInterest
         applyMetering(controls.metering, to: device)
-        applyExposure(controls.exposure, to: device)
-        applyFocus(controls.focus, to: device)
+        // A tapped point replaces the metering region; setting the point resets the region to
+        // its default size (AVCaptureDevice.h, exposurePointOfInterest).
+        if let point, point.exposes, device.isExposurePointOfInterestSupported {
+            device.exposurePointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
+        }
+        applyExposure(controls.exposure, locksAtPoint: point.map { $0.exposes && $0.locks } ?? false, to: device)
+        applyLongestAutoExposure(controls.longestAutoExposure, to: device)
+        applyFocusAids(controls, to: device)
+        applyFocus(controls.focus, locksAtPoint: point.map { $0.focuses && $0.locks } ?? false, to: device)
+        // Following a tapped point ends when the scene changes; a lock doesn't
+        // (AVCaptureDevice.subjectAreaDidChangeNotification).
+        device.isSubjectAreaChangeMonitoringEnabled = point.map { !$0.locks } ?? false
         applyWhiteBalance(controls.whiteBalance, to: device)
         return .success(())
     }
@@ -386,10 +485,17 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// - Parameters:
     ///   - exposure: The exposure.
     ///   - device: The camera.
-    private func applyExposure(_ exposure: DeviceControls.Exposure, to device: AVCaptureDevice) {
+    ///   - locksAtPoint: Whether auto exposure adjusts once at the tapped point and then locks
+    ///     (`.autoExpose`), for AE/AF lock.
+    private func applyExposure(_ exposure: DeviceControls.Exposure, locksAtPoint: Bool, to device: AVCaptureDevice) {
         switch exposure {
         case .automatic(let compensation):
-            if device.isExposureModeSupported(.continuousAutoExposure) { device.exposureMode = .continuousAutoExposure }
+            if locksAtPoint, device.isExposureModeSupported(.autoExpose) {
+                device.exposureMode = .autoExpose
+            } else if device.isExposureModeSupported(.continuousAutoExposure) {
+                // Setting the mode also applies a new point of interest (AVCaptureDevice.h).
+                device.exposureMode = .continuousAutoExposure
+            }
             setBias(compensation, on: device)
         case .locked:
             if device.isExposureModeSupported(.locked) { device.exposureMode = .locked }
@@ -414,6 +520,43 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                     duration: Self.duration(duration, format: format), iso: Self.iso(iso, format: format),
                     completionHandler: nil)
             }
+        }
+    }
+
+    /// Sets the longest shutter auto exposure may use (full auto's fast shutter rule), limited to
+    /// the format's range, or the device's default with `kCMTimeInvalid` (AVCaptureDevice.h,
+    /// `activeMaxExposureDuration`). Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - seconds: The longest shutter, or `nil` for the default.
+    ///   - device: The camera.
+    private func applyLongestAutoExposure(_ seconds: Double?, to device: AVCaptureDevice) {
+        guard let seconds else {
+            device.activeMaxExposureDuration = .invalid
+            return
+        }
+        let format = device.activeFormat
+        let time = CMTime(seconds: seconds, preferredTimescale: PhotoSettingsFactory.durationTimescale)
+        device.activeMaxExposureDuration = CMTimeClampToRange(
+            time, range: CMTimeRange(start: format.minExposureDuration, end: format.maxExposureDuration))
+    }
+
+    /// Sets the autofocus range restriction and the focus point before the focus mode, which
+    /// applies them (AVCaptureDevice.h: setting either alone "does not initiate a focus
+    /// operation"). Call only on `queue`, with the camera locked.
+    ///
+    /// - Parameters:
+    ///   - controls: The controls.
+    ///   - device: The camera.
+    private func applyFocusAids(_ controls: DeviceControls, to device: AVCaptureDevice) {
+        if device.isAutoFocusRangeRestrictionSupported {
+            device.autoFocusRangeRestriction = controls.nearFocusLimit ? .near : .none
+        }
+        guard device.isFocusPointOfInterestSupported else { return }
+        if let point = controls.pointOfInterest, point.focuses {
+            device.focusPointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
+        } else {
+            device.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
         }
     }
 
@@ -479,10 +622,16 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// - Parameters:
     ///   - focus: The focus.
     ///   - device: The camera.
-    private func applyFocus(_ focus: DeviceControls.Focus, to device: AVCaptureDevice) {
+    ///   - locksAtPoint: Whether autofocus scans once at the tapped point and then locks
+    ///     (`.autoFocus`), for AE/AF lock.
+    private func applyFocus(_ focus: DeviceControls.Focus, locksAtPoint: Bool, to device: AVCaptureDevice) {
         switch focus {
         case .automatic:
-            if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
+            if locksAtPoint, device.isFocusModeSupported(.autoFocus) {
+                device.focusMode = .autoFocus
+            } else if device.isFocusModeSupported(.continuousAutoFocus) {
+                device.focusMode = .continuousAutoFocus
+            }
         case .locked:
             if device.isFocusModeSupported(.locked) { device.focusMode = .locked }
         case .lensPosition(let position):
@@ -527,10 +676,12 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         readingObservations.forEach { $0.invalidate() }
         readingObservations = []
         guard readingsEnabled, let device = currentInput?.device else { return }
-        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation] device in
+        let send: @Sendable (AVCaptureDevice) -> Void = { [throttle, readingsContinuation, live] device in
             let now = ProcessInfo.processInfo.systemUptime
             guard throttle.withLock({ $0.shouldSend(at: now) }) else { return }
             readingsContinuation.yield(Self.reading(of: device))
+            // The live camera readout is built from the same observations, not a second set.
+            live.readingDidArrive(from: device)
         }
         readingObservations = [
             device.observe(\.exposureTargetOffset, options: [.initial]) { device, _ in send(device) },
@@ -556,7 +707,8 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         return ExposureReading(
             iso: Double(device.iso), exposureDuration: device.exposureDuration.seconds,
             exposureOffset: Double(device.exposureTargetOffset), lensPosition: Double(device.lensPosition),
-            aperture: Double(device.lensAperture), whiteBalance: whiteBalance)
+            aperture: Double(device.lensAperture), whiteBalance: whiteBalance,
+            isAdjustingFocus: device.isAdjustingFocus)
     }
 
 
@@ -589,6 +741,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             logger.error("Capture: the camera could not be attached")
             throw .configurationFailed
         }
+        followRotation(of: device)
         let switches = configuration.switches
         session.beginConfiguration()
         photoOutput.isAppleProRAWEnabled = switches.appleProRAW && photoOutput.isAppleProRAWSupported
@@ -611,6 +764,8 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             photoOutput.maxPhotoDimensions = chosen
             appliedMaxDimensions = PhotoDimensions(width: Int(chosen.width), height: Int(chosen.height))
         }
+        // The teardown removed every output; the live analysis output comes back if it is on.
+        live.updateVideoOutput()
         session.commitConfiguration()
 
         do {
@@ -707,7 +862,46 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             completion(result)
         }
         captureDelegates[id] = delegate
+        // Every photo, single or bracketed, gets the current capture angle.
+        applyCaptureRotation()
+        keepPhotosUnmirrored()
         photoOutput.capturePhoto(with: settings, delegate: delegate)
+    }
+
+    /// Points the preview rotation at the camera now in the session, on the main queue, in the
+    /// order cameras are configured.
+    ///
+    /// - Parameter device: The attached camera.
+    private func followRotation(of device: AVCaptureDevice) {
+        let deviceID = device.uniqueID
+        let rotation = preview.rotation
+        DispatchQueue.main.async { MainActor.assumeIsolated { rotation.use(deviceID: deviceID) } }
+    }
+
+    /// Sets the photo output's rotation to the coordinator's capture angle, so the photo is
+    /// upright. Privacy: the photo output records the angle as the Exif orientation and doesn't
+    /// rotate pixels (`AVCaptureSession.h`, `videoRotationAngle`). The value reaches the saved
+    /// DNG through `AVCapturePhoto.metadata`, which `MetadataPlan.properties(for:from:orientation:)`
+    /// copies because Orientation is a locked item (docs/PRIVACY.md). Call only on `queue`.
+    private func applyCaptureRotation() {
+        guard let angle = preview.rotation.captureAngle, let connection = photoOutput.connection(with: .video),
+            connection.isVideoRotationAngleSupported(angle)
+        else { return }
+        connection.videoRotationAngle = angle
+    }
+
+    /// Turns off the photo output's own mirroring, so every photo starts unmirrored and a
+    /// front camera photo is mirrored only through its orientation value, when the person asks
+    /// (`MetadataPlan.mirroredOrientation(_:)`, issue #45). The viewfinder's mirroring is
+    /// separate (the preview layer's own connection) and unchanged.
+    ///
+    /// `AVCaptureSession.h` (`AVCaptureConnection`): `videoMirrored` can be set only when
+    /// `automaticallyAdjustsVideoMirroring` is `NO`. Whether the system mirrors a front camera
+    /// photo by default isn't documented, so the app sets it explicitly. Call only on `queue`.
+    private func keepPhotosUnmirrored() {
+        guard let connection = photoOutput.connection(with: .video), connection.isVideoMirroringSupported else { return }
+        connection.automaticallyAdjustsVideoMirroring = false
+        connection.isVideoMirrored = false
     }
 
     /// Reports interruptions, their end, runtime errors and thermal state changes as events.
@@ -728,6 +922,11 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
             },
             center.addObserver(forName: ProcessInfo.thermalStateDidChangeNotification, object: nil, queue: nil) { _ in
                 continuation.yield(.heat(HeatLevel(ProcessInfo.processInfo.thermalState)))
+            },
+            // Sent only while monitoring is on, which it is only while a tapped point is
+            // followed (applyControls); nope. uses one camera at a time.
+            center.addObserver(forName: AVCaptureDevice.subjectAreaDidChangeNotification, object: nil, queue: nil) { _ in
+                continuation.yield(.subjectAreaChanged)
             },
         ]
     }
@@ -852,5 +1051,102 @@ final class MetadataCustomizer: NSObject, AVCapturePhotoFileDataRepresentationCu
     /// Returns the allowlisted metadata, which replaces the photo's own.
     func replacementMetadata(for photo: AVCapturePhoto) -> [String: Any]? {
         properties
+    }
+}
+
+// MARK: - Comparison shot (issue #55)
+
+extension SystemCaptureHardware: ComparisonHardware {
+    /// Waits until the output is ready, raises its maximum prioritization for one `.quality`
+    /// photo, takes it, then sets the maximum back and prepares the session's own photo settings
+    /// again, all on `queue`, before returning.
+    func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan)
+        async throws(CaptureError) -> HardwarePhoto
+    {
+        _ = try await CaptureReadiness.waitUntilReady(
+            timeout: Self.readinessTimeoutSeconds, interval: Self.readinessPollSeconds
+        ) {
+            await self.perform { CaptureReadiness(self.photoOutput.captureReadiness) }
+        }
+        let result: Result<HardwarePhoto, CaptureError> = await withCheckedContinuation { continuation in
+            queue.async {
+                guard self.session.isRunning, self.currentInput != nil else {
+                    continuation.resume(returning: .failure(.notRunning))
+                    return
+                }
+                self.setMaximumQualityPrioritization(plan.switches.qualityPrioritization)
+                let settings = PhotoSettingsFactory.makeSettings(for: plan, maxPhotoDimensions: self.appliedMaxDimensions)
+                let id = settings.uniqueID
+                let delegate = ComparisonCaptureDelegate { result in
+                    self.queue.async {
+                        self.captureDelegates[id] = nil
+                        // nope.'s next photo needs the session exactly as it was.
+                        self.setMaximumQualityPrioritization(sessionPlan.switches.qualityPrioritization)
+                        self.prepare(sessionPlan) { continuation.resume(returning: result) }
+                    }
+                }
+                self.captureDelegates[id] = delegate
+                self.applyCaptureRotation()
+                self.keepPhotosUnmirrored()
+                self.photoOutput.capturePhoto(with: settings, delegate: delegate)
+            }
+        }
+        return try result.get()
+    }
+
+    /// Sets the photo output's maximum prioritization in one configuration transaction, as
+    /// `AVCapturePhotoOutput.h` asks for settings that reconfigure the pipeline. Does nothing
+    /// when it is already that value. Call only on `queue`.
+    ///
+    /// - Parameter prioritization: The new maximum.
+    private func setMaximumQualityPrioritization(_ prioritization: AVCapturePhotoOutput.QualityPrioritization) {
+        guard photoOutput.maxPhotoQualityPrioritization != prioritization else { return }
+        session.beginConfiguration()
+        photoOutput.maxPhotoQualityPrioritization = prioritization
+        session.commitConfiguration()
+    }
+}
+
+/// Receives the comparison shot's second photo and reports it once the capture finishes.
+///
+/// Privacy: this file keeps the system's own metadata (`fileDataRepresentation()` without a
+/// customizer), on purpose: the compare view shows what the phone's version carries by default.
+/// It is never saved, signed, written to disk or logged (issue #55). The app's own photos are
+/// written by ``PhotoCaptureDelegate`` with the allowlist.
+///
+/// `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
+/// capture, and `photo` is only touched in them.
+final class ComparisonCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unchecked Sendable {
+    /// Called once with the result.
+    private let completion: @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
+    /// The photo, once delivered.
+    private var photo: HardwarePhoto?
+
+    /// Creates a delegate for one capture.
+    ///
+    /// - Parameter completion: Called once with the result.
+    init(completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void) {
+        self.completion = completion
+    }
+
+    /// Keeps the photo's file in memory.
+    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?) {
+        guard error == nil, let data = photo.fileDataRepresentation() else { return }
+        let size = photo.resolvedSettings.photoDimensions
+        self.photo = HardwarePhoto(
+            data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
+            exposureDuration: nil, iso: nil, pixelSample: nil)
+    }
+
+    /// Reports the photo, or a failure if the capture failed or no file arrived.
+    func photoOutput(
+        _ output: AVCapturePhotoOutput, didFinishCaptureFor resolvedSettings: AVCaptureResolvedPhotoSettings,
+        error: (any Error)?
+    ) {
+        guard error == nil, let photo else {
+            completion(.failure(.captureFailed))
+            return
+        }
+        completion(.success(photo))
     }
 }

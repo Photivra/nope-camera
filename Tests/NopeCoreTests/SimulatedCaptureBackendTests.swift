@@ -60,6 +60,19 @@ struct SimulatedCaptureBackendTests {
         }
     }
 
+    @MainActor
+    @Test func aScriptedReadingIsSentAsOftenAsAskedAndThePreviewKeepsPoints() async {
+        let dim = ExposureReading(iso: 3200, exposureDuration: 0.05, exposureOffset: -1, lensPosition: 0, aperture: 1.8, whiteBalance: nil)
+        let backend = SimulatedCaptureBackend(permission: .authorized, reading: dim, readingCount: 3)
+        await backend.setExposureReadingsEnabled(true)
+        backend.finishEvents()
+        var readings: [ExposureReading] = []
+        for await reading in backend.exposureReadings { readings.append(reading) }
+        #expect(readings == [dim, dim, dim])
+        let point = FramePoint(x: 0.2, y: 0.9)
+        #expect(SimulatedPreviewSource().devicePoint(forViewfinderPoint: point) == point)
+    }
+
     @Test func manualControlsAreAcceptedAndBracketsReturnOnePhotoPerFrame() async throws {
         let lens = Lens(id: "wide", kind: .wide, bayerRAWFormat: "bgg4", photoDimensions: [PhotoDimensions(width: 8, height: 6)])
         let backend = SimulatedCaptureBackend(permission: .authorized)

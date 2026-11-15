@@ -84,4 +84,27 @@ struct LensCatalogTests {
     func invalidAnglesGiveNoMagnification(fieldOfView: Double, reference: Double) {
         #expect(LensCatalog.magnification(fieldOfView: fieldOfView, reference: reference) == nil)
     }
+
+    @Test func equivalentFocalLengthComesFromTheAngleAndShape() throws {
+        // An iPhone wide camera reports about 69.4 degrees across a 4:3 frame: about 25 mm
+        // (Apple lists it as 24 mm).
+        let lens = try #require(LensCatalog.lenses(from: [camera("wide", .wideAngle, fieldOfView: 69.4)]).first)
+        let focalLength = try #require(lens.equivalentFocalLength)
+        #expect(abs(focalLength - 24.96) < 0.05)
+        let fourByThree = try #require(LensCatalog.equivalentFocalLength(fieldOfView: 69.4, photoSize: nil))
+        #expect(abs(fourByThree - focalLength) < 1e-9)
+        // A 3:2 frame has a shorter diagonal for the same width.
+        let threeByTwo = try #require(
+            LensCatalog.equivalentFocalLength(fieldOfView: 69.4, photoSize: PhotoDimensions(width: 3, height: 2)))
+        #expect(threeByTwo > focalLength)
+        // A size without area falls back to 4:3.
+        let empty = try #require(
+            LensCatalog.equivalentFocalLength(fieldOfView: 69.4, photoSize: PhotoDimensions(width: 0, height: 0)))
+        #expect(abs(empty - focalLength) < 1e-9)
+    }
+
+    @Test(arguments: [0.0, 180.0, -5.0])
+    func invalidAnglesGiveNoFocalLength(fieldOfView: Double) {
+        #expect(LensCatalog.equivalentFocalLength(fieldOfView: fieldOfView, photoSize: nil) == nil)
+    }
 }

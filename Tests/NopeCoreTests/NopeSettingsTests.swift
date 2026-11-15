@@ -21,11 +21,11 @@ final class ScratchDefaults {
 }
 
 struct MetadataPresentationTests {
-    @Test func locationAndNameAreNotOfferedYet() {
-        #expect(!MetadataItem.location.isOfferedInSettings)
+    @Test func locationIsOfferedAndNameIsNotYet() {
+        #expect(MetadataItem.location.isOfferedInSettings)
         #expect(!MetadataItem.nameAndCopyright.isOfferedInSettings)
-        #expect(MetadataItem.offeredInSettings.count == MetadataItem.allCases.count - 2)
-        #expect(MetadataItem.offeredInSettings.first == .dateAndTime)
+        #expect(MetadataItem.offeredInSettings.count == MetadataItem.allCases.count - 1)
+        #expect(MetadataItem.offeredInSettings.first == .location)
     }
 
     @Test func lockedItemsMatchThePrivacyPlan() {
@@ -105,6 +105,17 @@ struct NopeSettingsTests {
         #expect(settings.save == SaveSettings())
         #expect(!settings.showsManualControls)
         #expect(settings.developedLook == .standard)
+    }
+
+    @MainActor
+    @Test func theFastShutterChoiceIsSavedAndAnUnknownOneIsStandard() {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(settings.fastShutter == .handheld)
+        settings.setFastShutter(.freezeFastMotion)
+        #expect(NopeSettings(defaults: scratch.defaults).fastShutter == .freezeFastMotion)
+        scratch.defaults.set("warp", forKey: NopeSettings.Key.fastShutter)
+        #expect(NopeSettings(defaults: scratch.defaults).fastShutter == .handheld)
     }
 
     @Test func theOldManualControlsOptionIsMigratedOnce() {

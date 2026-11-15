@@ -50,7 +50,7 @@ Status: research, 2026-11-11, iOS/iPadOS 18 minimum, current release 27. No code
    - **Camera Control:** `AVCaptureSlider`, `AVCaptureIndexPicker` and the system exposure-bias slider (C).
    - **Hardware shutter:** volume buttons and Camera Control through `AVCaptureEventInteraction` or SwiftUI `onCameraCaptureEvent` (C).
 10. **iPad.**
-    - **Multitasking:** the camera works in multitasking only with Stage Manager on an external display, the multitasking camera access entitlement (requested from Apple), or a VoIP background mode, which nope. won't claim (C).
+    - **Multitasking:** the camera works in multitasking only with Stage Manager on an external display, the multitasking camera access entitlement (requested from Apple), or a VoIP background mode, which the app won't claim (C).
     - **Center Stage:** front camera only; turn it off for stills (I).
     - **LiDAR:** a virtual device, so no Bayer RAW (I).
 11. **Output.** 10-bit HEIF through `CIContext.heif10Representation` (I). No gain maps.

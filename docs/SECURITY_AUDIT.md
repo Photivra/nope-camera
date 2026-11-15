@@ -25,7 +25,7 @@ relies on. Checks that need hardware say **Device**. Free, open-source or Apple 
 
 ## Threat model
 
-### What nope. protects
+### What Photivra Nope Camera protects
 
 | Asset | Where it lives | Why it matters |
 |---|---|---|
@@ -42,10 +42,10 @@ relies on. Checks that need hardware say **Device**. Free, open-source or Apple 
 |---|---|---|
 | A recipient of a shared photo | Reads every byte of a file the user shares | Location, time, device, links to the user's other photos |
 | A data broker or platform collecting many photos | Large sets of files from many sources | Link photos to one camera or person (metadata, signature fields, sensor noise) |
-| A network observer | Sees traffic from the device | Learn that nope. is used, or anything about photos |
+| A network observer | Sees traffic from the device | Learn that the app is used, or anything about photos |
 | A dependency or build-chain attacker | A compromised package, binary framework or GitHub Action | Add network code, collection, or a weak key |
 | Someone with brief physical access to an unlocked or locked device | Reads the app container through backups or forensic tools | Leftover photos, thumbnails, logs |
-| Someone who wants to fake a signed photo | Edits a nope. file | Make an altered file validate as unchanged |
+| Someone who wants to fake a signed photo | Edits a file the app saved | Make an altered file validate as unchanged |
 | A curious contributor or a mistake in a pull request | Adds a log line, a temp file or a tag | Accidental leaks |
 
 ### Out of scope (disclosed on the Honesty screen, not fixed by the app)
@@ -76,7 +76,7 @@ MASVS-CODE-3. The only allowed dependencies are in `security/allowed-dependencie
   - GitHub Actions: every `uses:` in `.github/workflows/` is pinned to a full commit SHA
     (`grep -nE 'uses: [^@]+@[0-9a-f]{40}' .github/workflows/*.yml` matches every `uses:` line).
 - **Pass:** no unlisted dependency; every pin exact; checksum matches; no known vulnerability
-  that affects the code paths nope. uses (or a documented, reviewed exception); every license
+  that affects the code paths the app uses (or a documented, reviewed exception); every license
   GPL-3.0-only compatible and recorded; every Action pinned by SHA.
 
 ### 2. Secrets in the repository and the binary
@@ -114,7 +114,7 @@ archive (`Products/Applications/NopeApp.app`).
   code, even code that is never called. There is no exception path: a networking symbol in any
   linked binary is a Blocker, and a dynamic proof (check 8) that it never runs doesn't replace
   this check. c2pa-rs has optional features that fetch remote manifests, OCSP responses and
-  timestamps over HTTP; nope. builds it from source with every network feature off
+  timestamps over HTTP; the project builds it from source with every network feature off
   (`scripts/build-c2pa-lib.sh`, inputs pinned in `c2pa-lib/`) and vendors the Swift wrapper
   without its networking code (`Vendor/c2pa-swift`). Inspect the linked binary, not just the
   source:
@@ -130,7 +130,8 @@ archive (`Products/Applications/NopeApp.app`).
 ### 4. Entitlements
 
 MASVS-PLATFORM, least privilege. Allowed keys are in `security/allowed-entitlements.txt`
-(today only `com.apple.developer.locked-camera-capture`, for the lock-screen capture extension).
+(today only `com.apple.developer.locked-camera-capture`, kept for the lock-screen capture
+extension; no target requests it or any other entitlement as of 0.2.0).
 
 - **Run:**
   - `scripts/check-security.sh` (source `.entitlements` files).
@@ -151,8 +152,7 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
   `InfoPlist.strings` in every `.lproj`.
 - **Pass:**
   - Usage strings exist only for what the app uses: `NSCameraUsageDescription`,
-    `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` only if the
-    location switch ships. No `NSPhotoLibraryUsageDescription` (full library access), no
+    `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` (the location switch ships in 0.2.0). No `NSPhotoLibraryUsageDescription` (full library access), no
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
   - Each string is accurate, says "nope.", and is translated in all 11 languages.
@@ -176,19 +176,21 @@ app and for each third-party SDK it bundles
 ([Privacy manifest files](https://developer.apple.com/documentation/bundleresources/privacy-manifest-files),
 [Describing use of required reason API](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api)).
 
-**Does nope. need one?** Yes. `App/NopeApp/PrivacyInfo.xcprivacy` exists and declares no
+**Does the app need one?** Yes. `App/NopeApp/PrivacyInfo.xcprivacy` exists and declares no
 tracking, no tracking domains, no collected data and no required-reason APIs.
 
 **State as of 2026-11-12:** the manifest declares `NSPrivacyAccessedAPICategoryUserDefaults`
 with `CA92.1`, for the settings (`NopeSettings`, stored in the app's own `UserDefaults`).
 It also declares `NSPrivacyAccessedAPICategorySystemBootTime` with `35F9.1`, because Release
 code calls `ProcessInfo.systemUptime` to throttle exposure readings
-(`Sources/NopeCapture/SystemCaptureHardware.swift`). Expected 1.0 use:
+(`Sources/NopeCapture/SystemCaptureHardware.swift`), and
+`NSPrivacyAccessedAPICategoryDiskSpace` with `E174.1` and `85F4.1` for the storage warning
+(issue #44). Expected 1.0 use:
 
 | Category | Expected 1.0 use | Reason code (recheck on Apple's page before submission) |
 |---|---|---|
 | `NSPrivacyAccessedAPICategoryUserDefaults` | Settings: formats, the master switch and each metadata item, signing, manual controls, clean view (declared, `CA92.1`) | `CA92.1`: read and write data only the app itself uses |
-| `NSPrivacyAccessedAPICategoryDiskSpace` | Only if the app checks free space before saving or shows an out-of-space message | `E174.1`: check space before writing files |
+| `NSPrivacyAccessedAPICategoryDiskSpace` | `volumeAvailableCapacityForImportantUsageKey` for the low storage warning, the number of photos that fit, and stopping a burst before storage runs out (declared, `App/NopeApp/Camera/DeviceStatusReader.swift`, issue #44) | `E174.1`: check space before writing files; `85F4.1`: show disk space to the person (as a number of photos) |
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
@@ -199,7 +201,7 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
     excluding `#if DEBUG` files, and add each hit to the table.
   - Check the C2PA package for its own `PrivacyInfo.xcprivacy`, and whether its Rust core
     reads file timestamps or disk space (`nm -u` for `stat`, `fstat`, `statfs`,
-    `getattrlist`). If it does and ships no manifest, nope.'s manifest must cover it, or the
+    `getattrlist`). If it does and ships no manifest, the app's manifest must cover it, or the
     package must add one.
   - Each extension target (lock-screen capture, widget controls) gets its own manifest if it
     ships code that uses a listed API.
@@ -238,18 +240,18 @@ MASVS-NETWORK, MASVS-PRIVACY-1.
      every format, every switch, location on and off, signing on and off, the Honesty screen,
      settings, lock-screen capture, Control Center, Siri and Shortcuts. Stop with
      `rvictl -x <UDID>`. Open the file in Wireshark and filter by the app's process name; with
-     no process metadata, compare against a baseline capture of the same length with nope.
+     no process metadata, compare against a baseline capture of the same length with the app
      closed.
   2. **App Privacy Report.** Turn on Settings › Privacy & Security › App Privacy Report before
-     the session, use the app as above, then read nope.'s entry
+     the session, use the app as above, then read the app's entry
      ([App Privacy Report](https://support.apple.com/en-us/102188)).
   3. **Offline run.** With Airplane Mode on and Wi-Fi off, repeat the session. Every feature,
      including signing and the Honesty screen, works the same.
   - Optional: on the Simulator, `nettop -p <pid of NopeApp>` while running the UI tests.
-- **Pass:** zero connections and zero DNS lookups attributable to nope. in the capture; App
+- **Pass:** zero connections and zero DNS lookups attributable to the app in the capture; App
   Privacy Report shows camera and photos (and location when on) access, and **no domains**
   under Network Activity; every feature works offline. Links opened in the browser appear under
-  the browser, not nope.
+  the browser, not the app.
 
 ### 9. Metadata: allowlist and fail-closed (Device and tests)
 
@@ -380,7 +382,7 @@ MASVS-PRIVACY-1, MASVS-PRIVACY-4.
 
 - **Run:** on a reset device, install the release build and check every prompt: camera on
   first use; add-only Photos access on first save; location only when the user turns its
-  switch on; no prompt for anything else. Check Settings › Privacy & Security for nope.'s
+  switch on; no prompt for anything else. Check Settings › Privacy & Security for the app's
   entries, and that a library fetch with add-only access returns nothing.
 - **Pass:** only those prompts, at those moments; with "Remove all optional details" on, the
   app never asks for location.
@@ -393,7 +395,9 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   import, clipboard reads (`UIPasteboard`), drag-and-drop receivers or code loaded at run
   time. Any byte-level parser (the project's own tag reader) has fuzz tests, and every
   `Unsafe` use is in `security/allowed-unsafe.txt` (`scripts/check-security.sh`). App Intents
-  parameters are validated by `NopeCore`.
+  parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds;
+  an unknown lens takes no photo), and the intents return only whether a photo was saved and
+  signed, never image data or metadata.
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis

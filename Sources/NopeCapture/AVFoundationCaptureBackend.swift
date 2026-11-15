@@ -13,7 +13,7 @@ import NopeCore
 /// coverage gate and verified on a device (docs/TESTING.md).
 ///
 /// Create it with ``init()`` in the app target.
-public actor AVFoundationCaptureBackend: ManualCaptureBackend {
+public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBackend {
     /// Interruptions, heat changes and runtime errors from the hardware.
     public nonisolated let events: AsyncStream<CaptureEvent>
 
@@ -26,6 +26,12 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend {
     /// The camera calls.
     private let hardware: any CaptureHardware
 
+    /// The live view calls, or `nil` when the hardware has none.
+    nonisolated let liveHardware: (any LiveViewHardware)?
+
+    /// The comparison shot's camera call (issue #55), or `nil` when the hardware has none.
+    nonisolated let comparisonHardware: (any ComparisonHardware)?
+
     /// Camera permission.
     private let authorization: any CameraAuthorizing
 
@@ -33,7 +39,7 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend {
     private var knownLensIDs: Set<Lens.ID> = []
 
     /// The configuration the session runs with, or `nil` when it is stopped.
-    private var activeConfiguration: SessionConfiguration?
+    private(set) var activeConfiguration: SessionConfiguration?
 
     /// Creates a backend from its parts. The app uses ``init()``; tests pass fakes.
     ///
@@ -43,6 +49,8 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend {
     init(hardware: any CaptureHardware, authorization: any CameraAuthorizing) {
         self.hardware = hardware
         self.authorization = authorization
+        liveHardware = hardware as? any LiveViewHardware
+        comparisonHardware = hardware as? any ComparisonHardware
         events = hardware.events
         exposureReadings = hardware.exposureReadings
         previewSource = hardware.previewSource
@@ -92,7 +100,8 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend {
 
     /// Takes one photo, in memory only, and rejects it if its pixel buffer is blank.
     ///
-    /// - Parameter request: The lens and format; must match the last ``startSession(_:)``.
+    /// - Parameter request: The lens and format; must match the last ``startSession(_:)``. Its
+    ///   flash mode applies to this photo only.
     /// - Returns: The photo.
     /// - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
     ///   `CaptureError.blankPicture` if ``PictureCheck`` finds the photo's buffer zero-filled
@@ -101,7 +110,8 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend {
         guard let configuration = activeConfiguration,
             configuration == CapturePolicy.sessionConfiguration(for: request)
         else { throw .notRunning }
-        let photo = try await hardware.capture(configuration.photoSettings, metadata: request.metadata)
+        let plan = CapturePolicy.photoSettings(configuration.photoSettings, flashMode: request.flashMode)
+        let photo = try await hardware.capture(plan, metadata: request.metadata)
         guard !PictureCheck.isBlank(photo.pixelSample) else { throw .blankPicture }
         return CapturedPhoto(
             data: photo.data,
@@ -164,5 +174,14 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend {
                 rawImageData: photo.rawImageData
             )
         }
+    }
+
+    /// Turns the running lens's torch on at a level, or off.
+    ///
+    /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
+    /// - Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+    public func setTorch(level: Double?) async -> TorchStatus {
+        guard activeConfiguration != nil else { return .off }
+        return await hardware.setTorch(level: level)
     }
 }

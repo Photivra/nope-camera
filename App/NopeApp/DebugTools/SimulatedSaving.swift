@@ -33,7 +33,10 @@ struct SimulatedReadBack: MetadataReading {
             tags = [0x828D, 0x828E, 0xC612, 0xC621].map { MetadataInventory.Tag(directory: .primary, tag: $0) }
             tags.append(MetadataInventory.Tag(directory: .primary, tag: 0xC614, text: MetadataPlan.genericUniqueCameraModel))
         }
-        if addsUnexpectedTag { tags.append(MetadataInventory.Tag(directory: .primary, tag: Self.futureSystemTag)) }
+        // A file that isn't the placeholder was changed by a breaking signer: it fails.
+        if addsUnexpectedTag || file.data != SimulatedCaptureBackend.placeholderPhotoData {
+            tags.append(MetadataInventory.Tag(directory: .primary, tag: Self.futureSystemTag))
+        }
         return MetadataReadBack(
             file: MetadataFileReader.Result(
                 inventory: MetadataInventory(tags: tags),
@@ -43,7 +46,8 @@ struct SimulatedReadBack: MetadataReading {
 }
 
 /// Stands in for the signer: returns each file unchanged, so the status shows "Saved and
-/// signed.", or fails, so it shows the signing-failed message. The simulated backend's
+/// signed."; fails, so it shows the signing-failed message; or returns a changed file that
+/// fails the read-back, so the unsigned file is saved and the status says why (issue #66). The simulated backend's
 /// placeholder bytes aren't an image the real signer can sign; `NopeSigningTests` cover real
 /// signing.
 struct SimulatedSigner: PhotoSigning {
@@ -53,10 +57,46 @@ struct SimulatedSigner: PhotoSigning {
     /// Whether every file fails to sign.
     let fails: Bool
 
-    /// Returns the file, or throws ``Failure``.
+    /// Whether every signed file is changed so that it fails the read-back.
+    var breaksFiles = false
+
+    /// Returns the file, a changed copy, or throws ``Failure``.
     func sign(_ file: PhotoFile) async throws -> PhotoFile {
         if fails { throw Failure() }
-        return file
+        guard breaksFiles else { return file }
+        return PhotoFile(format: file.format, data: file.data + [0], isProcessedByDevice: file.isProcessedByDevice)
+    }
+}
+
+/// Makes a plain gray-blue thumbnail: the simulated backend's photo isn't an image, and
+/// `NopeDevelopTests` cover the ImageIO thumbnailer.
+struct SimulatedThumbnailer: PhotoThumbnailing {
+    /// The thumbnail's side, in pixels.
+    static let side = 8
+
+    /// Returns the same small thumbnail for every file.
+    func thumbnail(of file: PhotoFile) -> PhotoThumbnail? {
+        let pixel: [UInt8] = [70, 90, 120, 255]
+        return PhotoThumbnail(
+            width: Self.side, height: Self.side, rgba: Data(Array(repeating: pixel, count: Self.side * Self.side).joined()))
+    }
+}
+
+/// Makes the compare view's two pictures (issue #55): plain 4:3 pictures held upright, gray-blue
+/// for the app's file and warm orange for the phone-processed one, so the divider is visible. The
+/// simulated photos aren't images; `NopeDevelopTests` cover the ImageIO thumbnailer.
+struct SimulatedComparisonRenderer: PhotoThumbnailing {
+    /// The picture's width, in pixels.
+    static let width = 30
+    /// The picture's height, in pixels.
+    static let height = 40
+
+    /// Returns a picture in the file's color.
+    func thumbnail(of file: PhotoFile) -> PhotoThumbnail? {
+        let pixel: [UInt8] = file.isProcessedByDevice ? [200, 120, 60, 255] : [70, 90, 120, 255]
+        return PhotoThumbnail(
+            width: Self.width, height: Self.height,
+            rgba: Data(Array(repeating: pixel, count: Self.width * Self.height).joined()))
     }
 }
 
@@ -65,9 +105,13 @@ struct SimulatedPhotoLibrary: PhotoLibrary {
     /// Whether adding is allowed.
     let allowsAdding: Bool
 
+    /// How long each add takes, in seconds, so a burst runs long enough to watch.
+    var addSeconds = 0.0
+
     /// Does nothing, or throws `CaptureError.photosAccessDenied`.
     func add(_ assets: [PhotoLibraryAsset]) async throws(CaptureError) {
         guard allowsAdding else { throw .photosAccessDenied }
+        if addSeconds > 0 { try? await Task.sleep(for: .seconds(addSeconds)) }
     }
 }
 #endif

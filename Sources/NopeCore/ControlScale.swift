@@ -19,7 +19,7 @@ public struct ControlScale: Equatable, Sendable {
          320, 250, 200, 160, 125, 100, 80, 60, 50, 40, 30, 25, 20, 15, 13, 10, 8, 6, 5, 4].map { 1 / $0 }
         + [0.3, 0.4, 0.5, 0.6, 0.8, 1, 1.3, 1.6, 2, 2.5, 3.2, 4, 5, 6, 8, 10, 13, 15, 20, 25, 30]
 
-    /// The largest exposure compensation nope. offers, in EV either way: ±3 EV, as in the manual
+    /// The largest exposure compensation the app offers, in EV either way: ±3 EV, as in the manual
     /// controls design, within the lens's own range.
     static let maximumCompensation = 3.0
 

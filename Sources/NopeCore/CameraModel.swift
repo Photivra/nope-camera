@@ -24,14 +24,19 @@ public final class CameraModel {
     public private(set) var sessionStatus: SessionStatus = .stopped
 
     /// The state of the most recent capture.
-    public private(set) var captureStatus: CaptureStatus = .idle
+    public internal(set) var captureStatus: CaptureStatus = .idle
 
     /// The formats and metadata choices used for the next photo. A Settings screen changes them
     /// through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
     public var saveSettings = SaveSettings()
 
+    /// Location tagging (issue #43), which gives each photo its location while the Location
+    /// switch is on, or `nil` when the app has no location service (previews, tests). The app
+    /// sets it once.
+    public var location: LocationTagging?
+
     /// Builds, checks and saves each photo, or `nil` when this model can't save (previews).
-    private let saver: PhotoSaver?
+    let saver: PhotoSaver?
 
     /// Whether clean view is on: the interface hides every control that isn't essential. Off by
     /// default. Warnings that change what the photo is are never hidden.
@@ -40,11 +45,36 @@ public final class CameraModel {
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
+    /// The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+    public let drive: DriveModel
+
+    /// The device's free storage and battery, for warnings and to stop a burst in time.
+    public let deviceStatus: DeviceStatus
+
+    /// The live aids over the viewfinder: histogram, focus peaking and the live camera readout.
+    public let live: LiveViewModel
+
+    /// Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
+    /// focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
+    public private(set) var isMagnifying = false
+
+    /// The flash and the torch. Their intents arrive as ``CameraIntent/light(_:)``.
+    public let light: LightModel
+
+    /// The astro helper (issue #60). Its intents arrive as ``CameraIntent/astro(_:)``.
+    public let astro = AstroModel()
+
+    /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
+    public let comparison: ComparisonModel
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
     /// The hardware the model asks for permission, capabilities and photos.
-    private let backend: any CaptureBackend
+    let backend: any CaptureBackend
+
+    /// Reads the monotonic clock, to time each capture for the photo's details (issue #53).
+    let now: @Sendable () -> ContinuousClock.Instant
 
     /// Creates a model in the ``CameraState/starting`` state.
     ///
@@ -52,16 +82,28 @@ public final class CameraModel {
     ///   - backend: The hardware, or a ``SimulatedCaptureBackend`` in tests and previews.
     ///   - saver: The save pipeline. Without one, every photo ends in
     ///     ``CaptureError/savingUnavailable`` and nothing is saved.
-    ///   - sleep: Waits a number of seconds between interval photos. Tests pass a faster one.
+    ///   - sleep: Waits a number of seconds between interval photos and self-timer ticks. Tests
+    ///     pass a faster one.
+    ///   - now: Reads the clock that times each capture. Tests pass a scripted one.
+    ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
     ///
-    /// A ``ManualCaptureBackend`` also gets manual controls (``manual``).
+    /// A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
+    /// ``LightCaptureBackend`` a torch (``light``).
     public init(
         backend: any CaptureBackend, saver: PhotoSaver? = nil,
-        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }
+        sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
+        deviceStatusReader: (any DeviceStatusReading)? = nil
     ) {
         self.backend = backend
         self.saver = saver
+        self.now = now
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
+        drive = DriveModel(sleep: sleep)
+        deviceStatus = DeviceStatus(reader: deviceStatusReader)
+        live = LiveViewModel(backend: backend as? any LiveViewBackend)
+        light = LightModel(backend: backend as? any LightCaptureBackend)
+        comparison = ComparisonModel(backend: backend as? any ComparisonCaptureBackend)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -87,10 +129,11 @@ public final class CameraModel {
         selectedLens.map(CaptureFormat.init(for:))
     }
 
-    /// Whether the shutter should be enabled: the camera is running and no photo is being taken
-    /// or saved.
+    /// Whether the shutter should be enabled: the camera is running, no photo is being taken
+    /// or saved, and the compare view isn't open.
     public var canCapture: Bool {
         sessionStatus.canCapture && captureStatus != .capturing && captureStatus != .saving
+            && !comparison.isPresented
     }
 
     /// Handles one intent from the interface and updates the model's state.
@@ -101,7 +144,8 @@ public final class CameraModel {
     /// ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
     /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
     /// ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
-    /// it to Photos (which may show the add-only Photos prompt).
+    /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
+    /// (``pressShutter()``).
     public func send(_ intent: CameraIntent) async {
         switch intent {
         case .start:
@@ -111,11 +155,22 @@ public final class CameraModel {
         case .selectLens(let id):
             await selectLens(id)
         case .capture:
-            await capture()
+            await pressShutter()
         case .manual(let intent):
             await manual.handle(intent) { [weak self] in await self?.capture() }
+            await manualControlsDidChange(after: intent)
         case .setCleanView(let isOn):
             isCleanView = isOn
+        case .drive(let intent):
+            await handle(intent)
+        case .auto(let intent):
+            await handleAuto(intent)
+        case .light(let intent):
+            if !astroRefuses(intent) { await light.handle(intent) }
+        case .astro(let intent):
+            await handle(intent)
+        case .comparison(let intent):
+            comparison.handle(intent)
         }
     }
 
@@ -137,6 +192,7 @@ public final class CameraModel {
         switch event {
         case .interrupted(let reason):
             sessionStatus = .interrupted(reason)
+            await light.cameraDidPause()
         case .interruptionEnded:
             if case .interrupted = sessionStatus { sessionStatus = .running }
         case .heat(let level):
@@ -145,7 +201,62 @@ public final class CameraModel {
             // Apple's guidance for runtime errors such as a media services reset is to restart
             // the session (AVCaptureSession.runtimeErrorNotification).
             await startSession()
+        case .subjectAreaChanged:
+            await manual.subjectAreaDidChange()
+        case .torchUnavailable:
+            light.systemMadeTorchUnavailable()
         }
+    }
+
+    /// The lens to suggest when the subject seems closer than the selected lens can focus: the
+    /// ultra wide lens, from the wide or a telephoto lens, while
+    /// ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
+    /// a button to switch; the app never switches on its own (issue #51).
+    public var closeUpLens: Lens? {
+        guard manual.suggestsCloseUpLens, let kind = selectedLens?.kind, kind == .wide || kind == .telephoto else {
+            return nil
+        }
+        return capabilities?.lenses.first { $0.kind == .ultraWide }
+    }
+
+    /// Handles an aid that works in full auto too.
+    ///
+    /// - Parameter intent: The intent.
+    ///
+    /// Side effects: may refocus or re-expose the camera.
+    private func handleAuto(_ intent: AutoControlIntent) async {
+        switch intent {
+        case .focusAndExpose(let point):
+            await focus(at: point, locks: false)
+        case .lockFocusAndExposure(let point):
+            await focus(at: point ?? manual.focusTarget?.viewfinderPoint ?? .center, locks: true)
+        case .unlockFocusAndExposure:
+            await manual.unlockFocus()
+        case .setExposureCompensation(let value):
+            await manual.setExposureCompensation(value)
+        case .stepExposureCompensation(let steps):
+            await manual.stepExposureCompensation(by: steps)
+        case .setNearFocusLimit(let isOn):
+            await manual.setNearFocusLimit(isOn)
+        case .setFastShutter(let choice):
+            await manual.setFastShutter(choice)
+        case .dismissCloseUpSuggestion:
+            manual.dismissCloseUpSuggestion()
+        case .setMagnifier(let isOn):
+            isMagnifying = isOn
+        }
+    }
+
+    /// Aims focus and exposure at a viewfinder point, converted to the camera's coordinates by
+    /// the preview. A backend without a preview has no rotation, so the point is used as it is.
+    ///
+    /// - Parameters:
+    ///   - point: The point in the viewfinder.
+    ///   - locks: Whether to lock focus and exposure there.
+    private func focus(at point: FramePoint, locks: Bool) async {
+        let devicePoint = previewSource.map { $0.devicePoint(forViewfinderPoint: point) } ?? point
+        guard let devicePoint else { return }
+        await manual.focus(at: point, devicePoint: devicePoint, locks: locks)
     }
 
     /// Pauses the camera at a critical heat level and resumes it when the device cools down.
@@ -156,6 +267,7 @@ public final class CameraModel {
         if level.requiresPause {
             guard sessionStatus != .pausedForHeat, selectedLensID != nil else { return }
             sessionStatus = .pausedForHeat
+            await light.cameraDidPause()
             await backend.stopSession()
         } else if sessionStatus == .pausedForHeat {
             await startSession()
@@ -180,6 +292,7 @@ public final class CameraModel {
             }
             state = .ready(capabilities)
             selectedLensID = lens.id
+            deviceStatus.refresh()
             await startSession()
         }
     }
@@ -191,6 +304,7 @@ public final class CameraModel {
         guard id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
         selectedLensID = id
         await startSession()
+        await astroLensDidChange()
     }
 
     /// Starts or reconfigures the camera for the selected lens, unless the device is too hot.
@@ -202,12 +316,14 @@ public final class CameraModel {
         }
         sessionStatus = .starting
         manual.lensWillStart(lens)
+        light.lensWillStart(lens)
         do {
             try await backend.startSession(CaptureRequest(lens: lens))
             // An interruption or heat event may have arrived while starting; it wins.
             if sessionStatus == .starting { sessionStatus = .running }
             // Starting the camera returns its controls to automatic; apply the manual ones again.
             await manual.sessionDidStart()
+            await light.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
         }
@@ -216,19 +332,29 @@ public final class CameraModel {
     /// Takes one photo with the selected lens, if the camera can capture now.
     ///
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
-    /// camera once and takes the photo again (``recoverFromBlankPicture(_:)``).
-    private func capture() async {
+    /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
+    func capture() async {
         guard canCapture, let lens = selectedLens else { return }
+        deviceStatus.refresh()
         captureStatus = .capturing
         let settings = saveSettings
-        let plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
-        let request = CaptureRequest(lens: lens, metadata: plan)
+        var plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
+        plan.location = location?.location(isOn: settings.metadata.isOn(.location))
+        plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
+        let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
         if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
             await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
             return
         }
+        let comparisonBackend = comparisonBackendForNextPhoto
         do {
-            await save(try await backend.capturePhoto(request), settings: settings)
+            let start = now()
+            let photo = try await backend.capturePhoto(request)
+            if let comparisonBackend {
+                await saveComparing(photo, started: start, request: request, settings: settings, backend: comparisonBackend)
+                return
+            }
+            await save(photo, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             await recoverFromBlankPicture(request, settings: settings)
         } catch {
@@ -243,17 +369,19 @@ public final class CameraModel {
     /// - Parameters:
     ///   - photo: The captured photo.
     ///   - settings: The settings the photo was taken with.
-    private func save(_ photo: CapturedPhoto, settings: SaveSettings) async {
+    ///   - captureDuration: How long the camera took to return the photo.
+    private func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration) async {
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
         }
         captureStatus = .saving
         do {
-            captureStatus = .saved(try await saver.save(photo, settings: settings))
+            captureStatus = .saved(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
         } catch {
             captureStatus = .failed(error)
         }
+        deviceStatus.refresh()
     }
 
     /// Handles a blank photo: stops the camera, starts it again, and retries the photo once.
@@ -277,7 +405,9 @@ public final class CameraModel {
             return
         }
         do {
-            await save(try await backend.capturePhoto(request), settings: settings)
+            let start = now()
+            let photo = try await backend.capturePhoto(request)
+            await save(photo, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)

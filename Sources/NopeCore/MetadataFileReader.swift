@@ -51,7 +51,7 @@ public enum MetadataFileReader {
     /// The RAW image data of a DNG: IFD0's tiles or strips, concatenated.
     ///
     /// The capture adapter uses it to keep a reference copy of the sensor data from the system's
-    /// own DNG, before nope. writes its metadata.
+    /// own DNG, before the app writes its metadata.
     ///
     /// - Parameter data: The DNG's bytes.
     /// - Returns: The image data, or `nil` if the file has none that can be read.

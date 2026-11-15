@@ -18,7 +18,7 @@ public struct DeviceCapabilities: Equatable, Sendable {
         self.lenses = lenses
     }
 
-    /// Whether the device has at least one camera nope. can use.
+    /// Whether the device has at least one camera the app can use.
     public var hasCamera: Bool {
         !lenses.isEmpty
     }
@@ -28,6 +28,12 @@ public struct DeviceCapabilities: Equatable, Sendable {
     /// When it's `false`, every photo uses the labeled processed fallback.
     public var supportsBayerRAW: Bool {
         lenses.contains { $0.supportsBayerRAW }
+    }
+
+    /// Whether the device has a front camera, so front camera options such as
+    /// ``SaveSettings/mirrorsFrontCamera`` apply.
+    public var hasFrontCamera: Bool {
+        lenses.contains { $0.kind == .front }
     }
 
     /// The lens the camera starts with: the rear wide camera when there is one, otherwise the

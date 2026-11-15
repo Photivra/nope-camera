@@ -1,21 +1,22 @@
 import NopeCore
 import SwiftUI
 
-/// The panel of one control: its name, an Auto/Manual picker, the value in large type, a native
-/// slider over the lens's real steps, the lens's range and Reset.
+/// The dial of one control, over the bottom of the picture on a dark backing: its name and the
+/// lens's range, then − and + steppers around a native slider over the lens's real steps, and
+/// Auto (issue #68, "Manual"). Nothing needs a gesture: every step has a button.
 ///
-/// In Auto the value is the camera's, shown in the secondary color; moving the slider switches
-/// the control to Manual. The aperture uses a segmented picker of the recommended stops, and
-/// white balance adds a tint slider and presets. The panel has a solid backing over the
-/// viewfinder.
-struct ControlPanel: View {
+/// In Auto the value is the camera's; a step or the slider switches the control to Manual, and
+/// Auto hands it back. The aperture uses a segmented picker of the recommended stops, and white
+/// balance adds a tint slider and presets. While the camera reports readings, the meter shows
+/// how the exposure compares with its reading.
+struct ControlDial: View {
     /// The camera model.
     let model: CameraModel
 
     /// The control.
     let control: ManualControl
 
-    /// Creates a panel.
+    /// Creates a dial.
     ///
     /// - Parameters:
     ///   - model: The camera model.
@@ -31,59 +32,55 @@ struct ControlPanel: View {
     /// Whether the control is set manually.
     private var isManual: Bool { manual.settings.isManual(control) }
 
-    /// The panel.
+    /// The dial.
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
+            HStack(alignment: .firstTextBaseline) {
                 Text(verbatim: ControlText.name(control))
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
-                Spacer()
-                if manual.availability(of: control).isAdjustable {
-                    AutoManualPicker(model: model, control: control)
+                Text(verbatim: SlotValue.text(for: control, in: manual))
+                    .font(.headline.monospacedDigit())
+                    .accessibilityHidden(true)
+                Spacer(minLength: 8)
+                if let reading = manual.reading {
+                    Text(ControlText.meter(reading.exposureOffset))
+                        .font(.footnote.monospacedDigit())
+                        .accessibilityLabel(Text("Meter", bundle: .module, comment: "VoiceOver name of the exposure meter: how the exposure compares with the camera's reading."))
+                        .accessibilityValue(Text(ControlText.meter(reading.exposureOffset)))
                 }
             }
-            Text(verbatim: SlotValue.text(for: control, in: manual))
-                .font(.title2.monospacedDigit().weight(.semibold))
-                .foregroundStyle(isManual ? .primary : .secondary)
-                .accessibilityHidden(true)
             content
             if let scale = manual.scale(for: control) {
-                HStack {
-                    Text(
-                        "This lens: \(ControlText.range(scale, of: control))", bundle: .module,
-                        comment: "The range of a control on the selected lens, for example This lens: 54 – 12,096.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer()
-                    if isManual {
-                        Button {
-                            Task { await model.send(.manual(.setAuto(control))) }
-                        } label: {
-                            Text("Reset", bundle: .module, comment: "Button that returns one manual control to automatic.")
-                                .frame(minHeight: 44)
-                        }
-                    }
-                }
+                Text(
+                    "This lens: \(ControlText.range(scale, of: control))", bundle: .module,
+                    comment: "The range of a control on the selected lens, for example This lens: 54 – 12,096.")
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
+        .foregroundStyle(.white)
         .padding(12)
-        .background(.black, in: .rect(cornerRadius: 12))
+        .darkBacking()
         .accessibilityElement(children: .contain)
     }
 
-    /// The slider, or why the control can't be set.
+    /// The steppers and slider, or why the control can't be set.
     @ViewBuilder private var content: some View {
         switch manual.availability(of: control) {
         case .adjustable:
-            if control == .aperture, let scale = manual.scale(for: control) {
-                AperturePicker(model: model, stops: scale.values)
-            } else {
-                ScaleSlider(model: model, control: control)
-                if control == .whiteBalance {
-                    TintAndPresets(model: model)
+            HStack(spacing: CameraStyle.targetSpacing) {
+                stepButton(by: -1)
+                if control == .aperture, let scale = manual.scale(for: control) {
+                    AperturePicker(model: model, stops: scale.values)
+                } else {
+                    ScaleSlider(model: model, control: control)
                 }
+                stepButton(by: 1)
+                autoButton
+            }
+            if control == .whiteBalance {
+                TintAndPresets(model: model)
             }
         case .fixed:
             note(Text("This lens has a fixed aperture.", bundle: .module, comment: "Explains why the aperture can't be changed on this lens."))
@@ -94,49 +91,54 @@ struct ControlPanel: View {
         }
     }
 
-    /// A short explanation in the secondary style.
+    /// − or +: one step down or up, which sets the control manually.
+    ///
+    /// - Parameter steps: −1 or 1.
+    private func stepButton(by steps: Int) -> some View {
+        Button {
+            Task { await model.send(.manual(.step(control, by: steps))) }
+        } label: {
+            Label {
+                steps < 0
+                    ? Text("Decrease", bundle: .module, comment: "Button on a manual control's dial: one step lower.")
+                    : Text("Increase", bundle: .module, comment: "Button on a manual control's dial: one step higher.")
+            } icon: {
+                Image(systemName: steps < 0 ? "minus" : "plus")
+            }
+            .labelStyle(.iconOnly)
+        }
+        .buttonStyle(SelectableCapsuleStyle(isSelected: false))
+        .accessibilityShowsLargeContentViewer()
+    }
+
+    /// Auto: filled white while the camera sets the control. Pressing it in Auto fixes the value
+    /// in use; pressing it in Manual hands the control back to the camera.
+    private var autoButton: some View {
+        Button {
+            Task { await model.send(.manual(isManual ? .setAuto(control) : .step(control, by: 0))) }
+        } label: {
+            Text(verbatim: ControlText.mode(isManual: false))
+        }
+        .buttonStyle(SelectableCapsuleStyle(isSelected: !isManual))
+        .accessibilityAddTraits(isManual ? [] : .isSelected)
+        .accessibilityHint(Text(verbatim: isManual ? switchToAuto : switchToManual))
+    }
+
+    /// "Switch to Auto".
+    private var switchToAuto: String {
+        String(localized: "Switch to Auto", bundle: .module, comment: "VoiceOver action that hands a control back to the camera.")
+    }
+
+    /// "Switch to Manual".
+    private var switchToManual: String {
+        String(localized: "Switch to Manual", bundle: .module, comment: "VoiceOver action that fixes a control at its current value.")
+    }
+
+    /// A short explanation.
     ///
     /// - Parameter text: The explanation.
     private func note(_ text: Text) -> some View {
-        text.font(.footnote).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-    }
-}
-
-/// A segmented Auto/Manual picker for one control.
-struct AutoManualPicker: View {
-    /// The camera model.
-    let model: CameraModel
-
-    /// The control.
-    let control: ManualControl
-
-    /// Creates the picker.
-    ///
-    /// - Parameters:
-    ///   - model: The camera model.
-    ///   - control: The control.
-    init(model: CameraModel, control: ManualControl) {
-        self.model = model
-        self.control = control
-    }
-
-    /// The picker. Choosing Manual fixes the value in use; choosing Auto hands it back.
-    var body: some View {
-        Picker(
-            selection: Binding(
-                get: { model.manual.settings.isManual(control) },
-                set: { manual in
-                    Task { await model.send(.manual(manual ? .step(control, by: 0) : .setAuto(control))) }
-                })
-        ) {
-            Text(verbatim: ControlText.mode(isManual: false)).tag(false)
-            Text(verbatim: ControlText.mode(isManual: true)).tag(true)
-        } label: {
-            Text(verbatim: ControlText.name(control))
-        }
-        .pickerStyle(.segmented)
-        .fixedSize()
-        .accessibilityIdentifier("panel-mode")
+        text.font(.footnote).fixedSize(horizontal: false, vertical: true)
     }
 }
 

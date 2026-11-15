@@ -9,7 +9,7 @@ import Foundation
 /// ``MetadataField/catalog`` that the switches allow, so a tag a future iOS adds is never copied.
 public struct MetadataPlan: Equatable, Sendable {
     /// The `UniqueCameraModel` a DNG carries when ``MetadataItem/exactCameraModel`` is off. The
-    /// DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so nope. writes a value
+    /// DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so the app writes a value
     /// that names no device.
     public static let genericUniqueCameraModel = "Generic camera"
 
@@ -17,6 +17,17 @@ public struct MetadataPlan: Equatable, Sendable {
     /// the full product name, as the owner decided (2026-11-12), so files say "Photivra Nope
     /// Camera 0.2.0", or "Photivra Nope Camera 0.2.0 (27.2.1)" with the system version.
     public static let appName = "Photivra Nope Camera"
+
+    /// The `{TIFF}` fields a DNG's replacement metadata must always contain: `DateTime`, `Make`,
+    /// `Model` and `Software`.
+    ///
+    /// Measured on an iPhone 16 Pro Max with iOS 27.2.1 (issue #65):
+    /// `AVCapturePhoto.fileDataRepresentation(with:)` returns `nil` for a Bayer RAW photo unless
+    /// the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
+    /// them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
+    /// requirement. Privacy rule: when a field's switch is off, the app writes an empty string, never
+    /// a placeholder value, so the DNG still says nothing about the date, camera or software.
+    public static let requiredRAWTIFFFields: [MetadataField] = [.dateTime, .make, .model, .software]
 
     /// The XMP basic namespace (XMP part 1, 8.4).
     public static let xmpNamespace = "http://ns.adobe.com/xap/1.0/"
@@ -82,6 +93,17 @@ public struct MetadataPlan: Equatable, Sendable {
     /// ``MetadataItem/appNameAndVersion`` is on.
     public let appVersion: String
 
+    /// Whether the photo is saved mirrored left to right: a front camera photo with
+    /// ``SaveSettings/mirrorsFrontCamera`` on (issue #45). The mirroring is done only through
+    /// the orientation value (``mirroredOrientation(_:)``): the sensor data is never changed.
+    /// ``CameraModel`` sets it for each capture. Off by default.
+    public var mirrorsHorizontally = false
+
+    /// Where the photo was taken, written when ``MetadataItem/location`` is on, or `nil` for no
+    /// location (issue #43). ``CameraModel`` sets it for each capture from ``LocationTagging``;
+    /// nothing else supplies a location, and the system's own metadata carries none.
+    public var location: PhotoLocation?
+
     /// Creates a plan.
     ///
     /// - Parameters:
@@ -137,7 +159,9 @@ public struct MetadataPlan: Equatable, Sendable {
     ///     manifest's tag or block.
     /// - Returns: Everything the file may carry.
     public func allowlist(for format: PhotoFormat, signed: Bool) -> MetadataAllowlist {
-        let fields = MetadataField.catalog.filter { writes($0, in: format) }
+        let written = MetadataField.catalog.filter { writes($0, in: format) }
+        let alwaysPresent = format == .raw ? Self.requiredRAWTIFFFields.filter { !written.contains($0) } : []
+        let fields = written + alwaysPresent
         var tags = Set(fields.map { MetadataAllowlist.TagID($0.directory, $0.tag) })
         var blocks: Set<String> = []
         var xmp: Set<MetadataAllowlist.XMPName> = []
@@ -151,6 +175,8 @@ public struct MetadataPlan: Equatable, Sendable {
             textRules[MetadataAllowlist.TagID(.primary, MetadataField.uniqueCameraModel.tag)] =
                 .exactly(Self.genericUniqueCameraModel)
         }
+        // A DNG always carries these four, empty when their switch is off (issue #65).
+        for field in alwaysPresent { textRules[MetadataAllowlist.TagID(field.directory, field.tag)] = .exactly("") }
         switch format {
         case .raw:
             if signed { tags.insert(Self.contentCredentialsTag) }
@@ -169,14 +195,13 @@ public struct MetadataPlan: Equatable, Sendable {
                     MetadataAllowlist.XMPName(Self.xmpNamespace, "ModifyDate"),
                 ])
             }
-            for (field, name) in Self.xmpMirrors where fields.contains(field) { xmp.insert(name) }
+            for (field, name) in Self.xmpMirrors where written.contains(field) { xmp.insert(name) }
             if !xmp.isEmpty { blocks.insert(Self.heifXMPBlock) }
         }
-        if settings.isOn(.location) { wildcardDictionaries.insert(MetadataField.gps) }
         if settings.isOn(.makerNotes) { wildcardDictionaries.insert(MetadataField.makerApple) }
         let imageIOKeys = Set(fields.flatMap(\.imageIOKeys) + Self.derivedImageIOKeys.map { ImageIOKey(nil, $0) })
         return MetadataAllowlist(
-            format: format, tags: tags, wildcardDirectories: settings.isOn(.location) ? [.gps] : [], blocks: blocks,
+            format: format, tags: tags, wildcardDirectories: [], blocks: blocks,
             xmpProperties: xmp, imageIOKeys: imageIOKeys, wildcardImageIODictionaries: wildcardDictionaries,
             requiredTags: format == .raw ? Self.requiredDNGTags : [], textRules: textRules,
             xmpTextRules: [
@@ -190,8 +215,9 @@ public struct MetadataPlan: Equatable, Sendable {
     ///
     /// Privacy rule: the result starts empty, and only allowlisted values are copied in
     /// (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
-    /// and the person's name and copyright are written by nope.; everything else is the system's
-    /// own value.
+    /// the person's name and copyright, the ``location`` and a mirrored orientation
+    /// (``mirrorsHorizontally``) are written by the app; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+    /// string for each one whose switch is off.
     ///
     /// - Parameters:
     ///   - format: The file's format.
@@ -204,16 +230,19 @@ public struct MetadataPlan: Equatable, Sendable {
         var result: [String: Any] = [:]
         let special: [MetadataField] = [.software, .uniqueCameraModel, .artist, .copyright]
         for field in MetadataField.catalog where writes(field, in: format) && !special.contains(field) {
-            for key in field.imageIOKeys {
+            for key in field.imageIOKeys where Self.isWritten(key, in: format) {
                 if let value = Self.value(of: key, in: source) { Self.put(value, at: key, in: &result) }
             }
         }
-        for (item, dictionary) in [(MetadataItem.location, MetadataField.gps), (.makerNotes, MetadataField.makerApple)]
-        where settings.isOn(item) {
-            if let value = source[dictionary] { result[dictionary] = value }
+        if settings.isOn(.makerNotes), let value = source[MetadataField.makerApple] {
+            result[MetadataField.makerApple] = value
         }
-        let systemSoftware = Self.value(of: ImageIOKey(MetadataField.tiff, "Software"), in: source) as? String
-        if let software = softwareValue(systemSoftware: systemSoftware) {
+        // Privacy rule (issue #43): the GPS directory is built from the plan's location only,
+        // with the fields of `MetadataField.gpsFields`; a developed copy takes the same fields
+        // from its DNG through the catalog loop above.
+        if settings.isOn(.location), let location { result[MetadataField.gps] = location.gpsProperties }
+        let sourceSoftware = Self.value(of: ImageIOKey(MetadataField.tiff, "Software"), in: source) as? String
+        if let software = softwareValue(systemSoftware: Self.systemVersion(fromSoftware: sourceSoftware)) {
             Self.put(software, at: ImageIOKey(MetadataField.tiff, "Software"), in: &result)
         }
         if writes(.uniqueCameraModel, in: format) {
@@ -227,8 +256,73 @@ public struct MetadataPlan: Equatable, Sendable {
         }
         if let orientation {
             for key in MetadataField.orientation.imageIOKeys { Self.put(orientation, at: key, in: &result) }
+        } else if mirrorsHorizontally {
+            let current = MetadataField.orientation.imageIOKeys.lazy.compactMap { Self.value(of: $0, in: source) as? Int }
+                .first
+            let mirrored = Self.mirroredOrientation(current ?? 1)
+            for key in MetadataField.orientation.imageIOKeys { Self.put(mirrored, at: key, in: &result) }
+        }
+        if format == .raw {
+            // AVFoundation writes no DNG without these four keys (issue #65): an empty string
+            // stands in for a value the switches leave out, or the system didn't supply.
+            for key in Self.requiredRAWTIFFFields.map({ $0.imageIOKeys[0] }) where Self.value(of: key, in: result) == nil {
+                Self.put("", at: key, in: &result)
+            }
         }
         return result
+    }
+
+    /// Whether a value under an ImageIO key is copied into a file of a format.
+    ///
+    /// A HEIF or JPEG never gets the `{ExifAux}` dictionary (issue #58). ImageIO reports a DNG's
+    /// `LensSpecification` and `LensModel` again as `{ExifAux}` `LensInfo` and `LensModel`, so
+    /// a developed copy's source has both; written back, ImageIO stores the `{ExifAux}` values
+    /// as XMP `aux:LensInfo` and `aux:Lens` properties, which no allowlist permits, and the
+    /// read-back rejected the photo: with "Lens make and model" on and a HEIF or JPEG selected,
+    /// nothing was saved (`FileCompatibilityTests`, iOS 27.2 Simulator, 2026-11-14). The same
+    /// values are still written as the EXIF `LensSpecification` and `LensModel` tags. A DNG keeps
+    /// every key: its metadata is written by AVFoundation, which the device tag check covers.
+    ///
+    /// - Parameters:
+    ///   - key: The ImageIO key.
+    ///   - format: The file's format.
+    /// - Returns: `false` for an `{ExifAux}` key in a HEIF or JPEG; otherwise `true`.
+    static func isWritten(_ key: ImageIOKey, in format: PhotoFormat) -> Bool {
+        format == .raw || key.dictionary != MetadataField.exifAux
+    }
+
+    /// The orientation that shows a photo mirrored left to right, for an EXIF/TIFF orientation
+    /// value (issue #45).
+    ///
+    /// TIFF 6.0 (`Orientation`, tag 274) and EXIF 3.0 define eight values: 1 upright, 2 mirrored,
+    /// 3 turned 180°, 4 turned 180° and mirrored, 5 mirrored and turned 90° counterclockwise
+    /// (a transpose), 6 turned 90° clockwise, 7 mirrored and turned 90° clockwise (a transverse)
+    /// and 8 turned 90° counterclockwise. Mirroring the upright result left to right swaps each
+    /// pair: 1↔2, 3↔4, 5↔6 and 7↔8. The sensor data is never changed.
+    ///
+    /// - Parameter orientation: The orientation the photo would be shown with, 1 to 8. Any other
+    ///   value is treated as 1, upright.
+    /// - Returns: The mirrored orientation, 1 to 8.
+    public static func mirroredOrientation(_ orientation: Int) -> Int {
+        let value = (1...8).contains(orientation) ? orientation : 1
+        return value.isMultiple(of: 2) ? value - 1 : value + 1
+    }
+
+    /// The system's version in a `Software` value: the value itself when the system wrote it, the
+    /// part in parentheses when the app wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
+    ///
+    /// A HEIF or JPEG is developed from the DNG's metadata, whose `Software` the app already
+    /// wrote, so reading it as the system's own value would nest the app's name:
+    /// "Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))".
+    ///
+    /// - Parameter software: The source's `Software` value, if any.
+    /// - Returns: The system's version, or `nil` if there is none (also for an empty value).
+    static func systemVersion(fromSoftware software: String?) -> String? {
+        guard let software, !software.isEmpty else { return nil }
+        guard software.hasPrefix(appName) else { return software }
+        guard software.hasSuffix(")"), let open = software.range(of: " (", options: .backwards) else { return nil }
+        let version = software[open.upperBound..<software.index(before: software.endIndex)]
+        return version.isEmpty ? nil : String(version)
     }
 
     /// The `Software` value: the app's name, the system's version, both, or nothing.
