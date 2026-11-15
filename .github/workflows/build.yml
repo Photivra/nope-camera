@@ -154,12 +154,12 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  # The UI tests are built once, then run in shards: four on the iPhone Simulator and four on
+  # The UI tests are built once, then run in shards: eight on the iPhone Simulator and eight on
   # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
-  # shard, balanced by measured test time; repo checks fail when a test is in no shard or in two
-  # (docs/TESTING.md, "Continuous integration"). The iPhone and iPad Simulators run in separate
-  # jobs: running both in one job stalled the test runner before the second destination's first
-  # test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
+  # shard, balanced by test time measured on the runner; repo checks fail when a test is in no
+  # shard or in two (docs/TESTING.md, "UI test shards"). The iPhone and iPad Simulators run in
+  # separate jobs: running both in one job stalled the test runner before the second
+  # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
   # required status checks keep their names.
   ui-build:
     name: ui-build
@@ -198,14 +198,15 @@ jobs:
           retention-days: 1
 
   ui-tests-shard:
-    name: ui-tests ${{ matrix.shard }}/4
+    name: ui-tests ${{ matrix.shard }}/8
     needs: ui-build
     runs-on: xcode-27
-    timeout-minutes: 25
+    # About 10.5 minutes of tests on the runner and 5 of setup, so a setup retry still fits.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -216,18 +217,10 @@ jobs:
           name: ui-tests-build
       - name: Unpack the build
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
+      # Boots the Simulator and waits for it, launches the app once, then runs the shard; it
+      # retries once only when the test runner fails before any test starts.
       - name: Run the UI tests of this shard with accessibility audits
-        run: |
-          # One argument per line. (read -a on a line without a newline exits 1 and stops the step.)
-          args=$(scripts/ui-test-shards.sh args "${{ matrix.shard }}")
-          tests=()
-          while IFS= read -r arg; do tests+=("$arg"); done <<< "$args"
-          [ "${#tests[@]}" -gt 0 ] || { echo "error: shard ${{ matrix.shard }} has no tests"; exit 1; }
-          xcodebuild test-without-building \
-            -xctestrun products/*.xctestrun \
-            -destination "$SIMULATOR" \
-            "${tests[@]}" \
-            -resultBundlePath ui-tests.xcresult
+        run: scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPhone 18 Pro" products ui-tests.xcresult
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -249,14 +242,14 @@ jobs:
   # The source link test is skipped on iPad: there the link isn't found in the Settings popover
   # (docs/TESTING.md).
   ui-tests-ipad-shard:
-    name: ui-tests-ipad ${{ matrix.shard }}/4
+    name: ui-tests-ipad ${{ matrix.shard }}/8
     needs: ui-build
     runs-on: xcode-27
-    timeout-minutes: 25
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -268,18 +261,9 @@ jobs:
       - name: Unpack the build
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
       - name: Run the UI tests of this shard with accessibility audits on iPad
-        run: |
-          # One argument per line. (read -a on a line without a newline exits 1 and stops the step.)
-          args=$(scripts/ui-test-shards.sh args "${{ matrix.shard }}")
-          tests=()
-          while IFS= read -r arg; do tests+=("$arg"); done <<< "$args"
-          [ "${#tests[@]}" -gt 0 ] || { echo "error: shard ${{ matrix.shard }} has no tests"; exit 1; }
-          xcodebuild test-without-building \
-            -xctestrun products/*.xctestrun \
-            -destination "$IPAD_SIMULATOR" \
-            "${tests[@]}" \
-            -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink \
-            -resultBundlePath ui-tests-ipad.xcresult
+        run: >
+          scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
+          -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

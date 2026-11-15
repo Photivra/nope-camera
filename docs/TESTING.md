@@ -386,8 +386,8 @@ the local toolchain). Jobs:
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/4` … `4/4` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/4` … `4/4` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests 1/8` … `8/8` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
 | `docs` | `scripts/check-docs.sh` |
@@ -396,21 +396,35 @@ the local toolchain). Jobs:
 
 ### UI test shards
 
-The UI suite takes about an hour on one Simulator, so CI runs it in four shards per device,
-each job with a 25-minute limit. `scripts/ui-test-shards.txt` lists every UI test with its
-shard and its measured time in seconds; the shards are balanced by those times (longest test
-first, into the shard with the least time so far). `scripts/ui-test-shards.sh args <n>` prints
-the `-only-testing` arguments of shard n. `scripts/ui-test-shards.sh check`, in `repo-checks`,
-fails when a test in `App/NopeAppUITests` is in no shard or in two, when a listed test doesn't
-exist, or when the shard matrices in `build.yml` don't match the list, so a new test can't be
-skipped silently: add it to the shard with the least time, with its time from a local run.
-To run one shard locally:
+The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
+as on a recent Mac, so CI limits are sized from runner times, never from local ones). CI runs it
+in eight shards per device, about 10.5 minutes of tests each plus about 5 minutes of setup, with
+a 35-minute limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
+its time in seconds on the runner (the longer of the iPhone and iPad runs), or, marked `est`,
+twice its local time until the runner has measured it; the shards are balanced by those times
+(longest test first, into the shard with the least time so far). To rebalance, take the times
+from the `Test Case … passed (n seconds)` lines of the shard jobs' logs.
+
+`scripts/ui-test-shards.sh args <n>` prints the `-only-testing` arguments of shard n.
+`scripts/ui-test-shards.sh check`, in `repo-checks`, fails when a test in `App/NopeAppUITests` is
+in no shard or in two, when a listed test doesn't exist, or when the shard matrices or job names
+in `build.yml` don't match the list, so a new test can't be skipped silently: add it to the
+shard with the least time, marked `est` with twice its local time.
+
+Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
+has booted (`simctl bootstatus -b`), installs the app and launches it once, then runs the shard.
+In the first sharded CI run, two shards failed before any test started ("The test runner crashed
+while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
+two others failed to launch the app within its time limit; both happened on a Simulator the test
+runner had to boot itself. The script retries a shard once, after rebooting the Simulator, only
+when the test runner failed before any test started; a run in which a test started is never
+retried. `scripts/test-ui-test-shards.sh` tests both scripts. To run one shard locally, with a
+Simulator named as in CI:
 
 ```sh
 xcodebuild build-for-testing -project App/NopeCamera.xcodeproj -scheme NopeApp \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' -derivedDataPath DerivedData CODE_SIGNING_ALLOWED=NO
-xcodebuild test-without-building -xctestrun DerivedData/Build/Products/*.xctestrun \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' $(scripts/ui-test-shards.sh args 1)
+scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tests.xcresult
 ```
 
 ### Siri and Shortcuts in the UI tests

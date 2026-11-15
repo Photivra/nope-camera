@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# The UI tests run in CI as shards (docs/TESTING.md, "Continuous integration"). Each test is
-# listed in scripts/ui-test-shards.txt with the shard it runs in; the shards are balanced by
-# measured test time.
+# The UI tests run in CI as shards (docs/TESTING.md, "UI test shards"). Each test is listed in
+# scripts/ui-test-shards.txt with the shard it runs in; the shards are balanced by test time on
+# the CI runner. scripts/run-ui-test-shard.sh runs one shard.
 #
 #   scripts/ui-test-shards.sh check [root]      every UI test is in exactly one shard, every
 #                                               listed test exists, the shards are 1…n, and
 #                                               build.yml's shard matrices run shards 1…n
-#   (each line of the list: shard, Class/test, measured seconds; # starts a comment)
+#   (each line of the list: shard, Class/test, seconds on the CI runner, "est" when estimated;
+#   # starts a comment)
 #   scripts/ui-test-shards.sh args <n> [root]   the xcodebuild -only-testing arguments of shard n
 #                                               (after the check)
 #

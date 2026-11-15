@@ -100,5 +100,24 @@ want="-only-testing:NopeAppUITests/FirstUITests/testTwo -only-testing:NopeAppUIT
 if [[ $got == "$want" ]]; then echo "ok   argument text"; else echo "FAIL argument text: $got"; failures=$((failures + 1)); fi
 rm -rf "$d"
 
+# The shard runner retries only a test runner that failed before any test started.
+runner="$(cd "$(dirname "$0")" && pwd)/run-ui-test-shard.sh"
+case_log() { # case_log "want" "name" "log text"
+  local want=$1 name=$2 log got
+  log=$(mktemp); printf '%s\n' "$3" >"$log"
+  if "$runner" --is-setup-failure "$log"; then got=retry; else got=no-retry; fi
+  if [[ $got == "$want" ]]; then echo "ok   $name"; else echo "FAIL $name (expected $want, got $got)"; failures=$((failures + 1)); fi
+  rm -f "$log"
+}
+case_log retry "runner crashed while preparing" "Testing started
+NopeAppUITests-Runner (11895) encountered an error (The test runner crashed while preparing to run tests: NopeAppUITests-Runner at -[XCTWaiter(StallHandling) handleStalledWait:])"
+case_log retry "runner never began executing tests" "Test runner never began executing tests after launching."
+case_log no-retry "a test failed" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
+error: -[NopeAppUITests.NopeAppUITests testOne] : XCTAssertTrue failed
+Test Case '-[NopeAppUITests.NopeAppUITests testOne]' failed (3.0 seconds)."
+case_log no-retry "a crash after a test started" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
+NopeAppUITests-Runner (1) encountered an error (The test runner crashed while preparing to run tests: x)"
+case_log no-retry "a build error" "xcodebuild: error: Unknown build action ''."
+
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"
