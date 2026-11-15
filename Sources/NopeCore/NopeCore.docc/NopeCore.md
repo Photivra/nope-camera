@@ -1,7 +1,7 @@
 # ``NopeCore``
 
-The models, state machine and capability protocols behind nope.: the contract every interface
-builds on.
+The models, state machine and capability protocols behind Photivra Nope Camera: the contract every
+interface builds on.
 
 ## Overview
 

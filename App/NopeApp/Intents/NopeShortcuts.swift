@@ -1,6 +1,6 @@
 import AppIntents
 
-/// nope.'s App Shortcuts: the Siri phrases that work without setting anything up (issue #62).
+/// The app's App Shortcuts: the Siri phrases that work without setting anything up (issue #62).
 ///
 /// Each phrase names the app through `.applicationName`, as App Intents requires. The phrases
 /// are localized in all launch languages in `AppShortcuts.xcstrings`.

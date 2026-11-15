@@ -16,7 +16,7 @@ public protocol ScreenControlling: AnyObject {
 /// ends (issue #48).
 ///
 /// During a series the screen mustn't lock, or the camera stops and the series with it; dimming
-/// saves battery over a long series (AGENTS.md, "Battery"). This is the only place nope. turns
+/// saves battery over a long series (AGENTS.md, "Battery"). This is the only place the app turns
 /// the idle timer off, and it is turned on again whenever the series ends or is stopped, the
 /// camera screen goes away, or the app leaves the foreground.
 ///

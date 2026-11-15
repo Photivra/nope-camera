@@ -25,7 +25,7 @@ import Foundation
 /// Limits, each rejected with ``Failure``: classic TIFF only (not BigTIFF), at most
 /// ``maximumDirectories`` directories, a file that already has tag 52545, a value that crosses
 /// the insertion point, and an offset stored as SHORT that would no longer fit. Data whose own
-/// contents hold absolute file offsets can't be fixed up; of the tags nope. allows, only the
+/// contents hold absolute file offsets can't be fixed up; of the tags the app allows, only the
 /// Apple maker note (`0x927C`) holds offsets, and those are relative to the maker note's own
 /// start (an assumption from ExifTool's Apple maker note table, checked on a device with an
 /// exiftool dump of a signed DNG: `docs/PRIVACY.md`, "Device checks").
@@ -80,7 +80,7 @@ enum DNGManifestSlot {
     static let undefinedType: UInt16 = 7
     /// The size of one IFD entry, and so how far every later byte moves.
     static let entrySize = 12
-    /// More directories than any DNG nope. writes; a file with more is rejected, so a loop or a
+    /// More directories than any DNG the app writes; a file with more is rejected, so a loop or a
     /// hostile file can't make the walk unbounded.
     static let maximumDirectories = 64
 

@@ -35,7 +35,7 @@ extension EnvironmentValues {
     /// ``UprightRotation/portrait`` by default.
     @Entry public var cameraUprightRotation: UprightRotation = .portrait
 
-    /// Opens nope.'s page in the Settings app, for the Open Settings buttons (camera access
+    /// Opens the app's page in the Settings app, for the Open Settings buttons (camera access
     /// declined, photos access declined). `nil` hides those buttons, so an interface without a
     /// way to open Settings shows no button that does nothing. The app target sets it with
     /// `UIApplication.openSettingsURLString`.

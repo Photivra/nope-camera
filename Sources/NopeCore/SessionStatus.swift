@@ -17,7 +17,7 @@ public enum SessionStatus: Equatable, Sendable {
     /// The system paused the camera. Show the reason's message; it comes back by itself.
     case interrupted(InterruptionReason)
 
-    /// nope. paused the camera because the device is too hot. Say so; it resumes when the
+    /// The app paused the camera because the device is too hot. Say so; it resumes when the
     /// device cools down.
     case pausedForHeat
 
@@ -25,7 +25,7 @@ public enum SessionStatus: Equatable, Sendable {
     case failed(CaptureError)
 
     /// The camera runs and delivers frames, but they are blank (zero-filled), even after
-    /// nope. restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
+    /// the app restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
     /// screen (docs/TESTING.md, "Black frames").
     ///
     /// Say: "The camera isn't sending a picture."

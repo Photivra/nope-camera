@@ -25,7 +25,7 @@ extension SimulatedCaptureBackend: ComparisonCaptureBackend {
     /// Returns a placeholder phone-processed photo for the request, or throws
     /// ``comparisonError``.
     ///
-    /// - Parameter request: nope.'s request.
+    /// - Parameter request: the app's request.
     /// - Returns: ``placeholderComparisonData`` as a HEIF (a JPEG for a lens whose fallback is
     ///   JPEG), the lens's largest photo size (or ``placeholderDimensions``), and
     ///   ``placeholderComparisonMetadata``.

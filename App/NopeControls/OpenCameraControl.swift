@@ -2,20 +2,20 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// The controls nope. offers in Control Center, on the Lock Screen and for the Action button
+/// The controls the app offers in Control Center, on the Lock Screen and for the Action button
 /// (WidgetKit controls, iOS 18; issue #42).
 ///
 /// This extension only describes the control. It contains no camera, photo or settings code,
 /// and makes no network request (AGENTS.md, "No network").
 @main
 struct NopeControls: WidgetBundle {
-    /// The one control: Open nope.
+    /// The one control: "Open nope."
     var body: some Widget {
         OpenCameraControl()
     }
 }
 
-/// A button that opens the nope. camera, with ``OpenCameraIntent``. Because the intent is a
+/// A button that opens the app's camera, with ``OpenCameraIntent``. Because the intent is a
 /// `CameraCaptureIntent`, the system opens the Lock Screen capture extension when the device
 /// is locked, and the app when it isn't.
 struct OpenCameraControl: ControlWidget {

@@ -1,15 +1,15 @@
 import Foundation
 import Observation
 
-/// Whether nope. may use the device's location.
+/// Whether the app may use the device's location.
 public enum LocationAccess: Equatable, Sendable {
     /// The person hasn't been asked yet.
     case notDetermined
-    /// The person declined, or turned location off for nope. or for the whole device.
+    /// The person declined, or turned location off for the app or for the whole device.
     case denied
     /// A restriction, such as Screen Time or a device profile, doesn't allow it.
     case restricted
-    /// Allowed while nope. is in use.
+    /// Allowed while the app is in use.
     case allowed
 
     /// Whether a location can be read.
@@ -61,7 +61,7 @@ public protocol LocationProviding: Sendable {
 @MainActor
 @Observable
 public final class LocationTagging {
-    /// Whether nope. may use the location, as last read.
+    /// Whether the app may use the location, as last read.
     public private(set) var access: LocationAccess = .notDetermined
 
     /// The latest location while updates run, or `nil`.

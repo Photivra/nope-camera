@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// What nope. does for taking photos without looking at the screen: the hardware shutter
+/// What the app does for taking photos without looking at the screen: the hardware shutter
 /// buttons, haptics and spoken feedback (issue #68, "Settings").
 ///
 /// It lists only what is built; none of these have a switch yet, so the screen shows facts and

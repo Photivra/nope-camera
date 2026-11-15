@@ -14,7 +14,7 @@ import SwiftUI
 ///
 /// A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
 /// state, so settings and the Honesty screen are reachable before the camera is allowed. Before
-/// camera access is asked, ``FirstRunView`` says what nope. does, then asks.
+/// camera access is asked, ``FirstRunView`` says what the app does, then asks.
 ///
 /// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
 /// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
@@ -54,13 +54,13 @@ public struct CameraScreen<Viewfinder: View>: View {
         self.viewfinder = viewfinder
     }
 
-    /// Opens nope.'s page in the Settings app, or `nil` when the app can't.
+    /// Opens the app's page in the Settings app, or `nil` when the app can't.
     @Environment(\.openAppSettings) private var openAppSettings
 
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
 
-    /// Whether nope. is in the foreground, to turn the light off when it leaves.
+    /// Whether the app is in the foreground, to turn the light off when it leaves.
     @Environment(\.scenePhase) private var scenePhase
 
     /// The screen's content for the current state.

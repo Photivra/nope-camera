@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The first screen before camera access is asked (issue #68, "First run"): nope.'s name, three
+/// The first screen before camera access is asked (issue #68, "First run"): the app's name, three
 /// statements about what it does, and Continue, which shows the system camera prompt in context.
 /// A note says Photos access is asked the first time a photo is saved.
 ///

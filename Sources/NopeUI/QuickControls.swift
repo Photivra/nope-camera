@@ -211,7 +211,7 @@ enum QuickControls {
     }
 
     /// Night: red and black screens for working in the dark (issue #61). Remembered between
-    /// launches; nope. never changes the screen's brightness.
+    /// launches; the app never changes the screen's brightness.
     ///
     /// - Parameter context: The model and settings.
     static func night(_ context: CameraControlContext) -> QuickControlItem? {

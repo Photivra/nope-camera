@@ -97,7 +97,7 @@ struct OfflineContextTests {
         _ = try OfflineC2PAContext.make()
     }
 
-    /// Even when settings let the library fetch a remote manifest, it can't: the library nope.
+    /// Even when settings let the library fetch a remote manifest, it can't: the library the app
     /// links has no network code, so reading a file whose manifest is remote fails.
     @Test func remoteManifestIsNeverFetched() throws {
         let photo = SyntheticPhotos.data(for: .developedJPEG)

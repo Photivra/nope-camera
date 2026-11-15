@@ -171,7 +171,7 @@ extension ManualControlsModel {
     ///
     /// - Full auto: when the fast shutter limit had to be lifted past the handheld rule.
     /// - Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
-    ///   than the handheld rule. nope. changes nothing; it only says so.
+    ///   than the handheld rule. The app changes nothing; it only says so.
     func updateSteadyHint() {
         guard let lens, let lastReading else {
             showsSteadyHint = false

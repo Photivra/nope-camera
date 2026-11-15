@@ -4,7 +4,7 @@ import NopeCore
 /// Turns night mode on or off from Siri or the Shortcuts app (issues #61 and #62), with
 /// ``NopeSettings/setNightMode(_:)``, as the Night Mode switch in Settings and the tray does.
 ///
-/// It changes only the stored setting, so it runs without opening nope.; the camera screen
+/// It changes only the stored setting, so it runs without opening the app; the camera screen
 /// follows the change when it is open.
 struct SetNightModeIntent: AppIntent {
     /// The action's name in the Shortcuts app.

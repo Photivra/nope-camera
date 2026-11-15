@@ -1,9 +1,9 @@
 # Building an interface
 
-nope.'s interface is a replaceable layer. You can write your own (minimal, accessibility-first,
-iPad-specific or experimental) without touching capture, privacy, signing or development code.
-This guide explains how in plain English. The full walkthrough, with a compiled example, is the
-DocC article "Building an interface" in `NopeCore`
+Photivra Nope Camera's interface is a replaceable layer. You can write your own (minimal,
+accessibility-first, iPad-specific or experimental) without touching capture, privacy, signing or
+development code. This guide explains how in plain English. The full walkthrough, with a compiled
+example, is the DocC article "Building an interface" in `NopeCore`
 ([`Sources/NopeCore/NopeCore.docc/BuildingAnInterface.md`](../Sources/NopeCore/NopeCore.docc/BuildingAnInterface.md)).
 
 ## The contract

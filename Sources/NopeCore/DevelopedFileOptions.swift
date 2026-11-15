@@ -1,11 +1,11 @@
 import Foundation
 
-/// How the HEIF and JPEG copies nope. develops from the RAW are encoded: compression, HEIF bit
+/// How the HEIF and JPEG copies the app develops from the RAW are encoded: compression, HEIF bit
 /// depth and color space (issue #57, "File").
 ///
 /// Owner principle (issue #57): anything about the file that the device lets an app control is
 /// the person's to choose, behind the advanced options, with the defaults working on their own.
-/// The defaults are the encoding nope. has always used: HEIF at the system encoder's own
+/// The defaults are the encoding the app has always used: HEIF at the system encoder's own
 /// quality and 10 bits per channel, JPEG at maximum quality, both in Display P3. None of the
 /// options change the RAW, the metadata or the signature, and every combination is encoded and
 /// opened again by the unit tests (`NopeDevelopTests`), because a setting that makes a file
@@ -23,7 +23,7 @@ public struct DevelopedFileOptions: Equatable, Codable, Hashable, Sendable {
     /// The color space of both copies. ``OutputColorSpace/displayP3`` by default.
     public var colorSpace: OutputColorSpace
 
-    /// The defaults: the encoding nope. used before these options existed.
+    /// The defaults: the encoding the app used before these options existed.
     public init() {
         heifQuality = .systemDefault
         jpegQuality = .maximum

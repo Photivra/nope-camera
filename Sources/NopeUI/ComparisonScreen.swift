@@ -1,24 +1,24 @@
 import NopeCore
 import SwiftUI
 
-/// The compare view of the comparison shot (issue #55): nope.'s photo and the phone's fully
+/// The compare view of the comparison shot (issue #55): the app's photo and the phone's fully
 /// processed version of almost the same moment, with a divider to slide between them, and their
 /// metadata side by side.
 ///
 /// It covers the whole screen while `CameraModel.comparison` is presented. It opens on the
-/// pictures (the divider, a choice of nope. only, split or phone only, and zoom); its Details
+/// pictures (the divider, a choice of the app's photo only, split or phone only, and zoom); its Details
 /// button pushes a native list of the metadata, grouped by how it differs. Each side says exactly
 /// what it is.
 ///
 /// Privacy: the phone's version is shown only here and is never saved, shared or copied: the view
 /// has no save, share or copy control, its text can't be selected, and its contents are hidden
-/// while nope. isn't the active app, so the app switcher's snapshot doesn't show them. Done
+/// while the app isn't the active app, so the app switcher's snapshot doesn't show them. Done
 /// sends `ComparisonIntent.close`, which discards both pictures and the list.
 struct ComparisonScreen: View {
     /// The camera model, whose comparison is shown.
     let model: CameraModel
 
-    /// Whether nope. is the active app; the contents are hidden otherwise.
+    /// Whether the app is the active app; the contents are hidden otherwise.
     @Environment(\.scenePhase) private var scenePhase
 
     /// Creates the compare view.
@@ -130,7 +130,7 @@ struct ComparisonNavigation<Content: View>: View {
     }
 }
 
-/// Covers the compare view while nope. isn't the active app.
+/// Covers the compare view while the app isn't the active app.
 struct ComparisonHiddenView: View {
     /// Creates the cover.
     init() {}
@@ -152,7 +152,7 @@ struct ComparisonHiddenView: View {
 
 /// Which picture the compare view shows.
 enum ComparisonView: String, CaseIterable, Identifiable {
-    /// nope.'s photo only.
+    /// The app's photo only.
     case nope
     /// Both, split by the divider.
     case split
@@ -169,7 +169,7 @@ struct ComparisonPicturesView: View {
     /// The comparison.
     let result: PhotoComparison
 
-    /// The divider's place: the share of the width that shows nope.'s photo, from 0 to 1.
+    /// The divider's place: the share of the width that shows the app's photo, from 0 to 1.
     @State private var split = 0.5
 
     /// The zoom, from 1 (the whole photo) to ``maximumZoom``.
@@ -184,7 +184,7 @@ struct ComparisonPicturesView: View {
     /// The pan at the start of a drag.
     @State private var dragStartPan: CGSize?
 
-    /// nope.'s photo as an image, made once when the pictures appear.
+    /// The app's photo as an image, made once when the pictures appear.
     @State private var nopePicture: Image?
 
     /// The phone's version as an image, made once when the pictures appear.
@@ -243,14 +243,14 @@ struct ComparisonPicturesView: View {
         }
     }
 
-    /// The photos' width over their height, from nope.'s picture, else the phone's, else 3:4.
+    /// The photos' width over their height, from the app's picture, else the phone's, else 3:4.
     private var aspectRatio: CGFloat {
         let image = result.nopeImage ?? result.phoneImage
         guard let image else { return 3.0 / 4.0 }
         return CGFloat(image.width) / CGFloat(image.height)
     }
 
-    /// Both photos, nope.'s over the phone's and cut off at the divider, with their labels.
+    /// Both photos, the app's over the phone's and cut off at the divider, with their labels.
     private var pictures: some View {
         GeometryReader { proxy in
             let width = proxy.size.width
@@ -539,7 +539,7 @@ struct ComparisonSidesDescription: View {
     }
 }
 
-/// The details: the metadata of nope.'s file and the phone's version, grouped by how they
+/// The details: the metadata of the app's file and the phone's version, grouped by how they
 /// differ, with identifying values hidden until the person asks.
 struct ComparisonDetailsList: View {
     /// The comparison.
@@ -641,8 +641,8 @@ struct ComparisonEntryRow: View {
         }
     }
 
-    /// Why the item matters: its privacy switch and explanation, that it is nope.'s signature,
-    /// or that nope. never writes it.
+    /// Why the item matters: its privacy switch and explanation, that it is the app's signature,
+    /// or that the app never writes it.
     @ViewBuilder private var explanation: some View {
         if entry.isSignature {
             Text("nope.'s Content Credentials signature.", tableName: "Honesty", bundle: .module, comment: "Compare view: this item of nope.'s file is its Content Credentials signature. Keep \"nope.\" unchanged.")
@@ -670,7 +670,7 @@ enum ComparisonText {
         Text("Details", bundle: .module, comment: "Button and screen title in the compare view: the metadata of nope.'s photo and of the phone-processed version, side by side.")
     }
 
-    /// The label of nope.'s side.
+    /// The label of the app's side.
     static var nopeSide: Text {
         Text(verbatim: "nope.")
     }

@@ -2,12 +2,12 @@ import Foundation
 import NopeCore
 
 /// Writes a 256 × 256 Bayer DNG whose metadata is exactly an ImageIO property dictionary, the
-/// way AVFoundation writes a DNG from the replacement metadata nope. gives it
+/// way AVFoundation writes a DNG from the replacement metadata the app gives it
 /// (`AVCapturePhoto.fileDataRepresentation(with:)`), for the file compatibility matrix (issue #58).
 ///
 /// Test-only: the app never writes DNG bytes itself. The dictionary is the one
 /// `MetadataPlan.properties(for:from:orientation:)` builds for the RAW, so the fixture carries
-/// what nope. asks the system to write for each switch combination. The layout (IFD0 holding the
+/// what the app asks the system to write for each switch combination. The layout (IFD0 holding the
 /// image, then the EXIF and GPS directories, then the pixels) follows TIFF 6.0 and DNG 1.7.1.0;
 /// a camera DNG's own layout comes from AVFoundation and is checked on a device
 /// (docs/TESTING.md, "File compatibility").

@@ -17,7 +17,7 @@ struct PrivacySettingsView: View {
     /// shown only with it (issue #43).
     let location: LocationTagging?
 
-    /// Opens nope.'s page in the Settings app, where location access can be allowed.
+    /// Opens the app's page in the Settings app, where location access can be allowed.
     @Environment(\.openAppSettings) private var openAppSettings
 
     /// Creates the privacy settings.

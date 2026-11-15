@@ -13,7 +13,7 @@ struct ClaimGenerator
 The software named in each manifest as the claim generator: Photivra Nope Camera and its version.
 
 The C2PA specification requires `claim_generator_info.name` (C2PA 2.2, §10.2). Privacy rule:
-the name and version are the same for everyone running that version of nope.; no device,
+the name and version are the same for everyone running that version of the app; no device,
 operating system or user detail is added.
 
 ## `ClaimGenerator/appName`
@@ -34,7 +34,7 @@ public, declared in `Sources/NopeSigning/ClaimGenerator.swift`
 init(version: String)
 ```
 
-Creates the claim generator for a version of nope.
+Creates the claim generator for a version of the app.
 
 - Parameter version: The app's marketing version (`CFBundleShortVersionString`), for
   example `0.1.0`.
@@ -67,9 +67,9 @@ internal, declared in `Sources/NopeSigning/ContentCredentialsManifest.swift`
 struct ContentCredentialsManifest
 ```
 
-The manifest nope. writes for one file, as the JSON manifest definition the C2PA library takes.
+The manifest the app writes for one file, as the JSON manifest definition the C2PA library takes.
 
-It says only what nope. knows to be true (AGENTS.md, "Honesty"; issue #1, "Signing"):
+It says only what the app knows to be true (AGENTS.md, "Honesty"; issue #1, "Signing"):
 - one `c2pa.created` action, with the IPTC digital source type `digitalCapture` (the image
   was captured from real life by a digital camera) and a plain description of what happened
   to the file;
@@ -375,7 +375,7 @@ static func description(of file: SignableFile) -> String
 The description of what happened to a file, in the manifest's own words.
 
 The manifest is part of the file, not the interface, so this English text isn't localized.
-It claims no more than nope. does: "as little processing as the phone allows", never "no
+It claims no more than the app does: "as little processing as the phone allows", never "no
 processing".
 
 - Parameter file: What the file is.
@@ -637,7 +637,7 @@ signed file is read back against the allowlist like every other file.
 Limits, each rejected with ``Failure``: classic TIFF only (not BigTIFF), at most
 ``maximumDirectories`` directories, a file that already has tag 52545, a value that crosses
 the insertion point, and an offset stored as SHORT that would no longer fit. Data whose own
-contents hold absolute file offsets can't be fixed up; of the tags nope. allows, only the
+contents hold absolute file offsets can't be fixed up; of the tags the app allows, only the
 Apple maker note (`0x927C`) holds offsets, and those are relative to the maker note's own
 start (an assumption from ExifTool's Apple maker note table, checked on a device with an
 exiftool dump of a signed DNG: `docs/PRIVACY.md`, "Device checks").
@@ -1010,7 +1010,7 @@ internal, declared in `Sources/NopeSigning/DNGManifestSlot.swift`
 static let maximumDirectories: Int
 ```
 
-More directories than any DNG nope. writes; a file with more is rejected, so a loop or a
+More directories than any DNG the app writes; a file with more is rejected, so a loop or a
 hostile file can't make the walk unbounded.
 
 ## `DNGManifestSlot/storeTag`
@@ -1280,10 +1280,10 @@ internal, declared in `Sources/NopeSigning/OfflineC2PAContext.swift`
 enum OfflineC2PAContext
 ```
 
-Builds the C2PA library context nope. signs with: fully offline, no thumbnail, no timestamp.
+Builds the C2PA library context the app signs with: fully offline, no thumbnail, no timestamp.
 
-Privacy and network rule: nope. makes no network calls and links no networking code
-(AGENTS.md, "No network, no analytics"). The C2PA library nope. links is built without any
+Privacy and network rule: the app makes no network calls and links no networking code
+(AGENTS.md, "No network, no analytics"). The C2PA library the app links is built without any
 network feature (`c2pa-lib/README.md`), so it has no HTTP client to call. The settings also
 turn off every fetch and allow no network host (`core.allowed_network_hosts` set to an empty
 list blocks all traffic), so the library never asks for one.
@@ -1488,7 +1488,7 @@ Builds the anonymous, self-issued X.509 certificate that carries one file's publ
 The certificate is signed by the file's own one-use key, so it isn't chained to any
 certificate authority. Validators therefore show the signer as untrusted or unknown
 (C2PA specification 2.2, §15.7, `signingCredential.untrusted`). That is expected and honest:
-the signature proves the file hasn't changed since nope. signed it, not who took it
+the signature proves the file hasn't changed since the app signed it, not who took it
 (docs/research/c2pa-signing.md, "Certificates and trust").
 
 Privacy rule: every field except the key and the random serial number is the same for every
@@ -1572,7 +1572,7 @@ internal, declared in `Sources/NopeSigning/SignableFile.swift`
 enum SignableFile
 ```
 
-The kinds of file nope. signs, each with the honest description its manifest carries.
+The kinds of file the app signs, each with the honest description its manifest carries.
 
 Derived from a `PhotoFile`: its format, and whether the phone's camera processed it.
 
@@ -1584,7 +1584,7 @@ internal, declared in `Sources/NopeSigning/SignableFile.swift`
 case developedHEIF
 ```
 
-HEIF developed by nope. from a single-frame RAW.
+HEIF developed by the app from a single-frame RAW.
 
 ## `SignableFile/developedJPEG`
 
@@ -1594,7 +1594,7 @@ internal, declared in `Sources/NopeSigning/SignableFile.swift`
 case developedJPEG
 ```
 
-JPEG developed by nope. from a single-frame RAW.
+JPEG developed by the app from a single-frame RAW.
 
 ## `SignableFile/deviceProcessedHEIF`
 

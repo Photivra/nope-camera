@@ -17,7 +17,7 @@ The license and notice texts are bundled copies of the repository's `LICENSE` an
 (`Resources/GPL-3.0.txt` and `Resources/NOTICE.txt`); a unit test keeps them identical. They
 are legal texts, shown exactly as written and not translated (AGENTS.md, "Keep every
 notice"). The source address is a link: tapping it hands the `https` address to the system,
-which opens it in the browser. nope. itself makes no network request (AGENTS.md,
+which opens it in the browser. The app itself makes no network request (AGENTS.md,
 "Prevention first").
 
 ## `AboutScreen/body`
@@ -92,7 +92,7 @@ internal, declared in `Sources/NopeUI/AccessibilitySettingsView.swift`
 @MainActor struct AccessibilitySettingsView
 ```
 
-What nope. does for taking photos without looking at the screen: the hardware shutter
+What the app does for taking photos without looking at the screen: the hardware shutter
 buttons, haptics and spoken feedback (issue #68, "Settings").
 
 It lists only what is built; none of these have a switch yet, so the screen shows facts and
@@ -364,7 +364,7 @@ internal, declared in `Sources/NopeUI/AstroControls.swift`
 @MainActor struct AstroSheet
 ```
 
-The astro helper's settings: what nope. does with the frames, the frame count and start
+The astro helper's settings: what the app does with the frames, the frame count and start
 delay, each frame's exposure, and what the run will take. A standard form with pushed-list
 pickers.
 
@@ -408,7 +408,7 @@ internal, declared in `Sources/NopeUI/AstroControls.swift`
 @MainActor enum AstroText
 ```
 
-The words of the astro helper (issue #60). The claims about what nope. does with the frames
+The words of the astro helper (issue #60). The claims about what the app does with the frames
 are in the Honesty table.
 
 ## `AstroText/endMessage(_:)`
@@ -432,7 +432,7 @@ internal, declared in `Sources/NopeUI/AstroControls.swift`
 @MainActor static var honesty: Text { get }
 ```
 
-What nope. does with the frames, and what it doesn't.
+What the app does with the frames, and what it doesn't.
 
 ## `AstroText/settings`
 
@@ -1136,7 +1136,7 @@ backed by `AVCaptureVideoPreviewLayer`).
 
 A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
 state, so settings and the Honesty screen are reachable before the camera is allowed. Before
-camera access is asked, ``FirstRunView`` says what nope. does, then asks.
+camera access is asked, ``FirstRunView`` says what the app does, then asks.
 
 The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
 ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
@@ -1519,7 +1519,7 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 ```
 
 "The subject may be too close to focus." with a button that switches to the ultra wide lens
-and one that dismisses the suggestion. nope. never switches by itself.
+and one that dismisses the suggestion. The app never switches by itself.
 
 ## `CloseUpSuggestion/body`
 
@@ -1654,7 +1654,7 @@ internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
 @MainActor struct ComparisonDetailsList
 ```
 
-The details: the metadata of nope.'s file and the phone's version, grouped by how they
+The details: the metadata of the app's file and the phone's version, grouped by how they
 differ, with identifying values hidden until the person asks.
 
 ## `ComparisonDetailsList/body`
@@ -1762,7 +1762,7 @@ internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
 @MainActor struct ComparisonHiddenView
 ```
 
-Covers the compare view while nope. isn't the active app.
+Covers the compare view while the app isn't the active app.
 
 ## `ComparisonHiddenView/body`
 
@@ -1961,18 +1961,18 @@ internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
 @MainActor struct ComparisonScreen
 ```
 
-The compare view of the comparison shot (issue #55): nope.'s photo and the phone's fully
+The compare view of the comparison shot (issue #55): the app's photo and the phone's fully
 processed version of almost the same moment, with a divider to slide between them, and their
 metadata side by side.
 
 It covers the whole screen while `CameraModel.comparison` is presented. It opens on the
-pictures (the divider, a choice of nope. only, split or phone only, and zoom); its Details
+pictures (the divider, a choice of the app's photo only, split or phone only, and zoom); its Details
 button pushes a native list of the metadata, grouped by how it differs. Each side says exactly
 what it is.
 
 Privacy: the phone's version is shown only here and is never saved, shared or copied: the view
 has no save, share or copy control, its text can't be selected, and its contents are hidden
-while nope. isn't the active app, so the app switcher's snapshot doesn't show them. Done
+while the app isn't the active app, so the app switcher's snapshot doesn't show them. Done
 sends `ComparisonIntent.close`, which discards both pictures and the list.
 
 ## `ComparisonScreen/body`
@@ -2169,7 +2169,7 @@ internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
 static var nopeSide: Text { get }
 ```
 
-The label of nope.'s side.
+The label of the app's side.
 
 ## `ComparisonText/phoneSide`
 
@@ -2229,7 +2229,7 @@ internal, declared in `Sources/NopeUI/ComparisonScreen.swift`
 case nope
 ```
 
-nope.'s photo only.
+The app's photo only.
 
 ## `ComparisonView/phone`
 
@@ -3036,7 +3036,7 @@ public, declared in `Sources/NopeUI/CameraEnvironment.swift`
 var openAppSettings: CameraAction? { get set }
 ```
 
-Opens nope.'s page in the Settings app, for the Open Settings buttons (camera access
+Opens the app's page in the Settings app, for the Open Settings buttons (camera access
 declined, photos access declined). `nil` hides those buttons, so an interface without a
 way to open Settings shows no button that does nothing. The app target sets it with
 `UIApplication.openSettingsURLString`.
@@ -3096,7 +3096,7 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 case openSettings
 ```
 
-Opens nope.'s page in the Settings app, where Photos access is allowed.
+Opens the app's page in the Settings app, where Photos access is allowed.
 
 ## `FailureAction/tryAgain`
 
@@ -3450,7 +3450,7 @@ internal, declared in `Sources/NopeUI/FirstRunView.swift`
 @MainActor struct FirstRunView
 ```
 
-The first screen before camera access is asked (issue #68, "First run"): nope.'s name, three
+The first screen before camera access is asked (issue #68, "First run"): the app's name, three
 statements about what it does, and Continue, which shows the system camera prompt in context.
 A note says Photos access is asked the first time a photo is saved.
 
@@ -4412,7 +4412,7 @@ internal, declared in `Sources/NopeUI/HonestyScreen.swift`
 @MainActor struct HonestyScreen
 ```
 
-The Honesty screen: what nope. never does, what iOS may still do outside nope.'s control,
+The Honesty screen: what the app never does, what iOS may still do outside the app's control,
 and what no app can remove.
 
 Every statement uses the wording of `docs/research/privacy-claims.md` and is backed by the
@@ -5779,7 +5779,7 @@ Draws a view in night mode's red on black when night mode is on, and leaves it u
 otherwise (issue #61).
 
 The view's structure stays the same in both modes, so switching keeps each view's state.
-System menus, alerts and the keyboard are drawn by the system outside nope.'s views and keep
+System menus, alerts and the keyboard are drawn by the system outside the app's views and keep
 the system's dark appearance; the system's Color Filters (red tint) cover them too.
 
 ## `NightModeStyle/body(content:)`
@@ -5828,13 +5828,13 @@ enum NightStyle
 Night mode's look (issue #61): red on black, with no white, blue or yellow light, to keep
 eyes used to the dark.
 
-``NightModeStyle`` multiplies everything nope. draws by pure red, so white becomes red,
+``NightModeStyle`` multiplies everything the app draws by pure red, so white becomes red,
 grays become darker reds and black stays black. Pure sRGB red on black has a contrast of
 5.25:1 (WCAG 2.2 relative luminance 0.2126), above the 4.5:1 text minimum, so every text
 style is drawn at the full red: secondary and tertiary text are drawn like primary text,
 because a dimmer red would fall below 4.5:1.
 
-nope. never changes the screen's brightness; people dim it with the device's own controls.
+The app never changes the screen's brightness; people dim it with the device's own controls.
 
 ## `NightStyle/controlTint`
 
@@ -6101,7 +6101,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor struct PhotoDetailsSheet
 ```
 
-"What's in This Photo": the facts read back from a photo nope. just saved (issue #53),
+"What's in This Photo": the facts read back from a photo the app just saved (issue #53),
 opened from the last-photo thumbnail.
 
 A native list with one section per topic, each with a heading VoiceOver can jump between:
@@ -6360,7 +6360,7 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 @MainActor static let photoCounts: [Int]
 ```
 
-The photo counts offered for a series, from 2 to the 999 nope. allows.
+The photo counts offered for a series, from 2 to the 999 the app allows.
 
 ## `ProToolsSheet/settings`
 
@@ -6814,7 +6814,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Night: red and black screens for working in the dark (issue #61). Remembered between
-launches; nope. never changes the screen's brightness.
+launches; the app never changes the screen's brightness.
 
 - Parameter context: The model and settings.
 

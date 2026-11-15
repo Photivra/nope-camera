@@ -1,9 +1,9 @@
 import Foundation
 import NopeCore
 
-/// The manifest nope. writes for one file, as the JSON manifest definition the C2PA library takes.
+/// The manifest the app writes for one file, as the JSON manifest definition the C2PA library takes.
 ///
-/// It says only what nope. knows to be true (AGENTS.md, "Honesty"; issue #1, "Signing"):
+/// It says only what the app knows to be true (AGENTS.md, "Honesty"; issue #1, "Signing"):
 /// - one `c2pa.created` action, with the IPTC digital source type `digitalCapture` (the image
 ///   was captured from real life by a digital camera) and a plain description of what happened
 ///   to the file;
@@ -149,7 +149,7 @@ struct ContentCredentialsManifest: Encodable, Equatable {
     /// The description of what happened to a file, in the manifest's own words.
     ///
     /// The manifest is part of the file, not the interface, so this English text isn't localized.
-    /// It claims no more than nope. does: "as little processing as the phone allows", never "no
+    /// It claims no more than the app does: "as little processing as the phone allows", never "no
     /// processing".
     ///
     /// - Parameter file: What the file is.

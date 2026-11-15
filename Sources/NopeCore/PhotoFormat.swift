@@ -1,6 +1,6 @@
 import Foundation
 
-/// A file format nope. can save.
+/// A file format the app can save.
 ///
 /// The raw values are stable, so settings that store a format can be saved and read back.
 ///
@@ -8,15 +8,15 @@ import Foundation
 public enum PhotoFormat: String, Equatable, Hashable, Sendable, CaseIterable, Codable {
     /// Single-frame Bayer RAW, saved as DNG.
     case raw
-    /// HEIF developed by nope. from the RAW, 10 bits per channel.
+    /// HEIF developed by the app from the RAW, 10 bits per channel.
     case heif
-    /// JPEG developed by nope. from the RAW, at maximum quality.
+    /// JPEG developed by the app from the RAW, at maximum quality.
     case jpeg
 
     /// The formats selected when the app is first installed: RAW and HEIF.
     public static let defaultSelection: Set<PhotoFormat> = [.raw, .heif]
 
-    /// Whether nope. develops this format itself from the RAW, rather than saving sensor data.
+    /// Whether the app develops this format itself from the RAW, rather than saving sensor data.
     ///
     /// Developed formats never use the phone's own processing pipeline (issue #1, "Formats").
     public var isDevelopedFromRAW: Bool {

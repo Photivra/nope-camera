@@ -30,7 +30,7 @@ struct MetadataComparisonTests {
             MetadataInventory.XMPProperty(namespace: "http://ns.adobe.com/xap/1.0/", name: "Structure", value: "again"),
         ])
 
-    /// What nope.'s saved, signed HEIF carries.
+    /// What the app's saved, signed HEIF carries.
     static let nope = MetadataInventory(
         tags: [
             Tag(directory: .primary, tag: 0x0112, values: [6]),

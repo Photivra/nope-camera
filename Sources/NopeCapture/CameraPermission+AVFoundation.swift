@@ -5,7 +5,7 @@ extension CameraPermission {
     /// Converts an AVFoundation authorization status to a `NopeCore` permission.
     ///
     /// A status added in a future iOS release is treated as `CameraPermission.restricted`:
-    /// nope. must not assume access it can't confirm, and it must not ask again for a state it
+    /// The app must not assume access it can't confirm, and it must not ask again for a state it
     /// doesn't understand.
     ///
     /// - Parameter status: The value from

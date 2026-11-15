@@ -7,7 +7,7 @@ import NopeCore
 ///
 /// `CGImageSourceCreateThumbnailAtIndex` decodes the file at a small size, turned upright by its
 /// orientation tag (`kCGImageSourceCreateThumbnailWithTransform`). The image is always made from
-/// the full image (`kCGImageSourceCreateThumbnailFromImageAlways`): nope.'s files embed no
+/// the full image (`kCGImageSourceCreateThumbnailFromImageAlways`): the app's files embed no
 /// thumbnail. The result is drawn into an sRGB RGBA bitmap, the layout `PhotoThumbnail`
 /// describes.
 ///

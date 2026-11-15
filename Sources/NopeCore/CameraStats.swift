@@ -1,6 +1,6 @@
 import Foundation
 
-/// A processing feature of the camera or the photo output that nope. keeps off when the device
+/// A processing feature of the camera or the photo output that the app keeps off when the device
 /// allows (`docs/PRIVACY.md`, "Processing"). The live camera readout lists the ones that are
 /// off, as the hardware reports them.
 public enum ProcessingFeature: String, CaseIterable, Sendable {
@@ -138,7 +138,7 @@ public struct CameraStatsReading: Equatable, Sendable {
     public var gains: WhiteBalanceGainsReading
     /// How white balance is controlled.
     public var whiteBalanceMode: WhiteBalanceModeReading
-    /// The zoom factor in use; nope. keeps it at 1.0, which Bayer RAW requires.
+    /// The zoom factor in use; the app keeps it at 1.0, which Bayer RAW requires.
     public var zoomFactor: Double
     /// The processing features that are on, as the hardware reports them.
     public var processingOn: Set<ProcessingFeature>

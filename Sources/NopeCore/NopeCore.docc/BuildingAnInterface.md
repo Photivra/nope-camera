@@ -1,10 +1,10 @@
 # Building an interface
 
-Write a minimal interface for nope. that renders the camera state and sends intents.
+Write a minimal interface for Photivra Nope Camera that renders the camera state and sends intents.
 
 ## Overview
 
-Any interface (minimal, accessibility-first, iPad-specific or experimental) talks to nope. the
+Any interface (minimal, accessibility-first, iPad-specific or experimental) talks to the app the
 same way: it observes a ``CameraModel`` and sends it ``CameraIntent`` values. It needs nothing
 from `NopeCapture`, `NopeDevelop` or `NopeSigning`.
 

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Something that happened to the camera outside nope.'s control, reported by a
+/// Something that happened to the camera outside the app's control, reported by a
 /// ``CaptureBackend`` through ``CaptureBackend/events``.
 ///
 /// ``CameraModel`` turns events into ``SessionStatus`` values; interfaces never read events.

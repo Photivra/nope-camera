@@ -1,6 +1,6 @@
 import Foundation
 
-/// "What's in this photo": the facts about one photo nope. just saved, read back from the
+/// "What's in this photo": the facts about one photo the app just saved, read back from the
 /// saved files (issue #53).
 ///
 /// ``PhotoSaver`` builds it from each file's read-back (the project's own tag reader and
@@ -9,7 +9,7 @@ import Foundation
 /// value the file doesn't hold is `nil` or empty, never estimated.
 ///
 /// Privacy: built in memory from the just-saved photo and shown on screen only; nothing is
-/// logged, stored or copied. nope. can't reopen older photos (add-only access), so details
+/// logged, stored or copied. The app can't reopen older photos (add-only access), so details
 /// exist only for photos taken in this session.
 public struct PhotoDetails: Equatable, Sendable {
     /// One saved file.
@@ -33,7 +33,7 @@ public struct PhotoDetails: Equatable, Sendable {
         public let blackLevels: [Double]
         /// A DNG's `WhiteLevel` values; empty otherwise.
         public let whiteLevels: [Double]
-        /// Whether a DNG stores lens correction instructions (opcode lists 1, 2 or 3). nope.
+        /// Whether a DNG stores lens correction instructions (opcode lists 1, 2 or 3). The app
         /// never applies them to the pixels.
         public let storesLensCorrections: Bool
         /// What processing the file's pixels went through.
@@ -82,9 +82,9 @@ public struct PhotoDetails: Equatable, Sendable {
 
     /// What processing a file's pixels went through.
     public enum Processing: Equatable, Sendable {
-        /// None by nope.: the sensor data as the camera delivered it (the DNG).
+        /// None by the app: the sensor data as the camera delivered it (the DNG).
         case none
-        /// Developed by nope. from the RAW, with this look.
+        /// Developed by the app from the RAW, with this look.
         case developed(DevelopedLook)
         /// Processed by the phone's camera, because the lens can't save RAW.
         case byDevice

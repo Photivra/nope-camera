@@ -169,7 +169,7 @@ extension NopeAppUITests {
         case other
     }
 
-    /// The status bar's height, in points: the system draws it, outside nope.'s views.
+    /// The status bar's height, in points: the system draws it, outside the app's views.
     private static var statusBarHeight: CGFloat { 60 }
 
     /// The band at the bottom where the system draws the home indicator, which is skipped: night

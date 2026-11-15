@@ -10,7 +10,7 @@ public struct PhotoFile: Equatable, Sendable {
     /// The file's bytes.
     public let data: Data
     /// Whether the phone's camera processed the file: the HEIF or JPEG of a lens without Bayer
-    /// RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
+    /// RAW. `false` for a DNG and for a HEIF or JPEG the app developed from the RAW. The signer
     /// uses it to describe the file truthfully in its Content Credentials.
     public let isProcessedByDevice: Bool
     /// What the file's Content Credentials manifest says, set by the signer on the file it
@@ -194,7 +194,7 @@ public struct PhotoLibraryAsset: Equatable, Sendable {
 /// Adds photos to the library with add-only access.
 ///
 /// `NopeCapture` implements it with PhotoKit (`PhotoKitLibrary`). Add-only access can't read
-/// the library, including nope.'s own photos.
+/// the library, including the app's own photos.
 public protocol PhotoLibrary: Sendable {
     /// Asks for add-only access if needed, then adds every asset in one change.
     ///

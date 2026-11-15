@@ -1,10 +1,10 @@
 import C2PA
 import Foundation
 
-/// Builds the C2PA library context nope. signs with: fully offline, no thumbnail, no timestamp.
+/// Builds the C2PA library context the app signs with: fully offline, no thumbnail, no timestamp.
 ///
-/// Privacy and network rule: nope. makes no network calls and links no networking code
-/// (AGENTS.md, "No network, no analytics"). The C2PA library nope. links is built without any
+/// Privacy and network rule: the app makes no network calls and links no networking code
+/// (AGENTS.md, "No network, no analytics"). The C2PA library the app links is built without any
 /// network feature (`c2pa-lib/README.md`), so it has no HTTP client to call. The settings also
 /// turn off every fetch and allow no network host (`core.allowed_network_hosts` set to an empty
 /// list blocks all traffic), so the library never asks for one.

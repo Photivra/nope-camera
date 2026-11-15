@@ -1,6 +1,6 @@
 import Foundation
 
-/// Where a photo was taken: the only location values nope. ever writes (issue #43).
+/// Where a photo was taken: the only location values the app ever writes (issue #43).
 ///
 /// Privacy rule (`docs/PRIVACY.md`, "Location"): a photo carries a location only when the person
 /// turned the Location switch on and allowed location access. Then it carries exactly the
@@ -60,7 +60,7 @@ public struct PhotoLocation: Equatable, Hashable, Sendable {
     public static let altitudeRefKey = "AltitudeRef"
     /// `kCGImagePropertyGPSAltitude`.
     public static let altitudeKey = "Altitude"
-    /// `kCGImagePropertyGPSVersion`, the GPS directory's version tag (`GPSVersionID`). nope.
+    /// `kCGImagePropertyGPSVersion`, the GPS directory's version tag (`GPSVersionID`). The app
     /// never writes it, but EXIF 3.0 makes it mandatory in a GPS directory, so the writer may add
     /// it: ImageIO on the iOS 27.2 Simulator didn't for HEIF or JPEG; whether AVFoundation does
     /// for a DNG is a device check (docs/PRIVACY.md, "Location").

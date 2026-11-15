@@ -1,6 +1,6 @@
 # ``NopeUI``
 
-The standard SwiftUI interface for nope.
+The standard SwiftUI interface for Photivra Nope Camera.
 
 ## Overview
 

@@ -6,7 +6,7 @@ import Foundation
 /// allowlist and the read-back both name a tag by its directory and number. Directories follow
 /// TIFF 6.0 (section 2), EXIF 3.0 (section 4.6) and DNG 1.7 (chapter 3).
 public enum TIFFDirectory: String, CaseIterable, Codable, Hashable, Sendable {
-    /// The first image directory (IFD0). In nope.'s DNG it holds the RAW image itself.
+    /// The first image directory (IFD0). In the app's DNG it holds the RAW image itself.
     case primary
     /// The EXIF directory, reached through tag `0x8769`.
     case exif

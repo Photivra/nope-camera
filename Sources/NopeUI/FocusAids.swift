@@ -456,7 +456,7 @@ struct HintLabel: View {
 }
 
 /// "The subject may be too close to focus." with a button that switches to the ultra wide lens
-/// and one that dismisses the suggestion. nope. never switches by itself.
+/// and one that dismisses the suggestion. The app never switches by itself.
 struct CloseUpSuggestion: View {
     /// The camera model.
     let model: CameraModel

@@ -7,7 +7,7 @@ import NopeCore
 /// - only physical cameras: virtual multi-camera devices and unknown types are dropped;
 /// - a lens's RAW format is its first Bayer RAW format; Apple ProRAW never counts;
 /// - lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front;
-/// - the front camera gets no flash modes: nope. uses no screen flash (issue #38).
+/// - the front camera gets no flash modes: the app uses no screen flash (issue #38).
 enum LensCatalog {
     /// Builds the lens list.
     ///

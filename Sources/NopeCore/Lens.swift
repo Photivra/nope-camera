@@ -4,7 +4,7 @@ import Foundation
 ///
 /// Lenses are discovered at run time by a ``CaptureBackend``; an interface renders them without
 /// knowing the hardware (AGENTS.md, "Capabilities are data"). Every range is what the camera
-/// reported for the format nope. uses, so it can differ between devices and iOS versions.
+/// reported for the format the app uses, so it can differ between devices and iOS versions.
 public struct Lens: Identifiable, Equatable, Sendable {
     /// Where a lens sits and how wide it sees.
     public enum Kind: Equatable, Sendable, CaseIterable {
@@ -41,7 +41,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// front camera, which has no rear wide camera to compare with.
     ///
     /// It is computed from each camera's field of view, so it is approximate. It is for labels
-    /// only: nope. never zooms digitally.
+    /// only: the app never zooms digitally.
     public let magnification: Double?
 
     /// The ISO values the lens supports in its photo format, or `nil` when unknown.
@@ -71,7 +71,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
 
     /// The flash modes the lens supports, as the photo output reported them for this camera.
     /// Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
-    /// camera: nope. uses no screen flash (issue #38).
+    /// camera: the app uses no screen flash (issue #38).
     public let flashModes: [FlashMode]
 
     /// Whether the lens has a torch: a light that can stay on while framing and taking photos.

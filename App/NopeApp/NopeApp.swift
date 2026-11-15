@@ -8,7 +8,7 @@ import NopeUI
 import SwiftUI
 import UIKit
 
-/// The nope. app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
+/// The Photivra Nope Camera app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
 ///
 /// On a device it uses `AVFoundationCaptureBackend`. Debug builds launched by the UI tests with
 /// `-NopeSimulatedCamera <scenario>` use a simulated backend instead (``SimulatedCameraLaunch``).
@@ -242,7 +242,7 @@ struct NopeApp: App {
     }
 
     /// Decodes both photos of the comparison shot for the compare view (issue #55): ImageIO, in
-    /// memory, up to 4032 pixels on the long side, the size of the 12 MP photos nope. takes
+    /// memory, up to 4032 pixels on the long side, the size of the 12 MP photos the app takes
     /// (`CapturePolicy` picks the lens's smallest photo size), so zooming in shows the photos'
     /// own pixels. In Debug builds launched by the UI tests, two plain colored pictures.
     private static func makeComparisonRenderer() -> any PhotoThumbnailing {

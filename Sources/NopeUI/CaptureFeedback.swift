@@ -88,7 +88,7 @@ enum FailureAction: Equatable {
     /// Takes the photo again.
     case tryAgain
 
-    /// Opens nope.'s page in the Settings app, where Photos access is allowed.
+    /// Opens the app's page in the Settings app, where Photos access is allowed.
     case openSettings
 
     /// The action for an error, or `nil` when pressing a button wouldn't help: the camera is

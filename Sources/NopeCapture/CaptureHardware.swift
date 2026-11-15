@@ -42,7 +42,7 @@ protocol CaptureHardware: Sendable {
     /// `MetadataPlan.properties(for:from:orientation:)` for the system's metadata: the header
     /// says the returned dictionary replaces the photo's metadata (`AVCapturePhotoOutput.h`,
     /// `AVCapturePhotoFileDataRepresentationCustomizer`). AVFoundation itself writes the RAW
-    /// image data, so the sensor data isn't re-encoded by nope. For a RAW photo the system's
+    /// image data, so the sensor data isn't re-encoded by the app. For a RAW photo the system's
     /// own DNG is also flattened once, only to keep its RAW image data as a reference.
     ///
     /// - Parameters:

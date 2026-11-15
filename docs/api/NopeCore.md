@@ -358,7 +358,7 @@ public, declared in `Sources/NopeCore/AstroHelper.swift`
 The astro helper: a consistent series of single Bayer RAW frames of the night sky, to be
 stacked in other software (issue #60).
 
-nope. never stacks, merges or processes the frames: each one is an ordinary single-frame
+The app never stacks, merges or processes the frames: each one is an ordinary single-frame
 photo that goes through the metadata allowlist, read-back and signing like any other
 (AGENTS.md, "Honesty"). The helper only sets up the camera and takes the frames:
 
@@ -765,7 +765,7 @@ The brightness the scene needs is the product of ISO and exposure time corrected
 meter's offset: `ISO × time × 2^(−offset)` (`AVCaptureDevice.exposureTargetOffset` is in EV,
 negative when the picture is darker than the target). The product doesn't depend on how the
 camera splits it between ISO and time, so it can be compared with what a limit allows:
-`highest ISO × limit`. The aperture is fixed on every lens nope. uses in full auto.
+`highest ISO × limit`. The aperture is fixed on every lens the app uses in full auto.
 
 ## `AutoShutter/handheldLimit(for:)`
 
@@ -1044,7 +1044,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 static let frameCounts: [Int]
 ```
 
-The frame counts nope. offers: 3, 5 or 7, each up to the lens's
+The frame counts the app offers: 3, 5 or 7, each up to the lens's
 ``Lens/maxBracketedPhotoCount``.
 
 ## `BracketSettings/frameCounts(for:)`
@@ -1104,7 +1104,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 static let steps: [Double]
 ```
 
-The steps between frames nope. offers, in EV: 1/3, 2/3, 1 and 2 stops.
+The steps between frames the app offers, in EV: 1/3, 2/3, 1 and 2 stops.
 
 ## `BurstEnd`
 
@@ -1567,7 +1567,7 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 The lens to suggest when the subject seems closer than the selected lens can focus: the
 ultra wide lens, from the wide or a telephoto lens, while
 ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
-a button to switch; nope. never switches on its own (issue #51).
+a button to switch; the app never switches on its own (issue #51).
 
 ## `CameraModel/comparison`
 
@@ -1854,22 +1854,22 @@ internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
 @MainActor func saveComparing(_ photo: CapturedPhoto, started: ContinuousClock.Instant, request: CaptureRequest, settings: SaveSettings, backend: any ComparisonCaptureBackend) async
 ```
 
-Takes the phone's version right after nope.'s photo, saves nope.'s photo as usual, and
+Takes the phone's version right after the app's photo, saves the app's photo as usual, and
 opens the compare view.
 
-Privacy: only nope.'s photo goes to ``PhotoSaver``. The phone's version is a
-``PhoneProcessedPhoto``, which the saver can't take, and it is dropped when nope.'s photo
-fails to save. If the phone's version can't be taken, nope.'s photo is still saved and
+Privacy: only the app's photo goes to ``PhotoSaver``. The phone's version is a
+``PhoneProcessedPhoto``, which the saver can't take, and it is dropped when the app's photo
+fails to save. If the phone's version can't be taken, the app's photo is still saved and
 the compare view says why there is nothing to compare.
 
-Side effects: takes a second photo; may show the add-only Photos prompt; adds nope.'s
+Side effects: takes a second photo; may show the add-only Photos prompt; adds the app's
 photo to Photos.
 
 - Parameters:
-  - photo: nope.'s photo, just taken.
-  - started: When nope.'s photo was started.
-  - request: nope.'s request, which the phone's version repeats.
-  - settings: The settings nope.'s photo is saved with.
+  - photo: the app's photo, just taken.
+  - started: When the app's photo was started.
+  - request: the app's request, which the phone's version repeats.
+  - settings: The settings the app's photo is saved with.
   - backend: The backend that takes the phone's version.
 
 ## `CameraModel/saveSettings`
@@ -2009,7 +2009,7 @@ public, declared in `Sources/NopeCore/CameraPermission.swift`
 enum CameraPermission
 ```
 
-Whether nope. may use the camera, as reported by the system.
+Whether the app may use the camera, as reported by the system.
 
 A ``CaptureBackend`` reports this value; ``CameraModel`` turns it into a ``CameraState``.
 Interfaces never read it directly: they render the resulting state.
@@ -2109,7 +2109,7 @@ case needsPermission
 
 The person hasn't decided about camera access yet.
 
-Explain why nope. needs the camera and offer one button that sends
+Explain why the app needs the camera and offer one button that sends
 ``CameraIntent/requestPermission``.
 
 ## `CameraState/permissionDenied`
@@ -2157,7 +2157,7 @@ public, declared in `Sources/NopeCore/CameraState.swift`
 case unavailable
 ```
 
-Access is allowed but the device has no camera nope. can use, such as the Simulator.
+Access is allowed but the device has no camera the app can use, such as the Simulator.
 
 Say so plainly; there is nothing to retry.
 
@@ -2404,7 +2404,7 @@ public, declared in `Sources/NopeCore/CameraStats.swift`
 var zoomFactor: Double
 ```
 
-The zoom factor in use; nope. keeps it at 1.0, which Bayer RAW requires.
+The zoom factor in use; the app keeps it at 1.0, which Bayer RAW requires.
 
 ## `CameraUnavailability`
 
@@ -2424,7 +2424,7 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 case needsPermission
 ```
 
-The person hasn't been asked for camera access yet. Say to open nope. to allow it.
+The person hasn't been asked for camera access yet. Say to open the app to allow it.
 
 ## `CameraUnavailability/noCamera`
 
@@ -2434,7 +2434,7 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 case noCamera
 ```
 
-The device has no camera nope. can use. Say so.
+The device has no camera the app can use. Say so.
 
 ## `CameraUnavailability/notRunning`
 
@@ -2680,7 +2680,7 @@ public, declared in `Sources/NopeCore/CaptureError.swift`
 case photosAccessDenied
 ```
 
-nope. has no permission to add photos.
+The app has no permission to add photos.
 
 Say that the photo wasn't saved, and that adding photos can be allowed in Settings.
 
@@ -2717,7 +2717,7 @@ public, declared in `Sources/NopeCore/CaptureEvent.swift`
 enum CaptureEvent
 ```
 
-Something that happened to the camera outside nope.'s control, reported by a
+Something that happened to the camera outside the app's control, reported by a
 ``CaptureBackend`` through ``CaptureBackend/events``.
 
 ``CameraModel`` turns events into ``SessionStatus`` values; interfaces never read events.
@@ -3139,7 +3139,7 @@ public, declared in `Sources/NopeCore/CapturedPhoto.swift`
 let rawImageData: Data?
 ```
 
-For Bayer RAW, the RAW image data of the system's own DNG, taken before nope. wrote its
+For Bayer RAW, the RAW image data of the system's own DNG, taken before the app wrote its
 metadata; `nil` for the fallback. The read-back compares the saved DNG's image data with
 it, so a changed pixel rejects the photo.
 
@@ -3250,7 +3250,7 @@ struct CloseUpDetector
 Notices when the subject seems closer than the lens can focus: the lens stays at its nearest
 position while autofocus keeps searching (issue #51, "Close-up assist").
 
-It only suggests the ultra wide lens; nope. never switches lenses on its own. The thresholds
+It only suggests the ultra wide lens; the app never switches lenses on its own. The thresholds
 are assumptions to check on the device (docs/TESTING.md, "Close-up focus aids"):
 `lensPosition` is relative (0 is the nearest the lens can focus), not a distance.
 
@@ -3310,7 +3310,7 @@ protocol ComparisonCaptureBackend : CaptureBackend
 A ``CaptureBackend`` that can also take the phone's fully processed photo for the comparison
 shot (issue #55).
 
-`NopeCapture` implements it with AVFoundation: a second capture, right after nope.'s own,
+`NopeCapture` implements it with AVFoundation: a second capture, right after the app's own,
 with `.quality` prioritization, which lets the system combine several frames where the
 device does that. iOS doesn't allow that processing in the same capture as a Bayer RAW,
 so it is a separate photo a moment later. ``SimulatedCaptureBackend`` returns a placeholder.
@@ -3326,9 +3326,9 @@ func captureComparison(_ request: CaptureRequest) async throws(CaptureError) -> 
 Takes the phone's fully processed photo with the request's lens, in memory only.
 
 Side effects: none beyond the capture itself. The photo isn't written to a file or saved,
-and the camera is left configured for nope.'s own photos afterwards.
+and the camera is left configured for the app's own photos afterwards.
 
-- Parameter request: The lens, format and flash of nope.'s photo, just taken; the same as
+- Parameter request: The lens, format and flash of the app's photo, just taken; the same as
   the last ``CaptureBackend/startSession(_:)``. Its metadata plan is ignored: the
   phone's version keeps the system's own metadata, because that is what it shows.
 - Returns: The photo.
@@ -3364,7 +3364,7 @@ case setOn(Bool)
 ```
 
 Turn the comparison shot on or off. While it is on, each single or self-timer photo is
-followed by the phone's fully processed photo, and the compare view opens after nope.'s
+followed by the phone's fully processed photo, and the compare view opens after the app's
 photo is saved. Ignored when the backend can't take the second photo
 (``ComparisonModel/isAvailable``). Not remembered between launches.
 
@@ -3380,7 +3380,7 @@ The comparison shot (issue #55): whether it is on, and the compare view's conten
 
 ``CameraModel/comparison`` holds it; its intents arrive as ``CameraIntent/comparison(_:)``.
 While ``isOn``, ``CameraModel`` follows each single or self-timer photo with the phone's
-fully processed photo (``ComparisonCaptureBackend``), saves only nope.'s photo through
+fully processed photo (``ComparisonCaptureBackend``), saves only the app's photo through
 ``PhotoSaver`` as usual, and then fills ``state`` for the compare view.
 
 Privacy: the phone's version never reaches the save pipeline. Its pictures and metadata are
@@ -3405,8 +3405,8 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 case failed(CaptureError)
 ```
 
-nope.'s photo was saved, but the phone's version couldn't be taken, so there is
-nothing to compare. Say so, and that nope.'s photo was saved.
+The app's photo was saved, but the phone's version couldn't be taken, so there is
+nothing to compare. Say so, and that the app's photo was saved.
 
 ## `ComparisonModel/State/idle`
 
@@ -3426,7 +3426,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 case preparing
 ```
 
-nope.'s photo was saved and both pictures are being prepared. Show progress.
+The app's photo was saved and both pictures are being prepared. Show progress.
 
 ## `ComparisonModel/State/ready(_:)`
 
@@ -3480,11 +3480,11 @@ internal, declared in `Sources/NopeCore/Comparison.swift`
 @MainActor static func inventory(of file: PhotoFile?, in saved: SavedPhoto) -> MetadataInventory
 ```
 
-The read-back of the shown nope. file.
+The read-back of the app's shown file.
 
 - Parameters:
   - file: The shown file, or `nil`.
-  - saved: nope.'s saved photo, with each file's read-back.
+  - saved: the app's saved photo, with each file's read-back.
 - Returns: The file's read-back, or an empty inventory without a file.
 
 ## `ComparisonModel/isAvailable`
@@ -3528,7 +3528,7 @@ internal, declared in `Sources/NopeCore/Comparison.swift`
 @MainActor func present(_ phone: Result<PhoneProcessedPhoto, CaptureError>, saved: SavedPhoto, files: [PhotoFile], delay: Duration, mirrorsPhoneImage: Bool) async
 ```
 
-Opens the compare view after nope.'s photo was saved: the failure when the phone's
+Opens the compare view after the app's photo was saved: the failure when the phone's
 version couldn't be taken, otherwise both pictures and the metadata side by side.
 
 The pictures are decoded off the main actor. If the view was closed meanwhile, the result
@@ -3536,10 +3536,10 @@ is dropped.
 
 - Parameters:
   - phone: The phone's version, or why it couldn't be taken.
-  - saved: nope.'s saved photo.
-  - files: nope.'s saved files, in the order they were built.
+  - saved: the app's saved photo.
+  - files: the app's saved files, in the order they were built.
   - delay: The time between the starts of the two photos.
-  - mirrorsPhoneImage: Whether nope.'s picture is mirrored and the phone's isn't.
+  - mirrorsPhoneImage: Whether the app's picture is mirrored and the phone's isn't.
 
 ## `ComparisonModel/render(_:with:)`
 
@@ -3578,10 +3578,10 @@ internal, declared in `Sources/NopeCore/Comparison.swift`
 @MainActor static func shownFile(in files: [PhotoFile]) -> PhotoFile?
 ```
 
-The nope. file the compare view shows: the developed HEIF or JPEG when one was saved,
+The app's file the compare view shows: the developed HEIF or JPEG when one was saved,
 because it is the same kind of file as the phone's version, otherwise the DNG.
 
-- Parameter files: nope.'s saved files.
+- Parameter files: the app's saved files.
 - Returns: The file, or `nil` for none.
 
 ## `ComparisonModel/state`
@@ -3605,7 +3605,7 @@ internal, declared in `Sources/NopeCore/Comparison.swift`
 Takes the phone's version with a backend.
 
 - Parameters:
-  - request: nope.'s request.
+  - request: the app's request.
   - backend: The backend.
 - Returns: The photo, or the error.
 
@@ -3871,7 +3871,7 @@ internal, declared in `Sources/NopeCore/ControlScale.swift`
 static let maximumCompensation: Double
 ```
 
-The largest exposure compensation nope. offers, in EV either way: ±3 EV, as in the manual
+The largest exposure compensation the app offers, in EV either way: ±3 EV, as in the manual
 controls design, within the lens's own range.
 
 ## `ControlScale/nearestIndex(to:)`
@@ -4111,12 +4111,12 @@ public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
 struct DevelopedFileOptions
 ```
 
-How the HEIF and JPEG copies nope. develops from the RAW are encoded: compression, HEIF bit
+How the HEIF and JPEG copies the app develops from the RAW are encoded: compression, HEIF bit
 depth and color space (issue #57, "File").
 
 Owner principle (issue #57): anything about the file that the device lets an app control is
 the person's to choose, behind the advanced options, with the defaults working on their own.
-The defaults are the encoding nope. has always used: HEIF at the system encoder's own
+The defaults are the encoding the app has always used: HEIF at the system encoder's own
 quality and 10 bits per channel, JPEG at maximum quality, both in Display P3. None of the
 options change the RAW, the metadata or the signature, and every combination is encoded and
 opened again by the unit tests (`NopeDevelopTests`), because a setting that makes a file
@@ -4163,7 +4163,7 @@ public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
 init()
 ```
 
-The defaults: the encoding nope. used before these options existed.
+The defaults: the encoding the app used before these options existed.
 
 ## `DevelopedFileOptions/isDefault`
 
@@ -4207,7 +4207,7 @@ public, declared in `Sources/NopeCore/DevelopedLook.swift`
 enum DevelopedLook
 ```
 
-How nope. develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itself is never
+How the app develops the HEIF and JPEG it makes from the RAW. The RAW (DNG) itself is never
 affected.
 
 Both looks demosaic the sensor data and apply the file's own white balance and color
@@ -4272,7 +4272,7 @@ public, declared in `Sources/NopeCore/DeviceCapabilities.swift`
 var hasCamera: Bool { get }
 ```
 
-Whether the device has at least one camera nope. can use.
+Whether the device has at least one camera the app can use.
 
 ## `DeviceCapabilities/hasFrontCamera`
 
@@ -5414,7 +5414,7 @@ enum FastShutter
 ```
 
 How fast a shutter full auto prefers (issue #56). The camera's auto exposure still chooses
-the shutter and ISO; nope. only sets the longest shutter it may use
+the shutter and ISO; the app only sets the longest shutter it may use
 (`AVCaptureDevice.activeMaxExposureDuration`), so it raises ISO instead of slowing the
 shutter. Manual controls are never changed by it.
 
@@ -5470,7 +5470,7 @@ enum FlashMode
 
 When the flash fires for a photo (issue #38).
 
-The flash only adds light; nope. turns on no processing with it. Each lens lists the modes
+The flash only adds light; the app turns on no processing with it. Each lens lists the modes
 it supports in ``Lens/flashModes``; an interface offers a flash control only when that list
 has a mode other than ``off``.
 
@@ -6510,7 +6510,7 @@ public, declared in `Sources/NopeCore/HeatLevel.swift`
 case critical
 ```
 
-Critical; nope. pauses the camera until the device cools down.
+Critical; the app pauses the camera until the device cools down.
 
 ## `HeatLevel/fair`
 
@@ -6801,7 +6801,7 @@ enum InterruptionReason
 
 Why the system paused the camera.
 
-The system resumes the camera by itself when the reason goes away; nope. never restarts it
+The system resumes the camera by itself when the reason goes away; the app never restarts it
 against the system. Each case says how an interface should present it.
 
 ## `InterruptionReason/backgrounded`
@@ -6837,7 +6837,7 @@ case multitasking
 
 The app shares the screen with other apps (iPad Split View, Slide Over or Stage Manager).
 
-Say that the camera works only when nope. fills the screen.
+Say that the camera works only when the app fills the screen.
 
 ## `InterruptionReason/other`
 
@@ -6918,7 +6918,7 @@ struct IntervalSettings
 Interval shooting: a series of separate photos at a fixed interval.
 
 Each photo is an ordinary single capture; nothing is combined into a video or merged. The
-timer runs only while a series is running and nope. is open (AGENTS.md, "Battery").
+timer runs only while a series is running and the app is open (AGENTS.md, "Battery").
 
 ## `IntervalSettings/count`
 
@@ -6938,7 +6938,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 static let countRange: ClosedRange<Int>
 ```
 
-The photo counts nope. offers: 2 to 999.
+The photo counts the app offers: 2 to 999.
 
 ## `IntervalSettings/init(interval:count:)`
 
@@ -6972,7 +6972,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 static let intervalRange: ClosedRange<Double>
 ```
 
-The intervals nope. offers, in seconds: 1 second to 1 hour.
+The intervals the app offers, in seconds: 1 second to 1 hour.
 
 ## `IntervalSettings/standard`
 
@@ -7125,7 +7125,7 @@ One physical camera on the device, described as plain data.
 
 Lenses are discovered at run time by a ``CaptureBackend``; an interface renders them without
 knowing the hardware (AGENTS.md, "Capabilities are data"). Every range is what the camera
-reported for the format nope. uses, so it can differ between devices and iOS versions.
+reported for the format the app uses, so it can differ between devices and iOS versions.
 
 ## `Lens/Kind`
 
@@ -7234,7 +7234,7 @@ let flashModes: [FlashMode]
 
 The flash modes the lens supports, as the photo output reported them for this camera.
 Empty, or only ``FlashMode/off``, when the lens has no flash. Always empty for the front
-camera: nope. uses no screen flash (issue #38).
+camera: the app uses no screen flash (issue #38).
 
 ## `Lens/hasTorch`
 
@@ -7318,7 +7318,7 @@ How much closer this lens sees than the rear wide camera: 0.5 for a typical ultr
 front camera, which has no rear wide camera to compare with.
 
 It is computed from each camera's field of view, so it is approximate. It is for labels
-only: nope. never zooms digitally.
+only: the app never zooms digitally.
 
 ## `Lens/manualControls`
 
@@ -7676,7 +7676,7 @@ internal, declared in `Sources/NopeCore/Light.swift`
 @MainActor func cameraDidPause() async
 ```
 
-Turns the torch off because the camera stopped or paused (an interruption, heat, or nope.
+Turns the torch off because the camera stopped or paused (an interruption, heat, or the app
 leaving the screen). The person turns it on again when they want it.
 
 Side effect: switches the torch off.
@@ -7816,7 +7816,7 @@ public, declared in `Sources/NopeCore/Light.swift`
 @MainActor var supportsTorch: Bool { get }
 ```
 
-Whether the lens in use has a torch nope. can switch.
+Whether the lens in use has a torch the app can switch.
 
 ## `LightModel/systemMadeTorchUnavailable()`
 
@@ -8191,7 +8191,7 @@ public, declared in `Sources/NopeCore/LocationTagging.swift`
 enum LocationAccess
 ```
 
-Whether nope. may use the device's location.
+Whether the app may use the device's location.
 
 ## `LocationAccess/allowed`
 
@@ -8201,7 +8201,7 @@ public, declared in `Sources/NopeCore/LocationTagging.swift`
 case allowed
 ```
 
-Allowed while nope. is in use.
+Allowed while the app is in use.
 
 ## `LocationAccess/denied`
 
@@ -8211,7 +8211,7 @@ public, declared in `Sources/NopeCore/LocationTagging.swift`
 case denied
 ```
 
-The person declined, or turned location off for nope. or for the whole device.
+The person declined, or turned location off for the app or for the whole device.
 
 ## `LocationAccess/isAllowed`
 
@@ -8328,7 +8328,7 @@ public, declared in `Sources/NopeCore/LocationTagging.swift`
 @MainActor var access: LocationAccess { get set }
 ```
 
-Whether nope. may use the location, as last read.
+Whether the app may use the location, as last read.
 
 ## `LocationTagging/init(provider:)`
 
@@ -9858,7 +9858,7 @@ Decides whether to show "Hold it steady or use a tripod".
 
 - Full auto: when the fast shutter limit had to be lifted past the handheld rule.
 - Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
-  than the handheld rule. nope. changes nothing; it only says so.
+  than the handheld rule. The app changes nothing; it only says so.
 
 ## `ManualControlsModel/value(of:)`
 
@@ -10403,10 +10403,10 @@ public, declared in `Sources/NopeCore/MetadataComparison.swift`
 struct MetadataComparison
 ```
 
-The metadata of nope.'s saved file and of the phone's fully processed version, side by side
+The metadata of the app's saved file and of the phone's fully processed version, side by side
 (issue #55, "Compare the metadata").
 
-Both sides come from the project's own tag reader (``MetadataFileReader``): nope.'s from the
+Both sides come from the project's own tag reader (``MetadataFileReader``): the app's from the
 read-back of the saved file, the phone's from the in-memory file iOS wrote. Each tag, block
 and XMP property becomes one ``Entry``, grouped by ``Difference``.
 
@@ -10442,7 +10442,7 @@ public, declared in `Sources/NopeCore/MetadataComparison.swift`
 case onlyInNopeFile
 ```
 
-Only nope.'s file has it, such as its signature.
+Only the app's file has it, such as its signature.
 
 ## `MetadataComparison/Difference/onlyInPhoneVersion`
 
@@ -10509,10 +10509,10 @@ Creates an entry.
   - name: The item's name.
   - kind: Where it lives.
   - phoneValue: The phone's value, or `nil`.
-  - nopeValue: nope.'s value, or `nil`.
+  - nopeValue: the app's value, or `nil`.
   - item: The privacy switch, or `nil`.
   - isIdentifying: Whether to mask the value.
-  - isSignature: Whether it is nope.'s signature.
+  - isSignature: Whether it is the app's signature.
 
 ## `MetadataComparison/Entry/isIdentifying`
 
@@ -10533,7 +10533,7 @@ public, declared in `Sources/NopeCore/MetadataComparison.swift`
 let isSignature: Bool
 ```
 
-Whether the item is nope.'s Content Credentials signature.
+Whether the item is the app's Content Credentials signature.
 
 ## `MetadataComparison/Entry/item`
 
@@ -10543,8 +10543,8 @@ public, declared in `Sources/NopeCore/MetadataComparison.swift`
 let item: MetadataItem?
 ```
 
-The privacy switch that controls the item in nope. (`docs/PRIVACY.md`), or `nil` when
-no switch does: nope. then never writes it unless it is locked.
+The privacy switch that controls the item in the app (`docs/PRIVACY.md`), or `nil` when
+no switch does: the app then never writes it unless it is locked.
 
 ## `MetadataComparison/Entry/kind`
 
@@ -10575,7 +10575,7 @@ public, declared in `Sources/NopeCore/MetadataComparison.swift`
 let nopeValue: Value?
 ```
 
-nope.'s value, or `nil` when nope.'s file doesn't have it.
+The app's value, or `nil` when the app's file doesn't have it.
 
 ## `MetadataComparison/Entry/phoneValue`
 
@@ -10794,7 +10794,7 @@ public, declared in `Sources/NopeCore/MetadataComparison.swift`
 let entries: [Entry]
 ```
 
-Every entry: the phone's items in file order, then those only nope.'s file has.
+Every entry: the phone's items in file order, then those only the app's file has.
 
 ## `MetadataComparison/entries(_:)`
 
@@ -10820,10 +10820,10 @@ static func entry(_ side: Item, phone: Item?, nope: Item?) -> Entry
 Pairs one item's two sides.
 
 - Parameters:
-  - side: The side the item is listed from: the phone's, or nope.'s when only nope.'s
+  - side: The side the item is listed from: the phone's, or the app's when only the app's
     file has it. Its name, place and privacy switch are shown.
   - phone: The phone's side, or `nil`.
-  - nope: nope.'s side, or `nil`.
+  - nope: the app's side, or `nil`.
 - Returns: The entry.
 
 ## `MetadataComparison/identifyingTags`
@@ -10850,7 +10850,7 @@ Compares two files' metadata.
 
 - Parameters:
   - phone: What the tag reader found in the phone's version.
-  - nope: What the read-back found in nope.'s saved file.
+  - nope: What the read-back found in the app's saved file.
 
 ## `MetadataComparison/items(in:)`
 
@@ -10888,7 +10888,7 @@ internal, declared in `Sources/NopeCore/MetadataComparison.swift`
 static let otherTagNames: [TagID : String]
 ```
 
-Names of tags the phone may write that nope. never does, so they aren't in
+Names of tags the phone may write that the app never does, so they aren't in
 ``MetadataField/catalog``: from the EXIF 3.0 tag tables (4.6.5 for EXIF, 4.6.6 for GPS).
 
 ## `MetadataComparison/signatureBlocks`
@@ -10899,7 +10899,7 @@ internal, declared in `Sources/NopeCore/MetadataComparison.swift`
 static let signatureBlocks: Set<String>
 ```
 
-The container blocks that hold nope.'s Content Credentials manifest.
+The container blocks that hold the app's Content Credentials manifest.
 
 ## `MetadataComparison/tagItem(_:)`
 
@@ -10975,7 +10975,7 @@ public, declared in `Sources/NopeCore/MetadataField.swift`
 static let catalog: [MetadataField]
 ```
 
-Every field nope. may write, with its switch or lock and its formats. Built from the
+Every field the app may write, with its switch or lock and its formats. Built from the
 device tag check (`docs/PRIVACY.md`, "Tag check") and the TIFF 6.0, EXIF 3.0 and DNG 1.7
 tag tables. A tag that isn't here is never written and fails the read-back.
 
@@ -11318,7 +11318,7 @@ static func rawImageData(ofDNG data: Data) -> Data?
 The RAW image data of a DNG: IFD0's tiles or strips, concatenated.
 
 The capture adapter uses it to keep a reference copy of the sensor data from the system's
-own DNG, before nope. writes its metadata.
+own DNG, before the app writes its metadata.
 
 - Parameter data: The DNG's bytes.
 - Returns: The image data, or `nil` if the file has none that can be read.
@@ -11602,7 +11602,7 @@ case exactCameraModel
 ```
 
 The exact camera model for RAW editors (DNG `UniqueCameraModel`). The DNG standard
-requires the tag, so when this item is off nope. writes
+requires the tag, so when this item is off the app writes
 ``MetadataPlan/genericUniqueCameraModel`` instead of removing it.
 
 ## `MetadataItem/exposureSettings`
@@ -11864,7 +11864,7 @@ static let genericUniqueCameraModel: String
 ```
 
 The `UniqueCameraModel` a DNG carries when ``MetadataItem/exactCameraModel`` is off. The
-DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so nope. writes a value
+DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so the app writes a value
 that names no device.
 
 ## `MetadataPlan/heifBlocks`
@@ -12008,7 +12008,7 @@ Builds the ImageIO property dictionary to write a file with, from the system's m
 Privacy rule: the result starts empty, and only allowlisted values are copied in
 (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
 the person's name and copyright, the ``location`` and a mirrored orientation
-(``mirrorsHorizontally``) are written by nope.; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+(``mirrorsHorizontally``) are written by the app; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
 string for each one whose switch is off.
 
 - Parameters:
@@ -12060,7 +12060,7 @@ Measured on an iPhone 16 Pro Max with iOS 27.2.1 (issue #65):
 `AVCapturePhoto.fileDataRepresentation(with:)` returns `nil` for a Bayer RAW photo unless
 the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
 them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
-requirement. Privacy rule: when a field's switch is off, nope. writes an empty string, never
+requirement. Privacy rule: when a field's switch is off, the app writes an empty string, never
 a placeholder value, so the DNG still says nothing about the date, camera or software.
 
 ## `MetadataPlan/settings`
@@ -12106,9 +12106,9 @@ static func systemVersion(fromSoftware software: String?) -> String?
 ```
 
 The system's version in a `Software` value: the value itself when the system wrote it, the
-part in parentheses when nope. wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
+part in parentheses when the app wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
 
-A HEIF or JPEG is developed from the DNG's metadata, whose `Software` nope. already
+A HEIF or JPEG is developed from the DNG's metadata, whose `Software` the app already
 wrote, so reading it as the system's own value would nest the app's name:
 "Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))".
 
@@ -12521,7 +12521,7 @@ public, declared in `Sources/NopeCore/MetadataVerifier.swift`
 case unexpectedValue(MetadataAllowlist.TagID)
 ```
 
-An allowed tag with a value nope. didn't write, such as an exact camera model when the
+An allowed tag with a value the app didn't write, such as an exact camera model when the
 generic one was asked for.
 
 ## `MetadataViolation/unexpectedXMPProperty(_:)`
@@ -12565,7 +12565,7 @@ enum MeteringMode
 
 How the camera measures the scene for auto exposure.
 
-AVFoundation offers no named metering patterns. nope. offers what the camera's exposure
+AVFoundation offers no named metering patterns. The app offers what the camera's exposure
 region of interest can express (`AVCaptureDevice.exposureRectOfInterest`, iOS 26 and
 later), and names each by the region it measures, not by a pattern it can't promise.
 
@@ -12838,9 +12838,9 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var isNightModeOn: Bool { get set }
 ```
 
-Whether night mode is on: every nope. screen in red on black, to keep eyes used to the
+Whether night mode is on: every screen of the app in red on black, to keep eyes used to the
 dark (issue #61). Off by default, remembered between launches, never switched on or off
-automatically. nope. never changes the screen's brightness; people use the device's own
+automatically. The app never changes the screen's brightness; people use the device's own
 brightness control.
 
 Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
@@ -12931,7 +12931,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var savesDevelopedFormat: Bool { get }
 ```
 
-Whether any selected format is developed by nope. from the RAW (HEIF or JPEG).
+Whether any selected format is developed by the app from the RAW (HEIF or JPEG).
 
 ## `NopeSettings/selectedFormats(deviceSupportsBayerRAW:)`
 
@@ -13058,7 +13058,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 Turns night mode on or off, and saves the change.
 
-- Parameter isOn: Whether nope.'s screens are red on black.
+- Parameter isOn: Whether the app's screens are red on black.
 
 ## `NopeSettings/setOverlays(_:)`
 
@@ -13603,7 +13603,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 struct PhoneProcessedPhoto
 ```
 
-The phone's fully processed version of (almost) the same moment as a nope. photo, for the
+The phone's fully processed version of (almost) the same moment as the app's photo, for the
 comparison shot (issue #55).
 
 Privacy: it is never saved. It isn't a ``CapturedPhoto``, so it can't be handed to
@@ -13677,7 +13677,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 struct PhotoComparison
 ```
 
-One finished comparison, for the compare view: nope.'s photo and the phone's version as
+One finished comparison, for the compare view: the app's photo and the phone's version as
 pictures, and their metadata side by side.
 
 Privacy: in memory only, for as long as the compare view is open (``ComparisonModel``).
@@ -13693,14 +13693,14 @@ init(nopeImage: PhotoThumbnail?, phoneImage: PhotoThumbnail?, nopeFile: PhotoDet
 Creates a result.
 
 - Parameters:
-  - nopeImage: nope.'s picture, or `nil`.
+  - nopeImage: the app's picture, or `nil`.
   - phoneImage: The phone's picture, or `nil`.
-  - nopeFile: What the shown nope. file is, or `nil`.
+  - nopeFile: What the app's shown file is, or `nil`.
   - phoneFormat: The phone's format.
   - phoneDimensions: The phone's size, in pixels.
   - metadata: The metadata side by side.
   - secondPhotoDelay: The time between the starts of the two photos.
-  - mirrorsPhoneImage: Whether to mirror the phone's picture to match nope.'s.
+  - mirrorsPhoneImage: Whether to mirror the phone's picture to match the app's.
 
 ## `PhotoComparison/metadata`
 
@@ -13710,7 +13710,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 let metadata: MetadataComparison
 ```
 
-The metadata of the shown nope. file and of the phone's version, side by side.
+The metadata of the app's shown file and of the phone's version, side by side.
 
 ## `PhotoComparison/mirrorsPhoneImage`
 
@@ -13720,7 +13720,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 let mirrorsPhoneImage: Bool
 ```
 
-Whether nope.'s picture is mirrored (a front camera photo with mirroring on, issue #45)
+Whether the app's picture is mirrored (a front camera photo with mirroring on, issue #45)
 while the phone's version isn't, so an interface mirrors the phone's picture to line the
 two up. The phone's file itself is never changed.
 
@@ -13732,7 +13732,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 let nopeFile: PhotoDetails.File?
 ```
 
-What the shown nope. file is: its format, size and processing, from the photo's details,
+What the app's shown file is: its format, size and processing, from the photo's details,
 or `nil` when the details don't list it.
 
 ## `PhotoComparison/nopeImage`
@@ -13743,7 +13743,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 let nopeImage: PhotoThumbnail?
 ```
 
-nope.'s photo as a picture: the saved HEIF or JPEG, or the DNG when only the RAW was
+The app's photo as a picture: the saved HEIF or JPEG, or the DNG when only the RAW was
 saved; `nil` when it couldn't be decoded or the app has no renderer.
 
 ## `PhotoComparison/phoneDimensions`
@@ -13784,7 +13784,7 @@ public, declared in `Sources/NopeCore/Comparison.swift`
 let secondPhotoDelay: Duration
 ```
 
-From the start of nope.'s photo to the start of the phone's version, measured with the
+From the start of the app's photo to the start of the phone's version, measured with the
 monotonic clock.
 
 ## `PhotoDetails`
@@ -13795,7 +13795,7 @@ public, declared in `Sources/NopeCore/PhotoDetails.swift`
 struct PhotoDetails
 ```
 
-"What's in this photo": the facts about one photo nope. just saved, read back from the
+"What's in this photo": the facts about one photo the app just saved, read back from the
 saved files (issue #53).
 
 ``PhotoSaver`` builds it from each file's read-back (the project's own tag reader and
@@ -13804,7 +13804,7 @@ it in ``SavedPhoto/details``. Every value is what the file holds or what was mea
 value the file doesn't hold is `nil` or empty, never estimated.
 
 Privacy: built in memory from the just-saved photo and shown on screen only; nothing is
-logged, stored or copied. nope. can't reopen older photos (add-only access), so details
+logged, stored or copied. The app can't reopen older photos (add-only access), so details
 exist only for photos taken in this session.
 
 ## `PhotoDetails/CheckedFile`
@@ -14097,7 +14097,7 @@ public, declared in `Sources/NopeCore/PhotoDetails.swift`
 let storesLensCorrections: Bool
 ```
 
-Whether a DNG stores lens correction instructions (opcode lists 1, 2 or 3). nope.
+Whether a DNG stores lens correction instructions (opcode lists 1, 2 or 3). The app
 never applies them to the pixels.
 
 ## `PhotoDetails/File/whiteLevels`
@@ -14225,7 +14225,7 @@ public, declared in `Sources/NopeCore/PhotoDetails.swift`
 case developed(DevelopedLook)
 ```
 
-Developed by nope. from the RAW, with this look.
+Developed by the app from the RAW, with this look.
 
 ## `PhotoDetails/Processing/none`
 
@@ -14235,7 +14235,7 @@ public, declared in `Sources/NopeCore/PhotoDetails.swift`
 case none
 ```
 
-None by nope.: the sensor data as the camera delivered it (the DNG).
+None by the app: the sensor data as the camera delivered it (the DNG).
 
 ## `PhotoDetails/Tag`
 
@@ -14934,7 +14934,7 @@ let isProcessedByDevice: Bool
 ```
 
 Whether the phone's camera processed the file: the HEIF or JPEG of a lens without Bayer
-RAW. `false` for a DNG and for a HEIF or JPEG nope. developed from the RAW. The signer
+RAW. `false` for a DNG and for a HEIF or JPEG the app developed from the RAW. The signer
 uses it to describe the file truthfully in its Content Credentials.
 
 ## `PhotoFormat`
@@ -14945,7 +14945,7 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 enum PhotoFormat
 ```
 
-A file format nope. can save.
+A file format the app can save.
 
 The raw values are stable, so settings that store a format can be saved and read back.
 
@@ -14969,7 +14969,7 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 case heif
 ```
 
-HEIF developed by nope. from the RAW, 10 bits per channel.
+HEIF developed by the app from the RAW, 10 bits per channel.
 
 ## `PhotoFormat/isDevelopedFromRAW`
 
@@ -14979,7 +14979,7 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 var isDevelopedFromRAW: Bool { get }
 ```
 
-Whether nope. develops this format itself from the RAW, rather than saving sensor data.
+Whether the app develops this format itself from the RAW, rather than saving sensor data.
 
 Developed formats never use the phone's own processing pipeline (issue #1, "Formats").
 
@@ -14991,7 +14991,7 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 case jpeg
 ```
 
-JPEG developed by nope. from the RAW, at maximum quality.
+JPEG developed by the app from the RAW, at maximum quality.
 
 ## `PhotoFormat/raw`
 
@@ -15014,7 +15014,7 @@ protocol PhotoLibrary : Sendable
 Adds photos to the library with add-only access.
 
 `NopeCapture` implements it with PhotoKit (`PhotoKitLibrary`). Add-only access can't read
-the library, including nope.'s own photos.
+the library, including the app's own photos.
 
 ## `PhotoLibrary/add(_:)`
 
@@ -15109,7 +15109,7 @@ public, declared in `Sources/NopeCore/PhotoLocation.swift`
 struct PhotoLocation
 ```
 
-Where a photo was taken: the only location values nope. ever writes (issue #43).
+Where a photo was taken: the only location values the app ever writes (issue #43).
 
 Privacy rule (`docs/PRIVACY.md`, "Location"): a photo carries a location only when the person
 turned the Location switch on and allowed location access. Then it carries exactly the
@@ -15248,7 +15248,7 @@ public, declared in `Sources/NopeCore/PhotoLocation.swift`
 static let versionKey: String
 ```
 
-`kCGImagePropertyGPSVersion`, the GPS directory's version tag (`GPSVersionID`). nope.
+`kCGImagePropertyGPSVersion`, the GPS directory's version tag (`GPSVersionID`). The app
 never writes it, but EXIF 3.0 makes it mandatory in a GPS directory, so the writer may add
 it: ImageIO on the iOS 27.2 Simulator didn't for HEIF or JPEG; whether AVFoundation does
 for a DNG is a device check (docs/PRIVACY.md, "Location").
@@ -15581,10 +15581,10 @@ public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
 struct PhotoThumbnail
 ```
 
-A small picture of a photo nope. just saved, for the last-photo thumbnail beside the shutter
+A small picture of a photo the app just saved, for the last-photo thumbnail beside the shutter
 (issue #36).
 
-nope. has add-only Photos access and can't read the library, so the thumbnail is made from
+The app has add-only Photos access and can't read the library, so the thumbnail is made from
 the saved file while it is still in memory (``PhotoThumbnailing``).
 
 Privacy: the pixels live in memory only, for this session. They are never written to disk,
@@ -15735,7 +15735,7 @@ public, declared in `Sources/NopeCore/CameraStats.swift`
 enum ProcessingFeature
 ```
 
-A processing feature of the camera or the photo output that nope. keeps off when the device
+A processing feature of the camera or the photo output that the app keeps off when the device
 allows (`docs/PRIVACY.md`, "Processing"). The live camera readout lists the ones that are
 off, as the hardware reports them.
 
@@ -15912,7 +15912,7 @@ public, declared in `Sources/NopeCore/SaveSettings.swift`
 struct SaveSettings
 ```
 
-What nope. saves for each photo: the file formats, the developed look and the metadata
+What the app saves for each photo: the file formats, the developed look and the metadata
 choices.
 
 ``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,
@@ -16305,7 +16305,7 @@ Keeps the screen awake and dimmed while an interval series runs, and puts both b
 ends (issue #48).
 
 During a series the screen mustn't lock, or the camera stops and the series with it; dimming
-saves battery over a long series (AGENTS.md, "Battery"). This is the only place nope. turns
+saves battery over a long series (AGENTS.md, "Battery"). This is the only place the app turns
 the idle timer off, and it is turned on again whenever the series ends or is stopped, the
 camera screen goes away, or the app leaves the foreground.
 
@@ -16434,7 +16434,7 @@ case noPicture
 ```
 
 The camera runs and delivers frames, but they are blank (zero-filled), even after
-nope. restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
+the app restarted it once. Seen on iOS while a Mac was viewing and controlling the device's
 screen (docs/TESTING.md, "Black frames").
 
 Say: "The camera isn't sending a picture."
@@ -16448,7 +16448,7 @@ public, declared in `Sources/NopeCore/SessionStatus.swift`
 case pausedForHeat
 ```
 
-nope. paused the camera because the device is too hot. Say so; it resumes when the
+The app paused the camera because the device is too hot. Say so; it resumes when the
 device cools down.
 
 ## `SessionStatus/running`
@@ -16553,7 +16553,7 @@ public, declared in `Sources/NopeCore/ShortcutInbox.swift`
 How long a request waits for the camera screen to take it, and for the camera to start,
 in seconds, before it ends as ``CameraUnavailability/notRunning``. An assumption, to be
 confirmed on a device: the camera usually starts well within a second, and Siri opens
-nope. before the intent runs, so ten seconds leaves room for a slow start.
+the app before the intent runs, so ten seconds leaves room for a slow start.
 
 ## `ShortcutInbox/submit(_:)`
 
@@ -16650,7 +16650,7 @@ case notSaved(CaptureError)
 ```
 
 The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved, and
-that nope. shows why.
+that the app shows why.
 
 ## `ShortcutOutcome/saved(isSigned:)`
 
@@ -16871,7 +16871,7 @@ func captureComparison(_ request: CaptureRequest) async throws(CaptureError) -> 
 Returns a placeholder phone-processed photo for the request, or throws
 ``comparisonError``.
 
-- Parameter request: nope.'s request.
+- Parameter request: the app's request.
 - Returns: ``placeholderComparisonData`` as a HEIF (a JPEG for a lens whose fallback is
   JPEG), the lens's largest photo size (or ``placeholderDimensions``), and
   ``placeholderComparisonMetadata``.
@@ -17429,7 +17429,7 @@ public, declared in `Sources/NopeCore/OverlayOptions.swift`
 static let standard: SpiralPlacement
 ```
 
-The placement nope. starts with: no turn, not flipped. The spiral then winds in toward the
+The placement the app starts with: no turn, not flipped. The spiral then winds in toward the
 right third of a landscape frame.
 
 ## `SpiralPlacement/turned(by:)`
@@ -17599,7 +17599,7 @@ public, declared in `Sources/NopeCore/MetadataInventory.swift`
 case primary
 ```
 
-The first image directory (IFD0). In nope.'s DNG it holds the RAW image itself.
+The first image directory (IFD0). In the app's DNG it holds the RAW image itself.
 
 ## `TIFFDirectory/subImage`
 
@@ -17668,7 +17668,7 @@ var primaryImageData: Data?
 ```
 
 The bytes of IFD0's image data (its tiles or strips, concatenated in order), or
-`nil` when IFD0 has none. For nope.'s DNG this is the compressed RAW sensor data.
+`nil` when IFD0 has none. For the app's DNG this is the compressed RAW sensor data.
 
 ## `TIFFReader/Tag`
 
@@ -17804,7 +17804,7 @@ internal, declared in `Sources/NopeCore/TIFFReader.swift`
 static let maximumDirectories: Int
 ```
 
-The most directories a file may have. nope.'s DNG has two (IFD0 and EXIF).
+The most directories a file may have. The app's DNG has two (IFD0 and EXIF).
 
 ## `TIFFReader/maximumEntriesPerDirectory`
 
@@ -17814,7 +17814,7 @@ internal, declared in `Sources/NopeCore/TIFFReader.swift`
 static let maximumEntriesPerDirectory: Int
 ```
 
-The most entries one directory may have. nope.'s largest has about 40.
+The most entries one directory may have. The app's largest has about 40.
 
 ## `TIFFReader/maximumRecordedValues`
 
@@ -17953,7 +17953,7 @@ public, declared in `Sources/NopeCore/WhiteBalance.swift`
 static let temperatureRange: ClosedRange<Double>
 ```
 
-The temperatures nope. offers, in kelvin: 2500 K to 10,000 K, the range in the manual
+The temperatures the app offers, in kelvin: 2500 K to 10,000 K, the range in the manual
 controls design. AVFoundation converts any temperature; values the camera's gains can't
 reach are limited to the nearest gains it accepts.
 
@@ -17975,7 +17975,7 @@ public, declared in `Sources/NopeCore/WhiteBalance.swift`
 static let tintRange: ClosedRange<Double>
 ```
 
-The tints nope. offers, from green (negative) to magenta (positive). A tool setting:
+The tints the app offers, from green (negative) to magenta (positive). A tool setting:
 AVFoundation converts any tint, and the camera's gain limit applies as for temperature.
 
 ## `WhiteBalanceGainsReading`

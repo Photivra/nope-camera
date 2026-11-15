@@ -8,7 +8,7 @@ import NopeSigning
 import NopeUI
 import SwiftUI
 
-/// The Lock Screen camera (LockedCameraCapture, iOS 18; issue #42): the nope. camera, opened
+/// The Lock Screen camera (LockedCameraCapture, iOS 18; issue #42): the app's camera, opened
 /// from the "Open nope." control without unlocking the device.
 ///
 /// The system starts it from ``OpenCameraIntent`` while the device is locked. It runs the same
@@ -17,7 +17,7 @@ import SwiftUI
 /// saving to Photos (AGENTS.md, "Honesty"). It makes no network request.
 ///
 /// While locked, the extension sees only what Apple allows it: its own container, not the
-/// app's. So it keeps its own settings, starting from nope.'s defaults, and shows no button that
+/// app's. So it keeps its own settings, starting from the app's defaults, and shows no button that
 /// would open another app.
 @main
 struct NopeCaptureExtension: LockedCameraCaptureExtension {
@@ -38,7 +38,7 @@ struct LockedCameraView: View {
     /// The camera model, with the device's cameras and the full save pipeline.
     @State private var model = CameraModel(backend: AVFoundationCaptureBackend(), saver: Self.makeSaver())
 
-    /// The extension's own settings, in its own container: nope.'s defaults until changed here.
+    /// The extension's own settings, in its own container: the app's defaults until changed here.
     @State private var settings = NopeSettings(defaults: .standard)
 
     /// The camera screen, with the hardware shutter buttons.

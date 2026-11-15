@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Honesty screen: what nope. never does, what iOS may still do outside nope.'s control,
+/// The Honesty screen: what the app never does, what iOS may still do outside the app's control,
 /// and what no app can remove.
 ///
 /// Every statement uses the wording of `docs/research/privacy-claims.md` and is backed by the
@@ -28,7 +28,7 @@ struct HonestyScreen: View {
         .navigationTitle(Text("Honesty", tableName: "Honesty", bundle: .module, comment: "Settings row and screen title: what nope. does and doesn't do, and what it can't control."))
     }
 
-    /// What nope. never does, and how to check.
+    /// What the app never does, and how to check.
     private var neverSection: some View {
         HonestySection {
             HonestyStatement(
@@ -71,7 +71,7 @@ struct HonestyScreen: View {
         }
     }
 
-    /// What iOS and Photos may still do, outside nope.'s control.
+    /// What iOS and Photos may still do, outside the app's control.
     private var iOSSection: some View {
         HonestySection {
             HonestyStatement(

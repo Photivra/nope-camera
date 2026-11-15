@@ -3,7 +3,7 @@ import NopeCore
 
 @testable import NopeSigning
 
-/// Small synthetic files of every kind nope. signs. They are generated here, not captured, so
+/// Small synthetic files of every kind the app signs. They are generated here, not captured, so
 /// the tests carry no one's photos (AGENTS.md, "Test files and samples").
 enum SyntheticPhotos {
     /// A file for each kind.

@@ -26,7 +26,7 @@ public struct SpiralPlacement: Hashable, Sendable {
     /// The number of placements: four turns, each plain or flipped.
     public static let count = 8
 
-    /// The placement nope. starts with: no turn, not flipped. The spiral then winds in toward the
+    /// The placement the app starts with: no turn, not flipped. The spiral then winds in toward the
     /// right third of a landscape frame.
     public static let standard = SpiralPlacement(quarterTurns: 0, isFlipped: false)
 

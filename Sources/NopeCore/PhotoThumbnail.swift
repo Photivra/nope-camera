@@ -1,9 +1,9 @@
 import Foundation
 
-/// A small picture of a photo nope. just saved, for the last-photo thumbnail beside the shutter
+/// A small picture of a photo the app just saved, for the last-photo thumbnail beside the shutter
 /// (issue #36).
 ///
-/// nope. has add-only Photos access and can't read the library, so the thumbnail is made from
+/// The app has add-only Photos access and can't read the library, so the thumbnail is made from
 /// the saved file while it is still in memory (``PhotoThumbnailing``).
 ///
 /// Privacy: the pixels live in memory only, for this session. They are never written to disk,

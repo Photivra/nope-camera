@@ -118,7 +118,7 @@ check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Stand
 
 ## File compatibility (issue #58)
 
-Every file nope. can save must open (AGENTS.md, "Every setting the device allows"). This has two
+Every file the app can save must open (AGENTS.md, "Every setting the device allows"). This has two
 parts: an automated matrix of generated files, and a recorded table of manual checks in other
 apps.
 
@@ -397,7 +397,7 @@ iPad:
   the camera comes back afterwards; and the tag check (below) shows exposed frames;
 - saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
   prompt appears once and declining it shows the "isn't allowed to add photos" banner, whose
-  Open Settings opens nope.'s page in the Settings app; a RAW
+  Open Settings opens the app's page in the Settings app; a RAW
   plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
@@ -448,7 +448,7 @@ iPad:
   Mode changes the explanation;
 - interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
   a tap brightens it while the series continues; the brightness and auto-lock come back when the
-  series ends, is stopped, or nope. goes to the background, and after the camera screen closes.
+  series ends, is stopped, or the app goes to the background, and after the camera screen closes.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 
@@ -457,7 +457,7 @@ to Photos with the add-only access granted in the app, and can create a Secure E
 the device is locked (if it can't, photos are saved unsigned and the "Not Signed" chip says so).
 
 - Control: add "Open nope." in Control Center, on the Lock Screen and to the Action button;
-  each opens the nope. camera; unlocked, it opens the app.
+  each opens the camera; unlocked, it opens the app.
 - Locked: the camera opens without unlocking; a photo is saved to Photos (RAW plus HEIF by
   default), signed, and passes the read-back; the thumbnail opens the photo's details, not
   Photos; Settings changes made there don't change the app's settings; the volume buttons take a
@@ -465,9 +465,9 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
 - Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
   signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
   access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
-- Siri while the iPhone is locked: Siri asks to unlock before opening nope.
+- Siri while the iPhone is locked: Siri asks to unlock before opening the app.
 - Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
-  Night Mode on and off, with nope. closed and with it open (the screen turns red at once).
+  Night Mode on and off, with the app closed and with it open (the screen turns red at once).
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Low storage
@@ -494,12 +494,12 @@ frame, from the photos' capture times).
   lit by it; a Bayer RAW photo with Flash On and Auto fires the flash, is saved and passes the
   read-back (`docs/PRIVACY.md`, "Device checks"); does Flash On keep a locked focus (capability
   survey, question 6)?
-- the light turns off when nope. goes to the background, on a phone call or another camera
+- the light turns off when the app goes to the background, on a phone call or another camera
   app, on a lens without a light, and at a critical heat level; warm the device and check the
   "Light Unavailable" warning and that a lower level can be chosen;
-- night mode at night: no white or blue element in nope.'s own screens (camera, tray, pills,
+- night mode at night: no white or blue element in the app's own screens (camera, tray, pills,
   manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
-  popovers); list what the system still draws (status bar, menus, alerts); nope. never changes
+  popovers); list what the system still draws (status bar, menus, alerts); the app never changes
   the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
   Viewfinder; energy with the red viewfinder on (Instruments).
 
@@ -583,7 +583,7 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
 
 ### Comparison shot on a device (issue #55)
 
-The rules (which photos are comparison shots, that only nope.'s files reach the library, failure
+The rules (which photos are comparison shots, that only the app's files reach the library, failure
 handling, the metadata grouping and masking) are unit-tested with a scripted backend; the UI tests
 audit the compare view at the default and largest text sizes, right-to-left and in night mode.
 On the iPhone 16 Pro Max, record:
@@ -591,8 +591,8 @@ On the iPhone 16 Pro Max, record:
 - the time between the two photos (the compare view's "started … after nope.'s"), on the wide,
   ultra wide and telephoto lenses and the front camera, in good and low light;
 - that the phone-processed side visibly shows the phone's processing (tone, noise reduction,
-  sharpening, multi-frame fusion in low light), and nope.'s side matches the saved photo;
-- that only nope.'s files appear in Photos after several comparison shots, and that a following
+  sharpening, multi-frame fusion in low light), and the app's side matches the saved photo;
+- that only the app's files appear in Photos after several comparison shots, and that a following
   photo with Compare off has the same DNG tags and image data as before (the output's maximum
   prioritization is back at `.speed`): run the tag check after a comparison shot;
 - memory in Xcode's memory gauge or Instruments: it rises while the compare view is open and
@@ -600,9 +600,9 @@ On the iPhone 16 Pro Max, record:
 - the app switcher shows the hidden-contents cover, not the photos;
 - with the flash set to On, whether the second photo fires the flash again and how long it
   waits for it;
-- App Privacy Report after a session of comparison shots: no network activity for nope.;
+- App Privacy Report after a session of comparison shots: no network activity for the app;
 - the masked values in Details (maker notes, `ImageUniqueID`, any serial number) and whether iOS
-  adds location to the phone's file (it shouldn't: nope. supplies none).
+  adds location to the phone's file (it shouldn't: the app supplies none).
 
 ### Focus, exposure and close-up aids on a device
 
@@ -710,7 +710,7 @@ synthetic one: ImageIO reports `public.tiff` for the signed file. On the camera 
 to the end of the file is enough to cause it, with no store at all, and inserting tag 52545 into
 IFD0 where it is keeps `com.adobe.raw-image` (macOS 27, 2026-11-14).
 
-**Fix.** nope. inserts the entry into IFD0 in place and appends the store
+**Fix.** The app inserts the entry into IFD0 in place and appends the store
 (`DNGManifestSlot`), then signs with the C2PA library's data-hash workflow: a placeholder store
 of the final size, the hash over the file with the store excluded, and the signed store written
 over the placeholder (`ContentCredentialsSigner.embedInDNG`). The tests check that every value in
@@ -814,7 +814,7 @@ Island): while one is, every app other than Apple's Camera gets blank frames (se
 frames").
 
 1. Copy `Config/Local.xcconfig.example` to `Config/Local.xcconfig` and set your own team ID.
-2. Install a Debug build. Open nope. normally from the Home Screen once and check that the
+2. Install a Debug build. Open the app normally from the Home Screen once and check that the
    viewfinder shows the scene.
 3. Launch the tag check. In Xcode: Product › Scheme › Edit Scheme › Run, keep the Build
    Configuration at Debug, add `-NopeTagCheck` to "Arguments Passed On Launch", and run. From the
@@ -834,7 +834,7 @@ frames").
      --source Documents/TagCheck --destination TagCheckOutput
    ```
    `xcrun devicectl list devices` shows the device identifier.
-6. Open nope. normally again and check that the viewfinder still shows the scene.
+6. Open the app normally again and check that the viewfinder still shows the scene.
 7. Dump the tags:
    ```sh
    swift scripts/dump-tags.swift TagCheckOutput
@@ -871,7 +871,7 @@ such a session runs, the Dynamic Island shows a purple screen-and-person icon, a
 shows "“MacBook Pro” is viewing and controlling this iPhone" with a **Stop Session** button.
 During the session, every app other than Apple's Camera got blank frames, including other
 camera apps from the App Store, while the session ran normally and auto exposure followed
-the room. Tapping **Stop Session** brought nope.'s live viewfinder back at once, with no code
+the room. Tapping **Stop Session** brought the app's live viewfinder back at once, with no code
 change and no restart, and the next tag check produced real images on every lens. The session
 started while the phone was connected to the Mac for development builds; which Mac feature
 starts it has not been isolated. No Apple documentation found describes the blanking.
@@ -884,7 +884,7 @@ again and tap **Trust** to install builds.
 on the old tag check's pipeline (a separate `AVCaptureSession` per lens, an extra
 `AVCaptureVideoDataOutput`, and a bare `stopRunning()`), because a phone restart sometimes
 seemed to clear them. That was not confirmed: after a restart, the main-branch build, a fresh
-bundle identifier and a session with none of nope.'s settings were all blank while the viewing
+bundle identifier and a session with none of the app's settings were all blank while the viewing
 session ran. The changes below are kept because they are simpler and safer, not because they
 fixed the blank frames.
 
@@ -919,7 +919,7 @@ fixed the blank frames.
 ### Debug runs for diagnosis
 
 These Debug-only tools stay for future diagnosis. **Before a run, check that no Mac is viewing
-the phone's screen** (above), and open nope. normally first to check the viewfinder: a run while
+the phone's screen** (above), and open the app normally first to check the viewfinder: a run while
 the camera picture is blanked gives blank frames whatever the pipeline, and proves nothing.
 
 - `-NopeCameraProbe` runs the simplest pipeline from Apple's sample flow

@@ -21,7 +21,7 @@ Out of scope:
 - third-party forks.
 
 Expected behavior, not a vulnerability:
-- C2PA validators report nope.'s signatures as coming from an untrusted or unknown signer. Each file is signed with a new, anonymous key and a certificate that key issues to itself, not chained to any certificate authority (`docs/PRIVACY.md`, "Content Credentials"). The signature proves the file is unchanged, not who took it, and anyone can create a similar anonymous signature.
+- C2PA validators report the app's signatures as coming from an untrusted or unknown signer. Each file is signed with a new, anonymous key and a certificate that key issues to itself, not chained to any certificate authority (`docs/PRIVACY.md`, "Content Credentials"). The signature proves the file is unchanged, not who took it, and anyone can create a similar anonymous signature.
 
 ## Supported versions
 

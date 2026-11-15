@@ -17,7 +17,7 @@ struct SystemDeviceStatusReader: DeviceStatusReading {
     }
 
     /// The bytes free for important data on the app's volume, which is also where Photos stores
-    /// what nope. adds (Foundation, `volumeAvailableCapacityForImportantUsageKey`).
+    /// what the app adds (Foundation, `volumeAvailableCapacityForImportantUsageKey`).
     func availableStorageBytes() -> Int64? {
         let url = URL(fileURLWithPath: NSHomeDirectory())
         let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])

@@ -1,7 +1,7 @@
 import NopeCore
 import SwiftUI
 
-/// The words of the astro helper (issue #60). The claims about what nope. does with the frames
+/// The words of the astro helper (issue #60). The claims about what the app does with the frames
 /// are in the Honesty table.
 @MainActor
 enum AstroText {
@@ -15,7 +15,7 @@ enum AstroText {
         Text("Astro Settings", bundle: .module, comment: "Button on the camera and title of the sheet with the night sky helper's frame count, start delay and estimates.")
     }
 
-    /// What nope. does with the frames, and what it doesn't.
+    /// What the app does with the frames, and what it doesn't.
     static var honesty: Text {
         Text(
             "nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software.",
@@ -163,7 +163,7 @@ struct AstroPanel: View {
     }
 }
 
-/// The astro helper's settings: what nope. does with the frames, the frame count and start
+/// The astro helper's settings: what the app does with the frames, the frame count and start
 /// delay, each frame's exposure, and what the run will take. A standard form with pushed-list
 /// pickers.
 struct AstroSheet: View {

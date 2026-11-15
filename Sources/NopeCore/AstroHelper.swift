@@ -21,7 +21,7 @@ public enum AstroIntent: Equatable, Sendable {
 /// The astro helper: a consistent series of single Bayer RAW frames of the night sky, to be
 /// stacked in other software (issue #60).
 ///
-/// nope. never stacks, merges or processes the frames: each one is an ordinary single-frame
+/// The app never stacks, merges or processes the frames: each one is an ordinary single-frame
 /// photo that goes through the metadata allowlist, read-back and signing like any other
 /// (AGENTS.md, "Honesty"). The helper only sets up the camera and takes the frames:
 ///

@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// The phone's fully processed version of (almost) the same moment as a nope. photo, for the
+/// The phone's fully processed version of (almost) the same moment as the app's photo, for the
 /// comparison shot (issue #55).
 ///
 /// Privacy: it is never saved. It isn't a ``CapturedPhoto``, so it can't be handed to
@@ -41,7 +41,7 @@ public struct PhoneProcessedPhoto: Equatable, Sendable {
 /// A ``CaptureBackend`` that can also take the phone's fully processed photo for the comparison
 /// shot (issue #55).
 ///
-/// `NopeCapture` implements it with AVFoundation: a second capture, right after nope.'s own,
+/// `NopeCapture` implements it with AVFoundation: a second capture, right after the app's own,
 /// with `.quality` prioritization, which lets the system combine several frames where the
 /// device does that. iOS doesn't allow that processing in the same capture as a Bayer RAW,
 /// so it is a separate photo a moment later. ``SimulatedCaptureBackend`` returns a placeholder.
@@ -49,9 +49,9 @@ public protocol ComparisonCaptureBackend: CaptureBackend {
     /// Takes the phone's fully processed photo with the request's lens, in memory only.
     ///
     /// Side effects: none beyond the capture itself. The photo isn't written to a file or saved,
-    /// and the camera is left configured for nope.'s own photos afterwards.
+    /// and the camera is left configured for the app's own photos afterwards.
     ///
-    /// - Parameter request: The lens, format and flash of nope.'s photo, just taken; the same as
+    /// - Parameter request: The lens, format and flash of the app's photo, just taken; the same as
     ///   the last ``CaptureBackend/startSession(_:)``. Its metadata plan is ignored: the
     ///   phone's version keeps the system's own metadata, because that is what it shows.
     /// - Returns: The photo.
@@ -63,7 +63,7 @@ public protocol ComparisonCaptureBackend: CaptureBackend {
 /// A request about the comparison shot, sent as ``CameraIntent/comparison(_:)``.
 public enum ComparisonIntent: Equatable, Sendable {
     /// Turn the comparison shot on or off. While it is on, each single or self-timer photo is
-    /// followed by the phone's fully processed photo, and the compare view opens after nope.'s
+    /// followed by the phone's fully processed photo, and the compare view opens after the app's
     /// photo is saved. Ignored when the backend can't take the second photo
     /// (``ComparisonModel/isAvailable``). Not remembered between launches.
     case setOn(Bool)
@@ -72,19 +72,19 @@ public enum ComparisonIntent: Equatable, Sendable {
     case close
 }
 
-/// One finished comparison, for the compare view: nope.'s photo and the phone's version as
+/// One finished comparison, for the compare view: the app's photo and the phone's version as
 /// pictures, and their metadata side by side.
 ///
 /// Privacy: in memory only, for as long as the compare view is open (``ComparisonModel``).
 public struct PhotoComparison: Equatable, Sendable {
-    /// nope.'s photo as a picture: the saved HEIF or JPEG, or the DNG when only the RAW was
+    /// The app's photo as a picture: the saved HEIF or JPEG, or the DNG when only the RAW was
     /// saved; `nil` when it couldn't be decoded or the app has no renderer.
     public let nopeImage: PhotoThumbnail?
 
     /// The phone's version as a picture, or `nil` when it couldn't be decoded.
     public let phoneImage: PhotoThumbnail?
 
-    /// What the shown nope. file is: its format, size and processing, from the photo's details,
+    /// What the app's shown file is: its format, size and processing, from the photo's details,
     /// or `nil` when the details don't list it.
     public let nopeFile: PhotoDetails.File?
 
@@ -94,14 +94,14 @@ public struct PhotoComparison: Equatable, Sendable {
     /// The size of the phone's version, in pixels.
     public let phoneDimensions: PhotoDimensions
 
-    /// The metadata of the shown nope. file and of the phone's version, side by side.
+    /// The metadata of the app's shown file and of the phone's version, side by side.
     public let metadata: MetadataComparison
 
-    /// From the start of nope.'s photo to the start of the phone's version, measured with the
+    /// From the start of the app's photo to the start of the phone's version, measured with the
     /// monotonic clock.
     public let secondPhotoDelay: Duration
 
-    /// Whether nope.'s picture is mirrored (a front camera photo with mirroring on, issue #45)
+    /// Whether the app's picture is mirrored (a front camera photo with mirroring on, issue #45)
     /// while the phone's version isn't, so an interface mirrors the phone's picture to line the
     /// two up. The phone's file itself is never changed.
     public let mirrorsPhoneImage: Bool
@@ -109,14 +109,14 @@ public struct PhotoComparison: Equatable, Sendable {
     /// Creates a result.
     ///
     /// - Parameters:
-    ///   - nopeImage: nope.'s picture, or `nil`.
+    ///   - nopeImage: the app's picture, or `nil`.
     ///   - phoneImage: The phone's picture, or `nil`.
-    ///   - nopeFile: What the shown nope. file is, or `nil`.
+    ///   - nopeFile: What the app's shown file is, or `nil`.
     ///   - phoneFormat: The phone's format.
     ///   - phoneDimensions: The phone's size, in pixels.
     ///   - metadata: The metadata side by side.
     ///   - secondPhotoDelay: The time between the starts of the two photos.
-    ///   - mirrorsPhoneImage: Whether to mirror the phone's picture to match nope.'s.
+    ///   - mirrorsPhoneImage: Whether to mirror the phone's picture to match the app's.
     public init(
         nopeImage: PhotoThumbnail?, phoneImage: PhotoThumbnail?, nopeFile: PhotoDetails.File?, phoneFormat: PhotoFormat,
         phoneDimensions: PhotoDimensions, metadata: MetadataComparison, secondPhotoDelay: Duration,
@@ -137,7 +137,7 @@ public struct PhotoComparison: Equatable, Sendable {
 ///
 /// ``CameraModel/comparison`` holds it; its intents arrive as ``CameraIntent/comparison(_:)``.
 /// While ``isOn``, ``CameraModel`` follows each single or self-timer photo with the phone's
-/// fully processed photo (``ComparisonCaptureBackend``), saves only nope.'s photo through
+/// fully processed photo (``ComparisonCaptureBackend``), saves only the app's photo through
 /// ``PhotoSaver`` as usual, and then fills ``state`` for the compare view.
 ///
 /// Privacy: the phone's version never reaches the save pipeline. Its pictures and metadata are
@@ -150,12 +150,12 @@ public final class ComparisonModel {
     public enum State: Equatable, Sendable {
         /// No comparison: the compare view is closed.
         case idle
-        /// nope.'s photo was saved and both pictures are being prepared. Show progress.
+        /// The app's photo was saved and both pictures are being prepared. Show progress.
         case preparing
         /// Both photos are ready to compare.
         case ready(PhotoComparison)
-        /// nope.'s photo was saved, but the phone's version couldn't be taken, so there is
-        /// nothing to compare. Say so, and that nope.'s photo was saved.
+        /// The app's photo was saved, but the phone's version couldn't be taken, so there is
+        /// nothing to compare. Say so, and that the app's photo was saved.
         case failed(CaptureError)
     }
 
@@ -206,7 +206,7 @@ public final class ComparisonModel {
     /// Takes the phone's version with a backend.
     ///
     /// - Parameters:
-    ///   - request: nope.'s request.
+    ///   - request: the app's request.
     ///   - backend: The backend.
     /// - Returns: The photo, or the error.
     func takePhonePhoto(
@@ -219,7 +219,7 @@ public final class ComparisonModel {
         }
     }
 
-    /// Opens the compare view after nope.'s photo was saved: the failure when the phone's
+    /// Opens the compare view after the app's photo was saved: the failure when the phone's
     /// version couldn't be taken, otherwise both pictures and the metadata side by side.
     ///
     /// The pictures are decoded off the main actor. If the view was closed meanwhile, the result
@@ -227,10 +227,10 @@ public final class ComparisonModel {
     ///
     /// - Parameters:
     ///   - phone: The phone's version, or why it couldn't be taken.
-    ///   - saved: nope.'s saved photo.
-    ///   - files: nope.'s saved files, in the order they were built.
+    ///   - saved: the app's saved photo.
+    ///   - files: the app's saved files, in the order they were built.
     ///   - delay: The time between the starts of the two photos.
-    ///   - mirrorsPhoneImage: Whether nope.'s picture is mirrored and the phone's isn't.
+    ///   - mirrorsPhoneImage: Whether the app's picture is mirrored and the phone's isn't.
     func present(
         _ phone: Result<PhoneProcessedPhoto, CaptureError>, saved: SavedPhoto, files: [PhotoFile], delay: Duration,
         mirrorsPhoneImage: Bool
@@ -259,20 +259,20 @@ public final class ComparisonModel {
         state = .ready(result)
     }
 
-    /// The nope. file the compare view shows: the developed HEIF or JPEG when one was saved,
+    /// The app's file the compare view shows: the developed HEIF or JPEG when one was saved,
     /// because it is the same kind of file as the phone's version, otherwise the DNG.
     ///
-    /// - Parameter files: nope.'s saved files.
+    /// - Parameter files: the app's saved files.
     /// - Returns: The file, or `nil` for none.
     static func shownFile(in files: [PhotoFile]) -> PhotoFile? {
         files.first { $0.format != .raw } ?? files.first
     }
 
-    /// The read-back of the shown nope. file.
+    /// The read-back of the app's shown file.
     ///
     /// - Parameters:
     ///   - file: The shown file, or `nil`.
-    ///   - saved: nope.'s saved photo, with each file's read-back.
+    ///   - saved: the app's saved photo, with each file's read-back.
     /// - Returns: The file's read-back, or an empty inventory without a file.
     static func inventory(of file: PhotoFile?, in saved: SavedPhoto) -> MetadataInventory {
         file.flatMap { saved.metadata[$0.format] } ?? MetadataInventory()

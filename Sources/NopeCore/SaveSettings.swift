@@ -1,6 +1,6 @@
 import Foundation
 
-/// What nope. saves for each photo: the file formats, the developed look and the metadata
+/// What the app saves for each photo: the file formats, the developed look and the metadata
 /// choices.
 ///
 /// ``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,

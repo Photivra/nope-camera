@@ -1,10 +1,10 @@
 # Architecture
 
-nope. is split into a replaceable interface and interface-free logic. The rules are in
-[`AGENTS.md`](../AGENTS.md), "Architecture: interface separate from logic"; this page describes
+Photivra Nope Camera is split into a replaceable interface and interface-free logic. The rules are
+in [`AGENTS.md`](../AGENTS.md), "Architecture: interface separate from logic"; this page describes
 how the code follows them. Status: in development. The camera captures, each photo's metadata is
-built from the allowlist and checked by reading the file back, and clean photos are saved to
-Photos, signed with Content Credentials when signing is on.
+built from the allowlist and checked by reading the file back, and clean photos are saved to Photos,
+signed with Content Credentials when signing is on.
 
 ## Repository layout
 
@@ -142,7 +142,7 @@ when the camera opens and when the option changes.
   With manual controls on nothing is limited; the hint shows when the shutter is slower than the
   handheld rule.
 - **Close-Up** sets `autoFocusRangeRestriction = .near`. The **close-up hint** suggests the ultra
-  wide lens when the lens stays at its nearest position while autofocus searches; nope. never
+  wide lens when the lens stays at its nearest position while autofocus searches; the app never
   switches lenses itself. The **magnifier** scales the preview view only.
 - **Focus peaking** is part of the live frame analysis (below, "Viewfinder overlays").
 - **Bracketing** uses `AVCapturePhotoBracketSettings` with
@@ -392,7 +392,7 @@ isn't available for DNG. AVFoundation's own path is documented for this:
 `AVCapturePhotoFileDataRepresentationCustomizer.replacementMetadata(for:)` in
 `AVCapturePhotoOutput.h` returns "a dictionary of keys and values from
 <ImageIO/CGImageProperties.h> … To replace metadata, pass a replacement dictionary." AVFoundation
-then flattens the in-memory photo itself, so nope. never re-encodes or touches the sensor data,
+then flattens the in-memory photo itself, so the app never re-encodes or touches the sensor data,
 and never edits file bytes (AGENTS.md, "remove metadata through system APIs"). The read-back
 proves the result: every tag of the saved DNG must be on the allowlist, and its RAW image data
 (IFD0's tiles or strips) must equal the data of the system's own DNG. Whether AVFoundation adds
@@ -422,7 +422,7 @@ says so. `NopeSigning` implements the hook:
    ├─ SigningKeyProvider: SecureEnclaveKeyProvider on a device (excluded from the coverage gate),
    │                      SimulatorSoftwareKeyProvider in the Simulator only
    ├─ SelfIssuedCertificate (swift-certificates): anonymous, non-CA, C2PA EKU, fixed validity
-   ├─ ContentCredentialsManifest: one c2pa.created action, nope. as claim generator
+   ├─ ContentCredentialsManifest: one c2pa.created action, the app as claim generator
    ├─ OfflineC2PAContext: every fetch off, no network host
    ├─ DNGManifestSlot: a DNG's tag 52545 inserted into IFD0 in place, so iOS still opens it
    │                   as a DNG; signed with the library's data-hash workflow (issue #66)
@@ -444,30 +444,30 @@ Lock Screen capture extension sets no renderer, so it isn't offered on a locked 
 
 ```
  shutter ──▶ CameraModel.capture()
-               ├─ backend.capturePhoto(request)            nope.'s photo, exactly as without Compare
+               ├─ backend.capturePhoto(request)            the app's photo, exactly as without Compare
                ├─ ComparisonCaptureBackend.captureComparison(request)
                │     └─ second photo, .quality, system metadata kept   (PhoneProcessedPhoto)
-               ├─ PhotoSaver.saveReturningFiles(photo)     only nope.'s files go to Photos
+               ├─ PhotoSaver.saveReturningFiles(photo)     only the app's files go to Photos
                └─ ComparisonModel.present(...)             pictures (renderer) + MetadataComparison
  Done ──▶ .comparison(.close)                              everything above is dropped
 ```
 
 - **Only single and self-timer photos** are comparison shots (`CameraModel.comparisonAppliesToNextPhoto`):
   never a burst, a bracket or an interval series.
-- **nope.'s photo is unchanged.** The session keeps `ProcessingSwitches.leastProcessing`; for the
+- **The app's photo is unchanged.** The session keeps `ProcessingSwitches.leastProcessing`; for the
   second photo only, `SystemCaptureHardware` raises the photo output's
   `maxPhotoQualityPrioritization` to `.quality` (a `.quality` photo needs it), then sets it back
   to `.speed` and prepares the session's RAW settings again before returning
   (`ComparisonHardware`, `CapturePolicy.comparisonPlan(for:)`, `ProcessingSwitches.phoneProcessing`).
 - **The phone's version can't be saved.** It is a `PhoneProcessedPhoto`, not a `CapturedPhoto`,
-  so it can't be handed to `PhotoSaver`; the unit tests assert that only nope.'s files reach the
-  library. If nope.'s photo fails to save, the phone's version is dropped; if the second photo
-  fails, nope.'s photo is still saved and the view says there is nothing to compare.
+  so it can't be handed to `PhotoSaver`; the unit tests assert that only the app's files reach the
+  library. If the app's photo fails to save, the phone's version is dropped; if the second photo
+  fails, the app's photo is still saved and the view says there is nothing to compare.
 - **Pictures** are decoded off the main actor by `ComparisonModel.renderer` (the app passes
-  `ImageIOThumbnailer` at 4032 pixels): nope.'s saved HEIF or JPEG, or the DNG when only RAW
+  `ImageIOThumbnailer` at 4032 pixels): the app's saved HEIF or JPEG, or the DNG when only RAW
   was saved, and the phone's file. **Metadata** (`MetadataComparison`) pairs the read-back of
-  the shown nope. file with the phone's file read by `MetadataFileReader`, grouped as only in the
-  phone's version, different, only in nope.'s file and the same, each item linked to its privacy
+  the app's shown file with the phone's file read by `MetadataFileReader`, grouped as only in the
+  phone's version, different, only in the app's file and the same, each item linked to its privacy
   switch and marked when its value identifies the device or the photo.
 - While the compare view is open, `canCapture` and `handlesHardwareButtons` are false. `NopeUI`
   shows it as a full-screen cover (`ComparisonScreen`): the pictures with a divider (a slider,
@@ -506,8 +506,8 @@ implements it with Core Location (`CoreLocationProvider`) and starts or stops it
 The Honesty screen and About are static: every Honesty statement comes from
 [`research/privacy-claims.md`](research/privacy-claims.md), and About shows bundled copies of
 `LICENSE` and `NOTICE` (a unit test keeps them identical) with the source address as a link.
-Tapping it hands the `https` address to the system browser; nope. makes no network request,
-registers no URL scheme. The only system setting it opens is nope.'s own page in the Settings
+Tapping it hands the `https` address to the system browser; the app makes no network request,
+registers no URL scheme. The only system setting it opens is the app's own page in the Settings
 app, when the person presses Open Settings after declining camera or photo library access.
 
 ## The simulated backend

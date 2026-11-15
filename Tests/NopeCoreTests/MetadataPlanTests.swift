@@ -354,7 +354,7 @@ struct MetadataPropertiesTests {
     }
 
     /// Every format gets exactly the agreed `Software` for the two switches, including a HEIF or
-    /// JPEG developed from a DNG whose `Software` nope. already wrote (it must not nest:
+    /// JPEG developed from a DNG whose `Software` the app already wrote (it must not nest:
     /// "Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))"), and the processed
     /// fallback, written from the system's own metadata.
     @Test(arguments: [
@@ -382,7 +382,7 @@ struct MetadataPropertiesTests {
         }
     }
 
-    /// The system version is taken back out of a value nope. wrote, and an empty or missing one
+    /// The system version is taken back out of a value the app wrote, and an empty or missing one
     /// counts as none.
     @Test(arguments: [
         ("27.2.1" as String?, "27.2.1" as String?), (nil, nil), ("", nil),

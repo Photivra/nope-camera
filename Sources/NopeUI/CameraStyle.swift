@@ -212,13 +212,13 @@ struct CameraColor: ShapeStyle {
 /// Night mode's look (issue #61): red on black, with no white, blue or yellow light, to keep
 /// eyes used to the dark.
 ///
-/// ``NightModeStyle`` multiplies everything nope. draws by pure red, so white becomes red,
+/// ``NightModeStyle`` multiplies everything the app draws by pure red, so white becomes red,
 /// grays become darker reds and black stays black. Pure sRGB red on black has a contrast of
 /// 5.25:1 (WCAG 2.2 relative luminance 0.2126), above the 4.5:1 text minimum, so every text
 /// style is drawn at the full red: secondary and tertiary text are drawn like primary text,
 /// because a dimmer red would fall below 4.5:1.
 ///
-/// nope. never changes the screen's brightness; people dim it with the device's own controls.
+/// The app never changes the screen's brightness; people dim it with the device's own controls.
 enum NightStyle {
     /// The one color of night mode: pure sRGB red.
     static var red: Color { Color(.sRGB, red: 1, green: 0, blue: 0) }
@@ -238,7 +238,7 @@ extension EnvironmentValues {
 /// otherwise (issue #61).
 ///
 /// The view's structure stays the same in both modes, so switching keeps each view's state.
-/// System menus, alerts and the keyboard are drawn by the system outside nope.'s views and keep
+/// System menus, alerts and the keyboard are drawn by the system outside the app's views and keep
 /// the system's dark appearance; the system's Color Filters (red tint) cover them too.
 struct NightModeStyle: ViewModifier {
     /// Whether night mode is on.

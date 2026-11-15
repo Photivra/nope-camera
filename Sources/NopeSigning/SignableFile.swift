@@ -1,15 +1,15 @@
 import Foundation
 import NopeCore
 
-/// The kinds of file nope. signs, each with the honest description its manifest carries.
+/// The kinds of file the app signs, each with the honest description its manifest carries.
 ///
 /// Derived from a `PhotoFile`: its format, and whether the phone's camera processed it.
 enum SignableFile: Equatable, Hashable, Sendable, CaseIterable {
     /// Single-frame Bayer RAW, saved as DNG.
     case singleFrameRAW
-    /// HEIF developed by nope. from a single-frame RAW.
+    /// HEIF developed by the app from a single-frame RAW.
     case developedHEIF
-    /// JPEG developed by nope. from a single-frame RAW.
+    /// JPEG developed by the app from a single-frame RAW.
     case developedJPEG
     /// HEIF processed by the phone's camera, for a lens without Bayer RAW.
     case deviceProcessedHEIF

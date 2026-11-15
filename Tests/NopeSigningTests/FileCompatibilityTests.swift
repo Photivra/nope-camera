@@ -7,7 +7,7 @@ import Testing
 @testable import NopeDevelop
 @testable import NopeSigning
 
-/// The file compatibility matrix (issue #58): every format and setting nope. offers, saved by the
+/// The file compatibility matrix (issue #58): every format and setting the app offers, saved by the
 /// real save pipeline (`PhotoSaver` with `RAWDeveloper`, `ImageIOReadBack` and
 /// `ContentCredentialsSigner`), and each saved file checked the way another app opens it.
 ///
@@ -93,7 +93,7 @@ struct CompatibilityLens: Sendable, Hashable {
     let focalLength: Double
     let fNumber: Double
 
-    /// The four lens kinds nope. lists (`Lens.Kind`), with generic names.
+    /// The four lens kinds the app lists (`Lens.Kind`), with generic names.
     static let all: [CompatibilityLens] = [
         CompatibilityLens(
             id: "ultraWide", uniqueCameraModel: "Fixture back ultra wide camera",

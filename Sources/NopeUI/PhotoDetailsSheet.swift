@@ -1,7 +1,7 @@
 import NopeCore
 import SwiftUI
 
-/// "What's in This Photo": the facts read back from a photo nope. just saved (issue #53),
+/// "What's in This Photo": the facts read back from a photo the app just saved (issue #53),
 /// opened from the last-photo thumbnail.
 ///
 /// A native list with one section per topic, each with a heading VoiceOver can jump between:

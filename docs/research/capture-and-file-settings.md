@@ -1,15 +1,15 @@
 # Capture and file settings an app can control (issue #57)
 
-The owner principle (issue #57, AGENTS.md "Code"): anything about the file or the exposure that
-the device lets an app control should be controllable by the person, behind the manual or
-advanced options, with full auto as the default; and every file nope. can save must open. This
-page lists every capture and file setting AVFoundation and ImageIO expose to an app on iOS 18 to
-27, what nope. offers, and why anything isn't offered. Keep it current when an SDK adds a setting.
+The owner principle (issue #57, AGENTS.md "Code"): anything about the file or the exposure that the
+device lets an app control should be controllable by the person, behind the manual or advanced
+options, with full auto as the default; and every file Photivra Nope Camera can save must open. This
+page lists every capture and file setting AVFoundation and ImageIO expose to an app on iOS 18 to 27,
+what the app offers, and why anything isn't offered. Keep it current when an SDK adds a setting.
 
 Sources are the iOS 27.2 SDK headers (Xcode 27.2): `AVFoundation/AVCapturePhotoOutput.h`
 (`AVCapturePhotoOutput`, `AVCapturePhotoSettings`), `AVFoundation/AVCaptureDevice.h`,
 `AVFoundation/AVCaptureSession.h` (`AVCaptureConnection`) and `ImageIO/CGImageDestination.h`.
-"Offered" means a control in nope. today; "fixed" means nope. sets it to one value on purpose;
+"Offered" means a control in the app today; "fixed" means the app sets it to one value on purpose;
 "not offered" gives the reason. Status as of 0.2.0.
 
 Each status is per lens and per format at run time (AGENTS.md, "Progressive enhancement"): a
@@ -18,7 +18,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 
 ## File settings
 
-| Setting (API) | nope. | Why |
+| Setting (API) | The app | Why |
 |---|---|---|
 | RAW format: Bayer RAW DNG (`rawPhotoPixelFormatType`, `rawFileType: .dng`) | Fixed | Single-frame Bayer RAW is the product (AGENTS.md, "Honesty"). |
 | Apple ProRAW (`isAppleProRAWEnabled`, `AVVideoAppleProRAWBitDepthKey`) | Not offered | Multi-frame and processed; ruled out by AGENTS.md. Its bit depth and quality keys apply only to ProRAW. |
@@ -31,7 +31,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Color space of the developed copies (Display P3 or sRGB) | Offered | File Options. sRGB is converted by Core Graphics when drawing, not relabeled. |
 | HDR gain map / ISO HDR (`kCGImageDestinationEncodeRequest`, `…EncodeToISOHDR`, `…EncodeToISOGainmap`) | Not offered | The RAW developer outputs an SDR image; a gain map is an auxiliary image the read-back rejects (`heif:item:tmap`, `auxl`) and would need its own allowlist and research. Candidate for later. |
 | Embedded thumbnail (`kCGImageDestinationEmbedThumbnail`, `embeddedThumbnailPhotoFormat`, `rawEmbeddedThumbnailPhotoFormat`) | Fixed off | Privacy: a thumbnail is a second copy that keeps pixels after an edit, and the allowlist has no thumbnail blocks. |
-| Preview image (`previewPhotoFormat`) | Not offered | Only in memory; nope. doesn't use it. |
+| Preview image (`previewPhotoFormat`) | Not offered | Only in memory; the app doesn't use it. |
 | Downscaled size (`kCGImageDestinationImageMaxPixelSize`) | Not offered | Not yet. It would make smaller copies; it is safe to add later (files open). |
 | Photo dimensions (`maxPhotoDimensions` from `activeFormat.supportedMaxPhotoDimensions`) | Fixed | The active format's size the backend picks (`SessionConfiguration.maxPhotoDimensions`). The Bayer RAW was 12 MP on every lens of the device measured (docs/PRIVACY.md, "Results"). Whether any lens offers a second Bayer RAW size, and a size choice for the processed fallback, isn't measured yet: a device check before it can be offered. |
 | Optimize color for sharing (`kCGImageDestinationOptimizeColorForSharing`) | Not offered | The sRGB option covers the case explicitly. |
@@ -40,12 +40,12 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Live Photo, depth, portrait matte, semantic mattes, camera calibration data (`livePhotoMovieFileURL`, `isDepthDataDeliveryEnabled`, `isPortraitEffectsMatteDeliveryEnabled`, `enabledSemanticSegmentationMatteTypes`, `isCameraCalibrationDataDeliveryEnabled`) | Not offered | Processed or extra data, not single-frame RAW; auxiliary images fail the read-back. |
 | Shutter sound (`isShutterSoundSuppressionEnabled`) | Not offered | The shutter sound follows the system (AGENTS.md, "Hearing"). |
 | Quality prioritization (`photoQualityPrioritization`, `maxPhotoQualityPrioritization`) | Fixed `.speed` | `CapturePolicy`: the least processing for the fallback; the header documents `.balanced` and `.quality` as allowing more processing time. Its effect on Bayer RAW data isn't measured. |
-| Content-aware distortion correction, geometric distortion correction, constant color, auto red-eye reduction, virtual device fusion, still image stabilization | Fixed off | Each changes pixels; nope. stores lens corrections as DNG opcodes instead (docs/PRIVACY.md). |
+| Content-aware distortion correction, geometric distortion correction, constant color, auto red-eye reduction, virtual device fusion, still image stabilization | Fixed off | Each changes pixels; the app stores lens corrections as DNG opcodes instead (docs/PRIVACY.md). |
 | Zero shutter lag, responsive capture, fast capture prioritization, deferred delivery (`isZeroShutterLagEnabled`, `isResponsiveCaptureEnabled`, `isFastCapturePrioritizationEnabled`, `isAutoDeferredPhotoDeliveryEnabled`) | Fixed (`CapturePolicy`) | Timing and processing pipeline choices, not file or exposure settings; deferred delivery is off so the file is never processed later. |
 
 ## Exposure settings
 
-| Setting (API) | nope. | Why |
+| Setting (API) | The app | Why |
 |---|---|---|
 | ISO and shutter speed (`setExposureModeCustom(duration:iso:)`, `activeFormat.minISO…maxISO`, `minExposureDuration…maxExposureDuration`) | Offered | Manual controls, clamped to the active format's ranges per lens (`ControlScale`, `ManualControlSupport`). |
 | Exposure modes P, S, I, M (iOS 27 priority modes) | Offered | Where the format reports them. |
@@ -61,7 +61,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Max exposure duration in auto (`activeMaxExposureDuration`) | Offered | Fast Shutter in Settings (issues #35, #41, #51, #56): a shutter limit for auto exposure. |
 | Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Pro Tools; each frame a separate single-frame photo. |
 | Longest exposure (`activeFormat.maxExposureDuration`) | Offered | Through the manual shutter; the Astro helper (issue #60) starts from it. The value per lens is still to be recorded on the test devices (`docs/TESTING.md`, "Astro helper on a device"). |
-| Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by nope.; it is documented for low-light frame rates, and its effect on photos isn't measured. |
+| Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by the app; it is documented for low-light frame rates, and its effect on photos isn't measured. |
 | Global tone mapping, video HDR, Center Stage | Not offered | Video and preview processing, not the RAW. |
 | Flash and torch (`flashMode`, `setTorchModeOn(level:)`) | Offered | Issue #38: the Flash menu (the modes the photo output reports for the lens) and the Light switch in the quick-controls tray. |
 | Zoom (`videoZoomFactor`) | Fixed 1.0 | Bayer RAW requires a zoom factor of 1.0 ("Bayer RAW rules", `AVCapturePhotoOutput.h`); each lens is its own button. |

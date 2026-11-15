@@ -5,7 +5,7 @@ extension HeatLevel {
     /// Converts the system thermal state.
     ///
     /// A state added in a later iOS becomes `HeatLevel.serious`: high enough to be noted, but it
-    /// doesn't stop the camera on a value nope. can't interpret.
+    /// doesn't stop the camera on a value the app can't interpret.
     ///
     /// - Parameter state: `ProcessInfo.processInfo.thermalState`.
     public init(_ state: ProcessInfo.ThermalState) {

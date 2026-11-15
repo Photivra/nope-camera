@@ -22,7 +22,7 @@ public final class ShortcutInbox {
     /// How long a request waits for the camera screen to take it, and for the camera to start,
     /// in seconds, before it ends as ``CameraUnavailability/notRunning``. An assumption, to be
     /// confirmed on a device: the camera usually starts well within a second, and Siri opens
-    /// nope. before the intent runs, so ten seconds leaves room for a slow start.
+    /// the app before the intent runs, so ten seconds leaves room for a slow start.
     public static let startTimeoutSeconds: Double = 10
 
     /// Waits a number of seconds, for the timeouts. Tests pass their own.

@@ -9,7 +9,7 @@ import Foundation
 /// ``MetadataField/catalog`` that the switches allow, so a tag a future iOS adds is never copied.
 public struct MetadataPlan: Equatable, Sendable {
     /// The `UniqueCameraModel` a DNG carries when ``MetadataItem/exactCameraModel`` is off. The
-    /// DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so nope. writes a value
+    /// DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so the app writes a value
     /// that names no device.
     public static let genericUniqueCameraModel = "Generic camera"
 
@@ -25,7 +25,7 @@ public struct MetadataPlan: Equatable, Sendable {
     /// `AVCapturePhoto.fileDataRepresentation(with:)` returns `nil` for a Bayer RAW photo unless
     /// the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
     /// them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
-    /// requirement. Privacy rule: when a field's switch is off, nope. writes an empty string, never
+    /// requirement. Privacy rule: when a field's switch is off, the app writes an empty string, never
     /// a placeholder value, so the DNG still says nothing about the date, camera or software.
     public static let requiredRAWTIFFFields: [MetadataField] = [.dateTime, .make, .model, .software]
 
@@ -216,7 +216,7 @@ public struct MetadataPlan: Equatable, Sendable {
     /// Privacy rule: the result starts empty, and only allowlisted values are copied in
     /// (AGENTS.md, "Build metadata from the allowlist"). The app's name, the generic camera model,
     /// the person's name and copyright, the ``location`` and a mirrored orientation
-    /// (``mirrorsHorizontally``) are written by nope.; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
+    /// (``mirrorsHorizontally``) are written by the app; everything else is the system's own value. A DNG's dictionary always has the ``requiredRAWTIFFFields``, with an empty
     /// string for each one whose switch is off.
     ///
     /// - Parameters:
@@ -309,9 +309,9 @@ public struct MetadataPlan: Equatable, Sendable {
     }
 
     /// The system's version in a `Software` value: the value itself when the system wrote it, the
-    /// part in parentheses when nope. wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
+    /// part in parentheses when the app wrote both ("Photivra Nope Camera 0.2.0 (27.2.1)"), or none.
     ///
-    /// A HEIF or JPEG is developed from the DNG's metadata, whose `Software` nope. already
+    /// A HEIF or JPEG is developed from the DNG's metadata, whose `Software` the app already
     /// wrote, so reading it as the system's own value would nest the app's name:
     /// "Photivra Nope Camera 0.2.0 (Photivra Nope Camera 0.2.0 (27.2.1))".
     ///

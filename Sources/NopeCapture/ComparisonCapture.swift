@@ -7,13 +7,13 @@ import NopeCore
 /// ``SystemCaptureHardware`` implements it and is verified on a device.
 protocol ComparisonHardware: Sendable {
     /// Takes the phone's fully processed photo, with the system's own metadata, and then puts
-    /// the photo output back as nope.'s photos need it.
+    /// the photo output back as the app's photos need it.
     ///
-    /// The photo output's `maxPhotoQualityPrioritization` is `.speed` for nope.'s own photos
+    /// The photo output's `maxPhotoQualityPrioritization` is `.speed` for the app's own photos
     /// (Bayer RAW requires it). A `.quality` photo needs the maximum to be at least `.quality`
     /// (`AVCapturePhotoOutput.h`, `photoQualityPrioritization`), so it is raised only for this
-    /// photo and set back to `.speed` afterwards, before nope.'s next photo; the session's other
-    /// switches, and nope.'s photo just taken, are unchanged.
+    /// photo and set back to `.speed` afterwards, before the app's next photo; the session's other
+    /// switches, and the app's photo just taken, are unchanged.
     ///
     /// - Parameters:
     ///   - plan: The comparison photo's settings (``CapturePolicy/comparisonPlan(for:)``).
@@ -30,7 +30,7 @@ extension ProcessingSwitches {
     /// The switches for the comparison shot's second photo: the phone's processing at its
     /// highest setting for apps, `.quality` prioritization, which lets the system combine several
     /// frames where the device does that. Every other switch is the session's
-    /// (``leastProcessing``): they are configured once for the session, so nope.'s own photos
+    /// (``leastProcessing``): they are configured once for the session, so the app's own photos
     /// stay exactly as they are. This photo is never saved (issue #55).
     static let phoneProcessing = ProcessingSwitches(
         qualityPrioritization: .quality,
@@ -51,7 +51,7 @@ extension CapturePolicy {
     /// prioritization, with the request's flash mode, as HEIF (JPEG on a lens whose fallback is
     /// JPEG, which offers no HEVC).
     ///
-    /// - Parameter request: nope.'s request.
+    /// - Parameter request: the app's request.
     /// - Returns: The plan.
     static func comparisonPlan(for request: CaptureRequest) -> PhotoSettingsPlan {
         let format: ProcessedFallback = request.format == .processedFallback(.jpeg) ? .jpeg : .heif
@@ -67,7 +67,7 @@ extension AVFoundationCaptureBackend: ComparisonCaptureBackend {
     /// Privacy: the file keeps the system's own metadata, because showing it is the point; it
     /// is never saved, signed or logged. Its metadata is read with the project's own tag reader.
     ///
-    /// - Parameter request: nope.'s request; must match the last ``startSession(_:)``.
+    /// - Parameter request: the app's request; must match the last ``startSession(_:)``.
     /// - Returns: The photo.
     /// - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
     ///   `CaptureError.captureFailed` if the hardware can't take it, or the hardware's error.

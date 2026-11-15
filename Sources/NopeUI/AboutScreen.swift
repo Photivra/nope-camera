@@ -7,7 +7,7 @@ import SwiftUI
 /// (`Resources/GPL-3.0.txt` and `Resources/NOTICE.txt`); a unit test keeps them identical. They
 /// are legal texts, shown exactly as written and not translated (AGENTS.md, "Keep every
 /// notice"). The source address is a link: tapping it hands the `https` address to the system,
-/// which opens it in the browser. nope. itself makes no network request (AGENTS.md,
+/// which opens it in the browser. The app itself makes no network request (AGENTS.md,
 /// "Prevention first").
 struct AboutScreen: View {
     /// The address of the source code.

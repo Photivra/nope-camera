@@ -1,9 +1,10 @@
 # Privacy
 
-How nope. handles every metadata item it writes or removes. Status: in development. nope. saves
-photos to Photos with metadata built from the allowlist below and checked by reading each file
-back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved files are
-**still to be confirmed by the device tag check** (issue #1, step 2; "Device checks" below). Wording for any user-facing claim comes from
+How Photivra Nope Camera handles every metadata item it writes or removes. Status: in development.
+The app saves photos to Photos with metadata built from the allowlist below and checked by reading
+each file back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved files are
+**still to be confirmed by the device tag check** (issue #1, step 2; "Device checks" below). Wording
+for any user-facing claim comes from
 [`docs/research/privacy-claims.md`](research/privacy-claims.md).
 
 ## What the app does today
@@ -44,7 +45,7 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in
   memory for this session only: never written to disk, logged or copied, and gone when the app
-  quits. nope. can't reopen older photos (add-only access). Tapping the thumbnail opens the
+  quits. The app can't reopen older photos (add-only access). Tapping the thumbnail opens the
   Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
   Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
@@ -64,11 +65,11 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
   not remembered). Each single or self-timer photo is then followed by a second photo with the
   phone's processing at `.quality` prioritization, which keeps the system's own metadata, so the
   compare view can show what it carries. That photo is never saved, signed, written to a file,
-  shared, copied or logged: it is decoded into a picture and read by nope.'s tag reader in
-  memory, and everything is dropped when the person closes the view. nope.'s own photo is saved
+  shared, copied or logged: it is decoded into a picture and read by the app's tag reader in
+  memory, and everything is dropped when the person closes the view. The app's own photo is saved
   exactly as without Compare. Identifying values (maker notes, location, unique IDs and serial
   numbers) are hidden until the person taps Show Value. The view's contents are hidden while
-  nope. isn't the active app. No network request is involved.
+  the app isn't the active app. No network request is involved.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
   nothing. Debug builds include the
@@ -79,13 +80,13 @@ back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved
 
 ## Content Credentials (signing)
 
-nope. signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials
+The app signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials
 (`ContentCredentialsSigner` in `NopeSigning`, called by `PhotoSaver` before the read-back).
 Signing has its own switch (`MetadataSettings.signsPhotos`), on by default, outside the "Remove
 all optional details" master switch. If signing fails, the photo is saved unsigned and the
 screen says so.
 
-**What it proves.** The signature proves the file hasn't changed since nope. signed it. It
+**What it proves.** The signature proves the file hasn't changed since the app signed it. It
 doesn't prove who took the photo or on which device. Each file is signed with a new key and a
 certificate the key issues to itself, not one chained to a trusted certificate authority, so
 validators report the signer as untrusted (`signingCredential.untrusted`, C2PA 2.2, §15.7) and
@@ -102,13 +103,13 @@ the file as valid. That is expected.
 2. The key signs a certificate for itself (below).
 3. The C2PA library embeds a manifest and the key signs it (ES256). There is no timestamp
    authority, no certificate status check (OCSP), no remote manifest and no trust list. The
-   library nope. links is built from source with every network feature off, and contains no
+   library the app links is built from source with every network feature off, and contains no
    networking code at all; CI checks the library and a linked iOS binary for networking symbols
    on every pull request (`c2pa-lib/README.md`). Its settings also turn every fetch off and allow
    no network host. No App Attest.
 
 **What the signature contains.** Nothing in it identifies the person or the device, and nothing
-links two files: every field is either the same for everyone running that version of nope., or
+links two files: every field is either the same for everyone running that version of the app, or
 random and made for that file alone.
 
 | Item | Value | Same for everyone, or per file |
@@ -142,7 +143,7 @@ read-back exactly as its unsigned original does:
 
 | Format | Added | Notes |
 |---|---|---|
-| DNG | TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0, and the store at the end of the file | nope. inserts the entry into IFD0 where it is, at its tag-number position, and moves every later byte (and every offset that points to it) 12 bytes on (`DNGManifestSlot`); no tag is removed or rewritten. The C2PA library then signs with its data-hash workflow, and the hash excludes only the store. (The library's own DNG writer moves IFD0 to the end of the file, and iOS can't open that file as a DNG: issue #66, `docs/TESTING.md`, "Signed DNG and ImageIO") |
+| DNG | TIFF tag 52545 (`0xCD41`), type `UNDEFINED`, in IFD0, and the store at the end of the file | The app inserts the entry into IFD0 where it is, at its tag-number position, and moves every later byte (and every offset that points to it) 12 bytes on (`DNGManifestSlot`); no tag is removed or rewritten. The C2PA library then signs with its data-hash workflow, and the hash excludes only the store. (The library's own DNG writer moves IFD0 to the end of the file, and iOS can't open that file as a DNG: issue #66, `docs/TESTING.md`, "Signed DNG and ImageIO") |
 | HEIF | One top-level `uuid` box, UUID `D8FEC3D6-1B0E-483C-9297-5828877EC481`, after `ftyp` | No other box changes type or order. The hash excludes `/uuid`, `/ftyp`, `/mfra`, `/free` and `/skip`, the C2PA default exclusions for this format |
 | JPEG | APP11 (`0xFFEB`) segments with JUMBF (common identifier `JP`), after APP0 | No other segment changes. The hash excludes only the APP11 segments |
 
@@ -232,22 +233,22 @@ turning the master on clears every item, turning it off always starts from these
 
 | Item | Default | What turning it off costs (shown in the app) | Device tag check |
 |---|---|---|---|
-| Location (latitude, longitude, altitude) | Off | Nothing. Location is only added if you turn it on | Not written by the system; written by nope. from the device's location (see "Location") |
+| Location (latitude, longitude, altitude) | Off | Nothing. Location is only added if you turn it on | Not written by the system; written by the app from the device's location (see "Location") |
 | Date and time taken | On | Photos sorts by the date you saved it instead | Present (`DateTime*`, XMP dates) |
 | Sub-second time | Off | Nothing visible | Present (`SubSecTime*`) |
 | Time zone | Off | The photo's local time can't be converted to other zones | Present (`OffsetTime*`) |
 | Camera make and model | On | Apps can't show which phone took it | Present (`Make`, `Model`, HEIF `HostComputer`) |
 | Lens make and model | On | Apps can't show which lens took it | Present (`LensMake`, `LensModel`) |
-| Exact camera model for RAW editors (`UniqueCameraModel`) | On | Some RAW editors can't choose their camera-specific color profile and use the file's own color data instead. The DNG standard requires this tag, so when it's off, nope. writes a generic value rather than none | Present |
+| Exact camera model for RAW editors (`UniqueCameraModel`) | On | Some RAW editors can't choose their camera-specific color profile and use the file's own color data instead. The DNG standard requires this tag, so when it's off, the app writes a generic value rather than none | Present |
 | Lens correction instructions (DNG opcodes) | On | Editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way | Present (`OpcodeList3`) |
 | Exposure settings (shutter, ISO, aperture, focal length) | On | You can't see later how the photo was taken | Present (`ExposureTime`, `ISOSpeedRatings`, `FNumber`, `FocalLength` and related EXIF tags, in RAW and HEIF) |
 | iOS version | Off | Nothing visible | Present (`Software`, XMP `CreatorTool`) |
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
-| App name and version ("Photivra Nope Camera" and its version) | On | Apps can't show what made the file | Written by nope. |
-| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by nope. |
+| App name and version ("Photivra Nope Camera" and its version) | On | Apps can't show what made the file | Written by the app |
+| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by the app |
 
-Serial numbers, unique image IDs and raw data IDs are never written, by the system or by nope.,
+Serial numbers, unique image IDs and raw data IDs are never written, by the system or by the app,
 so they have no switch.
 
 **In the app:** Settings › Privacy shows the master switch, a switch for each item above with its
@@ -264,7 +265,7 @@ details" turns it off like every other item.
 
 - **Asking:** turning the switch on asks for "while using the app" location access first
   (`LocationTagging.turnOn(in:)`); if access is declined or restricted, the switch stays off and
-  Choose Details says how to allow it in Settings. nope. never asks for "always" access and has no
+  Choose Details says how to allow it in Settings. The app never asks for "always" access and has no
   background mode.
 - **When it runs:** location updates run only while the switch is on, access is allowed and the
   camera is running (`LocationTagging.update(isOn:cameraIsRunning:)`); they stop on any
@@ -304,7 +305,7 @@ Settings › Photos › File Options (issue #57): the compression of the HEIF an
 HEIF bit depth (10 or 8) and the color space (Display P3 or sRGB). They change only how the
 developed copies are encoded, never the RAW or any metadata; the defaults are the earlier
 encoding. Every combination is encoded and read back in the unit tests. The full list of what an
-app can control, and what nope. offers, is in
+app can control, and what the app offers, is in
 [`research/capture-and-file-settings.md`](research/capture-and-file-settings.md).
 
 ### Locked (the photo breaks without these)
@@ -331,7 +332,7 @@ allow, from the system's metadata. A tag the system adds that isn't listed here 
   (`AVCapturePhotoFileDataRepresentationCustomizer.replacementMetadata(for:)`;
   `AVCapturePhotoOutput.h`: "To replace metadata, pass a replacement dictionary"). ImageIO can't
   write DNG, and AVFoundation writes the RAW image data itself, so the sensor data is never
-  re-encoded by nope. (`docs/ARCHITECTURE.md`, "From capture to Photos").
+  re-encoded by the app (`docs/ARCHITECTURE.md`, "From capture to Photos").
 - **HEIF and JPEG developed from the RAW:** encoded by ImageIO from a rendered image that has no
   metadata, with the dictionary built from the DNG's (already allowlisted) metadata, orientation
   "up", no embedded thumbnail, and the person's file options (compression, HEIF bit depth,
@@ -359,7 +360,7 @@ be allowed. `MetadataVerifier` rejects the whole photo, and nothing is saved, if
 
 - any tag, block, XMP property or ImageIO key isn't on the allowlist, including one a future iOS
   adds;
-- an allowed text has a value nope. didn't write (for example the exact camera model when the
+- an allowed text has a value the app didn't write (for example the exact camera model when the
   generic one was asked for, or a date with a time zone when the time zone is off);
 - a tag a DNG can't be opened without is missing (`DNGVersion`, `UniqueCameraModel`,
   `ColorMatrix1`, `CFARepeatPatternDim`, `CFAPattern`);
@@ -374,7 +375,7 @@ file is rejected and no input crashes the reader.
 
 ### Exact tags by format
 
-Written by the system or by nope. only when listed here. `MetadataPlanTests` asserts these sets
+Written by the system or by the app only when listed here. `MetadataPlanTests` asserts these sets
 for all 8,192 switch combinations in every format.
 
 | Group | DNG | HEIF and JPEG |
@@ -453,7 +454,7 @@ Simulator has no camera and no real DNG can be made in a unit test:
 - a mirrored front camera photo (Mirror Front Camera on) shows mirrored, and an unmirrored one
   (the default) shows as others see you, in Photos and a RAW editor, for the DNG, HEIF, JPEG and
   the processed fallback, in portrait, both landscapes and upside down; and whether the system
-  mirrored front camera photos before nope. turned the photo output's mirroring off;
+  mirrored front camera photos before the app turned the photo output's mirroring off;
 - a signed DNG, HEIF and JPEG are saved and open in Photos and a RAW editor, and validate with
   c2patool (issue #66); with maker notes on, an exiftool dump of the signed DNG's maker note
   matches the unsigned one's (the maker note moves 12 bytes, and its offsets are assumed to be

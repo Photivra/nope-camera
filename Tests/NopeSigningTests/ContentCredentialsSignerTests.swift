@@ -161,7 +161,7 @@ struct ContentCredentialsSignerTests {
         #expect(Report(try validate(signed, as: file)).state == "Valid")
     }
 
-    /// Why nope. inserts the DNG's store itself: the C2PA library's own DNG writer moves IFD0 to
+    /// Why the app inserts the DNG's store itself: the C2PA library's own DNG writer moves IFD0 to
     /// the end of the file, and ImageIO then sees a plain TIFF with no image (measured on an
     /// iPhone 16 Pro Max with iOS 27.2.1, and here in the Simulator). If a library update changes
     /// this, this test fails, and the custom layout can be reconsidered.

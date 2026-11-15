@@ -50,7 +50,7 @@ public enum AutoControlIntent: Equatable, Sendable {
 }
 
 /// How fast a shutter full auto prefers (issue #56). The camera's auto exposure still chooses
-/// the shutter and ISO; nope. only sets the longest shutter it may use
+/// the shutter and ISO; the app only sets the longest shutter it may use
 /// (`AVCaptureDevice.activeMaxExposureDuration`), so it raises ISO instead of slowing the
 /// shutter. Manual controls are never changed by it.
 public enum FastShutter: String, CaseIterable, Codable, Sendable {
@@ -141,7 +141,7 @@ public struct AssistSettings: Equatable, Sendable {
 /// meter's offset: `ISO × time × 2^(−offset)` (`AVCaptureDevice.exposureTargetOffset` is in EV,
 /// negative when the picture is darker than the target). The product doesn't depend on how the
 /// camera splits it between ISO and time, so it can be compared with what a limit allows:
-/// `highest ISO × limit`. The aperture is fixed on every lens nope. uses in full auto.
+/// `highest ISO × limit`. The aperture is fixed on every lens the app uses in full auto.
 enum AutoShutter {
     /// How much brighter than needed a limit must be before a lifted limit comes back: half a
     /// stop, so the limit doesn't switch on and off when the light is near the threshold. A
@@ -214,7 +214,7 @@ enum AutoShutter {
 /// Notices when the subject seems closer than the lens can focus: the lens stays at its nearest
 /// position while autofocus keeps searching (issue #51, "Close-up assist").
 ///
-/// It only suggests the ultra wide lens; nope. never switches lenses on its own. The thresholds
+/// It only suggests the ultra wide lens; the app never switches lenses on its own. The thresholds
 /// are assumptions to check on the device (docs/TESTING.md, "Close-up focus aids"):
 /// `lensPosition` is relative (0 is the nearest the lens can focus), not a distance.
 struct CloseUpDetector: Equatable, Sendable {

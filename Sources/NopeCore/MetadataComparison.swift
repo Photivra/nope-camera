@@ -1,9 +1,9 @@
 import Foundation
 
-/// The metadata of nope.'s saved file and of the phone's fully processed version, side by side
+/// The metadata of the app's saved file and of the phone's fully processed version, side by side
 /// (issue #55, "Compare the metadata").
 ///
-/// Both sides come from the project's own tag reader (``MetadataFileReader``): nope.'s from the
+/// Both sides come from the project's own tag reader (``MetadataFileReader``): the app's from the
 /// read-back of the saved file, the phone's from the in-memory file iOS wrote. Each tag, block
 /// and XMP property becomes one ``Entry``, grouped by ``Difference``.
 ///
@@ -20,7 +20,7 @@ public struct MetadataComparison: Equatable, Sendable {
         case onlyInPhoneVersion
         /// Both have it, with different values.
         case different
-        /// Only nope.'s file has it, such as its signature.
+        /// Only the app's file has it, such as its signature.
         case onlyInNopeFile
         /// Both have it, with the same value.
         case same
@@ -59,17 +59,17 @@ public struct MetadataComparison: Equatable, Sendable {
         public let kind: Kind
         /// The phone's value, or `nil` when the phone's version doesn't have it.
         public let phoneValue: Value?
-        /// nope.'s value, or `nil` when nope.'s file doesn't have it.
+        /// The app's value, or `nil` when the app's file doesn't have it.
         public let nopeValue: Value?
         /// How the two differ.
         public let difference: Difference
-        /// The privacy switch that controls the item in nope. (`docs/PRIVACY.md`), or `nil` when
-        /// no switch does: nope. then never writes it unless it is locked.
+        /// The privacy switch that controls the item in the app (`docs/PRIVACY.md`), or `nil` when
+        /// no switch does: the app then never writes it unless it is locked.
         public let item: MetadataItem?
         /// Whether the value can identify the device or link photos (maker notes, location,
         /// unique IDs and serial numbers). Show it masked until the person asks.
         public let isIdentifying: Bool
-        /// Whether the item is nope.'s Content Credentials signature.
+        /// Whether the item is the app's Content Credentials signature.
         public let isSignature: Bool
 
         /// Creates an entry.
@@ -79,10 +79,10 @@ public struct MetadataComparison: Equatable, Sendable {
         ///   - name: The item's name.
         ///   - kind: Where it lives.
         ///   - phoneValue: The phone's value, or `nil`.
-        ///   - nopeValue: nope.'s value, or `nil`.
+        ///   - nopeValue: the app's value, or `nil`.
         ///   - item: The privacy switch, or `nil`.
         ///   - isIdentifying: Whether to mask the value.
-        ///   - isSignature: Whether it is nope.'s signature.
+        ///   - isSignature: Whether it is the app's signature.
         public init(
             id: String, name: String, kind: Kind, phoneValue: Value?, nopeValue: Value?, item: MetadataItem?,
             isIdentifying: Bool, isSignature: Bool
@@ -104,14 +104,14 @@ public struct MetadataComparison: Equatable, Sendable {
         }
     }
 
-    /// Every entry: the phone's items in file order, then those only nope.'s file has.
+    /// Every entry: the phone's items in file order, then those only the app's file has.
     public let entries: [Entry]
 
     /// Compares two files' metadata.
     ///
     /// - Parameters:
     ///   - phone: What the tag reader found in the phone's version.
-    ///   - nope: What the read-back found in nope.'s saved file.
+    ///   - nope: What the read-back found in the app's saved file.
     public init(phone: MetadataInventory, nope: MetadataInventory) {
         let phoneItems = Self.items(in: phone)
         let nopeItems = Self.items(in: nope)
@@ -175,10 +175,10 @@ public struct MetadataComparison: Equatable, Sendable {
     /// Pairs one item's two sides.
     ///
     /// - Parameters:
-    ///   - side: The side the item is listed from: the phone's, or nope.'s when only nope.'s
+    ///   - side: The side the item is listed from: the phone's, or the app's when only the app's
     ///     file has it. Its name, place and privacy switch are shown.
     ///   - phone: The phone's side, or `nil`.
-    ///   - nope: nope.'s side, or `nil`.
+    ///   - nope: the app's side, or `nil`.
     /// - Returns: The entry.
     static func entry(_ side: Item, phone: Item?, nope: Item?) -> Entry {
         Entry(
@@ -240,7 +240,7 @@ public struct MetadataComparison: Equatable, Sendable {
         otherTagNames[TagID(tag.directory, tag.tag)] ?? PhotoDetails.name(of: tag)
     }
 
-    /// The container blocks that hold nope.'s Content Credentials manifest.
+    /// The container blocks that hold the app's Content Credentials manifest.
     static let signatureBlocks: Set<String> = [
         MetadataPlan.contentCredentialsHEIFBlock, MetadataPlan.contentCredentialsJPEGBlock,
     ]
@@ -253,7 +253,7 @@ public struct MetadataComparison: Equatable, Sendable {
         TagID(.exif, 0xA431), TagID(.exif, 0xA435),
     ]
 
-    /// Names of tags the phone may write that nope. never does, so they aren't in
+    /// Names of tags the phone may write that the app never does, so they aren't in
     /// ``MetadataField/catalog``: from the EXIF 3.0 tag tables (4.6.5 for EXIF, 4.6.6 for GPS).
     static let otherTagNames: [TagID: String] = [
         TagID(.exif, 0x8832): "RecommendedExposureIndex",

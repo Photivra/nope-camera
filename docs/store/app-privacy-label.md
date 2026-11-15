@@ -24,7 +24,7 @@ Data processed only on the device isn't collected, and developers don't disclose
 collects ([App privacy details on the App Store](https://developer.apple.com/app-store/app-privacy-details/);
 `docs/research/privacy-claims.md`, claim 3 and note 3).
 
-- nope. contains no networking code and makes no network connections (audit checks 3, 7, 8).
+- Photivra Nope Camera contains no networking code and makes no network connections (audit checks 3, 7, 8).
 - No analytics, crash-reporting or advertising SDK (audit check 14).
 - The only non-platform dependency, the C2PA library, signs files on the device and sends
   nothing (audit checks 3 and 8 must confirm this for the prebuilt framework).

@@ -10,7 +10,7 @@ struct ProToolsSheet: View {
     /// The intervals offered, in seconds: 1 second to 1 hour.
     static let intervals: [Double] = [1, 2, 3, 5, 10, 15, 20, 30, 60, 120, 300, 600, 900, 1800, 3600]
 
-    /// The photo counts offered for a series, from 2 to the 999 nope. allows.
+    /// The photo counts offered for a series, from 2 to the 999 the app allows.
     static let photoCounts = [2, 3, 5, 10, 20, 30, 50, 100, 200, 500, 999]
 
     /// The camera model.

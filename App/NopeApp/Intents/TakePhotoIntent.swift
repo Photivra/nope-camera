@@ -1,13 +1,13 @@
 import AppIntents
 import NopeCore
 
-/// "Take Photo" for Siri and the Shortcuts app (issue #62): opens nope. to the camera and takes
+/// "Take Photo" for Siri and the Shortcuts app (issue #62): opens the app to the camera and takes
 /// a photo with the current settings, after an optional delay, with an optional lens.
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it turns its parameters into a
 /// ``PhotoShortcut``, hands it to the app's ``ShortcutInbox``, and says the outcome. The camera
 /// screen performs it through `CameraModel`, with the self-timer for a delay. Taking a photo
-/// needs nope. in the foreground, so the intent opens the app first. Siri hears only whether
+/// needs the app in the foreground, so the intent opens the app first. Siri hears only whether
 /// the photo was saved and signed, never image data or metadata.
 struct TakePhotoIntent: AppIntent {
     /// The action's name in the Shortcuts app.
@@ -20,7 +20,7 @@ struct TakePhotoIntent: AppIntent {
             "Opens nope. and takes a photo with the current settings, after an optional delay.",
             comment: "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
-    /// The camera needs nope. in the foreground (AVFoundation stops capture in the background),
+    /// The camera needs the app in the foreground (AVFoundation stops capture in the background),
     /// so the app opens before the intent runs.
     static let openAppWhenRun = true
 

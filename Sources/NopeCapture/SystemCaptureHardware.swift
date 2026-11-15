@@ -33,7 +33,7 @@ extension AVFoundationCaptureBackend {
 /// `@unchecked Sendable`: every mutable property and every session call is confined to
 /// `queue`.
 final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
-    /// The physical camera types nope. uses. Virtual multi-camera devices are never used.
+    /// The physical camera types the app uses. Virtual multi-camera devices are never used.
     private static let physicalDeviceTypes: [AVCaptureDevice.DeviceType] = [
         .builtInWideAngleCamera, .builtInUltraWideCamera, .builtInTelephotoCamera,
     ]
@@ -164,7 +164,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///
     /// The method returns only after both steps, because the caller awaits `perform`. The next
     /// ``configure(_:)`` re-adds the input and output with the full setup order. This is the
-    /// only way a session is taken down: nope. never creates a second session, and never
+    /// only way a session is taken down: the app never creates a second session, and never
     /// starts one while another is still stopping (docs/TESTING.md, "Black frames").
     func stop() async {
         await perform { self.tearDown() }
@@ -897,7 +897,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///
     /// `AVCaptureSession.h` (`AVCaptureConnection`): `videoMirrored` can be set only when
     /// `automaticallyAdjustsVideoMirroring` is `NO`. Whether the system mirrors a front camera
-    /// photo by default isn't documented, so nope. sets it explicitly. Call only on `queue`.
+    /// photo by default isn't documented, so the app sets it explicitly. Call only on `queue`.
     private func keepPhotosUnmirrored() {
         guard let connection = photoOutput.connection(with: .video), connection.isVideoMirroringSupported else { return }
         connection.automaticallyAdjustsVideoMirroring = false
@@ -1111,7 +1111,7 @@ extension SystemCaptureHardware: ComparisonHardware {
 ///
 /// Privacy: this file keeps the system's own metadata (`fileDataRepresentation()` without a
 /// customizer), on purpose: the compare view shows what the phone's version carries by default.
-/// It is never saved, signed, written to disk or logged (issue #55). nope.'s own photos are
+/// It is never saved, signed, written to disk or logged (issue #55). The app's own photos are
 /// written by ``PhotoCaptureDelegate`` with the allowlist.
 ///
 /// `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a

@@ -2,7 +2,7 @@ import Foundation
 
 /// When the flash fires for a photo (issue #38).
 ///
-/// The flash only adds light; nope. turns on no processing with it. Each lens lists the modes
+/// The flash only adds light; the app turns on no processing with it. Each lens lists the modes
 /// it supports in ``Lens/flashModes``; an interface offers a flash control only when that list
 /// has a mode other than ``off``.
 public enum FlashMode: String, Codable, CaseIterable, Equatable, Sendable {
@@ -127,7 +127,7 @@ public final class LightModel {
         self.backend = backend
     }
 
-    /// Whether the lens in use has a torch nope. can switch.
+    /// Whether the lens in use has a torch the app can switch.
     public var supportsTorch: Bool {
         backend != nil && lens?.hasTorch == true
     }
@@ -197,7 +197,7 @@ public final class LightModel {
         await applyTorch()
     }
 
-    /// Turns the torch off because the camera stopped or paused (an interruption, heat, or nope.
+    /// Turns the torch off because the camera stopped or paused (an interruption, heat, or the app
     /// leaving the screen). The person turns it on again when they want it.
     ///
     /// Side effect: switches the torch off.

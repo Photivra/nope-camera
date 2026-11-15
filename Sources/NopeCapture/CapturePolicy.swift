@@ -1,7 +1,7 @@
 import AVFoundation
 import NopeCore
 
-/// The processing switches nope. applies to every session and photo, as plain values.
+/// The processing switches the app applies to every session and photo, as plain values.
 ///
 /// They follow docs/research/capability-survey.md, item 12 ("Avoiding processing"), and Apple's
 /// Bayer RAW rules in `AVCapturePhotoOutput.h` (`capturePhoto(with:delegate:)`): Bayer RAW
@@ -28,7 +28,7 @@ struct ProcessingSwitches: Equatable, Sendable {
     let contentAwareDistortionCorrection: Bool
     /// The device's geometric distortion correction. Off where it can be turned off.
     let geometricDistortionCorrection: Bool
-    /// The device zoom factor. 1.0: Bayer RAW requires it, and nope. never zooms digitally.
+    /// The device zoom factor. 1.0: Bayer RAW requires it, and the app never zooms digitally.
     let videoZoomFactor: Double
     /// The flash. Off for starting the camera and for brackets (which don't support it,
     /// `AVCapturePhotoBracketSettings`); a single photo takes the request's mode
@@ -36,7 +36,7 @@ struct ProcessingSwitches: Equatable, Sendable {
     /// processing switch changes with it.
     let flashMode: AVCaptureDevice.FlashMode
 
-    /// Creates a set of switches. nope. uses only ``leastProcessing``.
+    /// Creates a set of switches. The app uses only ``leastProcessing``.
     ///
     /// - Parameters:
     ///   - qualityPrioritization: The output's maximum and every photo's prioritization.
@@ -79,7 +79,7 @@ struct ProcessingSwitches: Equatable, Sendable {
             flashMode: mode)
     }
 
-    /// The switches nope. uses.
+    /// The switches the app uses.
     static let leastProcessing = ProcessingSwitches(
         qualityPrioritization: .speed,
         appleProRAW: false,
@@ -154,7 +154,7 @@ enum CapturePolicy {
     /// The photo size is the lens's smallest supported size: on 48 MP sensors that is the
     /// native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
     /// Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-    /// delivery, which nope. turns off (`AVCapturePhotoOutput.h`).
+    /// delivery, which the app turns off (`AVCapturePhotoOutput.h`).
     ///
     /// - Parameter request: The lens and format.
     /// - Returns: The configuration, or `nil` if the request's RAW format code is invalid.

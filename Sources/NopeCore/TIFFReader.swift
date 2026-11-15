@@ -10,9 +10,9 @@ import Foundation
 /// or hostile file produces ``MetadataInventory/problems`` and never a crash. The fuzz tests in
 /// `NopeCoreTests` feed it random and mutated files.
 struct TIFFReader {
-    /// The most directories a file may have. nope.'s DNG has two (IFD0 and EXIF).
+    /// The most directories a file may have. The app's DNG has two (IFD0 and EXIF).
     static let maximumDirectories = 64
-    /// The most entries one directory may have. nope.'s largest has about 40.
+    /// The most entries one directory may have. The app's largest has about 40.
     static let maximumEntriesPerDirectory = 1024
 
     /// TIFF field types and their sizes in bytes (TIFF 6.0 section 2, and type 13, IFD, from
@@ -64,7 +64,7 @@ struct TIFFReader {
         /// Every tag found, and any problem.
         var inventory = MetadataInventory()
         /// The bytes of IFD0's image data (its tiles or strips, concatenated in order), or
-        /// `nil` when IFD0 has none. For nope.'s DNG this is the compressed RAW sensor data.
+        /// `nil` when IFD0 has none. For the app's DNG this is the compressed RAW sensor data.
         var primaryImageData: Data?
 
         /// Creates an empty result: no tags, no problems and no image data.

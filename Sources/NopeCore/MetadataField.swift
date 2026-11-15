@@ -204,7 +204,7 @@ extension MetadataField {
     /// The maker note (`0x927C`). ImageIO shows Apple's as the `{MakerApple}` dictionary.
     static let makerNote = item("MakerNote", .exif, 0x927C, [], .makerNotes, all)
 
-    /// Every field nope. may write, with its switch or lock and its formats. Built from the
+    /// Every field the app may write, with its switch or lock and its formats. Built from the
     /// device tag check (`docs/PRIVACY.md`, "Tag check") and the TIFF 6.0, EXIF 3.0 and DNG 1.7
     /// tag tables. A tag that isn't here is never written and fails the read-back.
     public static let catalog: [MetadataField] = structure + raw + capture + [

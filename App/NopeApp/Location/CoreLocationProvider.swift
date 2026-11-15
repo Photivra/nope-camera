@@ -80,7 +80,7 @@ final class CoreLocationProvider: NSObject, LocationProviding, CLLocationManager
     /// The access for a Core Location authorization status.
     ///
     /// - Parameter status: The status.
-    /// - Returns: The matching access; "always" counts as allowed, though nope. never asks for it.
+    /// - Returns: The matching access; "always" counts as allowed, though the app never asks for it.
     private static func access(_ status: CLAuthorizationStatus) -> LocationAccess {
         switch status {
         case .authorizedWhenInUse, .authorizedAlways: .allowed

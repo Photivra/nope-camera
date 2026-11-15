@@ -52,9 +52,9 @@ public final class NopeSettings {
     /// with ``LightIntent/setTorchLevel(_:)``.
     public private(set) var torchLevel: Double
 
-    /// Whether night mode is on: every nope. screen in red on black, to keep eyes used to the
+    /// Whether night mode is on: every screen of the app in red on black, to keep eyes used to the
     /// dark (issue #61). Off by default, remembered between launches, never switched on or off
-    /// automatically. nope. never changes the screen's brightness; people use the device's own
+    /// automatically. The app never changes the screen's brightness; people use the device's own
     /// brightness control.
     ///
     /// Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
@@ -152,7 +152,7 @@ public final class NopeSettings {
         selectedFormats(deviceSupportsBayerRAW: deviceSupportsBayerRAW) != [format]
     }
 
-    /// Whether any selected format is developed by nope. from the RAW (HEIF or JPEG).
+    /// Whether any selected format is developed by the app from the RAW (HEIF or JPEG).
     public var savesDevelopedFormat: Bool {
         formats.contains(where: \.isDevelopedFromRAW)
     }
@@ -305,7 +305,7 @@ public final class NopeSettings {
 
     /// Turns night mode on or off, and saves the change.
     ///
-    /// - Parameter isOn: Whether nope.'s screens are red on black.
+    /// - Parameter isOn: Whether the app's screens are red on black.
     public func setNightMode(_ isOn: Bool) {
         isNightModeOn = isOn
         defaults.set(isOn, forKey: Key.isNightModeOn)

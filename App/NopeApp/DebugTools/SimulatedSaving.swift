@@ -83,7 +83,7 @@ struct SimulatedThumbnailer: PhotoThumbnailing {
 }
 
 /// Makes the compare view's two pictures (issue #55): plain 4:3 pictures held upright, gray-blue
-/// for nope.'s file and warm orange for the phone-processed one, so the divider is visible. The
+/// for the app's file and warm orange for the phone-processed one, so the divider is visible. The
 /// simulated photos aren't images; `NopeDevelopTests` cover the ImageIO thumbnailer.
 struct SimulatedComparisonRenderer: PhotoThumbnailing {
     /// The picture's width, in pixels.

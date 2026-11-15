@@ -211,7 +211,7 @@ public final class CameraModel {
     /// The lens to suggest when the subject seems closer than the selected lens can focus: the
     /// ultra wide lens, from the wide or a telephoto lens, while
     /// ``ManualControlsModel/suggestsCloseUpLens`` is true. `nil` otherwise. An interface offers
-    /// a button to switch; nope. never switches on its own (issue #51).
+    /// a button to switch; the app never switches on its own (issue #51).
     public var closeUpLens: Lens? {
         guard manual.suggestsCloseUpLens, let kind = selectedLens?.kind, kind == .wide || kind == .telephoto else {
             return nil

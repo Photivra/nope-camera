@@ -80,7 +80,7 @@ Takes the phone's fully processed photo, in memory only (issue #55).
 Privacy: the file keeps the system's own metadata, because showing it is the point; it
 is never saved, signed or logged. Its metadata is read with the project's own tag reader.
 
-- Parameter request: nope.'s request; must match the last ``startSession(_:)``.
+- Parameter request: the app's request; must match the last ``startSession(_:)``.
 - Returns: The photo.
 - Throws: `CaptureError.notRunning` if the session isn't configured for this request,
   `CaptureError.captureFailed` if the hardware can't take it, or the hardware's error.
@@ -709,7 +709,7 @@ init(_ status: AVAuthorizationStatus)
 Converts an AVFoundation authorization status to a `NopeCore` permission.
 
 A status added in a future iOS release is treated as `CameraPermission.restricted`:
-nope. must not assume access it can't confirm, and it must not ask again for a state it
+The app must not assume access it can't confirm, and it must not ask again for a state it
 doesn't understand.
 
 - Parameter status: The value from
@@ -759,7 +759,7 @@ customizer whose `replacementMetadata(for:)` returns
 `MetadataPlan.properties(for:from:orientation:)` for the system's metadata: the header
 says the returned dictionary replaces the photo's metadata (`AVCapturePhotoOutput.h`,
 `AVCapturePhotoFileDataRepresentationCustomizer`). AVFoundation itself writes the RAW
-image data, so the sensor data isn't re-encoded by nope. For a RAW photo the system's
+image data, so the sensor data isn't re-encoded by the app. For a RAW photo the system's
 own DNG is also flattened once, only to keep its RAW image data as a reference.
 
 - Parameters:
@@ -913,7 +913,7 @@ The settings of the comparison shot's second photo: one processed photo at `.qua
 prioritization, with the request's flash mode, as HEIF (JPEG on a lens whose fallback is
 JPEG, which offers no HEVC).
 
-- Parameter request: nope.'s request.
+- Parameter request: the app's request.
 - Returns: The plan.
 
 ## `CapturePolicy/fileFormat(of:)`
@@ -975,7 +975,7 @@ The session configuration for a request.
 The photo size is the lens's smallest supported size: on 48 MP sensors that is the
 native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
 Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-delivery, which nope. turns off (`AVCapturePhotoOutput.h`).
+delivery, which the app turns off (`AVCapturePhotoOutput.h`).
 
 - Parameter request: The lens and format.
 - Returns: The configuration, or `nil` if the request's RAW format code is invalid.
@@ -1150,7 +1150,7 @@ Receives the comparison shot's second photo and reports it once the capture fini
 
 Privacy: this file keeps the system's own metadata (`fileDataRepresentation()` without a
 customizer), on purpose: the compare view shows what the phone's version carries by default.
-It is never saved, signed, written to disk or logged (issue #55). nope.'s own photos are
+It is never saved, signed, written to disk or logged (issue #55). The app's own photos are
 written by ``PhotoCaptureDelegate`` with the allowlist.
 
 `@unchecked Sendable`: AVFoundation calls the delegate methods one after another for a
@@ -1210,13 +1210,13 @@ func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSe
 ```
 
 Takes the phone's fully processed photo, with the system's own metadata, and then puts
-the photo output back as nope.'s photos need it.
+the photo output back as the app's photos need it.
 
-The photo output's `maxPhotoQualityPrioritization` is `.speed` for nope.'s own photos
+The photo output's `maxPhotoQualityPrioritization` is `.speed` for the app's own photos
 (Bayer RAW requires it). A `.quality` photo needs the maximum to be at least `.quality`
 (`AVCapturePhotoOutput.h`, `photoQualityPrioritization`), so it is raised only for this
-photo and set back to `.speed` afterwards, before nope.'s next photo; the session's other
-switches, and nope.'s photo just taken, are unchanged.
+photo and set back to `.speed` afterwards, before the app's next photo; the session's other
+switches, and the app's photo just taken, are unchanged.
 
 - Parameters:
   - plan: The comparison photo's settings (``CapturePolicy/comparisonPlan(for:)``).
@@ -1248,7 +1248,7 @@ Converts an AVFoundation flash mode, such as one of the photo output's
 `supportedFlashModes`.
 
 - Parameter mode: The AVFoundation flash mode.
-- Returns: `nil` for a mode added in a later iOS, which nope. doesn't offer.
+- Returns: `nil` for a mode added in a later iOS, which the app doesn't offer.
 
 ## `FourCharacterCode`
 
@@ -1463,7 +1463,7 @@ init(_ state: ProcessInfo.ThermalState)
 Converts the system thermal state.
 
 A state added in a later iOS becomes `HeatLevel.serious`: high enough to be noted, but it
-doesn't stop the camera on a value nope. can't interpret.
+doesn't stop the camera on a value the app can't interpret.
 
 - Parameter state: `ProcessInfo.processInfo.thermalState`.
 
@@ -1496,7 +1496,7 @@ Rules (capability survey, item 1, and AGENTS.md, "Honesty"):
 - only physical cameras: virtual multi-camera devices and unknown types are dropped;
 - a lens's RAW format is its first Bayer RAW format; Apple ProRAW never counts;
 - lenses are ordered rear ultra wide, wide, telephoto (by magnification), then front;
-- the front camera gets no flash modes: nope. uses no screen flash (issue #38).
+- the front camera gets no flash modes: the app uses no screen flash (issue #38).
 
 ## `LensCatalog/equivalentFocalLength(fieldOfView:photoSize:)`
 
@@ -2287,7 +2287,7 @@ internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
 static func canAdd(_ status: PHAuthorizationStatus) -> Bool
 ```
 
-Whether an add-only authorization status lets nope. add photos.
+Whether an add-only authorization status lets the app add photos.
 
 `PHAuthorizationStatus.limited` is reported only for read-write access, so for add-only
 access `.authorized` is the only status that allows adding (`PHPhotoLibrary.h`); both are
@@ -2638,7 +2638,7 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 struct ProcessingSwitches
 ```
 
-The processing switches nope. applies to every session and photo, as plain values.
+The processing switches the app applies to every session and photo, as plain values.
 
 They follow docs/research/capability-survey.md, item 12 ("Avoiding processing"), and Apple's
 Bayer RAW rules in `AVCapturePhotoOutput.h` (`capturePhoto(with:delegate:)`): Bayer RAW
@@ -2716,7 +2716,7 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 init(qualityPrioritization: AVCapturePhotoOutput.QualityPrioritization, appleProRAW: Bool, zeroShutterLag: Bool, responsiveCapture: Bool, deferredDelivery: Bool, constantColor: Bool, contentAwareDistortionCorrection: Bool, geometricDistortionCorrection: Bool, videoZoomFactor: Double, flashMode: AVCaptureDevice.FlashMode)
 ```
 
-Creates a set of switches. nope. uses only ``leastProcessing``.
+Creates a set of switches. The app uses only ``leastProcessing``.
 
 - Parameters:
   - qualityPrioritization: The output's maximum and every photo's prioritization.
@@ -2738,7 +2738,7 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 static let leastProcessing: ProcessingSwitches
 ```
 
-The switches nope. uses.
+The switches the app uses.
 
 ## `ProcessingSwitches/phoneProcessing`
 
@@ -2751,7 +2751,7 @@ static let phoneProcessing: ProcessingSwitches
 The switches for the comparison shot's second photo: the phone's processing at its
 highest setting for apps, `.quality` prioritization, which lets the system combine several
 frames where the device does that. Every other switch is the session's
-(``leastProcessing``): they are configured once for the session, so nope.'s own photos
+(``leastProcessing``): they are configured once for the session, so the app's own photos
 stay exactly as they are. This photo is never saved (issue #55).
 
 ## `ProcessingSwitches/qualityPrioritization`
@@ -2783,7 +2783,7 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 let videoZoomFactor: Double
 ```
 
-The device zoom factor. 1.0: Bayer RAW requires it, and nope. never zooms digitally.
+The device zoom factor. 1.0: Bayer RAW requires it, and the app never zooms digitally.
 
 ## `ProcessingSwitches/withFlashMode(_:)`
 
@@ -3196,7 +3196,7 @@ Stops the session and tears it down, strictly in order, on `queue`.
 
 The method returns only after both steps, because the caller awaits `perform`. The next
 ``configure(_:)`` re-adds the input and output with the full setup order. This is the
-only way a session is taken down: nope. never creates a second session, and never
+only way a session is taken down: the app never creates a second session, and never
 starts one while another is still stopping (docs/TESTING.md, "Black frames").
 
 ## `SystemLiveView`

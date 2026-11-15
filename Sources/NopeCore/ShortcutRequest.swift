@@ -67,7 +67,7 @@ public enum ShortcutOutcome: Equatable, Sendable {
     case savedSeveral(allSigned: Bool)
 
     /// The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved, and
-    /// that nope. shows why.
+    /// that the app shows why.
     case notSaved(CaptureError)
 
     /// The countdown was cancelled on the device, so no photo was taken. Say so.
@@ -85,13 +85,13 @@ public enum ShortcutOutcome: Equatable, Sendable {
 
 /// Why the camera couldn't take a photo for a ``ShortcutRequest``.
 public enum CameraUnavailability: Equatable, Sendable {
-    /// The person hasn't been asked for camera access yet. Say to open nope. to allow it.
+    /// The person hasn't been asked for camera access yet. Say to open the app to allow it.
     case needsPermission
 
     /// Camera access is declined or restricted. Say it can be turned on in the Settings app.
     case permissionDenied
 
-    /// The device has no camera nope. can use. Say so.
+    /// The device has no camera the app can use. Say so.
     case noCamera
 
     /// The camera didn't start or isn't running: it is starting too slowly, in use by another

@@ -1,6 +1,6 @@
 import AppIntents
 
-/// Opens the nope. camera from the Lock Screen, Control Center or the Action button (issue #42).
+/// Opens the app's camera from the Lock Screen, Control Center or the Action button (issue #42).
 ///
 /// It is a `CameraCaptureIntent` (App Intents, iOS 18): the system runs it from the "Open nope."
 /// control (`OpenCameraControl` in the NopeControls extension). On a locked device the system

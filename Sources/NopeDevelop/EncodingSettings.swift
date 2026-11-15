@@ -4,11 +4,11 @@ import ImageIO
 import NopeCore
 import UniformTypeIdentifiers
 
-/// How nope. encodes a developed photo with the system encoders.
+/// How the app encodes a developed photo with the system encoders.
 ///
 /// The defaults follow issue #1, "Formats": HEIF at 10 bits per channel and JPEG at maximum
 /// quality, in Display P3. The person may choose others (`DevelopedFileOptions`, issue #57).
-/// HEIF is written only with the system HEIF encoder; nope. never bundles an encoder
+/// HEIF is written only with the system HEIF encoder; the app never bundles an encoder
 /// (AGENTS.md, "Encoders").
 public struct EncodingSettings: Equatable, Sendable {
     /// JPEG's maximum quality for `kCGImageDestinationLossyCompressionQuality`.

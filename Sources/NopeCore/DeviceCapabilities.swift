@@ -18,7 +18,7 @@ public struct DeviceCapabilities: Equatable, Sendable {
         self.lenses = lenses
     }
 
-    /// Whether the device has at least one camera nope. can use.
+    /// Whether the device has at least one camera the app can use.
     public var hasCamera: Bool {
         !lenses.isEmpty
     }

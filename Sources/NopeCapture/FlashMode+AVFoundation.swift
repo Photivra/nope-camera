@@ -6,7 +6,7 @@ extension FlashMode {
     /// `supportedFlashModes`.
     ///
     /// - Parameter mode: The AVFoundation flash mode.
-    /// - Returns: `nil` for a mode added in a later iOS, which nope. doesn't offer.
+    /// - Returns: `nil` for a mode added in a later iOS, which the app doesn't offer.
     init?(_ mode: AVCaptureDevice.FlashMode) {
         switch mode {
         case .off: self = .off
