@@ -101,6 +101,51 @@ accepts every way a TIFF writer can store an empty text (one NUL, a count of 0, 
 and the tag left out, and rejects a space, any text and a non-text value. Which encoding
 AVFoundation writes is a device check (`docs/PRIVACY.md`, "Device checks").
 
+### RAW pairs not saved (PhotoKit error 3300)
+
+**How it was found.** On an iPhone 16 Pro Max (iOS 27.2.1, Debug build of 0.2.0), every photo
+that saved a RAW together with a HEIF or JPEG failed with "Not saved: the photo library couldn't
+add the photo. Try again.", on the 0.6× and 5× lenses, in manual mode. RAW only, JPEG only and
+HEIF plus JPEG saved. The DNG itself, signed, is accepted.
+
+**Cause (measured in the iOS 27.2 Simulator, 2026-11-15).** The app's own files (the fixtures of
+the file compatibility matrix below) added to the Simulator's photo library through the app with
+add-only access: a `PHAssetCreationRequest` with a `.photo` and an `.alternatePhoto` fails with
+`PHPhotosErrorDomain` 3300 (`PHPhotosErrorChangeNotSupported`, "The change request is not
+supported as configured") whenever the alternate is added from memory
+(`addResource(with:data:options:)`): a DNG with a HEIF or a JPEG, in either order, with or
+without type identifiers or matching file names, with any `originalResourceChoice`, and also with
+read-write access. The shape in Apple's RAW capture article (the DNG from a file, the processed
+copy from memory) fails the same way. The same pair succeeds when the alternate is added from a
+file (`addResource(with:fileURL:options:)`), with or without `shouldMoveFile`, whether the main
+file comes from memory or from a file. Single resources from memory succeed, which matches the
+device. The Photos daemon logs "PhotoKit validation failed" before reading the files, so the file
+contents aren't the cause. Apple's documentation doesn't state this rule.
+
+**Fix.** `PhotoKitLibrary` adds each pair's alternate from a file and everything else from
+memory (`PhotoKitMapping.Resource.addsFromFile`, `PhotoKitMapping.prepare(_:stage:)`). The file
+is written by `ResourceStaging` with complete file protection under a random name in the app's
+temporary directory, moved into the library (`shouldMoveFile`), and anything left is deleted as
+soon as the change ends, whether or not it succeeded. If the file can't be written (for example,
+while the device is locked a file with complete protection can't be created), the pair is saved
+as two photos from memory, so the photo is still saved. A failed change logs the error's domain
+and code (and its underlying error's), and each request's resource types, marked private; the
+person sees only the plain banner. A Debug build run from Xcode shows the private values in
+Xcode's console (an assumption from developer reports, not from Apple's documentation).
+
+**Tests.** `PhotoKitRequestShapeTests` (`NopeCaptureTests`) checks every format combination
+(RAW, HEIF, JPEG alone and in every combination, which is also every lens's processed fallback),
+with each pairing: every request has one `.photo` first, from memory, and at most one
+`.alternatePhoto`, from a file, only with a DNG as the main file; every file is saved exactly
+once; only the alternate is staged; and when staging fails, each file is its own request.
+Burst, bracket, interval, Astro and comparison frames go through the same `PhotoSaver` call, so
+the same shapes. `ResourceStagingTests` checks the file names, contents and deletion. Checked by
+hand in the iOS 27.2 Simulator on 2026-11-15 with the real `PhotoKitLibrary` and the fixtures
+of six cases (first launch signed, every item on unsigned, ultra wide, telephoto, front camera
+mirrored, a burst and an Astro frame): all 7 format combinations with both pairings saved, the
+library held the DNG as `.photo` with the chosen copy as `.alternatePhoto` and the other copy
+on its own, and no file was left in the temporary directory.
+
 ### Developed looks
 
 The RAW renderer can't run on a hand-built DNG, so one test needs a real DNG and is skipped
@@ -465,7 +510,11 @@ iPad:
 - saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
   prompt appears once and declining it shows the "isn't allowed to add photos" banner, whose
   Open Settings opens the app's page in the Settings app; a RAW
-  plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
+  plus HEIF appears as one photo in Photos with the RAW as the original; RAW plus HEIF, RAW plus
+  JPEG, and RAW plus HEIF plus JPEG with each "Paired with RAW" choice are saved on the wide, 0.6×
+  and 5× lenses, in full auto and manual, and in the Lock Screen camera while locked (see "RAW
+  pairs not saved (PhotoKit error 3300)"); after these photos the app's container holds no photo
+  file (Xcode › Devices and Simulators › Download Container); every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
 - last photo and its details (`ImageIOThumbnailer`, `PhotoDetails`, `openPhotosApp`): after a

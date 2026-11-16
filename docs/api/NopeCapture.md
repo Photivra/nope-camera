@@ -2183,9 +2183,15 @@ device (docs/TESTING.md); its decisions are in ``PhotoKitMapping``.
 - Access: `PHPhotoLibrary.requestAuthorization(for: .addOnly)`, which uses the localized
   `NSPhotoLibraryAddUsageDescription`. Add-only access can't read the library.
 - Adding: one `PHPhotoLibrary.performChanges` call; each `PhotoLibraryAsset` becomes one
-  `PHAssetCreationRequest` with its files added from memory
-  (`addResource(with:data:options:)`), so no temporary file is written. No location or
+  `PHAssetCreationRequest`. Every file is added from memory
+  (`addResource(with:data:options:)`) except the alternate of a RAW pair, which PhotoKit
+  accepts only from a file (``PhotoKitMapping/Resource/addsFromFile``): it is written with
+  complete file protection (``ResourceStaging``), moved into the library
+  (`shouldMoveFile`), and anything left is deleted when the change ends. No location or
   creation date is set on the asset.
+- Failures: the error's domain and code (never its description or user info) are logged,
+  marked private, so a failed save on a device can be diagnosed from a Debug build's console.
+  The person sees only the plain banner for `CaptureError.saveFailed`.
 
 ## `PhotoKitLibrary/add(_:)`
 
@@ -2222,6 +2228,118 @@ enum PhotoKitMapping
 The PhotoKit decisions behind ``PhotoKitLibrary``, as plain functions so they are tested
 without a photo library.
 
+## `PhotoKitMapping/PreparedChange`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+struct PreparedChange
+```
+
+The creation requests for one change, and the files staged for them.
+
+## `PhotoKitMapping/PreparedChange/init(requests:stagedFiles:unpairedBecauseStagingFailed:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+init(requests: [[PreparedResource]], stagedFiles: [URL], unpairedBecauseStagingFailed: Bool)
+```
+
+Creates a prepared change.
+
+- Parameters:
+  - requests: The resources of each creation request.
+  - stagedFiles: Every staged file.
+  - unpairedBecauseStagingFailed: Whether a pair was split because staging failed.
+
+## `PhotoKitMapping/PreparedChange/requests`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let requests: [[PreparedResource]]
+```
+
+One entry for each `PHAssetCreationRequest`: its resources, main file first.
+
+## `PhotoKitMapping/PreparedChange/stagedFiles`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let stagedFiles: [URL]
+```
+
+Every staged file. The caller deletes each one after the change, whether or not it
+succeeded: Photos moves the files of a change that succeeds, so deleting what is left
+is a no-op then.
+
+## `PhotoKitMapping/PreparedChange/unpairedBecauseStagingFailed`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let unpairedBecauseStagingFailed: Bool
+```
+
+Whether an alternate couldn't be staged, so its pair was saved as two assets.
+
+## `PhotoKitMapping/PreparedResource`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+struct PreparedResource
+```
+
+One resource, ready to add: its type, type identifier and source.
+
+## `PhotoKitMapping/PreparedResource/init(type:typeIdentifier:source:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+init(type: PHAssetResourceType, typeIdentifier: String, source: Source)
+```
+
+Creates a prepared resource.
+
+- Parameters:
+  - type: The resource type.
+  - typeIdentifier: The file's uniform type identifier.
+  - source: Where the bytes come from.
+
+## `PhotoKitMapping/PreparedResource/source`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let source: Source
+```
+
+Where the bytes come from.
+
+## `PhotoKitMapping/PreparedResource/type`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let type: PHAssetResourceType
+```
+
+The resource type.
+
+## `PhotoKitMapping/PreparedResource/typeIdentifier`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let typeIdentifier: String
+```
+
+The file's uniform type identifier.
+
 ## `PhotoKitMapping/Resource`
 
 internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
@@ -2231,6 +2349,28 @@ struct Resource
 ```
 
 One resource to add to a new asset.
+
+## `PhotoKitMapping/Resource/addsFromFile`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+var addsFromFile: Bool { get }
+```
+
+Whether the resource must be added from a file (`addResource(with:fileURL:options:)`)
+instead of from memory (`addResource(with:data:options:)`).
+
+Only the alternate of a pair is. Measured on 2026-11-15 in the iOS 27.2 Simulator,
+and matching the failure on an iPhone 16 Pro Max (iOS 27.2.1): a request with a
+`.photo` and an `.alternatePhoto` fails with `PHPhotosErrorDomain` 3300
+(`PHPhotosErrorChangeNotSupported`) whenever the alternate is added from memory, for
+a DNG with a HEIF or a JPEG, in either order, with any `originalResourceChoice`,
+type identifier or file name; it succeeds when the alternate is added from a file,
+whether the main file comes from memory or from a file. A single resource added from
+memory succeeds. Apple documents none of this; its RAW capture article adds the
+alternate from memory, and that shape fails too. See docs/TESTING.md, "RAW pairs not
+saved (PhotoKit error 3300)".
 
 ## `PhotoKitMapping/Resource/file`
 
@@ -2279,6 +2419,36 @@ let typeIdentifier: String
 The file's uniform type identifier, passed as
 `PHAssetResourceCreationOptions.uniformTypeIdentifier`.
 
+## `PhotoKitMapping/Source`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+enum Source
+```
+
+Where a prepared resource's bytes come from.
+
+## `PhotoKitMapping/Source/data(_:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+case data(Data)
+```
+
+From memory.
+
+## `PhotoKitMapping/Source/file(_:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+case file(URL)
+```
+
+From a staged file, which Photos moves into the library.
+
 ## `PhotoKitMapping/canAdd(_:)`
 
 internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
@@ -2296,6 +2466,54 @@ accepted here to stay correct if that changes.
 - Parameter status: The status for `PHAccessLevel.addOnly`.
 - Returns: `true` if photos can be added.
 
+## `PhotoKitMapping/fileExtension(for:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func fileExtension(for format: PhotoFormat) -> String
+```
+
+The file name extension of a format's staged file.
+
+- Parameter format: The format.
+- Returns: `dng`, `heic` or `jpg`.
+
+## `PhotoKitMapping/logDescription(of:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func logDescription(of error: any Error) -> String
+```
+
+The part of an error that is safe and useful to log: its domain and code, and those of
+its underlying error, never its description or user info (which can hold file paths).
+
+- Parameter error: The error PhotoKit or the file system reported.
+- Returns: For example `PHPhotosErrorDomain 3300` or
+  `PHPhotosErrorDomain 3302 (underlying NSCocoaErrorDomain 4)`.
+
+## `PhotoKitMapping/prepare(_:stage:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func prepare(_ assets: [PhotoLibraryAsset], stage: (PhotoFile) throws -> URL) -> PreparedChange
+```
+
+Prepares the creation requests for a change: every resource from memory, except each
+pair's alternate, which is staged as a file (``Resource/addsFromFile``).
+
+If an alternate can't be staged (for example, while the device is locked a file with
+complete protection can't be created), its pair is saved as two assets from memory
+instead, so the photo is still saved; the files are unchanged.
+
+- Parameters:
+  - assets: The assets to add.
+  - stage: Writes one file and returns its location, or throws.
+- Returns: The requests and the staged files.
+
 ## `PhotoKitMapping/resources(for:)`
 
 internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
@@ -2310,6 +2528,20 @@ Apple ProRAW Formats", "Save the photos to the photos library").
 
 - Parameter asset: The asset.
 - Returns: The resources, main file first.
+
+## `PhotoKitMapping/shapeDescription(of:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func shapeDescription(of change: PreparedChange) -> String
+```
+
+The shape of a change, for the log: each request's resources by type identifier, with
+`(file)` after a staged one.
+
+- Parameter change: The prepared change.
+- Returns: For example `com.adobe.raw-image+public.heic(file), public.jpeg`.
 
 ## `PhotoKitMapping/typeIdentifier(for:)`
 
@@ -2856,6 +3088,71 @@ Whether a reading at a time should be sent, and records it if so.
 - Parameter time: The time of the reading, in seconds on any steady clock.
 - Returns: `true` for the first reading and for each one at least ``interval`` after the
   last one let through.
+
+## `ResourceStaging`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+struct ResourceStaging
+```
+
+Writes the one file PhotoKit needs on disk, the alternate of a RAW pair
+(``PhotoKitMapping/Resource/addsFromFile``), and deletes it again.
+
+Privacy (AGENTS.md, "Photos never linger"): the file is written with complete file
+protection, under a random name in the app's temporary directory, and Photos moves it into
+the library (`PHAssetResourceCreationOptions.shouldMoveFile`). ``PhotoKitLibrary`` deletes
+whatever is left as soon as the change ends, whether or not it succeeded.
+
+## `ResourceStaging/directory`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+let directory: URL
+```
+
+The directory the files are written to.
+
+## `ResourceStaging/init(directory:)`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+init(directory: URL = FileManager.default.temporaryDirectory)
+```
+
+Creates a stager.
+
+- Parameter directory: The directory to write to. Defaults to the app's temporary
+  directory.
+
+## `ResourceStaging/remove(_:)`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+func remove(_ urls: [URL])
+```
+
+Deletes staged files. A file Photos already moved is skipped.
+
+- Parameter urls: The staged files.
+
+## `ResourceStaging/stage(_:)`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+func stage(_ file: PhotoFile) throws -> URL
+```
+
+Writes a file with complete file protection, never over an existing file.
+
+- Parameter file: The file to write.
+- Returns: Where it was written.
+- Throws: The file system's error, for example while the device is locked.
 
 ## `SessionConfiguration`
 

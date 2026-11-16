@@ -367,7 +367,9 @@ takes VoiceOver focus and offers one action (Try Again or Open Settings, through
       is read back the same way, and one that fails is replaced by its unsigned file, with
       "not signed" and the reason in the status
    4. PhotoKitLibrary (NopeCapture): add-only access, one PHAssetCreationRequest per asset;
-      the DNG as `.photo` and its HEIF (or JPEG) as `.alternatePhoto`
+      the DNG as `.photo` (from memory) and its HEIF (or JPEG) as `.alternatePhoto` (from a
+      file with complete protection, moved into Photos: PhotoKit rejects an alternate added
+      from memory with error 3300)
    5. in memory, for the interface: SavedPhoto.thumbnail (PhotoThumbnailing: ImageIOThumbnailer,
       NopeDevelop) and SavedPhoto.details (PhotoDetails, built from each file's read-back, the
       plan, the signer's ContentCredentialsSummary and SaveTimings)
@@ -406,6 +408,11 @@ each is on the allowlist only where it holds nothing beyond what the switches al
 (docs/PRIVACY.md).
 
 Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
+The one exception is the alternate of a RAW pair, which PhotoKit accepts only from a file
+(`PhotoKitMapping.Resource.addsFromFile`): `ResourceStaging` writes it with complete file
+protection under a random name in the temporary directory, Photos moves it into the library
+(`shouldMoveFile`), and anything left is deleted as soon as the change ends
+(docs/TESTING.md, "RAW pairs not saved (PhotoKit error 3300)").
 
 ### Signing
 

@@ -29,7 +29,11 @@ for any user-facing claim comes from
   default); the other is its own asset (issue #50). Pairing changes nothing in any file. The formats are RAW plus
   HEIF by default (`SaveSettings`); a lens without RAW saves its labeled processed fallback. If a
   file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
-  that the photo holds only the details you chose." Files are never written to disk.
+  that the photo holds only the details you chose." Files aren't written to disk, with one
+  exception PhotoKit requires: the processed copy paired with a RAW is added to Photos from a
+  file, written with complete file protection under a random name in the app's temporary
+  directory, moved into Photos, and deleted as soon as the save ends if anything is left
+  (`docs/TESTING.md`, "RAW pairs not saved (PhotoKit error 3300)").
 - **Signing:** every file is signed with Content Credentials when the signature switch is on
   (the default), and the screen says "Saved and signed." If signing fails, the photo is saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
@@ -71,8 +75,10 @@ for any user-facing claim comes from
   numbers) are hidden until the person taps Show Value. The view's contents are hidden while
   the app isn't the active app. No network request is involved.
 - **Entitlements:** none.
-- **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
-  nothing. Debug builds include the
+- **Files and logs:** Release builds write no files except the paired copy above, which
+  Photos moves into the library (photos otherwise go from memory to Photos). They log only why
+  adding to Photos failed: the error's domain and code and the resource types, marked private;
+  never photo data or metadata. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
   `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
