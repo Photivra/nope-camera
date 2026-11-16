@@ -22,7 +22,9 @@ set -euo pipefail
 is_setup_failure() {
   local log=$1
   grep -qE "Test Case '.*' started" "$log" && return 1
-  grep -qE "The test runner crashed while preparing to run tests|Test runner never began executing tests|The test runner timed out while preparing to run tests" "$log"
+  # "The test runner crashed while preparing to run tests", "… timed out while preparing …", and
+  # "Test crashed with signal term while preparing to run tests." (a runner killed during setup).
+  grep -qE "while preparing to run tests|Test runner never began executing tests" "$log"
 }
 
 if [[ ${1:-} == --is-setup-failure ]]; then

@@ -130,10 +130,15 @@ extension NopeAppUITests {
     /// The viewfinder is drawn behind the camera interface in every mode, so it stays the same
     /// view when night mode changes; in the scrolling layout it must still move with the
     /// picture.
+    ///
+    /// The manual controls list is shown so the scrolling layout is taller than the screen on
+    /// the iPad too: without it, a portrait iPad fits the whole layout at the largest text size,
+    /// so a drag only bounced and the picture returned to where it was.
     @MainActor
     func testViewfinderFollowsThePictureInTheScrollingLayout() throws {
-        let app = launch("allow", extraArguments: Self.largestTextSize + ["-NopeSimulatedViewfinder", "white"])
-        continuePastFirstRun(app)
+        let app = launch(
+            "manual",
+            extraArguments: Self.largestTextSize + ["-NopeSettings.showsManualControls", "YES", "-NopeSimulatedViewfinder", "white"])
         let viewfinder = app.otherElements["Viewfinder"]
         XCTAssertTrue(viewfinder.waitForExistence(timeout: 10))
         settle()
@@ -170,13 +175,20 @@ extension NopeAppUITests {
         // As in testSettingsScreensPassAccessibilityAudits: Dynamic Type is checked at the
         // largest size below.
         try auditSettingsScreens(app, checksDynamicType: false, checksContrast: !isPad)
-        app.terminate()
+    }
 
+    // The largest text size and right to left are separate tests: together with the default
+    // size they took 770 seconds in one CI test (build 43786103024), most of a shard.
+
+    @MainActor
+    func testNightModeSettingsScreensAtTheLargestTextSize() throws {
         let large = launch("photosDenied", extraArguments: Self.nightModeOn + Self.largestTextSize)
         XCTAssertTrue(large.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditSettingsScreens(large, checksContrast: !isPad)
-        large.terminate()
+    }
 
+    @MainActor
+    func testNightModeSettingsScreensRightToLeft() throws {
         let rightToLeft = launch("photosDenied", extraArguments: Self.nightModeOn + Self.rightToLeft)
         XCTAssertTrue(rightToLeft.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)

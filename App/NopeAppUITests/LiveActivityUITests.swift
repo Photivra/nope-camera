@@ -73,4 +73,35 @@ extension NopeAppUITests {
         // (testSettingsAtTheLargestTextSize), which include this switch.
         try audit(app, afterScrolling: true, checksDynamicType: false)
     }
+
+    /// At the largest text size the explanation goes below the switch, at the row's full width:
+    /// beside the switch it was a column 261 of 402 points wide and the row about 1,146 points
+    /// tall. Below the switch the row is about 890 points tall on an iPhone 18 Pro.
+    @MainActor
+    func testLiveActivitySwitchAtTheLargestTextSize() throws {
+        let app = launch("photosDenied", extraArguments: Self.largestTextSize)
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
+        app.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Live Activity")).firstMatch
+        var swipes = 0
+        while !(toggle.exists && toggle.isHittable) && swipes < 20 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(toggle.exists)
+        XCTAssertTrue(toggle.label.contains("never sent anywhere"), "the explanation is read with the switch")
+        // The form's width: the window on iPhone, the Settings sheet on iPad.
+        let form = app.navigationBars["Settings"].frame
+        XCTAssertGreaterThan(toggle.frame.width, form.width * 0.8, "the explanation runs across the row")
+        XCTAssertLessThan(toggle.frame.height, 1000, "the row is shorter than with the explanation beside the switch")
+        XCTAssertEqual(toggle.value as? String, "0")
+        // The switch itself, at the trailing end of the name; the text below it isn't a button.
+        app.switches.matching(NSPredicate(format: "label == %@", "Live Activity")).firstMatch.switches.firstMatch.tap()
+        XCTAssertTrue(
+            XCTWaiter().wait(
+                for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: toggle)], timeout: 5)
+                == .completed)
+        try audit(app, afterScrolling: true)
+    }
 }

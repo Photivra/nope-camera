@@ -550,13 +550,25 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Scrolls to a navigation row whose label contains the text, and opens it.
+    ///
+    /// It drags by three tenths of the window, inside the middle of the screen (where the iPad's
+    /// Settings sheet is), without a fling, first down the list and
+    /// then, if the row isn't found, back up, so it can't skip past a row or miss one that is
+    /// above. At the largest text size Settings is far longer than the screen (in 0.3.0 the
+    /// Mirror Front Camera row alone is about 530 points tall in the iPad sheet), and 8 swipes
+    /// stopped short of More's Accessibility row on iPhone; on iPad full swipes flung the sheet
+    /// past Choose Details.
     @MainActor
     private func open(_ app: XCUIApplication, row text: String) {
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
-        var swipes = 0
-        while !row.isHittable && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
+        for towardEnd in [true, false] {
+            var steps = 0
+            while !row.isHittable && steps < 30 {
+                let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardEnd ? 0.7 : 0.4))
+                let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardEnd ? 0.4 : 0.7))
+                from.press(forDuration: 0.05, thenDragTo: to)
+                steps += 1
+            }
         }
         row.tap()
     }

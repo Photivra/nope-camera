@@ -111,6 +111,9 @@ case_log() { # case_log "want" "name" "log text"
 }
 case_log retry "runner crashed while preparing" "Testing started
 NopeAppUITests-Runner (11895) encountered an error (The test runner crashed while preparing to run tests: NopeAppUITests-Runner at -[XCTWaiter(StallHandling) handleStalledWait:])"
+case_log retry "runner killed while preparing" "Testing started
+Testing failed:
+	NopeAppUITests-Runner (39493) encountered an error (Test crashed with signal term while preparing to run tests.)"
 case_log retry "runner never began executing tests" "Test runner never began executing tests after launching."
 case_log no-retry "a test failed" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
 error: -[NopeAppUITests.NopeAppUITests testOne] : XCTAssertTrue failed

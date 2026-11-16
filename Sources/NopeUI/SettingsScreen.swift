@@ -214,27 +214,22 @@ public struct SettingsScreen: View {
                 }
             }
             if offersLiveActivity {
-                Toggle(
-                    isOn: Binding(get: { settings.showsLiveActivity }, set: { settings.setShowsLiveActivity($0) })
-                ) {
-                    SettingLabel(
-                        title: Text("Live Activity", bundle: .module, comment: "Switch and its Voice Control name: shows interval shooting, astro frames, a burst or the self-timer on the Lock Screen and in the Dynamic Island. Live Activity is the name of the iOS feature: use its name in the language's iOS."),
-                        explanation: Text(
-                            "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.",
-                            tableName: "Honesty", bundle: .module,
-                            comment: "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS."))
-                }
+                // The explanation is long: below the switch at the accessibility sizes.
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.showsLiveActivity }, set: { settings.setShowsLiveActivity($0) }),
+                    title: Text("Live Activity", bundle: .module, comment: "Switch and its Voice Control name: shows interval shooting, astro frames, a burst or the self-timer on the Lock Screen and in the Dynamic Island. Live Activity is the name of the iOS feature: use its name in the language's iOS."),
+                    explanation: Text(
+                        "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS."))
             }
             if deviceHasFrontCamera {
-                Toggle(
-                    isOn: Binding(get: { settings.mirrorsFrontCamera }, set: { settings.setMirrorsFrontCamera($0) })
-                ) {
-                    SettingLabel(
-                        title: Text("Mirror Front Camera", bundle: .module, comment: "Switch: front camera photos are saved mirrored, as the viewfinder shows them."),
-                        explanation: Text(
-                            "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.",
-                            bundle: .module, comment: "Explains the Mirror Front Camera switch."))
-                }
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.mirrorsFrontCamera }, set: { settings.setMirrorsFrontCamera($0) }),
+                    title: Text("Mirror Front Camera", bundle: .module, comment: "Switch: front camera photos are saved mirrored, as the viewfinder shows them."),
+                    explanation: Text(
+                        "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.",
+                        bundle: .module, comment: "Explains the Mirror Front Camera switch."))
             }
         } header: {
             Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")

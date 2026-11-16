@@ -503,8 +503,9 @@ the local toolchain). Jobs:
 
 The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
 as on a recent Mac, so CI limits are sized from runner times, never from local ones). CI runs it
-in eight shards per device, about 10.5 minutes of tests each plus about 5 minutes of setup, with
-a 35-minute limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
+in eight shards per device, about 18.5 minutes of tests each by the times of build 43786103024
+plus about 5 minutes of setup (up to 10 when the Simulator is slow to boot), with a 35-minute
+limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
 its time in seconds on the runner (the longer of the iPhone and iPad runs), or, marked `est`,
 twice its local time until the runner has measured it; the shards are balanced by those times
 (longest test first, into the shard with the least time so far). To rebalance, take the times
@@ -522,8 +523,10 @@ In the first sharded CI run, two shards failed before any test started ("The tes
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
 runner had to boot itself. The script retries a shard once, after rebooting the Simulator, only
-when the test runner failed before any test started; a run in which a test started is never
-retried. `scripts/test-ui-test-shards.sh` tests both scripts.
+when the test runner failed before any test started (any "… while preparing to run tests" error,
+including "Test crashed with signal term while preparing to run tests", which ended an iPad shard
+of build 43786103024 after its Simulator took five minutes to boot); a run in which a test started
+is never retried. `scripts/test-ui-test-shards.sh` tests both scripts.
 
 On the runner the tests wait for state rather than assume speed: a new launch waits until the
 previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
