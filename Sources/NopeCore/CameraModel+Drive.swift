@@ -82,14 +82,21 @@ extension CameraModel {
         }
     }
 
-    /// Starts the self-timer, which takes one photo when it reaches zero. Ignored while a photo
-    /// can't be taken or a countdown or burst runs.
+    /// Starts the self-timer, which takes one photo, or a burst, when it reaches zero. Ignored
+    /// while a photo can't be taken or a countdown or burst runs.
     ///
-    /// - Parameter seconds: The delay, in seconds.
-    private func startTimer(seconds: Int) {
+    /// - Parameters:
+    ///   - seconds: The delay, in seconds.
+    ///   - frames: How many photos at zero: 1 for one photo, more for a burst of that many
+    ///     frames (a Siri or Shortcuts request with a count, issue #62).
+    func startTimer(seconds: Int, frames: Int = 1) {
         guard canCapture, !drive.isBusy else { return }
         drive.countdown.start(seconds: seconds) { [weak self] in
-            await self?.capture()
+            if frames == 1 {
+                await self?.capture()
+            } else {
+                await self?.takeBurst(frames: frames)
+            }
         }
     }
 
@@ -107,8 +114,12 @@ extension CameraModel {
     /// frames.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
-    private func takeBurst() async {
-        await takeFrames(limit: DriveModel.maximumBurstFrames, tracker: drive, stopsOnLowBattery: false)
+    ///
+    /// - Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
+    ///   shutter, or the count a Siri or Shortcuts request asked for (issue #62).
+    func takeBurst(frames: Int = DriveModel.maximumBurstFrames) async {
+        let end: BurstEnd = frames < DriveModel.maximumBurstFrames ? .countReached : .limitReached
+        await takeFrames(limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end)
     }
 
     /// Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -121,9 +132,12 @@ extension CameraModel {
     ///   - tracker: What the run reports its progress to.
     ///   - stopsOnLowBattery: Whether the run also stops when the battery is at or below
     ///     ``AstroModel/stopBatteryLevel`` and not charging.
+    ///   - endAtLimit: What the run reports when it takes all `limit` frames.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
-    func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool) async {
+    func takeFrames(
+        limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached
+    ) async {
         guard canCapture, let lens = selectedLens else { return }
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
@@ -138,7 +152,7 @@ extension CameraModel {
         captureStatus = .capturing
         var saved: [SavedPhoto] = []
         var failure: CaptureError?
-        var end = BurstEnd.limitReached
+        var end = endAtLimit
         var pending: Task<Result<SavedPhoto, CaptureError>, Never>?
         for _ in 0..<limit {
             if let reason = stopReason(tracker, bytesPerPhoto: bytesPerPhoto, stopsOnLowBattery: stopsOnLowBattery) {

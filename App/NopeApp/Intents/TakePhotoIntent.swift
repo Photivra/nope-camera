@@ -2,7 +2,8 @@ import AppIntents
 import NopeCore
 
 /// "Take Photo" for Siri and the Shortcuts app (issue #62): opens the app to the camera and takes
-/// a photo with the current settings, after an optional delay, with an optional lens.
+/// a photo with the current settings, after an optional delay, with an optional lens; with a
+/// count above one, a burst of that many separate photos.
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it turns its parameters into a
 /// ``PhotoShortcut``, hands it to the app's ``ShortcutInbox``, and says the outcome. The camera
@@ -48,6 +49,17 @@ struct TakePhotoIntent: AppIntent {
             "Lens", comment: "A setting of nope.'s Take Photo action: which camera to use."))
     var lens: PhotoLens?
 
+    /// How many photos: one, or a burst of up to 50 frames, each its own photo. `nil` for one.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Number of Photos", comment: "A setting of nope.'s actions: how many photos to take."),
+        description: LocalizedStringResource(
+            "More than one takes a burst: separate photos, as fast as the camera allows, up to 50.",
+            comment: "Explains the Number of Photos setting of nope.'s Take Photo action."),
+        // A compile-time constant: DriveModel.maximumBurstFrames, which also checks the value.
+        inclusiveRange: (1, 50))
+    var count: Int?
+
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
 
@@ -56,6 +68,7 @@ struct TakePhotoIntent: AppIntent {
         Summary("Take a photo (delay: \(\.$delay))") {
             \.$customDelaySeconds
             \.$lens
+            \.$count
         }
     }
 
@@ -64,7 +77,8 @@ struct TakePhotoIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let photo = PhotoShortcut(timer: delay.timer, customDelaySeconds: customDelaySeconds, lensKind: lens?.kind)
+        let photo = PhotoShortcut(
+            timer: delay.timer, customDelaySeconds: customDelaySeconds, lensKind: lens?.kind, count: count)
         let outcome = await inbox.submit(.takePhoto(photo))
         return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
     }
@@ -107,7 +121,7 @@ enum PhotoDelay: String, AppEnum {
     }
 }
 
-/// The lenses ``TakePhotoIntent`` can ask for. A device without the lens says so and takes no
+/// The lenses ``TakePhotoIntent`` and ``SwitchLensIntent`` can ask for. A device without the lens says so and takes no
 /// photo.
 enum PhotoLens: String, AppEnum {
     /// The rear ultra wide camera.

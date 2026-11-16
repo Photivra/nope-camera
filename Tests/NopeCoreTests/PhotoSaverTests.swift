@@ -121,6 +121,18 @@ struct PhotoSaverTests {
         PhotoSaver(developer: developer, signer: signer, reader: reader, library: library, appVersion: "0.2.0")
     }
 
+    @Test func theRAWClippingMeasuredAtCaptureIsInTheDetails() async throws {
+        let photo = Self.rawPhoto()
+        let measured = CapturedPhoto(
+            data: photo.data, format: photo.format, lensID: photo.lensID, dimensions: photo.dimensions,
+            exposureDuration: nil, iso: nil, rawImageData: photo.rawImageData,
+            rawClipping: SimulatedCaptureBackend.placeholderClipping)
+        let saved = try await Self.saver(library: FakeLibrary()).save(measured, settings: SaveSettings())
+        #expect(saved.details?.rawClipping == SimulatedCaptureBackend.placeholderClipping)
+        let unmeasured = try await Self.saver(library: FakeLibrary()).save(photo, settings: SaveSettings())
+        #expect(unmeasured.details?.rawClipping == nil)
+    }
+
     @Test func rawPlusHEIFIsSavedAsOnePairedAsset() async throws {
         let library = FakeLibrary()
         var settings = SaveSettings()

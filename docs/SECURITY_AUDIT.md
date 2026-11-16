@@ -414,9 +414,10 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   import, clipboard reads (`UIPasteboard`), drag-and-drop receivers or code loaded at run
   time. Any byte-level parser (the project's own tag reader) has fuzz tests, and every
   `Unsafe` use is in `security/allowed-unsafe.txt` (`scripts/check-security.sh`). App Intents
-  parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds;
-  an unknown lens takes no photo), and the intents return only whether a photo was saved and
-  signed, never image data or metadata.
+  parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds
+  and the count to 1 to 50; `IntervalSettings` clamps an interval series; an unknown lens takes
+  no photo and changes nothing), and the intents return only whether a photo was saved and
+  signed or what changed, never image data or metadata.
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis

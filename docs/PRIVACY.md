@@ -44,7 +44,9 @@ for any user-facing claim comes from
   (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from the
   thumbnail's long-press menu or its VoiceOver action) lists what the read-back found in each
   saved file (pixel size, bit depth, file size, the DNG's color filter pattern, black and white
-  levels and whether it stores lens correction instructions; the exposure tags as written; every
+  levels and whether it stores lens correction instructions; the share of clipped highlights and
+  shadows counted from the RAW sensor buffer at capture time (counts only, `RAWClipping`; the
+  samples are read once and never copied, stored or logged); the exposure tags as written; every
   tag, block and property by name), which optional details were written or left out and why, the
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in

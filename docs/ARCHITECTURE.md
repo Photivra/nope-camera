@@ -25,7 +25,7 @@ signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `IntervalShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
@@ -255,6 +255,33 @@ content or metadata leaves the model. `SetNightModeIntent` calls `NopeSettings.s
 without opening the app. The app registers its `ShortcutInbox` and `NopeSettings` with
 `AppDependencyManager`, and `NopeShortcuts` lists the Siri phrases.
 
+Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
+with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
+burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
+path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
+(`.setLight(isOn:)`, the tray's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
+`StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
+`.stopInterval`, the manual controls' `ManualControlIntent` values). Requests that need the
+camera open the app, because the camera, the light and a series run only in the foreground
+(AGENTS.md, "Battery"). Turning the light off and stopping a series don't open the app: without
+a camera screen serving the inbox (`ShortcutInbox.isServed`) nothing is running, so they end at
+once with `ShortcutRequest.outcomeWithoutCameraScreen`. Interval shooting is part of the manual
+controls; with them off, the request says so (`ShortcutOutcome.needsManualControls`) and
+changes nothing. A request never starts while a photo, countdown, burst, series or astro run is
+in progress (`ShortcutOutcome.busy`).
+
+Siri on a locked device: the app's intents can't take a photo without unlocking. A request that
+opens the app needs the device unlocked (iOS asks first), and the camera only runs in the
+foreground. The Lock Screen capture extension can't serve requests either: Apple documents that
+the system launches it only from a control in Control Center, on the Lock Screen or on the
+Action button ("Creating a camera experience for the Lock Screen", LockedCameraCapture), that it
+can't read or write the App Group container, and that its container is erased when it is
+suspended, so no request can reach it from the app's process. `CameraCaptureIntent` passes only
+an `appContext` the app or extension wrote earlier, not a per-launch request. The "Open the
+camera in nope." phrase runs `OpenCameraIntent`, the `CameraCaptureIntent` the control runs;
+whether Siri opens the capture extension from it on a locked device isn't documented, so it is
+a device check (docs/TESTING.md).
+
 `OpenCameraIntent` is a `CameraCaptureIntent`, compiled into the app, the capture extension and
 the control extension (`App/Shared`), as Apple requires. The `NopeControls` extension offers it
 as the "Open nope." control for Control Center, the Lock Screen and the Action button. On a
@@ -403,7 +430,8 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 - **Live camera readout** ("stats for nerds"): the values AVFoundation reports
   (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
   four a second) while the readout is shown; no second set of observations and no video. Hidden
-  in clean view.
+  in clean view unless pinned (`OverlayOptions.pinsLiveReadout`, "Keep Readout in Clean View",
+  `OverlayOptions.showsLiveReadout(inCleanView:)`).
 
 ```
  NopeUI ViewfinderOverlays ── setNeeds / setShowsStats ──▶ CameraModel.live (LiveViewModel)
@@ -480,6 +508,19 @@ injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The c
 shows the thumbnail in the last-photo slot: a tap opens Photos through
 `EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
 and accessibility actions offer Open in Photos and Photo Details.
+
+**RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
+has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
+adapter counts the photo's own uncompressed Bayer buffer (`AVCapturePhoto.pixelBuffer`) at
+capture time: `RAWClippingMeter` (NopeCapture) reads every 16-bit sample of the active area once
+into a histogram per position of the 2 × 2 color filter pattern, takes the size, active area, bit
+depth and black and white levels from the read-back of the camera's own DNG of the same photo,
+and gives `RAWClippingResult` (NopeCore): per-color counts of photosites within 0.5% of the white
+level or above, and within 0.5% of the black level or below. It reads the four 14-bit Bayer
+formats and 16-bit versatile Bayer (with its pattern attachment); it accepts the buffer's values
+as they are, or shifted up by the difference in bit depth when every value's low bits are zero,
+and otherwise reports why it didn't measure (`RAWClippingFailure`). The result travels with
+`CapturedPhoto.rawClipping` into `PhotoDetails.rawClipping`; only the counts are kept.
 
 **Why the DNG's metadata is written by AVFoundation.** ImageIO can't write DNG: on macOS 27 and
 the iOS 27 Simulator, `CGImageDestinationCopyTypeIdentifiers()` doesn't list

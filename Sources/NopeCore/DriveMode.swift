@@ -79,8 +79,13 @@ public enum BurstEnd: Equatable, Sendable {
     /// The person let go of the button, or pressed Stop.
     case stopped
 
-    /// The burst reached ``DriveModel/maximumBurstFrames``.
+    /// The burst reached ``DriveModel/maximumBurstFrames``, or an astro run took all its frames.
     case limitReached
+
+    /// The burst took the number of frames a Siri or Shortcuts request asked for (issue #62),
+    /// fewer than ``DriveModel/maximumBurstFrames``. Siri reports the result, so an interface
+    /// needn't announce it.
+    case countReached
 
     /// The next frame wouldn't fit in the device's free storage (issue #44).
     case storageFull
@@ -127,7 +132,7 @@ public final class DriveModel {
     /// The most frames one burst takes (issue #46, "Limits"). An assumption to be confirmed on a
     /// device: with RAW and HEIF at 12 MP this is under 2 GB, and memory stays bounded at any
     /// count, because each frame is saved while the next is taken.
-    public static let maximumBurstFrames = 50
+    nonisolated public static let maximumBurstFrames = 50
 
     /// What the shutter does.
     public private(set) var mode = DriveMode.single

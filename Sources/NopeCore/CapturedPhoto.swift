@@ -15,6 +15,10 @@ public struct CapturedPhoto: Equatable, Sendable {
     /// it, so a changed pixel rejects the photo.
     public let rawImageData: Data?
 
+    /// For Bayer RAW, the clipping counted from the photo's sensor buffer at capture time, or why
+    /// it wasn't measured; `nil` for the fallback or when the backend doesn't measure it.
+    public let rawClipping: RAWClippingResult?
+
     /// The format of ``data``.
     public let format: CaptureFormat
 
@@ -41,12 +45,14 @@ public struct CapturedPhoto: Equatable, Sendable {
     ///   - exposureDuration: The exposure duration in seconds, or `nil`.
     ///   - iso: The ISO, or `nil`.
     ///   - rawImageData: The reference RAW image data, or `nil`.
+    ///   - rawClipping: The RAW clipping, or `nil`.
     public init(
         data: Data, format: CaptureFormat, lensID: Lens.ID, dimensions: PhotoDimensions,
-        exposureDuration: Double?, iso: Double?, rawImageData: Data? = nil
+        exposureDuration: Double?, iso: Double?, rawImageData: Data? = nil, rawClipping: RAWClippingResult? = nil
     ) {
         self.data = data
         self.rawImageData = rawImageData
+        self.rawClipping = rawClipping
         self.format = format
         self.lensID = lensID
         self.dimensions = dimensions

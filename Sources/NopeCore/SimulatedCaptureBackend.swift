@@ -178,6 +178,15 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// Does nothing: there is no camera to stop.
     public func stopSession() async {}
 
+    /// The RAW clipping of every simulated RAW photo: 12 million photosites, 0.4% clipped
+    /// highlights and 0.1% clipped shadows, in the proportions of an RGGB pattern.
+    public static let placeholderClipping = RAWClippingResult.measured(
+        RAWClipping(channels: [
+            RAWClipping.Channel(color: .red, photosites: 3_000_000, highlights: 12_000, shadows: 3_000),
+            RAWClipping.Channel(color: .green, photosites: 6_000_000, highlights: 24_000, shadows: 6_000),
+            RAWClipping.Channel(color: .blue, photosites: 3_000_000, highlights: 12_000, shadows: 3_000),
+        ]))
+
     /// Returns a placeholder photo for the request, or throws ``captureError``.
     ///
     /// - Parameter request: The lens and format of the photo.
@@ -194,7 +203,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
             dimensions: request.lens.photoDimensions.last ?? Self.placeholderDimensions,
             exposureDuration: 1.0 / 60.0,
             iso: 100,
-            rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil
+            rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil,
+            rawClipping: request.format.isBayerRAW ? Self.placeholderClipping : nil
         )
     }
 
@@ -231,7 +241,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
                 dimensions: request.lens.photoDimensions.last ?? Self.placeholderDimensions,
                 exposureDuration: frame.exposureDuration,
                 iso: frame.iso,
-                rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil
+                rawImageData: request.format.isBayerRAW ? Self.placeholderPhotoData : nil,
+                rawClipping: request.format.isBayerRAW ? Self.placeholderClipping : nil
             )
         }
     }

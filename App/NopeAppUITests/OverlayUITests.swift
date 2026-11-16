@@ -153,6 +153,40 @@ final class OverlayUITests: XCTestCase {
         XCTAssertFalse(app.otherElements["Live Camera Readout"].exists)
     }
 
+    /// The readout pinned from the quick-controls tray stays in clean view (issue #52).
+    @MainActor
+    func testPinnedReadoutStaysInCleanView() throws {
+        let app = launch("manual", ["-NopeSettings.overlays.showsLiveReadout", "YES"])
+        let readout = app.otherElements["Live Camera Readout"]
+        XCTAssertTrue(readout.waitForExistence(timeout: 10))
+        openTray(app)
+        let menu = app.buttons["Readout"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 5))
+        menu.tap()
+        let pin = app.buttons["Keep Readout in Clean View"]
+        XCTAssertTrue(pin.waitForExistence(timeout: 5))
+        pin.tap()
+        let hide = app.buttons["Hide Controls"]
+        XCTAssertTrue(hide.waitForExistence(timeout: 5))
+        hide.tap()
+        XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 5))
+        XCTAssertTrue(readout.exists)
+        try audit(app)
+        app.terminate()
+
+        // Starting in clean view: the readout shows only when pinned. (UI test launches start
+        // from empty settings, so each launch sets the switches it needs.)
+        let unpinned = launch("manual", ["-NopeSettings.overlays.showsLiveReadout", "YES", "-NopeSettings.startsInCleanView", "YES"])
+        XCTAssertTrue(unpinned.buttons["Show Controls"].waitForExistence(timeout: 10))
+        XCTAssertFalse(unpinned.otherElements["Live Camera Readout"].waitForExistence(timeout: 3))
+        unpinned.terminate()
+        let pinned = launch("manual", [
+            "-NopeSettings.overlays.showsLiveReadout", "YES", "-NopeSettings.overlays.pinsLiveReadout", "YES",
+            "-NopeSettings.startsInCleanView", "YES",
+        ])
+        XCTAssertTrue(pinned.otherElements["Live Camera Readout"].waitForExistence(timeout: 10))
+    }
+
     @MainActor
     func testHistogramIsNeverShownInFullAuto() throws {
         let app = launch("manual", ["-NopeSettings.overlays.showsHistogram", "YES", "-NopeSettings.overlays.showsLiveReadout", "YES"])
@@ -175,7 +209,7 @@ final class OverlayUITests: XCTestCase {
 
     @MainActor
     func testOverlaySettingsAndProTools() throws {
-        let app = launch("manual", ["-NopeSettings.showsManualControls", "YES"])
+        let app = launch("manual", ["-NopeSettings.showsManualControls", "YES", "-NopeSettings.overlays.showsLiveReadout", "YES"])
         app.buttons["Settings"].tap()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
         var swipes = 0
@@ -217,7 +251,7 @@ final class OverlayUITests: XCTestCase {
         app.buttons["More Manual Controls"].tap()
         app.buttons["Pro Tools"].tap()
         // The form loads rows as they scroll in; the live aids are its last section but Done.
-        for name in ["Focus Peaking", "Histogram", "Live Camera Readout"] {
+        for name in ["Focus Peaking", "Histogram", "Live Camera Readout", "Keep Readout in Clean View"] {
             let toggle = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
             var proSwipes = 0
             while !(toggle.exists && toggle.isHittable) && proSwipes < 8 {
@@ -230,7 +264,11 @@ final class OverlayUITests: XCTestCase {
 
     @MainActor
     func testOverlaySettingsAtTheLargestTextSize() throws {
-        let app = launch("manual", Self.largestTextSize + ["-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "goldenSpiral"])
+        // The readout on, so its Keep Readout in Clean View switch is audited too.
+        let app = launch("manual", Self.largestTextSize + [
+            "-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "goldenSpiral",
+            "-NopeSettings.overlays.showsLiveReadout", "YES",
+        ])
         app.buttons["Settings"].tap()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
         var swipes = 0
