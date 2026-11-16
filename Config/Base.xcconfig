@@ -4,7 +4,7 @@
 // Team IDs, certificates and profiles are never committed (AGENTS.md, "Keep the repository clean").
 
 // Version: semantic versioning, 0.x.y during development (AGENTS.md, "Versioning").
-MARKETING_VERSION = 0.1.0
+MARKETING_VERSION = 0.3.0
 CURRENT_PROJECT_VERSION = 1
 
 NOPE_BUNDLE_IDENTIFIER = com.photivra.nope.dev
