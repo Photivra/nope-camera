@@ -71,6 +71,20 @@ enum RAWClippingMeter {
         let bottom: Int
         /// The column after the last.
         let right: Int
+
+        /// Creates an area.
+        ///
+        /// - Parameters:
+        ///   - top: The first row.
+        ///   - left: The first column.
+        ///   - bottom: The row after the last.
+        ///   - right: The column after the last.
+        init(top: Int, left: Int, bottom: Int, right: Int) {
+            self.top = top
+            self.left = left
+            self.bottom = bottom
+            self.right = right
+        }
     }
 
     /// What the camera's DNG says about its RAW samples.
@@ -91,6 +105,31 @@ enum RAWClippingMeter {
         let repeatRows: Int
         /// The black level pattern's columns: 1 or 2.
         let repeatColumns: Int
+
+        /// Creates the levels.
+        ///
+        /// - Parameters:
+        ///   - width: `ImageWidth`.
+        ///   - height: `ImageLength`.
+        ///   - activeArea: The active area.
+        ///   - bitsPerSample: `BitsPerSample`.
+        ///   - whiteLevel: `WhiteLevel`.
+        ///   - blackLevels: The black levels, row by row.
+        ///   - repeatRows: The black level pattern's rows.
+        ///   - repeatColumns: The black level pattern's columns.
+        init(
+            width: Int, height: Int, activeArea: Area, bitsPerSample: Int, whiteLevel: Double, blackLevels: [Double],
+            repeatRows: Int, repeatColumns: Int
+        ) {
+            self.width = width
+            self.height = height
+            self.activeArea = activeArea
+            self.bitsPerSample = bitsPerSample
+            self.whiteLevel = whiteLevel
+            self.blackLevels = blackLevels
+            self.repeatRows = repeatRows
+            self.repeatColumns = repeatColumns
+        }
 
         /// The black level of a position of the 2 × 2 color filter pattern, counted from the
         /// buffer's top-left corner; the black level pattern starts at the active area's.
@@ -177,7 +216,12 @@ enum RAWClippingMeter {
         static let binCount = 1 << 16
 
         /// The counts: position `p`'s bin for value `v` is at `p × binCount + v`.
-        private(set) var counts = [UInt32](repeating: 0, count: 4 * binCount)
+        private(set) var counts: [UInt32]
+
+        /// Creates an empty histogram.
+        init() {
+            counts = [UInt32](repeating: 0, count: 4 * Self.binCount)
+        }
 
         /// Counts one photosite.
         ///

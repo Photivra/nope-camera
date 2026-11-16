@@ -1265,6 +1265,46 @@ let saved: Int
 
 The frames saved, each its own photo.
 
+## `CFAColor`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+enum CFAColor
+```
+
+One color of a Bayer RAW sensor's color filter.
+
+## `CFAColor/blue`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case blue
+```
+
+Blue.
+
+## `CFAColor/green`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case green
+```
+
+Green.
+
+## `CFAColor/red`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case red
+```
+
+Red.
+
 ## `CameraIntent`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -3092,12 +3132,12 @@ let format: CaptureFormat
 
 The format of ``data``.
 
-## `CapturedPhoto/init(data:format:lensID:dimensions:exposureDuration:iso:rawImageData:)`
+## `CapturedPhoto/init(data:format:lensID:dimensions:exposureDuration:iso:rawImageData:rawClipping:)`
 
 public, declared in `Sources/NopeCore/CapturedPhoto.swift`
 
 ```swift
-init(data: Data, format: CaptureFormat, lensID: Lens.ID, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, rawImageData: Data? = nil)
+init(data: Data, format: CaptureFormat, lensID: Lens.ID, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, rawImageData: Data? = nil, rawClipping: RAWClippingResult? = nil)
 ```
 
 Creates a captured photo.
@@ -3110,6 +3150,7 @@ Creates a captured photo.
   - exposureDuration: The exposure duration in seconds, or `nil`.
   - iso: The ISO, or `nil`.
   - rawImageData: The reference RAW image data, or `nil`.
+  - rawClipping: The RAW clipping, or `nil`.
 
 ## `CapturedPhoto/iso`
 
@@ -3130,6 +3171,17 @@ let lensID: Lens.ID
 ```
 
 The lens that took the photo.
+
+## `CapturedPhoto/rawClipping`
+
+public, declared in `Sources/NopeCore/CapturedPhoto.swift`
+
+```swift
+let rawClipping: RAWClippingResult?
+```
+
+For Bayer RAW, the clipping counted from the photo's sensor buffer at capture time, or why
+it wasn't measured; `nil` for the fallback or when the backend doesn't measure it.
 
 ## `CapturedPhoto/rawImageData`
 
@@ -13072,6 +13124,19 @@ Replaces the viewfinder overlay options, and saves the change.
 
 - Parameter options: The new options.
 
+## `NopeSettings/setPinsLiveReadout(_:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+@MainActor func setPinsLiveReadout(_ isOn: Bool)
+```
+
+Pins the live camera readout so it stays in clean view, or unpins it, and saves the
+change.
+
+- Parameter isOn: Whether the readout stays in clean view.
+
 ## `NopeSettings/setRAWPairing(_:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -13347,6 +13412,16 @@ static let gridStyle: String
 
 The grid style, a ``GridStyle`` raw value.
 
+## `OverlayOptions/Key/pinsLiveReadout`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let pinsLiveReadout: String
+```
+
+Whether the live camera readout stays in clean view, a Boolean.
+
 ## `OverlayOptions/Key/showsFocusPeaking`
 
 internal, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -13454,6 +13529,17 @@ var isAnyOn: Bool { get }
 
 Whether any overlay is on, for the settings row's summary.
 
+## `OverlayOptions/pinsLiveReadout`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+var pinsLiveReadout: Bool
+```
+
+Whether the live camera readout stays shown in clean view ("pinned"); otherwise clean
+view hides it with the other controls. Off by default.
+
 ## `OverlayOptions/showsFocusPeaking`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -13504,6 +13590,20 @@ var showsLiveReadout: Bool
 ```
 
 Whether the live camera readout ("stats for nerds") is shown.
+
+## `OverlayOptions/showsLiveReadout(inCleanView:)`
+
+public, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+func showsLiveReadout(inCleanView isCleanView: Bool) -> Bool
+```
+
+Whether the live camera readout is shown on a camera screen: when it is on, and in clean
+view only when it is pinned (issue #52).
+
+- Parameter isCleanView: Whether clean view is on.
+- Returns: `true` if the readout is shown.
 
 ## `OverlayOptions/spiralPlacement`
 
@@ -14467,12 +14567,12 @@ case manual
 
 1: manual white balance.
 
-## `PhotoDetails/build(files:plan:look:signature:timings:)`
+## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings) -> PhotoDetails
+static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil) -> PhotoDetails
 ```
 
 Builds the details of one saved photo.
@@ -14483,6 +14583,7 @@ Builds the details of one saved photo.
   - look: The look HEIF and JPEG were developed with.
   - signature: The photo's signature status.
   - timings: The measured timings.
+  - rawClipping: The clipping counted at capture time, or `nil`.
 - Returns: The details.
 
 ## `PhotoDetails/colorFilterLetters`
@@ -14588,12 +14689,12 @@ Whether a tag carries an item.
   - tag: A tag with a value.
 - Returns: `true` if the tag is one of the item's.
 
-## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:)`
+## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings)
+init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil)
 ```
 
 Creates details.
@@ -14605,6 +14706,7 @@ Creates details.
   - lockedItems: The locked items kept.
   - signature: The signature status.
   - timings: The timings.
+  - rawClipping: The RAW clipping, or `nil`.
 
 ## `PhotoDetails/integer(_:in:directory:)`
 
@@ -14678,6 +14780,17 @@ Credentials tag, or its directory and hexadecimal number.
 
 - Parameter tag: The tag.
 - Returns: The name.
+
+## `PhotoDetails/rawClipping`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let rawClipping: RAWClippingResult?
+```
+
+The clipping counted from the RAW sensor data at capture time, or why it wasn't measured;
+`nil` for a photo without RAW (a lens's processed fallback).
 
 ## `PhotoDetails/signature`
 
@@ -15819,6 +15932,309 @@ case zeroShutterLag
 ```
 
 Zero shutter lag, which takes the photo from frames buffered before the press.
+
+## `RAWClipping`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+struct RAWClipping
+```
+
+How much of a RAW photo is clipped: the photosites at or near the white level (highlights
+that the sensor recorded as full) and at or near the black level (shadows with no signal
+above the sensor's zero), per color of the color filter (issue #53).
+
+The capture adapter counts every photosite of the RAW's active area in the photo's own
+sensor buffer (`AVCapturePhoto.pixelBuffer`) at capture time, against the black and white
+levels of the camera's DNG. Nothing is estimated: a photo whose buffer can't be read that way
+gets a ``RAWClippingResult/notMeasured(_:)`` with the reason instead.
+
+Definition: a highlight photosite is one at or above the white level less ``margin`` of the
+range between the black and white levels; a shadow photosite is one at or below the black
+level plus the same margin. The sensor may saturate a little below the white level the DNG
+records, so this counts what the file says is full, not what the sensor did.
+
+Privacy: counts only, kept in memory with the photo's details; never logged or stored.
+
+## `RAWClipping/Channel`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+struct Channel
+```
+
+The counts for one color of the color filter.
+
+## `RAWClipping/Channel/color`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+let color: CFAColor
+```
+
+The color.
+
+## `RAWClipping/Channel/highlightShare`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var highlightShare: Double { get }
+```
+
+The share of this color's photosites that are clipped highlights, 0 to 1.
+
+## `RAWClipping/Channel/highlights`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+let highlights: Int
+```
+
+How many are clipped highlights.
+
+## `RAWClipping/Channel/init(color:photosites:highlights:shadows:)`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+init(color: CFAColor, photosites: Int, highlights: Int, shadows: Int)
+```
+
+Creates a channel's counts.
+
+- Parameters:
+  - color: The color.
+  - photosites: The photosites counted.
+  - highlights: The clipped highlights.
+  - shadows: The clipped shadows.
+
+## `RAWClipping/Channel/photosites`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+let photosites: Int
+```
+
+How many photosites of this color were counted.
+
+## `RAWClipping/Channel/shadowShare`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var shadowShare: Double { get }
+```
+
+The share of this color's photosites that are clipped shadows, 0 to 1.
+
+## `RAWClipping/Channel/shadows`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+let shadows: Int
+```
+
+How many are clipped shadows.
+
+## `RAWClipping/channels`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+let channels: [Channel]
+```
+
+The counts per color, in red, green, blue order; a color the filter doesn't have is left
+out.
+
+## `RAWClipping/highlightShare`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var highlightShare: Double { get }
+```
+
+The share of all photosites that are clipped highlights, 0 to 1.
+
+## `RAWClipping/highlights`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var highlights: Int { get }
+```
+
+Every clipped highlight.
+
+## `RAWClipping/init(channels:)`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+init(channels: [Channel])
+```
+
+Creates the counts.
+
+- Parameter channels: The counts per color.
+
+## `RAWClipping/margin`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+static let margin: Double
+```
+
+How near the white or black level a photosite counts as clipped: 0.5% of the range
+between the two levels. A choice, not a platform value: near enough to the levels that
+the photosite holds no usable detail, wide enough to include values a step or two off
+the level.
+
+## `RAWClipping/photosites`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var photosites: Int { get }
+```
+
+Every photosite counted.
+
+## `RAWClipping/shadowShare`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var shadowShare: Double { get }
+```
+
+The share of all photosites that are clipped shadows, 0 to 1.
+
+## `RAWClipping/shadows`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+var shadows: Int { get }
+```
+
+Every clipped shadow.
+
+## `RAWClipping/share(_:of:)`
+
+internal, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+static func share(_ count: Int, of total: Int) -> Double
+```
+
+A count as a share of a total, or 0 for an empty total.
+
+- Parameters:
+  - count: The count.
+  - total: The total.
+- Returns: The share, 0 to 1.
+
+## `RAWClippingFailure`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+enum RAWClippingFailure
+```
+
+Why a photo's RAW clipping wasn't measured.
+
+## `RAWClippingFailure/levelsUnreadable`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case levelsUnreadable
+```
+
+The camera's DNG has no usable size, black level or white level, or describes them in a
+way the app doesn't apply (a linearization table, per-row or per-column black levels).
+
+## `RAWClippingFailure/noSamples`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case noSamples
+```
+
+The photo had no sensor buffer to read, or it held no photosites.
+
+## `RAWClippingFailure/scaleMismatch`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case scaleMismatch
+```
+
+The sensor buffer's values don't fit the DNG's levels, so they can't be compared.
+
+## `RAWClippingFailure/sizeMismatch`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case sizeMismatch
+```
+
+The sensor buffer and the camera's DNG differ in size.
+
+## `RAWClippingFailure/unsupportedLayout`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case unsupportedLayout
+```
+
+The sensor buffer's layout isn't one the app reads (only single-plane 16-bit Bayer
+buffers with a known color filter pattern are).
+
+## `RAWClippingResult`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+enum RAWClippingResult
+```
+
+The RAW clipping of one photo, or why it wasn't measured.
+
+## `RAWClippingResult/measured(_:)`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case measured(RAWClipping)
+```
+
+Measured from the photo's sensor buffer.
+
+## `RAWClippingResult/notMeasured(_:)`
+
+public, declared in `Sources/NopeCore/RAWClipping.swift`
+
+```swift
+case notMeasured(RAWClippingFailure)
+```
+
+Not measured, for this reason.
 
 ## `RAWPairing`
 
@@ -17056,6 +17472,17 @@ The analysis sent when analysis is asked for: ``placeholderFrame``, analyzed for
 needs.
 
 - Parameter needs: What was asked for.
+
+## `SimulatedCaptureBackend/placeholderClipping`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+static let placeholderClipping: RAWClippingResult
+```
+
+The RAW clipping of every simulated RAW photo: 12 million photosites, 0.4% clipped
+highlights and 0.1% clipped shadows, in the proportions of an RGGB pattern.
 
 ## `SimulatedCaptureBackend/placeholderComparisonData`
 
