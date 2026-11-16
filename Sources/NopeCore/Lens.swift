@@ -131,4 +131,41 @@ public struct Lens: Identifiable, Equatable, Sendable {
     public var supportsBayerRAW: Bool {
         bayerRAWFormat != nil
     }
+
+    /// The 24 MP size AVFoundation delivers only through deferred photo delivery, which the app
+    /// turns off: "The maxPhotoDimensions setting for 24MP (5712, 4284), when supported, is only
+    /// serviced as 24MP via deferred photo delivery" (`AVCapturePhotoOutput.h`).
+    static let deferredOnlySize = PhotoDimensions(width: 5712, height: 4284)
+
+    /// The photo sizes a person can choose between on this lens, smallest first (issue #57), or
+    /// an empty list when there is no choice.
+    ///
+    /// - A lens with Bayer RAW has no choice: its RAW is always the sensor's binned 12 MP readout,
+    ///   whatever the photo size (capability survey, item 1), and its HEIF and JPEG are developed
+    ///   from that RAW (their size is ``OutputSize``).
+    /// - A lens without Bayer RAW offers the sizes its format reports
+    ///   (`supportedMaxPhotoDimensions`) for its processed fallback, without the deferred-only
+    ///   24 MP size.
+    /// - Fewer than two sizes is no choice.
+    public var photoSizeChoices: [PhotoDimensions] {
+        guard !supportsBayerRAW else { return [] }
+        let choices = photoDimensions.filter { $0 != Self.deferredOnlySize }.sorted { $0.pixelCount < $1.pixelCount }
+        return choices.count > 1 ? choices : []
+    }
+
+    /// The default photo size: the smallest the lens reports, the camera's own default
+    /// (`AVCapturePhotoSettings.maxPhotoDimensions`) and the size the app has always used.
+    public var defaultPhotoSize: PhotoDimensions? {
+        photoDimensions.min { $0.pixelCount < $1.pixelCount }
+    }
+
+    /// The photo size to configure for a person's choice: the choice when the lens offers it
+    /// (``photoSizeChoices``), otherwise ``defaultPhotoSize``.
+    ///
+    /// - Parameter choice: The size the person chose for this lens, or `nil`.
+    /// - Returns: The size, or `nil` when the lens reported none.
+    public func photoSize(for choice: PhotoDimensions?) -> PhotoDimensions? {
+        guard let choice, photoSizeChoices.contains(choice) else { return defaultPhotoSize }
+        return choice
+    }
 }

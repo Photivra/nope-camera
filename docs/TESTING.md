@@ -238,18 +238,34 @@ TEST_RUNNER_NOPE_COMPAT_FIXTURES=$PWD/compat-fixtures xcodebuild test -scheme No
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
   -only-testing:NopeSigningTests/FileCompatibilityTests
 scripts/check-file-compat.sh compat-fixtures          # every validator that is installed
-scripts/check-file-compat.sh --require "c2patool exiftool dng_validate" compat-fixtures
+# The pinned, checksum-verified validators CI uses, in a directory of your choice:
+PATH="$(scripts/install-file-validators.sh "$PWD/build/file-validators"):$PATH" \
+  scripts/check-file-compat.sh --require "c2patool exiftool" compat-fixtures
 ```
 
 `check-file-compat.sh` runs c2patool on every file (signed: `Valid` with
 `signingCredential.untrusted` the only failure; unsigned: no manifest), `exiftool -validate` on
-every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG. None of
-them is a project dependency, and none is in `security/allowed-dependencies.txt`. CI writes the
-fixtures in `unit-tests`; the `file-compat` job runs the validators only after the maintainer
-approves them by setting the repository variable `NOPE_FILE_VALIDATORS` to the approved list
-(for example `c2patool exiftool`), and fails if a listed validator is missing. `dng_validate`
-has no install step yet: it is built from Adobe's DNG SDK, whose license must be reviewed first.
+every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG when it is
+installed. None of them is part of the app. c2patool and exiftool are maintainer-approved for CI
+(`security/allowed-dependencies.txt`, `THIRD_PARTY.md`): `scripts/install-file-validators.sh`
+downloads c2patool 0.28.4 (the project's universal macOS release asset) and exiftool 13.55 (the
+latest production release, from SourceForge or CPAN), checks each against its pinned SHA-256
+before unpacking it, and checks the installed versions. CI writes the fixtures in `unit-tests`,
+and the `file-compat` job runs on every build with `--require "c2patool exiftool"`, so a missing
+validator fails it. `dng_validate` isn't approved and doesn't run in CI. Updating a pin is a
+reviewed change to the script, with the new checksum.
 `scripts/test-check-file-compat.sh` tests the script with stand-in validators.
+
+**Run locally on 2026-11-16** with `scripts/install-file-validators.sh` (c2patool 0.28.4,
+exiftool 13.55) on the 280 fixtures of this branch: `check-file-compat.sh --require "c2patool
+exiftool"` passed. c2patool reported every signed file `Valid` with `signingCredential.untrusted`
+the only failure, and no manifest in any unsigned file; exiftool `-validate` reported no errors.
+It printed warnings, which don't fail the check: on 106 of the JPEGs, "Missing required JPEG"
+tags `YCbCrPositioning` (0x0213), `ComponentsConfiguration` (0x9101) and on 90 of them
+`ColorSpace` (0xA001), on 19 `GPSVersionID` and on 6 `ExifVersion`; on 45 DNGs, "[minor] Invalid
+date/time format for EXIF:ModifyDate" (the empty `DateTime` a DNG carries with Date and Time off,
+issue #65). The JPEG tags are on the allowlist where they apply but ImageIO didn't write them;
+the files open. Whether to supply them is a follow-up.
 
 **Run locally on 2026-11-14** (Mac with macOS 27.2.1, iOS 27.2 Simulator), on the 260 files:
 c2patool 0.29.0 (installed on the Mac by hand) reported every signed file `Valid` with
@@ -444,12 +460,12 @@ the local toolchain). Jobs:
 
 | Job | What it runs |
 |---|---|
-| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
+| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
 | `ui-tests 1/8` … `8/8` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
 | `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
-| `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
+| `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `docs` | `scripts/check-docs.sh` |
 
@@ -749,6 +765,20 @@ Simulator (`FileOptionsEncodingTests`). On a device:
 - **File options** (issue #57): with each compression, HEIF bit depth and color space, a RAW plus
   HEIF plus JPEG photo is saved, opens in Photos and a RAW editor, and the HEIF's depth and both
   copies' color profile (exiftool `ProfileDescription`) match the choice;
+- **Copy Size** (issue #57): with Half Size and Quarter Size, the HEIF and JPEG open in Photos at
+  half (2016 × 1512 from a 12 MP RAW) and a quarter of the RAW's width and height, the RAW is
+  unchanged, and exiftool's `ExifImageWidth` and `ExifImageHeight` match the copy;
+- **Face Detection** (issue #57): with it on (the default), autofocus and exposure follow a face
+  in the frame in full auto, as before; with it off, they stay on the center (or the tapped
+  point) with a face in the frame, on the wide and the front camera; nothing in the files changes;
+- **Far Focus** (issue #57): with manual controls on, Far Focus in the tray, on each rear lens:
+  autofocus ignores a near subject (a hand or a branch close to the lens) and keeps the far scene
+  sharp; Close-Up then replaces it and back; the live readout's focus range shows the limit;
+- **Photo Size** (issue #57): on a device with a lens without Bayer RAW that reports more than
+  one size (the Debug tag check lists each lens's `supportedMaxPhotoDimensions`), each size saves
+  a processed photo of that size that opens in Photos; record the lenses and sizes. On a lens
+  with Bayer RAW, confirm the RAW is 12 MP whatever `maxPhotoDimensions` is (the reason the
+  choice isn't offered there);
 - **Paired with RAW** (issue #50): with RAW, HEIF and JPEG selected, Photos shows two items: the
   RAW paired with the chosen copy, and the other copy on its own; note how Photos labels the
   paired item and which copy it shows and shares by default, for each choice;

@@ -354,9 +354,10 @@ copy. Orientation is a locked item and the read-back accepts all eight values.
 ### Developed file options
 
 Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
-HEIF bit depth (10 or 8) and the color space (Display P3 or sRGB). They change only how the
-developed copies are encoded, never the RAW or any metadata; the defaults are the earlier
-encoding. Every combination is encoded and read back in the unit tests. The full list of what an
+HEIF bit depth (10 or 8), the color space (Display P3 or sRGB) and the copy size (full, half or a
+quarter of the RAW's width and height). They change only how the developed copies are encoded,
+never the RAW; the only metadata they touch is EXIF `PixelXDimension` and `PixelYDimension` of a
+smaller copy, set to its size. The defaults are the earlier encoding. Every combination is encoded and read back in the unit tests. The full list of what an
 app can control, and what the app offers, is in
 [`research/capture-and-file-settings.md`](research/capture-and-file-settings.md).
 

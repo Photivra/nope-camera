@@ -21,6 +21,10 @@ public struct CaptureRequest: Equatable, Sendable {
     /// is on). A bracket never uses the flash: AVFoundation doesn't support it in brackets.
     public let flashMode: FlashMode
 
+    /// The photo size to configure (`AVCapturePhotoOutput.maxPhotoDimensions`): one of the lens's
+    /// ``Lens/photoDimensions``, from ``Lens/photoSize(for:)``. `nil` for the lens's default.
+    public let photoSize: PhotoDimensions?
+
     /// Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
     ///
     /// - Parameters:
@@ -28,11 +32,15 @@ public struct CaptureRequest: Equatable, Sendable {
     ///   - metadata: The metadata plan. Defaults to the first-launch settings: every optional
     ///     detail removed.
     ///   - flashMode: When the flash fires. Defaults to off.
-    public init(lens: Lens, metadata: MetadataPlan = MetadataPlan(), flashMode: FlashMode = .off) {
+    ///   - photoSize: The photo size to configure, or `nil` for the lens's default.
+    public init(
+        lens: Lens, metadata: MetadataPlan = MetadataPlan(), flashMode: FlashMode = .off, photoSize: PhotoDimensions? = nil
+    ) {
         self.lens = lens
         self.format = CaptureFormat(for: lens)
         self.metadata = metadata
         self.flashMode = flashMode
+        self.photoSize = photoSize
     }
 
     /// Creates a request for a lens with an explicit format.
@@ -50,5 +58,6 @@ public struct CaptureRequest: Equatable, Sendable {
         self.format = format
         self.metadata = metadata
         self.flashMode = .off
+        self.photoSize = nil
     }
 }

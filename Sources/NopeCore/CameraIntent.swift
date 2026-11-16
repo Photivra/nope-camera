@@ -53,4 +53,12 @@ public enum CameraIntent: Equatable, Sendable {
 
     /// Turn the comparison shot on or off, or close the compare view: see ``ComparisonIntent``.
     case comparison(ComparisonIntent)
+
+    /// Use the person's photo size for each lens (``NopeSettings/photoSizes``, issue #57). Send
+    /// it when the camera screen appears and whenever the choice changes. When the selected
+    /// lens's size changes, the camera is reconfigured; a size a lens doesn't offer
+    /// (``Lens/photoSizeChoices``) is ignored.
+    ///
+    /// - Parameter sizes: The chosen size for each lens.
+    case setPhotoSizes([Lens.ID: PhotoDimensions])
 }
