@@ -263,7 +263,7 @@ keyboard and the status bar are drawn by the system and keep its dark appearance
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
 parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
-outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:)` while it is shown: the model
+outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:presets:)` while it is shown: the model
 waits for the camera to start (at most `ShortcutInbox.startTimeoutSeconds`, following its
 observable state, without polling), switches the lens if asked, then takes one photo at once or
 starts the self-timer with `.drive(.startTimer(seconds:))`, and reports a `ShortcutOutcome`:
@@ -291,11 +291,11 @@ change.
 
 Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
 Far Focus in one action, because the camera has one autofocus range restriction, so the two
-limits exclude each other) and `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
-in use) open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+limits exclude each other), `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
+in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
 `AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
 choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
-its settings to `serveShortcuts(from:settings:)`; the app then applies the new size as it does
+its settings to `serveShortcuts(from:settings:presets:)`; the app then applies the new size as it does
 from Settings. `SetFastShutterIntent` and `SetFaceDetectionIntent` change only stored settings
 (`NopeSettings.setFastShutter(_:)`, `setFollowsFaces(_:)`), as `SetNightModeIntent` does, so they
 run without opening the app. None of them changes a manual value. App Shortcuts allows ten per
@@ -414,6 +414,56 @@ The person's settings live in one place that every target of the app can read: t
   share an App Group with the iPhone (each device has its own containers): on the watch, the Watch
   app and its own extensions can share a group the same way, and the iPhone would send a
   `NopeSettingsSnapshot` across with WatchConnectivity.
+
+### Settings presets (issue #72)
+
+A preset is a named snapshot of every setting, applied all at once when the person chooses it.
+Nothing applies a preset on its own: the app never changes the person's settings by itself.
+
+- **What a preset holds** (`SettingsPreset`): a `NopeSettingsSnapshot` of every stored
+  `NopeSettings` key (formats, file options, pairing, privacy, signing, location, mirroring,
+  overlays, flash, night mode and anything added later) and a `CameraSetup` with the camera's own
+  state, which the app doesn't remember between launches: the lens, the manual exposure values,
+  Close-Up, the drive mode, the bracket, the interval series and the astro helper. Left out on
+  purpose, because they belong to one moment: the torch being on (the light always starts off),
+  a tapped focus point and the locks, the magnifier, clean view while open, and the comparison
+  shot.
+- **Every setting is covered by construction.** The settings part copies every key with the
+  `NopeSettings.` prefix, so a setting added later is in every preset saved after it exists. Tests
+  fail when a `NopeSettings` property, a `CameraSetup` value or a `ManualSettings` value isn't
+  saved and restored (or, for the locks, listed as left out).
+- **Versioned, forward-compatible encoding.** Each preset records `SettingsPreset.encodingVersion`;
+  only its identifier, name and settings are required, and every camera value is optional when
+  read. A setting missing from an older preset gets its default when the preset is applied
+  (`NopeSettings.apply(_:)` removes keys the snapshot doesn't have); a choice a later version adds
+  is read as the default. One damaged preset is skipped without hiding the others.
+- **Applying** (`SettingsPresets.apply(_:camera:location:)`): the snapshot replaces the
+  settings, then `CameraModel.applyCameraSetup(_:manualControlsOn:)` sets the camera through the
+  same intents as the interface, so every lens rule still applies. Factory Defaults is an empty
+  snapshot and `CameraSetup.factory`; saved presets are kept. Location is never turned on by the
+  snapshot: it is turned off and then on again through `LocationTagging.turnOn(in:)`, which asks
+  for access and leaves it off with `PresetNotice.locationNotAllowed` if access isn't allowed.
+  Other notices: no matching lens, values moved into the lens's range, camera not on yet, camera
+  busy (a countdown, burst, series or astro run; nothing changes), unreadable preset. The last
+  apply can be undone (`undo(camera:location:)`), which is why applying needs no confirmation.
+- **Storage.** The list is JSON under `NopePresets.saved` in the same store as the settings (the
+  App Group's `UserDefaults`). The key doesn't have the `NopeSettings.` prefix, so presets aren't
+  part of a settings snapshot or the Lock Screen camera's copy, which doesn't offer presets.
+  Applying writes the settings store, so `SharedSettingsSync` posts the change signal and the app
+  hands the new settings to the Lock Screen camera as after any other change.
+- **Interface.** `PresetsScreen` (a native `List`) opens from the first row of Settings and from
+  Presets in the quick-controls tray (`PresetsSheet`, a sheet so night mode stays red): Factory
+  Defaults and the saved presets, each applied with one tap; the result, its notices and Undo;
+  Save Current Settings (`PresetNameScreen`) and Rename or Delete (`EditPresetsScreen`).
+- **Shortcuts.** `ApplyPresetIntent` (a Shortcuts action with no Siri phrase; every App Shortcut
+  slot is used) picks a `PresetEntity` (Factory Defaults, then the saved presets, from
+  `PresetQuery` over the app's `SettingsPresets`, registered with `AppDependencyManager`). It
+  opens the app and sends `ShortcutRequest.applyPreset(_:)` through the inbox; the model waits for
+  the camera, then calls the same `SettingsPresets.apply(_:camera:location:)` (a camera that
+  can't start leaves the camera values unchanged, `PresetNotice.cameraNotReady`). The outcome,
+  `ShortcutOutcome.presetApplied(_:)`, `.busy` or `.presetUnavailable`, becomes one spoken
+  sentence: which preset, whether everything applied as saved, and that Presets can undo it,
+  because the apply leaves the same Undo in the Presets list. A preset never turns the light on.
 
 ### Apple Watch remote shutter (issue #63)
 
@@ -691,7 +741,7 @@ last format can't be turned off; turning on one item turns the master switch off
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
 network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
 Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
-state. Settings is a short grouped list: Photos (formats with the RAW pairing, look, file
+state. Settings is a short grouped list: Presets (see "Settings presets"), Photos (formats with the RAW pairing, look, file
 options), Privacy (the master switch, "Choose Details", signing), Camera (manual controls, clean
 view, front camera mirroring) and More (Accessibility, Honesty, About); explanations are in
 footers and on the detail screens.

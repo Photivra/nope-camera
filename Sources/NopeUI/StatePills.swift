@@ -18,6 +18,13 @@ struct CameraControlContext {
     /// screen sets it; a constant `false` elsewhere.
     var showsExposureDial: Binding<Bool> = .constant(false)
 
+    /// The saved settings presets, for the Presets tray item (issue #72), or `nil` where there
+    /// are none (the Lock Screen camera).
+    var presets: SettingsPresets?
+
+    /// Whether the presets sheet is open, for the Presets tray item. The camera screen sets it.
+    var showsPresets: Binding<Bool> = .constant(false)
+
     /// Whether the Interval sheet is open, for the Drive menu and the Interval pill. The camera
     /// screen sets it; a constant `false` elsewhere.
     var showsIntervalSettings: Binding<Bool> = .constant(false)

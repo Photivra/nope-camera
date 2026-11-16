@@ -75,6 +75,26 @@ struct MetadataVerifierTests {
         }
     }
 
+    /// With the standard file tags on (the default), a DNG's `DateTime` may also be the Exif
+    /// standard's unknown date, blanks and colons; with them off, and for the other three fields,
+    /// it fails.
+    @Test func theStandardUnknownDatePassesOnlyForTheDateWithTheStandardTagsOn() {
+        var minimal = MetadataSettings()
+        minimal.writesStandardFileTags = false
+        for (plan, standardTags) in [(Self.plan, true), (MetadataPlan(settings: minimal), false)] {
+            let allowlist = plan.allowlist(for: .raw, signed: false)
+            for tag: UInt16 in [0x0132, 0x010F, 0x0110, 0x0131] {
+                let root = CleanFiles.tiff(for: allowlist)
+                root.entries.removeAll { $0.0 == tag }
+                root.entries.append((tag, .ascii(MetadataPlan.unknownDateTime)))
+                let found = violations(Data(TIFFBuilder.build(root)), .raw, allowlist)
+                let passes = standardTags && tag == 0x0132
+                #expect(found == (passes ? [] : [.unexpectedValue(MetadataAllowlist.TagID(.primary, tag))]), "\(tag)")
+            }
+        }
+        #expect(!MetadataAllowlist.TextRule.oneOf(["a"]).accepts(nil))
+    }
+
     @Test func theFourTIFFFieldsMayBeAbsentFromADNG() {
         let allowlist = Self.plan.allowlist(for: .raw, signed: false)
         let root = CleanFiles.tiff(for: allowlist)

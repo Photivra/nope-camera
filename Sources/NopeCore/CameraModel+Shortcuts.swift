@@ -15,9 +15,13 @@ extension CameraModel {
     ///     (``ShortcutRequest/setPhotoSize(_:)``), or `nil` when the interface stores none; such
     ///     a request then says the lens offers no choice. The interface applies the changed
     ///     setting to the camera, as it does for its own settings screen.
-    public func serveShortcuts(from inbox: ShortcutInbox, settings: NopeSettings? = nil) async {
+    ///   - presets: The person's settings presets, for ``ShortcutRequest/applyPreset(_:)``, or
+    ///     `nil` when the interface has none; such a request then says the preset can't be found.
+    public func serveShortcuts(
+        from inbox: ShortcutInbox, settings: NopeSettings? = nil, presets: SettingsPresets? = nil
+    ) async {
         while let pending = await inbox.next() {
-            pending.finish(await perform(pending.request, inbox: inbox, settings: settings))
+            pending.finish(await perform(pending.request, inbox: inbox, settings: settings, presets: presets))
         }
     }
 
@@ -27,8 +31,11 @@ extension CameraModel {
     ///   - request: What was asked for.
     ///   - inbox: The inbox, for its waits and timeouts.
     ///   - settings: The person's settings, or `nil`.
+    ///   - presets: The person's settings presets, or `nil`.
     /// - Returns: How it ended.
-    func perform(_ request: ShortcutRequest, inbox: ShortcutInbox, settings: NopeSettings?) async -> ShortcutOutcome {
+    func perform(
+        _ request: ShortcutRequest, inbox: ShortcutInbox, settings: NopeSettings?, presets: SettingsPresets?
+    ) async -> ShortcutOutcome {
         switch request {
         case .takePhoto(let photo): await takePhoto(photo, inbox: inbox)
         case .takeBracket(let bracket): await takeBracket(bracket, inbox: inbox)
@@ -38,6 +45,7 @@ extension CameraModel {
         case .stopInterval: await stopInterval()
         case .setFocusRange(let range): await setFocusRange(range, inbox: inbox)
         case .setPhotoSize(let size): await setPhotoSize(size, settings: settings, inbox: inbox)
+        case .applyPreset(let choice): await applyPreset(choice, presets: presets, inbox: inbox)
         }
     }
 
@@ -263,7 +271,7 @@ extension CameraModel {
     ///
     /// - Parameter inbox: The inbox, for its wait and timeout.
     /// - Returns: Why the camera can't take a photo, or `nil` when it can.
-    private func cameraProblem(inbox: ShortcutInbox) async -> CameraUnavailability? {
+    func cameraProblem(inbox: ShortcutInbox) async -> CameraUnavailability? {
         _ = await inbox.wait(timeoutSeconds: ShortcutInbox.startTimeoutSeconds) { !self.isStartingCamera }
         switch state {
         case .needsPermission: return .needsPermission

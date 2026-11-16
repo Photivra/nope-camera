@@ -44,7 +44,7 @@ extension WatchResult {
     /// The watch's result for how a photo request through the ``ShortcutInbox`` ended.
     ///
     /// The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
-    /// interval series, a bracket, the focus range, a photo size) can't happen; they would be
+    /// interval series, a bracket, the focus range, a photo size, a preset) can't happen; they would be
     /// reported as not saved.
     ///
     /// - Parameter outcome: How the request ended.
@@ -54,7 +54,7 @@ extension WatchResult {
         case .savedSeveral(let allSigned): self = .savedSeveral(allSigned: allSigned)
         case .notSaved, .lensUnavailable, .lensSelected, .lightOn, .lightOff, .noLight, .lightUnavailable,
             .intervalStarted, .intervalStopped, .noIntervalRunning, .bracketUnavailable, .focusRangeSet,
-            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice:
+            .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable:
             self = .notSaved
         case .cancelled: self = .cancelled
         case .busy: self = .busy

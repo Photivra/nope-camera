@@ -89,4 +89,19 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertEqual(message.label, "Photos saved and signed.")
         XCTAssertFalse(app.buttons["More Manual Controls"].exists)
     }
+
+    @MainActor
+    func testApplyPresetSaysWhatChangedAndCanBeUndone() throws {
+        // Apply Preset with Factory Defaults, through the same path as the Presets list.
+        let app = launch("noRAW", request: "preset-factory")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "Factory Defaults applied. You can undo it in Presets.")
+        // The Presets list shows the result with Undo, as after applying it there.
+        app.buttons["Settings"].tap()
+        let presets = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch
+        XCTAssertTrue(presets.waitForExistence(timeout: 5))
+        presets.tap()
+        XCTAssertTrue(app.buttons["Undo"].waitForExistence(timeout: 5))
+    }
 }

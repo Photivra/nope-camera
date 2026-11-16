@@ -5,7 +5,8 @@ import SwiftUI
 /// "Metadata plan".
 ///
 /// The master switch comes first, then one switch per optional item with what turning it off
-/// costs, then the items every file keeps, each marked locked with the reason. The signing switch
+/// costs, then the Standard File Tags switch (outside the master switch, on by default), then the
+/// items every file keeps, each marked locked with the reason. The signing switch
 /// is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
 /// `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 /// `MetadataSettings`; this view only shows them.
@@ -35,6 +36,7 @@ struct PrivacySettingsView: View {
         Form {
             masterSection
             itemsSection
+            standardTagsSection
             lockedSection
         }
         .navigationTitle(Self.title)
@@ -131,6 +133,26 @@ struct PrivacySettingsView: View {
             }
         } header: {
             Text("In Each Photo", tableName: "Honesty", bundle: .module, comment: "Section header above the switches for optional details saved in each photo.")
+        }
+    }
+
+    /// The Standard File Tags switch (`MetadataSettings.writesStandardFileTags`): fixed values the
+    /// Exif standard requires, on by default and outside the master switch, with its explanation
+    /// under its name.
+    private var standardTagsSection: some View {
+        Section {
+            Toggle(
+                isOn: Binding(
+                    get: { settings.metadata.writesStandardFileTags },
+                    set: { settings.setWritesStandardFileTags($0) })
+            ) {
+                SettingLabel(
+                    title: Text("Standard File Tags", tableName: "Honesty", bundle: .module, comment: "Switch: files carry the fixed tags the photo file standard (Exif) asks for, such as version numbers and the color space."),
+                    explanation: Text(
+                        "Fixed values the file standard asks for, such as version numbers and the color space. They say nothing about you, your phone or the photo. On by default.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the Standard File Tags switch. Must not claim more than the English."))
+            }
         }
     }
 

@@ -398,6 +398,23 @@ adds to describe the image itself (checked by the read-back). No thumbnail is em
 with ImageIO on macOS 27 and the iOS 27 Simulator). A smaller copy (`OutputSize`) is drawn
 at its size before encoding, and its EXIF pixel dimensions are set to that size.
 
+## `PhotoEncoder/colorSpaceTagged(_:as:)`
+
+internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
+
+```swift
+static func colorSpaceTagged(_ properties: [String : Any], as space: OutputColorSpace) -> [String : Any]
+```
+
+The properties with EXIF `ColorSpace`, where present, stating the color space the copy is
+encoded in: 1 (sRGB) for an sRGB copy, otherwise the value the plan wrote ("Uncalibrated"
+for Display P3, Exif 2.32, `ColorSpace`).
+
+- Parameters:
+  - properties: The metadata from `MetadataPlan`.
+  - space: The color space of the encoded image.
+- Returns: The properties for the encoder.
+
 ## `PhotoEncoder/encode(_:settings:properties:)`
 
 internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`

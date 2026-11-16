@@ -273,6 +273,34 @@ c2patool 0.29.0 (installed on the Mac by hand) reported every signed file `Valid
 on macOS opened every file as its type (62 DNG, 99 HEIC, 99 JPEG). exiftool and `dng_validate`
 weren't installed, so they haven't been run on these files.
 
+### Standard File Tags
+
+The matrix saves every case with Standard File Tags on (the default) except `standardTagsOff`:
+first launch and every item on, signed and unsigned, as RAW, HEIF and JPEG and as each processed
+fallback, with the minimal set (`theMatrixCoversEveryOption` requires both states, for every
+format and each fallback). `StandardFileTagsEncodingTests` encodes HEIF and JPEG in each color
+space and checks what ImageIO keeps: every tag, except `ColorSpace` in a Display P3 JPEG, which
+ImageIO drops; the read-back passes either way.
+
+`exiftool -validate` on the 300 fixtures (iOS 27.2 Simulator, exiftool 13.55, 2026-11-16; no
+errors in any file). **With them on:** HEIF and DNG files report no warnings; a DNG without its date
+no longer reports "Invalid date/time format for EXIF:ModifyDate" (exiftool accepts the standard's
+blank form, `    :  :     :  :  `, and reports the empty text); the GPS version, `ExifVersion` and
+`ComponentsConfiguration` warnings are gone. Two remain on JPEGs, because ImageIO can't write
+those tags (`docs/PRIVACY.md`, "Standard File Tags"): "Missing required JPEG IFD0 tag 0x0213
+YCbCrPositioning" (106 JPEGs, all of them) and "Missing required JPEG ExifIFD tag 0xa001
+ColorSpace" (90, the Display P3 ones). **With them off** (the `standardTagsOff` cases): the
+minimal set's warnings, on JPEGs `YCbCrPositioning`, `ColorSpace`, `ComponentsConfiguration`,
+`ExifVersion` (processed fallback) and `GPSVersionID` (with a location), and on DNGs the
+`ModifyDate` format.
+
+**Device checks:** with Standard File Tags on (the default) and the date off, a RAW is saved on
+each lens and its `DateTime` is the 19-character blank date or empty (both pass the read-back;
+note which); with it on and Location on, the HEIF, JPEG and DNG carry `GPSVersionID` 2.3.0.0; an
+exiftool dump of a JPEG and a HEIF shows `ComponentsConfiguration`, `FlashpixVersion` and
+`ColorSpace` as in `docs/PRIVACY.md`; the processed fallback keeps the system's own values where
+it has them. With it off, the files match the earlier minimal set.
+
 ### Manual checks in other apps
 
 Record each result with the file it was checked on (a photo taken on a device with the release's
@@ -647,7 +675,12 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   or Far Focus pill shows and goes; a lens without a range limit says so); Set Photo Size Largest
   and Standard on a lens with a choice (Settings > Photo Size shows it; the next photo's size
   changes) and on a Bayer RAW lens (says there is one size); Set Fast Shutter and Set Face
-  Detection with the app closed (Settings shows the new value when the app opens).
+  Detection with the app closed (Settings shows the new value when the app opens). Apply
+  Preset: the picker lists Factory Defaults and the saved presets (a renamed preset shows its new
+  name, a deleted one is gone); with the app closed it opens, applies the preset (lens, values
+  and settings), says it can be undone in Presets, and Presets shows Undo; with a preset that has
+  Location on and access declined, it says some settings couldn't be applied; the light stays
+  off.
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Live Activity on a device
@@ -701,8 +734,27 @@ view.
   Night Mode control on the Lock Screen, then open the camera again: it follows. A setting
   changed in the Lock Screen camera doesn't change the app's. With the Location switch on in the
   app, a photo from the Lock Screen camera has no location.
-- After these checks the App Group's preferences file holds only `NopeSettings.` keys and the
-  migration key (`docs/SECURITY_AUDIT.md`, check 12).
+- After these checks the App Group's preferences file holds only `NopeSettings.` keys, the
+  migration key and the saved presets, `NopePresets.saved` (`docs/SECURITY_AUDIT.md`, check 12).
+
+### Settings presets on a device
+
+Issue #72. The rules are unit-tested (`SettingsPresetsTests`, `CameraSetupTests`) and the screens
+UI-tested on the Simulator; on a device, confirm the parts the simulated camera can't show:
+
+- Save a preset on the telephoto with manual ISO and shutter, a 10 s timer and RAW + JPEG; apply
+  Factory Defaults (wide lens, full auto, single, RAW + HEIF, saved presets still listed), then
+  the preset: the lens switches once without a frozen or black viewfinder, the values and timer
+  are back, and the next photo has those formats.
+- A preset with Location on, applied after location access was declined in Settings: Location
+  stays off, the notice says so, and no prompt appears; with access not yet asked, the system
+  prompt appears once.
+- A preset with the astro helper on, applied in daylight: the helper is on with the preset's
+  frame count and delay, and night mode follows the preset.
+- From the tray in night mode: the presets sheet is red on black and VoiceOver reads each preset
+  and the result after applying. Undo returns the lens and values.
+- After applying a preset, open the Lock Screen camera: it uses the applied formats and night
+  mode (the copy is handed over after every change).
 
 ### Apple Watch on a device (issue #63)
 
