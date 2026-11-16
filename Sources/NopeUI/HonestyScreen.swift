@@ -66,6 +66,12 @@ struct HonestyScreen: View {
                     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Apple Watch Sends Only Commands", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name."),
+                text: Text(
+                    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What nope. Never Does", tableName: "Honesty", bundle: .module, comment: "Honesty section header. Keep \"nope.\" unchanged.")
         }
