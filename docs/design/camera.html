@@ -197,7 +197,7 @@
       radial-gradient(520px 400px at 20% 20%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
   /* manual readout row (the dials themselves are in manual-controls.html) */
   .mro { position:absolute; left:4px; right:4px; top:528px; height:36px; display:flex; gap:3px; justify-content:center; z-index:5; }
-  .mro span { flex:0 0 auto; min-width:33px; height:36px; padding:0 4px; border-radius:18px; background:#333; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; line-height:1.15; font-variant-numeric:tabular-nums; }
+  .mro span { flex:0 0 auto; min-width:33px; height:36px; padding:0 3px; white-space:nowrap; border-radius:18px; background:#333; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; line-height:1.15; font-variant-numeric:tabular-nums; }
   .mro span i { font-style:normal; font-size:8px; font-weight:600; }
   /* other device frames */
   .phone.se { width:281px; height:500px; border-radius:34px; }
@@ -265,6 +265,61 @@
   .night .sheet .grab { background:#5a1410; }
   .night .mro span { background:#140000; color:var(--red); }
   .night .count { color:var(--red); }
+
+  /* ---- pass 2 additions ---- */
+  .sec-h a { color:inherit; }
+  .card.sess { background:#000; font-size:13px; }
+  .i.big { display:block; width:30px; height:30px; margin:0 auto 6px; }
+  .i.chv { width:10px; height:10px; stroke-width:2.6; vertical-align:-.05em; }
+  .ax .ib { flex:0 0 auto; }
+  /* sheets: the system's current form style, as in settings.html */
+  .sheet .hd { text-transform:none; letter-spacing:0; font-size:12.5px; font-weight:600; color:#f2f2f7; margin:13px 12px 5px; }
+  .sheet.dense .hd { font-size:11.5px; margin:10px 11px 4px; }
+  .sheet .g { border-radius:16px; }
+  .sheet .ft { margin:5px 12px 0; }
+  .sheet .nb .done { background:#0a84ff; color:#fff; }
+  .sheet .nb .i { stroke-width:2.6; }
+  .night .sheet .nb .done { background:var(--red); color:#000; }
+  .kb { position:absolute; left:0; right:0; bottom:0; height:200px; background:#2b2b2d; border-top:.5px solid #444; display:grid; grid-template-rows:repeat(4,1fr); gap:7px; padding:8px 4px 26px; }
+  .kb div { display:flex; gap:5px; justify-content:center; }
+  .kb span { flex:0 0 24px; height:34px; border-radius:5px; background:#6b6b6e; }
+  .kb span.w { flex:0 0 140px; } .kb span.m { flex:0 0 38px; background:#464648; }
+  .ck-t { color:#0a84ff; margin-left:auto; }
+  .note-dis { opacity:.45; }
+  .states { width:100%; }
+  .states td:first-child { white-space:nowrap; }
+  .f1 { font-size:10px; font-weight:700; letter-spacing:.03em; border:1px solid currentColor; border-radius:4px; padding:0 4px; margin-left:4px; vertical-align:1px; }
+  /* accessibility text sizes: the scrolling layout */
+  .scroll { position:absolute; left:0; right:0; top:40px; bottom:112px; overflow:hidden; display:flex; flex-direction:column; align-items:center; gap:9px; padding-top:8px; }
+  .ax .chip { height:auto; padding:8px 16px; border-radius:30px; font-size:24px; line-height:1.15; gap:8px; white-space:normal; }
+  .ax .chip .i { width:28px; height:28px; }
+  .ax .ib { width:56px; height:56px; } .ax .ib .i { width:30px; height:30px; }
+  .ax .pill { height:44px; border-radius:22px; font-size:22px; padding:0 14px; } .ax .pill .i { width:24px; height:24px; }
+  .ax .lens { height:44px; min-width:84px; border-radius:22px; font-size:24px; }
+  .ax .tray-btn { width:84px; height:40px; border-radius:20px; margin:0; } .ax .tray-btn .i { width:26px; height:26px; }
+  .ax .pic { flex:0 0 auto; width:158px; height:210px; background:radial-gradient(60px 45px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%), radial-gradient(130px 100px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .ax .lro { position:static; font-size:17px; grid-template-columns:auto; padding:8px 10px; align-self:stretch; margin:0 12px; }
+  /* iPhone Duo frames: drawn at 0.6 × points (the other frames are 0.75 ×) */
+  .duo { position:relative; background:#000; color:#fff; font-size:12px; overflow:hidden; box-shadow:0 0 0 10px #1c1c1e, 0 20px 40px rgba(0,0,0,.25); margin:12px auto 0; zoom:.8; }
+  .duo.outer { width:350px; height:509px; border-radius:34px; }
+  .duo.book { width:713px; height:502px; border-radius:30px; }
+  .duo.turned { width:502px; height:713px; border-radius:30px; }
+  .duo .pic { position:absolute; background:radial-gradient(30% 22% at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%), radial-gradient(70% 55% at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .duo .abs { position:absolute; display:flex; align-items:center; gap:6px; }
+  .duo .strip { position:absolute; font-size:12px; font-weight:600; }
+  .duo .band { position:absolute; background:rgba(0,0,0,.9); display:flex; align-items:center; justify-content:center; gap:8px; }
+  .duo .band .tray-btn { position:absolute; right:8px; margin:0; }
+  .duo .colx { position:absolute; top:0; bottom:0; display:flex; flex-direction:column; align-items:center; padding:16px 0; }
+  .duo .colx > div { flex:1 1 0; min-height:0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .duo .colx > div:last-child { justify-content:flex-end; }
+  .duo .colx > .shutter { flex:0 0 auto; }
+  .duo .tray-btn { margin:0; }
+  .up { transform:rotate(-90deg); }
+  .ipad .col { justify-content:flex-start; }
+  .ipad .col > .half { flex:1 1 0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .ipad .col > .half:last-child { justify-content:flex-end; gap:10px; }
+  .menubar { display:flex; gap:18px; align-items:center; padding:6px 14px; border-radius:10px 10px 0 0; background:#2c2c2e; color:#f2f2f7; font-size:13px; max-width:420px; }
+  .menubar b { background:#48484a; border-radius:5px; padding:1px 7px; font-weight:600; }
   @media (max-width:700px) { .phone.land, .ipad { transform-origin:top left; } }
 </style>
 </head>
@@ -313,6 +368,9 @@
     <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></symbol>
     <symbol id="camera" viewBox="0 0 24 24"><path d="M3 8h3.5l2-2.5h7l2 2.5H21v11H3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
     <symbol id="hourglass" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 10 5 10 9s-10 4-10 9M17 3c0 5-10 5-10 9s10 4 10 9"/></symbol>
+    <symbol id="pausecircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></symbol>
+    <symbol id="thermo" viewBox="0 0 24 24"><path d="M10 4a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 8v8M17 5h3M17 9h3"/></symbol>
+    <symbol id="lr" viewBox="0 0 24 24"><path d="M5 12h14M8 8.5 4.5 12 8 15.5M16 8.5l3.500 3.500-3.500 3.500"/></symbol>
     <symbol id="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
     <symbol id="updown" viewBox="0 0 24 24"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></symbol>
   </defs>
@@ -354,7 +412,7 @@
       <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
       <div class="vf"></div>
       <div class="row" style="top:488px"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
-      <div class="mro"><span><i>A</i>+0.0</span><span><i>A</i>ISO 200</span><span><i>A</i>1/125</span><span><i>A</i>f/1.78</span><span><i>A</i>Middle</span><span><i>A</i>5200K</span><span><svg class="i"><use href="#sliders"/></svg></span></div>
+      <div class="mro"><span><i>A</i>0.0</span><span><i>A</i>ISO 200</span><span><i>A</i>1/125</span><span><i>A</i>f/1.78</span><span><i>A</i>Middle</span><span><i>A</i>5,200 K</span><span><svg class="i"><use href="#sliders"/></svg></span></div>
       <div class="bottom" style="bottom:12px;height:72px"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
     </div>
     <figcaption><b>3 · Manual Controls on</b>Turned on in Settings; an M pill shows it (tap: Turn Off Manual Controls). One readout row below the lens row: exposure compensation, ISO, shutter, aperture, focus and white balance, each with A or M above its value, so the mode never depends on color. The last button holds All Auto and Pro Tools. Dials, Pro Tools and bracketing: <a href="manual-controls.html">manual-controls.html</a>.</figcaption>
@@ -373,7 +431,7 @@
 
   <figure>
     <div class="phone"><div class="island"></div>
-      <div class="top"><div class="pills"></div><div class="chip"><svg class="i w"><use href="#warn"/></svg>No RAW on This Lens</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="top"><div class="pills" style="min-width:0"></div><div class="chip" style="margin-right:6px"><svg class="i w"><use href="#warn"/></svg>No RAW on This Lens</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
       <div class="vf" style="filter:saturate(1.3) contrast(1.1)"></div>
       <div class="row"><div class="lens">0.6×</div><div class="lens">1×</div><div class="lens two">5×<small>No RAW</small></div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
       <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
@@ -383,10 +441,25 @@
 
   <figure>
     <div class="phone"><div class="island"></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="sheet tall"><div class="grab"></div>
+        <div class="nb">Formats<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
+        <div class="g"><div class="r" style="justify-content:flex-start;gap:8px"><svg class="i f"><use href="#seal"/></svg><span>Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it.</span></div></div>
+        <div class="hd">Save Each Photo As</div>
+        <div class="g"><div class="r">RAW (DNG)<span class="ck-t"><svg class="i"><use href="#check"/></svg></span></div><div class="r">HEIF<span class="ck-t"><svg class="i"><use href="#check"/></svg></span></div><div class="r">JPEG</div></div>
+        <div class="ft">At least one format is required.</div>
+        <div class="g" style="margin-top:12px"><div class="r">Look <small>Standard <svg class="i chv"><use href="#chev"/></svg></small></div></div>
+      </div>
+    </div>
+    <figcaption><b>5b · The format chip's sheet</b>Tapping the chip on a RAW lens opens Formats at full height: the teal seal with the explanation, the three formats (tap to turn one on or off; the last one can't be turned off), and Look while a HEIF or JPEG copy is saved. With all three formats on, a Paired with RAW row chooses which copy Photos keeps with the RAW. On iPad this is a popover, and a sheet in night mode. The same list is in Settings (<a href="settings.html">settings.html</a>).</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
       <div class="vf"><div class="gridov"></div></div>
       <div class="bottom"><div class="flip" style="width:39px;height:39px"><svg class="i"><use href="#eye"/></svg></div><div class="shutter"></div><div class="slot"></div></div>
     </div>
-    <figcaption><b>6 · Clean view</b>Hide Controls (the last tray item) leaves the picture, the shutter and a Show Controls button in the thumbnail's place. Warnings, a format chip that isn't a seal, a Light pill and, if chosen, the live readout still show. Swiping the picture down or up is only a shortcut for the two buttons.</figcaption>
+    <figcaption><b>6 · Clean view</b>Hide Controls (the last tray item) leaves the picture, the shutter and a Show Controls button in the thumbnail's place. Still shown: warning chips, a failure banner, timer, burst, interval and running astro progress with their Stop buttons, hints, a format chip that isn't a seal, a Light pill, the grid, level and peaking overlays and, if chosen, the live readout. Swiping the picture down or up is only a shortcut for the two buttons.</figcaption>
   </figure>
 
   <figure class="wide">
@@ -404,9 +477,17 @@
     <div class="phone ipad">
       <div class="vf"></div>
       <div style="position:absolute;left:30px;top:30px;display:flex;gap:6px;z-index:6"><div class="pill"><svg class="i"><use href="#split"/></svg>Compare</div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div>
-      <div class="col"><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lensv"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="tray-btn" style="margin:2px auto 0"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div></div>
+      <div class="col"><div class="half"><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lens">0.6×</div><div class="lens on">1×</div><div class="tray-btn" style="margin:0"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div class="half"><div class="flip"><svg class="i"><use href="#flip"/></svg></div><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div></div></div>
     </div>
-    <figcaption><b>8 · iPad, and any window wider than tall</b>The picture beside a trailing column: Settings, lenses and ⋯ at the top, the shutter centered, the flip and thumbnail at the bottom. Pills, chip and warnings sit on the picture's top edge; the tray (wrapping into rows so every item shows whole), the manual readout and dials sit over its bottom. Real rotation. The format details open as a popover; the larger sheets stay page-sized sheets. In a window too small for the camera, the picture shows "The camera works only when nope. fills the screen."</figcaption>
+    <figcaption><b>8 · iPad, and any window wider than tall</b>The picture beside a trailing column: Settings, lenses and ⋯ at the top, the shutter centered, the flip and thumbnail at the bottom. Pills, chip and warnings sit on the picture's top edge; the tray (wrapping into rows so every item shows whole), the manual readout and dials sit over its bottom. Real rotation. The column's halves above and below the shutter share its height equally, and the upper half scrolls if the text is too large to fit, so nothing passes under the shutter. At accessibility text sizes a portrait iPad uses the scrolling layout instead (figure 9b), and in a wide window the manual controls' All Auto and Pro Tools button moves into the column under ⋯ (<a href="manual-controls.html">manual-controls.html</a>). The format details open as a popover; the larger sheets stay page-sized sheets. In a window too small for the camera, the picture shows "The camera works only when nope. fills the screen."</figcaption>
+  </figure>
+
+  <figure>
+    <div style="padding:18px 0 0;max-width:420px;margin:0 auto">
+      <div class="menubar"><span>File</span><span>Edit</span><span>View</span><b>Camera</b><span>Window</span><span>Help</span></div>
+      <div class="menu" style="position:relative;margin-left:150px;width:210px"><div class="mi">Take Photo<span class="tr" style="color:#98989f">space</span></div></div>
+    </div>
+    <figcaption><b>8b · Camera menu on iPad and with a hardware keyboard</b>nope. adds one menu, Camera, with one command: Take Photo, on the Space bar. It is dimmed whenever the shutter can't be pressed, and it stops a countdown, burst or series as the shutter does. The command also shows in the keyboard shortcuts overlay. The other menus are the system's and are drawn only as placeholders.</figcaption>
   </figure>
 
   <figure>
@@ -417,6 +498,19 @@
       <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
     </div>
     <figcaption><b>9 · 4.7-inch iPhone</b>When the lens row (and the manual readout) don't fit below the 4:3 picture, they overlay its bottom edge on a dark backing, solid with Reduce Transparency or Increase Contrast. An open dial sits just above them. The shutter row keeps its 88 points.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone ax"><div class="island"></div>
+      <div class="scroll">
+        <div class="chip" style="width:190px"><svg class="i f"><use href="#seal"/></svg><span>RAW + HEIF</span></div>
+        <div class="ib"><svg class="i"><use href="#gear"/></svg></div>
+        <div class="pic"></div>
+        <div class="lro"><span>Exposure</span><span>1/125 · ISO 200 · f/1.78 · Auto</span><span>Bias / Offset</span><span>0.0 EV / -0.1 EV</span><span>Focus</span><span>0.42 · Continuous</span></div>
+      </div>
+      <div class="bottom"><div class="slot"></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>9b · Accessibility text sizes: the scrolling layout</b>At the five largest text sizes the bands become one scrolling column and the shutter row stays pinned below it, always in reach. Top to bottom: pills, chip and Settings (side by side if they fit, stacked if not), warnings and banners, the session message (above the picture, not over it), a shorter picture (280 points, 4:3, clipped to the scroll area), the live readout and histogram below the picture rather than on it, an open exposure dial, then the lenses one under another, ⋯ and the open tray. With Manual Controls on, a list with a switch and stepper per control replaces the readout row (<a href="manual-controls.html">manual-controls.html</a>).</figcaption>
   </figure>
 
   <figure>
@@ -434,11 +528,11 @@
     <div class="phone"><div class="island"></div>
       <div class="top"><div class="pills"></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
       <div class="vf" style="filter:brightness(.25)"></div>
-      <div class="card" style="position:absolute;left:30px;right:30px;top:250px;text-align:center;z-index:6;padding:12px">The camera is in use by another app or a call. It comes back when that ends.</div>
+      <div class="card sess" style="position:absolute;left:30px;right:30px;top:232px;text-align:center;z-index:6;padding:12px"><svg class="i big"><use href="#pausecircle"/></svg>The camera is in use by another app or a call. It comes back when that ends.</div>
       <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
       <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter off"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
     </div>
-    <figcaption><b>11 · Camera paused</b>The session's state is one message on the picture; the shutter dims and can't be pressed. Other messages: "The camera is paused to let your device cool down.", "The camera is paused by the system. It comes back by itself.", "The camera couldn't start. Try another lens.", "The camera isn't sending a picture." Each comes back without a tap when it can.</figcaption>
+    <figcaption><b>11 · Camera paused</b>The session's state is one message on the picture, on solid black with a large symbol above the words: a pause symbol here, a thermometer for heat, a warning triangle when the camera couldn't start, a video-off symbol when it sends no picture. The shutter dims and can't be pressed. Other messages: "The camera is paused to let your device cool down.", "The camera is paused by the system. It comes back by itself.", "The camera couldn't start. Try another lens.", "The camera isn't sending a picture." Each comes back without a tap when it can.</figcaption>
   </figure>
 
   <!-- ===================================================== QUICK CONTROLS -->
@@ -588,7 +682,21 @@
         <div class="g" style="margin-top:12px"><div class="r lnk">Done</div></div>
       </div>
     </div>
-    <figcaption><b>20 · Interval series sheet</b>Opens when Interval Shooting is chosen, or from the Interval pill. Interval from 1 second to 1 hour; Photos from 2 to 999. Start closes the sheet and begins the series; Start is off while the camera can't take a photo. The same section is in Pro Tools.</figcaption>
+    <figcaption><b>20 · Interval series sheet</b>Opens when Interval Shooting is chosen, or from the Interval pill. Interval from 1 second to 1 hour; Photos from 2 to 999. Start closes the sheet and begins the series; Start is off while the camera can't take a photo. The same section is in Pro Tools. Refused starts: figure 20b.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="sheet tall"><div class="grab"></div>
+        <div class="nb">Interval Shooting</div>
+        <div class="g"><div class="r"><b>Interval Shooting</b></div><div class="r">Interval <small>45 sec <svg class="i"><use href="#updown"/></svg></small></div><div class="r">Photos <small>12 <svg class="i"><use href="#updown"/></svg></small></div><div class="r lnk note-dis">Start</div><div class="r">Turn off Astro to start interval shooting.</div></div>
+        <div class="ft">Each photo is separate. Nothing is combined. Keep nope. open while the series runs.</div>
+        <div class="ft" style="margin-top:6px">Each photo is taken in full auto, or with your manual settings while Manual Controls are on.</div>
+        <div class="g" style="margin-top:12px"><div class="r lnk">Done</div></div>
+      </div>
+    </div>
+    <figcaption><b>20b · Start refused, and values set elsewhere <span class="f1">F1</span></b>While Astro is on, or while the self-timer counts down or a burst runs, Start is dimmed and the row under it says why: "Turn off Astro to start interval shooting." or "Interval shooting can start when the self-timer or burst ends." Siri answers the same request with "Astro is on. Turn it off to start interval shooting." When Shortcuts or a preset set a value that isn't in the lists (here 45 seconds and 12 photos), the pickers show it and offer it as one more choice. Drawn from review fixes not merged yet.</figcaption>
   </figure>
 
   <figure>
@@ -599,7 +707,19 @@
       <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
       <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
     </div>
-    <figcaption><b>21 · Interval series running</b>Progress and Stop at the picture's top edge; the shutter also stops it ("Interval series running. Press to stop."). Leaving nope. pauses the series; the Live Activity says so (figure 50).</figcaption>
+    <figcaption><b>21 · Interval series running</b>Progress and Stop at the picture's top edge; the shutter also stops it ("Interval series running. Press to stop."). When nope. leaves the front or the camera pauses, the series pauses (figure 21b).</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#interval"/></svg>Interval</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf" style="filter:brightness(.25)"></div>
+      <div class="ov"><div class="prog">Paused: 12 of 30 photos taken<span class="stop">Stop</span></div></div>
+      <div class="card sess" style="position:absolute;left:30px;right:30px;top:232px;text-align:center;z-index:6;padding:12px"><svg class="i big"><use href="#pausecircle"/></svg>The camera is in use by another app or a call. It comes back when that ends.</div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>21b · Interval series paused <span class="f1">F1</span></b>The series really pauses, taking no photos, while nope. is in the background or the camera can't take a photo (a call, another app, heat). The progress line reads "Paused: 12 of 30 photos taken" and Stop still works; the series continues by itself when the camera is back. The Live Activity shows the same pause (figure 50) once nope. is in the background, not while it is only inactive. Drawn from review fixes not merged yet.</figcaption>
   </figure>
 
   <figure>
@@ -675,7 +795,7 @@
         <div class="hd">Details Left Out</div>
         <div class="g"><div class="r">Location <small>Off in Settings</small></div><div class="r">Time Zone <small>Off in Settings</small></div><div class="r">Your Name and Copyright <small>On, but there was nothing to write</small></div></div>
         <div class="hd">Read Back from the Files</div>
-        <div class="g"><div class="r">RAW (DNG) <small>64 ›</small></div><div class="r">HEIF <small>41 ›</small></div></div>
+        <div class="g"><div class="r">RAW (DNG) <small>64 <svg class="i chv"><use href="#chev"/></svg></small></div><div class="r">HEIF <small>41 <svg class="i chv"><use href="#chev"/></svg></small></div></div>
         <div class="ft">Only for photos taken since nope. opened: nope. can't read your photo library, and these details aren't stored.</div>
         <div class="hd">Timing</div>
         <div class="g"><div class="r">Taking the Photo <small>182 ms</small></div><div class="r">Developing <small>640 ms</small></div><div class="r">Signing <small>95 ms</small></div><div class="r">Reading Back <small>38 ms</small></div><div class="r">Adding to Photos <small>212 ms</small></div></div>
@@ -695,7 +815,7 @@
       <div style="position:absolute;left:0;right:0;top:108px;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;border-top:1px solid #222"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
       <div style="position:absolute;left:0;right:0;top:202px;height:84px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;border-top:1px solid #222"><div class="thumb"><div class="seal w"><svg class="i"><use href="#warn"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
     </div>
-    <figcaption><b>27 · The thumbnail's three states</b>Top: Saving… while the photo is checked and added. Middle: saved and signed, a teal seal. Bottom: saved but not signed, an amber triangle, with a Not Signed chip on the picture whose explanation gives the reason ("Saved. Not signed: signing is off in Settings." and similar). Never a seal on an unsigned photo.</figcaption>
+    <figcaption><b>27 · The thumbnail's three states</b>Top: Saving… while the photo is checked and added. Middle: saved and signed, a teal seal; VoiceOver hears "Saved and signed.", or after a bracket or burst "3 photos saved and signed." (the seal shows only if every one is signed). Bottom: saved but not signed, an amber triangle; that photo's message is "Saved. Not signed: signing is off in Settings." (or the signature couldn't be created, or the signed file didn't pass the check). The Not Signed chip on the picture explains "Photos aren't signed: signing is off in Settings.", or repeats the last photo's reason when signing is on but failed. Never a seal on an unsigned photo.</figcaption>
   </figure>
 
   <figure>
@@ -791,12 +911,12 @@
       <div class="top"><div class="pills"></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
       <div class="vf"><div class="gridov"></div>
         <div class="levelmk" style="left:72px"></div><div class="levelmk" style="right:72px"></div><div class="levelbar"></div>
-        <div class="lro"><span>Exposure</span><span>1/125 · ISO 200 · f/1.78 · Auto</span><span>Bias / Offset</span><span>+0.0 / −0.1</span><span>Focus</span><span>0.42 · Continuous</span><span>White Balance / Tint</span><span>5200K / +3 · Auto</span><span>Gains</span><span>R 2.01 G 1.00 B 1.74</span><span>Lens</span><span>Wide · 1.0× · single-frame RAW</span><span>Processing Off</span><span>All</span><span>Status</span><span>Ready · Nominal</span></div>
+        <div class="lro"><span>Exposure</span><span>1/125 · ISO 200 · f/1.78 · Auto</span><span>Bias / Offset</span><span>0.0 EV / -0.1 EV</span><span>Focus</span><span>0.42 · Continuous</span><span>White Balance / Tint</span><span>5,200 K / +3 · Auto</span><span>Gains</span><span>R 2.01 G 1.00 B 1.74</span><span>Lens</span><span>Wide · 1.0× · single-frame RAW</span><span>Processing Off</span><span>All</span><span>Status</span><span>Ready · Nominal</span><span>Low Power Mode</span><span>On</span><span>Torch</span><span>25%</span></div>
       </div>
       <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
       <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
     </div>
-    <figcaption><b>35 · Grid, level and live readout</b>Grid lines are white with a dark outline (Thirds shown; also 4 × 4, Square, Golden Ratio, Golden Spiral). The level is a horizon bar between two marks that thickens and gives a haptic when level, or a top-down level when pointing straight down. Live Camera Readout lists the camera's live values at the picture's top trailing corner, measured only while it shows.</figcaption>
+    <figcaption><b>35 · Grid, level and live readout</b>Grid lines are white with a dark outline (Thirds shown; also 4 × 4, Square, Golden Ratio, Golden Spiral). The level is a horizon bar between two marks that thickens and gives a haptic when level, or a top-down level when pointing straight down. Live Camera Readout lists the camera's live values at the picture's top trailing corner, measured only while it shows. Two lines come and go: Low Power Mode (only while it is on) and Torch (on a lens with a light: its level, or Off).</figcaption>
   </figure>
 
   <figure>
@@ -827,7 +947,7 @@
   <figure>
     <div class="phone"><div class="island"></div>
       <div style="position:absolute;left:12px;right:12px;top:46px;height:36px;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14px"><span class="ib" style="width:30px;height:30px"><svg class="i" style="width:14px;height:14px"><use href="#readout"/></svg></span>Compare<span class="ib" style="width:30px;height:30px"><svg class="i" style="width:14px;height:14px"><use href="#check"/></svg></span></div>
-      <div class="cmp"><div class="side phoneside"></div><div class="side nopeside"></div><div class="div"></div><div class="handle">↔</div><span class="lbl" style="left:6px">nope.</span><span class="lbl" style="right:6px">Phone Processing</span></div>
+      <div class="cmp"><div class="side phoneside"></div><div class="side nopeside"></div><div class="div"></div><div class="handle"><svg class="i"><use href="#lr"/></svg></div><span class="lbl" style="left:6px">nope.</span><span class="lbl" style="right:6px">Phone Processing</span></div>
       <div style="position:absolute;left:14px;right:14px;top:400px">
         <div style="display:flex;gap:6px"><span class="cap">nope. Only</span><span class="cap on">Split</span><span class="cap">Phone Only</span></div>
         <div class="slider"></div>
@@ -836,13 +956,26 @@
         <div style="margin-top:8px;font-size:11.5px;line-height:1.4;color:#98989f"><b style="color:#fff">Phone Processing</b><br>A second photo, started 850 ms after nope.'s, with the processing iOS applies…</div>
       </div>
     </div>
-    <figcaption><b>38 · Compare view</b>A full-screen view: nope.'s photo on the left, the phone-processed one on the right, always left to right. Drag the divider, use the slider (VoiceOver: swipe up or down), or choose nope. Only, Split or Phone Only; zoom both together to 4×. Below, each side is described; the phone version is "Not saved: it is discarded when you close this view." In the app switcher the photos are hidden.</figcaption>
+    <figcaption><b>38 · Compare view</b>A full-screen view: nope.'s photo on the left, the phone-processed one on the right, always left to right. Drag the divider, use the slider (VoiceOver: swipe up or down), or choose nope. Only, Split or Phone Only; zoom both together to 4×. Below, each side is described; the phone version is "Not saved: it is discarded when you close this view." "Saved to Photos." stands under nope.'s side; if only the RAW was saved it adds "Shown here as iOS displays RAW files." In the app switcher the photos are hidden. Other states: figure 38b.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div style="position:absolute;left:12px;right:12px;top:46px;height:36px;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14px"><span class="ib" style="width:30px;height:30px"><svg class="i"><use href="#readout" style="width:14px;height:14px"/></svg></span>Compare<span class="ib" style="width:30px;height:30px"><svg class="i"><use href="#check" style="width:14px;height:14px"/></svg></span></div>
+      <div class="cmp"><div class="side" style="background:#262626;display:grid;place-items:center;padding-left:50%"><span style="font-size:11.5px;color:#f2f2f7;text-align:center;width:120px">Picture unavailable</span></div><div class="side nopeside"></div><div class="div"></div><div class="handle"><svg class="i"><use href="#lr"/></svg></div><span class="lbl" style="left:6px">nope.</span><span class="lbl" style="right:6px">Phone Processing</span></div>
+      <div style="position:absolute;left:14px;right:14px;top:400px">
+        <div style="display:flex;gap:6px"><span class="cap">nope. Only</span><span class="cap on">Split</span><span class="cap">Phone Only</span></div>
+        <div class="slider"></div>
+        <div style="margin-top:12px;font-size:11.5px;line-height:1.4"><b>nope.</b><br>RAW (DNG) · <span style="color:#98989f">The RAW sensor data as the camera delivered it. nope. didn't develop it. Shown here as iOS displays RAW files. Saved to Photos.</span></div>
+      </div>
+    </div>
+    <figcaption><b>38b · Compare: other states</b>Before the pictures are ready the view shows a spinner, "Preparing the comparison…". A photo that can't be decoded for display leaves its side gray with "Picture unavailable" (drawn here on the phone's side). With RAW as the only saved format, nope.'s side is the RAW as iOS displays it, and the note says so. If the second photo couldn't be taken at all: "Nothing to Compare" (figure 39).</figcaption>
   </figure>
 
   <figure>
     <div class="phone"><div class="island"></div>
       <div class="sheet full dense">
-        <div class="nb"><span class="lead">‹</span>Details<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
+        <div class="nb"><span class="lead"><svg class="i" style="transform:scaleX(-1)"><use href="#chev"/></svg></span>Details<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
         <div class="g"><div class="r col">What each file holds, read on this device. Values are shown on this screen only: nothing is stored or copied.</div></div>
         <div class="hd">Only in Phone Version</div>
         <div class="g"><div class="r col"><span class="mono">MakerApple</span><div>Phone: Present, no readable value</div><div><b style="color:#f2f2f7">Maker Notes</b> · The camera maker's private notes in the file.</div></div><div class="r col"><span class="mono">ImageUniqueID</span><div>Phone: Hidden</div><div>nope. never writes this.</div><div class="lnk" style="color:#0a84ff">Show Value</div></div></div>
@@ -877,7 +1010,7 @@
       <div class="sheet tall dense"><div class="grab"></div>
         <div class="nb">Astro Settings</div>
         <div class="g"><div class="r col" style="color:var(--red)">nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software.</div></div>
-        <div class="g"><div class="r">Frames <small>20 ›</small></div><div class="r">Start Delay <small>10 seconds ›</small></div></div>
+        <div class="g"><div class="r">Frames <small>20 <svg class="i chv"><use href="#chev"/></svg></small></div><div class="r">Start Delay <small>10 seconds <svg class="i chv"><use href="#chev"/></svg></small></div></div>
         <div class="hd">Each Frame</div>
         <div class="g"><div class="r">Shutter <small>1 sec</small></div><div class="r">ISO <small>3200</small></div><div class="r">Focus <small>Far</small></div></div>
         <div class="ft">Set when Astro is turned on: focus at the far end, and the longest shutter and highest ISO this lens allows. Change them with the manual controls.</div>
@@ -901,6 +1034,18 @@
     <figcaption><b>42 · Astro run in progress</b>Red Viewfinder on, so the picture is red too. "Frame 7 of 20" and Stop Frames; the shutter also stops ("Taking astro frames. Press to stop."). Frames already taken are saved. At the end VoiceOver hears "Astro finished. Frames saved: 20", or why it stopped early (storage full, battery low, camera stopped). The screen dims as in figure 22.</figcaption>
   </figure>
 
+  <figure>
+    <div class="phone night"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#moonstars"/></svg>Astro</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf natural" style="background:radial-gradient(1px 1px at 20% 30%,#fff 99%,transparent),radial-gradient(1px 1px at 70% 20%,#fff 99%,transparent),radial-gradient(1.5px 1.5px at 45% 55%,#fff 99%,transparent),linear-gradient(#05070d,#10141c)"></div>
+      <div class="ov"><div class="prog">Photo in 8s<span class="stop">Cancel Timer</span></div><div class="prog"><svg class="i"><use href="#moonstars"/></svg>Paused: 7 of 20 frames<span class="stop">Stop Frames</span></div></div>
+      <div class="count">8</div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>42b · Astro paused, and the resume countdown</b>When nope. leaves the front or the camera pauses (a call, heat), the run pauses instead of ending: "Paused: 7 of 20 frames", with Stop Frames. When the camera is back, the start delay counts down again so the phone is still before the next frame; the two lines are drawn together here, the app shows one at a time. Leaving during the first start delay also starts the run paused. Stop, or Cancel Timer during the countdown, ends the run; frames already taken are saved.</figcaption>
+  </figure>
+
   <!-- ===================================================== PRESETS -->
   <div class="sec-h"><h2>Presets</h2><p>Named sets of every setting: photos, privacy, camera, and the lens, exposure and drive mode. The same list is in Settings.</p></div>
 
@@ -911,7 +1056,7 @@
         <div class="nb">Presets<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
         <div class="hd">Apply a Preset</div>
         <div class="g"><div class="r col">Factory Defaults<div>Every setting as on a fresh install. Saved presets are kept.</div></div><div class="r">Astro</div><div class="r">Street</div></div>
-        <div class="g" style="margin-top:12px"><div class="r">Save Current Settings <small>›</small></div><div class="r">Rename or Delete <small>›</small></div></div>
+        <div class="g" style="margin-top:12px"><div class="r">Save Current Settings <small><svg class="i chv"><use href="#chev"/></svg></small></div><div class="r">Rename or Delete <small><svg class="i chv"><use href="#chev"/></svg></small></div></div>
         <div class="ft">A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.</div>
         <div class="ft" style="margin-top:6px">Presets are kept on this device only.</div>
       </div>
@@ -927,7 +1072,7 @@
         <div class="g"><div class="r col"><b>“Street” applied.</b><div>Some camera values were changed to what this lens supports.</div></div><div class="r lnk">Undo</div></div>
         <div class="hd">Apply a Preset</div>
         <div class="g"><div class="r col">Factory Defaults<div>Every setting as on a fresh install. Saved presets are kept.</div></div><div class="r">Astro</div><div class="r">Street</div></div>
-        <div class="g" style="margin-top:12px"><div class="r">Save Current Settings <small>›</small></div><div class="r">Rename or Delete <small>›</small></div></div>
+        <div class="g" style="margin-top:12px"><div class="r">Save Current Settings <small><svg class="i chv"><use href="#chev"/></svg></small></div><div class="r">Rename or Delete <small><svg class="i chv"><use href="#chev"/></svg></small></div></div>
       </div>
     </div>
     <figcaption><b>44 · Applied, with Undo</b>The result is at the top and announced (“Street” applied., or Factory Defaults applied.), with any notice (lens not on this device, values adjusted, Location still off without access, camera busy). Undo puts every setting back ("Settings restored."). If nothing could be applied it says "Nothing changed." and why.</figcaption>
@@ -937,9 +1082,22 @@
     <div class="phone"><div class="island"></div>
       <div class="vf" style="filter:brightness(.45)"></div>
       <div class="sheet tall"><div class="grab"></div>
-        <div class="nb"><span class="lead">‹</span>Save Preset<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
+        <div class="nb">Presets<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
+        <div class="g"><div class="r col"><b>“Street” applied.</b><div>Couldn't undo: the camera is busy, or the earlier settings can't be read. Nothing changed.</div></div><div class="r lnk">Undo</div></div>
+        <div class="hd">Apply a Preset</div>
+        <div class="g"><div class="r col">Factory Defaults<div>Every setting as on a fresh install. Saved presets are kept.</div></div><div class="r">Astro</div><div class="r">Street</div></div>
+      </div>
+    </div>
+    <figcaption><b>44b · Undo that couldn't be done</b>If Undo changes nothing, for example during a countdown, burst or series, the result keeps its place and adds "Couldn't undo: the camera is busy, or the earlier settings can't be read. Nothing changed."; VoiceOver hears the same sentence. Undo stays, to try again.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="sheet tall"><div class="grab"></div>
+        <div class="nb"><span class="lead"><svg class="i" style="transform:scaleX(-1)"><use href="#chev"/></svg></span>Save Preset<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
         <div class="g"><div class="r"><span class="field">For example, Astro</span></div></div>
-        <div style="position:absolute;left:0;right:0;bottom:0;height:170px;background:#2c2c2e;border-top:1px solid #3a3a3c"></div>
+        <div class="kb"><div><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div><span class="m"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span class="m"></span></div><div><span class="m"></span><span class="w"></span><span class="m" style="flex-basis:60px"></span></div></div>
       </div>
     </div>
     <figcaption><b>45 · Save Preset</b>One name field with the keyboard up; Return or the checkmark saves the current settings under that name. Problems show under the field: "Enter a name.", "Use 40 characters or fewer." (the app's limit), "Another preset has this name."</figcaption>
@@ -949,7 +1107,7 @@
     <div class="phone"><div class="island"></div>
       <div class="vf" style="filter:brightness(.45)"></div>
       <div class="sheet tall"><div class="grab"></div>
-        <div class="nb"><span class="lead">‹</span>Rename Preset<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
+        <div class="nb"><span class="lead"><svg class="i" style="transform:scaleX(-1)"><use href="#chev"/></svg></span>Rename Preset<span class="done"><svg class="i"><use href="#check"/></svg></span></div>
         <div class="g"><div class="r">Street</div></div>
         <div class="g" style="margin-top:14px"><div class="r dst">Delete Preset</div></div>
         <div class="ft">Deleting a preset doesn't change your current settings.</div>
@@ -997,7 +1155,7 @@
         <div class="fade" style="background:linear-gradient(transparent,#000)"></div>
       </div>
     </div>
-    <figcaption><b>49 · Sheets at night</b>No white sheet at night: secondary text is drawn at the full red, because a dimmer red would fall below 4.5:1 contrast. On iPad, sheets replace popovers in night mode so the glass doesn't let the picture show through.</figcaption>
+    <figcaption><b>49 · Sheets at night</b>No white sheet at night: secondary text, tinted text and icons (back buttons, checkmarks, list buttons) are drawn at the full red, the Done button is filled red with a black checkmark, and switch and slider tracks are a dark red so the full-red knob stands out; all because a dimmer red would fall below 4.5:1 contrast. On iPad, sheets replace popovers in night mode so the glass doesn't let the picture show through.</figcaption>
   </figure>
 
   <!-- ===================================================== OUTSIDE THE APP -->
@@ -1006,10 +1164,10 @@
   <figure>
     <div class="phone lock"><div class="island"></div>
       <div class="date">Monday, November 16</div><div class="clock">9:41</div>
-      <div class="la" style="bottom:200px"><span class="ic"><svg class="i"><use href="#timer"/></svg></span><div style="flex:1"><b>Interval Shooting</b>12 of 30 photos taken<div class="bar"><span style="width:40%"></span></div></div><span class="st">Stop</span></div>
-      <div class="la nightla" style="bottom:110px"><span class="ic"><svg class="i"><use href="#moonstars"/></svg></span><div style="flex:1"><b>Astro</b>Saving: 14 of 20 photos saved<div style="font-size:10.5px">Signed.</div><div class="bar"><span style="width:70%"></span></div></div></div>
+      <div class="la" style="bottom:214px"><span class="ic"><svg class="i"><use href="#timer"/></svg></span><div style="flex:1"><b>Interval Shooting</b>12 of 30 photos taken<div class="bar"><span style="width:40%"></span></div></div><span class="st">Stop</span></div>
+      <div class="la nightla" style="bottom:98px"><span class="ic"><svg class="i"><use href="#moonstars"/></svg></span><div style="flex:1"><b>Astro</b>Paused: 7 of 20 frames. Open nope. to continue.<div class="bar"><span style="width:35%"></span></div></div><span class="st">Stop</span></div>
     </div>
-    <figcaption><b>50 · Live Activity on the Lock Screen</b>Shown when nope. leaves the front during an interval series, astro frames, a burst or the self-timer, or while photos are still saving. Title, status, a signing line when saved, and progress. Only interval shooting has Stop. Other states: "Paused: 12 of 30 photos taken. Open nope. to continue.", "Photo in 0:07", "Done: 30 of 30 photos taken", "Not signed. Open nope. for details." In night mode it is red on black (lower card).</figcaption>
+    <figcaption><b>50 · Live Activity on the Lock Screen</b>Shown when nope. leaves the front during an interval series, astro frames, a burst or the self-timer, or while photos are still saving. Title, status, a signing line once the run has ended, and progress. Interval series and astro runs have Stop while they run or are paused, because Stop prevents photos still to come; every photo already taken is saved either way. In night mode the activity is red on black (lower card: a paused astro run). Every status: figure 51b.</figcaption>
   </figure>
 
   <figure>
@@ -1017,30 +1175,124 @@
       <div class="die"><div class="tp"><svg class="i" style="width:22px;height:22px"><use href="#timer"/></svg><span style="font-size:13px">Interval Shooting</span><span style="font-size:15px">12</span></div><div class="bt"><div style="flex:1">12 of 30 photos taken<div class="la" style="position:static;padding:0;background:none"><div class="bar" style="flex:1"><span style="width:40%"></span></div></div></div><span class="cap" style="background:#3a3a3c">Stop</span></div></div>
       <div style="position:absolute;top:300px;left:0;right:0;text-align:center;color:rgba(255,255,255,.7);font-size:11px">Compact (top) and expanded (long press)</div>
     </div>
-    <figcaption><b>51 · Dynamic Island</b>Compact: the kind's symbol and a count, or the countdown for the timer and the astro start delay. Expanded: symbol, title, count, the same status and progress as the Lock Screen, and Stop for an interval series. Minimal: the symbol. White, or night red in night mode.</figcaption>
+    <figcaption><b>51 · Dynamic Island</b>Compact: the kind's symbol and a count, or the countdown for the timer and the astro start delay. Expanded: symbol, title, count, the same status and progress as the Lock Screen, and Stop for an interval series or an astro run, running or paused. Minimal: the symbol. White, or night red in night mode.</figcaption>
+  </figure>
+
+  <figure class="wide">
+    <table class="states">
+      <tr><th>Title</th><th>State</th><th>Status line</th><th>Button</th></tr>
+<tr><td>Self-Timer</td><td>Counting down</td><td>Photo in 0:07</td><td></td></tr>
+<tr><td>Astro</td><td>Counting down the start delay</td><td>First frame in 0:07</td><td></td></tr>
+<tr><td>Self-Timer</td><td>Taking</td><td>Taking the photo…</td><td></td></tr>
+<tr><td>Interval Shooting</td><td>Running</td><td>12 of 30 photos taken</td><td>Stop</td></tr>
+<tr><td>Astro</td><td>Running</td><td>Frame 8 of 20</td><td>Stop</td></tr>
+<tr><td>Burst</td><td>Running</td><td>Photos taken: 14</td><td></td></tr>
+<tr><td>Interval Shooting</td><td>Paused</td><td>Paused: 12 of 30 photos taken. Open nope. to continue.</td><td>Stop</td></tr>
+<tr><td>Astro</td><td>Paused</td><td>Paused: 7 of 20 frames. Open nope. to continue.</td><td>Stop</td></tr>
+<tr><td>Burst, Astro</td><td>Saving after nope. left the front</td><td>Saving: 14 of 20 photos saved</td><td></td></tr>
+<tr><td>Self-Timer</td><td>Saving</td><td>Saving the photo…</td><td></td></tr>
+<tr><td>Any</td><td>iOS gave no more background time</td><td>Saving paused. Open nope. to finish.</td><td></td></tr>
+<tr><td>Interval Shooting</td><td>Finished</td><td>Done: 30 of 30 photos taken</td><td></td></tr>
+<tr><td>Interval Shooting</td><td>Stopped early</td><td>Stopped: 12 of 30 photos taken</td><td></td></tr>
+<tr><td>Burst, Astro, Self-Timer</td><td>Finished</td><td>Photos saved: 20</td><td></td></tr>
+<tr><td>Burst, Astro</td><td>Stopped early</td><td>Stopped. Photos saved: 7</td><td></td></tr>
+<tr><td>Self-Timer, Astro</td><td>Cancelled before any photo</td><td>Stopped. No photo taken.</td><td></td></tr>
+<tr><td>Any</td><td>A photo couldn't be taken or saved</td><td>A photo wasn't saved. Open nope. for details.</td><td></td></tr>
+      <tr><th colspan="4">Signing line, added once the run has ended and photos were saved</th></tr>
+<tr><td>Any</td><td>Every saved photo is signed</td><td>Signed.</td><td></td></tr>
+<tr><td>Any</td><td>One photo saved, without a signature</td><td>Not signed. Open nope. for details.</td><td></td></tr>
+<tr><td>Any</td><td>Several saved, at least one without</td><td>Not every photo is signed. Open nope. for details.</td><td></td></tr>
+    </table>
+    <figcaption><b>51b · Every Live Activity status <span class="f1">F1</span></b>The same lines on the Lock Screen and in the expanded Dynamic Island; the compact island shows the count or the countdown, or a warning triangle when there is neither. Countdowns are counted down by the system. Counts and status only, never a picture. With the review fixes not merged yet, the activity says Paused only once nope. is in the background or the camera has paused the run, not while nope. is merely inactive (Control Center or a notification over it).</figcaption>
   </figure>
 
   <figure class="wide">
     <div class="devices">
-      <div class="watch"><div class="st"><svg class="i"><use href="#camera"/></svg>Camera ready</div><div class="wb"><svg class="i" style="width:20px;height:20px"><use href="#camcircle"/></svg>Take Photo</div><div class="wr"><span><svg class="i"><use href="#timer"/></svg> Delay</span><small>3 seconds ›</small></div></div>
-      <div class="watch"><div class="st"><svg class="i"><use href="#timer"/></svg>Photo in 2 seconds</div><div class="wb"><svg class="i" style="width:20px;height:20px"><use href="#xcircle"/></svg>Cancel Timer</div><div class="wr"><span><svg class="i"><use href="#timer"/></svg> Delay</span><small>3 seconds ›</small></div></div>
+      <div class="watch"><div class="st"><svg class="i"><use href="#camera"/></svg>Camera ready</div><div class="wb"><svg class="i" style="width:20px;height:20px"><use href="#camcircle"/></svg>Take Photo</div><div class="wr"><span><svg class="i"><use href="#timer"/></svg> Delay</span><small>3 seconds <svg class="i chv"><use href="#chev"/></svg></small></div></div>
+      <div class="watch"><div class="st"><svg class="i"><use href="#timer"/></svg>Photo in 2 seconds</div><div class="wb"><svg class="i" style="width:20px;height:20px"><use href="#xcircle"/></svg>Cancel Timer</div><div class="wr"><span><svg class="i"><use href="#timer"/></svg> Delay</span><small>3 seconds <svg class="i chv"><use href="#chev"/></svg></small></div></div>
       <div class="watch"><div class="st"><svg class="i"><use href="#camera"/></svg>Camera ready</div><div class="st f"><svg class="i"><use href="#seal"/></svg>Saved and signed</div><div class="wb"><svg class="i" style="width:20px;height:20px"><use href="#camcircle"/></svg>Take Photo</div></div>
+      <div class="watch"><div class="st"><svg class="i"><use href="#camera"/></svg>Camera ready</div><div class="st w"><svg class="i"><use href="#hourglass"/></svg>The camera was busy. No photo taken.</div><div class="wb"><svg class="i" style="width:20px;height:20px"><use href="#camcircle"/></svg>Take Photo</div></div>
       <div class="watch"><div class="st w"><svg class="i"><use href="#warn"/></svg>Can't reach your phone. Keep it nearby with nope. open.</div><div class="wb" style="opacity:.45"><svg class="i" style="width:20px;height:20px"><use href="#camcircle"/></svg>Take Photo</div></div>
     </div>
-    <figcaption><b>52 · Apple Watch remote</b>A status line, the last result, Take Photo and Delay (Off, 3 seconds, 10 seconds). During the phone's countdown Take Photo becomes Cancel Timer. Teal only for "Saved and signed"; amber with a symbol for warnings ("Saved, not signed", "Not saved. Your phone shows why.", "Can't reach your phone…"). Haptics for the countdown and the result; everything is spoken to VoiceOver.</figcaption>
+    <table class="states">
+      <tr><th>Line</th><th>Text</th><th>Tone</th></tr>
+<tr><td>Status</td><td>Connecting to your phone…</td><td>plain</td></tr>
+<tr><td>Status</td><td>Can't reach your phone. Keep it nearby with nope. open.</td><td>warning</td></tr>
+<tr><td>Status</td><td>Camera ready</td><td>plain</td></tr>
+<tr><td>Status</td><td>Photo in 3 seconds</td><td>plain</td></tr>
+<tr><td>Status</td><td>Taking photo…</td><td>plain</td></tr>
+<tr><td>Status</td><td>Open nope. on your phone to allow camera access.</td><td>warning</td></tr>
+<tr><td>Status</td><td>Camera access is off. Turn it on in your phone's Settings app.</td><td>warning</td></tr>
+<tr><td>Status</td><td>Your phone has no camera nope. can use.</td><td>warning</td></tr>
+<tr><td>Status</td><td>Camera not available. Open nope. on your phone.</td><td>warning</td></tr>
+<tr><td>Result</td><td>Saved and signed</td><td>verified (teal seal)</td></tr>
+<tr><td>Result</td><td>Saved, not signed</td><td>warning</td></tr>
+<tr><td>Result</td><td>Photos saved and signed</td><td>verified (teal seal)</td></tr>
+<tr><td>Result</td><td>Photos saved, not all signed</td><td>warning</td></tr>
+<tr><td>Result</td><td>Not saved. Your phone shows why.</td><td>warning</td></tr>
+<tr><td>Result</td><td>Timer cancelled. No photo taken.</td><td>plain</td></tr>
+<tr><td>Result</td><td>The camera was busy. No photo taken.</td><td>warning</td></tr>
+<tr><td>Result</td><td>No photo taken.</td><td>warning</td></tr>
+<tr><td>Result</td><td>Update nope. on your phone and watch.</td><td>warning</td></tr>
+    </table>
+    <figcaption><b>52 · Apple Watch remote</b>A status line, the last result, Take Photo and Delay (Off, 3 seconds, 10 seconds). During the phone's countdown Take Photo becomes Cancel Timer. Teal only for "Saved and signed"; amber with a symbol for warnings ("Saved, not signed", "Not saved. Your phone shows why.", "Can't reach your phone…"). The table lists every status and result line; warnings are amber with a symbol, plain lines are white. "The camera was busy" means the phone was already taking a photo, counting down or in a burst. Haptics for the countdown and the result; everything is spoken to VoiceOver.</figcaption>
   </figure>
 
   <figure class="wide">
     <div class="speech">
-      <div><q>Take a photo with nope.</q><span>"Photo saved and signed." · "Photo saved. It isn't signed." · "The photo wasn't saved. nope. shows why."</span></div>
-      <div><q>Take a photo in 10 seconds with nope.</q><span>"Photo saved and signed." · "The timer was cancelled. No photo was taken."</span></div>
-      <div><q>Take a bracket with nope.</q><span>"Photos saved and signed." · "Photos saved. Not all of them are signed."</span></div>
-      <div><q>Switch to Wide in nope.</q><span>"Now using the wide camera."</span></div>
-      <div><q>Turn on the light in nope.</q><span>"The light is on."</span></div>
-      <div><q>Start interval shooting in nope.</q><span>"Interval shooting started."</span></div>
-      <div><span style="color:var(--muted)">Any request, while busy or unavailable</span><span>"nope. is already taking a photo." · "The camera isn't available right now."</span></div>
+      <div><span>Take Photo<br><q>Take a photo with nope.</q> · <q>Take a picture with nope.</q> · <q>Take a photo in 10 seconds with nope.</q></span><span>"Photo saved and signed." · "Photo saved. It isn't signed." · "Photos saved and signed." · "Photos saved. Not all of them are signed." (Number of Photos above 1) · "The photo wasn't saved. nope. shows why." · "The timer was cancelled. No photo was taken." · "This device doesn't have that lens."</span></div>
+      <div><span>Take Bracket<br><q>Take a bracket with nope.</q></span><span>"Photos saved and signed." · "Photos saved. Not all of them are signed." · "This lens can't take that bracket." · "The photo wasn't saved. nope. shows why."</span></div>
+      <div><span>Open Camera<br><q>Open the camera in nope.</q></span><span>Opens nope.; nothing is said.</span></div>
+      <div><span>Switch Lens<br><q>Switch to Wide in nope.</q></span><span>"Now using the ultra wide camera." · "Now using the wide camera." · "Now using the telephoto camera." · "Now using the front camera." · "This device doesn't have that lens."</span></div>
+      <div><span>Turn On the Light<br><q>Turn on the light in nope.</q></span><span>"The light is on." · "This lens has no light." · "The light isn't available right now."</span></div>
+      <div><span>Turn Off the Light<br><q>Turn off the light in nope.</q></span><span>"The light is off."</span></div>
+      <div><span>Start Interval Shooting<br><q>Start interval shooting in nope.</q></span><span>"Interval shooting started." · "Astro is on. Turn it off to start interval shooting." <span class="f1">F1</span></span></div>
+      <div><span>Stop Interval Shooting<br><q>Stop interval shooting in nope.</q></span><span>"Interval shooting stopped. The photos taken are saved." · "No interval series is running."</span></div>
+      <div><span>Set Night Mode<br><q>Turn on night mode in nope.</q> · <q>Turn off night mode in nope.</q></span><span>"Night mode is on." · "Night mode is off."</span></div>
+      <div><span>Set Focus Range<br><span style="color:var(--muted)">Shortcuts app only</span></span><span>"Autofocus has no range limit." · "Close-Up is on." · "Far Focus is on." · "This lens can't limit its focus range."</span></div>
+      <div><span>Set Photo Size<br><span style="color:var(--muted)">Shortcuts app only</span></span><span>"The photo size is set." · "This lens has only one photo size." · "This device doesn't have that lens."</span></div>
+      <div><span>Set Fast Shutter<br><span style="color:var(--muted)">Shortcuts app only</span></span><span>"Fast Shutter is set."</span></div>
+      <div><span>Set Face Detection<br><span style="color:var(--muted)">Shortcuts app only</span></span><span>"Face Detection is on." · "Face Detection is off."</span></div>
+      <div><span>Apply Preset<br><span style="color:var(--muted)">Shortcuts app only</span></span><span>"Factory Defaults applied. You can undo it in Presets." · “Street” applied. You can undo it in Presets. · “Street” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it. (the same for Factory Defaults) · "That preset can't be found. Nothing changed."</span></div>
+      <div><span><span style="color:var(--muted)">Any action that uses the camera</span></span><span>"nope. is already taking a photo." · "nope. is still doing an earlier request. Nothing changed." · "Open nope. to allow camera access." · "Camera access is off for nope. You can turn it on in the Settings app." · "This device has no camera nope. can use." · "The camera isn't available right now."</span></div>
     </div>
-    <figcaption><b>53 · Siri and Shortcuts: what nope. says back</b>Spoken results are short and factual, and claim a signature only when there is one. Other phrases: open the camera, turn off the light, stop interval shooting, turn night mode on or off. Apply Preset is in the Shortcuts app without a Siri phrase. Settings for Shortcuts and Control Center: <a href="settings.html">settings.html</a>.</figcaption>
+    <figcaption><b>53 · Siri and Shortcuts: what nope. says back</b>Every answer, per action, with its Siri phrases (ten phrases is the system's limit; the other actions are in the Shortcuts app). Answers are short and factual, and claim a signature only when there is one. Which answers apply to which action beyond the obvious ones is listed as the code allows: any camera action can also give the answers in the last row. The interval answer marked F1 comes from review fixes not merged yet. Settings for Shortcuts and Control Center: <a href="settings.html">settings.html</a>.</figcaption>
+  </figure>
+
+  <!-- ===================================================== IPHONE DUO -->
+  <div class="sec-h"><h2>iPhone Duo (foldable)</h2><p>The layout rule reads the window, not the device model: the outer display is an iPhone window, the unfolded inner display is treated like an iPad window. These frames are drawn at 0.6 × points (outer display 466 × 678 points, inner 951 × 669) with the lenses the Duo Simulator lists (0.5×, 1×). Checked on the iPhone Duo Simulator, which has no camera; see the list under figure 58 for what only a real Duo can confirm.</p></div>
+
+  <figure>
+    <div class="duo outer"><div class="abs" style="left:8px;right:76px;top:0;height:32px;justify-content:space-between"><div class="pill"><svg class="i"><use href="#timer"/></svg>3s</div><span style="display:flex;gap:6px;align-items:center"><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></span></div><div class="pic" style="left:0;top:32px;width:282px;height:376px"></div><div class="band" style="left:0;width:282px;top:375px;height:33px"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div><div class="abs" style="left:0;width:282px;top:414px;height:66px;justify-content:space-between;padding:0 30px"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div><div class="strip" style="right:16px;top:62px">9:41</div></div>
+    <figcaption><b>54 · Duo outer display, portrait</b>The stacked iPhone layout. The system keeps its status items in a strip on the trailing side, so the app's window is narrower than the screen and nothing sits under the strip. The 4:3 picture and the bands don't both fit, so the lens row (and the manual readout, in two rows) overlay the picture's bottom on a dark backing, as on a 4.7-inch iPhone (figure 9).</figcaption>
+  </figure>
+
+  <figure>
+    <div class="duo outer"><div class="abs" style="left:8px;right:76px;top:0;height:32px;justify-content:flex-end"><div class="up ib"><svg class="i"><use href="#gear"/></svg></div></div><div class="pic" style="left:0;top:32px;width:282px;height:376px"></div><div class="abs" style="left:-36px;top:190px;width:120px;justify-content:center;transform:rotate(-90deg)"><div class="pill"><svg class="i"><use href="#timer"/></svg>3s</div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div><div class="band" style="left:0;width:282px;top:375px;height:33px"><div class="up lens">0.5×</div><div class="up lens on">1×</div><div class="up tray-btn"><svg class="i"><use href="#more"/></svg></div></div><div class="abs" style="left:0;width:282px;top:414px;height:66px;justify-content:space-between;padding:0 30px"><div class="up thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="up flip"><svg class="i"><use href="#flip"/></svg></div></div><div class="strip" style="right:16px;top:62px">9:41</div></div>
+    <figcaption><b>55 · Duo outer display, held sideways</b>As on any iPhone (figure 7): the outer display stays in portrait and each icon and text block turns upright. Pills and chip move onto the picture's upper edge; Settings stays in the top bar. A Duo folded while on its side comes back to this portrait layout.</figcaption>
+  </figure>
+
+  <figure class="wide">
+    <div class="devices"><div class="duo book"><div class="pic" style="left:0;top:25px;width:569px;height:427px"></div><div class="abs" style="left:8px;top:33px"><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div><div class="colx" style="left:572px;width:76px"><div><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div><div class="flip"><svg class="i"><use href="#flip"/></svg></div><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div></div></div><div class="strip" style="right:14px;top:22px">9:41</div></div><div class="duo turned"><div class="pic" style="left:0;top:94px;width:421px;height:561px"></div><div class="abs" style="left:8px;top:102px"><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div><div class="colx" style="left:423px;width:76px;padding-top:70px"><div><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div><div class="flip"><svg class="i"><use href="#flip"/></svg></div><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div></div></div><div class="strip" style="right:22px;top:28px">9:41</div></div></div>
+    <figcaption><b>56 · Duo inner display: held like a book, and turned</b>Unfolded, the window is regular in both size classes, so it gets the column layout (figure 8): the picture beside a trailing column with Settings, lenses and ⋯ above the shutter and the flip and thumbnail below it; pills, chip and warnings on the picture's top edge; the tray, exposure dial and manual readout over its bottom. The system rotates the inner display with the device, so nothing turns as an upright unit here. Sheets are sheets, as on iPhone.</figcaption>
+  </figure>
+
+  <figure class="wide">
+    <div class="devices"><div class="duo book ax"><div class="pic" style="left:0;top:33px;width:545px;height:409px"></div><div class="abs" style="left:8px;top:41px"><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div><div class="colx" style="left:548px;width:104px;padding:10px 0"><div style="overflow:hidden"><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div></div><div class="strip" style="right:10px;top:22px">9:41</div></div><div class="duo turned ax"><div class="scroll" style="top:60px;bottom:96px"><div style="display:flex;gap:8px;align-items:center;align-self:stretch;justify-content:flex-end;padding:0 12px"><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div><div class="pic" style="position:static"></div><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div><div class="abs" style="left:0;right:0;bottom:16px;height:66px;justify-content:space-between;padding:0 120px"><div class="slot"></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div><div class="strip" style="right:22px;top:28px">9:41</div></div></div>
+    <figcaption><b>57 · Duo inner display at the largest text size</b>Wider than tall (left): still the column; it takes the width its larger controls need, and its upper half scrolls so nothing passes under the shutter. Taller than wide (right): the scrolling layout of figure 9b, with the top items side by side because they fit, a short picture, the lenses one under another and the shutter row pinned. The outer display at this size is figure 9b with the status strip beside it.</figcaption>
+  </figure>
+
+  <figure class="wide">
+    <table class="states">
+      <tr><th>Open before folding or unfolding</th><th>After</th></tr>
+      <tr><td>A manual dial, or the exposure dial</td><td>Still open, in the other layout's place for it</td></tr>
+      <tr><td>The quick-controls tray</td><td>Still open: one scrolling row on the outer display, wrapped rows over the picture on the inner</td></tr>
+      <tr><td>Settings, or another sheet</td><td>Still open, on the same page</td></tr>
+      <tr><td>Self-timer countdown</td><td>Keeps counting; the photo is taken</td></tr>
+      <tr><td>Interval series, astro frames</td><td>Keep running; the progress line and Stop move with the layout</td></tr>
+      <tr><td>Night mode, pills, warnings, the last photo's thumbnail</td><td>Unchanged</td></tr>
+    </table>
+    <figcaption><b>58 · Folding and unfolding</b>Only the layout changes; dials, the tray, sheets and running drive modes are state that carries over. Checked in the Simulator. Only a real iPhone Duo can confirm: that the status strip covers no control; that the preview and saved photos are upright on the inner display in both positions, with the level and the spiral grid matching; which cameras the Duo reports (expected: ultra wide, wide and front, each with RAW) and which one the inner display uses for selfies; that the preview and a running series survive a fold with a real camera; and the Lock Screen camera and the Open nope. control on each display.</figcaption>
   </figure>
 </div>
 
@@ -1060,7 +1312,7 @@
     <li>Every gesture has a visible button: Hide/Show Controls for the swipe, Lock for the long press, −/+ and Reset or Auto on every dial, Cancel Timer and Stop for running drive modes.</li>
     <li>Controls sit in the black bands; anything over the picture has a dark backing (90% black over a material, solid with Reduce Transparency or Increase Contrast).</li>
     <li>Point budget (iPhone 16/17 size): top bar 44 · 4:3 picture · lens row 44 · manual readout when on · shutter row 88. Targets at least 44 × 44 with 8 between; shutter 76; thumbnail and flip 52.</li>
-    <li>Sideways iPhone: the layout stays put, each icon and text block turns upright. iPad: trailing column, real rotation. Right-to-left mirrors rows, never the picture.</li>
+    <li>Sideways iPhone: the layout stays put, each icon and text block turns upright. iPad and the iPhone Duo's inner display: trailing column, real rotation. Accessibility text sizes: one scrolling column with the shutter row pinned. Right-to-left mirrors rows, never the picture.</li>
   </ul>
 </section>
 </body>
