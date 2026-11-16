@@ -579,6 +579,7 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   default), signed, and passes the read-back; the thumbnail opens the photo's details, not
   Photos; Settings changes made there don't change the app's settings; the volume buttons take a
   photo; first use before the app was ever opened (camera and Photos prompts) behaves sensibly.
+  Settings: see "Shared settings" below.
 - Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
   signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
   access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
@@ -586,6 +587,32 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
 - Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
   Night Mode on and off, with the app closed and with it open (the screen turns red at once).
 - Check in each of the 11 languages that Siri accepts the localized phrases.
+
+### Shared settings, the Night Mode control and the Lock Screen camera on a device
+
+Issue #42. Assumptions to confirm: cross-process delivery of the settings change signal (a
+Darwin notification) between the app and `NopeControls`; that `NopeControls` may write
+`OpenCameraIntent`'s app context (Apple documents the app and the capture extension); and that
+the Lock Screen camera reads the app context quickly enough not to be ended for having no camera
+view.
+
+- Signing: a device build with automatic signing registers `group.<bundle identifier>` for the
+  app and `NopeControls`; `codesign -d --entitlements - --xml` on each shows exactly that one App
+  Group, and none on `NopeCaptureExtension`.
+- Upgrade: install 0.2.0, change several settings (formats, a detail, signing off, night mode
+  on), install this build over it: the settings are kept.
+- Control: add Night Mode in Control Center and on the Lock Screen. It shows the app's state;
+  turning it on with the app open turns the app red at once (also while Control Center covers the
+  app); with the app in the background or closed, the app is red when opened. Turning night mode
+  on or off in the app (Settings, the tray or the Set Night Mode shortcut) updates the control.
+- Lock Screen camera: with night mode on, RAW plus HEIF plus JPEG, a detail on and signing off
+  in the app, lock the device and open "Open nope.": the camera opens red, without a white flash,
+  and its photo has those formats, that detail and no signature. Change night mode from the
+  Night Mode control on the Lock Screen, then open the camera again: it follows. A setting
+  changed in the Lock Screen camera doesn't change the app's. With the Location switch on in the
+  app, a photo from the Lock Screen camera has no location.
+- After these checks the App Group's preferences file holds only `NopeSettings.` keys and the
+  migration key (`docs/SECURITY_AUDIT.md`, check 12).
 
 ### Low storage
 

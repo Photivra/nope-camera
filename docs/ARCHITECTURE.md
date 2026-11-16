@@ -16,8 +16,8 @@ signed with Content Credentials when signing is on.
 | `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests |
 | `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy`; `Intents/` holds the Siri and Shortcuts App Intents and `AppShortcuts.xcstrings` |
 | `App/NopeCaptureExtension/` | The Lock Screen camera (LockedCameraCapture capture extension), with its own privacy manifest |
-| `App/NopeControls/` | The "Open nope." control (WidgetKit control extension), with its own privacy manifest |
-| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent` and `Localizable.xcstrings` |
+| `App/NopeControls/` | The "Open nope." and Night Mode controls (WidgetKit control extension), with its own privacy manifest; its entitlements are `App/NopeControls.entitlements` |
+| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent`, `SharedSettings` (the App Group store and change signal) and `Localizable.xcstrings` |
 | `Config/Base.xcconfig` | Shared build settings; includes the untracked `Config/Local.xcconfig` |
 | `docs/api/` | The API exported as Markdown from the DocC comments (generated) |
 
@@ -31,7 +31,7 @@ signed with Content Credentials when signing is on.
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents | Everything |
-| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the control uses only AppIntents, WidgetKit and SwiftUI |
+| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the controls use only `NopeCore` (for `NopeSettings`), AppIntents, WidgetKit and SwiftUI |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -260,11 +260,62 @@ the control extension (`App/Shared`), as Apple requires. The `NopeControls` exte
 as the "Open nope." control for Control Center, the Lock Screen and the Action button. On a
 locked device the system opens `NopeCaptureExtension`, which runs the same `CameraModel` and
 `PhotoSaver` as the app (RAW, the allowlist and read-back, a signature per photo, add-only
-saving). It sees only its own container, so it keeps its own settings, starting from the
-defaults, and offers no button that opens another app; it has no storage and battery warnings
+saving). It sees only its own container (not the App Group's), so it starts from the copy of the
+person's settings in `OpenCameraIntent`'s app context (see "Shared settings" below), and offers no
+button that opens another app; it has no location reader and no storage and battery warnings
 (their system reader uses API that extensions can't use). It shares `CameraPreviewView.swift`
 and `MotionGravitySource.swift` with the app through the project's file membership, with the
 `NOPE_CAPTURE_EXTENSION` compilation condition leaving out the Debug UI-test scenarios.
+
+### Shared settings: App Group, controls and the Lock Screen camera (issue #42)
+
+The person's settings live in one place that every target of the app can read: the
+`UserDefaults` of the App Group `$(NOPE_APP_GROUP_IDENTIFIER)` (`group.$(NOPE_BUNDLE_IDENTIFIER)`,
+`Config/Base.xcconfig`). The app (`App/NopeApp.entitlements`) and `NopeControls`
+(`App/NopeControls.entitlements`) request it; each reads the name from its Info.plist key
+`NopeAppGroupIdentifier` (`App/NopeApp-Info.plist`, `App/NopeControls/Info.plist`).
+
+```
+ app: NopeSettings ──┐                               ┌── NopeControls: NightModeControl
+                     ├──▶ App Group UserDefaults ◀───┤     (value provider, SetNightModeControlIntent)
+ SharedSettingsSync ─┘                               │
+        ▲ │ Darwin notification "<group>.settings-changed" (posted by the writer, heard by all)
+        │ ▼
+ app ── makeSnapshot() ──▶ OpenCameraIntent.updateAppContext ──▶ NopeCaptureExtension: apply(_:)
+```
+
+- **`NopeCore` API** (`SharedSettings.swift`, `NopeSettingsSnapshot.swift`):
+  `SharedSettingsStore` (`groupIdentifier(infoDictionary:)`, `defaults(groupIdentifier:)`,
+  `migrate(from:domainName:to:)`, `changeSignalName(groupIdentifier:)`, `isSettingsKey(_:)`);
+  `SettingsChangeSignaling` and `DarwinSettingsChangeSignal`; `SharedSettingsSync`;
+  `NopeSettings.reload()`, `makeSnapshot()` and `apply(_:)`; `NopeSettingsSnapshot`. The app-side
+  glue for every target is `App/Shared/SharedSettings.swift` (`SharedSettings.store()`,
+  `appStore()`, `changeSignal`, `publishToLockScreenCamera(_:)`) and `NopeControlKind`.
+- **Moving old settings.** The app's first launch with the App Group copies every
+  `NopeSettings.` key from its standard `UserDefaults` once (`migrate`), keeping any value a
+  control already wrote. Extensions never migrate: their own stores are empty.
+- **Changes between processes, without polling.** `SharedSettingsSync` posts the Darwin
+  notification whenever this process writes the store (`UserDefaults.didChangeNotification`, which
+  is posted only for this process's writes, before the setter returns), and calls
+  `NopeSettings.reload()` when it hears one, assigning only the values that changed. The app also
+  reloads when it returns to the foreground, for a notification sent while it was suspended. After
+  a change the app refreshes the Night Mode control (`ControlCenter.reloadControls(ofKind:)`) and
+  hands the settings to the Lock Screen camera.
+- **The Night Mode control** (`NightModeControl`, a `ControlWidgetToggle`) reads
+  `NopeSettings.isNightModeOn` from the App Group in its value provider and sets it with
+  `SetNightModeControlIntent` (a `SetValueIntent`, hidden from Shortcuts), which then posts the
+  signal and updates the Lock Screen camera's copy.
+- **The Lock Screen camera can't open the App Group** (Apple: a capture extension "can't read from
+  or write to the App Group's shared container"). The app writes a `NopeSettingsSnapshot` (a
+  property list of every `NopeSettings.` key, well under Apple's 4 KB `appContext` limit, checked
+  by a test) to `OpenCameraIntent.updateAppContext(_:)` at launch and after every change; the
+  extension shows black until it has read and applied it, so it never starts in the wrong mode.
+  Its changes last until it closes.
+- **Later targets.** A Live Activity or widget extension joins the same App Group (an entitlement
+  and the Info.plist key) and uses `SharedSettings.store()` and `changeSignal`. A Watch app can't
+  share an App Group with the iPhone (each device has its own containers): on the watch, the Watch
+  app and its own extensions can share a group the same way, and the iPhone would send a
+  `NopeSettingsSnapshot` across with WatchConnectivity.
 
 ### The viewfinder
 
