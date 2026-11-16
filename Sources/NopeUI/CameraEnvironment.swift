@@ -28,6 +28,45 @@ public enum UprightRotation: Equatable, Sendable {
 
     /// Whether the device is on its side, so content turns a quarter turn.
     var isSideways: Bool { self != .portrait }
+
+    /// The turn upright content needs in a window, given the device's orientation: none in a
+    /// window that is regular in both size classes (``CameraLayout/isRegularSize(horizontal:vertical:)``),
+    /// because that window rotates with the device, as on iPad and on the unfolded inner display
+    /// of a foldable iPhone, where the system turns the interface whatever the app asks.
+    ///
+    /// - Parameter isRegularSize: Whether the window is regular in both size classes.
+    /// - Returns: This rotation in a portrait-only window, otherwise ``portrait``.
+    func inWindow(isRegularSize: Bool) -> UprightRotation {
+        isRegularSize ? .portrait : self
+    }
+}
+
+/// Clears ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` in a window that rotates with
+/// the device, so icons and text aren't turned twice: once by the interface and again as
+/// upright units. The size classes come from the environment, so the same rule covers an iPad
+/// and both displays of a foldable iPhone, and changes as it folds or unfolds.
+struct WindowUprightRotation: ViewModifier {
+    /// Which way up the person holds the device, from the app.
+    @Environment(\.cameraUprightRotation) private var rotation
+
+    /// The horizontal size class.
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    /// The vertical size class.
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    /// Creates the modifier. It reads everything from the environment.
+    init() {}
+
+    /// The content, with the rotation its window needs.
+    ///
+    /// - Parameter content: The content.
+    func body(content: Content) -> some View {
+        content.environment(
+            \.cameraUprightRotation,
+            rotation.inWindow(
+                isRegularSize: CameraLayout.isRegularSize(horizontal: horizontalSizeClass, vertical: verticalSizeClass)))
+    }
 }
 
 extension EnvironmentValues {
