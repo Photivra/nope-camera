@@ -15,10 +15,11 @@ import SwiftUI
 ///   4.7-inch iPhone, they overlay its bottom on a dark backing. The layout stays put when the
 ///   iPhone turns; icons and text blocks turn upright as units, and the chip, pills and warnings
 ///   move to the picture's upper edge.
-/// - **Scrolling**: the same bands in a scroll view at accessibility text sizes.
-/// - **Column** (iPad, or a window wider than tall): the picture beside a trailing column with
-///   the shutter centered; pills, chip and warnings over the picture's top, and the manual
-///   controls and tray over its bottom.
+/// - **Scrolling**: the same bands in a scroll view at accessibility text sizes, in every window,
+///   with the enlarged manual controls list; the viewfinder is clipped to the scroll view.
+/// - **Column** (iPad, or a window wider than tall, below the accessibility sizes): the picture
+///   beside a trailing column with the shutter centered; pills, chip and warnings over the
+///   picture's top, and the manual controls and tray over its bottom.
 ///
 /// Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
 /// place and any warning. Every gesture has a button: swiping the picture down or up is a
@@ -300,6 +301,8 @@ struct CameraReadyView: View {
             scrollingStack
         }
         .hardScrollEdges()
+        // The viewfinder is drawn outside the scroll view (CameraScreen); this keeps it inside.
+        .transformAnchorPreference(key: ViewfinderFrame.self, value: .bounds) { $0.clip = $1 }
     }
 
     /// The scrolling layout's parts, top to bottom.
@@ -315,8 +318,9 @@ struct CameraReadyView: View {
                 // these text sizes it is taller than the picture and overlapped the banner and
                 // the lens buttons.
                 SessionStatusView(status: model.sessionStatus)
+                // Landscape in a wide window, where the preview turns with the interface.
                 picture(showsStatus: false)
-                    .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
+                    .aspectRatio(CameraLayout.pictureAspectRatio(in: size), contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
                 if LiveAidsPanel.isShown(model) {
                     LiveAidsPanel(model: model, settings: settings)
@@ -357,7 +361,7 @@ struct CameraReadyView: View {
                                 if showsExposureDial {
                                     AutoExposureDial(model: model) { showsExposureDial = false }
                                 }
-                                if model.manual.isEnabled && !dynamicTypeSize.isAccessibilitySize {
+                                if model.manual.isEnabled {
                                     if let openControl {
                                         ControlDial(model: model, control: openControl)
                                     }
@@ -389,9 +393,6 @@ struct CameraReadyView: View {
                         VStack(spacing: CameraStyle.targetSpacing) {
                             LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID, isVertical: true) { select($0) }
                             QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
-                            if model.manual.isEnabled && dynamicTypeSize.isAccessibilitySize {
-                                ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                            }
                         }
                     }
                     .scrollBounceBehavior(.basedOnSize)
@@ -664,7 +665,7 @@ struct CameraReadyView: View {
             .focusMagnified(model)
             // Reported outside the enlargement, so CameraScreen gets the picture's own frame and
             // enlarges the viewfinder the same way (FocusMagnifier).
-            .background { Color.clear.anchorPreference(key: ViewfinderFrame.self, value: .bounds) { $0 } }
+            .background { Color.clear.anchorPreference(key: ViewfinderFrame.self, value: .bounds) { ViewfinderAnchors(frame: $0) } }
             .overlay { FocusSquareLayer(model: model, part: .square) }
             .accessibilityIgnoresInvertColors()
             .accessibilityElement(children: .ignore)
@@ -921,20 +922,57 @@ struct ShowControlsButton: View {
 /// Where the ready camera reserves room for the live viewfinder, for ``CameraScreen`` to draw it
 /// behind the interface: so night mode's red stays off the picture (issue #61), and so switching
 /// night mode or Red Viewfinder never replaces the viewfinder (on a device, its preview layer).
-/// `nil` outside the ready camera.
+/// Empty outside the ready camera.
 struct ViewfinderFrame: PreferenceKey {
     /// Creates the key. It holds no state.
     init() {}
 
     /// No frame: there is no picture to fill.
-    static var defaultValue: Anchor<CGRect>? { nil }
+    static var defaultValue: ViewfinderAnchors { ViewfinderAnchors() }
 
-    /// Keeps the first frame reported.
+    /// Keeps the first frame and the first clip reported.
     ///
     /// - Parameters:
-    ///   - value: The frame so far.
-    ///   - nextValue: The next frame reported.
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = value ?? nextValue()
+    ///   - value: The anchors so far.
+    ///   - nextValue: The next anchors reported.
+    static func reduce(value: inout ViewfinderAnchors, nextValue: () -> ViewfinderAnchors) {
+        let next = nextValue()
+        value.frame = value.frame ?? next.frame
+        value.clip = value.clip ?? next.clip
+    }
+}
+
+/// The picture's frame and, when the picture scrolls, the scroll view's frame, which the
+/// viewfinder must stay inside: ``CameraScreen`` draws it behind the interface, outside the
+/// scroll view, so without the clip it would run past the scroll view's edges into the pinned
+/// shutter row or the top of the screen (the scrolling layout at accessibility text sizes).
+struct ViewfinderAnchors {
+    /// The picture's frame, or `nil` when there is no picture.
+    var frame: Anchor<CGRect>?
+
+    /// The frame the picture is seen through, or `nil` when it isn't clipped.
+    var clip: Anchor<CGRect>?
+
+    /// Creates the anchors.
+    ///
+    /// - Parameters:
+    ///   - frame: The picture's frame.
+    ///   - clip: The frame the picture is seen through.
+    init(frame: Anchor<CGRect>? = nil, clip: Anchor<CGRect>? = nil) {
+        self.frame = frame
+        self.clip = clip
+    }
+
+    /// The part of the picture to show: all of it, or the part inside the clip; empty when the
+    /// picture has scrolled out of view.
+    ///
+    /// - Parameters:
+    ///   - frame: The picture's frame.
+    ///   - clip: The frame the picture is seen through, or `nil`.
+    /// - Returns: The visible frame, in the same coordinates.
+    static func visibleFrame(of frame: CGRect, in clip: CGRect?) -> CGRect {
+        guard let clip else { return frame }
+        let visible = frame.intersection(clip)
+        return visible.isNull ? .zero : visible
     }
 }

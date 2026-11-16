@@ -224,6 +224,49 @@ extension NopeAppUITests {
         countPixels(app, outside: excluded) { red, green, blue in max(green, blue) > max(24, red / 4) }
     }
 
+    /// At the largest text size the camera scrolls, and the viewfinder, drawn behind the
+    /// interface, stays inside the scroll view: no yellow from a pure yellow viewfinder shows in
+    /// the pinned shutter row or above the scroll view, before or after scrolling the picture
+    /// past the top. It ran into the shutter row on short screens (iPhone SE, the iPhone Duo's
+    /// outer display) and past the top when scrolled.
+    @MainActor
+    func testViewfinderStaysInsideTheScrollingLayout() throws {
+        let app = launch(
+            "manual",
+            extraArguments: ["-NopeSettings.showsManualControls", "YES", "-NopeSimulatedViewfinder", "yellow"]
+                + Self.largestTextSize)
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        let scrollView = app.scrollViews.firstMatch
+        XCTAssertTrue(scrollView.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(yellowPixels(app, outside: scrollView.frame), -1)
+        XCTAssertEqual(yellowPixels(app, outside: scrollView.frame), 0, "the viewfinder shows outside the scroll view")
+        // Scroll the picture partly past the scroll view's top edge.
+        let start = scrollView.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.6))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -250)))
+        XCTAssertEqual(yellowPixels(app, outside: scrollView.frame), 0, "the scrolled viewfinder shows outside the scroll view")
+    }
+
+    /// Counts sampled pure yellow pixels (the simulated yellow viewfinder) outside a frame, or
+    /// -1 when the screenshot can't be read.
+    @MainActor
+    private func yellowPixels(_ app: XCUIApplication, outside frame: CGRect) -> Int {
+        settle()
+        let image = XCUIScreen.main.screenshot().image
+        guard let pixels = Pixels(image) else { return -1 }
+        let scale = image.scale
+        let size = app.windows.firstMatch.frame.size
+        // A point's margin inside the frame's edges, for anti-aliasing.
+        let inside = frame.insetBy(dx: -1, dy: -1)
+        var count = 0
+        for y in stride(from: CGFloat(0), to: size.height, by: 4) {
+            for x in stride(from: CGFloat(0), to: size.width, by: 4) where !inside.contains(CGPoint(x: x, y: y)) {
+                let (red, green, blue) = pixels.color(x: Int(x * scale), y: Int(y * scale))
+                if red > 200, green > 200, blue < 60 { count += 1 }
+            }
+        }
+        return count
+    }
+
     /// Closes the quick-controls tray if it is open.
     @MainActor
     func closeTray(_ app: XCUIApplication) {

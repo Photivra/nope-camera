@@ -29,6 +29,7 @@
 2 NopeAppUITests/testSourceCodeIsAnHTTPSLink 21
 2 NopeAppUITests/testStorageAndBatteryWarnings 85
 2 NopeAppUITests/testViewfinderFollowsThePictureInTheScrollingLayout 60
+2 NopeAppUITests/testViewfinderStaysInsideTheScrollingLayout 38 est
 2 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 35
 2 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 50
 3 NopeAppUITests/testAstroFramesShowProgressAndStop 121
@@ -82,6 +83,7 @@
 5 OverlayUITests/testFlatLevelSaysItPointsDown 18
 5 ShortcutUITests/testSwitchingLensesSaysWhichCamera 12 est
 6 NopeAppUITests/testDimLightSaysHoldItSteady 24
+6 NopeAppUITests/testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize 40 est
 6 NopeAppUITests/testFarFocusNeedsManualControlsAndShowsAPill 68 est
 6 NopeAppUITests/testFastShutterSettingPassesAudits 114
 6 NopeAppUITests/testFirstRunAtTheLargestTextSizeAndRightToLeft 41

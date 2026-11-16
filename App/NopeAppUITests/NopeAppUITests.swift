@@ -1232,6 +1232,42 @@ final class NopeAppUITests: XCTestCase {
         try auditVisibleElements(app)
     }
 
+    /// At the largest text size every manual control can be set in landscape too: on iPad (and
+    /// the unfolded iPhone Duo) a wide window used the column, which had room only for All Auto
+    /// and Pro Tools. Every window scrolls at these sizes, with the enlarged controls list.
+    @MainActor
+    func testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize() throws {
+        let app = launch("manual", extraArguments: Self.manualOn + Self.largestTextSize)
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        rotate(app, to: .landscapeLeft)
+        XCTAssertTrue(app.steppers.firstMatch.waitForExistence(timeout: 20), "no manual controls list")
+        for name in ["ISO", "Shutter"] {
+            let stepper = app.steppers.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+            // Drag the row into view, holding at the end so the scroll view doesn't coast past it.
+            let scrollView = app.scrollViews.firstMatch
+            var drags = 0
+            let increment = stepper.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "Increment")).firstMatch
+            while !(increment.exists && increment.isHittable) && drags < 12 {
+                let visible = scrollView.frame.insetBy(dx: 0, dy: 60)
+                let distance = max(-250, min(250, visible.midY - stepper.frame.midY))
+                let start = scrollView.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
+                start.press(
+                    forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: distance)),
+                    withVelocity: .slow, thenHoldForDuration: 0.3)
+                drags += 1
+            }
+            XCTAssertTrue(increment.isHittable, "\(name) can't be set")
+            // Setting it makes the control manual and changes its value.
+            let before = stepper.value as? String
+            increment.tap()
+            let changed = NSPredicate { _, _ in stepper.value as? String != before }
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: changed, object: nil)], timeout: 5), .completed,
+                "\(name) didn't change")
+        }
+        rotate(app, to: .portrait)
+    }
+
     @MainActor
     func testDeviceWithoutRAWShowsTheFallbackChip() throws {
         let app = launch("noRAW")

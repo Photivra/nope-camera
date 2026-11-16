@@ -942,9 +942,11 @@ How the camera screen arranges the picture and its controls (issue #68, "Point b
 
 The rule depends only on the space and the text size, so it covers iPhone and iPad in every
 orientation and window size:
-- a space taller than wide, on a phone-sized screen, stacks the bands: top bar, picture, lens
-  row, manual readout and shutter row (``stacked``), or scrolls them at accessibility text
-  sizes (``scrolling``, also on a portrait iPad);
+- at accessibility text sizes, every window scrolls the bands with a shorter picture
+  (``scrolling``), because only that layout has room for the enlarged manual controls list:
+  the column has no room for it, and offered only All Auto and Pro Tools there;
+- otherwise, a space taller than wide, on a phone-sized screen, stacks the bands: top bar,
+  picture, lens row, manual readout and shutter row (``stacked``);
 - a space wider than tall, or a full-size iPad window, puts the picture beside a control
   column on the trailing edge with the shutter centered (``column``).
 
@@ -953,7 +955,7 @@ turns icons and text upright instead (``UprightUnit``); it meets ``column`` only
 rotated sheet is open over the camera. A window that is regular in both size classes rotates
 for real, as on iPad: the unfolded inner display of a foldable iPhone (iPhone Duo) is such a
 window, and the system turns it with the device whatever the app asks, so it uses ``column``
-(``scrolling`` while taller than wide at accessibility sizes) and nothing turns upright
+(``scrolling`` at accessibility sizes) and nothing turns upright
 (``isRegularSize(horizontal:vertical:)``). The Duo's outer display is a compact-width iPhone
 window and stays portrait.
 
@@ -1064,7 +1066,8 @@ case scrolling
 ```
 
 The stacked bands in a scrolling column with a shorter picture, at accessibility text
-sizes, so no control is clipped (AGENTS.md, "Larger Text").
+sizes in every window, so no control is clipped and every manual control is in the
+enlarged list (AGENTS.md, "Larger Text").
 
 ## `CameraLayout/scrollingPictureHeight`
 
@@ -1129,10 +1132,11 @@ readout row and its dial when the "Manual controls" option is on, and a failure 
   4.7-inch iPhone, they overlay its bottom on a dark backing. The layout stays put when the
   iPhone turns; icons and text blocks turn upright as units, and the chip, pills and warnings
   move to the picture's upper edge.
-- **Scrolling**: the same bands in a scroll view at accessibility text sizes.
-- **Column** (iPad, or a window wider than tall): the picture beside a trailing column with
-  the shutter centered; pills, chip and warnings over the picture's top, and the manual
-  controls and tray over its bottom.
+- **Scrolling**: the same bands in a scroll view at accessibility text sizes, in every window,
+  with the enlarged manual controls list; the viewfinder is clipped to the scroll view.
+- **Column** (iPad, or a window wider than tall, below the accessibility sizes): the picture
+  beside a trailing column with the shutter centered; pills, chip and warnings over the
+  picture's top, and the manual controls and tray over its bottom.
 
 Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
 place and any warning. Every gesture has a button: swiping the picture down or up is a
@@ -9704,6 +9708,69 @@ Turns this block upright as one unit while the iPhone is on its side.
 - Parameter sidewaysWidth: The width text wraps at while sideways, or `nil` for the
   natural width.
 
+## `ViewfinderAnchors`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+struct ViewfinderAnchors
+```
+
+The picture's frame and, when the picture scrolls, the scroll view's frame, which the
+viewfinder must stay inside: ``CameraScreen`` draws it behind the interface, outside the
+scroll view, so without the clip it would run past the scroll view's edges into the pinned
+shutter row or the top of the screen (the scrolling layout at accessibility text sizes).
+
+## `ViewfinderAnchors/clip`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+var clip: Anchor<CGRect>?
+```
+
+The frame the picture is seen through, or `nil` when it isn't clipped.
+
+## `ViewfinderAnchors/frame`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+var frame: Anchor<CGRect>?
+```
+
+The picture's frame, or `nil` when there is no picture.
+
+## `ViewfinderAnchors/init(frame:clip:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+init(frame: Anchor<CGRect>? = nil, clip: Anchor<CGRect>? = nil)
+```
+
+Creates the anchors.
+
+- Parameters:
+  - frame: The picture's frame.
+  - clip: The frame the picture is seen through.
+
+## `ViewfinderAnchors/visibleFrame(of:in:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static func visibleFrame(of frame: CGRect, in clip: CGRect?) -> CGRect
+```
+
+The part of the picture to show: all of it, or the part inside the clip; empty when the
+picture has scrolled out of view.
+
+- Parameters:
+  - frame: The picture's frame.
+  - clip: The frame the picture is seen through, or `nil`.
+- Returns: The visible frame, in the same coordinates.
+
 ## `ViewfinderFrame`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
@@ -9715,14 +9782,14 @@ struct ViewfinderFrame
 Where the ready camera reserves room for the live viewfinder, for ``CameraScreen`` to draw it
 behind the interface: so night mode's red stays off the picture (issue #61), and so switching
 night mode or Red Viewfinder never replaces the viewfinder (on a device, its preview layer).
-`nil` outside the ready camera.
+Empty outside the ready camera.
 
 ## `ViewfinderFrame/defaultValue`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-static var defaultValue: Anchor<CGRect>? { get }
+static var defaultValue: ViewfinderAnchors { get }
 ```
 
 No frame: there is no picture to fill.
@@ -9742,14 +9809,14 @@ Creates the key. It holds no state.
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
+static func reduce(value: inout ViewfinderAnchors, nextValue: () -> ViewfinderAnchors)
 ```
 
-Keeps the first frame reported.
+Keeps the first frame and the first clip reported.
 
 - Parameters:
-  - value: The frame so far.
-  - nextValue: The next frame reported.
+  - value: The anchors so far.
+  - nextValue: The next anchors reported.
 
 ## `ViewfinderOverlays`
 

@@ -360,23 +360,63 @@ struct SettingsPresetsTests {
         #expect(presets.canUndo)
     }
 
+    /// While an apply waits (here for location access, held by the test), a second apply and an
+    /// undo are refused as busy; once it finishes, one undo restores the earlier settings and a
+    /// second has nothing left to undo. The wait is held open on purpose, so the test doesn't
+    /// depend on which of two concurrent tasks the executor runs first.
     @Test func oneApplyAtATime() async throws {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)
         let presets = SettingsPresets(settings: settings)
         let preset = try presetWithLocation(settings, presets)
-        let location = LocationTagging(provider: FakeLocationProvider(access: .allowed))
+        let provider = GatedLocationProvider()
+        let location = LocationTagging(provider: provider)
 
-        async let first = presets.apply(.saved(preset.id), camera: nil, location: location)
-        async let second = presets.apply(.factoryDefaults, camera: nil, location: nil)
-        let results = await [first, second]
+        let first = Task { await presets.apply(.saved(preset.id), camera: nil, location: location) }
+        await waitUntil { presets.isApplying }
+        #expect(presets.isApplying)
 
-        #expect(results.map(\.isApplied).sorted { !$0 && $1 } == [false, true])
-        #expect(results.contains { $0.notices == [.cameraBusy] })
+        let second = await presets.apply(.factoryDefaults, camera: nil, location: nil)
+        #expect(!second.isApplied)
+        #expect(second.notices == [.cameraBusy])
+        #expect(await presets.undo(camera: nil, location: location) == false)
 
-        async let undo = presets.undo(camera: nil, location: location)
-        async let another = presets.undo(camera: nil, location: location)
-        #expect(await [undo, another].filter { $0 }.count == 1)
+        await provider.open()
+        #expect(await first.value.isApplied)
+        #expect(!presets.isApplying)
+
+        #expect(await presets.undo(camera: nil, location: location))
+        #expect(await presets.undo(camera: nil, location: location) == false)
+    }
+}
+
+/// A location provider whose access request waits until the test opens it, so a preset apply
+/// stays in progress for as long as a test needs.
+actor GatedLocationProvider: LocationProviding {
+    /// Whether requests answer at once.
+    private var isOpen = false
+
+    /// The requests waiting for ``open()``.
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    /// Answers every waiting request, and every later one at once.
+    func open() {
+        isOpen = true
+        for continuation in waiting { continuation.resume() }
+        waiting = []
+    }
+
+    func currentAccess() async -> LocationAccess {
+        .allowed
+    }
+
+    func requestAccess() async -> LocationAccess {
+        if !isOpen { await withCheckedContinuation { waiting.append($0) } }
+        return .allowed
+    }
+
+    nonisolated func locations() -> AsyncStream<PhotoLocation> {
+        AsyncStream { $0.finish() }
     }
 }
 

@@ -114,7 +114,12 @@ struct CameraLayoutTests {
     @Test func wideSpaceOrFullIPadUsesTheColumn() {
         let landscape = CGSize(width: 874, height: 402)
         #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: false, isRegularSize: false) == .column)
-        #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: true, isRegularSize: false) == .column)
+        // At accessibility sizes every window scrolls: the column has no room for the enlarged
+        // manual controls list, so it offered only All Auto and Pro Tools.
+        #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: true, isRegularSize: false) == .scrolling)
+        let iPadLandscape = CGSize(width: 1180, height: 820)
+        #expect(CameraLayout.arrangement(for: iPadLandscape, isAccessibilitySize: false, isRegularSize: true) == .column)
+        #expect(CameraLayout.arrangement(for: iPadLandscape, isAccessibilitySize: true, isRegularSize: true) == .scrolling)
         let iPadPortrait = CGSize(width: 820, height: 1160)
         #expect(CameraLayout.arrangement(for: iPadPortrait, isAccessibilitySize: false, isRegularSize: true) == .column)
         #expect(CameraLayout.arrangement(for: iPadPortrait, isAccessibilitySize: true, isRegularSize: true) == .scrolling)
@@ -173,7 +178,7 @@ struct CameraLayoutTests {
         let tall = CGSize(width: 669, height: 835)
         #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: false, isRegularSize: isRegular) == .column)
         #expect(CameraLayout.arrangement(for: tall, isAccessibilitySize: false, isRegularSize: isRegular) == .column)
-        #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: true, isRegularSize: isRegular) == .column)
+        #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
         #expect(CameraLayout.arrangement(for: tall, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
         #expect(CameraLayout.pictureAspectRatio(in: wide) == CameraLayout.photoAspectRatio)
         #expect(CameraLayout.pictureAspectRatio(in: tall) == 1 / CameraLayout.photoAspectRatio)
@@ -181,6 +186,21 @@ struct CameraLayoutTests {
         #expect(UprightRotation.landscapeLeft.inWindow(isRegularSize: isRegular) == .portrait)
         #expect(UprightRotation.landscapeRight.inWindow(isRegularSize: isRegular) == .portrait)
         #expect(UprightRotation.portrait.inWindow(isRegularSize: isRegular) == .portrait)
+    }
+
+    @Test func viewfinderStaysInsideTheScrollView() {
+        let picture = CGRect(x: 40, y: 300, width: 210, height: 280)
+        // Not clipped outside the scrolling layout.
+        #expect(ViewfinderAnchors.visibleFrame(of: picture, in: nil) == picture)
+        // An iPhone SE at the largest text size: the scroll view ends at 520, above the pinned
+        // shutter row, so only the picture's top 220 points show.
+        let scrollView = CGRect(x: 0, y: 20, width: 375, height: 500)
+        #expect(ViewfinderAnchors.visibleFrame(of: picture, in: scrollView) == CGRect(x: 40, y: 300, width: 210, height: 220))
+        // Scrolled up past the top: only the part still in the scroll view.
+        let scrolledUp = picture.offsetBy(dx: 0, dy: -400)
+        #expect(ViewfinderAnchors.visibleFrame(of: scrolledUp, in: scrollView) == CGRect(x: 40, y: 20, width: 210, height: 160))
+        // Scrolled out of view: nothing.
+        #expect(ViewfinderAnchors.visibleFrame(of: picture.offsetBy(dx: 0, dy: -700), in: scrollView) == .zero)
     }
 
     @Test func regularSizeNeedsBothSizeClasses() {

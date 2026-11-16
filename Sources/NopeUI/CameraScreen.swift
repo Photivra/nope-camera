@@ -95,10 +95,13 @@ public struct CameraScreen<Viewfinder: View>: View {
         // is a new preview layer, which attaches to the running capture session on the main
         // thread and made switching night mode freeze the camera. Red Viewfinder tints it here.
         // The focus magnifier enlarges it here, as it enlarges the picture and focus peaking there.
-        .backgroundPreferenceValue(ViewfinderFrame.self) { anchor in
-            if let anchor, let source = model.previewSource {
+        // In the scrolling layout it is clipped to the scroll view, so it never runs into the
+        // pinned shutter row or past the top of the screen.
+        .backgroundPreferenceValue(ViewfinderFrame.self) { anchors in
+            if let anchor = anchors.frame, let source = model.previewSource {
                 GeometryReader { proxy in
                     let frame = proxy[anchor]
+                    let visible = ViewfinderAnchors.visibleFrame(of: frame, in: anchors.clip.map { proxy[$0] })
                     viewfinder(source)
                         .frame(width: frame.width, height: frame.height)
                         .focusMagnified(model)
@@ -106,6 +109,12 @@ public struct CameraScreen<Viewfinder: View>: View {
                         .clipped()
                         .colorMultiply(tintsViewfinder ? NightStyle.red : .white)
                         .offset(x: frame.minX, y: frame.minY)
+                        .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
+                        .mask(alignment: .topLeading) {
+                            Rectangle()
+                                .frame(width: visible.width, height: visible.height)
+                                .offset(x: visible.minX, y: visible.minY)
+                        }
                 }
                 .accessibilityIgnoresInvertColors()
                 .accessibilityHidden(true)

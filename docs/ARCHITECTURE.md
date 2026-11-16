@@ -589,16 +589,22 @@ The camera screen follows the approved layout in [`design/camera.html`](design/c
 - **iPad, or any window wider than tall (column):** the interface rotates; the picture sits
   beside a trailing column with the shutter centered, and Settings and the format details open as
   popovers. The column's halves above and below the shutter share its height, and the upper one
-  scrolls at large text sizes, so nothing passes under the shutter in a short window. In a
+  scrolls if its buttons don't fit, so nothing passes under the shutter in a short window. In a
   reduced window the camera shows the multitasking pause.
-- **Accessibility text sizes (scrolling):** the iPhone bands in a scroll view.
+- **Accessibility text sizes (scrolling), in every window:** the iPhone bands in a scroll view
+  with a shorter picture (landscape in a wide window) and the enlarged manual controls list. The
+  column isn't used at these sizes: it has no room for that list, and offered only All Auto and
+  Pro Tools. `CameraScreen` draws the viewfinder outside the scroll view, so the scroll view
+  reports its frame with the picture's (`ViewfinderAnchors.clip`) and the viewfinder is masked
+  to it (`ViewfinderAnchors.visibleFrame(of:in:)`): it never runs into the pinned shutter row or
+  past the top when the picture scrolls.
 - **Foldable iPhone (iPhone Duo):** the rule reads the window's size classes, not the device
   model. The outer display (466 × 678 points, compact width and regular height, with the status
   bar in a trailing strip) is an iPhone window: stacked, kept in portrait, with upright icons;
   its bands overlay the picture's bottom, as on a 4.7-inch iPhone. The unfolded inner display
   (951 × 669 points held like a book, 669 × 951 turned) is regular in both size classes, and the
   system rotates it with the device whatever the app asks, so it is treated like an iPad window:
-  the column beside the 4:3 picture (scrolling while taller than wide at accessibility sizes),
+  the column beside the 4:3 picture (scrolling at accessibility sizes),
   and nothing turns as an upright unit (`CameraLayout.isRegularSize(horizontal:vertical:)`,
   `UprightRotation.inWindow(isRegularSize:)`, applied by `CameraScreen`). The app delegate allows
   every orientation for such a window, never forces it back to portrait when a sheet closes, and
