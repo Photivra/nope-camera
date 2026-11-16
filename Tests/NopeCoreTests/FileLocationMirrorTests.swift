@@ -315,6 +315,8 @@ struct PhotoLocationTests {
 
         var settings = MetadataSettings()
         settings.set(.location, isOn: true)
+        // The GPS version the standard file tags add is tested in `StandardFileTagsTests`.
+        settings.writesStandardFileTags = false
         var on = MetadataPlan(settings: settings)
         on.location = place
         let gps = on.properties(for: format, from: source)["{GPS}"] as? [String: Any]

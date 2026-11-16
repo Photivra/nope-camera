@@ -99,9 +99,12 @@ struct MetadataPlanTests {
         #expect(
             plan.allowlist(for: .raw, signed: false).textRules[MetadataAllowlist.TagID(.primary, 0xC614)]
                 == .exactly(MetadataPlan.genericUniqueCameraModel))
-        // The four TIFF fields every DNG carries must be empty when their switches are off.
+        // The four TIFF fields every DNG carries must be empty when their switches are off; the
+        // date takes the standard's unknown form while the standard file tags are on (the default).
         for tag in ExpectedTags.alwaysInRAW {
-            #expect(plan.allowlist(for: .raw, signed: false).textRules[tag] == .exactly(""), "\(tag)")
+            let expected: MetadataAllowlist.TextRule =
+                tag.tag == 0x0132 ? .oneOf(["", MetadataPlan.unknownDateTime]) : .exactly("")
+            #expect(plan.allowlist(for: .raw, signed: false).textRules[tag] == expected, "\(tag)")
         }
     }
 
@@ -289,7 +292,8 @@ struct MetadataPropertiesTests {
             ])
         #expect((properties["{DNG}"] as? [String: Any])?["UniqueCameraModel"] as? String == "Generic camera")
         let tiff = properties["{TIFF}"] as? [String: Any]
-        for key in ["DateTime", "Make", "Model", "Software"] { #expect(tiff?[key] as? String == "", "\(key)") }
+        #expect(tiff?["DateTime"] as? String == MetadataPlan.unknownDateTime)
+        for key in ["Make", "Model", "Software"] { #expect(tiff?[key] as? String == "", "\(key)") }
     }
 
     /// Regression test for issue #65: for every one of the 8,192 switch combinations, a DNG's
@@ -303,7 +307,8 @@ struct MetadataPropertiesTests {
             let plan = MetadataPlan(settings: settings, appVersion: "0.2.0")
             let tiff = plan.properties(for: .raw, from: Self.systemMetadata)["{TIFF}"] as? [String: Any] ?? [:]
             let expected: [String: String] = [
-                "DateTime": settings.isOn(.dateAndTime) ? system["DateTime"] as! String : "",
+                "DateTime": settings.isOn(.dateAndTime)
+                    ? system["DateTime"] as! String : settings.writesStandardFileTags ? MetadataPlan.unknownDateTime : "",
                 "Make": settings.isOn(.cameraMakeAndModel) ? system["Make"] as! String : "",
                 "Model": settings.isOn(.cameraMakeAndModel) ? system["Model"] as! String : "",
                 "Software": plan.softwareValue(systemSoftware: system["Software"] as? String) ?? "",
@@ -350,7 +355,10 @@ struct MetadataPropertiesTests {
         let properties = MetadataPlan(settings: settings).properties(for: .raw, from: [:])
         // Only the four TIFF fields AVFoundation needs, empty because the system gave no value.
         #expect(Self.keys(properties) == ["{TIFF}.DateTime", "{TIFF}.Make", "{TIFF}.Model", "{TIFF}.Software"])
-        #expect((properties["{TIFF}"] as? [String: Any])?.values.allSatisfy { $0 as? String == "" } == true)
+        // The date, with no value from the system, takes the standard's unknown form.
+        let tiff = properties["{TIFF}"] as? [String: Any] ?? [:]
+        #expect(tiff["DateTime"] as? String == MetadataPlan.unknownDateTime)
+        #expect(tiff.filter { $0.key != "DateTime" }.values.allSatisfy { $0 as? String == "" })
     }
 
     /// Every format gets exactly the agreed `Software` for the two switches, including a HEIF or

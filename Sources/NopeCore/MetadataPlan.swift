@@ -26,8 +26,36 @@ public struct MetadataPlan: Equatable, Sendable {
     /// the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
     /// them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
     /// requirement. Privacy rule: when a field's switch is off, the app writes an empty string, never
-    /// a placeholder value, so the DNG still says nothing about the date, camera or software.
+    /// a made-up value, so the DNG still says nothing about the date, camera or software; with the
+    /// standard file tags on, the date is the Exif standard's all-blank "unknown" form instead
+    /// (``unknownDateTime``), which holds no date either.
     public static let requiredRAWTIFFFields: [MetadataField] = [.dateTime, .make, .model, .software]
+
+    /// The `DateTime` a DNG carries when its date switch is off and the standard file tags are
+    /// on: the Exif standard's form for an unknown date, "all the character spaces except colons
+    /// filled with blank characters" (Exif 2.32 and 3.0, `DateTime`). It says nothing about when
+    /// the photo was taken, and `exiftool -validate` accepts it, where it reports an empty string
+    /// as an invalid date. It is still a value, so AVFoundation's need for the key (issue #65)
+    /// is met.
+    public static let unknownDateTime = "    :  :     :  :  "
+
+    /// `ComponentsConfiguration` for a YCbCr image: Y, Cb, Cr and an unused fourth component
+    /// (Exif 2.32, `ComponentsConfiguration`, "4 5 6 0" is RGB, "1 2 3 0" the default for YCbCr).
+    public static let ycbcrComponentsConfiguration = [1, 2, 3, 0]
+
+    /// `ExifVersion` 2.32 ("0232"), the version ImageIO writes into the files it encodes itself.
+    public static let exifVersion = [2, 3, 2]
+
+    /// `FlashpixVersion` 1.0, the only version the Exif standard defines (Exif 2.32,
+    /// `FlashpixVersion`, "0100").
+    public static let flashpixVersion = [1, 0]
+
+    /// `ColorSpace` for any color space other than sRGB: "Uncalibrated" (Exif 2.32, `ColorSpace`,
+    /// `0xFFFF`). `PhotoEncoder` writes 1 (sRGB) for an sRGB copy.
+    public static let uncalibratedColorSpace = 0xFFFF
+
+    /// `GPSVersionID` 2.3.0.0, the version of the GPS directory in Exif 2.3 and later.
+    public static let gpsVersion = [2, 3, 0, 0]
 
     /// The XMP basic namespace (XMP part 1, 8.4).
     public static let xmpNamespace = "http://ns.adobe.com/xap/1.0/"
@@ -175,8 +203,15 @@ public struct MetadataPlan: Equatable, Sendable {
             textRules[MetadataAllowlist.TagID(.primary, MetadataField.uniqueCameraModel.tag)] =
                 .exactly(Self.genericUniqueCameraModel)
         }
-        // A DNG always carries these four, empty when their switch is off (issue #65).
-        for field in alwaysPresent { textRules[MetadataAllowlist.TagID(field.directory, field.tag)] = .exactly("") }
+        // A DNG always carries these four, empty when their switch is off (issue #65). With the
+        // standard file tags on, the date is written as the standard's unknown form; the empty
+        // text also passes, since how AVFoundation stores the blank value is a device check and
+        // neither holds a date.
+        for field in alwaysPresent {
+            let rule: MetadataAllowlist.TextRule =
+                field == .dateTime && settings.writesStandardFileTags ? .oneOf(["", Self.unknownDateTime]) : .exactly("")
+            textRules[MetadataAllowlist.TagID(field.directory, field.tag)] = rule
+        }
         switch format {
         case .raw:
             if signed { tags.insert(Self.contentCredentialsTag) }
@@ -241,6 +276,7 @@ public struct MetadataPlan: Equatable, Sendable {
         // with the fields of `MetadataField.gpsFields`; a developed copy takes the same fields
         // from its DNG through the catalog loop above.
         if settings.isOn(.location), let location { result[MetadataField.gps] = location.gpsProperties }
+        if settings.writesStandardFileTags { addStandardFileTags(for: format, to: &result) }
         let sourceSoftware = Self.value(of: ImageIOKey(MetadataField.tiff, "Software"), in: source) as? String
         if let software = softwareValue(systemSoftware: Self.systemVersion(fromSoftware: sourceSoftware)) {
             Self.put(software, at: ImageIOKey(MetadataField.tiff, "Software"), in: &result)
@@ -265,11 +301,43 @@ public struct MetadataPlan: Equatable, Sendable {
         if format == .raw {
             // AVFoundation writes no DNG without these four keys (issue #65): an empty string
             // stands in for a value the switches leave out, or the system didn't supply.
-            for key in Self.requiredRAWTIFFFields.map({ $0.imageIOKeys[0] }) where Self.value(of: key, in: result) == nil {
-                Self.put("", at: key, in: &result)
+            for field in Self.requiredRAWTIFFFields where Self.value(of: field.imageIOKeys[0], in: result) == nil {
+                let placeholder = field == .dateTime && settings.writesStandardFileTags ? Self.unknownDateTime : ""
+                Self.put(placeholder, at: field.imageIOKeys[0], in: &result)
             }
         }
         return result
+    }
+
+    /// Adds the standard file tags (``MetadataSettings/writesStandardFileTags``) a file doesn't
+    /// have yet: in a HEIF or JPEG the EXIF `ExifVersion`, `ComponentsConfiguration`,
+    /// `FlashpixVersion` and `ColorSpace`, and in any file with a GPS directory its `GPSVersionID`. Each is a fixed
+    /// value from the Exif standard on the allowlist (locked image structure, or the location
+    /// item's GPS fields), so nothing identifying is added; a value the source already has is
+    /// kept.
+    ///
+    /// ImageIO writes no `YCbCrPositioning` (IFD0 `0x0213`): `CGImageProperties.h` has no key for
+    /// it, and neither the `{TIFF}` dictionary nor an XMP `tiff:YCbCrPositioning` tag puts it in
+    /// a JPEG's EXIF (macOS 27.2, 2026-11-16). It also drops `ColorSpace` from a Display P3
+    /// JPEG; a Display P3 HEIF keeps it (`docs/TESTING.md`, "External validators").
+    ///
+    /// - Parameters:
+    ///   - format: The file's format.
+    ///   - result: The property dictionary being built.
+    func addStandardFileTags(for format: PhotoFormat, to result: inout [String: Any]) {
+        if format != .raw {
+            let exif = MetadataField.exif
+            for (key, value) in [
+                ("ExifVersion", Self.exifVersion as Any), ("ComponentsConfiguration", Self.ycbcrComponentsConfiguration as Any), ("FlashPixVersion", Self.flashpixVersion),
+                ("ColorSpace", Self.uncalibratedColorSpace),
+            ] where Self.value(of: ImageIOKey(exif, key), in: result) == nil {
+                Self.put(value, at: ImageIOKey(exif, key), in: &result)
+            }
+        }
+        let version = ImageIOKey(MetadataField.gps, PhotoLocation.versionKey)
+        if result[MetadataField.gps] != nil, Self.value(of: version, in: result) == nil {
+            Self.put(Self.gpsVersion, at: version, in: &result)
+        }
     }
 
     /// Whether a value under an ImageIO key is copied into a file of a format.

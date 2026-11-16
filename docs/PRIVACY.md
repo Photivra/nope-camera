@@ -393,6 +393,35 @@ smaller copy, set to its size. The defaults are the earlier encoding. Every comb
 app can control, and what the app offers, is in
 [`research/capture-and-file-settings.md`](research/capture-and-file-settings.md).
 
+### Standard File Tags
+
+Settings › Privacy › Choose Details › Standard File Tags, **on by default** (owner decision,
+2026-11-16) and outside "Remove all optional details", like signing
+(`MetadataSettings.writesStandardFileTags`). It writes the tags the Exif standard requires that
+are fixed values and say nothing about the photo, the device or the person:
+
+| Tag | Value | Files |
+|---|---|---|
+| EXIF `ExifVersion` (`0x9000`) | `0232`, where the system's metadata has none | HEIF and JPEG |
+| EXIF `ComponentsConfiguration` (`0x9101`) | Y, Cb, Cr (`1 2 3 0`) | HEIF and JPEG |
+| EXIF `FlashpixVersion` (`0xA000`) | `0100` | HEIF and JPEG |
+| EXIF `ColorSpace` (`0xA001`) | 1 (sRGB) for an sRGB copy, `0xFFFF` (Uncalibrated) for Display P3 | HEIF and JPEG; ImageIO drops it from a Display P3 JPEG |
+| GPS `GPSVersionID` (`0x0000`) | 2.3.0.0 | Every file with a location (Location on) |
+| IFD0 `DateTime` (`0x0132`) when Date and Time is off | 19 characters: blanks and colons, the Exif standard's form for an unknown date | DNG (instead of the empty text of issue #65) |
+
+ImageIO writes `ExifVersion` itself into the copies it develops, but a processed fallback encoded
+from metadata without one had none. Each value comes from the allowlist
+(the locked image structure fields, or the Location item's GPS fields); a value the system's own
+metadata already has is kept. The blank date has no digits, so it says nothing about when the
+photo was taken. **Off** writes the minimal set the app wrote before: no added tags, and an empty
+`DateTime` in a DNG with the date off.
+
+ImageIO can't write `YCbCrPositioning` (IFD0 `0x0213`), which exiftool also expects in a JPEG:
+`CGImageProperties.h` has no key for it, and neither a `{TIFF}` value nor an XMP
+`tiff:YCbCrPositioning` tag puts it in the EXIF block (macOS 27.2, 2026-11-16). Writing it, or
+`ColorSpace` in a Display P3 JPEG, would need the app to edit the file's bytes, which AGENTS.md
+allows only where no system API exists, with fuzzing; that is an open owner decision.
+
 ### Locked (the photo breaks without these)
 
 | Item | Why it can't be removed (shown in the app) |
@@ -493,10 +522,14 @@ the replacement metadata's `{TIFF}` dictionary has `DateTime`, `Make`, `Model` a
 (measured with debug runs on the device; Apple doesn't document it). Leaving out any one fails;
 `HostComputer` and the resolution keys aren't needed; an empty text for each of the four works,
 and `NSNull` doesn't. So every DNG's dictionary has all four (`MetadataPlan.requiredRAWTIFFFields`):
-the real value when the item's switch is on, and an empty text, never a placeholder, when it is
-off. An empty field says nothing about the date, camera or software. The read-back accepts each
-of the four when its switch is off only if it is empty: one NUL, a count of 0, only NULs, or the
-tag left out (which of these AVFoundation writes is a device check below); any text fails. HEIF
+the real value when the item's switch is on, and an empty text, never a made-up value, when it is
+off. An empty field says nothing about the date, camera or software. With Standard File Tags on
+(the default), `DateTime` is instead the Exif standard's unknown form, blanks and colons
+(`MetadataPlan.unknownDateTime`), which `exiftool -validate` accepts where it reports the empty
+text as an invalid date; it holds no date either. The read-back accepts each of the four when its
+switch is off only if it is that value (empty: one NUL, a count of 0, only NULs, or the tag left
+out; or exactly the blank date): which encoding AVFoundation writes is a device check below; any
+other text fails. HEIF
 and JPEG don't need them, so they leave them out when the switch is off. `UniqueCameraModel`
 keeps its "Generic camera" value.
 
@@ -527,7 +560,9 @@ Simulator has no camera and no real DNG can be made in a unit test:
 - with "Remove all optional details" on (the default) and with every switch on, a RAW is saved
   (issue #65), and the saved DNG's `DateTime`, `Make`, `Model` and `Software` are empty with the
   switches off: note which encoding AVFoundation uses (one NUL, a count of 0, or the tag left
-  out), and that the read-back accepts it;
+  out), and that the read-back accepts it; with Standard File Tags on (the default), a RAW is
+  still saved and its `DateTime` is the 19-character blank date, byte for byte (exiftool
+  `-IFD0:ModifyDate -b`), and `exiftool -validate` reports no date warning; with it off, as before;
 - on a lens without Bayer RAW, the processed fallback HEIF (and JPEG) is saved with "Remove all
   optional details" on: it is written through the same `fileDataRepresentation(with:)` call
   without the four TIFF fields, and whether AVFoundation needs them for a processed photo too

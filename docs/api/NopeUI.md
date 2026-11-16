@@ -6860,7 +6860,8 @@ The metadata switches, the signing switch and the locked items, as in `docs/PRIV
 "Metadata plan".
 
 The master switch comes first, then one switch per optional item with what turning it off
-costs, then the items every file keeps, each marked locked with the reason. The signing switch
+costs, then the Standard File Tags switch (outside the master switch, on by default), then the
+items every file keeps, each marked locked with the reason. The signing switch
 is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
 `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 `MetadataSettings`; this view only shows them.

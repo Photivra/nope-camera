@@ -54,6 +54,8 @@ public struct MetadataAllowlist: Equatable, Sendable {
         case exactly(String)
         /// Text that starts with this prefix.
         case prefix(String)
+        /// Exactly one of these texts.
+        case oneOf([String])
         /// Any text: the value is the system's own (for example the system version).
         case any
 
@@ -65,6 +67,7 @@ public struct MetadataAllowlist: Equatable, Sendable {
             switch self {
             case .exactly(let expected): value == expected
             case .prefix(let prefix): value?.hasPrefix(prefix) == true
+            case .oneOf(let values): value.map(values.contains) == true
             case .any: true
             }
         }
