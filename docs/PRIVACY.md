@@ -12,8 +12,8 @@ for any user-facing claim comes from
 - **Network:** none. The app contains no networking code; `scripts/check-security.sh` fails a
   pull request that adds any.
 - **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains and
-  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1`), for the
-  settings below.
+  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1` and
+  `1C8F.1`), for the settings below.
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
   for camera access when the person presses "Allow Camera Access", and for add-only Photos access
@@ -44,7 +44,9 @@ for any user-facing claim comes from
   (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from the
   thumbnail's long-press menu or its VoiceOver action) lists what the read-back found in each
   saved file (pixel size, bit depth, file size, the DNG's color filter pattern, black and white
-  levels and whether it stores lens correction instructions; the exposure tags as written; every
+  levels and whether it stores lens correction instructions; the share of clipped highlights and
+  shadows counted from the RAW sensor buffer at capture time (counts only, `RAWClipping`; the
+  samples are read once and never copied, stored or logged); the exposure tags as written; every
   tag, block and property by name), which optional details were written or left out and why, the
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in
@@ -53,10 +55,12 @@ for any user-facing claim comes from
   Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
   Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
-  HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in the app's own `UserDefaults` on the device. They are
-  never synced or sent. The name and copyright fields of `SaveSettings` stay empty: Settings
-  has no text entry for them yet. The privacy manifest declares the `UserDefaults` required-reason API
-  with reason `CA92.1` (the app's own data).
+  HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in
+  `UserDefaults` on the device. They are never synced or sent. The name and copyright fields of
+  `SaveSettings` stay empty: Settings has no text entry for them yet. The privacy manifest
+  declares the `UserDefaults` required-reason API with reasons `CA92.1` (the app's own data) and
+  `1C8F.1` (data shared with the app's own extensions through its App Group). See "Settings
+  shared with the extensions" below.
 - **Location:** off by default; see "Location" below. The location is never stored by the app
   outside the photo itself, never logged and never sent. The privacy manifest declares no
   collected data: Apple's "collected" means data transmitted off the device, and the location
@@ -83,6 +87,37 @@ for any user-facing claim comes from
   `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
+
+## Settings shared with the extensions
+
+Since 0.3.0 the settings are kept in the `UserDefaults` of the app's App Group
+(`group.<bundle identifier>`, for example `group.com.photivra.nope.dev` in development builds),
+so the app and its Control Center and Lock Screen controls read the same values (issue #42).
+
+- **What is shared:** only the settings listed above, under keys that start with
+  `NopeSettings.`: Booleans, the names of choices (formats, flash mode, look) and numbers (torch
+  brightness). No photo, thumbnail, metadata value, location, file name, date of use, counter or
+  identifier is stored or shared.
+- **Who can read it:** the app and its own extensions signed by the same team: today the
+  controls extension (`NopeControls`), which reads and writes night mode. Another app can't read
+  an App Group it doesn't belong to.
+- **It stays on the device.** The App Group container is local: it isn't synced through iCloud,
+  and nothing in it is sent anywhere. Device backups include it as they include the app's own
+  preferences.
+- **Moving the old settings:** on the first launch of 0.3.0 the app copies its settings from its
+  own `UserDefaults` into the App Group's once (`SharedSettingsStore.migrate`); the old copy is
+  left in place and no longer read.
+- **Change signal:** when a setting changes, the process that changed it posts a Darwin
+  notification named `<App Group>.settings-changed`. It carries no data; the app and the controls
+  read the store again when they hear it.
+- **The Lock Screen camera** (`NopeCaptureExtension`) can't open the App Group: Apple's
+  LockedCameraCapture documentation says a capture extension "can't read from or write to the App
+  Group's shared container". So the app (and the night mode control) hand it a copy of the same
+  settings through the `appContext` of the "Open nope." intent (`NopeSettingsSnapshot`, at most
+  4 KB, kept by the system on the device). The Lock Screen camera reads it when it opens; changes
+  made there last until it closes, because the system erases the extension's own container. Its
+  restrictions are unchanged: it has no location reader and no storage or battery reader, so a
+  photo taken there never carries a location even if the Location switch is on.
 
 ## Content Credentials (signing)
 

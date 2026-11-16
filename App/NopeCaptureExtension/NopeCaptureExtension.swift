@@ -16,9 +16,11 @@ import SwiftUI
 /// allowlist with its fail-closed read-back, a signature with a new key per photo, and add-only
 /// saving to Photos (AGENTS.md, "Honesty"). It makes no network request.
 ///
-/// While locked, the extension sees only what Apple allows it: its own container, not the
-/// app's. So it keeps its own settings, starting from the app's defaults, and shows no button that
-/// would open another app.
+/// While locked, the extension sees only what Apple allows it: its own container, not the app's or
+/// the App Group's. It starts with a copy of the person's settings that the app hands it through
+/// ``OpenCameraIntent``'s app context (``NopeSettingsSnapshot``), so photos use their formats,
+/// metadata and signing choices, and night mode stays on if it was on. Changes made here last until
+/// the extension closes. It shows no button that would open another app.
 @main
 struct NopeCaptureExtension: LockedCameraCaptureExtension {
     /// The extension's one scene: the camera screen.
@@ -38,11 +40,33 @@ struct LockedCameraView: View {
     /// The camera model, with the device's cameras and the full save pipeline.
     @State private var model = CameraModel(backend: AVFoundationCaptureBackend(), saver: Self.makeSaver())
 
-    /// The extension's own settings, in its own container: the app's defaults until changed here.
+    /// The extension's own settings, in its own container, which the system erases when the
+    /// extension closes: the copy from the app once ``hasSettings`` is `true`.
     @State private var settings = NopeSettings(defaults: .standard)
 
-    /// The camera screen, with the hardware shutter buttons.
+    /// Whether the settings from the app are applied, so the camera never shows in the wrong mode
+    /// (a white screen in night mode) before they arrive.
+    @State private var hasSettings = false
+
+    /// Black until the settings from the app are applied, then the camera screen.
     var body: some View {
+        if hasSettings {
+            camera
+        } else {
+            Color.black
+                .ignoresSafeArea()
+                .task {
+                    // No copy yet (the app hasn't run since it was installed): the defaults.
+                    if let snapshot = try? await OpenCameraIntent.appContext {
+                        settings.apply(snapshot)
+                    }
+                    hasSettings = true
+                }
+        }
+    }
+
+    /// The camera screen, with the hardware shutter buttons.
+    private var camera: some View {
         CameraScreen(model: model, settings: settings) { source in
             Viewfinder(source: source)
         }

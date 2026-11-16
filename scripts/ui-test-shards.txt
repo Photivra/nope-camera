@@ -76,6 +76,7 @@
 6 OverlayUITests/testGridOnlyAndLevelOnly 27
 6 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 23
 6 ShortcutUITests/testACancelledCountdownSaysNoPhotoWasTaken 14 est
+6 OverlayUITests/testPinnedReadoutStaysInCleanView 115 est
 7 NopeAppUITests/testComparisonShotShowsBothPicturesAndTheirDetails 110
 7 NopeAppUITests/testExposureModesAndFixedAperture 43
 7 NopeAppUITests/testFocusAidsAtTheLargestTextSize 34

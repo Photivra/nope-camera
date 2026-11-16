@@ -136,7 +136,8 @@ public struct PhotoSaver: Sendable {
             formats: finished.map(\.file.format), isProcessedFallback: !photo.format.isBayerRAW, signature: status,
             metadata: metadata, thumbnail: thumbnail(of: finished.map(\.file)),
             details: PhotoDetails.build(
-                files: finished, plan: plan, look: settings.developedLook, signature: status, timings: timings))
+                files: finished, plan: plan, look: settings.developedLook, signature: status, timings: timings,
+                rawClipping: photo.rawClipping))
         return (saved, finished.map(\.file))
     }
 

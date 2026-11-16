@@ -7,6 +7,7 @@ import NopeSigning
 import NopeUI
 import SwiftUI
 import UIKit
+import WidgetKit
 
 /// The Photivra Nope Camera app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
 ///
@@ -32,6 +33,13 @@ struct NopeApp: App {
     /// screen shows (``SetNightModeIntent``).
     private static let sharedSettings = NopeSettings(defaults: makeSettingsStore())
 
+    /// Keeps the settings in step with the Control Center controls (issue #42); `nil` without the
+    /// App Group and in UI tests, whose settings are their own.
+    private static let settingsSync = makeSettingsSync()
+
+    /// Whether the app is in the foreground, to read the shared settings again when it returns.
+    @Environment(\.scenePhase) private var scenePhase
+
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
 
@@ -51,6 +59,7 @@ struct NopeApp: App {
         let shortcuts = Self.shortcuts
         AppDependencyManager.shared.add(dependency: settings)
         AppDependencyManager.shared.add(dependency: shortcuts)
+        _ = Self.settingsSync
     }
 
     /// The app's single window, showing the camera screen.
@@ -174,6 +183,11 @@ struct NopeApp: App {
         .task(id: settings.torchLevel) {
             await model.send(.light(.setTorchLevel(settings.torchLevel)))
         }
+        // A control's change normally arrives at once (`SharedSettingsSync`); reading the store
+        // again on return to the foreground also covers a signal sent while the app was suspended.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, Self.settingsSync != nil, settings.reload() { Self.settingsDidChange() }
+        }
     }
 
     /// Reads the storage and battery again each time the notification is posted, for as long as
@@ -204,13 +218,34 @@ struct NopeApp: App {
         return MotionGravitySource()
     }
 
-    /// Where settings are stored: the app's standard `UserDefaults`, or in Debug builds launched
-    /// by the UI tests, an empty store of their own, so every test starts from the defaults.
+    /// Where settings are stored: the App Group's `UserDefaults`, shared with the controls (with
+    /// the settings of earlier versions moved in once), or in Debug builds launched by the UI
+    /// tests, an empty store of their own, so every test starts from the defaults.
     private static func makeSettingsStore() -> UserDefaults {
         #if DEBUG
         if let store = SimulatedCameraLaunch.settingsStore() { return store }
         #endif
-        return .standard
+        return SharedSettings.appStore()
+    }
+
+    /// Follows the shared settings, and hands the current ones to the Lock Screen camera.
+    ///
+    /// - Returns: The sync, or `nil` without the App Group or in a UI test.
+    private static func makeSettingsSync() -> SharedSettingsSync? {
+        #if DEBUG
+        if SimulatedCameraLaunch.scenario != nil { return nil }
+        #endif
+        guard let signal = SharedSettings.changeSignal else { return nil }
+        let sync = SharedSettingsSync(settings: sharedSettings, signal: signal) { settingsDidChange() }
+        settingsDidChange()
+        return sync
+    }
+
+    /// After a settings change here or in a control: refreshes the Night Mode control and hands the
+    /// settings to the Lock Screen camera. Never called in UI tests, so they can't change either.
+    private static func settingsDidChange() {
+        ControlCenter.shared.reloadControls(ofKind: NopeControlKind.nightMode)
+        Task { await SharedSettings.publishToLockScreenCamera(sharedSettings) }
     }
 
     /// The location service for this launch: a simulated one for a UI test scenario in Debug
