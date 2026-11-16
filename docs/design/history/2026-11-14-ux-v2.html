@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. UX v2</title>
+<style>
+  :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#4fd1c5; --yellow:#ffd60a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+  header { max-width:1100px; margin:0 auto; padding:28px 16px 8px; }
+  h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.02em; }
+  header p { margin:0; color:var(--muted); max-width:760px; }
+  .grid { max-width:1100px; margin:0 auto; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:28px; }
+  figure { margin:0; }
+  figcaption { margin-top:10px; font-size:13px; color:var(--muted); }
+  figcaption b { color:var(--ink); display:block; font-size:14px; margin-bottom:2px; }
+  .phone { position:relative; width:290px; height:620px; border-radius:46px; background:#000; overflow:hidden; box-shadow:0 0 0 10px #1c1c1e, 0 20px 40px rgba(0,0,0,.25); margin:10px auto 0; color:#fff; }
+  .phone.land { width:620px; height:290px; max-width:100%; }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:96px; height:28px; background:#000; border-radius:20px; z-index:5; }
+  .land .island { top:50%; left:10px; transform:translateY(-50%); width:28px; height:96px; }
+  .vf { position:absolute; left:0; right:0; top:84px; height:386px; background:
+      radial-gradient(120px 90px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(260px 200px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .land .vf { top:0; bottom:0; left:56px; right:112px; height:auto; }
+  .mat { background:rgba(40,40,44,.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); }
+  .topbar { position:absolute; top:44px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:center; z-index:4; }
+  .land .topbar { top:14px; left:auto; right:122px; bottom:14px; width:auto; flex-direction:column; }
+  .ib { width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-size:16px; }
+  .chip { font-size:11px; font-weight:600; letter-spacing:.06em; padding:5px 10px; border-radius:20px; color:var(--teal); }
+  .lenses { position:absolute; left:50%; transform:translateX(-50%); top:424px; display:flex; gap:6px; padding:4px; border-radius:22px; z-index:4; }
+  .land .lenses { top:50%; left:auto; right:126px; transform:translateY(-50%); flex-direction:column; }
+  .lens { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:600; color:#fff; }
+  .lens.on { color:var(--yellow); background:rgba(0,0,0,.45); font-size:12px; }
+  .bottom { position:absolute; left:0; right:0; bottom:22px; height:96px; display:flex; align-items:center; justify-content:space-around; padding:0 26px; }
+  .land .bottom { left:auto; top:0; bottom:0; right:0; width:112px; height:auto; flex-direction:column; padding:22px 0; }
+  .thumb { width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg,#8a6a3e,#3d5a6b); border:1.5px solid rgba(255,255,255,.7); }
+  .thumb.empty { background:#1c1c1e; border-color:#3a3a3c; }
+  .shutter { width:72px; height:72px; border-radius:50%; border:4px solid #fff; display:grid; place-items:center; }
+  .shutter::after { content:""; width:58px; height:58px; border-radius:50%; background:#fff; }
+  .flip { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:18px; }
+  .toast { position:absolute; left:50%; transform:translateX(-50%); top:96px; padding:7px 13px; border-radius:16px; font-size:12px; white-space:nowrap; z-index:4; }
+  .land .toast { top:14px; }
+  .dial { position:absolute; left:0; right:0; top:470px; height:70px; z-index:3; }
+  .readout { display:flex; justify-content:space-around; padding:8px 12px 0; font:600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; color:#d1d1d6; }
+  .readout span.sel { color:var(--yellow); }
+  .ruler { margin:10px 14px 0; height:26px; border-radius:8px; background:
+      repeating-linear-gradient(90deg, rgba(255,255,255,.55) 0 1px, transparent 1px 9px); position:relative; opacity:.8; }
+  .ruler::after { content:""; position:absolute; left:50%; top:-4px; width:2px; height:34px; background:var(--yellow); }
+  .grid3 { position:absolute; inset:0; background:
+      linear-gradient(90deg, transparent 33%, rgba(255,255,255,.25) 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, rgba(255,255,255,.25) 66% calc(66% + 1px), transparent calc(66% + 1px)),
+      linear-gradient(0deg, transparent 33%, rgba(255,255,255,.25) 33% calc(33% + 1px), transparent calc(33% + 1px) 66%, rgba(255,255,255,.25) 66% calc(66% + 1px), transparent calc(66% + 1px)); }
+  .focus { position:absolute; left:58%; top:48%; width:64px; height:64px; border:1.5px solid var(--yellow); transform:translate(-50%,-50%); }
+  .settings { background:#f2f2f7; color:#1c1c1e; }
+  @media (prefers-color-scheme: dark) { .settings { background:#000; color:#f2f2f7; } .settings .group { background:#1c1c1e !important; } .settings .row { border-color:#38383a !important; } }
+  .settings .nav { padding:52px 16px 6px; display:flex; justify-content:space-between; align-items:baseline; }
+  .settings .nav b { font-size:28px; letter-spacing:-.02em; }
+  .settings .nav a { color:#0a84ff; font-size:15px; }
+  .settings .sec { padding:14px 32px 6px; font-size:11px; text-transform:uppercase; color:#8e8e93; letter-spacing:.03em; }
+  .settings .group { margin:0 16px; background:#fff; border-radius:12px; overflow:hidden; }
+  .settings .row { display:flex; justify-content:space-between; align-items:center; padding:11px 14px; border-bottom:.5px solid #d1d1d6; font-size:15px; }
+  .settings .row:last-child { border-bottom:0; }
+  .settings .row small { color:#8e8e93; }
+  .tog { width:44px; height:26px; border-radius:14px; background:#34c759; position:relative; }
+  .tog::after { content:""; position:absolute; right:2px; top:2px; width:22px; height:22px; border-radius:50%; background:#fff; }
+  .tog.off { background:#78788029; } .tog.off::after { left:2px; right:auto; }
+  .night { color:#ff3b30 !important; }
+  .night .vf { filter: sepia(1) saturate(6) hue-rotate(-50deg) brightness(.55); }
+  .night .mat { background:rgba(60,0,0,.55); }
+  .night .chip, .night .lens.on { color:#ff453a; }
+  .night .shutter { border-color:#ff3b30; } .night .shutter::after { background:#ff3b30; }
+  .notes { max-width:1100px; margin:8px auto 40px; padding:0 16px; }
+  .notes h2 { font-size:18px; margin:24px 0 8px; }
+  .notes ul { margin:0; padding-left:20px; color:var(--ink); }
+  .notes li { margin:4px 0; }
+  .notes li span { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>nope. — clean camera layout (v2)</h1>
+  <p>Proposal following Apple's Human Interface Guidelines: the picture first, controls only where the thumb expects them, short transient messages instead of persistent text, system materials and SF Symbols. Mockups only; nothing is built yet.</p>
+</header>
+
+<div class="grid">
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="vf"></div>
+      <div class="topbar"><div class="ib mat">ϟ</div><div class="chip mat">RAW</div><div class="ib mat">⚙︎</div></div>
+      <div class="lenses mat"><div class="lens">.6</div><div class="lens on">1×</div><div class="lens">5</div></div>
+      <div class="bottom"><div class="thumb empty"></div><div class="shutter"></div><div class="flip mat">⟲</div></div>
+    </div>
+    <figcaption><b>1 · Full auto (default)</b>Only five controls: light, format chip, settings, lenses, shutter. Last photo left, front/back camera right, as in the system camera. No status text until there's something to say.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="vf"><div class="focus"></div></div>
+      <div class="topbar"><div class="ib mat">ϟ</div><div class="chip mat">RAW + HEIF</div><div class="ib mat">⚙︎</div></div>
+      <div class="toast mat">Saved and signed</div>
+      <div class="lenses mat"><div class="lens">.6</div><div class="lens on">1×</div><div class="lens">5</div></div>
+      <div class="bottom"><div class="thumb"></div><div class="shutter"></div><div class="flip mat">⟲</div></div>
+    </div>
+    <figcaption><b>2 · After a shot</b>A short toast fades out after two seconds (VoiceOver announces it). The thumbnail opens the photo and its details. Tap to focus shows a small yellow square; press and hold locks it.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="vf"></div>
+      <div class="topbar"><div class="ib mat">ϟ</div><div class="chip mat">RAW · M</div><div class="ib mat">⚙︎</div></div>
+      <div class="lenses mat" style="top:428px"><div class="lens">.6</div><div class="lens on">1×</div><div class="lens">5</div></div>
+      <div class="dial mat"><div class="readout"><span>ISO 200</span><span class="sel">1/125</span><span>±0.0</span><span>5200K</span><span>AF</span></div><div class="ruler"></div></div>
+      <div class="bottom"><div class="thumb"></div><div class="shutter"></div><div class="flip mat">⟲</div></div>
+    </div>
+    <figcaption><b>3 · Manual controls on</b>One quiet readout row; tap a value and a ruler dial appears in place (swipe to adjust, double-tap for Auto). Mode letter lives in the chip. Pro tools stay one level deeper.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="vf"><div class="grid3"></div></div>
+      <div class="bottom"><div class="thumb" style="opacity:0"></div><div class="shutter"></div><div class="flip" style="opacity:0"></div></div>
+    </div>
+    <figcaption><b>4 · Clean view</b>Swipe down on the picture: everything but the shutter hides (grid shown here as an option). Swipe up to bring controls back.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone night"><div class="island"></div>
+      <div class="vf"></div>
+      <div class="topbar"><div class="ib mat">ϟ</div><div class="chip mat">RAW</div><div class="ib mat">⚙︎</div></div>
+      <div class="lenses mat"><div class="lens">.6</div><div class="lens on">1×</div><div class="lens">5</div></div>
+      <div class="bottom"><div class="thumb empty" style="border-color:#5a1010"></div><div class="shutter"></div><div class="flip mat">⟲</div></div>
+    </div>
+    <figcaption><b>5 · Night mode</b>Red on black everywhere, viewfinder tint optional. No dimming control: the phone's own brightness is used.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings"><div class="island"></div>
+      <div class="nav"><b>Settings</b><a>Done</a></div>
+      <div class="sec">Photos</div>
+      <div class="group">
+        <div class="row">Formats <small>RAW + HEIF ›</small></div>
+        <div class="row">Look <small>Standard ›</small></div>
+      </div>
+      <div class="sec">Privacy</div>
+      <div class="group">
+        <div class="row">Remove All Optional Details <span class="tog"></span></div>
+        <div class="row">Sign Photos <span class="tog"></span></div>
+        <div class="row">Choose Details <small>›</small></div>
+      </div>
+      <div class="sec">Camera</div>
+      <div class="group">
+        <div class="row">Manual Controls <span class="tog off"></span></div>
+        <div class="row">Grid <small>Off ›</small></div>
+        <div class="row">Night Mode <span class="tog off"></span></div>
+      </div>
+      <div class="sec">About</div>
+      <div class="group">
+        <div class="row">Honesty <small>›</small></div>
+        <div class="row">About nope. <small>›</small></div>
+      </div>
+    </div>
+    <figcaption><b>6 · Settings</b>Short top level, one line per row, details one tap deeper (each switch's explanation moves to its detail screen or footer). Inset grouped list, large title, Done.</figcaption>
+  </figure>
+
+  <figure style="grid-column:1/-1">
+    <div class="phone land"><div class="island"></div>
+      <div class="vf"></div>
+      <div class="topbar"><div class="ib mat">ϟ</div><div class="chip mat">RAW</div><div class="ib mat">⚙︎</div></div>
+      <div class="lenses mat"><div class="lens">.6</div><div class="lens on">1×</div><div class="lens">5</div></div>
+      <div class="bottom"><div class="flip mat">⟲</div><div class="shutter"></div><div class="thumb"></div></div>
+    </div>
+    <figcaption><b>7 · Landscape</b>The layout doesn't rotate; controls stay on the shutter side and only the icons rotate, as in the system camera. The picture fills the rest.</figcaption>
+  </figure>
+</div>
+
+<section class="notes">
+  <h2>What changes from today</h2>
+  <ul>
+    <li>Full-width viewfinder under the status bar <span>(today: inset box with margins)</span></li>
+    <li>Small round buttons on system material, SF Symbols <span>(today: large gear circle)</span></li>
+    <li>Format badge becomes a compact chip; "Single frame" moves to the photo details <span>(less text)</span></li>
+    <li>Lens picker as a compact pill over the picture; front camera is its own flip button</li>
+    <li>Status messages are short toasts that fade, announced to VoiceOver <span>(today: a line of text that stays)</span></li>
+    <li>Thumbnail bottom-left, shutter center, camera flip bottom-right <span>(platform convention)</span></li>
+    <li>Manual: one readout row plus a dial, not a grid of tiles</li>
+    <li>Settings: short grouped list; explanations move a level down</li>
+    <li>Landscape: fixed layout, rotating icons</li>
+    <li>Haptic on shutter, lens change and lock; Dynamic Type and VoiceOver kept for every control</li>
+  </ul>
+</section>
+</body>
+</html>
