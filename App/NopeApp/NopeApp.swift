@@ -38,7 +38,8 @@ struct NopeApp: App {
     /// App Group and in UI tests, whose settings are their own.
     private static let settingsSync = makeSettingsSync()
 
-    /// Whether the app is in the foreground, to read the shared settings again when it returns.
+    /// Whether the app is in the foreground, to read the shared settings again when it returns,
+    /// and for the Live Activity.
     @Environment(\.scenePhase) private var scenePhase
 
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
@@ -51,9 +52,6 @@ struct NopeApp: App {
     /// after the app leaves the foreground.
     @State private var liveActivities = LiveActivityCoordinator(
         presenter: SystemLiveActivities(), backgroundTime: SystemBackgroundTime())
-
-    /// Whether the app is in the foreground, for the Live Activity.
-    @Environment(\.scenePhase) private var scenePhase
 
     /// Keeps the iPhone camera in portrait while sheets rotate.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
