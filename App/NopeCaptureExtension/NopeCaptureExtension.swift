@@ -71,6 +71,8 @@ struct LockedCameraView: View {
             Viewfinder(source: source)
         }
         .environment(\.cameraGravitySource, MotionGravitySource())
+        // Settings follows the system's light or dark setting, as in the app.
+        .modifier(ProvidesSystemAppearance())
         // The volume buttons and the Camera Control are the shutter while the camera runs, as in
         // the app (AVKit, `onCameraCaptureEvent`).
         .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in

@@ -90,6 +90,23 @@ extension EnvironmentValues {
     /// (issue #68, "Settings and sheets rotate normally"); it uses this to allow rotation while a
     /// sheet is open.
     @Entry public var cameraPresentsSheet = SheetPresentationAction { _ in }
+
+    /// The light or dark appearance chosen in the system's settings, which Settings and the
+    /// other screens that aren't the camera follow (``CameraScreen``, "Appearance").
+    ///
+    /// The camera screen's window is dark, so its own color scheme can't tell the system's
+    /// setting, and a sheet presented from the camera would stay dark. The app target sets this
+    /// from its window scene and updates it when the setting changes. `nil` (not known, the default) leaves those sheets in the camera's dark
+    /// appearance.
+    @Entry public var systemColorScheme: ColorScheme?
+
+    /// Sets the appearance of the window the camera screen is in: dark while the camera shows,
+    /// following the system on first run and the other screens that aren't the camera, and
+    /// hears when a sheet that follows the system opens or closes (``WindowAppearanceRequest``).
+    /// The app target sets it so it can keep reading the system's setting for
+    /// ``systemColorScheme``. `nil` (the default) makes the camera screen ask with
+    /// `preferredColorScheme(_:)`.
+    @Entry public var windowAppearance: WindowAppearanceAction?
 }
 
 /// An action the app target supplies to the camera screen, such as opening Settings. Call it

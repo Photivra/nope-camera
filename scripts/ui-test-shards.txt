@@ -4,6 +4,7 @@
 # keeps its earlier time, from build 43722319731), or "est":
 # twice the time on a local Mac where the runner hasn't measured the test yet. Balanced longest
 # test first into the shard with the least time; add a new test to the shard with the least time.
+1 NopeAppUITests/testCameraSheetsStayDarkInTheLightSetting 132 est
 1 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 42
 1 NopeAppUITests/testControlGridPanelAndAllAuto 54
 1 NopeAppUITests/testFailedSecondPhotoIsExplainedAndNopesPhotoIsSaved 38
@@ -46,6 +47,7 @@
 3 NopeAppUITests/testPhotoSizeOfALensWithoutRAW 56 est
 3 NopeAppUITests/testRightToLeftLayout 22
 3 NopeAppUITests/testSelfTimerAtTheLargestTextSizeAndRightToLeft 83
+3 NopeAppUITests/testSettingsAtTheLargestTextSizeInTheLightSetting 710 est
 3 NopeAppUITests/testWarningsAtTheLargestTextSizeAndRightToLeft 38
 3 OverlayUITests/testGridOnlyAndLevelOnly 43
 4 NopeAppUITests/testAstroFramesPauseWhenLeavingAndContinueOnReturn 125 est
@@ -61,6 +63,7 @@
 4 NopeAppUITests/testNightModeSettingsScreensPassAccessibilityAudits 274 est
 4 NopeAppUITests/testPresetsFromTheTrayInNightMode 48 est
 4 NopeAppUITests/testRedViewfinderOption 18
+4 NopeAppUITests/testSettingsOpenInTheSettingChangedUnderTheCamera 60 est
 4 OverlayUITests/testGridAndLevelFromTheQuickControls 84
 4 OverlayUITests/testHistogramIsNeverShownInFullAuto 35
 4 OverlayUITests/testOverlaySettingsAndProTools 102
@@ -78,6 +81,7 @@
 5 NopeAppUITests/testNightModeSettingsScreensRightToLeft 240 est
 5 NopeAppUITests/testNoPhotoSizeRowWhenEveryLensHasRAW 60 est
 5 NopeAppUITests/testPresetsAtTheLargestTextSize 88 est
+5 NopeAppUITests/testSettingsAndPresetsFollowTheLightSetting 100 est
 5 NopeAppUITests/testSigningFailureSavesUnsignedAndSaysSo 24
 5 NopeAppUITests/testTooCloseSuggestionCanBeDismissed 29
 5 OverlayUITests/testFlatLevelSaysItPointsDown 18
@@ -108,6 +112,7 @@
 7 NopeAppUITests/testProToolsGrowsWithTheLargestTextSize 71
 7 NopeAppUITests/testRefusedLightIsExplainedAndCanBeCleared 62
 7 NopeAppUITests/testSettingsInRightToLeftLayout 204
+7 NopeAppUITests/testSettingsScreensPassAccessibilityAuditsInTheLightSetting 360 est
 7 NopeAppUITests/testSigningOffShowsAPersistentWarning 41
 7 NopeAppUITests/testStandardFileTagsAreOnByDefaultAndCanBeTurnedOff 52 est
 7 NopeAppUITests/testStartInCleanViewSetting 44
@@ -129,6 +134,7 @@
 8 NopeAppUITests/testPairedWithRAWAtTheLargestTextSize 46
 8 NopeAppUITests/testPresetsSaveApplyUndoRenameAndDelete 120 est
 8 NopeAppUITests/testQuickControlsTrayOpensAndCloses 30
+8 NopeAppUITests/testSettingsFollowTheDarkSetting 34 est
 8 NopeAppUITests/testSpaceTakesAPhoto 24
 8 NopeAppUITests/testStatePillsChangeOrReset 53
 8 ShortcutUITests/testABracketIsTakenOnceInFullAuto 14 est

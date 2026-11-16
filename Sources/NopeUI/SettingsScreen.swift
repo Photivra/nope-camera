@@ -16,7 +16,8 @@ extension EnvironmentValues {
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
 /// `NopeSettings` and changes it only through its methods, which hold the rules (AGENTS.md,
-/// "One direction of flow"). It follows the system appearance.
+/// "One direction of flow"). It follows the system's light or dark setting, also when it is
+/// presented from the dark camera (`ScreenAppearance.system`), and is red on black in night mode.
 ///
 /// ```swift
 /// .sheet(isPresented: $showsSettings) {

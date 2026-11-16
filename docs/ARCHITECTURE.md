@@ -265,7 +265,7 @@ mode or Red Viewfinder changes: on a device a new viewfinder is a new
 and switching night mode froze the camera in 0.2.0 (`NightModeViewfinderTests`). The focus
 magnifier is the same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in
 the ready camera, and on the viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
-keyboard and the status bar are drawn by the system and keep its dark appearance.
+keyboard and the status bar are drawn by the system in the dark appearance night mode asks for.
 
 ### Siri, Shortcuts, Control Center and the Lock Screen (issues #42, #62)
 
@@ -819,9 +819,46 @@ Simulator (docs/TESTING.md). Release builds always use `AVFoundationCaptureBacke
 
 ## Appearance
 
-The camera screen uses the dark appearance (`preferredColorScheme(.dark)`). The settings sheet
-is presented from it and inherits the dark appearance for now; following the system appearance
-in the sheet is a follow-up.
+The camera screen and its own sheets (the format details, What's in This Photo, Compare, the
+astro and interval settings, Pro Tools) are always dark: a camera is used in every light, and a
+dark frame doesn't change how a scene looks. Settings and its pages, Presets (from Settings or
+the quick-controls tray), Honesty, About and Licenses, first run and the camera access screens
+follow the system's light or dark setting, as a sheet on iPhone and a popover on iPad (owner
+decision for 0.3.0). A sheet changes with the setting while it is open; the iPad popover keeps
+the setting it opened with until it closes, because a popover whose scheme changed while open
+kept its glass half in the old appearance, a mid gray behind white text. The brief "Starting the camera…" message
+is dark, like the camera it leads to. Night mode is red on black everywhere: `NightModeStyle` on
+the dark appearance.
+
+`ScreenAppearance` holds the rule: `.camera` is always dark, `.system` is the system's scheme,
+and night mode is dark for both; `ScreenAppearance.of(_:)` picks it from the camera state.
+SwiftUI applies a window's `preferredColorScheme(_:)` to the whole window scene, after which
+nothing in the scene (and not `UIScreen`) shows the system's setting, and a sheet presented
+from the dark camera inherits dark unless it names a scheme. So the app target sets the
+appearance itself (`ProvidesSystemAppearance` in `App/NopeApp/Camera/SystemAppearance.swift`,
+also in the Lock Screen camera), on requests from `CameraScreen` through
+`EnvironmentValues.windowAppearance` (`WindowAppearanceRequest`):
+- the window's `overrideUserInterfaceStyle` is dark while the camera shows (`.camera(.dark)`),
+  so the camera stays dark under any sheet, and unspecified on first run and the access screens;
+- the window scene's `traitOverrides` are dark too while no screen that follows the system is
+  open, so the camera's own sheets sit in a dark scene, as they did with
+  `preferredColorScheme(_:)`: with a light scene the accessibility audit measured their
+  navigation titles (What's in This Photo, Astro Settings) as low contrast;
+- while Settings or Presets is open (`.showsSystemScreen(true)`, sent by
+  `screenAppearance(.system, isNightMode:)`, not in night mode), the scene isn't overridden: it
+  shows the system's setting, which the app reads, follows with `registerForTraitChanges`, and
+  passes as `EnvironmentValues.systemColorScheme`. Settings and Presets ask their sheet or
+  popover for that scheme by name. The value read before may be stale (the setting can change
+  while the scene shows the camera's dark), so on `.showsSystemScreen(true)` the app removes the
+  scene's override at once, reads the scene's style and returns it; the screen opens with it.
+
+Without the app's action (tests, previews) `CameraScreen` falls back to
+`preferredColorScheme(_:)` and Settings stays dark. The status bar, system menus and alerts over
+the camera follow the window and stay dark.
+
+`AppearanceUITests` checks light and dark Settings, Presets and first run by sampling the
+screen, a change of the setting while Settings is open and while only the camera shows, and
+that the camera's sheets stay dark in the light setting; the Settings screens are audited in both settings (docs/TESTING.md).
 
 ## Signing and secrets
 

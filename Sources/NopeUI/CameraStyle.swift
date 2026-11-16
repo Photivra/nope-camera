@@ -185,7 +185,8 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// - Parameter content: The presenting view.
     func body(content: Content) -> some View {
         content
-            .popover(isPresented: shown(as: .popover), content: presented)
+            // A popover keeps the appearance it opened with (ScreenAppearanceModifier).
+            .popover(isPresented: shown(as: .popover)) { presented().environment(\.isPresentedInPopover, true) }
             .sheet(isPresented: shown(as: .sheet), content: presented)
             .onChange(of: isPresented, initial: true) { _, isOpen in openStyle = isOpen ? currentStyle : nil }
     }
@@ -332,7 +333,7 @@ extension EnvironmentValues {
 ///
 /// The view's structure stays the same in both modes, so switching keeps each view's state.
 /// System menus, alerts and the keyboard are drawn by the system outside the app's views and keep
-/// the system's dark appearance; the system's Color Filters (red tint) cover them too.
+/// the dark appearance night mode asks for; the system's Color Filters (red tint) cover them too.
 struct NightModeStyle: ViewModifier {
     /// Whether night mode is on.
     let isOn: Bool
@@ -369,9 +370,18 @@ extension View {
     }
 }
 
-/// The style of secondary text: `.secondary` normally, white in night mode (shown as the full
-/// night red by ``NightModeStyle``). See ``CameraStyle/secondaryText``.
+/// The style of secondary text: `.secondary` in the dark appearance, a darker gray in the light
+/// one, and white in night mode (shown as the full night red by ``NightModeStyle``). See
+/// ``CameraStyle/secondaryText``.
+///
+/// In the light appearance the accessibility audit reported footnote-sized explanations in the
+/// system's secondary gray as low contrast ("Contrast nearly passed") on Settings' white rows, so
+/// light uses ``lightGray``, as the design does (docs/design/settings.html).
 struct SecondaryText: ShapeStyle {
+    /// Secondary text in the light appearance: 5.2:1 on white and 4.8:1 on the grouped
+    /// background (#F2F2F7), above WCAG 2.2's 4.5:1 for body text.
+    static let lightGray = Color(red: 0x6D / 255, green: 0x6D / 255, blue: 0x72 / 255)
+
     /// Creates the style. It holds no state.
     init() {}
 
@@ -379,6 +389,7 @@ struct SecondaryText: ShapeStyle {
     ///
     /// - Parameter environment: The view's environment.
     func resolve(in environment: EnvironmentValues) -> AnyShapeStyle {
-        environment.isNightMode ? AnyShapeStyle(Color.white) : AnyShapeStyle(.secondary)
+        if environment.isNightMode { return AnyShapeStyle(Color.white) }
+        return environment.colorScheme == .light ? AnyShapeStyle(Self.lightGray) : AnyShapeStyle(.secondary)
     }
 }

@@ -4,9 +4,11 @@ import SwiftUI
 /// The camera screen: renders a `CameraModel` and sends it intents.
 ///
 /// The screen holds no rules: it shows the model's state and sends `CameraIntent` values
-/// (AGENTS.md, "One direction of flow"). It uses the dark appearance, because a camera is used
-/// in every light and a dark frame doesn't change how a scene looks; other screens follow the
-/// system appearance.
+/// (AGENTS.md, "One direction of flow"). The camera and its own sheets use the dark appearance,
+/// because a camera is used in every light and a dark frame doesn't change how a scene looks;
+/// Settings, first run and the other screens that aren't the camera follow the system's light or
+/// dark setting, read from ``SwiftUICore/EnvironmentValues/systemColorScheme``
+/// (`ScreenAppearance`). Night mode is red on black on every screen.
 ///
 /// The live viewfinder comes from the app target: `NopeUI` can't show camera video, so the app
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
@@ -17,8 +19,10 @@ import SwiftUI
 /// camera access is asked, ``FirstRunView`` says what the app does, then asks.
 ///
 /// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
-/// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
-/// ``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
+/// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone),
+/// ``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open),
+/// ``SwiftUICore/EnvironmentValues/systemColorScheme`` (the appearance Settings follows) and
+/// ``SwiftUICore/EnvironmentValues/windowAppearance`` (the window's appearance).
 ///
 /// ```swift
 /// CameraScreen(model: model, settings: settings) { source in
@@ -128,7 +132,8 @@ public struct CameraScreen<Viewfinder: View>: View {
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
                 lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
                 .nightModeStyle(settings.isNightModeOn)
-                .preferredColorScheme(settings.isNightModeOn ? .dark : nil)
+                // The system's light or dark setting, not the camera's dark appearance.
+                .screenAppearance(.system, isNightMode: settings.isNightModeOn)
                 .frame(idealWidth: 480, idealHeight: 720)
                 // Opaque: a translucent popover lets the camera through and fails the contrast
                 // audit.
@@ -144,7 +149,8 @@ public struct CameraScreen<Viewfinder: View>: View {
                 await model.send(.setInForeground(phase != .background))
             }
         }
-        .preferredColorScheme(.dark)
+        // Dark for the camera; first run, camera access declined and no camera follow the system.
+        .windowAppearance(ScreenAppearance.of(model.state), isNightMode: settings.isNightModeOn)
         // Night mode: the home indicator, a white system bar, fades away until the screen is
         // touched.
         .persistentSystemOverlays(settings.isNightModeOn ? .hidden : .automatic)

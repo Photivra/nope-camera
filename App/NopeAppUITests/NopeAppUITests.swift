@@ -6,12 +6,21 @@ import XCTest
 final class NopeAppUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
-        MainActor.assumeIsolated { XCUIDevice.shared.orientation = .portrait }
+        // Every test starts in portrait and in the system's light setting, which Settings and the
+        // screens that aren't the camera follow (AppearanceUITests); a test that needs the dark
+        // setting sets it.
+        MainActor.assumeIsolated {
+            XCUIDevice.shared.orientation = .portrait
+            XCUIDevice.shared.appearance = .light
+        }
         iPhoneSideways = false
     }
 
     override func tearDown() {
-        MainActor.assumeIsolated { XCUIDevice.shared.orientation = .portrait }
+        MainActor.assumeIsolated {
+            XCUIDevice.shared.orientation = .portrait
+            XCUIDevice.shared.appearance = .light
+        }
     }
 
     /// The launch arguments for the largest accessibility text size.
@@ -98,7 +107,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Opens the manual controls' last button and chooses an item: "All Auto" or "Pro Tools".
     @MainActor
-    private func manualMenu(_ app: XCUIApplication, _ name: String) {
+    func manualMenu(_ app: XCUIApplication, _ name: String) {
         let menu = app.buttons["More Manual Controls"]
         XCTAssertTrue(menu.waitForExistence(timeout: 20))
         menu.tap()
@@ -581,6 +590,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSettingsScreensPassAccessibilityAudits() throws {
+        // The dark setting; the light one is audited in AppearanceUITests.
+        XCUIDevice.shared.appearance = .dark
         let app = launch("allow")
         let allow = app.buttons["Continue"]
         XCTAssertTrue(allow.waitForExistence(timeout: 10))
@@ -596,6 +607,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSettingsAtTheLargestTextSize() throws {
+        // The dark setting; the light one is audited in AppearanceUITests.
+        XCUIDevice.shared.appearance = .dark
         let app = launch("denied", extraArguments: Self.largestTextSize)
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
         try auditSettingsScreens(app, checksContrast: !isPad)
@@ -603,6 +616,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSettingsInRightToLeftLayout() throws {
+        // The dark setting; the light one is audited in AppearanceUITests.
+        XCUIDevice.shared.appearance = .dark
         let app = launch(
             "denied", extraArguments: ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
@@ -1692,7 +1707,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Chooses a drive mode in the tray's Drive menu.
     @MainActor
-    private func chooseDrive(_ app: XCUIApplication, _ option: String) {
+    func chooseDrive(_ app: XCUIApplication, _ option: String) {
         quickControl(app, "Drive")
         let item = app.buttons[option]
         XCTAssertTrue(item.waitForExistence(timeout: 10), option)
@@ -1855,7 +1870,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Takes a photo and opens its details from the thumbnail's long-press menu.
     @MainActor
-    private func openPhotoDetails(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+    func openPhotoDetails(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let shutter = app.buttons["Take Photo"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10), file: file, line: line)
         shutter.tap()

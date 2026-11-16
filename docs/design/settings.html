@@ -342,7 +342,7 @@
   [dir=rtl] .tog.off::after { left:auto; right:2px; }
   [dir=rtl] .swipe .rw { transform:none; }
 
-  /* full-screen states (first run, permissions): the camera screen's dark appearance */
+  /* full-screen states (first run, permissions): they follow the system appearance, like Settings */
   .fs { position:absolute; inset:0; padding:92px 24px 0; }
   .fs .gear { position:absolute; top:42px; right:12px; background:#333; }
   .fs h3 { margin:0 0 18px; font-size:26px; letter-spacing:-.02em; }
@@ -357,6 +357,11 @@
   .smsg .bt { display:inline-block; padding:10px 18px; border-radius:12px; background:rgba(120,120,128,.32); color:#0a84ff; font-weight:600; font-size:14px; }
   .status { position:absolute; left:34px; right:34px; top:216px; padding:14px; border-radius:8px; background:#000; text-align:center; font-size:13px; line-height:1.35; z-index:7; }
   .status svg { width:30px; height:30px; display:block; margin:0 auto 8px; }
+  .phone.fsl { background:#fff; color:#000; }
+  .fsl .fs .gear { background:#e5e5ea; color:#000; }
+  .fsl .stmt svg { color:#007aff; }
+  .fsl .fnote, .fsl .smsg p, .fsl .smsg svg { color:#6d6d72; }
+  .fsl .cont, .fsl .smsg .bt { background:rgba(120,120,128,.12); color:#007aff; }
   .dim { position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:9; }
   /* system-drawn (iOS) elements: alerts, Lock Screen, Control Center, Shortcuts */
   .alert { position:absolute; left:40px; right:40px; top:200px; border-radius:14px; background:rgba(50,50,52,.98); text-align:center; z-index:10; color:#fff; overflow:hidden; }
@@ -456,7 +461,7 @@
 <header>
   <h1>nope. design: settings and system screens</h1>
   <p><b>Design version: 0.3.0 (2026-11-16).</b> Other files in this set: <a href="camera.html">camera.html</a> (the camera screen, its chips, banners and sheets) · <a href="manual-controls.html">manual-controls.html</a> (manual dials and Pro Tools) · <a href="icon.html">icon.html</a> (app icon).</p>
-  <p>Settings, its pages, first run, permissions and what nope. shows outside the app, drawn from the 0.3.0 code: row names, order, values and footers are the English strings in the source (<code>Sources/NopeUI</code>, <code>App/</code>). Settings follows the system appearance (light or dark, and red on black in night mode); the camera screen and its states are always dark. Every row is one line with its explanation under its name, as the app does: section footers were reported by the accessibility audit as not following Dynamic Type. iOS-drawn screens (alerts, Lock Screen, Control Center, Shortcuts) are marked as system UI; only the words nope. supplies are nope.'s. Sizes are drawn at 0.75 × points. Mockups only.</p>
+  <p>Settings, its pages, first run, permissions and what nope. shows outside the app, drawn from the 0.3.0 code: row names, order, values and footers are the English strings in the source (<code>Sources/NopeUI</code>, <code>App/</code>). Settings, first run and the camera access screens follow the system appearance (light or dark, and red on black in night mode); the camera screen and its own sheets are always dark. Every row is one line with its explanation under its name, as the app does: section footers were reported by the accessibility audit as not following Dynamic Type. iOS-drawn screens (alerts, Lock Screen, Control Center, Shortcuts) are marked as system UI; only the words nope. supplies are nope.'s. Sizes are drawn at 0.75 × points. Mockups only.</p>
 </header>
 
 <!-- ============================================================ -->
@@ -1079,7 +1084,7 @@
 <div class="grid">
 
   <figure>
-    <div class="phone"><div class="island"></div>
+    <div class="phone fsl"><div class="island"></div>
       <div class="fs"><div class="ib gear"><svg class="i"><use href="#gear"/></svg></div>
         <h3>nope.</h3>
         <div class="stmt"><svg class="i"><use href="#i-aperture"/></svg><span>Photos with as little processing as this phone allows.</span></div>
@@ -1089,7 +1094,7 @@
       </div>
       <div class="cont">Continue</div>
     </div>
-    <figcaption><b>36 · First run, the camera prompt's lead-in</b>Shown before camera access is asked: the name as a heading in the system font (not the wordmark), three statements, and a note on what iOS asks next. "Each photo is signed" is a statement here, not its own screen. Continue is the bordered system button, pinned below the text so it stays in reach when the text scrolls; the Settings button is reachable. <code>FirstRunView.swift</code></figcaption>
+    <figcaption><b>36 · First run, the camera prompt's lead-in</b>Shown before camera access is asked: the name as a heading in the system font (not the wordmark), three statements, and a note on what iOS asks next. "Each photo is signed" is a statement here, not its own screen. Continue is the bordered system button, pinned below the text so it stays in reach when the text scrolls; the Settings button is reachable. First run follows the system's light or dark setting, as Settings does: drawn here in light, and in dark in figure 37. <code>FirstRunView.swift</code></figcaption>
   </figure>
 
   <figure>
@@ -1108,11 +1113,11 @@
   </figure>
 
   <figure>
-    <div class="phone"><div class="island"></div>
+    <div class="phone fsl"><div class="island"></div>
       <div class="fs"><div class="ib gear"><svg class="i"><use href="#gear"/></svg></div></div>
       <div class="smsg"><svg class="i"><use href="#i-cambadge"/></svg><b>Camera Access Is Off</b><p>To take photos, turn on camera access for nope. in the Settings app.</p><span class="bt">Open Settings</span></div>
     </div>
-    <figcaption><b>38 · Camera access denied</b>A plain message with Open Settings, which opens nope.'s page in the Settings app. Built from plain text and buttons so the symbol grows with Dynamic Type; at large sizes it scrolls. The Settings button stays above the content. <code>CameraScreen.swift</code>, <code>StatusMessageView.swift</code></figcaption>
+    <figcaption><b>38 · Camera access denied</b>A plain message with Open Settings, which opens nope.'s page in the Settings app. Built from plain text and buttons so the symbol grows with Dynamic Type; at large sizes it scrolls. The Settings button stays above the content. Like first run, it follows the system's light or dark setting (drawn in light; figure 39 in dark). <code>CameraScreen.swift</code>, <code>StatusMessageView.swift</code></figcaption>
   </figure>
 
   <figure>
@@ -1120,7 +1125,7 @@
       <div class="fs"><div class="ib gear"><svg class="i"><use href="#gear"/></svg></div></div>
       <div class="smsg"><svg class="i"><use href="#camera"/></svg><b>No Camera Available</b><p>This device has no camera that nope. can use.</p></div>
     </div>
-    <figcaption><b>39 · No usable camera</b>The same message layout, with no action. While access is being checked, "Starting the camera…" shows with a spinner.</figcaption>
+    <figcaption><b>39 · No usable camera</b>The same message layout, with no action. While access is being checked, "Starting the camera…" shows with a spinner, dark like the camera it leads to.</figcaption>
   </figure>
 
   <figure>
@@ -1318,10 +1323,10 @@
   </table>
   <h2>Rules behind it</h2>
   <ul>
-    <li>Settings follows the system appearance; the camera screen and its states are always dark; night mode is pure red on black everywhere, including Settings, sheets and the Live Activity, with tinted text and icons at the full red.</li>
+    <li>Settings, its pages, Presets, first run and the camera access screens follow the system appearance, as a sheet on iPhone and a popover on iPad (a sheet changes with the setting while open, a popover when it next opens); the camera screen and its own sheets (format details, What's in This Photo, Compare, Astro, interval, Pro Tools) are always dark; night mode is pure red on black everywhere, including Settings, sheets and the Live Activity, with tinted text and icons at the full red.</li>
     <li>One line per row, with the explanation under the name, never in a footer that wouldn't grow with the text. Each row shows its current value.</li>
     <li>Every picker is a pushed list or an inline list; no menus, which clipped long values and failed the night mode tests.</li>
-    <li>No disabled buttons and no tinted form text: both failed the contrast audit. A button that can't act yet says why.</li>
+    <li>No disabled buttons and no tinted form text: both failed the contrast audit. A button that can't act yet says why. In the light appearance, explanations under a row's name are #6D6D72, not the system's lighter secondary gray, which failed the contrast audit at footnote size.</li>
     <li>Colors keep their v3 meaning: teal only for verified facts (none in Settings), amber only for warnings with a symbol and words, filled white for selected on the camera.</li>
     <li>Privacy and processing wording lives in <code>Honesty.xcstrings</code> and never claims more than the English.</li>
     <li>System-drawn screens show nope.'s words only where nope. supplies them (purpose strings, control names, Live Activity text).</li>

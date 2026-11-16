@@ -4,8 +4,8 @@ import SwiftUI
 /// The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
 /// standard form, opened from the last button of the manual controls row.
 ///
-/// Each section appears only when the selected lens supports it. The sheet follows the system
-/// appearance.
+/// Each section appears only when the selected lens supports it. Like the camera it covers, the
+/// sheet is dark in either system setting (``ScreenAppearance/camera``).
 struct ProToolsSheet: View {
     /// The camera model.
     let model: CameraModel

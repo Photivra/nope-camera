@@ -131,6 +131,8 @@ struct NopeApp: App {
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
         .modifier(FollowsWindowSizeClasses())
+        // Settings and the screens that aren't the camera follow the system's light or dark setting.
+        .modifier(ProvidesSystemAppearance())
         .environment(\.cameraGravitySource, Self.gravitySource)
         .environment(\.cameraPresentsSheet, SheetPresentationAction { AppDelegate.setSheetPresented($0) })
         // Open Settings goes to nope.'s own page in the Settings app (UIKit,

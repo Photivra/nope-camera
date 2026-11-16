@@ -229,7 +229,8 @@ struct CameraReadyView: View {
             if let presets {
                 PresetsSheet(presets: presets, settings: settings, camera: model)
                     .nightModeStyle(isNightMode)
-                    .preferredColorScheme(isNightMode ? .dark : nil)
+                    // Presets follows the system's light or dark setting, as in Settings.
+                    .screenAppearance(.system, isNightMode: isNightMode)
                     .presentationBackground(.background)
                     .presentationDetents([.large])
                     .presentationSizing(.page)

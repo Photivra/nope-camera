@@ -354,6 +354,18 @@ and Settings rotates. On iPad the window rotates and the shutter is in the colum
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
 
+Every test starts in the system's light setting (`XCUIDevice.appearance`, set in `setUp`).
+Settings, Presets, first run and the camera access screens follow that setting, so their audits
+run in light; `testSettingsScreensPassAccessibilityAudits`, `testSettingsAtTheLargestTextSize`
+and `testSettingsInRightToLeftLayout` set the dark setting, and
+`testSettingsScreensPassAccessibilityAuditsInTheLightSetting` and
+`testSettingsAtTheLargestTextSizeInTheLightSetting` audit every Settings screen in light,
+contrast included (except on iPad, as for dark). `AppearanceUITests` samples the screenshot's
+light share to check which screens are light and which dark, including a change of the setting
+while Settings is open (the iPhone sheet follows it, the iPad popover keeps its setting until
+it closes) and while only the camera shows, and that the camera's own sheets stay dark in the
+light setting.
+
 The Apple Watch app (issue #63) has its own UI tests on the watch Simulator, with a simulated
 phone (`-NopeSimulatedPhone ready|notSigned|notRunning|permissionDenied|unreachable|countdown`,
 Debug builds only), because a UI test can't drive a paired iPhone:

@@ -325,11 +325,6 @@
   .form .rw .lbl small { display:block; white-space:normal; font-size:10.5px; line-height:1.3; margin-top:1px; }
   .form .rw .lnk { color:#0a84ff; }
   .form .rw .lnk.dis { color:#48484a; }
-  .form.light { background:#f2f2f7; color:#000; }
-  .form.light .gr { background:#fff; }
-  .form.light .rw { border-color:#c6c6c8; }
-  .form.light .rw .lnk { color:#007aff; }
-  .form.light .tog.off { background:#e9e9ea; }
   .tog { flex:0 0 auto; width:42px; height:25px; border-radius:13px; background:#34c759; position:relative; }
   .tog::after { content:""; position:absolute; right:2px; top:2px; width:21px; height:21px; border-radius:50%; background:#fff; }
   .tog.off { background:#39393d; } .tog.off::after { left:2px; right:auto; }
@@ -597,17 +592,17 @@
       <div class="gap"></div><div class="gr"><div class="rw">Bracketing <span class="tog"></span></div><div class="rw">Frames <small>3<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Step <small>1 EV<svg class="i"><use href="#updown"/></svg></small></div></div>
       <div class="ft">Each frame is a separate single-frame photo. Nothing is merged.</div>
     </div>
-    <figcaption><b>14 · Pro Tools: modes, metering, locks, bracketing</b>A full-screen form, following the system appearance (night mode turns it red on black). Each section appears only when the lens supports it. Exposure Mode: Program, Shutter Priority, ISO Priority, Manual (S and I where iOS reports them for the lens's format); in S you set the shutter and the camera sets ISO. Metering: Center, Spot, Whole Frame (spot and whole frame need iOS 26). AE-L and AF-L are switches; AE-L needs ISO, shutter and aperture on Auto, AF-L needs focus on Auto. Bracketing: 3, 5 or 7 frames (up to what the lens can take), ⅓ EV, ⅔ EV, 1 EV or 2 EV apart, through the system's manual exposure bracket. Each frame is its own photo.</figcaption>
+    <figcaption><b>14 · Pro Tools: modes, metering, locks, bracketing</b>A full-screen form over the camera, dark like the camera in either system setting (night mode turns it red on black). Each section appears only when the lens supports it. Exposure Mode: Program, Shutter Priority, ISO Priority, Manual (S and I where iOS reports them for the lens's format); in S you set the shutter and the camera sets ISO. Metering: Center, Spot, Whole Frame (spot and whole frame need iOS 26). AE-L and AF-L are switches; AE-L needs ISO, shutter and aperture on Auto, AF-L needs focus on Auto. Bracketing: 3, 5 or 7 frames (up to what the lens can take), ⅓ EV, ⅔ EV, 1 EV or 2 EV apart, through the system's manual exposure bracket. Each frame is its own photo.</figcaption>
   </figure>
   <figure>
-    <div class="phone form light"><div class="island"></div>
+    <div class="phone form"><div class="island"></div>
       <div class="ttl">Pro Tools</div>
       <div class="gap"></div><div class="gr"><div class="rw"><b>Interval Shooting</b></div><div class="rw">Interval <small>10 sec<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Photos <small>10<svg class="i"><use href="#updown"/></svg></small></div><div class="rw"><span class="lnk">Start</span></div></div>
       <div class="ft">Each photo is separate. Nothing is combined. Keep nope. open while the series runs.<br><br>Each photo is taken in full auto, or with your manual settings while Manual Controls are on.</div>
       <div class="gap"></div><div class="gr"><div class="rw"><span class="lbl">Focus Peaking<small>Highlights the sharpest edges in magenta.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Histogram<small>Shown with the manual controls. It measures the processed live preview, not the RAW.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Live Camera Readout<small>The camera's live values, such as shutter, ISO, focus and white balance.</small></span><span class="tog off"></span></div></div>
       <div class="gap"></div><div class="gr"><div class="rw"><span class="lnk">Done</span></div></div>
     </div>
-    <figcaption><b>15 · Pro Tools, scrolled: interval and live aids</b>Shown here in the light appearance. The interval section is the same one the Drive menu opens in full auto: 1 s to 1 h between photos, 2 to 999 photos, Start (Stop while a series runs). Then the live aid switches, the same ones as in Settings, and Done as a row of the form.</figcaption>
+    <figcaption><b>15 · Pro Tools, scrolled: interval and live aids</b>The interval section is the same one the Drive menu opens in full auto: 1 s to 1 h between photos, 2 to 999 photos, Start (Stop while a series runs). Then the live aid switches, the same ones as in Settings, and Done as a row of the form.</figcaption>
   </figure>
   <figure>
     <div class="phone form"><div class="island"></div>
@@ -655,7 +650,7 @@
         </div>
       </div>
     </div>
-    <figcaption><b>18 · Largest text sizes</b>At accessibility text sizes the camera scrolls, and the readout row and dials become a list: one block per control in the same order, each with its name, a Manual switch and a stepper with the value. A control the lens can't set shows its value in words ("Fixed, f/2.2"). The sliders button (All Auto, Pro Tools) follows the list, then the lens buttons and ⋯.</figcaption>
+    <figcaption><b>18 · Largest text sizes</b>At accessibility text sizes the camera scrolls in every window (iPhone, iPad and the iPhone Duo's inner display alike; in a window wider than tall the picture is landscape), and the readout row and dials become a list: one block per control in the same order, each with its name, a Manual switch and a stepper with the value. A control the lens can't set shows its value in words ("Fixed, f/2.2"). The sliders button (All Auto, Pro Tools) follows the list, then the lens buttons and ⋯.</figcaption>
   </figure>
   <figure>
     <div class="phone man"><div class="island"></div>
@@ -708,7 +703,7 @@
       <div class="over"><div class="dial"><div class="dh">ISO <span class="v">100</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:14%"></div><div class="cb">+</div><div class="cb sel">Auto</div></div><div class="rng">This lens: 54 – 12,096</div></div><div class="ro backed"><div class="b"><i>A</i><span>0.0</span></div><div class="b sel"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div></div>
       <div class="col"><div class="tophalf"><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lens">0.6×</div><div class="lens on">1×</div><div class="tray-btn" style="margin:0"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div class="bothalf"><div class="flip"><svg class="i"><use href="#flip"/></svg></div><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div></div></div>
     </div>
-    <figcaption><b>23 · iPad, and the iPhone Duo's inner display</b>In the column layout the picture sits beside a trailing column: Settings, the lenses and ⋯ at the top, the shutter centered, the flip and thumbnail at the bottom. The manual controls sit over the picture's bottom edge: the readout row on a dark backing with its sliders button, and the open dial across the picture above it. The window rotates with the device, so nothing turns upright by itself. At accessibility text sizes a wide window keeps the column, the list of figure 18 isn't used here, and the sliders button (All Auto, Pro Tools) moves into the trailing column under ⋯; a portrait iPad scrolls as in figure 18. Lens buttons show what the device has (<a href="camera.html">camera.html</a> has the Duo screens).</figcaption>
+    <figcaption><b>23 · iPad, and the iPhone Duo's inner display</b>In the column layout the picture sits beside a trailing column: Settings, the lenses and ⋯ at the top, the shutter centered, the flip and thumbnail at the bottom. The manual controls sit over the picture's bottom edge: the readout row on a dark backing with its sliders button, and the open dial across the picture above it. The window rotates with the device, so nothing turns upright by itself. The column is used only below the accessibility text sizes: at those sizes every window, iPad in either orientation and the Duo's inner display included, scrolls as in figure 18, with the list of controls and a picture shaped like the window, so every control stays settable. Lens buttons show what the device has (<a href="camera.html">camera.html</a> has the Duo screens).</figcaption>
   </figure>
 </div>
 

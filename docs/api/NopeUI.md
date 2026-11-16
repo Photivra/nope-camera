@@ -1233,9 +1233,11 @@ public, declared in `Sources/NopeUI/CameraScreen.swift`
 The camera screen: renders a `CameraModel` and sends it intents.
 
 The screen holds no rules: it shows the model's state and sends `CameraIntent` values
-(AGENTS.md, "One direction of flow"). It uses the dark appearance, because a camera is used
-in every light and a dark frame doesn't change how a scene looks; other screens follow the
-system appearance.
+(AGENTS.md, "One direction of flow"). The camera and its own sheets use the dark appearance,
+because a camera is used in every light and a dark frame doesn't change how a scene looks;
+Settings, first run and the other screens that aren't the camera follow the system's light or
+dark setting, read from ``SwiftUICore/EnvironmentValues/systemColorScheme``
+(`ScreenAppearance`). Night mode is red on black on every screen.
 
 The live viewfinder comes from the app target: `NopeUI` can't show camera video, so the app
 passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
@@ -1246,8 +1248,10 @@ state, so settings and the Honesty screen are reachable before the camera is all
 camera access is asked, ``FirstRunView`` says what the app does, then asks.
 
 The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
-``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
-``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
+``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone),
+``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open),
+``SwiftUICore/EnvironmentValues/systemColorScheme`` (the appearance Settings follows) and
+``SwiftUICore/EnvironmentValues/windowAppearance`` (the window's appearance).
 
 ```swift
 CameraScreen(model: model, settings: settings) { source in
@@ -3191,6 +3195,17 @@ var isNightMode: Bool { get set }
 Whether night mode is on, for views that need a different color in it
 (``CameraColor``). Set by ``NightModeStyle``.
 
+## `EnvironmentValues/isPresentedInPopover`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+var isPresentedInPopover: Bool { get set }
+```
+
+Whether the view is presented in a popover (Settings and the format details on iPad), set
+by ``AdaptivePresentation``.
+
 ## `EnvironmentValues/offersLiveActivity`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
@@ -3238,6 +3253,37 @@ var seriesScreenKeeper: SeriesScreenKeeper? { get set }
 
 Keeps the screen awake and dimmed during an interval series (issue #48), or `nil` when
 the app gives none, as in previews: then the screen is left alone.
+
+## `EnvironmentValues/systemColorScheme`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var systemColorScheme: ColorScheme? { get set }
+```
+
+The light or dark appearance chosen in the system's settings, which Settings and the
+other screens that aren't the camera follow (``CameraScreen``, "Appearance").
+
+The camera screen's window is dark, so its own color scheme can't tell the system's
+setting, and a sheet presented from the camera would stay dark. The app target sets this
+from its window scene and updates it when the setting changes. `nil` (not known, the default) leaves those sheets in the camera's dark
+appearance.
+
+## `EnvironmentValues/windowAppearance`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var windowAppearance: WindowAppearanceAction? { get set }
+```
+
+Sets the appearance of the window the camera screen is in: dark while the camera shows,
+following the system on first run and the other screens that aren't the camera, and
+hears when a sheet that follows the system opens or closes (``WindowAppearanceRequest``).
+The app target sets it so it can keep reading the system's setting for
+``systemColorScheme``. `nil` (the default) makes the camera screen ask with
+`preferredColorScheme(_:)`.
 
 ## `ExplainedToggle`
 
@@ -6158,7 +6204,7 @@ otherwise (issue #61).
 
 The view's structure stays the same in both modes, so switching keeps each view's state.
 System menus, alerts and the keyboard are drawn by the system outside the app's views and keep
-the system's dark appearance; the system's Color Filters (red tint) cover them too.
+the dark appearance night mode asks for; the system's Color Filters (red tint) cover them too.
 
 ## `NightModeStyle/body(content:)`
 
@@ -7190,8 +7236,8 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
 standard form, opened from the last button of the manual controls row.
 
-Each section appears only when the selected lens supports it. The sheet follows the system
-appearance.
+Each section appears only when the selected lens supports it. Like the camera it covers, the
+sheet is dark in either system setting (``ScreenAppearance/camera``).
 
 ## `ProToolsSheet/body`
 
@@ -8045,6 +8091,143 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The camera model.
 
+## `ScreenAppearance`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+enum ScreenAppearance
+```
+
+Which appearance a screen uses: the camera's dark appearance, or the person's light or dark
+setting.
+
+The camera screen and its own sheets (the format details, What's in This Photo, Compare, the
+astro and interval settings, Pro Tools) are always dark: a camera is used in every light, and
+a dark frame doesn't change how a scene looks. Settings and the other screens that aren't the
+camera (first run, camera access declined, no camera, Presets, Honesty, About and Licenses)
+follow the system's light or dark setting. Night mode is red on black everywhere: its style
+is drawn on the dark appearance.
+
+## `ScreenAppearance/camera`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case camera
+```
+
+Always dark: the camera screen and its own sheets.
+
+## `ScreenAppearance/colorScheme(isNightMode:system:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+func colorScheme(isNightMode: Bool, system: ColorScheme?) -> ColorScheme?
+```
+
+The color scheme to ask for.
+
+The camera screen asks its window for the dark appearance, and a sheet presented from it
+inherits that unless it asks for a scheme of its own; so a screen that follows the system
+asks for the system's scheme by name.
+
+- Parameters:
+  - isNightMode: Whether night mode is on: always dark.
+  - system: The system's light or dark setting
+    (``SwiftUICore/EnvironmentValues/systemColorScheme``), or `nil` when it isn't known.
+- Returns: `ColorScheme.dark` for the camera or in night mode, otherwise the
+  system's scheme, or `nil` (no preference) when that isn't known.
+
+## `ScreenAppearance/of(_:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+static func of(_ state: CameraState) -> ScreenAppearance
+```
+
+The appearance of the camera screen's content in a camera state: the ready camera and the
+brief starting message are the camera; first run, camera access declined and no camera
+aren't.
+
+- Parameter state: The camera's state.
+- Returns: The appearance for that state.
+
+## `ScreenAppearance/system`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case system
+```
+
+The system's light or dark setting: Settings and the screens that aren't the camera.
+
+## `ScreenAppearanceModifier`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor struct ScreenAppearanceModifier
+```
+
+Asks the nearest presentation (a sheet or a popover) for a screen's appearance, and tells the
+app while it shows a screen that follows the system
+(``WindowAppearanceRequest/showsSystemScreen(_:)``).
+
+A sheet follows changes of the system's setting while it is open. A popover (Settings on
+iPad) keeps the setting it opened with until it closes: when the scheme changed under an
+open popover, its glass stayed half in the old appearance, a mid gray behind white text.
+
+## `ScreenAppearanceModifier/appearance`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let appearance: ScreenAppearance
+```
+
+The screen's appearance.
+
+## `ScreenAppearanceModifier/body(content:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with its color scheme preference.
+
+- Parameter content: The content.
+
+## `ScreenAppearanceModifier/init(appearance:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor init(appearance: ScreenAppearance, isNightMode: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
+
+## `ScreenAppearanceModifier/isNightMode`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether night mode is on.
+
 ## `SecondaryText`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -8053,8 +8236,13 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 struct SecondaryText
 ```
 
-The style of secondary text: `.secondary` normally, white in night mode (shown as the full
-night red by ``NightModeStyle``). See ``CameraStyle/secondaryText``.
+The style of secondary text: `.secondary` in the dark appearance, a darker gray in the light
+one, and white in night mode (shown as the full night red by ``NightModeStyle``). See
+``CameraStyle/secondaryText``.
+
+In the light appearance the accessibility audit reported footnote-sized explanations in the
+system's secondary gray as low contrast ("Contrast nearly passed") on Settings' white rows, so
+light uses ``lightGray``, as the design does (docs/design/settings.html).
 
 ## `SecondaryText/init()`
 
@@ -8065,6 +8253,17 @@ init()
 ```
 
 Creates the style. It holds no state.
+
+## `SecondaryText/lightGray`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static let lightGray: Color
+```
+
+Secondary text in the light appearance: 5.2:1 on white and 4.8:1 on the grouped
+background (#F2F2F7), above WCAG 2.2's 4.5:1 for body text.
 
 ## `SecondaryText/resolve(in:)`
 
@@ -8356,7 +8555,8 @@ detection, night mode, front camera mirroring) and More (Accessibility, Honesty,
 One line per row; each switch's explanation is in a footer or on its detail screen. Each
 row shows its current value, so the state reads at a glance. The screen renders a
 `NopeSettings` and changes it only through its methods, which hold the rules (AGENTS.md,
-"One direction of flow"). It follows the system appearance.
+"One direction of flow"). It follows the system's light or dark setting, also when it is
+presented from the dark camera (`ScreenAppearance.system`), and is red on black in night mode.
 
 ```swift
 .sheet(isPresented: $showsSettings) {
@@ -9664,6 +9864,22 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 The look of a state pill: small bold text on a dark capsule, inside a touch target at
 least 44 points on each side.
 
+## `View/screenAppearance(_:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func screenAppearance(_ appearance: ScreenAppearance, isNightMode: Bool) -> some View
+
+```
+
+Asks the nearest sheet or popover for a screen's appearance: dark for the camera, the
+system's light or dark setting for other screens, and dark in night mode.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
+
 ## `View/seriesScreen(_:isNightMode:)`
 
 internal, declared in `Sources/NopeUI/SeriesScreen.swift`
@@ -9707,6 +9923,22 @@ Turns this block upright as one unit while the iPhone is on its side.
 
 - Parameter sidewaysWidth: The width text wraps at while sideways, or `nil` for the
   natural width.
+
+## `View/windowAppearance(_:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func windowAppearance(_ appearance: ScreenAppearance, isNightMode: Bool) -> some View
+
+```
+
+Gives the window a screen's appearance: dark for the camera and in night mode, otherwise
+the system's.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
 
 ## `ViewfinderAnchors`
 
@@ -10036,6 +10268,141 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The warning.
+
+## `WindowAppearanceAction`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+struct WindowAppearanceAction
+```
+
+Sets the appearance of the window the camera screen is in. Call it like a function with a
+``WindowAppearanceRequest``.
+
+## `WindowAppearanceAction/callAsFunction(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@discardableResult @MainActor func callAsFunction(_ request: WindowAppearanceRequest) -> ColorScheme?
+```
+
+Handles a request.
+
+- Parameter request: The request.
+- Returns: The system's light or dark setting when the request read it, otherwise `nil`.
+
+## `WindowAppearanceAction/init(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+init(_ handler: @escaping @MainActor @Sendable (WindowAppearanceRequest) -> ColorScheme?)
+```
+
+Creates an action.
+
+- Parameter handler: Handles a request, on the main actor. For
+  ``WindowAppearanceRequest/showsSystemScreen(_:)`` with `true` it returns the system's
+  light or dark setting, read as the screen opens; otherwise `nil`.
+
+## `WindowAppearanceModifier`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor struct WindowAppearanceModifier
+```
+
+Gives the window a screen's appearance: through the app's
+``SwiftUICore/EnvironmentValues/windowAppearance`` when it sets one, otherwise with
+`preferredColorScheme(_:)`.
+
+SwiftUI applies a window's `preferredColorScheme(_:)` to the whole window scene, which then
+no longer shows the system's own setting; the app sets the appearance itself so it can read
+that setting for Settings (``SwiftUICore/EnvironmentValues/systemColorScheme``).
+
+## `WindowAppearanceModifier/appearance`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let appearance: ScreenAppearance
+```
+
+The screen's appearance.
+
+## `WindowAppearanceModifier/body(content:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the window's appearance set.
+
+- Parameter content: The content.
+
+## `WindowAppearanceModifier/init(appearance:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor init(appearance: ScreenAppearance, isNightMode: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
+
+## `WindowAppearanceModifier/isNightMode`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether night mode is on.
+
+## `WindowAppearanceRequest`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+enum WindowAppearanceRequest
+```
+
+What the camera screen asks of the app's window through ``WindowAppearanceAction``.
+
+## `WindowAppearanceRequest/camera(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case camera(ColorScheme?)
+```
+
+The camera screen's own appearance: `ColorScheme.dark` for the camera and in night mode,
+or `nil` to follow the system (first run, camera access declined, no camera).
+
+## `WindowAppearanceRequest/showsSystemScreen(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case showsSystemScreen(Bool)
+```
+
+A sheet or popover that follows the system's light or dark setting (Settings, Presets)
+opened (`true`) or closed (`false`). While one is open, the window scene shows the
+system's setting, so the app can read and follow it; otherwise the whole scene is dark
+with the camera, so the camera's own sheets match the scene they are in.
 
 ## `WindowUprightRotation`
 

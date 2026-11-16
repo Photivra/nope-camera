@@ -117,6 +117,7 @@
 			membershipExceptions = (
 				Camera/CameraPreviewView.swift,
 				Camera/MotionGravitySource.swift,
+				Camera/SystemAppearance.swift,
 				InfoPlist.xcstrings,
 			);
 			target = A10000000000000000000403 /* NopeCaptureExtension */;

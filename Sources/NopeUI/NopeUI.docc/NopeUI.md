@@ -29,7 +29,9 @@ values: ``SwiftUICore/EnvironmentValues/cameraUprightRotation``,
 
 The live viewfinder view is supplied by the app target, because `NopeUI` imports only `NopeCore`
 and SwiftUI. The
-camera screen uses the dark appearance; other screens follow the system. Each screen and state
+camera screen and its own sheets use the dark appearance; Settings, first run and the other
+screens that aren't the camera follow the system's light or dark setting (`ScreenAppearance`,
+``SwiftUICore/EnvironmentValues/systemColorScheme``). Each screen and state
 is checked by the UI tests with `performAccessibilityAudit()`.
 
 ## Topics
@@ -45,3 +47,5 @@ is checked by the UI tests with `performAccessibilityAudit()`.
 - ``UprightRotation``
 - ``CameraAction``
 - ``SheetPresentationAction``
+- ``WindowAppearanceAction``
+- ``WindowAppearanceRequest``
