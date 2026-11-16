@@ -809,6 +809,17 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 Whether the full-auto exposure dial is open, for the Exposure tray item. The camera
 screen sets it; a constant `false` elsewhere.
 
+## `CameraControlContext/showsIntervalSettings`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var showsIntervalSettings: Binding<Bool>
+```
+
+Whether the Interval sheet is open, for the Drive menu and the Interval pill. The camera
+screen sets it; a constant `false` elsewhere.
+
 ## `CameraFlipButton`
 
 internal, declared in `Sources/NopeUI/LensRow.swift`
@@ -2989,12 +3000,12 @@ A number of seconds in the system's short form, such as "3s" or "3 Sek.".
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func shutterValue(_ drive: DriveModel) -> Text?
+@MainActor static func shutterValue(_ model: CameraModel) -> Text?
 ```
 
 What the shutter does now, for VoiceOver, or `nil` in single mode with nothing running.
 
-- Parameter drive: The drive model.
+- Parameter model: The camera model.
 
 ## `DriveText/spokenSeconds(_:)`
 
@@ -4654,6 +4665,128 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 Stops the series.
+
+## `IntervalSection`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor struct IntervalSection
+```
+
+The interval and photo count of interval shooting (issue #48), with Start or Stop: one
+section, shown in the Interval sheet of the Drive menu and in Pro Tools, so both offer the
+same thing.
+
+A series works in full auto and with manual controls on; `NopeCore` holds the series
+(`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
+
+## `IntervalSection/body`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The pickers and the button, with the honesty footer.
+
+## `IntervalSection/didStart`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let didStart: () -> Void
+```
+
+Runs after Start, such as closing the sheet so the series can be seen.
+
+## `IntervalSection/init(model:didStart:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor init(model: CameraModel, didStart: @escaping () -> Void)
+```
+
+Creates the section.
+
+- Parameters:
+  - model: The camera model.
+  - didStart: Runs after Start.
+
+## `IntervalSection/intervals`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static let intervals: [Double]
+```
+
+The intervals offered, in seconds: 1 second to 1 hour.
+
+## `IntervalSection/model`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `IntervalSection/photoCounts`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static let photoCounts: [Int]
+```
+
+The photo counts offered for a series, from 2 to the 999 the app allows.
+
+## `IntervalSheet`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor struct IntervalSheet
+```
+
+The Interval sheet, opened from the Drive menu and the Interval pill: the series' interval
+and photo count, and Start. In the Interval drive mode the shutter starts the series too.
+
+## `IntervalSheet/body`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `IntervalSheet/init(model:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameter model: The camera model.
+
+## `IntervalSheet/model`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
 
 ## `LegalTextView`
 
@@ -6325,16 +6458,6 @@ Creates the sheet.
   - settings: The person's settings, for the focus peaking, histogram and live readout
     switches, or `nil` to leave them out.
 
-## `ProToolsSheet/intervals`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor static let intervals: [Double]
-```
-
-The intervals offered, in seconds: 1 second to 1 hour.
-
 ## `ProToolsSheet/model`
 
 internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
@@ -6344,16 +6467,6 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 The camera model.
-
-## `ProToolsSheet/photoCounts`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor static let photoCounts: [Int]
-```
-
-The photo counts offered for a series, from 2 to the 999 the app allows.
 
 ## `ProToolsSheet/settings`
 
@@ -6691,8 +6804,9 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func drive(_ context: CameraControlContext) -> QuickControlItem?
 ```
 
-Drive: a menu of single, the 3 and 10 second self-timer, and burst (issue #68). Bracket
-and interval shooting stay in Pro Tools, behind the manual controls.
+Drive: a menu of single, the 3 and 10 second self-timer, burst and interval shooting
+(issue #68). Choosing Interval Shooting also opens its settings (``IntervalSheet``).
+Bracketing stays in Pro Tools, behind the manual controls.
 
 - Parameter context: The model and settings.
 
@@ -8005,8 +8119,9 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func drive(_ context: CameraControlContext) -> StatePill?
 ```
 
-The self-timer's delay ("3s") or "Burst" while the drive mode isn't single; its action
-returns to single photos.
+The self-timer's delay ("3s"), "Burst" or "Interval" while the drive mode isn't single;
+its action returns to single photos, and the Interval pill also opens the interval
+settings.
 
 - Parameter context: The model and settings.
 

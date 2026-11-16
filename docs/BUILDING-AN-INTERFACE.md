@@ -53,7 +53,9 @@ Manual controls are off by default; the "Manual controls" option in Settings tur
 the app target sends `.manual(.setEnabled(_:))` when it changes. Everything about them is in
 `CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
-exposure modes, bracketing and interval shooting. Send `.manual(...)` intents to change them; the
+exposure modes, bracketing and interval shooting (which, unlike the other manual intents, works
+in full auto too; the `.interval` drive mode starts it from the shutter). Send `.manual(...)`
+intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
 compensation, Close-Up, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`

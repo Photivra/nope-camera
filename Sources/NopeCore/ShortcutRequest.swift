@@ -11,6 +11,10 @@ public enum ShortcutRequest: Equatable, Sendable {
     /// Take one photo or a burst, after an optional delay, with an optional lens.
     case takePhoto(PhotoShortcut)
 
+    /// Take one exposure bracket, after an optional delay, with an optional lens, without
+    /// changing the bracket chosen in Pro Tools.
+    case takeBracket(BracketShortcut)
+
     /// Switch to a lens of this kind, as the lens buttons do.
     case selectLens(Lens.Kind)
 
@@ -34,7 +38,7 @@ public enum ShortcutRequest: Equatable, Sendable {
         switch self {
         case .setLight(isOn: false): .lightOff
         case .stopInterval: .noIntervalRunning
-        case .takePhoto, .selectLens, .setLight(isOn: true), .startInterval: nil
+        case .takePhoto, .takeBracket, .selectLens, .setLight(isOn: true), .startInterval: nil
         }
     }
 }
@@ -87,6 +91,57 @@ public struct PhotoShortcut: Equatable, Sendable {
     ///   - count: How many photos, or `nil` for one.
     public init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil, count: Int? = nil) {
         self.init(delaySeconds: customDelaySeconds ?? timer?.seconds ?? 0, lensKind: lensKind, count: count ?? 1)
+    }
+}
+
+/// The parameters of a "Take Bracket" request: the frames, the step between them, the delay and
+/// the lens.
+///
+/// The bracket is taken once, through the same bracket path as the one in Pro Tools, whether or
+/// not manual controls are on; the person's own bracket setting doesn't change. Values are moved
+/// to the nearest the app offers (``BracketSettings/frameCounts`` and ``BracketSettings/steps``);
+/// whether the lens can take it is checked when it is taken.
+public struct BracketShortcut: Equatable, Sendable {
+    /// The frames and the step, each one the app offers.
+    public let bracket: BracketSettings
+
+    /// The delay before the bracket, in seconds, from 0 to ``PhotoShortcut/maximumDelaySeconds``.
+    public let delaySeconds: Int
+
+    /// The kind of lens to use, or `nil` for the lens already selected.
+    public let lensKind: Lens.Kind?
+
+    /// Creates a request.
+    ///
+    /// - Parameters:
+    ///   - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
+    ///   - step: The exposure difference between neighboring frames in EV (stops), moved to the
+    ///     nearest of ``BracketSettings/steps``.
+    ///   - delaySeconds: The delay in seconds, kept within 0 to ``PhotoShortcut/maximumDelaySeconds``.
+    ///   - lensKind: The kind of lens, or `nil` for the lens already selected.
+    public init(frameCount: Int, step: Double, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil) {
+        bracket = BracketSettings(
+            frameCount: Self.nearest(frameCount, in: BracketSettings.frameCounts),
+            step: Self.nearest(step, in: BracketSettings.steps))
+        self.delaySeconds = PhotoShortcut(delaySeconds: delaySeconds).delaySeconds
+        self.lensKind = lensKind
+    }
+
+    /// The value in a list closest to a value: the first of two equally close ones.
+    ///
+    /// - Parameters:
+    ///   - value: The value.
+    ///   - values: The values offered; not empty.
+    /// - Returns: The closest.
+    static func nearest<Value: Numeric & Comparable>(_ value: Value, in values: [Value]) -> Value {
+        values.dropFirst().reduce(values[0]) { best, next in
+            distance(next, value) < distance(best, value) ? next : best
+        }
+    }
+
+    /// The distance between two values.
+    private static func distance<Value: Numeric & Comparable>(_ first: Value, _ second: Value) -> Value {
+        first > second ? first - second : second - first
     }
 }
 
@@ -173,10 +228,9 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// No interval series was running, so nothing was stopped. Say so.
     case noIntervalRunning
 
-    /// Interval shooting is part of the manual controls, which are off. Say they can be turned
-    /// on in the app's Settings; the request doesn't turn them on (manual settings are the
-    /// person's to change).
-    case needsManualControls
+    /// The lens in use can't take the bracket asked for: it has no manual exposure, or takes
+    /// fewer frames in one bracket. Say so; nothing was taken.
+    case bracketUnavailable
 
     /// The camera can't take a photo now. Say why, from the reason.
     case cameraUnavailable(CameraUnavailability)

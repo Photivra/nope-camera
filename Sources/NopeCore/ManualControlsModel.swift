@@ -226,8 +226,45 @@ public final class ManualControlsModel {
     /// The base exposure is the person's ISO and shutter where set, otherwise the camera's
     /// reading, which already includes exposure compensation.
     func bracketFrames() -> [BracketFrame]? {
-        guard isEnabled, let bracket, let lens, let isoRange = lens.isoRange, let durationRange = lens.exposureDurationRange,
-            let iso = value(of: .iso), let duration = value(of: .shutter)
+        guard isEnabled, let bracket else { return nil }
+        return plan(bracket, iso: value(of: .iso), duration: value(of: .shutter))
+    }
+
+    /// Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
+    /// frame count is one ``bracketFrameCounts`` offers, and the step is one of
+    /// ``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+    ///
+    /// - Parameter bracket: The bracket.
+    func canBracket(_ bracket: BracketSettings) -> Bool {
+        lens?.isoRange != nil && lens?.exposureDurationRange != nil
+            && bracketFrameCounts.contains(bracket.frameCount) && BracketSettings.steps.contains(bracket.step)
+    }
+
+    /// The frames of a bracket taken once, for a Siri or Shortcuts request (issue #62), whether
+    /// or not manual controls are on. It leaves ``bracket`` and every setting as they are.
+    ///
+    /// The base exposure is the person's ISO and shutter where set (only while manual controls
+    /// are on; otherwise the settings are automatic), otherwise the camera's last reading.
+    ///
+    /// - Parameter bracket: The bracket.
+    /// - Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
+    ///   camera hasn't reported an exposure yet.
+    func bracketFrames(once bracket: BracketSettings) -> [BracketFrame]? {
+        guard canBracket(bracket) else { return nil }
+        return plan(
+            bracket, iso: settings.iso ?? lastReading?.iso, duration: settings.shutter ?? lastReading?.exposureDuration)
+    }
+
+    /// Plans a bracket's frames around a base exposure, within the lens's ranges.
+    ///
+    /// - Parameters:
+    ///   - bracket: The bracket.
+    ///   - iso: The base ISO, or `nil` when there is none yet.
+    ///   - duration: The base exposure duration in seconds, or `nil` when there is none yet.
+    /// - Returns: The frames, or `nil` without a base exposure or the lens's ranges.
+    private func plan(_ bracket: BracketSettings, iso: Double?, duration: Double?) -> [BracketFrame]? {
+        guard let lens, let isoRange = lens.isoRange, let durationRange = lens.exposureDurationRange, let iso,
+            let duration
         else { return nil }
         return BracketFrame.plan(
             offsets: bracket.offsets, base: BracketFrame(iso: iso, exposureDuration: duration),
@@ -250,7 +287,9 @@ public final class ManualControlsModel {
 
     /// Handles one intent. ``CameraModel/send(_:)`` calls it.
     ///
-    /// Settings intents and starting a series have no effect while manual controls are off.
+    /// Settings intents have no effect while manual controls are off. Interval shooting works
+    /// in full auto too (each photo is then a full-auto photo), so choosing, starting and
+    /// stopping a series always applies.
     ///
     /// - Parameters:
     ///   - intent: The intent.
@@ -268,7 +307,7 @@ public final class ManualControlsModel {
             self.interval = interval
             return
         case .startInterval:
-            if isEnabled { startInterval(capture: capture) }
+            startInterval(capture: capture)
             return
         case .stopInterval:
             stopInterval()
@@ -312,7 +351,8 @@ public final class ManualControlsModel {
 
     // MARK: - Rules
 
-    /// Turns manual controls on or off. Off returns everything to automatic and stops a series.
+    /// Turns manual controls on or off. Off returns everything to automatic; a running interval
+    /// series continues, with full-auto photos from then on.
     ///
     /// - Parameter enabled: Whether manual controls are on.
     private func setEnabled(_ enabled: Bool) async {
@@ -324,7 +364,6 @@ public final class ManualControlsModel {
             if longestAutoShutter != nil { await applyCurrentControls() }
             return
         }
-        stopInterval()
         bracket = nil
         reading = nil
         let previous = settings

@@ -76,10 +76,10 @@ enum ShortcutDialog {
         case .noIntervalRunning:
             LocalizedStringResource(
                 "No interval series is running.", comment: "Siri's answer when asked to stop interval shooting while none runs.")
-        case .needsManualControls:
+        case .bracketUnavailable:
             LocalizedStringResource(
-                "Interval shooting needs Manual Controls. Turn them on in nope. Settings.",
-                comment: "Siri's answer when interval shooting was asked for while manual controls are off. \"Manual Controls\" is the option's name in Settings. Keep \"nope.\" unchanged.")
+                "This lens can't take that bracket.",
+                comment: "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.")
         case .cameraUnavailable(.needsPermission):
             LocalizedStringResource(
                 "Open nope. to allow camera access.",

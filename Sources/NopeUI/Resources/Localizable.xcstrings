@@ -5611,6 +5611,72 @@
         }
       }
     },
+    "Each photo is taken in full auto, or with your manual settings while Manual Controls are on.": {
+      "comment": "Explains which exposure the photos of an interval series use. \"Manual Controls\" is the option's name in Settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto wird vollautomatisch aufgenommen oder, wenn „Manuelle Steuerung“ eingeschaltet ist, mit deinen manuellen Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto se toma en automático total o, con Controles manuales activados, con tus ajustes manuales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque photo est prise en mode entièrement automatique ou, si Commandes manuelles est activé, avec vos réglages manuels."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni foto viene scattata in automatico completo o, con Controlli manuali attivi, con le tue impostazioni manuali."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真はフルオートで、または「マニュアル操作」がオンのときは手動設定で撮影されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 사진은 완전 자동으로, 또는 수동 조작이 켜져 있으면 수동 설정으로 촬영됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto wordt volautomatisch gemaakt, of met je handmatige instellingen als Handmatige bediening aan staat."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto é tirada no automático total ou, com Controles manuais ativados, com seus ajustes manuais."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片都以全自动拍摄；打开“手动控制”时则使用你的手动设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片都以全自動拍攝；開啟「手動控制」時則使用你的手動設定。"
+          }
+        }
+      }
+    },
     "Exposure": {
       "comment": "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.",
       "extractionState": "manual",
@@ -9931,6 +9997,72 @@
         }
       }
     },
+    "Interval Settings": {
+      "comment": "Action of the interval pill on the camera: opens the time between photos and the number of photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervall-Einstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes de intervalo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages de l’intervalle"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni intervallo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバルの設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalinstellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes de intervalo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔設定"
+          }
+        }
+      }
+    },
     "Interval Shooting": {
       "comment": "Section title: a series of photos taken at a fixed interval.",
       "extractionState": "manual",
@@ -9993,6 +10125,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "間隔拍攝"
+          }
+        }
+      }
+    },
+    "Interval series running. Press to stop.": {
+      "comment": "VoiceOver value of the shutter while an interval series runs: pressing the shutter stops it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallserie läuft. Zum Stoppen drücken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie a intervalos en curso. Pulsa para detenerla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Série par intervalles en cours. Appuyez pour l’arrêter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie a intervalli in corso. Premi per interromperla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影中。押すと停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영 중입니다. 누르면 중지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalreeks loopt. Druk om te stoppen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Série por intervalo em andamento. Pressione para parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄进行中。按下可停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝進行中。按下可停止。"
+          }
+        }
+      }
+    },
+    "Interval shooting. Press to start the series.": {
+      "comment": "VoiceOver value of the shutter in the interval drive mode: one press starts a series of photos at a fixed interval.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme. Zum Starten der Serie drücken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo a intervalos. Pulsa para iniciar la serie."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise de vue par intervalles. Appuyez pour démarrer la série."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto a intervalli. Premi per avviare la serie."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影。押すと開始します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영. 누르면 촬영을 시작합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen. Druk om de reeks te starten."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo por intervalo. Pressione para iniciar a série."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄。按下可开始拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝。按下可開始拍攝。"
           }
         }
       }

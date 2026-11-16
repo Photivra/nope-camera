@@ -90,6 +90,8 @@ struct ShortcutTests {
         #expect(model.drive.countdown.remainingSeconds == 2)
         #expect(await backend.captureRequests.isEmpty)
         await tick(ticker)
+        // The next tick only after the countdown has moved on, so it isn't lost on a busy Mac.
+        await waitUntil { model.drive.countdown.remainingSeconds == 1 }
         await tick(ticker)
         #expect(await request.value == .saved(isSigned: false))
         #expect(await backend.captureRequests.count == 1)
@@ -427,13 +429,124 @@ struct ShortcutTests {
         #expect(await run(.stopInterval, on: model) == .noIntervalRunning)
     }
 
-    @Test func intervalShootingNeedsManualControls() async {
+    @Test func intervalShootingRunsInFullAutoWithoutTurningOnManualControls() async {
         let (model, backend) = await makeManualModel(enabled: false)
-        #expect(await run(.startInterval(IntervalShortcut()), on: model) == .needsManualControls)
+        #expect(await run(.startInterval(IntervalShortcut(count: 2)), on: model) == .intervalStarted)
         #expect(!model.manual.isEnabled)
-        #expect(await backend.captureCount == 0)
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        #expect(await backend.captureCount == 1)
+        #expect(await backend.applied.isEmpty)
+        #expect(await run(.stopInterval, on: model) == .intervalStopped)
         let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
         #expect(await run(.startInterval(IntervalShortcut()), on: denied) == .cameraUnavailable(.permissionDenied))
+    }
+
+    // MARK: - Brackets
+
+    @Test func bracketValuesMoveToTheNearestOffered() {
+        #expect(BracketShortcut(frameCount: 5, step: 1).bracket == BracketSettings(frameCount: 5, step: 1))
+        #expect(BracketShortcut(frameCount: 1, step: 0).bracket == BracketSettings(frameCount: 3, step: 1.0 / 3.0))
+        #expect(BracketShortcut(frameCount: 4, step: 1.6).bracket == BracketSettings(frameCount: 3, step: 2))
+        #expect(BracketShortcut(frameCount: 99, step: 9).bracket == BracketSettings(frameCount: 7, step: 2))
+        #expect(BracketShortcut(frameCount: 3, step: 0.7).bracket.step == 2.0 / 3.0)
+        let delayed = BracketShortcut(frameCount: 3, step: 1, delaySeconds: 500, lensKind: .wide)
+        #expect(delayed.delaySeconds == PhotoShortcut.maximumDelaySeconds)
+        #expect(delayed.lensKind == .wide)
+        #expect(BracketShortcut(frameCount: 3, step: 1, delaySeconds: -1).delaySeconds == 0)
+        #expect(ShortcutRequest.takeBracket(delayed).outcomeWithoutCameraScreen == nil)
+    }
+
+    /// A started manual-capable camera that has reported an exposure.
+    func makeBracketModel(
+        enabled: Bool = false, lenses: [Lens] = [ManualFixtures.wide],
+        sleep: @escaping @Sendable (Double) async throws -> Void = { _ in }
+    ) async -> (CameraModel, ScriptedManualBackend) {
+        let backend = ScriptedManualBackend(lenses: lenses)
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), sleep: sleep)
+        await model.send(.start)
+        if enabled { await model.send(.manual(.setEnabled(true))) }
+        await model.manual.record(ManualFixtures.reading)
+        return (model, backend)
+    }
+
+    @Test func takesABracketOnceInFullAutoWithoutChangingSettings() async {
+        let (model, backend) = await makeBracketModel()
+        let outcome = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model)
+        #expect(outcome == .savedSeveral(allSigned: false))
+        let frames = await backend.brackets
+        #expect(frames.count == 1)
+        #expect(frames.first?.count == 3)
+        #expect(model.manual.bracket == nil)
+        #expect(!model.manual.isEnabled)
+        // The next shutter press takes one photo again.
+        await model.send(.capture)
+        #expect(await backend.brackets.count == 1)
+        #expect(await backend.captureCount == 1)
+    }
+
+    @Test func aBracketRequestLeavesThePersonsBracketAsItIs() async {
+        let (model, backend) = await makeBracketModel(enabled: true)
+        let chosen = BracketSettings(frameCount: 5, step: 2.0 / 3.0)
+        await model.send(.manual(.setBracket(chosen)))
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model) == .savedSeveral(allSigned: false))
+        #expect(await backend.brackets.last?.count == 3)
+        #expect(model.manual.bracket == chosen)
+    }
+
+    @Test func aBracketTheLensCanNotTakeIsReported() async {
+        // The wide fixture takes at most 5 frames; the bare lens has no manual exposure.
+        let (model, backend) = await makeBracketModel()
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 7, step: 1)), on: model) == .bracketUnavailable)
+        #expect(model.manual.bracketFrames(once: BracketSettings(frameCount: 7, step: 1)) == nil)
+        #expect(model.manual.bracketFrames(once: BracketSettings(frameCount: 3, step: 1))?.count == 3)
+        let (bare, _) = await makeBracketModel(lenses: [ManualFixtures.bare])
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: bare) == .bracketUnavailable)
+        #expect(await backend.brackets.isEmpty)
+        #expect(await backend.captureCount == 0)
+    }
+
+    @Test func aBracketWaitsForAnExposureReading() async {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
+        await model.send(.start)
+        // The reading never comes, and the timeout passes at once.
+        let outcome = await run(
+            .takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model, inbox: ShortcutInbox(sleep: { _ in }))
+        #expect(outcome == .cameraUnavailable(.notRunning))
+        #expect(await backend.brackets.isEmpty)
+        #expect(model.manual.bracketFrames(once: BracketSettings(frameCount: 3, step: 1)) == nil)
+    }
+
+    @Test func aBracketAfterADelayAndOnAnotherLens() async {
+        let ticker = Ticker()
+        let (model, backend) = await makeBracketModel(
+            lenses: [ManualFixtures.wide, ManualFixtures.basicLens], sleep: { _ in await ticker.sleep() })
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        defer { server.cancel() }
+        await waitUntil { inbox.isServed }
+        let request = Task {
+            await inbox.submit(.takeBracket(BracketShortcut(frameCount: 3, step: 1, delaySeconds: 1, lensKind: .ultraWide)))
+        }
+        // Switching lenses clears the last reading; the new lens reports its own.
+        await waitUntil { model.selectedLens?.kind == .ultraWide && model.sessionStatus == .running }
+        await model.manual.record(ManualFixtures.reading)
+        await waitUntil { model.drive.countdown.isRunning }
+        #expect(model.selectedLens?.kind == .ultraWide)
+        await tick(ticker)
+        #expect(await request.value == .savedSeveral(allSigned: false))
+        #expect(await backend.brackets.count == 1)
+    }
+
+    @Test func aBracketRequestIsBusyDuringACountdownAndChecksTheLens() async {
+        let ticker = Ticker()
+        let (model, _) = await makeBracketModel(sleep: { _ in await ticker.sleep() })
+        await model.send(.drive(.startTimer(seconds: 5)))
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model) == .busy)
+        model.drive.countdown.cancel()
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1, lensKind: .front)), on: model) == .lensUnavailable)
+        let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: denied) == .cameraUnavailable(.permissionDenied))
     }
 
     // MARK: - Without a camera screen

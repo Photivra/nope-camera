@@ -5,9 +5,9 @@ import NopeCore
 /// camera and starts an interval series, as Start in Pro Tools does.
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it hands an
-/// ``IntervalShortcut`` to the app's ``ShortcutInbox`` and says the outcome. Interval shooting
-/// is part of the manual controls; when they are off, Siri says so and nothing changes. The
-/// series runs only while the app is open, with the screen kept awake and dimmed
+/// ``IntervalShortcut`` to the app's ``ShortcutInbox`` and says the outcome. The series is the
+/// same as the Interval drive mode's: full-auto photos, or the manual settings while manual
+/// controls are on. It runs only while the app is open, with the screen kept awake and dimmed
 /// (`SeriesScreenKeeper`), so the app opens first.
 struct StartIntervalIntent: AppIntent {
     /// The action's name in the Shortcuts app.
@@ -17,8 +17,8 @@ struct StartIntervalIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and starts a series of photos at a fixed interval. Needs Manual Controls on in nope. Settings.",
-            comment: "Describes nope.'s Start Interval Shooting action in the Shortcuts app. \"Manual Controls\" is the option's name in Settings. Keep \"nope.\" unchanged."))
+            "Opens nope. and starts a series of photos at a fixed interval.",
+            comment: "Describes nope.'s Start Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
     /// The series needs the camera, which runs only in the foreground.
     static let openAppWhenRun = true

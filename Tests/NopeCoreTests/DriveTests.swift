@@ -150,7 +150,7 @@ struct DriveTests {
         #expect(SelfTimerDelay.threeSeconds.seconds == 3)
         #expect(SelfTimerDelay.tenSeconds.seconds == 10)
         #expect(SelfTimerDelay.allCases == [.threeSeconds, .tenSeconds])
-        #expect(DriveMode.allCases == [.single, .timer(.threeSeconds), .timer(.tenSeconds), .burst])
+        #expect(DriveMode.allCases == [.single, .timer(.threeSeconds), .timer(.tenSeconds), .burst, .interval])
         #expect(BurstProgress(taken: 2, saved: 1) == BurstProgress(taken: 2, saved: 1))
         #expect(BurstResult(end: .stopped, saved: 3).saved == 3)
         let drive = DriveModel(sleep: { _ in })
@@ -620,5 +620,27 @@ struct DriveTests {
         keeper.update(isSeriesRunning: false, isInForeground: true)
         #expect(screen.brightness == 0.6)
         #expect(!screen.isIdleTimerDisabled)
+    }
+
+    // MARK: - Interval mode
+
+    @Test func theIntervalModeStartsAndStopsASeriesWithTheShutter() async {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in try await Task.sleep(for: .seconds(60)) })
+        await model.send(.start)
+        await model.send(.drive(.setMode(.interval)))
+        #expect(model.drive.mode == .interval)
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 3))))
+        await model.send(.capture)
+        #expect(model.manual.intervalProgress != nil)
+        #expect(model.canPressShutter)
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        #expect(await backend.captureCount == 1)
+        // The shutter stops the series, whatever the drive mode.
+        await model.send(.drive(.setMode(.single)))
+        await model.send(.capture)
+        #expect(model.manual.intervalProgress == nil)
+        #expect(await backend.captureCount == 1)
     }
 }

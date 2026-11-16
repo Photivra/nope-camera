@@ -29,6 +29,8 @@ enum DriveText {
             Text("Timer: \(shortSeconds(delay.seconds))", bundle: .module, comment: "Drive menu option on the camera: a self-timer. The value is a short number of seconds, such as 3s or 10s, formatted by the system.")
         case .burst:
             Text("Burst", bundle: .module, comment: "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos.")
+        case .interval:
+            Text("Interval Shooting", bundle: .module, comment: "Section title: a series of photos taken at a fixed interval.")
         }
     }
 
@@ -40,13 +42,18 @@ enum DriveText {
         case .single: "timer"
         case .timer: "timer"
         case .burst: "square.stack.3d.down.right"
+        case .interval: "clock.arrow.circlepath"
         }
     }
 
     /// What the shutter does now, for VoiceOver, or `nil` in single mode with nothing running.
     ///
-    /// - Parameter drive: The drive model.
-    static func shutterValue(_ drive: DriveModel) -> Text? {
+    /// - Parameter model: The camera model.
+    static func shutterValue(_ model: CameraModel) -> Text? {
+        let drive = model.drive
+        if model.manual.intervalProgress != nil {
+            return Text("Interval series running. Press to stop.", bundle: .module, comment: "VoiceOver value of the shutter while an interval series runs: pressing the shutter stops it.")
+        }
         if drive.countdown.isRunning {
             return Text("Counting down. Press to cancel.", bundle: .module, comment: "VoiceOver value of the shutter while the self-timer counts down: pressing the shutter cancels the photo.")
         }
@@ -59,6 +66,8 @@ enum DriveText {
             return Text("Self-timer: \(spokenSeconds(delay.seconds))", bundle: .module, comment: "VoiceOver value of the shutter when the self-timer is on. The value is a number of seconds in words, such as 3 seconds, formatted by the system.")
         case .burst:
             return Text("Burst. Press to start, press again to stop.", bundle: .module, comment: "VoiceOver value of the shutter in burst mode: one press starts a rapid run of separate photos, the next press stops it.")
+        case .interval:
+            return Text("Interval shooting. Press to start the series.", bundle: .module, comment: "VoiceOver value of the shutter in the interval drive mode: one press starts a series of photos at a fixed interval.")
         }
     }
 
@@ -84,8 +93,9 @@ enum DriveText {
 }
 
 extension QuickControls {
-    /// Drive: a menu of single, the 3 and 10 second self-timer, and burst (issue #68). Bracket
-    /// and interval shooting stay in Pro Tools, behind the manual controls.
+    /// Drive: a menu of single, the 3 and 10 second self-timer, burst and interval shooting
+    /// (issue #68). Choosing Interval Shooting also opens its settings (``IntervalSheet``).
+    /// Bracketing stays in Pro Tools, behind the manual controls.
     ///
     /// - Parameter context: The model and settings.
     static func drive(_ context: CameraControlContext) -> QuickControlItem? {
@@ -102,6 +112,7 @@ extension QuickControls {
                         id: optionID(mode), title: DriveText.name(of: mode), isSelected: drive.mode == mode
                     ) {
                         context.send(.drive(.setMode(mode)))
+                        if mode == .interval { context.showsIntervalSettings.wrappedValue = true }
                     }
                 }))
     }
@@ -114,13 +125,15 @@ extension QuickControls {
         case .single: "single"
         case .timer(let delay): "timer\(delay.seconds)"
         case .burst: "burst"
+        case .interval: "interval"
         }
     }
 }
 
 extension StatePills {
-    /// The self-timer's delay ("3s") or "Burst" while the drive mode isn't single; its action
-    /// returns to single photos.
+    /// The self-timer's delay ("3s"), "Burst" or "Interval" while the drive mode isn't single;
+    /// its action returns to single photos, and the Interval pill also opens the interval
+    /// settings.
     ///
     /// - Parameter context: The model and settings.
     static func drive(_ context: CameraControlContext) -> StatePill? {
@@ -136,10 +149,23 @@ extension StatePills {
         case .burst:
             text = String(localized: "Burst", bundle: .module, comment: "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos.")
             label = Text("Burst", bundle: .module, comment: "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos.")
+        case .interval:
+            text = String(localized: "Interval", bundle: .module, comment: "Picker for the time between photos in interval shooting.")
+            label = Text("Interval Shooting", bundle: .module, comment: "Section title: a series of photos taken at a fixed interval.")
+        }
+        var actions: [StatePill.Action] = []
+        if mode == .interval {
+            actions.append(
+                StatePill.Action(
+                    id: "intervalSettings",
+                    title: Text("Interval Settings", bundle: .module, comment: "Action of the interval pill on the camera: opens the time between photos and the number of photos.")
+                ) {
+                    context.showsIntervalSettings.wrappedValue = true
+                })
         }
         return StatePill(
             id: "drive", systemImage: DriveText.systemImage(for: mode), text: Text(verbatim: text), label: label,
-            actions: [
+            actions: actions + [
                 StatePill.Action(
                     id: "single",
                     title: Text("Back to Single Photo", bundle: .module, comment: "Action of the self-timer or burst pill on the camera: the shutter takes one photo per press again.")
@@ -283,6 +309,6 @@ extension View {
     ///
     /// - Parameter model: The camera model.
     func shutterDriveValue(_ model: CameraModel) -> some View {
-        accessibilityValue(AstroText.shutterValue(model) ?? DriveText.shutterValue(model.drive) ?? Text(verbatim: ""))
+        accessibilityValue(AstroText.shutterValue(model) ?? DriveText.shutterValue(model) ?? Text(verbatim: ""))
     }
 }
