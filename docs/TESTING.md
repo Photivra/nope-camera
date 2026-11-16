@@ -282,13 +282,17 @@ format and each fallback). `StandardFileTagsEncodingTests` encodes HEIF and JPEG
 space and checks what ImageIO keeps: every tag, except `ColorSpace` in a Display P3 JPEG, which
 ImageIO drops; the read-back passes either way.
 
-`exiftool -validate` with them on (iOS 27.2 Simulator fixtures, exiftool 13.55, 2026-11-16):
-HEIF files report no warnings; a DNG without its date no longer reports "Invalid date/time format
-for EXIF:ModifyDate" (exiftool accepts the standard's blank form, `    :  :     :  :  `, and
-reports the empty text); JPEGs still report "Missing required JPEG IFD0 tag 0x0213
-YCbCrPositioning", and Display P3 JPEGs "Missing required JPEG ExifIFD tag 0xa001 ColorSpace",
-because ImageIO can't write those (`docs/PRIVACY.md`, "Standard File Tags"). With them off the
-warnings are those of the minimal set.
+`exiftool -validate` on the 300 fixtures (iOS 27.2 Simulator, exiftool 13.55, 2026-11-16; no
+errors in any file). **With them on:** HEIF and DNG files report no warnings; a DNG without its date
+no longer reports "Invalid date/time format for EXIF:ModifyDate" (exiftool accepts the standard's
+blank form, `    :  :     :  :  `, and reports the empty text); the GPS version, `ExifVersion` and
+`ComponentsConfiguration` warnings are gone. Two remain on JPEGs, because ImageIO can't write
+those tags (`docs/PRIVACY.md`, "Standard File Tags"): "Missing required JPEG IFD0 tag 0x0213
+YCbCrPositioning" (106 JPEGs, all of them) and "Missing required JPEG ExifIFD tag 0xa001
+ColorSpace" (90, the Display P3 ones). **With them off** (the `standardTagsOff` cases): the
+minimal set's warnings, on JPEGs `YCbCrPositioning`, `ColorSpace`, `ComponentsConfiguration`,
+`ExifVersion` (processed fallback) and `GPSVersionID` (with a location), and on DNGs the
+`ModifyDate` format.
 
 **Device checks:** with Standard File Tags on (the default) and the date off, a RAW is saved on
 each lens and its `DateTime` is the 19-character blank date or empty (both pass the read-back;
