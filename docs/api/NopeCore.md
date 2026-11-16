@@ -1174,6 +1174,18 @@ case cameraStopped
 
 The camera stopped running, for example because of an interruption or a lens change.
 
+## `BurstEnd/countReached`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case countReached
+```
+
+The burst took the number of frames a Siri or Shortcuts request asked for (issue #62),
+fewer than ``DriveModel/maximumBurstFrames``. Siri reports the result, so an interface
+needn't announce it.
+
 ## `BurstEnd/failed`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -1192,7 +1204,7 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 case limitReached
 ```
 
-The burst reached ``DriveModel/maximumBurstFrames``.
+The burst reached ``DriveModel/maximumBurstFrames``, or an astro run took all its frames.
 
 ## `BurstEnd/stopped`
 
@@ -2050,6 +2062,22 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the camera is running, and if not, why. Meaningful while ``state`` is
 ``CameraState/ready(_:)``.
 
+## `CameraModel/startTimer(seconds:frames:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func startTimer(seconds: Int, frames: Int = 1)
+```
+
+Starts the self-timer, which takes one photo, or a burst, when it reaches zero. Ignored
+while a photo can't be taken or a countdown or burst runs.
+
+- Parameters:
+  - seconds: The delay, in seconds.
+  - frames: How many photos at zero: 1 for one photo, more for a burst of that many
+    frames (a Siri or Shortcuts request with a count, issue #62).
+
 ## `CameraModel/state`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2071,12 +2099,38 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 The storage warning for the next photo with the selected lens and formats, or `nil`
 (issue #44). The photo's size is estimated with ``PhotoSizeEstimate``.
 
-## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:)`
+## `CameraModel/takeBurst(frames:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool) async
+@MainActor func takeBurst(frames: Int = DriveModel.maximumBurstFrames) async
+```
+
+Takes a burst: single frames as fast as the camera is ready for them, each saved as its
+own photo through the same pipeline as any photo (metadata allowlist, read-back and
+signing per file). No frame is merged with another (AGENTS.md, "Honesty").
+
+Each frame is saved while the next is taken, so at most two frames are in memory at once
+(issue #46, "memory stays bounded"). The burst stops when the person stops it, at
+``DriveModel/maximumBurstFrames``, when the next frame wouldn't fit in storage, when the
+camera stops, or at the first frame that can't be taken or saved. Every frame taken
+before that is still saved; nothing is dropped.
+
+A burst never fires the flash, as brackets don't: the flash can't recharge between rapid
+frames.
+
+Side effects: may show the add-only Photos prompt; adds each photo to Photos.
+
+- Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
+  shutter, or the count a Siri or Shortcuts request asked for (issue #62).
+
+## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached) async
 ```
 
 Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -2089,6 +2143,7 @@ location when the Location switch is on, as a single photo does.
   - tracker: What the run reports its progress to.
   - stopsOnLowBattery: Whether the run also stops when the battery is at or below
     ``AstroModel/stopBatteryLevel`` and not charging.
+  - endAtLimit: What the run reports when it takes all `limit` frames.
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
@@ -5240,7 +5295,7 @@ How the last burst ended, or `nil` before the first one. Cleared when the next s
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-@MainActor static let maximumBurstFrames: Int
+nonisolated static let maximumBurstFrames: Int
 ```
 
 The most frames one burst takes (issue #46, "Limits"). An assumption to be confirmed on a
@@ -7074,6 +7129,66 @@ static let standard: IntervalSettings
 ```
 
 The default series: 10 photos, 10 seconds apart.
+
+## `IntervalShortcut`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+struct IntervalShortcut
+```
+
+The parameters of a "Start Interval Shooting" request: the time between photos and how many,
+each `nil` to keep the value chosen in Pro Tools (``ManualControlsModel/interval``).
+
+Values are moved into the ranges ``IntervalSettings`` allows.
+
+## `IntervalShortcut/count`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let count: Int?
+```
+
+How many photos the series takes, or `nil` to keep the chosen number.
+
+## `IntervalShortcut/init(intervalSeconds:count:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(intervalSeconds: Double? = nil, count: Int? = nil)
+```
+
+Creates a request.
+
+- Parameters:
+  - intervalSeconds: The time between photos in seconds, or `nil` to keep the chosen one.
+  - count: The number of photos, or `nil` to keep the chosen number.
+
+## `IntervalShortcut/intervalSeconds`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let intervalSeconds: Double?
+```
+
+The time from one photo to the next in seconds, or `nil` to keep the chosen one.
+
+## `IntervalShortcut/settings(over:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+func settings(over chosen: IntervalSettings) -> IntervalSettings
+```
+
+The series to run: this request's values over the chosen ones.
+
+- Parameter chosen: The interval and count chosen in Pro Tools.
+- Returns: The settings, each value inside its allowed range.
 
 ## `JPEGReader`
 
@@ -16332,10 +16447,24 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 struct PhotoShortcut
 ```
 
-The parameters of a "Take Photo" request: the delay before the shot and the lens.
+The parameters of a "Take Photo" request: the delay before the shot, the lens and how many
+photos.
 
 Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
 is.
+
+## `PhotoShortcut/count`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let count: Int
+```
+
+How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo
+(an exposure bracket that is on in the manual controls still applies, as it does to the
+shutter); more takes a burst of exactly that many frames with the burst's own loop, each
+frame its own photo.
 
 ## `PhotoShortcut/delaySeconds`
 
@@ -16348,12 +16477,12 @@ let delaySeconds: Int
 The delay before the photo, in seconds, from 0 (none) to ``maximumDelaySeconds``. A delay
 runs the self-timer, with its countdown on screen and announced.
 
-## `PhotoShortcut/init(delaySeconds:lensKind:)`
+## `PhotoShortcut/init(delaySeconds:lensKind:count:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1)
 ```
 
 Creates a request.
@@ -16362,13 +16491,15 @@ Creates a request.
   - delaySeconds: The delay in seconds. Values below 0 become 0, and values above
     ``maximumDelaySeconds`` become ``maximumDelaySeconds``.
   - lensKind: The kind of lens, or `nil` for the lens already selected.
+  - count: How many photos. Values below 1 become 1, and values above
+    ``DriveModel/maximumBurstFrames`` become ``DriveModel/maximumBurstFrames``.
 
-## `PhotoShortcut/init(timer:customDelaySeconds:lensKind:)`
+## `PhotoShortcut/init(timer:customDelaySeconds:lensKind:count:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil)
+init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil, count: Int? = nil)
 ```
 
 Creates a request from a preset delay and an optional custom one, as the "Take Photo"
@@ -16378,6 +16509,7 @@ intent offers them: a custom delay, when given, replaces the preset.
   - timer: The preset delay, or `nil` for none.
   - customDelaySeconds: A custom delay in seconds, or `nil` to use the preset.
   - lensKind: The kind of lens, or `nil` for the lens already selected.
+  - count: How many photos, or `nil` for one.
 
 ## `PhotoShortcut/lensKind`
 
@@ -17476,6 +17608,17 @@ Creates an empty inbox.
 - Parameter sleep: Waits a number of seconds, throwing when cancelled. Tests pass their
   own; the default is `Task.sleep`.
 
+## `ShortcutInbox/isServed`
+
+public, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var isServed: Bool { get }
+```
+
+Whether a camera screen serves the inbox: from its first call to ``next()`` until its
+task is cancelled. While it performs a request it is still serving.
+
 ## `ShortcutInbox/next()`
 
 internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
@@ -17523,9 +17666,10 @@ public, declared in `Sources/NopeCore/ShortcutInbox.swift`
 Hands a request to the camera screen and waits until it is done.
 
 - Parameter request: What Siri or Shortcuts asks for.
-- Returns: How it ended. When no camera screen takes the request within
-  ``startTimeoutSeconds``, ``ShortcutOutcome/cameraUnavailable(_:)`` with
-  ``CameraUnavailability/notRunning``.
+- Returns: How it ended. Without a camera screen, a request that doesn't need one ends at
+  once with its ``ShortcutRequest/outcomeWithoutCameraScreen``. When no camera screen
+  takes any other request within ``startTimeoutSeconds``,
+  ``ShortcutOutcome/cameraUnavailable(_:)`` with ``CameraUnavailability/notRunning``.
 
 ## `ShortcutInbox/wait(timeoutSeconds:until:)`
 
@@ -17566,7 +17710,8 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 case busy
 ```
 
-A photo, countdown or burst was already in progress. Say so; nothing changed.
+A photo, countdown, burst, interval series or astro run was already in progress. Say so;
+nothing changed.
 
 ## `ShortcutOutcome/cameraUnavailable(_:)`
 
@@ -17588,6 +17733,36 @@ case cancelled
 
 The countdown was cancelled on the device, so no photo was taken. Say so.
 
+## `ShortcutOutcome/intervalStarted`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case intervalStarted
+```
+
+An interval series started. Say so; the camera screen shows its progress.
+
+## `ShortcutOutcome/intervalStopped`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case intervalStopped
+```
+
+The interval series was stopped. Say so; every photo already taken is saved.
+
+## `ShortcutOutcome/lensSelected(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lensSelected(Lens.Kind)
+```
+
+The camera now uses a lens of this kind. Say which.
+
 ## `ShortcutOutcome/lensUnavailable`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -17596,7 +17771,70 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 case lensUnavailable
 ```
 
-The device has no lens of the kind asked for. Say so; nothing was taken.
+The device has no lens of the kind asked for. Say so; nothing was taken or changed.
+
+## `ShortcutOutcome/lightOff`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lightOff
+```
+
+The light is off. Say so.
+
+## `ShortcutOutcome/lightOn`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lightOn
+```
+
+The light is on. Say so.
+
+## `ShortcutOutcome/lightUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lightUnavailable
+```
+
+The light was asked for, but the system didn't allow it (for example while the device is
+hot) or the astro helper keeps it off. Say the light isn't available right now.
+
+## `ShortcutOutcome/needsManualControls`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case needsManualControls
+```
+
+Interval shooting is part of the manual controls, which are off. Say they can be turned
+on in the app's Settings; the request doesn't turn them on (manual settings are the
+person's to change).
+
+## `ShortcutOutcome/noIntervalRunning`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case noIntervalRunning
+```
+
+No interval series was running, so nothing was stopped. Say so.
+
+## `ShortcutOutcome/noLight`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case noLight
+```
+
+The lens in use has no light. Say so; nothing changed.
 
 ## `ShortcutOutcome/notSaved(_:)`
 
@@ -17648,6 +17886,62 @@ turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports
 ``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:)`` performs it with the same intents
 as the on-screen controls.
 
+## `ShortcutRequest/outcomeWithoutCameraScreen`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+var outcomeWithoutCameraScreen: ShortcutOutcome? { get }
+```
+
+What the request ends with when no camera screen is open to take it, or `nil` when it
+waits for one (``ShortcutInbox/startTimeoutSeconds``).
+
+Turning the light off and stopping a series don't need the camera: without a camera
+screen, the camera isn't running, so the light is already off and no series runs
+(AGENTS.md, "Battery": the light turns off and the session stops when the camera screen
+isn't in use). Their intents therefore run without opening the app.
+
+## `ShortcutRequest/selectLens(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case selectLens(Lens.Kind)
+```
+
+Switch to a lens of this kind, as the lens buttons do.
+
+## `ShortcutRequest/setLight(isOn:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case setLight(isOn: Bool)
+```
+
+Turn the light (the torch) on or off, as the Light switch in the quick-controls tray does.
+
+## `ShortcutRequest/startInterval(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case startInterval(IntervalShortcut)
+```
+
+Start an interval series, as Start in Pro Tools does.
+
+## `ShortcutRequest/stopInterval`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case stopInterval
+```
+
+Stop the running interval series, as its Stop button does.
+
 ## `ShortcutRequest/takePhoto(_:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -17656,7 +17950,7 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 case takePhoto(PhotoShortcut)
 ```
 
-Take one photo, after an optional delay, with an optional lens.
+Take one photo or a burst, after an optional delay, with an optional lens.
 
 ## `SignatureStatus`
 

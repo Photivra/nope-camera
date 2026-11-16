@@ -19,6 +19,7 @@
 2 NopeAppUITests/testSelfTimerCountsDownAndCanBeCancelled 46
 2 NopeAppUITests/testSettingsInRightToLeftLayout 256
 2 NopeAppUITests/testStatePillsChangeOrReset 41
+2 NopeAppUITests/testLiveActivityLayoutsPassAccessibilityAudits 300 est
 3 NopeAppUITests/testBlankPictureAtTheLargestTextSize 41
 3 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 48
 3 NopeAppUITests/testDeniedOffersOpenSettings 19
@@ -73,7 +74,6 @@
 6 OverlayUITests/testGridOnlyAndLevelOnly 27
 6 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 23
 6 ShortcutUITests/testACancelledCountdownSaysNoPhotoWasTaken 14 est
-6 NopeAppUITests/testLiveActivityLayoutsPassAccessibilityAudits 300 est
 7 NopeAppUITests/testComparisonShotShowsBothPicturesAndTheirDetails 110
 7 NopeAppUITests/testExposureModesAndFixedAperture 43
 7 NopeAppUITests/testFocusAidsAtTheLargestTextSize 34
@@ -89,6 +89,7 @@
 7 NopeAppUITests/testSpaceTakesAPhoto 0
 7 NopeAppUITests/testTooCloseSuggestionCanBeDismissed 16 est
 7 OverlayUITests/testGridAndLevelFromTheQuickControls 38
+7 ShortcutUITests/testACountTakesABurstThenSaysThePhotosWereSaved 14 est
 8 NopeAppUITests/testAstroAtTheLargestTextSizeAndRightToLeft 97
 8 NopeAppUITests/testBurstRunsUntilStoppedAndSavesEachFrame 84 est
 8 NopeAppUITests/testControlsOverWhiteAndYellowFrames 54
@@ -104,3 +105,5 @@
 8 NopeAppUITests/testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself 26 est
 8 OverlayUITests/testOverlaySettingsAtTheLargestTextSize 80 est
 8 NopeAppUITests/testLiveActivitySwitchIsOffByDefaultAndTurnsOn 70 est
+8 ShortcutUITests/testSwitchingLensesSaysWhichCamera 12 est
+6 NopeAppUITests/testViewfinderFollowsThePictureInTheScrollingLayout 60 est

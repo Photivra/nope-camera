@@ -34,6 +34,10 @@ public final class ShortcutInbox {
     /// The camera screen's wait for the next request, while the queue is empty.
     private var server: CheckedContinuation<PendingShortcut?, Never>?
 
+    /// Whether a camera screen serves the inbox: from its first call to ``next()`` until its
+    /// task is cancelled. While it performs a request it is still serving.
+    public private(set) var isServed = false
+
     /// Creates an empty inbox.
     ///
     /// - Parameter sleep: Waits a number of seconds, throwing when cancelled. Tests pass their
@@ -45,11 +49,13 @@ public final class ShortcutInbox {
     /// Hands a request to the camera screen and waits until it is done.
     ///
     /// - Parameter request: What Siri or Shortcuts asks for.
-    /// - Returns: How it ended. When no camera screen takes the request within
-    ///   ``startTimeoutSeconds``, ``ShortcutOutcome/cameraUnavailable(_:)`` with
-    ///   ``CameraUnavailability/notRunning``.
+    /// - Returns: How it ended. Without a camera screen, a request that doesn't need one ends at
+    ///   once with its ``ShortcutRequest/outcomeWithoutCameraScreen``. When no camera screen
+    ///   takes any other request within ``startTimeoutSeconds``,
+    ///   ``ShortcutOutcome/cameraUnavailable(_:)`` with ``CameraUnavailability/notRunning``.
     public func submit(_ request: ShortcutRequest) async -> ShortcutOutcome {
-        await withCheckedContinuation { continuation in
+        if !isServed, let outcome = request.outcomeWithoutCameraScreen { return outcome }
+        return await withCheckedContinuation { continuation in
             let pending = PendingShortcut(request: request, continuation: continuation)
             // Cancelled when a camera screen takes the request; a request already taken is no
             // longer queued, so a late expiry does nothing.
@@ -73,14 +79,17 @@ public final class ShortcutInbox {
     func next() async -> PendingShortcut? {
         server?.resume(returning: nil)
         server = nil
+        guard !Task.isCancelled else {
+            isServed = false
+            return nil
+        }
+        isServed = true
         if !queue.isEmpty { return queue.removeFirst().pickedUp() }
         return await withTaskCancellationHandler {
+            // No suspension since the check above, so the task can only be cancelled from now
+            // on, which the handler below sees: it runs on the main actor after this.
             await withCheckedContinuation { continuation in
-                if Task.isCancelled {
-                    continuation.resume(returning: nil)
-                } else {
-                    server = continuation
-                }
+                server = continuation
             }
         } onCancel: {
             Task { @MainActor [weak self] in self?.stopServing() }
@@ -91,6 +100,7 @@ public final class ShortcutInbox {
     private func stopServing() {
         server?.resume(returning: nil)
         server = nil
+        isServed = false
     }
 
     /// Ends a request no camera screen took in time.
