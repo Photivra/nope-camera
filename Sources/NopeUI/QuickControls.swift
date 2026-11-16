@@ -90,7 +90,7 @@ struct QuickControlItem: Identifiable {
 /// settings (`nil` hides an item the device can't do).
 ///
 /// The planned order is Light, Flash, Drive, Exposure, Grid, Level, Fast Shutter, Night, then
-/// Hide Controls last (issue #68).
+/// Hide Controls last (issue #68); Presets (issue #72) comes just before Night.
 @MainActor
 enum QuickControls {
     /// Every item builder, in display order. Add a feature's builder here, before
@@ -107,6 +107,7 @@ enum QuickControls {
         magnifier,
         astro,
         compare,
+        presets,
         night,
         hideControls,
     ]

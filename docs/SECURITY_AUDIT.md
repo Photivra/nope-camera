@@ -354,7 +354,10 @@ MASVS-STORAGE-2, MASVS-PRIVACY-2.
 - **Pass:** only the documented setting keys (switch states, formats, options), with Boolean
   or enum values. No photo data, metadata values, file names, dates of use, counters, device
   identifiers or the user's name and copyright text unless the user entered it for that switch.
-  Debug-only keys (for example an armed debug run) never appear in a Release build.
+  Debug-only keys (for example an armed debug run) never appear in a Release build. The one
+  other key is `NopePresets.saved` (issue #72): JSON of the saved presets, each with the name the
+  person typed, a random identifier, the same setting values and the camera values listed in
+  `docs/PRIVACY.md`, "Settings presets"; nothing else.
 
 ### 13. Logging
 

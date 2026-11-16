@@ -317,6 +317,47 @@ The person's settings live in one place that every target of the app can read: t
   app and its own extensions can share a group the same way, and the iPhone would send a
   `NopeSettingsSnapshot` across with WatchConnectivity.
 
+### Settings presets (issue #72)
+
+A preset is a named snapshot of every setting, applied all at once when the person chooses it.
+Nothing applies a preset on its own: the app never changes the person's settings by itself.
+
+- **What a preset holds** (`SettingsPreset`): a `NopeSettingsSnapshot` of every stored
+  `NopeSettings` key (formats, file options, pairing, privacy, signing, location, mirroring,
+  overlays, flash, night mode and anything added later) and a `CameraSetup` with the camera's own
+  state, which the app doesn't remember between launches: the lens, the manual exposure values,
+  Close-Up, the drive mode, the bracket, the interval series and the astro helper. Left out on
+  purpose, because they belong to one moment: the torch being on (the light always starts off),
+  a tapped focus point and the locks, the magnifier, clean view while open, and the comparison
+  shot.
+- **Every setting is covered by construction.** The settings part copies every key with the
+  `NopeSettings.` prefix, so a setting added later is in every preset saved after it exists. Tests
+  fail when a `NopeSettings` property, a `CameraSetup` value or a `ManualSettings` value isn't
+  saved and restored (or, for the locks, listed as left out).
+- **Versioned, forward-compatible encoding.** Each preset records `SettingsPreset.encodingVersion`;
+  only its identifier, name and settings are required, and every camera value is optional when
+  read. A setting missing from an older preset gets its default when the preset is applied
+  (`NopeSettings.apply(_:)` removes keys the snapshot doesn't have); a choice a later version adds
+  is read as the default. One damaged preset is skipped without hiding the others.
+- **Applying** (`SettingsPresets.apply(_:camera:location:)`): the snapshot replaces the
+  settings, then `CameraModel.applyCameraSetup(_:manualControlsOn:)` sets the camera through the
+  same intents as the interface, so every lens rule still applies. Factory Defaults is an empty
+  snapshot and `CameraSetup.factory`; saved presets are kept. Location is never turned on by the
+  snapshot: it is turned off and then on again through `LocationTagging.turnOn(in:)`, which asks
+  for access and leaves it off with `PresetNotice.locationNotAllowed` if access isn't allowed.
+  Other notices: no matching lens, values moved into the lens's range, camera not on yet, camera
+  busy (a countdown, burst, series or astro run; nothing changes), unreadable preset. The last
+  apply can be undone (`undo(camera:location:)`), which is why applying needs no confirmation.
+- **Storage.** The list is JSON under `NopePresets.saved` in the same store as the settings (the
+  App Group's `UserDefaults`). The key doesn't have the `NopeSettings.` prefix, so presets aren't
+  part of a settings snapshot or the Lock Screen camera's copy, which doesn't offer presets.
+  Applying writes the settings store, so `SharedSettingsSync` posts the change signal and the app
+  hands the new settings to the Lock Screen camera as after any other change.
+- **Interface.** `PresetsScreen` (a native `List`) opens from the first row of Settings and from
+  Presets in the quick-controls tray (`PresetsSheet`, a sheet so night mode stays red): Factory
+  Defaults and the saved presets, each applied with one tap; the result, its notices and Undo;
+  Save Current Settings (`PresetNameScreen`) and Rename or Delete (`EditPresetsScreen`).
+
 ### The viewfinder
 
 `NopeUI` may import only `NopeCore` and SwiftUI, and `NopeCapture` may not import UIKit, so the
@@ -550,7 +591,7 @@ last format can't be turned off; turning on one item turns the master switch off
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
 network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
 Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
-state. Settings is a short grouped list: Photos (formats with the RAW pairing, look, file
+state. Settings is a short grouped list: Presets (see "Settings presets"), Photos (formats with the RAW pairing, look, file
 options), Privacy (the master switch, "Choose Details", signing), Camera (manual controls, clean
 view, front camera mirroring) and More (Accessibility, Honesty, About); explanations are in
 footers and on the detail screens.

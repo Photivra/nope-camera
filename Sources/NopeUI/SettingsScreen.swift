@@ -2,7 +2,7 @@ import NopeCore
 import SwiftUI
 
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
-/// (issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
+/// (issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options), Privacy (the master switch,
 /// signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
 /// and More (Accessibility, Honesty, About).
 ///
@@ -30,6 +30,12 @@ public struct SettingsScreen: View {
     /// Location tagging, or `nil` to hide the Location switch.
     private let location: LocationTagging?
 
+    /// The saved settings presets, or `nil` to hide the Presets row.
+    private let presets: SettingsPresets?
+
+    /// The camera, whose lens and exposure a preset saves and sets, or `nil`.
+    private let camera: CameraModel?
+
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
 
@@ -44,10 +50,14 @@ public struct SettingsScreen: View {
     ///     Pass `true` when it isn't known yet.
     ///   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     ///     location service, which hides the Location switch.
+    ///   - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
+    ///   - camera: The camera, whose lens and exposure presets save and set, or `nil`.
     public init(
         settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true,
-        location: LocationTagging? = nil
+        location: LocationTagging? = nil, presets: SettingsPresets? = nil, camera: CameraModel? = nil
     ) {
+        self.presets = presets
+        self.camera = camera
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
         self.deviceHasFrontCamera = deviceHasFrontCamera
@@ -58,6 +68,11 @@ public struct SettingsScreen: View {
     public var body: some View {
         NavigationStack {
             Form {
+                if let presets {
+                    Section {
+                        PresetsScreen.link(presets: presets, settings: settings, camera: camera)
+                    }
+                }
                 photosSection
                 privacySection
                 cameraSection

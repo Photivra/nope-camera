@@ -776,6 +776,17 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The camera model.
 
+## `CameraControlContext/presets`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var presets: SettingsPresets?
+```
+
+The saved settings presets, for the Presets tray item (issue #72), or `nil` where there
+are none (the Lock Screen camera).
+
 ## `CameraControlContext/send(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -808,6 +819,16 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 Whether the full-auto exposure dial is open, for the Exposure tray item. The camera
 screen sets it; a constant `false` elsewhere.
+
+## `CameraControlContext/showsPresets`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var showsPresets: Binding<Bool>
+```
+
+Whether the presets sheet is open, for the Presets tray item. The camera screen sets it.
 
 ## `CameraFlipButton`
 
@@ -1097,12 +1118,12 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The screen.
 
-## `CameraReadyView/init(model:settings:lenses:openSettings:)`
+## `CameraReadyView/init(model:settings:lenses:openSettings:presets:)`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void)
+@MainActor init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void, presets: SettingsPresets? = nil)
 ```
 
 Creates the ready view.
@@ -1112,6 +1133,7 @@ Creates the ready view.
   - settings: The person's settings.
   - lenses: The lenses, in display order.
   - openSettings: Opens Settings.
+  - presets: The saved settings presets, or `nil` for no Presets tray item.
 
 ## `CameraReadyView/lenses`
 
@@ -1142,6 +1164,16 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 Opens Settings.
+
+## `CameraReadyView/presets`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+@MainActor let presets: SettingsPresets?
+```
+
+The saved settings presets (issue #72), or `nil` for no Presets tray item.
 
 ## `CameraReadyView/settings`
 
@@ -1210,12 +1242,12 @@ Creates the camera screen with a plain black viewfinder, for tests and previews.
   - model: The model to render.
   - settings: The person's settings.
 
-## `CameraScreen/init(model:settings:viewfinder:)`
+## `CameraScreen/init(model:settings:presets:viewfinder:)`
 
 public, declared in `Sources/NopeUI/CameraScreen.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings, @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder)
+@MainActor init(model: CameraModel, settings: NopeSettings, presets: SettingsPresets? = nil, @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder)
 ```
 
 Creates the camera screen.
@@ -1224,6 +1256,8 @@ Creates the camera screen.
   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     and runs `CameraModel.observeEvents()` while it is visible.
   - settings: The person's settings, opened from the Settings button.
+  - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    `nil` to offer none (the Lock Screen camera, which can't read them).
   - viewfinder: Makes the live viewfinder from the model's preview source.
 
 ## `CameraStyle`
@@ -3019,6 +3053,60 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 The SF Symbol for a mode.
 
 - Parameter mode: The mode.
+
+## `EditPresetsScreen`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct EditPresetsScreen
+```
+
+The saved presets, each opening its rename and delete screen; swiping a row deletes it.
+
+## `EditPresetsScreen/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list.
+
+## `EditPresetsScreen/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel?
+```
+
+The camera, or `nil`.
+
+## `EditPresetsScreen/init(presets:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, camera: CameraModel?)
+```
+
+Creates the list.
+
+- Parameters:
+  - presets: The presets.
+  - camera: The camera, or `nil`.
+
+## `EditPresetsScreen/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
 
 ## `EnvironmentValues/cameraGravitySource`
 
@@ -6149,6 +6237,308 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 The photos of the last press of the shutter: one, or a bracket's frames.
 
+## `PresetNameScreen`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetNameScreen
+```
+
+Names a new preset, or renames or deletes a saved one.
+
+## `PresetNameScreen/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `PresetNameScreen/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel?
+```
+
+The camera whose state a new preset saves, or `nil`.
+
+## `PresetNameScreen/editing`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let editing: SettingsPreset?
+```
+
+The preset being renamed, or `nil` for a new one.
+
+## `PresetNameScreen/init(presets:camera:editing:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, camera: CameraModel?, editing: SettingsPreset?)
+```
+
+Creates the screen.
+
+- Parameters:
+  - presets: The presets.
+  - camera: The camera, or `nil`.
+  - editing: The preset to rename, or `nil` for a new one.
+
+## `PresetNameScreen/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
+
+## `PresetText`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+enum PresetText
+```
+
+The words of the presets screens.
+
+## `PresetText/factoryDefaults`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let factoryDefaults: Text
+```
+
+The built-in preset's name.
+
+## `PresetText/factoryDefaultsExplanation`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let factoryDefaultsExplanation: Text
+```
+
+What Factory Defaults does.
+
+## `PresetText/notice(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func notice(_ notice: PresetNotice) -> String
+```
+
+What a notice tells the person.
+
+- Parameter notice: The notice.
+- Returns: The sentence.
+
+## `PresetText/problem(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func problem(_ problem: PresetNameProblem) -> String
+```
+
+Why a name can't be saved.
+
+- Parameter problem: The problem.
+- Returns: The sentence.
+
+## `PresetText/summary(of:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func summary(of result: PresetApplyResult) -> String
+```
+
+What an apply did, in one sentence.
+
+- Parameter result: The result.
+- Returns: The sentence.
+
+## `PresetText/title`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let title: Text
+```
+
+"Presets": the Settings row, the screen and the tray item.
+
+Its own key: "Presets" alone is the white balance presets menu.
+
+## `PresetsScreen`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetsScreen
+```
+
+The settings presets (issue #72): Factory Defaults and the saved presets, each applied with
+one tap, the result of the last apply with an Undo button, and links to save the current
+settings and to rename or delete saved presets.
+
+The same list opens from Settings (pushed) and from the Presets item of the quick-controls
+tray (``PresetsSheet``), and applying works the same from both. A preset is applied only when
+the person taps it, and Undo stays until the list closes, so a preset tapped by mistake costs
+nothing: that is why there is no confirmation step. The screen renders a `SettingsPresets`
+and changes it only through its methods, which hold the rules (AGENTS.md, "One direction of
+flow").
+
+## `PresetsScreen/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list.
+
+## `PresetsScreen/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel?
+```
+
+The camera a preset saves and sets up, or `nil`.
+
+## `PresetsScreen/init(presets:settings:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel?)
+```
+
+Creates the list.
+
+- Parameters:
+  - presets: The presets.
+  - settings: The settings.
+  - camera: The camera, or `nil`.
+
+## `PresetsScreen/link(presets:settings:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor static func link(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel?) -> some View
+
+```
+
+The Presets row in Settings, with the number of saved presets.
+
+- Parameters:
+  - presets: The presets.
+  - settings: The settings.
+  - camera: The camera, or `nil`.
+- Returns: The link.
+
+## `PresetsScreen/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
+
+## `PresetsScreen/settings`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings, for night mode.
+
+## `PresetsSheet`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetsSheet
+```
+
+The presets list in its own sheet, opened from the quick-controls tray.
+
+## `PresetsSheet/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list in a navigation stack, with Done.
+
+## `PresetsSheet/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel
+```
+
+The camera.
+
+## `PresetsSheet/init(presets:settings:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameters:
+  - presets: The presets.
+  - settings: The settings.
+  - camera: The camera.
+
+## `PresetsSheet/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
+
+## `PresetsSheet/settings`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings.
+
 ## `PrivacySettingsView`
 
 internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
@@ -6619,7 +7009,7 @@ function here; the tray shows whatever the functions return for the current lens
 settings (`nil` hides an item the device can't do).
 
 The planned order is Light, Flash, Drive, Exposure, Grid, Level, Fast Shutter, Night, then
-Hide Controls last (issue #68).
+Hide Controls last (issue #68); Presets (issue #72) comes just before Night.
 
 ## `QuickControls/astro(_:)`
 
@@ -6808,6 +7198,20 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Night: red and black screens for working in the dark (issue #61). Remembered between
 launches; the app never changes the screen's brightness.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/presets(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor static func presets(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Presets: opens the list of presets, Factory Defaults and the saved ones (issue #72), the
+same list as in Settings. Shown wherever the app has presets (not in the Lock Screen
+camera).
 
 - Parameter context: The model and settings.
 
@@ -7337,7 +7741,7 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 ```
 
 The settings: a short inset grouped list in a navigation stack, opened from the camera
-(issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
+(issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options), Privacy (the master switch,
 signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
 and More (Accessibility, Honesty, About).
 
@@ -7362,12 +7766,12 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 The form and its toolbar.
 
-## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:)`
+## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:presets:camera:)`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil)
+@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil, presets: SettingsPresets? = nil, camera: CameraModel? = nil)
 ```
 
 Creates the settings screen.
@@ -7381,6 +7785,8 @@ Creates the settings screen.
     Pass `true` when it isn't known yet.
   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     location service, which hides the Location switch.
+  - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
+  - camera: The camera, whose lens and exposure presets save and set, or `nil`.
 
 ## `SheetPresentationAction`
 

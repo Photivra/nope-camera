@@ -611,8 +611,27 @@ view.
   Night Mode control on the Lock Screen, then open the camera again: it follows. A setting
   changed in the Lock Screen camera doesn't change the app's. With the Location switch on in the
   app, a photo from the Lock Screen camera has no location.
-- After these checks the App Group's preferences file holds only `NopeSettings.` keys and the
-  migration key (`docs/SECURITY_AUDIT.md`, check 12).
+- After these checks the App Group's preferences file holds only `NopeSettings.` keys, the
+  migration key and the saved presets, `NopePresets.saved` (`docs/SECURITY_AUDIT.md`, check 12).
+
+### Settings presets on a device
+
+Issue #72. The rules are unit-tested (`SettingsPresetsTests`, `CameraSetupTests`) and the screens
+UI-tested on the Simulator; on a device, confirm the parts the simulated camera can't show:
+
+- Save a preset on the telephoto with manual ISO and shutter, a 10 s timer and RAW + JPEG; apply
+  Factory Defaults (wide lens, full auto, single, RAW + HEIF, saved presets still listed), then
+  the preset: the lens switches once without a frozen or black viewfinder, the values and timer
+  are back, and the next photo has those formats.
+- A preset with Location on, applied after location access was declined in Settings: Location
+  stays off, the notice says so, and no prompt appears; with access not yet asked, the system
+  prompt appears once.
+- A preset with the astro helper on, applied in daylight: the helper is on with the preset's
+  frame count and delay, and night mode follows the preset.
+- From the tray in night mode: the presets sheet is red on black and VoiceOver reads each preset
+  and the result after applying. Undo returns the lens and values.
+- After applying a preset, open the Lock Screen camera: it uses the applied formats and night
+  mode (the copy is handed over after every change).
 
 ### Low storage
 

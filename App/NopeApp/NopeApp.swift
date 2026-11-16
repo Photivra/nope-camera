@@ -40,6 +40,9 @@ struct NopeApp: App {
     /// Whether the app is in the foreground, to read the shared settings again when it returns.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// The saved settings presets (issue #72), stored with the settings on the device.
+    @State private var presets = SettingsPresets(settings: Self.sharedSettings)
+
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
 
@@ -101,7 +104,7 @@ struct NopeApp: App {
     /// The system delivers these events only while a capture session runs; while the camera
     /// isn't running, the interaction is off, so the buttons keep their system behavior.
     private var cameraScreen: some View {
-        CameraScreen(model: model, settings: settings) { source in
+        CameraScreen(model: model, settings: settings, presets: presets) { source in
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)

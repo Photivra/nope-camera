@@ -39,6 +39,9 @@ struct CameraReadyView: View {
     /// Opens Settings.
     let openSettings: () -> Void
 
+    /// The saved settings presets (issue #72), or `nil` for no Presets tray item.
+    let presets: SettingsPresets?
+
     /// The current text size; accessibility sizes switch to the scrolling layout.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -106,6 +109,9 @@ struct CameraReadyView: View {
     /// Whether the astro helper's settings are shown (issue #60).
     @State private var showsAstroSettings = false
 
+    /// Whether the presets sheet is shown (issue #72).
+    @State private var showsPresets = false
+
     /// The viewfinder's size, to turn a touch into a point in the picture.
     @State private var viewfinderSize = CGSize.zero
 
@@ -116,17 +122,24 @@ struct CameraReadyView: View {
     ///   - settings: The person's settings.
     ///   - lenses: The lenses, in display order.
     ///   - openSettings: Opens Settings.
-    init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void) {
+    ///   - presets: The saved settings presets, or `nil` for no Presets tray item.
+    init(
+        model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void,
+        presets: SettingsPresets? = nil
+    ) {
         self.model = model
         self.settings = settings
         self.lenses = lenses
         self.openSettings = openSettings
+        self.presets = presets
     }
 
     /// The registries' context.
     private var context: CameraControlContext {
         var context = CameraControlContext(model: model, settings: settings)
         context.showsExposureDial = $showsExposureDial
+        context.presets = presets
+        context.showsPresets = $showsPresets
         return context
     }
 
@@ -199,7 +212,18 @@ struct CameraReadyView: View {
                 .presentationSizing(.page)
         }
         .onChange(of: model.astro.isOn) { _, isOn in if !isOn { showsAstroSettings = false } }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        // The same presets list as in Settings (issue #72), a sheet for the reasons above.
+        .sheet(isPresented: $showsPresets) {
+            if let presets {
+                PresetsSheet(presets: presets, settings: settings, camera: model)
+                    .nightModeStyle(isNightMode)
+                    .preferredColorScheme(isNightMode ? .dark : nil)
+                    .presentationBackground(.background)
+                    .presentationDetents([.large])
+                    .presentationSizing(.page)
+            }
+        }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
         .onChange(of: model.captureStatus) { _, status in record(status) }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil

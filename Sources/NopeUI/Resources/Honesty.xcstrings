@@ -3697,6 +3697,72 @@
         }
       }
     },
+    "Location stays off, because location access isn't allowed for nope. You can allow it in Settings.": {
+      "comment": "Shown after applying a settings preset that includes Location when location access is off. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„Standort“ bleibt aus, weil der Standortzugriff für nope. nicht erlaubt ist. Du kannst ihn in den Einstellungen erlauben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ubicación sigue desactivada porque el acceso a la ubicación no está permitido para nope. Puedes permitirlo en Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localisation reste désactivée, car l’accès à la localisation n’est pas autorisé pour nope. Vous pouvez l’autoriser dans Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Posizione resta disattivata, perché l’accesso alla posizione non è consentito per nope. Puoi consentirlo in Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. に位置情報へのアクセスが許可されていないため、「位置情報」はオフのままです。「設定」で許可できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.에 위치 접근이 허용되지 않아 위치가 꺼진 상태로 유지됩니다. 설정에서 허용할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Locatie blijft uit, omdat toegang tot de locatie niet is toegestaan voor nope. Je kunt het toestaan in Instellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localização continua desativada porque o acesso à localização não está permitido para o nope. Você pode permiti-lo em Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“位置”保持关闭，因为 nope. 未获准访问位置。你可以在“设置”中允许。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「位置」保持關閉，因為 nope. 未獲准取用位置。你可以在「設定」中允許。"
+          }
+        }
+      }
+    },
     "Locked": {
       "comment": "VoiceOver: this detail is always saved and can't be turned off. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -6069,6 +6135,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "照片的處理程度盡可能低，以本機允許的最低程度為限。"
+          }
+        }
+      }
+    },
+    "Presets are kept on this device only.": {
+      "comment": "Privacy note under the settings presets. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Presets werden nur auf diesem Gerät gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Los preajustes se guardan solo en este dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les préréglages sont conservés uniquement sur cet appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le preimpostazioni sono conservate solo su questo dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットはこのデバイスにのみ保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋은 이 기기에만 보관됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Presets worden alleen op dit apparaat bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "As predefinições ficam guardadas apenas neste dispositivo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "预设仅保存在此设备上。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設僅保存在此裝置上。"
           }
         }
       }

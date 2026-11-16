@@ -117,6 +117,27 @@ so the app and its Control Center and Lock Screen controls read the same values 
   restrictions are unchanged: it has no location reader and no storage or battery reader, so a
   photo taken there never carries a location even if the Location switch is on.
 
+## Settings presets
+
+Presets (issue #72) are named copies of the settings above plus the camera's lens, exposure,
+drive and astro values, saved when the person taps Save Current Settings.
+
+- **What is stored:** the preset's name as typed, a random identifier, an encoding version, the
+  same settings values as above and the camera values (lens identifier, kind and magnification,
+  ISO, shutter, aperture, focus position, white balance, exposure compensation, metering, Close-Up,
+  drive mode, bracket, interval and astro choices). No photo, location, date, counter or
+  device identifier. The lens identifier is the app's own name for the lens on this device and is
+  never written to a photo.
+- **Where:** in the same on-device store as the settings (the App Group's `UserDefaults`, key
+  `NopePresets.saved`). Presets are not part of the copy handed to the Lock Screen camera, are
+  never synced through iCloud and never leave the device; device backups include them as they
+  include the settings.
+- **Permissions are never bypassed.** Applying a preset that has Location on asks for location
+  access through the normal prompt; if access isn't allowed, Location stays off and the person
+  is told. A preset can't grant camera or Photos access either: those prompts are unchanged.
+- **Deleting** a preset removes it from the store; Factory Defaults resets every setting but
+  keeps the saved presets.
+
 ## Content Credentials (signing)
 
 The app signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials
