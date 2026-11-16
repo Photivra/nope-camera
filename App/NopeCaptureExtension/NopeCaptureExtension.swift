@@ -67,6 +67,12 @@ struct LockedCameraView: View {
         .task(id: settings.fastShutter) {
             await model.send(.auto(.setFastShutter(settings.fastShutter)))
         }
+        .task(id: settings.followsFaces) {
+            await model.send(.auto(.setFollowsFaces(settings.followsFaces)))
+        }
+        .task(id: settings.photoSizes) {
+            await model.send(.setPhotoSizes(settings.photoSizes))
+        }
         .task(id: settings.startsInCleanView) {
             await model.send(.setCleanView(settings.startsInCleanView))
         }

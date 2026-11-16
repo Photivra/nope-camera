@@ -35,6 +35,10 @@ public struct EncodingSettings: Equatable, Sendable {
     /// The color space the image is encoded in.
     public let colorSpace: OutputColorSpace
 
+    /// The size of the encoded image, as a fraction of the developed image's.
+    /// `OutputSize.full` unless the person chose a smaller copy (`DevelopedFileOptions`).
+    public let size: OutputSize
+
     /// Creates the default encoding settings for a developed format: HEIF at 10 bits and the
     /// encoder's quality, JPEG at maximum quality, both in Display P3.
     ///
@@ -49,7 +53,7 @@ public struct EncodingSettings: Equatable, Sendable {
     ///
     /// - Parameters:
     ///   - format: The format to encode.
-    ///   - options: The compression, HEIF bit depth and color space.
+    ///   - options: The compression, HEIF bit depth, color space and size.
     /// - Returns: `nil` for `PhotoFormat.raw`, which is saved as the camera's DNG and never
     ///   re-encoded.
     public init?(format: PhotoFormat, options: DevelopedFileOptions) {
@@ -60,9 +64,11 @@ public struct EncodingSettings: Equatable, Sendable {
         case .heif:
             self.init(
                 format: format, type: .heic, bitsPerChannel: options.heifBitDepth.rawValue, quality: quality,
-                colorSpace: options.colorSpace)
+                colorSpace: options.colorSpace, size: options.size)
         case .jpeg:
-            self.init(format: format, type: .jpeg, bitsPerChannel: 8, quality: quality, colorSpace: options.colorSpace)
+            self.init(
+                format: format, type: .jpeg, bitsPerChannel: 8, quality: quality, colorSpace: options.colorSpace,
+                size: options.size)
         }
     }
 
@@ -74,12 +80,17 @@ public struct EncodingSettings: Equatable, Sendable {
     ///   - bitsPerChannel: Bits per color channel.
     ///   - quality: The lossy compression quality, or `nil` for the encoder default.
     ///   - colorSpace: The color space to encode in.
-    private init(format: PhotoFormat, type: UTType, bitsPerChannel: Int, quality: Double?, colorSpace: OutputColorSpace) {
+    ///   - size: The size of the encoded image.
+    private init(
+        format: PhotoFormat, type: UTType, bitsPerChannel: Int, quality: Double?, colorSpace: OutputColorSpace,
+        size: OutputSize
+    ) {
         self.format = format
         self.typeIdentifier = type.identifier
         self.bitsPerChannel = bitsPerChannel
         self.lossyCompressionQuality = quality
         self.colorSpace = colorSpace
+        self.size = size
     }
 
     /// The bits per component of the image handed to the encoder: 8 for an 8-bit HEIF, and

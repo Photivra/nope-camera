@@ -547,6 +547,14 @@ enum CloseUpText {
     }
 }
 
+/// The name of the far focus limit (issue #57).
+enum FarFocusText {
+    /// "Far Focus".
+    static var title: Text {
+        Text("Far Focus", bundle: .module, comment: "Quick control and pill on the camera: limits autofocus to far subjects, such as a landscape seen past near branches.")
+    }
+}
+
 /// The name of the focus magnifier.
 enum MagnifierText {
     /// "Magnify".

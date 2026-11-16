@@ -151,10 +151,12 @@ struct PhotoSettingsPlan: Equatable, Sendable {
 enum CapturePolicy {
     /// The session configuration for a request.
     ///
-    /// The photo size is the lens's smallest supported size: on 48 MP sensors that is the
-    /// native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
-    /// Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-    /// delivery, which the app turns off (`AVCapturePhotoOutput.h`).
+    /// The photo size is the request's (the person's choice for a lens without Bayer RAW,
+    /// `Lens.photoSizeChoices`, issue #57) when the lens reports it, and otherwise the lens's
+    /// smallest supported size: on 48 MP sensors that is the native 12 MP binned readout, the
+    /// same size as the Bayer RAW (capability survey, item 1). Larger processed sizes are made
+    /// by the camera's pipeline, and 24 MP needs deferred delivery, which the app turns off
+    /// (`AVCapturePhotoOutput.h`).
     ///
     /// - Parameter request: The lens and format.
     /// - Returns: The configuration, or `nil` if the request's RAW format code is invalid.
@@ -162,7 +164,8 @@ enum CapturePolicy {
         guard let plan = photoSettings(for: request.format) else { return nil }
         return SessionConfiguration(
             deviceID: request.lens.id,
-            maxPhotoDimensions: request.lens.photoDimensions.min { $0.pixelCount < $1.pixelCount },
+            maxPhotoDimensions: request.photoSize.flatMap { request.lens.photoDimensions.contains($0) ? $0 : nil }
+                ?? request.lens.defaultPhotoSize,
             photoSettings: plan,
             switches: .leastProcessing
         )

@@ -89,7 +89,10 @@ enum SimulatedCameraLaunch {
     /// Two lenses like an iPad's without RAW: a wide and a front camera, neither with Bayer RAW.
     static let lensesWithoutRAW: [Lens] = [
         Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1),
-        Lens(id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil),
+        // Two photo sizes, so Settings offers the Photo Size choice (issue #57).
+        Lens(
+            id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil,
+            photoDimensions: [PhotoDimensions(width: 4032, height: 3024), PhotoDimensions(width: 8064, height: 6048)]),
     ]
     /// The `UserDefaults` suite that holds settings during UI tests.
     static let settingsSuiteName = "NopeUITestSettings"

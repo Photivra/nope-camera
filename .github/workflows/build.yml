@@ -140,7 +140,6 @@ jobs:
       - name: Coverage gate (100% lines and branches of logic modules)
         run: scripts/check-coverage.sh DerivedData
       - name: Upload the file compatibility fixtures for the external validators
-        if: vars.NOPE_FILE_VALIDATORS != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: compat-fixtures
@@ -282,20 +281,16 @@ jobs:
       - name: All iPad shards passed
         run: '[[ "${{ needs.ui-tests-ipad-shard.result }}" == success ]]'
 
-  # External validators on the pipeline-generated fixtures (issue #58): c2patool, exiftool
-  # -validate and Adobe's dng_validate. None is approved yet (security/allowed-dependencies.txt),
-  # so this job runs only once the maintainer sets the repository variable NOPE_FILE_VALIDATORS
-  # to the approved list, for example "c2patool exiftool". scripts/check-file-compat.sh then
-  # fails if a listed validator is missing. dng_validate has no install step: it is built from
-  # Adobe's DNG SDK, whose license must be reviewed first.
+  # External validators on the pipeline-generated fixtures (issue #58): c2patool and exiftool
+  # -validate, both maintainer-approved (security/allowed-dependencies.txt). They are installed
+  # at pinned versions, each checked against its SHA-256, by scripts/install-file-validators.sh;
+  # scripts/check-file-compat.sh fails if either is missing. Adobe's dng_validate isn't
+  # approved, so it isn't installed and doesn't run here.
   file-compat:
     name: file-compat
     needs: unit-tests
-    if: vars.NOPE_FILE_VALIDATORS != ''
     runs-on: xcode-27
     timeout-minutes: 20
-    env:
-      NOPE_FILE_VALIDATORS: ${{ vars.NOPE_FILE_VALIDATORS }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -305,19 +300,14 @@ jobs:
         with:
           name: compat-fixtures
           path: compat-fixtures
-      - name: Install exiftool
-        if: contains(vars.NOPE_FILE_VALIDATORS, 'exiftool')
-        run: brew install exiftool
-      - name: Install c2patool
-        if: contains(vars.NOPE_FILE_VALIDATORS, 'c2patool')
-        run: brew install c2patool
+      - name: Install c2patool and exiftool (pinned, checksum-verified)
+        run: scripts/install-file-validators.sh "$RUNNER_TEMP/file-validators" >> "$GITHUB_PATH"
       - name: Show validator versions
         run: |
-          for tool in $NOPE_FILE_VALIDATORS; do echo "$tool: $(command -v "$tool" || echo missing)"; done
-          if command -v exiftool >/dev/null; then exiftool -ver; fi
-          if command -v c2patool >/dev/null; then c2patool --version; fi
+          c2patool --version
+          echo "exiftool $(exiftool -ver)"
       - name: Validate every fixture
-        run: scripts/check-file-compat.sh --require "$NOPE_FILE_VALIDATORS" compat-fixtures
+        run: scripts/check-file-compat.sh --require "c2patool exiftool" compat-fixtures
 
   docs:
     name: docs

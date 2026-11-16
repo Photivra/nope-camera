@@ -447,6 +447,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         if let point, point.exposes, device.isExposurePointOfInterestSupported {
             device.exposurePointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
         }
+        // Face detection is set before the exposure and focus modes, which apply it
+        // (AVCaptureDevice.h, faceDrivenAutoExposureEnabled and faceDrivenAutoFocusEnabled).
+        applyFaceDetection(controls.followsFaces, to: device)
         applyExposure(controls.exposure, locksAtPoint: point.map { $0.exposes && $0.locks } ?? false, to: device)
         applyLongestAutoExposure(controls.longestAutoExposure, to: device)
         applyFocusAids(controls, to: device)
@@ -550,13 +553,35 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///   - device: The camera.
     private func applyFocusAids(_ controls: DeviceControls, to device: AVCaptureDevice) {
         if device.isAutoFocusRangeRestrictionSupported {
-            device.autoFocusRangeRestriction = controls.nearFocusLimit ? .near : .none
+            device.autoFocusRangeRestriction = controls.nearFocusLimit ? .near : controls.farFocusLimit ? .far : .none
         }
         guard device.isFocusPointOfInterestSupported else { return }
         if let point = controls.pointOfInterest, point.focuses {
             device.focusPointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
         } else {
             device.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
+        }
+    }
+
+    /// Lets detected faces steer autofocus and auto exposure (the system's automatic choice), or
+    /// turns that off. Call only on `queue`, with the camera locked.
+    ///
+    /// AVFoundation raises an exception when either is set on a camera without autofocus or
+    /// auto exposure, or while its "automatically adjusts" property is on (AVCaptureDevice.h), so
+    /// each is set only where the camera supports the continuous mode, and the automatic
+    /// property is turned off before the value is set.
+    ///
+    /// - Parameters:
+    ///   - followsFaces: Whether faces steer autofocus and auto exposure.
+    ///   - device: The camera.
+    private func applyFaceDetection(_ followsFaces: Bool, to device: AVCaptureDevice) {
+        if device.isFocusModeSupported(.continuousAutoFocus) {
+            device.automaticallyAdjustsFaceDrivenAutoFocusEnabled = followsFaces
+            if !followsFaces { device.isFaceDrivenAutoFocusEnabled = false }
+        }
+        if device.isExposureModeSupported(.continuousAutoExposure) {
+            device.automaticallyAdjustsFaceDrivenAutoExposureEnabled = followsFaces
+            if !followsFaces { device.isFaceDrivenAutoExposureEnabled = false }
         }
     }
 

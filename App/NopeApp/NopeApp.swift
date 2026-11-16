@@ -161,6 +161,14 @@ struct NopeApp: App {
         .task(id: settings.fastShutter) {
             await model.send(.auto(.setFastShutter(settings.fastShutter)))
         }
+        // Face Detection (issue #57): applied when the camera opens and whenever it changes.
+        .task(id: settings.followsFaces) {
+            await model.send(.auto(.setFollowsFaces(settings.followsFaces)))
+        }
+        // The photo size of each lens that offers a choice (issue #57).
+        .task(id: settings.photoSizes) {
+            await model.send(.setPhotoSizes(settings.photoSizes))
+        }
         // "Start in clean view": applied when the camera opens and whenever the option changes;
         // the camera's own button still toggles clean view at any time.
         .task(id: settings.startsInCleanView) {

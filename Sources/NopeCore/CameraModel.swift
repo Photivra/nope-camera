@@ -67,6 +67,10 @@ public final class CameraModel {
     /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
     public let comparison: ComparisonModel
 
+    /// The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
+    /// the camera starts with a lens. Empty by default: every lens at its default size.
+    public private(set) var photoSizes: [Lens.ID: PhotoDimensions] = [:]
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -171,7 +175,22 @@ public final class CameraModel {
             await handle(intent)
         case .comparison(let intent):
             comparison.handle(intent)
+        case .setPhotoSizes(let sizes):
+            await setPhotoSizes(sizes)
         }
+    }
+
+    /// Keeps the person's photo sizes, and reconfigures the camera when the selected lens's size
+    /// changed while it was started.
+    ///
+    /// - Parameter sizes: The chosen size for each lens.
+    private func setPhotoSizes(_ sizes: [Lens.ID: PhotoDimensions]) async {
+        let previous = selectedLens.flatMap { $0.photoSize(for: photoSizes[$0.id]) }
+        photoSizes = sizes
+        guard let lens = selectedLens, lens.photoSize(for: sizes[lens.id]) != previous, sessionStatus != .stopped else {
+            return
+        }
+        await startSession()
     }
 
     /// Applies the backend's events until its stream ends. Run it for as long as the camera
@@ -238,6 +257,10 @@ public final class CameraModel {
             await manual.stepExposureCompensation(by: steps)
         case .setNearFocusLimit(let isOn):
             await manual.setNearFocusLimit(isOn)
+        case .setFarFocusLimit(let isOn):
+            await manual.setFarFocusLimit(isOn)
+        case .setFollowsFaces(let isOn):
+            await manual.setFollowsFaces(isOn)
         case .setFastShutter(let choice):
             await manual.setFastShutter(choice)
         case .dismissCloseUpSuggestion:
@@ -318,7 +341,7 @@ public final class CameraModel {
         manual.lensWillStart(lens)
         light.lensWillStart(lens)
         do {
-            try await backend.startSession(CaptureRequest(lens: lens))
+            try await backend.startSession(CaptureRequest(lens: lens, photoSize: lens.photoSize(for: photoSizes[lens.id])))
             // An interruption or heat event may have arrived while starting; it wins.
             if sessionStatus == .starting { sessionStatus = .running }
             // Starting the camera returns its controls to automatic; apply the manual ones again.

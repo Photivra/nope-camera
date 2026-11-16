@@ -10,7 +10,8 @@ Sources are the iOS 27.2 SDK headers (Xcode 27.2): `AVFoundation/AVCapturePhotoO
 (`AVCapturePhotoOutput`, `AVCapturePhotoSettings`), `AVFoundation/AVCaptureDevice.h`,
 `AVFoundation/AVCaptureSession.h` (`AVCaptureConnection`) and `ImageIO/CGImageDestination.h`.
 "Offered" means a control in the app today; "fixed" means the app sets it to one value on purpose;
-"not offered" gives the reason. Status as of 0.2.0.
+"not offered" gives the reason. Status as of 0.3.0 (the rows changed since 0.2.0 name the
+release).
 
 Each status is per lens and per format at run time (AGENTS.md, "Progressive enhancement"): a
 control appears only where the lens's active format reports it (`ManualCapabilities`,
@@ -29,11 +30,11 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | HEIF and JPEG compression (`kCGImageDestinationLossyCompressionQuality`) | Offered | Settings › File Options: System Default, Maximum, High (0.9), Medium (0.7); HEIF defaults to the encoder's own quality and JPEG to maximum, as before (`DevelopedFileOptions`). |
 | HEIF bit depth (10-bit from a 16-bit image, or 8-bit) | Offered | File Options: 10-bit (default) or 8-bit. ImageIO writes a 16-bit image as 10-bit HEIF on the iOS 27 Simulator and macOS 27 (`PhotoEncoder`). JPEG has only 8 bits. |
 | Color space of the developed copies (Display P3 or sRGB) | Offered | File Options. sRGB is converted by Core Graphics when drawing, not relabeled. |
-| HDR gain map / ISO HDR (`kCGImageDestinationEncodeRequest`, `…EncodeToISOHDR`, `…EncodeToISOGainmap`) | Not offered | The RAW developer outputs an SDR image; a gain map is an auxiliary image the read-back rejects (`heif:item:tmap`, `auxl`) and would need its own allowlist and research. Candidate for later. |
+| HDR gain map / ISO HDR (`kCGImageDestinationEncodeRequest`, `…EncodeToISOHDR`, `…EncodeToISOGainmap`) | Not offered (no-go, 0.3.0) | See "HDR gain maps" below: the files fail the fail-closed read-back, so they can't be written through the allowlist. |
 | Embedded thumbnail (`kCGImageDestinationEmbedThumbnail`, `embeddedThumbnailPhotoFormat`, `rawEmbeddedThumbnailPhotoFormat`) | Fixed off | Privacy: a thumbnail is a second copy that keeps pixels after an edit, and the allowlist has no thumbnail blocks. |
 | Preview image (`previewPhotoFormat`) | Not offered | Only in memory; the app doesn't use it. |
-| Downscaled size (`kCGImageDestinationImageMaxPixelSize`) | Not offered | Not yet. It would make smaller copies; it is safe to add later (files open). |
-| Photo dimensions (`maxPhotoDimensions` from `activeFormat.supportedMaxPhotoDimensions`) | Fixed | The active format's size the backend picks (`SessionConfiguration.maxPhotoDimensions`). The Bayer RAW was 12 MP on every lens of the device measured (docs/PRIVACY.md, "Results"). Whether any lens offers a second Bayer RAW size, and a size choice for the processed fallback, isn't measured yet: a device check before it can be offered. |
+| Downscaled size of the HEIF and JPEG copies (`kCGImageDestinationImageMaxPixelSize`) | Offered (0.3.0) | File Options › Copy Size: Full Size (default), Half Size or Quarter Size of the RAW's width and height (`OutputSize`). The encoder draws the copy at its size with Core Graphics (high-quality interpolation) rather than passing `kCGImageDestinationImageMaxPixelSize`, so the exact size is known and EXIF `PixelXDimension`/`PixelYDimension` are set to it. The RAW keeps every pixel. Every size is in the file compatibility matrix. |
+| Photo dimensions (`maxPhotoDimensions` from `activeFormat.supportedMaxPhotoDimensions`) | Offered per lens without Bayer RAW (0.3.0); fixed with Bayer RAW | Settings › Photos › Photo Size, only for a lens without Bayer RAW that reports more than one size (`Lens.photoSizeChoices`); the smallest size, the camera's own default (`AVCapturePhotoSettings.maxPhotoDimensions`), stays the default. The 24 MP size (5712 × 4284) is left out: `AVCapturePhotoOutput.h` says it "is only serviced as 24MP via deferred photo delivery", which the app turns off. A lens with Bayer RAW has no choice: 48 MP sensors give 12 MP binned Bayer RAW and no public API offers full-resolution quad-Bayer data (capability survey, item 1), and the RAW was 12 MP on every lens of the device measured (docs/PRIVACY.md, "Results"); its HEIF and JPEG are developed from that RAW, so their size is Copy Size. The larger fallback size is in the file compatibility matrix; that `maxPhotoDimensions` leaves the Bayer RAW at 12 MP, and the sizes each fallback lens reports, are device checks (docs/TESTING.md). |
 | Optimize color for sharing (`kCGImageDestinationOptimizeColorForSharing`) | Not offered | The sRGB option covers the case explicitly. |
 | Metadata (`AVCapturePhotoSettings.metadata`, `kCGImageDestinationMetadata`) | Fixed | Built from the allowlist (docs/PRIVACY.md); location from `LocationTagging` (issue #43). |
 | Orientation, mirroring (`AVCaptureConnection.videoMirrored`, Orientation tag) | Offered | Settings › Mirror Front Camera (issue #45): through the Orientation value only; the photo output's own mirroring is turned off. |
@@ -54,8 +55,9 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Focus and exposure point (`focusPointOfInterest`, `exposurePointOfInterest`) | Offered | Tap to focus and expose, with a lock (issues #35, #41, #51, #56). |
 | AE lock, AF lock | Offered | |
 | Focus position (`setFocusModeLocked(lensPosition:)`) | Offered | Where the lens supports manual focus. |
-| Focus range restriction (`autoFocusRangeRestriction`) | Offered (near) | Close-up aids (issues #35, #41, #51, #56): the near limit, where the lens supports it. Far isn't offered. |
-| Smooth autofocus, face-driven AE/AF (`isSmoothAutoFocusEnabled`, `isFaceDrivenAutoExposureEnabled`, `isFaceDrivenAutoFocusEnabled`) | Not offered | System defaults in full auto; face-driven exposure is a candidate behind Pro Tools. |
+| Focus range restriction (`autoFocusRangeRestriction`) | Offered (near; far since 0.3.0) | Close-Up (issues #35, #41, #51, #56) is the near limit, in full auto too. Far Focus (`.far`, "subject matter that is far from the camera", `AVCaptureDevice.h`) is in the quick-controls tray with manual controls on, with a pill; the two replace each other, since the device has one restriction; All Auto clears both. Both need autofocus and `isAutoFocusRangeRestrictionSupported`. |
+| Face-driven AE/AF (`automaticallyAdjustsFaceDrivenAutoFocusEnabled`, `isFaceDrivenAutoFocusEnabled`, and the exposure equivalents) | Offered (0.3.0) | Settings › Camera › Face Detection, on by default: on leaves the system's automatic choice (`automaticallyAdjusts…` = YES, the default); off sets `automaticallyAdjusts…` to NO and the face-driven value to NO. Each is set only where the camera supports continuous autofocus or auto exposure, because AVFoundation raises an exception otherwise, and before the focus and exposure modes, which apply it (`AVCaptureDevice.h`). Applies only while focus or exposure is automatic. |
+| Smooth autofocus (`isSmoothAutoFocusEnabled`) | Not offered | `AVCaptureDevice.h` documents it as "appropriate for movie recording": slower focusing, with no effect on a still photo's file or exposure. |
 | White balance temperature and tint, presets, gains (`setWhiteBalanceModeLocked(with:)`, `deviceWhiteBalanceGains`) | Offered | Temperature and tint (2500–10,000 K) are converted to gains within `maxWhiteBalanceGain`; direct gains aren't shown, because temperature and tint describe the same values. |
 | Aperture (`lensAperture`, iOS 27 variable aperture) | Offered | Where the lens has more than one stop. |
 | Max exposure duration in auto (`activeMaxExposureDuration`) | Offered | Fast Shutter in Settings (issues #35, #41, #51, #56): a shutter limit for auto exposure. |
@@ -66,10 +68,47 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | Flash and torch (`flashMode`, `setTorchModeOn(level:)`) | Offered | Issue #38: the Flash menu (the modes the photo output reports for the lens) and the Light switch in the quick-controls tray. |
 | Zoom (`videoZoomFactor`) | Fixed 1.0 | Bayer RAW requires a zoom factor of 1.0 ("Bayer RAW rules", `AVCapturePhotoOutput.h`); each lens is its own button. |
 
+## HDR gain maps: no-go (issue #57, 0.3.0)
+
+An HDR gain map (ISO 21496-1) or an ISO HDR file (`kCGImageDestinationEncodeRequest` with
+`kCGImageDestinationEncodeToISOGainmap` or `…EncodeToISOHDR`, iOS 18 and later,
+`ImageIO/CGImageDestination.h`) isn't offered, because such a file can't be written through the
+metadata allowlist and pass the fail-closed read-back. Measured on 2026-11-16 on the iOS 27.2
+Simulator with the app's own encoder (`PhotoEncoder.encode`), a 64 × 48 half-float image with
+values above 1.0, and the first-launch metadata plan, for HEIF and JPEG, in extended linear
+Display P3, BT.2100 PQ and BT.2100 HLG:
+
+- **Gain map request:** `CGImageDestinationFinalize` failed for every color space and both
+  formats when `kCGImageDestinationEncodeToISOGainmap` was passed with `CGImageDestinationAddImage`:
+  no file was written. ImageIO doesn't make a gain map from one HDR image this way.
+- **ISO HDR request (and an HDR image without a request):** a PQ or HLG HEIF carries
+  `Headroom`, `AverageLightLevelNits` and the ICC `CLL` (content light level) key, and a PQ or HLG
+  JPEG carries `Headroom`; the read-back reports each as an unexpected ImageIO key
+  (`MetadataViolation.unexpectedImageIOKey`), so the photo wouldn't be saved. An extended linear
+  Display P3 image is written as an ordinary SDR file with no gain map.
+- **The RAW developer is SDR:** `CoreImageRAWRenderer` renders the DNG to 16-bit Display P3 with
+  the RAW filter's default (SDR) range, so there is no HDR rendition to map. Making one needs the
+  RAW filter's extended dynamic range output, which is more processing than the app's neutral
+  development.
+- **What it would take:** a gain map is a second (auxiliary) image in the file, `tmap` and `auxl`
+  items in a HEIF and an MPF secondary image with `hdrgm` XMP in a JPEG. Each would need its own
+  allowlist entries, read-back rules and a check that the Content Credentials hash covers it, all
+  reviewed changes to the allowlist (AGENTS.md, "Metadata is allowlisted"), and a device check that
+  Photos and other apps show it. Not tried: Core Image's `CIContext` gain map writer
+  (`CIImageRepresentationOption.hdrGainMapImage`).
+
+Owner principle: a setting that makes a file that doesn't open, or can't be checked, isn't
+shipped. Revisit if the allowlist is extended for gain maps by a reviewed change.
+
 ## Files must open
 
 Every option in File Options is encoded and opened again by `NopeDevelopTests`
 (`FileOptionsEncodingTests`): each HEIF and JPEG combination of compression, bit depth and color
 space opens as one image of its format, passes the metadata read-back, and has the chosen depth
-and color space. On a device, the same combinations must open in Photos and a RAW editor before
+and color space; each copy size opens at its size with matching EXIF pixel dimensions. The file
+compatibility matrix (`FileCompatibilityTests`, issue #58) saves every option through the full
+pipeline, signed and unsigned, including each copy size and a processed fallback at a larger photo
+size; `theMatrixCoversEveryOption` fails when an option has no fixture. Face Detection and Far
+Focus change only how the camera focuses and exposes, not what is written, so they add no file
+fixture. On a device, the same combinations must open in Photos and a RAW editor before
 release (docs/TESTING.md, "File options, pairing, mirroring and location").

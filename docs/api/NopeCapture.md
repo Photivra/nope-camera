@@ -972,10 +972,12 @@ static func sessionConfiguration(for request: CaptureRequest) -> SessionConfigur
 
 The session configuration for a request.
 
-The photo size is the lens's smallest supported size: on 48 MP sensors that is the
-native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
-Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-delivery, which the app turns off (`AVCapturePhotoOutput.h`).
+The photo size is the request's (the person's choice for a lens without Bayer RAW,
+`Lens.photoSizeChoices`, issue #57) when the lens reports it, and otherwise the lens's
+smallest supported size: on 48 MP sensors that is the native 12 MP binned readout, the
+same size as the Bayer RAW (capability survey, item 1). Larger processed sizes are made
+by the camera's pipeline, and 24 MP needs deferred delivery, which the app turns off
+(`AVCapturePhotoOutput.h`).
 
 - Parameter request: The lens and format.
 - Returns: The configuration, or `nil` if the request's RAW format code is invalid.
