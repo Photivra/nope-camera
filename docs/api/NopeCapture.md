@@ -3707,10 +3707,10 @@ struct ResourceStaging
 Writes the one file PhotoKit needs on disk, the alternate of a RAW pair
 (``PhotoKitMapping/Resource/addsFromFile``), and deletes it again.
 
-Privacy (AGENTS.md, "Photos never linger"): the file is written with complete file
-protection, under a random name in the app's temporary directory, and Photos moves it into
-the library (`PHAssetResourceCreationOptions.shouldMoveFile`). ``PhotoKitLibrary`` deletes
-whatever is left as soon as the change ends, whether or not it succeeded.
+Privacy (AGENTS.md, "Photos never linger"): the file is written under a random name in the
+app's temporary directory with ``protection``, and Photos moves it into the library
+(`PHAssetResourceCreationOptions.shouldMoveFile`). ``PhotoKitLibrary`` deletes whatever is
+left as soon as the change ends, whether or not it succeeded.
 
 ## `ResourceStaging/directory`
 
@@ -3735,6 +3735,21 @@ Creates a stager.
 - Parameter directory: The directory to write to. Defaults to the app's temporary
   directory.
 
+## `ResourceStaging/protection`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+static let protection: Data.WritingOptions
+```
+
+The file protection of a staged file: encrypted until the device is first unlocked after
+it starts (`NSFileProtectionCompleteUntilFirstUserAuthentication`). Complete protection
+can't be used: Apple documents that a file with it can't be written or read while the
+device is locked, so every RAW pair taken with the Lock Screen camera, or still saving
+when the screen locks, would be split into two photos. The file exists only for the
+moment the save takes.
+
 ## `ResourceStaging/remove(_:)`
 
 internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
@@ -3755,7 +3770,7 @@ internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
 func stage(_ file: PhotoFile) throws -> URL
 ```
 
-Writes a file with complete file protection, never over an existing file.
+Writes a file with ``protection``, never over an existing file.
 
 - Parameter file: The file to write.
 - Returns: Where it was written.

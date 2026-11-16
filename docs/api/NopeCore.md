@@ -2428,8 +2428,10 @@ public, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 @MainActor func serveShortcuts(from inbox: ShortcutInbox, settings: NopeSettings? = nil, presets: SettingsPresets? = nil) async
 ```
 
-Performs each request from the inbox in turn, until the calling task is cancelled. Run it
-for as long as the camera screen is shown, for example in a SwiftUI `.task`.
+Performs the requests from the inbox, until the calling task is cancelled: one at a time,
+except that an instant request (``ShortcutRequest/isInstant``) runs at once, alongside a
+request still in progress. Run it for as long as the camera screen is shown, for example
+in a SwiftUI `.task`.
 
 Side effects: as ``CameraIntent/capture`` and ``CameraIntent/selectLens(_:)``; a request
 may switch the lens, start the self-timer, take a photo and add it to Photos.
@@ -12617,6 +12619,31 @@ case any
 
 Any text: the value is the system's own (for example the system version).
 
+## `MetadataAllowlist/TextRule/blankDate`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+case blankDate
+```
+
+A date with no date in it: empty, or at most ``blankDateMaximumLength`` characters
+that are each a blank or a colon. This is the Exif standard's form for an unknown date
+("all the character spaces except colons filled with blank characters", Exif 2.32 and
+3.0, `DateTime`) however the system pads or shortens it; the reader stops at the first
+NUL, so NUL padding passes too. Any digit or other character fails.
+
+## `MetadataAllowlist/TextRule/blankDateMaximumLength`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+static let blankDateMaximumLength: Int
+```
+
+The length of an Exif date and time, `YYYY:MM:DD HH:MM:SS`, without its closing NUL
+(Exif 2.32, `DateTime`: 20 bytes with it).
+
 ## `MetadataAllowlist/TextRule/exactly(_:)`
 
 public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
@@ -16523,6 +16550,16 @@ Creates a pending request.
   - request: What was asked for.
   - continuation: The intent's wait for the outcome.
 
+## `PendingShortcut/onFinish`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor var onFinish: ((PendingShortcut) -> Void)?
+```
+
+Called once when the request finishes, so the inbox can start the next one.
+
 ## `PendingShortcut/pickedUp()`
 
 internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
@@ -20400,6 +20437,18 @@ let settings: NopeSettingsSnapshot
 
 Every stored setting.
 
+## `SettingsPreset/verbatimName`
+
+public, declared in `Sources/NopeCore/SettingsPresets.swift`
+
+```swift
+var verbatimName: LocalizedStringResource { get }
+```
+
+The name as a resource that shows it exactly as typed, for the Shortcuts app. The name
+itself is never a string catalog key, so a name that matches one of the app's strings
+(such as "Preset") isn't translated: the key is a placeholder that the name fills.
+
 ## `SettingsPreset/version`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
@@ -20592,6 +20641,18 @@ the preset includes Location; may switch the lens, which restarts the camera.
     case Location stays off.
 - Returns: What happened, also kept in ``lastResult``.
 
+## `SettingsPresets/beforeLastApply`
+
+internal, declared in `Sources/NopeCore/SettingsPresets.swift`
+
+```swift
+@MainActor var beforeLastApply: SettingsPreset? { get set }
+```
+
+The settings and camera from before the last apply, which ``undo(camera:location:)``
+restores, or `nil` when there is nothing to undo. Internal so tests can give it one that
+can't be read.
+
 ## `SettingsPresets/canUndo`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
@@ -20613,6 +20674,27 @@ public, declared in `Sources/NopeCore/SettingsPresets.swift`
 Deletes a saved preset. The settings don't change.
 
 - Parameter id: The preset.
+
+## `SettingsPresets/handlesManualControlsChange(to:)`
+
+public, declared in `Sources/NopeCore/SettingsPresets.swift`
+
+```swift
+@MainActor func handlesManualControlsChange(to isOn: Bool) -> Bool
+```
+
+Whether a change of the "Manual controls" option (``NopeSettings/showsManualControls``)
+was made by an apply or undo that already set the camera up for it, so an interface that
+follows the option must not send it to the camera again.
+
+``CameraModel/applyCameraSetup(_:manualControlsOn:)`` turns manual controls on or off
+itself, before the astro helper, which turns them on again for its frames. An interface
+that sent the changed option afterwards (a SwiftUI `.task(id:)` runs later) would turn
+manual controls off under the helper, and so the helper too. Each apply's answer is given
+once: the next change is the person's again.
+
+- Parameter isOn: The option's new value.
+- Returns: `true` when the interface should skip sending it.
 
 ## `SettingsPresets/init(settings:)`
 
@@ -20786,7 +20868,9 @@ Side effects: as ``apply(_:camera:location:)``.
 - Parameters:
   - camera: The camera to set up again, or `nil`.
   - location: Location tagging, or `nil`.
-- Returns: `true` when there was an apply to undo and the camera wasn't busy.
+- Returns: `true` when the settings were restored; `false`, with nothing changed, when
+  there was no apply to undo, the camera was busy, or the earlier settings couldn't be
+  read (they can't be restored, so Undo is no longer offered). An interface says so.
 
 ## `SharedSettingsStore`
 
@@ -21033,7 +21117,8 @@ internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
 ```
 
 The next request, waiting until one arrives. Only one camera screen serves at a time: a
-second caller replaces the first, whose wait ends with `nil`.
+second caller replaces the first, whose wait ends with `nil`. A caller whose task is
+already cancelled gets `nil` at once and leaves another caller's wait alone.
 
 - Returns: The request, or `nil` when the calling task is cancelled.
 
@@ -21070,11 +21155,17 @@ public, declared in `Sources/NopeCore/ShortcutInbox.swift`
 
 Hands a request to the camera screen and waits until it is done.
 
+An instant request (``ShortcutRequest/isInstant``, such as turning the light off) is
+taken at once, even while another request is being performed. Any other request waits
+for the one before it to finish.
+
 - Parameter request: What Siri or Shortcuts asks for.
 - Returns: How it ended. Without a camera screen, a request that doesn't need one ends at
   once with its ``ShortcutRequest/outcomeWithoutCameraScreen``. When no camera screen
   takes any other request within ``startTimeoutSeconds``,
-  ``ShortcutOutcome/cameraUnavailable(_:)`` with ``CameraUnavailability/notRunning``.
+  ``ShortcutOutcome/cameraUnavailable(_:)`` with ``CameraUnavailability/notRunning``, or
+  ``ShortcutOutcome/busyWithEarlierRequest`` when a camera screen is open but still
+  performing an earlier request.
 
 ## `ShortcutInbox/wait(timeoutSeconds:until:)`
 
@@ -21128,6 +21219,18 @@ case busy
 
 A photo, countdown, burst, interval series or astro run was already in progress. Say so;
 nothing changed.
+
+## `ShortcutOutcome/busyWithEarlierRequest`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case busyWithEarlierRequest
+```
+
+The camera screen was still performing an earlier request from Siri, Shortcuts or the
+watch when this one had waited ``ShortcutInbox/startTimeoutSeconds``. Say so; nothing
+changed.
 
 ## `ShortcutOutcome/cameraUnavailable(_:)`
 
@@ -21362,6 +21465,19 @@ case applyPreset(PresetChoice)
 ```
 
 Apply a settings preset (issue #72), as tapping it in the Presets list does.
+
+## `ShortcutRequest/isInstant`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+var isInstant: Bool { get }
+```
+
+Whether the request ends at once, without waiting for the camera or a photo: turning
+the light off and stopping a series. A ``ShortcutInbox`` hands it to the camera screen
+even while another request is being performed, so stopping never waits behind a
+countdown or a slow camera start.
 
 ## `ShortcutRequest/outcomeWithoutCameraScreen`
 

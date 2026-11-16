@@ -6096,6 +6096,75 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Whether night mode is on.
 
+## `NightModeSwitchStyle`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeSwitchStyle
+```
+
+The system switch, with ``NightStyle/trackTint`` on its track in night mode, so its knob
+stays distinct from the track while other tinted controls use the full night red. Outside
+night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
+with its own style keeps that style.
+
+## `NightModeSwitchStyle/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NightModeSwitchStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The toggle, drawn by the system.
+
+- Parameter configuration: The toggle's label and state.
+
+## `NightModeTrackTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeTrackTint
+```
+
+Puts ``NightStyle/trackTint`` on a control's track in night mode.
+
+## `NightModeTrackTint/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The control, with the track tint in night mode.
+
+- Parameter content: The control.
+
+## `NightModeTrackTint/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state.
+
 ## `NightStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -6123,8 +6192,10 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var controlTint: Color { get }
 ```
 
-The tint of system controls in night mode, before the multiply: a mid gray, which shows
-as a dark red, so a switch's white knob (shown red) stays visible on its track.
+The tint of system controls in night mode, before the multiply: white, shown as the full
+night red. Tinted text and icons (a back button, a picker's checkmark, a button in a list)
+need it: a mid gray showed as about `#800000`, under 2:1 against black and the dark red
+rows, below WCAG 2.2's 3:1 for icons (1.4.11) and 4.5:1 for text (1.4.3).
 
 ## `NightStyle/red`
 
@@ -6135,6 +6206,19 @@ static var red: Color { get }
 ```
 
 The one color of night mode: pure sRGB red.
+
+## `NightStyle/trackTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static var trackTint: Color { get }
+```
+
+The tint of a switch's track and a slider's filled track in night mode, before the
+multiply: a dark gray, shown as a dark red, so the knob or thumb (white, shown as the full
+red) stands out from the track by at least 3:1 (WCAG 2.2, 1.4.11). Applied by
+``NightModeSwitchStyle`` and `nightModeTrackTint()`.
 
 ## `OverlaySettingsView`
 
@@ -6691,6 +6775,16 @@ static let title: Text
 "Presets": the Settings row, the screen and the tray item.
 
 Its own key: "Presets" alone is the white balance presets menu.
+
+## `PresetText/undoFailed`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static var undoFailed: String { get }
+```
+
+What a failed Undo tells the person: nothing changed, and why it can happen.
 
 ## `PresetsScreen`
 
@@ -9430,6 +9524,18 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 Draws the view in night mode's red on black while `isOn` is `true`.
 
 - Parameter isOn: Whether night mode is on.
+
+## `View/nightModeTrackTint()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func nightModeTrackTint() -> some View
+
+```
+
+Draws a switch's or slider's filled track in night mode's dark red
+(``NightStyle/trackTint``), so its knob or thumb stays visible on it.
 
 ## `View/pillShape()`
 
