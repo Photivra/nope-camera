@@ -272,6 +272,15 @@ content or metadata leaves the model. `SetNightModeIntent` calls `NopeSettings.s
 without opening the app. The app registers its `ShortcutInbox` and `NopeSettings` with
 `AppDependencyManager`, and `NopeShortcuts` lists the Siri phrases.
 
+The camera screen performs requests one at a time, each in its own child task: a request that
+arrives while another runs (for example during a Siri self-timer) waits for it, and if it has
+waited `ShortcutInbox.startTimeoutSeconds` it ends with `ShortcutOutcome.busyWithEarlierRequest`
+("nope. is still doing an earlier request. Nothing changed.") rather than claiming the camera
+isn't running. Turning the light off and stopping a series (`ShortcutRequest.isInstant`) never
+wait: the inbox hands them over at once, alongside the request in progress. Only one camera
+screen serves the inbox; a cancelled server ends only its own wait, never the one that replaced
+it.
+
 Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
 with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
 burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same

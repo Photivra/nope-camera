@@ -53,6 +53,14 @@ public enum ShortcutRequest: Equatable, Sendable {
             nil
         }
     }
+
+    /// Whether the request ends at once, without waiting for the camera or a photo: turning
+    /// the light off and stopping a series. A ``ShortcutInbox`` hands it to the camera screen
+    /// even while another request is being performed, so stopping never waits behind a
+    /// countdown or a slow camera start.
+    public var isInstant: Bool {
+        outcomeWithoutCameraScreen != nil
+    }
 }
 
 /// The parameters of a "Take Photo" request: the delay before the shot, the lens and how many
@@ -265,6 +273,11 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// A photo, countdown, burst, interval series or astro run was already in progress. Say so;
     /// nothing changed.
     case busy
+
+    /// The camera screen was still performing an earlier request from Siri, Shortcuts or the
+    /// watch when this one had waited ``ShortcutInbox/startTimeoutSeconds``. Say so; nothing
+    /// changed.
+    case busyWithEarlierRequest
 
     /// The device has no lens of the kind asked for. Say so; nothing was taken or changed.
     case lensUnavailable

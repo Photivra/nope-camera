@@ -57,7 +57,7 @@ extension WatchResult {
             .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable:
             self = .notSaved
         case .cancelled: self = .cancelled
-        case .busy: self = .busy
+        case .busy, .busyWithEarlierRequest: self = .busy
         case .cameraUnavailable(let reason): self = .notTaken(WatchCameraProblem(reason))
         }
     }
