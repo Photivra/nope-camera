@@ -311,7 +311,8 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 - **Live camera readout** ("stats for nerds"): the values AVFoundation reports
   (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
   four a second) while the readout is shown; no second set of observations and no video. Hidden
-  in clean view.
+  in clean view unless pinned (`OverlayOptions.pinsLiveReadout`, "Keep Readout in Clean View",
+  `OverlayOptions.showsLiveReadout(inCleanView:)`).
 
 ```
  NopeUI ViewfinderOverlays ── setNeeds / setShowsStats ──▶ CameraModel.live (LiveViewModel)
@@ -388,6 +389,19 @@ injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The c
 shows the thumbnail in the last-photo slot: a tap opens Photos through
 `EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
 and accessibility actions offer Open in Photos and Photo Details.
+
+**RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
+has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
+adapter counts the photo's own uncompressed Bayer buffer (`AVCapturePhoto.pixelBuffer`) at
+capture time: `RAWClippingMeter` (NopeCapture) reads every 16-bit sample of the active area once
+into a histogram per position of the 2 × 2 color filter pattern, takes the size, active area, bit
+depth and black and white levels from the read-back of the camera's own DNG of the same photo,
+and gives `RAWClippingResult` (NopeCore): per-color counts of photosites within 0.5% of the white
+level or above, and within 0.5% of the black level or below. It reads the four 14-bit Bayer
+formats and 16-bit versatile Bayer (with its pattern attachment); it accepts the buffer's values
+as they are, or shifted up by the difference in bit depth when every value's low bits are zero,
+and otherwise reports why it didn't measure (`RAWClippingFailure`). The result travels with
+`CapturedPhoto.rawClipping` into `PhotoDetails.rawClipping`; only the counts are kept.
 
 **Why the DNG's metadata is written by AVFoundation.** ImageIO can't write DNG: on macOS 27 and
 the iOS 27 Simulator, `CGImageDestinationCopyTypeIdentifiers()` doesn't list

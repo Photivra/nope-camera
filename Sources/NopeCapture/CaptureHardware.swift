@@ -112,6 +112,9 @@ struct HardwarePhoto: Equatable, Sendable {
     /// `nil` when the photo has none (a compressed HEIF or JPEG). Used only to detect a blank
     /// buffer; never stored or logged.
     let pixelSample: [UInt8]?
+    /// For RAW, the clipping counted from the photo's sensor buffer (``RAWClippingMeter``);
+    /// `nil` for a processed photo.
+    let rawClipping: RAWClippingResult?
 
     /// Creates a photo result.
     ///
@@ -122,12 +125,14 @@ struct HardwarePhoto: Equatable, Sendable {
     ///   - iso: The ISO before the capture.
     ///   - pixelSample: The sampled pixel buffer bytes, or `nil`.
     ///   - rawImageData: The reference RAW image data, or `nil`.
+    ///   - rawClipping: The RAW clipping, or `nil`.
     init(
         data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?,
-        rawImageData: Data? = nil
+        rawImageData: Data? = nil, rawClipping: RAWClippingResult? = nil
     ) {
         self.data = data
         self.rawImageData = rawImageData
+        self.rawClipping = rawClipping
         self.dimensions = dimensions
         self.exposureDuration = exposureDuration
         self.iso = iso
