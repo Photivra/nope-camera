@@ -32,8 +32,8 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case countingDown
         /// Photos are being taken, which happens only while the app is open.
         case running
-        /// The app left during an interval series or astro run, or the camera paused an astro run:
-        /// it continues when the app is open and the camera runs again.
+        /// The app left during an interval series or astro run, or the camera paused one: it
+        /// continues when the app is open and the camera runs again.
         case paused
         /// The app left, so no more photos are taken; the ones taken are being saved.
         case saving
@@ -62,8 +62,8 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     /// How far it has got.
     public var phase: Phase
 
-    /// The photos taken so far. For an interval series, photos skipped while the camera was
-    /// paused are counted too, as on the camera screen (``IntervalProgress/taken``).
+    /// The photos taken so far. For an interval series, only photos taken and saved are
+    /// counted, as on the camera screen (``IntervalProgress/taken``).
     public var taken: Int
 
     /// The photos the run takes, or `nil` when it has no set number (a burst or the self-timer).

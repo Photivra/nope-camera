@@ -314,8 +314,12 @@ struct LiveActivityTests {
         coordinator.apply(model)
         coordinator.isEnabled = true
         coordinator.isInForeground = false
+        coordinator.isActive = false
         coordinator.apply(model)
+        // Inactive (Control Center over the app): still in the foreground, but not active.
         coordinator.isInForeground = true
+        coordinator.apply(model)
+        coordinator.isActive = true
         presenter.areActivitiesEnabled = false
         coordinator.apply(model)
         #expect(presenter.started.isEmpty)
@@ -337,6 +341,10 @@ struct LiveActivityTests {
         coordinator.apply(model)
         #expect(presenter.started.last == Content(kind: .burst, phase: .running, isNightMode: true))
         #expect(coordinator.shown?.kind == .burst)
+        coordinator.isActive = false
+        coordinator.apply(model)
+        #expect(coordinator.shown?.phase == .running, "inactive is still the foreground: the burst runs")
+        coordinator.isActive = true
 
         // Nothing that is already saving or ended starts one. (This one reads the system clock.)
         let other = LiveActivityCoordinator(presenter: presenter, backgroundTime: FakeBackgroundTime())

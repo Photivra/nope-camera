@@ -69,6 +69,10 @@ enum ShortcutDialog {
         case .intervalStarted:
             LocalizedStringResource(
                 "Interval shooting started.", comment: "Siri's answer after nope. started a series of photos at a fixed interval.")
+        case .intervalBlockedByAstro:
+            LocalizedStringResource(
+                "Astro is on. Turn it off to start interval shooting.",
+                comment: "Siri's answer when interval shooting was asked for while nope.'s night sky helper is on. Astro is the helper's name on the camera.")
         case .intervalStopped:
             LocalizedStringResource(
                 "Interval shooting stopped. The photos taken are saved.",

@@ -142,14 +142,15 @@ extension CameraModel {
     ///   - endAtLimit: What the run reports when it takes all `limit` frames.
     ///   - pausesWithCamera: Whether the run pauses instead of stopping when the app leaves the
     ///     foreground or the camera pauses, and continues afterwards (the astro helper, issue
-    ///     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again.
+    ///     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again, also
+    ///     when its error arrives before the pause does (`failureWasAPause()`).
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     func takeFrames(
         limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached,
         pausesWithCamera: Bool = false
     ) async {
-        guard canCapture || (pausesWithCamera && astroShouldPause), let lens = selectedLens else { return }
+        guard canCapture || (pausesWithCamera && seriesShouldPause), let lens = selectedLens else { return }
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
@@ -167,7 +168,7 @@ extension CameraModel {
         var pending: Task<Result<SavedPhoto, CaptureError>, Never>?
         var taken = 0
         while taken < limit {
-            if pausesWithCamera, astroShouldPause {
+            if pausesWithCamera, seriesShouldPause {
                 // Every frame taken is saved before the pause, so nothing waits in memory.
                 if let previous = pending {
                     pending = nil
@@ -192,7 +193,7 @@ extension CameraModel {
                 photo = try await backend.capturePhoto(request)
             } catch {
                 // A frame cut short by leaving the app or a camera pause is taken again after it.
-                if pausesWithCamera, astroShouldPause { continue }
+                if pausesWithCamera, await failureWasAPause() { continue }
                 failure = error
                 break
             }

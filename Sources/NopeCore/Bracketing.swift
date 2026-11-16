@@ -127,23 +127,49 @@ public struct IntervalSettings: Equatable, Sendable {
         self.interval = interval.limited(to: Self.intervalRange)
         self.count = Swift.min(Swift.max(count, Self.countRange.lowerBound), Self.countRange.upperBound)
     }
+
+    /// The intervals an interface lists, in seconds: 1 second to 1 hour.
+    public static let listedIntervals: [Double] = [1, 2, 3, 5, 10, 15, 20, 30, 60, 120, 300, 600, 900, 1800, 3600]
+
+    /// The photo counts an interface lists, from 2 to the 999 the app allows.
+    public static let listedCounts = [2, 3, 5, 10, 20, 30, 50, 100, 200, 500, 999]
+
+    /// The intervals to list for these settings: ``listedIntervals``, with ``interval`` added in
+    /// order when it isn't one of them (a value set from Siri, Shortcuts or a preset), so a
+    /// picker always shows the value in use.
+    public var intervalChoices: [Double] {
+        Self.listedIntervals.contains(interval) ? Self.listedIntervals : (Self.listedIntervals + [interval]).sorted()
+    }
+
+    /// The photo counts to list for these settings: ``listedCounts``, with ``count`` added in
+    /// order when it isn't one of them.
+    public var countChoices: [Int] {
+        Self.listedCounts.contains(count) ? Self.listedCounts : (Self.listedCounts + [count]).sorted()
+    }
 }
 
 /// How far a running interval series has got.
 public struct IntervalProgress: Equatable, Sendable {
-    /// The photos taken (or skipped because the camera was paused) so far.
+    /// The photos taken so far. A photo is counted only once it is taken and saved; while the
+    /// series is paused, nothing is taken or counted.
     public let taken: Int
 
     /// The photos in the series.
     public let total: Int
+
+    /// Whether the series is paused: the app is out of the foreground or the camera is paused
+    /// (an interruption, heat, or starting again). It continues when both are back.
+    public let isPaused: Bool
 
     /// Creates a progress value.
     ///
     /// - Parameters:
     ///   - taken: The photos taken so far.
     ///   - total: The photos in the series.
-    public init(taken: Int, total: Int) {
+    ///   - isPaused: Whether the series is paused.
+    public init(taken: Int, total: Int, isPaused: Bool = false) {
         self.taken = taken
         self.total = total
+        self.isPaused = isPaused
     }
 }

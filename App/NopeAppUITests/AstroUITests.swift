@@ -23,6 +23,33 @@ extension NopeAppUITests {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "back from the \(picker) list")
     }
 
+    /// While Astro is on, an interval series can't start: Start in Pro Tools is disabled and
+    /// says why.
+    @MainActor
+    func testIntervalStartIsDisabledWhileAstroIsOn() throws {
+        let app = launch("manual")
+        quickControl(app, "Astro")
+        closeTray(app)
+        let more = app.buttons["More Manual Controls"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
+        more.tap()
+        app.buttons["Pro Tools"].tap()
+        let reason = element(app, containing: "Turn off Astro to start interval shooting.")
+        var swipes = 0
+        while !reason.exists && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(reason.exists)
+        let start = app.buttons["Start"]
+        XCTAssertTrue(start.exists)
+        XCTAssertFalse(start.isEnabled)
+        // As for the other form screens at the default size, the iOS 27.2 Simulator reports form
+        // text as "partially unsupported" Dynamic Type; the form is audited at the largest size
+        // in testIntervalSheetAtTheLargestTextSizeAndRightToLeft.
+        try audit(app, afterScrolling: true, checksDynamicType: false)
+    }
+
     @MainActor
     func testAstroHelperIsRedOnBlackAndSetsUpTheFrames() throws {
         let app = launch("manual", extraArguments: ["-NopeSimulatedViewfinder", "white"])

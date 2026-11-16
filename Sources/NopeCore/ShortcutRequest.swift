@@ -288,6 +288,10 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// An interval series started. Say so; the camera screen shows its progress.
     case intervalStarted
 
+    /// The astro helper is on, so no interval series was started. Say so, and that turning Astro
+    /// off allows one.
+    case intervalBlockedByAstro
+
     /// The interval series was stopped. Say so; every photo already taken is saved.
     case intervalStopped
 

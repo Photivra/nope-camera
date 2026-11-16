@@ -6,12 +6,14 @@ import Observation
 /// leaves the foreground.
 ///
 /// The app owns one for its lifetime, runs ``observe(_:)`` while the camera screen is shown, and
-/// keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground`` and
-/// ``isNightMode`` current. The coordinator follows the camera model; it holds no camera rules.
+/// keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground``, ``isActive``
+/// and ``isNightMode`` current. The coordinator follows the camera model; it holds no camera
+/// rules.
 ///
 /// - **Start:** an activity can only be started while the app is in the foreground (ActivityKit,
 ///   `Activity.request`), so it starts when an interval series, astro run, burst or self-timer
-///   starts, if the switch is on and the person allows Live Activities.
+///   starts while the app is active (``isActive``), if the switch is on and the person allows
+///   Live Activities.
 /// - **Updates:** local only, no push and no network. While the app is in the foreground the
 ///   activity isn't on screen, so a change of the counts alone is sent at most every
 ///   ``minimumUpdateInterval``; a change of phase, and the content when the app leaves the
@@ -41,8 +43,15 @@ public final class LiveActivityCoordinator {
     /// Turning it off ends the shown activity at once.
     public var isEnabled = false
 
-    /// Whether the app is in the foreground. The app sets it whenever its scene phase changes.
+    /// Whether the app is in the foreground: its scene is active or inactive (for example while
+    /// Control Center or a system alert covers it), not in the background. The camera keeps
+    /// taking photos then, so the content says the run is running. The app sets it whenever its
+    /// scene phase changes.
     public var isInForeground = true
+
+    /// Whether the app is active (its scene phase is `active`), the only time an activity is
+    /// started. The app sets it whenever its scene phase changes.
+    public var isActive = true
 
     /// Whether night mode is on, so the activity is red on black too.
     public var isNightMode = false
@@ -88,8 +97,8 @@ public final class LiveActivityCoordinator {
     }
 
     /// Follows the model until the calling task is cancelled: applies every change of the model
-    /// or of ``isEnabled``, ``isInForeground`` and ``isNightMode`` as it happens. Nothing polls;
-    /// it waits for Observation's change notifications.
+    /// or of ``isEnabled``, ``isInForeground``, ``isActive`` and ``isNightMode`` as it happens.
+    /// Nothing polls; it waits for Observation's change notifications.
     ///
     /// - Parameter model: The camera model.
     public func observe(_ model: CameraModel) async {
@@ -156,7 +165,7 @@ public final class LiveActivityCoordinator {
     ///
     /// - Parameter content: The content for what runs now, or `nil`.
     private func start(_ content: LiveActivityContent?) {
-        guard let content, content.startsActivity, isEnabled, isInForeground, !wasRefused,
+        guard let content, content.startsActivity, isEnabled, isActive, !wasRefused,
             presenter.areActivitiesEnabled
         else { return }
         guard presenter.start(content) else {

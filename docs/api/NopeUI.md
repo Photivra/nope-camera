@@ -3213,6 +3213,79 @@ var seriesScreenKeeper: SeriesScreenKeeper? { get set }
 Keeps the screen awake and dimmed during an interval series (issue #48), or `nil` when
 the app gives none, as in previews: then the screen is left alone.
 
+## `ExplainedToggle`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor struct ExplainedToggle
+```
+
+A Settings switch with a long explanation (``SettingLabel``).
+
+At the standard text sizes the explanation is part of the switch's label, as in every other
+switch row. At the accessibility sizes the switch takes a large share of the row's width, and
+a long explanation beside it became a very narrow, very tall column: the Live Activity row was
+about 1,146 points tall at the largest size, more than the screen, and pushed the rows below
+it far down. There the explanation goes below the switch, across the row's full width, and
+the two are combined into one accessibility element, so VoiceOver still reads the name and
+the explanation as the switch, as at the standard sizes.
+
+## `ExplainedToggle/body`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The switch, with the explanation in its label or below it.
+
+## `ExplainedToggle/explanation`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor let explanation: Text
+```
+
+What the setting does.
+
+## `ExplainedToggle/init(isOn:title:explanation:)`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor init(isOn: Binding<Bool>, title: Text, explanation: Text)
+```
+
+Creates the row.
+
+- Parameters:
+  - isOn: Whether the setting is on.
+  - title: The setting's name.
+  - explanation: What the setting does.
+
+## `ExplainedToggle/isOn`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor let isOn: Binding<Bool>
+```
+
+Whether the setting is on.
+
+## `ExplainedToggle/title`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The setting's name, also the switch's Voice Control name.
+
 ## `FailureAction`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
@@ -4848,16 +4921,6 @@ Creates the section.
   - model: The camera model.
   - didStart: Runs after Start.
 
-## `IntervalSection/intervals`
-
-internal, declared in `Sources/NopeUI/IntervalControls.swift`
-
-```swift
-@MainActor static let intervals: [Double]
-```
-
-The intervals offered, in seconds: 1 second to 1 hour.
-
 ## `IntervalSection/model`
 
 internal, declared in `Sources/NopeUI/IntervalControls.swift`
@@ -4868,15 +4931,18 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 
 The camera model.
 
-## `IntervalSection/photoCounts`
+## `IntervalSection/reason(_:)`
 
 internal, declared in `Sources/NopeUI/IntervalControls.swift`
 
 ```swift
-@MainActor static let photoCounts: [Int]
+@MainActor static func reason(_ blocker: IntervalBlocker) -> Text
 ```
 
-The photo counts offered for a series, from 2 to the 999 the app allows.
+Why Start is unavailable, said beside the disabled button.
+
+- Parameter blocker: Why a series can't start now.
+- Returns: The sentence.
 
 ## `IntervalSheet`
 
@@ -4941,6 +5007,13 @@ internal, declared in `Sources/NopeUI/AboutScreen.swift`
 ```
 
 The text in a scrolling, selectable column.
+
+The column is lazy: only the paragraphs on screen are laid out and in the accessibility
+tree. The license is about 160,000 points tall at the largest text size; laid out whole,
+the CI test that audits this screen took 770 seconds and the audit's Dynamic Type check
+failed on the first paragraph (build 43786103024). Lazy, the audit at the largest size
+takes about 8 seconds on a local Simulator. VoiceOver still reads on through the text,
+which scrolls as it goes.
 
 ## `LegalTextView/init(resource:title:)`
 

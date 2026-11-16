@@ -162,7 +162,15 @@ when the camera opens and when the option changes.
   turning manual controls off doesn't stop a series. It starts from the Interval drive mode's
   shutter (`DriveMode.interval`), Start in the Interval sheet or Pro Tools (the same
   `IntervalSection` in `NopeUI`), or Siri; the shutter stops a running series in any mode. Its
-  timer exists only while a series runs, and the camera screen stops it when it disappears. While a series runs in the
+  timer exists only while a series runs, and the camera screen stops it when it disappears.
+  `ManualControlsModel` holds the series and counts only photos taken and saved;
+  `CameraModel.takeIntervalPhoto()` takes each one. While the app is out of the foreground or the
+  camera is paused (`seriesShouldPause`, the same rule as an astro run) the photo waits and the
+  series is marked paused (`IntervalProgress.isPaused`); it also waits while another photo is
+  being taken or saved. A photo cut short by a pause is taken again, also when its error arrives
+  before the pause (`failureWasAPause()` waits `CameraModel.pauseAfterErrorSeconds` for it); any
+  other failure ends the series. A series doesn't start while Astro is on or the self-timer or a
+  burst runs (`CameraModel.intervalBlocker`). While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
   background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
@@ -199,7 +207,8 @@ controls are the person's. While it is on, the shutter starts `drive.countdown` 
 stops them. When the app leaves the foreground (`CameraIntent.setInForeground(false)`, sent by
 the camera screen on each scene phase change) or the camera pauses (an interruption, heat, a
 restart), the run pauses instead of stopping (`AstroModel.isPaused`, issue #64): the frames taken
-are saved, a frame cut short is taken again, and `pauseAstroRun()` waits on Observation, without
+are saved, a frame cut short is taken again (also when its error arrives before the pause, see
+`CameraModel.pauseAfterErrorSeconds`), and `pauseAstroRun()` waits on Observation, without
 polling, until the app is in the foreground and the camera runs; then `Countdown.run(seconds:)`
 counts the start delay down again so the phone is still, and the loop checks storage and battery
 before the next frame. Leaving during the start delay starts the run paused. A run stops before a
@@ -338,7 +347,8 @@ and `MotionGravitySource.swift` with the app through the project's file membersh
 
 iOS shows an app's Live Activity only while the app isn't on screen, and the camera stops when the
 app leaves the foreground, so the activity shows status, not shooting: a paused interval series
-or astro run (it continues when the app is opened again; Stop ends it), frames still being saved
+or astro run (no photos are taken or counted while it is paused; it continues when the app is
+opened again; Stop ends it), frames still being saved
 after a burst, a cancelled self-timer, and how each run ended, with whether the saved photos are
 signed. It is off by default (`NopeSettings.showsLiveActivity`).
 
@@ -347,7 +357,10 @@ turns the model's state into a `LiveActivityContent` (kind, phase, counts, count
 night mode) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
 model with Observation (`observe(_:)`, no polling) and calls a `LiveActivityPresenting`, which the
 app implements with ActivityKit (`SystemLiveActivities`): an activity can only be started in the
-foreground, so it starts when the run starts; while the app is in the foreground a change of the
+foreground, so it starts when the run starts while the app is active (`isActive`, scene phase
+`active`); the content counts an inactive app (Control Center or a system alert over it) as in the
+foreground (`isInForeground`, any phase but `background`), since the camera keeps taking photos
+then; while the app is in the foreground a change of the
 counts alone is sent at most every 30 seconds, and phase changes and the content at the moment
 the app leaves are sent at once; countdowns are drawn by the system from their end time. Updates
 are local only: no push type, no push token, no network. The coordinator also asks iOS for time to

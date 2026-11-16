@@ -330,6 +330,35 @@ struct AstroPauseTests {
         await model.send(.setInForeground(true))
     }
 
+    @Test func aFrameErrorThatArrivesBeforeThePauseStillPauses() async {
+        let ticker = Ticker()
+        let (model, backend) = await makeModel(sleep: { _ in await ticker.sleep() })
+        let waits = WaitCounter()
+        model.pauseAfterErrorSleep = {
+            await waits.add()
+            try await Task.sleep(for: .seconds(60))
+        }
+        let events = Task { await model.observeEvents() }
+        // The second frame's error arrives before the camera says it was interrupted.
+        await backend.setOnCapture { number in number == 2 ? .notRunning : nil }
+        await model.send(.capture)
+        await countDown(ticker, model)
+        await eventually { await waits.count == 1 }
+        backend.inner.emitEvent(.interrupted(.inUseElsewhere))
+        await waitUntilPaused(model)
+        #expect(model.astro.progress == BurstProgress(taken: 1, saved: 1))
+        #expect(model.astro.lastRun == nil, "the run waits instead of failing")
+
+        backend.inner.emitEvent(.interruptionEnded)
+        await waitFor { model.drive.countdown.isRunning }
+        await countDown(ticker, model)
+        await waitForRun(model)
+        #expect(model.astro.lastRun == BurstResult(end: .limitReached, saved: 5))
+        #expect(await backend.captures == 6, "the cut-short frame is taken again")
+        backend.inner.finishEvents()
+        await events.value
+    }
+
     @Test func aFailedFrameInTheForegroundStillEndsTheRun() async {
         let ticker = Ticker()
         let (model, backend) = await makeModel(sleep: { _ in await ticker.sleep() })
@@ -362,12 +391,12 @@ struct AstroPauseTests {
 
     @Test func whenTheRunPauses() async {
         let (model, _) = await makeModel()
-        #expect(!model.astroShouldPause)
+        #expect(!model.seriesShouldPause)
         model.setInForeground(false)
-        #expect(model.astroShouldPause)
+        #expect(model.seriesShouldPause)
         model.setInForeground(true)
         let stopped = CameraModel(backend: PausingBackend(ScriptedManualBackend(lenses: [ManualFixtures.wide])))
-        #expect(!stopped.astroShouldPause)
+        #expect(!stopped.seriesShouldPause)
         // The canStop and status line of a paused astro run.
         let paused = LiveActivityContent(kind: .astro, phase: .paused, taken: 4, total: 20)
         #expect(paused.canStop)

@@ -429,6 +429,19 @@ struct ShortcutTests {
         #expect(await run(.stopInterval, on: model) == .noIntervalRunning)
     }
 
+    @Test func intervalIsRefusedWhileAstroIsOn() async {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: Self.neverTimesOut,
+            deviceStatusReader: FakeStatusReader(bytes: nil))
+        await model.send(.start)
+        await model.send(.astro(.setOn(true)))
+        #expect(model.astro.isOn)
+        #expect(await run(.startInterval(IntervalShortcut(count: 2)), on: model) == .intervalBlockedByAstro)
+        #expect(model.manual.intervalProgress == nil)
+        #expect(await backend.captureCount == 0)
+    }
+
     @Test func intervalShootingRunsInFullAutoWithoutTurningOnManualControls() async {
         let (model, backend) = await makeManualModel(enabled: false)
         #expect(await run(.startInterval(IntervalShortcut(count: 2)), on: model) == .intervalStarted)

@@ -161,9 +161,10 @@ extension CameraModel {
         Task { [weak self] in await self?.takeAstroFrames() }
     }
 
-    /// Whether the astro run should pause: the app is out of the foreground, or the camera is
-    /// paused for a while (an interruption, heat, or starting again).
-    var astroShouldPause: Bool {
+    /// Whether an astro run or an interval series should pause: the app is out of the
+    /// foreground, or the camera is paused for a while (an interruption, heat, or starting
+    /// again).
+    var seriesShouldPause: Bool {
         guard isInForeground else { return true }
         switch sessionStatus {
         case .starting, .interrupted, .pausedForHeat: return true
@@ -179,7 +180,7 @@ extension CameraModel {
     ///   checks the camera, storage and battery again before the next frame.
     func pauseAstroRun() async -> Bool {
         astro.setPaused(true)
-        while astroShouldPause, !astro.isStopRequested {
+        while seriesShouldPause, !astro.isStopRequested {
             await nextChangeOfPauseState()
         }
         astro.setPaused(false)

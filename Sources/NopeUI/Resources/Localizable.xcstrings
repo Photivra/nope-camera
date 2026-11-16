@@ -11845,6 +11845,72 @@
         }
       }
     },
+    "Interval shooting can start when the self-timer or burst ends.": {
+      "comment": "Shown under the disabled Start button of interval shooting while the self-timer counts down or a burst runs.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Intervallaufnahme kann starten, wenn der Selbstauslöser oder die Serie endet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El disparo a intervalos puede empezar cuando termine el temporizador o la ráfaga."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La prise de vue par intervalles pourra démarrer à la fin du retardateur ou de la rafale."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lo scatto a intervalli può iniziare al termine dell’autoscatto o della raffica."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "セルフタイマーまたはバーストが終わるとインターバル撮影を開始できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "셀프 타이머나 연속 촬영이 끝나면 인터벌 촬영을 시작할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen kunnen starten wanneer de zelfontspanner of de burst klaar is."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O disparo por intervalo pode começar quando o temporizador ou a sequência terminar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍定时或连拍结束后即可开始间隔拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍定時或連拍結束後即可開始間隔拍攝。"
+          }
+        }
+      }
+    },
     "Interval shooting. Press to start the series.": {
       "comment": "VoiceOver value of the shutter in the interval drive mode: one press starts a series of photos at a fixed interval.",
       "extractionState": "manual",
@@ -16131,6 +16197,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "已暫停：%1$lld/%2$lld 個影格"
+          }
+        }
+      }
+    },
+    "Paused: %lld of %lld photos taken": {
+      "comment": "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pausiert: %1$lld von %2$lld Fotos aufgenommen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En pausa: %1$lld de %2$lld fotos tomadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En pause : %1$lld photos prises sur %2$lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In pausa: %1$lld di %2$lld foto scattate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一時停止中: %1$lld/%2$lld 枚撮影済み"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "일시 정지됨: %2$lld장 중 %1$lld장 촬영됨"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gepauzeerd: %1$lld van %2$lld foto’s gemaakt"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pausado: %1$lld de %2$lld fotos tiradas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已暂停：已拍摄 %1$lld/%2$lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已暫停：已拍攝 %1$lld/%2$lld 張"
           }
         }
       }
@@ -26193,6 +26325,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "旋轉螺旋"
+          }
+        }
+      }
+    },
+    "Turn off Astro to start interval shooting.": {
+      "comment": "Shown under the disabled Start button of interval shooting while the night sky helper is on. Astro is the helper's name on the camera.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schalte Astro aus, um die Intervallaufnahme zu starten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desactiva Astro para iniciar el disparo a intervalos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Désactivez Astro pour démarrer la prise de vue par intervalles."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disattiva Astro per avviare lo scatto a intervalli."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影を開始するには星空をオフにしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영을 시작하려면 별 사진을 끄세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schakel Astro uit om intervalopnamen te starten."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desative Astro para iniciar o disparo por intervalo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭星空后才能开始间隔拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉星空後才能開始間隔拍攝。"
           }
         }
       }

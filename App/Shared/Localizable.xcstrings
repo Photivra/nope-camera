@@ -976,6 +976,71 @@
         }
       }
     },
+    "Astro is on. Turn it off to start interval shooting.": {
+      "comment": "Siri's answer when interval shooting was asked for while nope.'s night sky helper is on. Astro is the helper's name on the camera.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro ist an. Schalte es aus, um die Intervallaufnahme zu starten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro está activado. Desactívalo para iniciar el disparo a intervalos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro est activé. Désactivez-le pour démarrer la prise de vue par intervalles."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro è attivo. Disattivalo per avviare lo scatto a intervalli."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空がオンです。インターバル撮影を開始するにはオフにしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진이 켜져 있습니다. 인터벌 촬영을 시작하려면 끄세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro staat aan. Schakel het uit om intervalopnamen te starten."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro está ativado. Desative-o para iniciar o disparo por intervalo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空已开启。关闭后才能开始间隔拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空已開啟。關閉後才能開始間隔拍攝。"
+          }
+        }
+      }
+    },
     "Autofocus has no range limit.": {
       "comment": "Siri's answer after nope.'s autofocus range limit (Close-Up or Far Focus) was lifted.",
       "localizations": {

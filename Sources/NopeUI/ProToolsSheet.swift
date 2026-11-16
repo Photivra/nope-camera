@@ -194,8 +194,14 @@ struct IntervalProgressView: View {
     /// The count and the Stop button.
     var body: some View {
         HStack(spacing: 12) {
-            Text("\(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
-                .font(.callout.monospacedDigit())
+            Group {
+                if progress.isPaused {
+                    Text("Paused: \(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.")
+                } else {
+                    Text("\(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
+                }
+            }
+            .font(.callout.monospacedDigit())
             Button(role: .destructive, action: stop) {
                 Text("Stop", bundle: .module, comment: "Button that stops interval shooting.")
                     .frame(minHeight: 44)

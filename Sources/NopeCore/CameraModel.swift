@@ -84,6 +84,12 @@ public final class CameraModel {
     /// Reads the monotonic clock, to time each capture for the photo's details (issue #53).
     let now: @Sendable () -> ContinuousClock.Instant
 
+    /// Waits ``pauseAfterErrorSeconds`` after a photo of a series fails, for the pause that may
+    /// have caused it (`failureWasAPause()`). Tests replace it.
+    @ObservationIgnored var pauseAfterErrorSleep: @Sendable () async throws -> Void = {
+        try await Task.sleep(for: .seconds(CameraModel.pauseAfterErrorSeconds))
+    }
+
     /// Creates a model in the ``CameraState/starting`` state.
     ///
     /// - Parameters:
@@ -165,7 +171,8 @@ public final class CameraModel {
         case .capture:
             await pressShutter()
         case .manual(let intent):
-            await manual.handle(intent) { [weak self] in await self?.capture() }
+            if case .startInterval = intent, intervalBlocker != nil { return }
+            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? false }
             await manualControlsDidChange(after: intent)
         case .setCleanView(let isOn):
             isCleanView = isOn

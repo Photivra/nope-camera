@@ -167,7 +167,12 @@ struct NopeApp: App {
             SeriesActivityActions.stop = { [liveActivities, model] in await liveActivities.stopSeries(model) }
             await liveActivities.observe(model)
         }
-        .onChange(of: scenePhase, initial: true) { _, phase in liveActivities.isInForeground = phase == .active }
+        // Inactive (Control Center, a system alert) is still the foreground: the camera keeps
+        // shooting. An activity starts only while the app is active.
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            liveActivities.isInForeground = phase != .background
+            liveActivities.isActive = phase == .active
+        }
         .onChange(of: settings.showsLiveActivity, initial: true) { _, isOn in liveActivities.isEnabled = isOn }
         .onChange(of: settings.isNightModeOn, initial: true) { _, isOn in liveActivities.isNightMode = isOn }
         // Siri and Shortcuts requests are performed while the camera screen is shown.

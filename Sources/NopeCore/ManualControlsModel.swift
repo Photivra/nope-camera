@@ -302,8 +302,9 @@ public final class ManualControlsModel {
     ///
     /// - Parameters:
     ///   - intent: The intent.
-    ///   - capture: Takes one photo the way the shutter does; used by interval shooting.
-    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Void) async {
+    ///   - capture: Takes one photo of an interval series the way the shutter does, waiting
+    ///     while the series is paused, and returns whether the photo was taken and saved.
+    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async {
         var next = settings
         switch intent {
         case .setEnabled(let enabled):
@@ -519,18 +520,21 @@ public final class ManualControlsModel {
     // MARK: - Interval shooting
 
     /// Starts an interval series: takes a photo, waits ``interval``, and repeats until
-    /// ``IntervalSettings/count`` photos are taken or the series is stopped. A photo the camera
-    /// can't take, for example during a pause, is skipped and still counted.
+    /// ``IntervalSettings/count`` photos are taken or the series is stopped. Only photos taken and
+    /// saved are counted: `capture` waits while the series is paused (``setIntervalPaused(_:)``)
+    /// instead of skipping a photo. A photo that can't be taken for another reason (the camera
+    /// stopped for good, or the photo failed) ends the series, and the camera says why.
     ///
-    /// - Parameter capture: Takes one photo.
-    private func startInterval(capture: @escaping @MainActor () async -> Void) {
+    /// - Parameter capture: Takes one photo and returns whether it was taken and saved.
+    private func startInterval(capture: @escaping @MainActor () async -> Bool) {
         guard intervalProgress == nil else { return }
         let series = interval
         intervalProgress = IntervalProgress(taken: 0, total: series.count)
         intervalTask = Task {
             for taken in 1...series.count {
-                await capture()
+                let wasTaken = await capture()
                 guard !Task.isCancelled else { return }
+                guard wasTaken else { break }
                 intervalProgress = IntervalProgress(taken: taken, total: series.count)
                 guard taken < series.count else { break }
                 do {
@@ -542,6 +546,15 @@ public final class ManualControlsModel {
             intervalProgress = nil
             intervalTask = nil
         }
+    }
+
+    /// Marks the running series as paused or running again, for the camera screen and the Live
+    /// Activity. Does nothing while no series runs.
+    ///
+    /// - Parameter isPaused: Whether the series is paused.
+    func setIntervalPaused(_ isPaused: Bool) {
+        guard let progress = intervalProgress, progress.isPaused != isPaused else { return }
+        intervalProgress = IntervalProgress(taken: progress.taken, total: progress.total, isPaused: isPaused)
     }
 
     /// Stops the running interval series, if any.

@@ -1799,17 +1799,6 @@ night sky frames, and it would ruin dark-adapted eyes.
 
 - Parameter intent: The light intent.
 
-## `CameraModel/astroShouldPause`
-
-internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
-
-```swift
-@MainActor var astroShouldPause: Bool { get }
-```
-
-Whether the astro run should pause: the app is out of the foreground, or the camera is
-paused for a while (an interruption, heat, or starting again).
-
 ## `CameraModel/backend`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2007,6 +1996,19 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
 
+## `CameraModel/failureWasAPause()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+@MainActor func failureWasAPause() async -> Bool
+```
+
+Whether a photo of an astro run or an interval series that failed was cut short by a
+pause: the run should pause now, or starts to within ``pauseAfterErrorSeconds``.
+
+- Returns: `true` when the run should pause, so the photo is taken again after the pause.
+
 ## `CameraModel/handle(_:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2068,6 +2070,19 @@ Creates a model in the ``CameraState/starting`` state.
 
 A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
 ``LightCaptureBackend`` a torch (``light``).
+
+## `CameraModel/intervalBlocker`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+@MainActor var intervalBlocker: IntervalBlocker? { get }
+```
+
+Why an interval series can't start now, or `nil` when it can as far as these rules go
+(the camera must also be able to take a photo, ``canCapture``). An interface disables
+Start and says why; ``CameraIntent/manual(_:)`` with
+``ManualControlIntent/startInterval`` is ignored while it isn't `nil`.
 
 ## `CameraModel/isBusyForPresets`
 
@@ -2158,8 +2173,8 @@ The Live Activity's content for what runs now, or `nil` when nothing runs that i
 
 An interval series, astro frames, a burst and the self-timer each have content while they
 run. Out of the foreground the camera stops, so a running interval series or astro run is
-``LiveActivityContent/Phase/paused`` (it continues when the app is open again; an astro run
-is paused in the foreground too while the camera is), and a running burst is
+``LiveActivityContent/Phase/paused`` (it continues when the app is open again; both are
+paused in the foreground too while the camera is), and a running burst is
 ``LiveActivityContent/Phase/saving`` (the frames already taken are being saved). The self-timer's photo keeps the timer's content while it is
 taken and saved.
 
@@ -2257,6 +2272,33 @@ The outcome a capture status reports.
 
 - Parameter status: The status after the photo.
 - Returns: The outcome.
+
+## `CameraModel/pauseAfterErrorSeconds`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+@MainActor static let pauseAfterErrorSeconds: Double
+```
+
+How long a photo of an astro run or an interval series that failed waits for a pause, in
+seconds, before the failure ends the run (`failureWasAPause()`).
+
+The camera reports a photo cut short by an interruption, and the interruption itself, on
+separate paths, and the app hears that it left the foreground from the interface, so the
+photo's error can arrive first. One second is an assumption to be checked on a device:
+long enough for those events, short enough that a real failure is reported at once.
+
+## `CameraModel/pauseAfterErrorSleep`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var pauseAfterErrorSleep: @Sendable () async throws -> Void
+```
+
+Waits ``pauseAfterErrorSeconds`` after a photo of a series fails, for the pause that may
+have caused it (`failureWasAPause()`). Tests replace it.
 
 ## `CameraModel/pauseAstroRun()`
 
@@ -2420,6 +2462,18 @@ Side effects: ``CameraIntent/requestPermission`` may show the system camera prom
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
 
+## `CameraModel/seriesShouldPause`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var seriesShouldPause: Bool { get }
+```
+
+Whether an astro run or an interval series should pause: the app is out of the
+foreground, or the camera is paused for a while (an interruption, heat, or starting
+again).
+
 ## `CameraModel/serveShortcuts(from:settings:presets:)`
 
 public, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
@@ -2551,9 +2605,28 @@ location when the Location switch is on, as a single photo does.
   - endAtLimit: What the run reports when it takes all `limit` frames.
   - pausesWithCamera: Whether the run pauses instead of stopping when the app leaves the
     foreground or the camera pauses, and continues afterwards (the astro helper, issue
-    #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again.
+    #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again, also
+    when its error arrives before the pause does (`failureWasAPause()`).
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
+
+## `CameraModel/takeIntervalPhoto()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+@MainActor func takeIntervalPhoto() async -> Bool
+```
+
+Takes one photo of the running interval series, the way the shutter does. While the
+series should pause (``seriesShouldPause``) it waits, marked as paused, instead of
+skipping the photo; it also waits while another photo is being taken or saved (such as
+the photo the shutter took just before the series started) or the compare view is open.
+A photo cut short by a pause is taken again after it.
+
+- Returns: Whether the photo was taken and saved. `false` ends the series: it was stopped,
+  the camera stopped for good, or the photo failed for another reason (the camera says
+  why).
 
 ## `CameraModel/watchStatus`
 
@@ -8266,6 +8339,38 @@ The device is too hot, or under other system pressure, to run the camera.
 
 Say that the camera is paused to let the device cool down.
 
+## `IntervalBlocker`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+enum IntervalBlocker
+```
+
+Why an interval series can't start now (``CameraModel/intervalBlocker``).
+
+## `IntervalBlocker/astroIsOn`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+case astroIsOn
+```
+
+The astro helper is on. Its frames and an interval series both take the camera for a long
+time, and the helper sets the exposure for the night sky, so one runs at a time: turn the
+helper off first.
+
+## `IntervalBlocker/driveIsBusy`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+case driveIsBusy
+```
+
+The self-timer counts down or a burst runs. Wait until it ends.
+
 ## `IntervalProgress`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8276,12 +8381,12 @@ struct IntervalProgress
 
 How far a running interval series has got.
 
-## `IntervalProgress/init(taken:total:)`
+## `IntervalProgress/init(taken:total:isPaused:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(taken: Int, total: Int)
+init(taken: Int, total: Int, isPaused: Bool = false)
 ```
 
 Creates a progress value.
@@ -8289,6 +8394,18 @@ Creates a progress value.
 - Parameters:
   - taken: The photos taken so far.
   - total: The photos in the series.
+  - isPaused: Whether the series is paused.
+
+## `IntervalProgress/isPaused`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let isPaused: Bool
+```
+
+Whether the series is paused: the app is out of the foreground or the camera is paused
+(an interruption, heat, or starting again). It continues when both are back.
 
 ## `IntervalProgress/taken`
 
@@ -8298,7 +8415,8 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 let taken: Int
 ```
 
-The photos taken (or skipped because the camera was paused) so far.
+The photos taken so far. A photo is counted only once it is taken and saved; while the
+series is paused, nothing is taken or counted.
 
 ## `IntervalProgress/total`
 
@@ -8332,6 +8450,17 @@ let count: Int
 ```
 
 How many photos the series takes.
+
+## `IntervalSettings/countChoices`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var countChoices: [Int] { get }
+```
+
+The photo counts to list for these settings: ``listedCounts``, with ``count`` added in
+order when it isn't one of them.
 
 ## `IntervalSettings/countRange`
 
@@ -8367,6 +8496,18 @@ let interval: Double
 
 The time from one photo to the next, in seconds.
 
+## `IntervalSettings/intervalChoices`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var intervalChoices: [Double] { get }
+```
+
+The intervals to list for these settings: ``listedIntervals``, with ``interval`` added in
+order when it isn't one of them (a value set from Siri, Shortcuts or a preset), so a
+picker always shows the value in use.
+
 ## `IntervalSettings/intervalRange`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8376,6 +8517,26 @@ static let intervalRange: ClosedRange<Double>
 ```
 
 The intervals the app offers, in seconds: 1 second to 1 hour.
+
+## `IntervalSettings/listedCounts`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let listedCounts: [Int]
+```
+
+The photo counts an interface lists, from 2 to the 999 the app allows.
+
+## `IntervalSettings/listedIntervals`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let listedIntervals: [Double]
+```
+
+The intervals an interface lists, in seconds: 1 second to 1 hour.
 
 ## `IntervalSettings/standard`
 
@@ -9510,8 +9671,8 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 case paused
 ```
 
-The app left during an interval series or astro run, or the camera paused an astro run:
-it continues when the app is open and the camera runs again.
+The app left during an interval series or astro run, or the camera paused one: it
+continues when the app is open and the camera runs again.
 
 ## `LiveActivityContent/Phase/running`
 
@@ -9752,8 +9913,8 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 var taken: Int
 ```
 
-The photos taken so far. For an interval series, photos skipped while the camera was
-paused are counted too, as on the camera screen (``IntervalProgress/taken``).
+The photos taken so far. For an interval series, only photos taken and saved are
+counted, as on the camera screen (``IntervalProgress/taken``).
 
 ## `LiveActivityContent/total`
 
@@ -9778,12 +9939,14 @@ Screen and in the Dynamic Island (issue #64), and asks for time to finish saving
 leaves the foreground.
 
 The app owns one for its lifetime, runs ``observe(_:)`` while the camera screen is shown, and
-keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground`` and
-``isNightMode`` current. The coordinator follows the camera model; it holds no camera rules.
+keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground``, ``isActive``
+and ``isNightMode`` current. The coordinator follows the camera model; it holds no camera
+rules.
 
 - **Start:** an activity can only be started while the app is in the foreground (ActivityKit,
   `Activity.request`), so it starts when an interval series, astro run, burst or self-timer
-  starts, if the switch is on and the person allows Live Activities.
+  starts while the app is active (``isActive``), if the switch is on and the person allows
+  Live Activities.
 - **Updates:** local only, no push and no network. While the app is in the foreground the
   activity isn't on screen, so a change of the counts alone is sent at most every
   ``minimumUpdateInterval``; a change of phase, and the content when the app leaves the
@@ -9835,6 +9998,17 @@ Creates a coordinator with no activity shown.
   - backgroundTime: Asks for time to finish saving.
   - now: Reads the current time. Tests pass their own.
 
+## `LiveActivityCoordinator/isActive`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor var isActive: Bool { get set }
+```
+
+Whether the app is active (its scene phase is `active`), the only time an activity is
+started. The app sets it whenever its scene phase changes.
+
 ## `LiveActivityCoordinator/isEnabled`
 
 public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
@@ -9854,7 +10028,10 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 @MainActor var isInForeground: Bool { get set }
 ```
 
-Whether the app is in the foreground. The app sets it whenever its scene phase changes.
+Whether the app is in the foreground: its scene is active or inactive (for example while
+Control Center or a system alert covers it), not in the background. The camera keeps
+taking photos then, so the content says the run is running. The app sets it whenever its
+scene phase changes.
 
 ## `LiveActivityCoordinator/isNightMode`
 
@@ -9888,8 +10065,8 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 ```
 
 Follows the model until the calling task is cancelled: applies every change of the model
-or of ``isEnabled``, ``isInForeground`` and ``isNightMode`` as it happens. Nothing polls;
-it waits for Observation's change notifications.
+or of ``isEnabled``, ``isInForeground``, ``isActive`` and ``isNightMode`` as it happens.
+Nothing polls; it waits for Observation's change notifications.
 
 - Parameter model: The camera model.
 
@@ -11923,7 +12100,7 @@ system's behavior; the app sets it from the person's Face Detection setting
 internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Void) async
+@MainActor func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async
 ```
 
 Handles one intent. ``CameraModel/send(_:)`` calls it.
@@ -11934,7 +12111,8 @@ stopping a series always applies.
 
 - Parameters:
   - intent: The intent.
-  - capture: Takes one photo the way the shutter does; used by interval shooting.
+  - capture: Takes one photo of an interval series the way the shutter does, waiting
+    while the series is paused, and returns whether the photo was taken and saved.
 
 ## `ManualControlsModel/init(backend:sleep:)`
 
@@ -12190,6 +12368,19 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 Lets detected faces steer autofocus and auto exposure, or stops them.
 
 - Parameter isOn: Whether faces steer them; `true` is the system's default.
+
+## `ManualControlsModel/setIntervalPaused(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func setIntervalPaused(_ isPaused: Bool)
+```
+
+Marks the running series as paused or running again, for the camera screen and the Live
+Activity. Does nothing while no series runs.
+
+- Parameter isPaused: Whether the series is paused.
 
 ## `ManualControlsModel/setLongestAutoShutter(_:)`
 
@@ -21168,6 +21359,17 @@ case focusRangeUnavailable
 ```
 
 The lens can't limit its autofocus range. Say so; nothing changed.
+
+## `ShortcutOutcome/intervalBlockedByAstro`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case intervalBlockedByAstro
+```
+
+The astro helper is on, so no interval series was started. Say so, and that turning Astro
+off allows one.
 
 ## `ShortcutOutcome/intervalStarted`
 

@@ -127,6 +127,7 @@ Related documentation in the repository:
 - ``BracketFrame``
 - ``IntervalSettings``
 - ``IntervalProgress``
+- ``IntervalBlocker``
 
 ### Drive modes, self-timer and burst
 

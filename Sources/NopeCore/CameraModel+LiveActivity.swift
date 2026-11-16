@@ -14,8 +14,8 @@ extension CameraModel {
     ///
     /// An interval series, astro frames, a burst and the self-timer each have content while they
     /// run. Out of the foreground the camera stops, so a running interval series or astro run is
-    /// ``LiveActivityContent/Phase/paused`` (it continues when the app is open again; an astro run
-    /// is paused in the foreground too while the camera is), and a running burst is
+    /// ``LiveActivityContent/Phase/paused`` (it continues when the app is open again; both are
+    /// paused in the foreground too while the camera is), and a running burst is
     /// ``LiveActivityContent/Phase/saving`` (the frames already taken are being saved). The self-timer's photo keeps the timer's content while it is
     /// taken and saved.
     ///
@@ -29,7 +29,7 @@ extension CameraModel {
     ) -> LiveActivityContent? {
         if let progress = manual.intervalProgress {
             return LiveActivityContent(
-                kind: .interval, phase: isInForeground ? .running : .paused, taken: progress.taken,
+                kind: .interval, phase: isInForeground && !progress.isPaused ? .running : .paused, taken: progress.taken,
                 total: progress.total)
         }
         if let progress = astro.progress {
