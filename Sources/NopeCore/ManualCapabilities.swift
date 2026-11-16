@@ -108,6 +108,13 @@ public struct ManualCapabilities: Equatable, Sendable {
         self.supportsNearFocusLimit = supportsNearFocusLimit
     }
 
+    /// Whether autofocus can be limited to far subjects, for the Far Focus limit (issue #57).
+    /// The same answer as ``supportsNearFocusLimit``: the camera's range restriction offers
+    /// near and far together (`AVCaptureDevice.AutoFocusRangeRestriction`).
+    public var supportsFarFocusLimit: Bool {
+        supportsNearFocusLimit
+    }
+
     /// Whether tapping the viewfinder can do anything on this lens: aim autofocus or auto
     /// exposure at the tapped point.
     public var supportsTapToFocus: Bool {

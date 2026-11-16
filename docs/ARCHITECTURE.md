@@ -141,7 +141,12 @@ when the camera opens and when the option changes.
   from the readings), the limit is lifted and the screen says "Hold it steady or use a tripod."
   With manual controls on nothing is limited; the hint shows when the shutter is slower than the
   handheld rule.
-- **Close-Up** sets `autoFocusRangeRestriction = .near`. The **close-up hint** suggests the ultra
+- **Close-Up** sets `autoFocusRangeRestriction = .near`; **Far Focus** (manual controls on, issue
+  #57) sets `.far`, and the two replace each other. **Face Detection** (Settings, on by default)
+  leaves face-driven autofocus and auto exposure to the system, or turns both off
+  (`DeviceControls.followsFaces`). The **photo size** of a lens without Bayer RAW
+  (`CameraIntent.setPhotoSizes`, `Lens.photoSizeChoices`) is configured when the session starts.
+- The **close-up hint** suggests the ultra
   wide lens when the lens stays at its nearest position while autofocus searches; the app never
   switches lenses itself. The **magnifier** scales the preview view only.
 - **Focus peaking** is part of the live frame analysis (below, "Viewfinder overlays").

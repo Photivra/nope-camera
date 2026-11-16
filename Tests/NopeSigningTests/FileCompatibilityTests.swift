@@ -42,6 +42,11 @@ struct FileCompatibilityTests {
         try await CompatibilityRun.check(compatibilityCase)
     }
 
+    @Test(arguments: CompatibilityCase.sizes)
+    func everyCopySizeAndPhotoSize(_ compatibilityCase: CompatibilityCase) async throws {
+        try await CompatibilityRun.check(compatibilityCase)
+    }
+
     @Test(arguments: CompatibilityCase.processedFallbacks)
     func processedFallbacks(_ compatibilityCase: CompatibilityCase) async throws {
         try await CompatibilityRun.check(compatibilityCase)
@@ -70,6 +75,10 @@ struct FileCompatibilityTests {
         #expect(Set(all.map(\.options.jpegQuality)) == Set(CompressionQuality.allCases))
         #expect(Set(all.map(\.options.heifBitDepth)) == Set(HEIFBitDepth.allCases))
         #expect(Set(all.map(\.options.colorSpace)) == Set(OutputColorSpace.allCases))
+        #expect(Set(all.map(\.options.size)) == Set(OutputSize.allCases))
+        // A larger photo size than the default, chosen per lens, only changes a processed
+        // fallback (Bayer RAW is always the sensor's binned size; `Lens.photoSizeChoices`).
+        #expect(Set(all.filter { $0.photoSize != nil }.compactMap(\.fallback)) == Set(ProcessedFallback.allCases))
         #expect(Set(all.map(\.look)) == Set(DevelopedLook.allCases))
         #expect(Set(all.compactMap(\.fallback)) == Set(ProcessedFallback.allCases))
         #expect(Set(all.map(\.lens.id)) == Set(CompatibilityLens.all.map(\.id)))
@@ -133,6 +142,9 @@ struct CompatibilityCase: Sendable, CustomTestStringConvertible {
     var options = DevelopedFileOptions()
     /// A processed fallback instead of a Bayer RAW photo.
     var fallback: ProcessedFallback?
+    /// The processed fallback's size when the person chose a larger photo size for the lens
+    /// (issue #57), or `nil` for the fixture's default size.
+    var photoSize: PhotoDimensions?
     var lens = CompatibilityLens.wide
     /// The orientation the system reports, 1 to 8.
     var orientation = 6
@@ -147,7 +159,7 @@ struct CompatibilityCase: Sendable, CustomTestStringConvertible {
 
     /// Every case.
     static var all: [CompatibilityCase] {
-        metadataClasses + lenses + fileOptions + processedFallbacks + orientations + locations + series
+        metadataClasses + lenses + fileOptions + sizes + processedFallbacks + orientations + locations + series
     }
 
     /// A location south of the equator, west of Greenwich and below sea level, so every
@@ -214,6 +226,32 @@ struct CompatibilityCase: Sendable, CustomTestStringConvertible {
                     }
                 }
             }
+        }
+        return cases
+    }
+
+    /// Every copy size, for the HEIF and JPEG with every item on, signed and unsigned; and the
+    /// processed fallback HEIF and JPEG at a larger, non-square photo size, as a lens without
+    /// Bayer RAW gives when the person chooses its larger size.
+    static var sizes: [CompatibilityCase] {
+        var cases: [CompatibilityCase] = []
+        for size in OutputSize.allCases {
+            for signed in [true, false] {
+                var options = DevelopedFileOptions()
+                options.size = size
+                var metadata = allOn
+                metadata.signsPhotos = signed
+                cases.append(
+                    CompatibilityCase(
+                        name: "size-\(size.rawValue)-\(signed ? "signed" : "unsigned")", metadata: metadata, options: options,
+                        location: location))
+            }
+        }
+        for fallback in ProcessedFallback.allCases {
+            cases.append(
+                CompatibilityCase(
+                    name: "photo-size-large-fallback-\(fallback == .heif ? "heif" : "jpeg")", metadata: allOn, fallback: fallback,
+                    photoSize: PhotoDimensions(width: 512, height: 384), location: location))
         }
         return cases
     }
@@ -352,16 +390,20 @@ final class RecordingLibrary: PhotoLibrary, @unchecked Sendable {
 enum CompatibilityRun {
     static let appVersion = "0.2.0"
 
-    /// A flat 256 × 256, 16-bit Display P3 image, as the RAW renderer returns.
-    static func image() -> CGImage? {
-        let size = Int(FixtureDNG.size)
+    /// The fixture's size: the DNG's, and the processed fallback's by default.
+    static let defaultSize = PhotoDimensions(width: Int(FixtureDNG.size), height: Int(FixtureDNG.size))
+
+    /// A flat 16-bit Display P3 image, 256 × 256 by default, as the RAW renderer returns.
+    ///
+    /// - Parameter size: The image's size.
+    static func image(size: PhotoDimensions = defaultSize) -> CGImage? {
         guard let space = CGColorSpace(name: CGColorSpace.displayP3),
             let context = CGContext(
-                data: nil, width: size, height: size, bitsPerComponent: 16, bytesPerRow: 0, space: space,
+                data: nil, width: size.width, height: size.height, bitsPerComponent: 16, bytesPerRow: 0, space: space,
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder16Little.rawValue)
         else { return nil }
         context.setFillColor(red: 0.3, green: 0.5, blue: 0.7, alpha: 1)
-        context.fill(CGRect(x: 0, y: 0, width: size, height: size))
+        context.fill(CGRect(x: 0, y: 0, width: size.width, height: size.height))
         return context.makeImage()
     }
 
@@ -377,14 +419,14 @@ enum CompatibilityRun {
     /// The photo the camera returns, with its metadata written from the capture plan.
     static func capturedPhoto(for compatibilityCase: CompatibilityCase) throws -> CapturedPhoto {
         let plan = capturePlan(for: compatibilityCase)
-        let dimensions = PhotoDimensions(width: Int(FixtureDNG.size), height: Int(FixtureDNG.size))
+        let dimensions = compatibilityCase.photoSize ?? defaultSize
         if let fallback = compatibilityCase.fallback {
             // The fallback is the system's own processed file, written with the replacement
             // metadata; here the system encoder writes the same dictionary.
             let format: PhotoFormat = fallback == .heif ? .heif : .jpeg
             let settings = try #require(EncodingSettings(format: format))
             let data = try PhotoEncoder.encode(
-                try #require(image()), settings: settings,
+                try #require(image(size: dimensions)), settings: settings,
                 properties: plan.properties(for: format, from: compatibilityCase.systemMetadata))
             return CapturedPhoto(
                 data: data, format: .processedFallback(fallback), lensID: compatibilityCase.lens.id, dimensions: dimensions,
@@ -503,6 +545,13 @@ enum FileCheck {
         }
     }
 
+    /// The size a HEIF or JPEG must decode at: the fallback's photo size, or the RAW's size
+    /// scaled by the copy size.
+    static func expectedSize(of file: PhotoFile, case compatibilityCase: CompatibilityCase) -> PhotoDimensions {
+        guard compatibilityCase.fallback == nil else { return compatibilityCase.photoSize ?? CompatibilityRun.defaultSize }
+        return compatibilityCase.options.size.dimensions(of: CompatibilityRun.defaultSize)
+    }
+
     /// The color space a HEIF or JPEG must decode in.
     static func expectedColorSpace(of file: PhotoFile, case compatibilityCase: CompatibilityCase) -> CFString {
         compatibilityCase.fallback == nil && compatibilityCase.options.colorSpace == .sRGB
@@ -528,7 +577,13 @@ enum FileCheck {
             // decoded for HEIF and JPEG only.
             let source = try #require(CGImageSourceCreateWithData(file.data as CFData, nil))
             let image = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil), "\(label)")
-            #expect(image.width == Int(FixtureDNG.size) && image.height == Int(FixtureDNG.size), "\(label)")
+            let size = expectedSize(of: file, case: compatibilityCase)
+            #expect(image.width == size.width && image.height == size.height, "\(label): \(image.width) × \(image.height)")
+            // EXIF pixel dimensions, where the file has them, state the pixels it holds.
+            let exif = properties["{Exif}"] as? [String: Any]
+            for (key, side) in [("PixelXDimension", size.width), ("PixelYDimension", size.height)] {
+                if let value = exif?[key] as? Int { #expect(value == side, "\(label): \(key) \(value)") }
+            }
             let space = expectedColorSpace(of: file, case: compatibilityCase)
             #expect(image.colorSpace?.name == space, "\(label): \(String(describing: image.colorSpace?.name))")
             #expect(properties["ProfileName"] is String, "\(label): no color profile")

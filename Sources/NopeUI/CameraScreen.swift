@@ -107,7 +107,8 @@ public struct CameraScreen<Viewfinder: View>: View {
         .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
-                deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location)
+                deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
+                lenses: model.capabilities?.lenses ?? [])
                 .nightModeStyle(settings.isNightModeOn)
                 .preferredColorScheme(settings.isNightModeOn ? .dark : nil)
                 .frame(idealWidth: 480, idealHeight: 720)

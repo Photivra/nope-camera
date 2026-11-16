@@ -1360,11 +1360,22 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Restore Defaults"].exists)
         choose(app, "sRGB", inPickerLabeled: "Color Space")
         let restore = app.buttons["Restore Defaults"]
+        // Restore Defaults is the last row, below the fold since Copy Size (issue #57).
+        var swipes = 0
+        while !(restore.exists && restore.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
-        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
         goBack(app)
         XCTAssertTrue(element(app, containing: "Custom").waitForExistence(timeout: 5))
         open(app, row: "File Options")
+        swipes = 0
+        while !(restore.exists && restore.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
         restore.tap()
         XCTAssertFalse(restore.waitForExistence(timeout: 2))

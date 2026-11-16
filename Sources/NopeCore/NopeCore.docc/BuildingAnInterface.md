@@ -95,6 +95,11 @@ These work with manual controls off, and never change a manual setting
   ``AutoControlIntent/stepExposureCompensation(by:)``;
 - Close-Up: where ``ManualCapabilities/supportsNearFocusLimit``, send
   ``AutoControlIntent/setNearFocusLimit(_:)``;
+- Far Focus: where ``ManualCapabilities/supportsFarFocusLimit``, send
+  ``AutoControlIntent/setFarFocusLimit(_:)`` (it lifts the near limit, and Close-Up lifts it);
+- send the person's ``NopeSettings/followsFaces`` with ``AutoControlIntent/setFollowsFaces(_:)``,
+  and their ``NopeSettings/photoSizes`` with ``CameraIntent/setPhotoSizes(_:)`` (offer a size
+  only from ``Lens/photoSizeChoices``);
 - show "Hold it steady or use a tripod." while ``ManualControlsModel/showsSteadyHint``, and offer
   a button to switch to ``CameraModel/closeUpLens`` when it isn't `nil`;
 - send the person's ``NopeSettings/fastShutter`` with ``AutoControlIntent/setFastShutter(_:)``. Clean view is ``CameraModel/isCleanView``, set with

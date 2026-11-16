@@ -1,7 +1,7 @@
 import Foundation
 
 /// How the HEIF and JPEG copies the app develops from the RAW are encoded: compression, HEIF bit
-/// depth and color space (issue #57, "File").
+/// depth, color space and size (issue #57, "File").
 ///
 /// Owner principle (issue #57): anything about the file that the device lets an app control is
 /// the person's to choose, behind the advanced options, with the defaults working on their own.
@@ -23,12 +23,24 @@ public struct DevelopedFileOptions: Equatable, Codable, Hashable, Sendable {
     /// The color space of both copies. ``OutputColorSpace/displayP3`` by default.
     public var colorSpace: OutputColorSpace
 
+    /// The size of both copies. Stored as an optional so options saved before it existed still
+    /// decode; read ``size``.
+    private var storedSize: OutputSize?
+
+    /// The size of both copies, as a fraction of the RAW's width and height.
+    /// ``OutputSize/full`` by default: the RAW's own size, as before this option existed.
+    public var size: OutputSize {
+        get { storedSize ?? .full }
+        set { storedSize = newValue == .full ? nil : newValue }
+    }
+
     /// The defaults: the encoding the app used before these options existed.
     public init() {
         heifQuality = .systemDefault
         jpegQuality = .maximum
         heifBitDepth = .ten
         colorSpace = .displayP3
+        storedSize = nil
     }
 
     /// Whether every option is at its default.
@@ -91,4 +103,46 @@ public enum OutputColorSpace: String, CaseIterable, Codable, Hashable, Sendable 
     case displayP3
     /// sRGB, for sites and screens that show only sRGB. Colors outside sRGB are clipped to it.
     case sRGB
+}
+
+/// The size of the developed copies, as a fraction of the RAW's width and height (issue #57,
+/// "Downscaled size").
+///
+/// A smaller copy is for sharing or saving space; the RAW always keeps every pixel. The encoder
+/// draws the developed image into a smaller bitmap with Core Graphics' high-quality
+/// interpolation, so the copy's exact size is known and its EXIF `PixelXDimension` and
+/// `PixelYDimension` match it. A fraction, rather than a pixel count, keeps the choice the same
+/// on every lens and never enlarges a photo.
+public enum OutputSize: String, CaseIterable, Codable, Hashable, Sendable {
+    /// The RAW's own width and height. The default.
+    case full
+    /// Half the width and height: a quarter of the pixels (about 3 MP from a 12 MP RAW).
+    case half
+    /// A quarter of the width and height: a sixteenth of the pixels (about 0.75 MP from 12 MP).
+    case quarter
+
+    /// The fraction of the width and height the copy keeps: 1, 0.5 or 0.25.
+    public var scale: Double {
+        switch self {
+        case .full: 1
+        case .half: 0.5
+        case .quarter: 0.25
+        }
+    }
+
+    /// The size of a copy of an image.
+    ///
+    /// - Parameter size: The developed image's size, in pixels.
+    /// - Returns: Each side times ``scale``, rounded, and at least 1 pixel.
+    public func dimensions(of size: PhotoDimensions) -> PhotoDimensions {
+        PhotoDimensions(width: scaled(size.width), height: scaled(size.height))
+    }
+
+    /// One side times ``scale``, rounded, and at least 1.
+    ///
+    /// - Parameter side: A side, in pixels.
+    /// - Returns: The scaled side, in pixels.
+    private func scaled(_ side: Int) -> Int {
+        max(1, Int((Double(side) * scale).rounded()))
+    }
 }
