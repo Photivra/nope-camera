@@ -2,7 +2,7 @@ import Foundation
 import NopeCore
 
 /// What Siri and Shortcuts say for each ``ShortcutOutcome`` (issue #62): whether the photo was
-/// saved and signed, or why not. Never image data or metadata.
+/// saved and signed, what changed, or why not. Never image data or metadata.
 enum ShortcutDialog {
     /// The sentence for an outcome, as each ``ShortcutOutcome`` case documents it.
     ///
@@ -41,6 +41,45 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "This device doesn't have that lens.",
                 comment: "Siri's answer when the lens asked for doesn't exist on this iPhone or iPad.")
+        case .lensSelected(.ultraWide):
+            LocalizedStringResource(
+                "Now using the ultra wide camera.", comment: "Siri's answer after nope. switched to the ultra wide rear camera.")
+        case .lensSelected(.wide):
+            LocalizedStringResource(
+                "Now using the wide camera.", comment: "Siri's answer after nope. switched to the wide (main) rear camera.")
+        case .lensSelected(.telephoto):
+            LocalizedStringResource(
+                "Now using the telephoto camera.", comment: "Siri's answer after nope. switched to the telephoto rear camera.")
+        case .lensSelected(.front):
+            LocalizedStringResource(
+                "Now using the front camera.", comment: "Siri's answer after nope. switched to the front (selfie) camera.")
+        case .lightOn:
+            LocalizedStringResource(
+                "The light is on.", comment: "Siri's answer after nope. turned its steady light (the torch) on.")
+        case .lightOff:
+            LocalizedStringResource(
+                "The light is off.", comment: "Siri's answer after nope.'s steady light (the torch) was turned off, or was already off.")
+        case .noLight:
+            LocalizedStringResource(
+                "This lens has no light.", comment: "Siri's answer when the lens in use has no steady light (torch), for example the front camera.")
+        case .lightUnavailable:
+            LocalizedStringResource(
+                "The light isn't available right now.",
+                comment: "Siri's answer when the system didn't allow the steady light (torch), for example because the phone is warm, or the night sky helper keeps it off.")
+        case .intervalStarted:
+            LocalizedStringResource(
+                "Interval shooting started.", comment: "Siri's answer after nope. started a series of photos at a fixed interval.")
+        case .intervalStopped:
+            LocalizedStringResource(
+                "Interval shooting stopped. The photos taken are saved.",
+                comment: "Siri's answer after nope.'s interval series was stopped; the photos already taken are kept.")
+        case .noIntervalRunning:
+            LocalizedStringResource(
+                "No interval series is running.", comment: "Siri's answer when asked to stop interval shooting while none runs.")
+        case .needsManualControls:
+            LocalizedStringResource(
+                "Interval shooting needs Manual Controls. Turn them on in nope. Settings.",
+                comment: "Siri's answer when interval shooting was asked for while manual controls are off. \"Manual Controls\" is the option's name in Settings. Keep \"nope.\" unchanged.")
         case .cameraUnavailable(.needsPermission):
             LocalizedStringResource(
                 "Open nope. to allow camera access.",

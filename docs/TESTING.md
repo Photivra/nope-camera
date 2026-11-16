@@ -487,10 +487,12 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 ### Siri and Shortcuts in the UI tests
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
-`-NopeSimulatedShortcut <seconds>`: the app sends a Take Photo request through the same
-`ShortcutInbox` the intent uses and shows what Siri would say (`ShortcutUITests`: a delay with
-the countdown, a cancelled countdown, and no camera access). The request logic is unit tested in
-`ShortcutTests`.
+`-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
+`burst<count>` for Take Photo with a count, or `lens-ultraWide` for Switch Lens. The app sends
+the request through the same `ShortcutInbox` the intents use and shows what Siri would say
+(`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
+of three and a lens switch). The request logic (counts, lenses, the light, interval shooting,
+requests without a camera screen) is unit tested in `ShortcutTests`.
 
 ## On-device checks
 
@@ -587,9 +589,20 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
 - Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
   signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
   access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
-- Siri while the iPhone is locked: Siri asks to unlock before opening the app.
-- Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
-  Night Mode on and off, with the app closed and with it open (the screen turns red at once).
+- Siri while the iPhone is locked: "Take a photo with nope." asks to unlock before opening the
+  app. "Open the camera in nope.": record whether Siri opens the Lock Screen camera, asks to
+  unlock, or refuses (not documented by Apple; docs/ARCHITECTURE.md).
+- Siri, other phrases: "Switch to Ultra Wide in nope." (and a lens the device lacks), "Turn on
+  the light in nope." and "Turn off the light in nope." (the light comes on and goes off; with
+  the app closed, turning it off says the light is off without opening the app), "Start interval
+  shooting in nope." with Manual Controls off (Siri says to turn them on; nothing changes) and on
+  (the series starts, the screen dims), and "Stop interval shooting in nope.".
+- Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
+  Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
+  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
+  Interval Shooting, and Set Night Mode on and off, with the app closed and with it open (the
+  screen turns red at once).
+- Siri does not mistake "Turn on the light in nope." for a HomeKit request.
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Low storage
