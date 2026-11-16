@@ -19,7 +19,7 @@ struct SeriesActivityAttributes: ActivityAttributes {
     typealias ContentState = LiveActivityContent
 }
 
-/// Stops the interval series from the Live Activity's Stop button.
+/// Stops the interval series or astro run from the Live Activity's Stop button.
 ///
 /// A `LiveActivityIntent` runs in the app's process, not the widget extension's (App Intents,
 /// `LiveActivityIntent`), so the app's ``SeriesActivityActions/stop`` does the work; it holds no
@@ -28,12 +28,12 @@ struct StopSeriesIntent: LiveActivityIntent {
     /// The action's name.
     static let title = LocalizedStringResource(
         "Stop Series",
-        comment: "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting. Keep \"nope.\" unchanged if it appears.")
+        comment: "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears.")
 
     /// What the action does.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Stops nope.'s interval shooting. Every photo already taken is saved.",
+            "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved.",
             comment: "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged."))
 
     /// Not listed in the Shortcuts app.
@@ -138,6 +138,8 @@ enum SeriesActivityText {
             Text("Photos taken: \(taken)", comment: "Live Activity: how many photos a running burst has taken.")
         case .paused(let taken, let total):
             Text("Paused: \(taken) of \(total) photos taken. Open nope. to continue.", comment: "Live Activity after the person left nope. during interval shooting: the series continues when nope. is opened again. Both numbers are counts of photos. Keep \"nope.\" unchanged.")
+        case .framesPaused(let taken, let total):
+            Text("Paused: \(taken) of \(total) frames. Open nope. to continue.", comment: "Live Activity after the person left nope. during the night sky helper's frames, or the camera paused them: the run continues when nope. is open again, after its start delay. Both numbers are counts of frames. Keep \"nope.\" unchanged.")
         case .saving(let saved, let taken):
             Text("Saving: \(saved) of \(taken) photos saved", comment: "Live Activity after the person left nope. during a burst or the night sky helper: the photos already taken are being saved. Both numbers are counts of photos.")
         case .savingPhoto:
@@ -191,7 +193,7 @@ struct SeriesStopButton: View {
     var body: some View {
         Button(intent: StopSeriesIntent()) {
             Label {
-                Text("Stop", comment: "Button on nope.'s Live Activity that stops interval shooting. Every photo already taken is saved.")
+                Text("Stop", comment: "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.")
             } icon: {
                 Image(systemName: "stop.fill")
             }

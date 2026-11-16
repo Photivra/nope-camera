@@ -223,6 +223,10 @@ struct NopeApp: App {
         // again on return to the foreground also covers a signal sent while the app was suspended.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active, Self.settingsSync != nil, settings.reload() { Self.settingsDidChange() }
+            #if DEBUG
+            // UI tests: the simulated camera is interrupted in the background, as AVFoundation's is.
+            SimulatedCameraLaunch.followScenePhase(phase == .background, backend: Self.backend)
+            #endif
         }
     }
 

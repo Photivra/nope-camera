@@ -117,15 +117,13 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .presentationBackground(.background)
         }
         .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
-        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The camera
-        // stops there, so the self-timer can't take its photo: it is cancelled, and the Live
-        // Activity says so (issue #64), rather than firing whenever the app comes back.
+        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The model
+        // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
+        // and continue (issue #64).
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background {
-                Task {
-                    await model.send(.light(.setTorch(false)))
-                    await model.send(.drive(.cancelTimer))
-                }
+            Task {
+                if phase == .background { await model.send(.light(.setTorch(false))) }
+                await model.send(.setInForeground(phase != .background))
             }
         }
         .preferredColorScheme(.dark)

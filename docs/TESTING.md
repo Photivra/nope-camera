@@ -663,8 +663,13 @@ and the time iOS gives to finish saving is enough for a burst's frames.
 - Burst: hold the shutter in burst mode, go to the Home Screen while it saves: "Saving: n of m
   photos saved", then "Photos saved: m" with "Signed." (or the unsigned line with signing off),
   gone two minutes later; every frame is in Photos.
-- Astro: leave during the frames: the run stops, the activity shows the frames saving, then
-  "Stopped. Photos saved: n".
+- Astro: leave during the frames: the frames pause and the activity shows "Paused: n of N
+  frames. Open nope. to continue." with Stop; coming back counts the start delay down again and
+  the run continues from frame n + 1 (the frame cut short by leaving is taken again); Stop from
+  the Lock Screen ends the run with every frame taken saved. Leave during the start delay: the
+  run starts paused and begins after the delay on return. A call during a run pauses it the same
+  way. Check that a frame cut short by leaving doesn't end the run as failed (the interruption
+  may arrive after the frame fails).
 - Self-timer: start a 10 s timer and lock the phone: the timer is cancelled and the activity says
   "Stopped. No photo taken."; no photo is taken when the app is opened again.
 - In the foreground no activity is visible, and with the switch off none starts. Night mode shows

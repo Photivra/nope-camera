@@ -61,4 +61,15 @@ public enum CameraIntent: Equatable, Sendable {
     ///
     /// - Parameter sizes: The chosen size for each lens.
     case setPhotoSizes([Lens.ID: PhotoDimensions])
+
+    /// The app came back to the foreground (`true`) or went to the background (`false`). Send it
+    /// whenever the scene phase changes to or from the background (issue #64).
+    ///
+    /// Leaving cancels the self-timer, because the camera stops and can't take its photo. With
+    /// the astro helper on, leaving pauses its frames instead (``AstroModel/isPaused``), or, during
+    /// its start delay, starts the run paused; coming back with the camera running counts the
+    /// start delay down again and continues the run.
+    ///
+    /// - Parameter isInForeground: Whether the app is in the foreground now.
+    case setInForeground(Bool)
 }

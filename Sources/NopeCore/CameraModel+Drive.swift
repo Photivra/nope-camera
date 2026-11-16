@@ -140,12 +140,16 @@ extension CameraModel {
     ///   - stopsOnLowBattery: Whether the run also stops when the battery is at or below
     ///     ``AstroModel/stopBatteryLevel`` and not charging.
     ///   - endAtLimit: What the run reports when it takes all `limit` frames.
+    ///   - pausesWithCamera: Whether the run pauses instead of stopping when the app leaves the
+    ///     foreground or the camera pauses, and continues afterwards (the astro helper, issue
+    ///     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     func takeFrames(
-        limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached
+        limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached,
+        pausesWithCamera: Bool = false
     ) async {
-        guard canCapture, let lens = selectedLens else { return }
+        guard canCapture || (pausesWithCamera && astroShouldPause), let lens = selectedLens else { return }
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
@@ -161,7 +165,23 @@ extension CameraModel {
         var failure: CaptureError?
         var end = endAtLimit
         var pending: Task<Result<SavedPhoto, CaptureError>, Never>?
-        for _ in 0..<limit {
+        var taken = 0
+        while taken < limit {
+            if pausesWithCamera, astroShouldPause {
+                // Every frame taken is saved before the pause, so nothing waits in memory.
+                if let previous = pending {
+                    pending = nil
+                    if let error = await collect(previous, into: &saved, tracker: tracker) {
+                        failure = error
+                        break
+                    }
+                }
+                guard await pauseAstroRun() else {
+                    end = .stopped
+                    break
+                }
+                continue
+            }
             if let reason = stopReason(tracker, bytesPerPhoto: bytesPerPhoto, stopsOnLowBattery: stopsOnLowBattery) {
                 end = reason
                 break
@@ -171,9 +191,12 @@ extension CameraModel {
             do {
                 photo = try await backend.capturePhoto(request)
             } catch {
+                // A frame cut short by leaving the app or a camera pause is taken again after it.
+                if pausesWithCamera, astroShouldPause { continue }
                 failure = error
                 break
             }
+            taken += 1
             tracker.recordTaken()
             let previous = pending
             let captureDuration = now() - start

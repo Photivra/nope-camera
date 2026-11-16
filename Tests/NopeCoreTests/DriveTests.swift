@@ -98,11 +98,15 @@ final class FakeScreen: ScreenControlling {
     }
 }
 
-/// Waits, yielding, until the condition holds (at most 10,000 yields).
+/// Waits, yielding, until the condition holds: at most 10,000 yields, then on the clock for up
+/// to five seconds more, so a busy test runner doesn't end the wait too early.
 @MainActor
 func waitUntil(_ condition: () -> Bool) async {
     for _ in 0..<10_000 where !condition() {
         await Task.yield()
+    }
+    for _ in 0..<500 where !condition() {
+        try? await Task.sleep(for: .milliseconds(10))
     }
 }
 
@@ -111,11 +115,17 @@ func settle() async {
     for _ in 0..<200 { await Task.yield() }
 }
 
-/// Waits until a sleep is waiting on the ticker (at least `count`), then lets the oldest go.
+/// Waits until a sleep is waiting on the ticker (at least `count`), then lets the oldest go. It
+/// yields first, then waits on the clock for up to five seconds, so a busy test runner can't
+/// make it tick before the sleep is waiting and lose the tick.
 func tick(_ ticker: Ticker, whenWaiting count: Int = 1) async {
     for _ in 0..<10_000 {
         if await ticker.pending >= count { break }
         await Task.yield()
+    }
+    for _ in 0..<500 {
+        if await ticker.pending >= count { break }
+        try? await Task.sleep(for: .milliseconds(10))
     }
     await ticker.tick()
 }

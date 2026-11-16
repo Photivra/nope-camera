@@ -203,7 +203,7 @@ struct LiveActivityTests {
                 == Content(kind: .astro, phase: .running, taken: 1, total: 20))
         #expect(
             model.liveActivityContent(continuing: nil, isInForeground: false, now: now)
-                == Content(kind: .astro, phase: .saving, taken: 1, total: 20))
+                == Content(kind: .astro, phase: .paused, taken: 1, total: 20))
         model.astro.endRun(.stopped)
 
         // A burst.

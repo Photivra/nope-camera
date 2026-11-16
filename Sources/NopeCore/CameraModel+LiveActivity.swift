@@ -2,20 +2,21 @@ import Foundation
 
 /// What the Live Activity shows (issue #64): see ``LiveActivityCoordinator``.
 extension CameraModel {
-    /// Whether photos are being taken or saved: a photo, a bracket, a burst or astro frames. When
-    /// the app leaves the foreground then, it asks iOS for time to finish saving them
-    /// (``BackgroundTimeRequesting``).
+    /// Whether photos are being taken or saved: a photo, a bracket, a burst or astro frames that
+    /// aren't paused. When the app leaves the foreground then, it asks iOS for time to finish
+    /// saving them (``BackgroundTimeRequesting``); a paused astro run has saved every frame taken.
     public var isFinishingPhotos: Bool {
-        captureStatus == .capturing || captureStatus == .saving || drive.burstProgress != nil || astro.isRunning
+        guard !astro.isPaused else { return false }
+        return captureStatus == .capturing || captureStatus == .saving || drive.burstProgress != nil || astro.isRunning
     }
 
     /// The Live Activity's content for what runs now, or `nil` when nothing runs that it shows.
     ///
     /// An interval series, astro frames, a burst and the self-timer each have content while they
-    /// run. Out of the foreground the camera stops, so a running interval series is
-    /// ``LiveActivityContent/Phase/paused`` (it continues when the app is open again) and a
-    /// running burst or astro run is ``LiveActivityContent/Phase/saving`` (the frames already
-    /// taken are being saved). The self-timer's photo keeps the timer's content while it is
+    /// run. Out of the foreground the camera stops, so a running interval series or astro run is
+    /// ``LiveActivityContent/Phase/paused`` (it continues when the app is open again; an astro run
+    /// is paused in the foreground too while the camera is), and a running burst is
+    /// ``LiveActivityContent/Phase/saving`` (the frames already taken are being saved). The self-timer's photo keeps the timer's content while it is
     /// taken and saved.
     ///
     /// - Parameters:
@@ -26,7 +27,6 @@ extension CameraModel {
     public func liveActivityContent(
         continuing kind: LiveActivityContent.Kind?, isInForeground: Bool, now: Date
     ) -> LiveActivityContent? {
-        let takingPhase: LiveActivityContent.Phase = isInForeground ? .running : .saving
         if let progress = manual.intervalProgress {
             return LiveActivityContent(
                 kind: .interval, phase: isInForeground ? .running : .paused, taken: progress.taken,
@@ -34,10 +34,12 @@ extension CameraModel {
         }
         if let progress = astro.progress {
             return LiveActivityContent(
-                kind: .astro, phase: takingPhase, taken: progress.taken, total: astro.frameCount, saved: progress.saved)
+                kind: .astro, phase: isInForeground && !astro.isPaused ? .running : .paused, taken: progress.taken,
+                total: astro.frameCount, saved: progress.saved)
         }
         if let progress = drive.burstProgress {
-            return LiveActivityContent(kind: .burst, phase: takingPhase, taken: progress.taken, saved: progress.saved)
+            return LiveActivityContent(
+                kind: .burst, phase: isInForeground ? .running : .saving, taken: progress.taken, saved: progress.saved)
         }
         if let remaining = drive.countdown.remainingSeconds {
             return LiveActivityContent(

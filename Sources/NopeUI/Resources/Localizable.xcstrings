@@ -15145,6 +15145,72 @@
         }
       }
     },
+    "Paused: %lld of %lld frames": {
+      "comment": "Shown on the camera while the night sky helper's frames are paused because the camera is paused (for example by a call): they continue, after the start delay, when the camera is back. Both numbers are counts of frames.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pausiert: %1$lld von %2$lld Bildern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En pausa: %1$lld de %2$lld fotogramas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En pause : %1$lld images sur %2$lld"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In pausa: %1$lld di %2$lld fotogrammi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一時停止中: %1$lld/%2$lld フレーム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "일시 정지됨: 프레임 %1$lld/%2$lld"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gepauzeerd: %1$lld van %2$lld frames"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pausado: %1$lld de %2$lld quadros"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已暂停：%1$lld/%2$lld 帧"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已暫停：%1$lld/%2$lld 個影格"
+          }
+        }
+      }
+    },
     "Phone Only": {
       "comment": "Button in the compare view: shows only the phone-processed version.",
       "extractionState": "manual",

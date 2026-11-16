@@ -4557,6 +4557,71 @@
         }
       }
     },
+    "Paused: %lld of %lld frames. Open nope. to continue.": {
+      "comment": "Live Activity after the person left nope. during the night sky helper's frames, or the camera paused them: the run continues when nope. is open again, after its start delay. Both numbers are counts of frames. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pausiert: %1$lld von %2$lld Bildern. Öffne nope., um fortzufahren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En pausa: %1$lld de %2$lld fotogramas. Abre nope. para continuar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En pause : %1$lld images sur %2$lld. Ouvrez nope. pour continuer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In pausa: %1$lld di %2$lld fotogrammi. Apri nope. per continuare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一時停止中: %1$lld/%2$lld フレーム。nope.を開くと続行します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "일시 정지됨: 프레임 %1$lld/%2$lld. 계속하려면 nope.을 여세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gepauzeerd: %1$lld van %2$lld frames. Open nope. om door te gaan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pausado: %1$lld de %2$lld quadros. Abra o nope. para continuar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已暂停：%1$lld/%2$lld 帧。打开 nope. 以继续。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已暫停：%1$lld/%2$lld 個影格。打開 nope. 以繼續。"
+          }
+        }
+      }
+    },
     "Paused: %lld of %lld photos taken. Open nope. to continue.": {
       "comment": "Live Activity after the person left nope. during interval shooting: the series continues when nope. is opened again. Both numbers are counts of photos. Keep \"nope.\" unchanged.",
       "localizations": {
@@ -6379,7 +6444,7 @@
       }
     },
     "Stop": {
-      "comment": "Button on nope.'s Live Activity that stops interval shooting. Every photo already taken is saved.",
+      "comment": "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -6509,7 +6574,7 @@
       }
     },
     "Stop Series": {
-      "comment": "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting. Keep \"nope.\" unchanged if it appears.",
+      "comment": "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears.",
       "localizations": {
         "de": {
           "stringUnit": {
@@ -6833,67 +6898,67 @@
         }
       }
     },
-    "Stops nope.'s interval shooting. Every photo already taken is saved.": {
+    "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved.": {
       "comment": "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged.",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Stoppt die Intervallaufnahme in nope. Alle bereits aufgenommenen Fotos werden gesichert."
+            "value": "Stoppt die Intervallaufnahme oder die Astro-Bilder in nope. Alle bereits aufgenommenen Fotos werden gesichert."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Detiene el disparo a intervalos de nope. Se guardan todas las fotos ya tomadas."
+            "value": "Detiene el disparo a intervalos o los fotogramas de Astro de nope. Se guardan todas las fotos ya tomadas."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Arrête la prise de vue par intervalles de nope. Toutes les photos déjà prises sont enregistrées."
+            "value": "Arrête la prise de vue par intervalles ou les images Astro de nope. Toutes les photos déjà prises sont enregistrées."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Interrompe lo scatto a intervalli di nope. Tutte le foto già scattate vengono salvate."
+            "value": "Interrompe lo scatto a intervalli o i fotogrammi Astro di nope. Tutte le foto già scattate vengono salvate."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "nope.のインターバル撮影を停止します。撮影済みの写真はすべて保存されます。"
+            "value": "nope.のインターバル撮影または星空のフレーム撮影を停止します。撮影済みの写真はすべて保存されます。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "nope.의 인터벌 촬영을 정지합니다. 이미 촬영한 사진은 모두 저장됩니다."
+            "value": "nope.의 인터벌 촬영 또는 별 사진 프레임 촬영을 정지합니다. 이미 촬영한 사진은 모두 저장됩니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Stopt de intervalopnamen van nope. Alle al gemaakte foto’s worden bewaard."
+            "value": "Stopt de intervalopnamen of de Astro-frames van nope. Alle al gemaakte foto’s worden bewaard."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Para o disparo por intervalo do nope. Todas as fotos já tiradas são salvas."
+            "value": "Para o disparo por intervalo ou os quadros do Astro do nope. Todas as fotos já tiradas são salvas."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "停止 nope. 的间隔拍摄。已拍摄的照片都会存储。"
+            "value": "停止 nope. 的间隔拍摄或星空帧拍摄。已拍摄的照片都会存储。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "停止 nope. 的間隔拍攝。已拍攝的照片都會儲存。"
+            "value": "停止 nope. 的間隔拍攝或星空影格拍攝。已拍攝的照片都會儲存。"
           }
         }
       }

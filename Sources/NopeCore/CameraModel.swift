@@ -42,6 +42,10 @@ public final class CameraModel {
     /// default. Warnings that change what the photo is are never hidden.
     public private(set) var isCleanView = false
 
+    /// Whether the app is in the foreground, as the interface last said with
+    /// ``CameraIntent/setInForeground(_:)``. `true` until it says otherwise.
+    public internal(set) var isInForeground = true
+
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
@@ -177,6 +181,8 @@ public final class CameraModel {
             comparison.handle(intent)
         case .setPhotoSizes(let sizes):
             await setPhotoSizes(sizes)
+        case .setInForeground(let isInForeground):
+            setInForeground(isInForeground)
         }
     }
 

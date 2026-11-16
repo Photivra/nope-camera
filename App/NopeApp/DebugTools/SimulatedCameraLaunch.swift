@@ -14,6 +14,18 @@ enum SimulatedCameraLaunch {
     /// The launch argument: `-NopeSimulatedCamera`.
     static let argument = "-NopeSimulatedCamera"
 
+    /// Interrupts the simulated camera while the app is in the background and ends the
+    /// interruption when it returns, as AVFoundation does for a real camera
+    /// (`videoDeviceNotAvailableInBackground`), so the UI tests can leave and return during a run.
+    ///
+    /// - Parameters:
+    ///   - isInBackground: Whether the app is in the background now.
+    ///   - backend: The launch's backend; anything but the simulated one is left alone.
+    static func followScenePhase(_ isInBackground: Bool, backend: any CaptureBackend) {
+        guard let simulated = backend as? SimulatedCaptureBackend else { return }
+        simulated.emit(isInBackground ? .interrupted(.backgrounded) : .interruptionEnded)
+    }
+
     /// A simulated camera state.
     enum Scenario: String, CaseIterable {
         /// Permission not asked yet; allowing it gives four lenses, the telephoto without RAW.

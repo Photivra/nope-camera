@@ -31,6 +31,7 @@ struct LiveActivityGallery: View {
             LiveActivityContent(kind: .interval, phase: .running, taken: 12, total: 120),
             LiveActivityContent(kind: .interval, phase: .paused, taken: 42, total: 120),
             LiveActivityContent(kind: .astro, phase: .running, taken: 4, total: 20, saved: 3),
+            LiveActivityContent(kind: .astro, phase: .paused, taken: 6, total: 20, saved: 6),
             LiveActivityContent(kind: .burst, phase: .saving, taken: 12, saved: 7),
             LiveActivityContent(kind: .astro, phase: .savingPaused, taken: 9, total: 20, saved: 6),
             LiveActivityContent(kind: .timer, phase: .saving, taken: 1),

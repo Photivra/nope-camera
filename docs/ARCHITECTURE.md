@@ -196,9 +196,15 @@ sets focus to lens position 1, the longest shutter and the highest ISO the lens 
 the light off, returns the drive mode to single and turns bracketing off; after that the manual
 controls are the person's. While it is on, the shutter starts `drive.countdown` with
 `astro.startDelay` and then `astro.frameCount` frames; the same shutter (or `.astro(.stop)`)
-stops them. A run also stops before a frame that wouldn't fit in storage, at or below
-`AstroModel.stopBatteryLevel` unplugged (`BurstEnd.batteryLow`), when the camera stops, or at a
-failed frame. `CameraModel.astroEstimate` gives the total exposure time and an upper estimate of
+stops them. When the app leaves the foreground (`CameraIntent.setInForeground(false)`, sent by
+the camera screen on each scene phase change) or the camera pauses (an interruption, heat, a
+restart), the run pauses instead of stopping (`AstroModel.isPaused`, issue #64): the frames taken
+are saved, a frame cut short is taken again, and `pauseAstroRun()` waits on Observation, without
+polling, until the app is in the foreground and the camera runs; then `Countdown.run(seconds:)`
+counts the start delay down again so the phone is still, and the loop checks storage and battery
+before the next frame. Leaving during the start delay starts the run paused. A run stops before a
+frame that wouldn't fit in storage, at or below `AstroModel.stopBatteryLevel` unplugged
+(`BurstEnd.batteryLow`), when the camera stops for good, or at a failed frame in the foreground. `CameraModel.astroEstimate` gives the total exposure time and an upper estimate of
 the storage. Turning it off turns manual controls off again only if it turned them on. The torch
 can't be turned on while it is on, and a lens it can't use turns it off. It is offered only
 where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen capture extension has
@@ -332,8 +338,8 @@ and `MotionGravitySource.swift` with the app through the project's file membersh
 
 iOS shows an app's Live Activity only while the app isn't on screen, and the camera stops when the
 app leaves the foreground, so the activity shows status, not shooting: a paused interval series
-(it continues when the app is opened again; Stop ends it), frames still being saved after a burst
-or astro run, a cancelled self-timer, and how each run ended, with whether the saved photos are
+or astro run (it continues when the app is opened again; Stop ends it), frames still being saved
+after a burst, a cancelled self-timer, and how each run ended, with whether the saved photos are
 signed. It is off by default (`NopeSettings.showsLiveActivity`).
 
 `LiveActivityCoordinator` (`NopeCore`) holds the rules. `CameraModel.liveActivityContent(...)`

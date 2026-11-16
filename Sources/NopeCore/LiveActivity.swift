@@ -32,8 +32,8 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case countingDown
         /// Photos are being taken, which happens only while the app is open.
         case running
-        /// The app left during an interval series: the series continues when the app is opened
-        /// again.
+        /// The app left during an interval series or astro run, or the camera paused an astro run:
+        /// it continues when the app is open and the camera runs again.
         case paused
         /// The app left, so no more photos are taken; the ones taken are being saved.
         case saving
@@ -108,11 +108,11 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         self.isNightMode = isNightMode
     }
 
-    /// Whether the activity offers Stop: only for an interval series that runs or is paused,
-    /// because only it has photos still to take that Stop would prevent. Every photo already
-    /// taken is saved either way.
+    /// Whether the activity offers Stop: for an interval series or astro run that runs or is
+    /// paused, because they have photos still to take that Stop would prevent. Every photo
+    /// already taken is saved either way.
     public var canStop: Bool {
-        kind == .interval && (phase == .running || phase == .paused)
+        (kind == .interval || kind == .astro) && (phase == .running || phase == .paused)
     }
 
     /// Whether the run has ended, so the activity shows its final state.
@@ -159,7 +159,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
             case .timer: return .takingPhoto
             }
         case .paused:
-            return .paused(taken: taken, total: total)
+            return kind == .astro ? .framesPaused(taken: taken, total: total) : .paused(taken: taken, total: total)
         case .saving:
             return kind == .timer ? .savingPhoto : .saving(saved: saved, taken: taken)
         case .savingPaused:
@@ -213,6 +213,8 @@ public enum LiveActivityStatusLine: Equatable, Sendable {
     case burstPhotosTaken(Int)
     /// "Paused: 42 of 120 photos taken. Open nope. to continue."
     case paused(taken: Int, total: Int)
+    /// "Paused: 4 of 20 frames. Open nope. to continue.": an astro run.
+    case framesPaused(taken: Int, total: Int)
     /// "Saving: 4 of 7 photos saved."
     case saving(saved: Int, taken: Int)
     /// "Saving the photo…"

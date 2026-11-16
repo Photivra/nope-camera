@@ -66,6 +66,7 @@
 5 NopeAppUITests/testRightToLeftLayout 17
 5 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 50 est
 5 ShortcutUITests/testARequestWithoutCameraAccessSaysWhy 12 est
+5 NopeAppUITests/testAstroFramesPauseWhenLeavingAndContinueOnReturn 125 est
 6 NopeAppUITests/testAstroFramesShowProgressAndStop 121
 6 NopeAppUITests/testBracketDetailsChooseEachFrame 52
 6 NopeAppUITests/testCopySizeInFileOptions 76 est
