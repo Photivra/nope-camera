@@ -238,12 +238,13 @@ public struct CameraSetup: Codable, Equatable, Sendable {
     /// The stored name of a drive mode.
     ///
     /// - Parameter mode: The drive mode.
-    /// - Returns: `single`, `timer3`, `timer10` or `burst`.
+    /// - Returns: `single`, `timer3`, `timer10`, `burst` or `interval`.
     public static func driveName(_ mode: DriveMode) -> String {
         switch mode {
         case .single: "single"
         case .timer(let delay): "timer\(delay.seconds)"
         case .burst: "burst"
+        case .interval: "interval"
         }
     }
 

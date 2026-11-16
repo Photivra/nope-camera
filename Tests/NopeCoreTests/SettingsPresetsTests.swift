@@ -463,7 +463,7 @@ struct CameraSetupTests {
 
     @Test func namesOfKindsAndDriveModes() {
         #expect(Lens.Kind.allCases.map(CameraSetup.kindName) == ["ultraWide", "wide", "telephoto", "front"])
-        #expect(DriveMode.allCases.map(CameraSetup.driveName) == ["single", "timer3", "timer10", "burst"])
+        #expect(DriveMode.allCases.map(CameraSetup.driveName) == ["single", "timer3", "timer10", "burst", "interval"])
         for mode in DriveMode.allCases {
             #expect(CameraSetup.driveMode(named: CameraSetup.driveName(mode)) == mode)
         }
