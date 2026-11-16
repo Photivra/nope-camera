@@ -1,6 +1,350 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Open the camera in ${applicationName}": {
+      "comment": "A Siri phrase that opens nope.'s camera. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Öffne die Kamera in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Abre la cámara en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Ouvre l’appareil photo dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Apri la fotocamera in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}でカメラを開いて"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 카메라 열어 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Open de camera in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Abra a câmera no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中打开相机"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中打開相機"
+            ]
+          }
+        }
+      }
+    },
+    "Start interval shooting in ${applicationName}": {
+      "comment": "A Siri phrase that starts a series of photos at a fixed interval in nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Starte die Intervallaufnahme in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Inicia el disparo a intervalos en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Démarre la prise de vue par intervalles dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Avvia lo scatto a intervalli in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}でインターバル撮影を開始して"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 인터벌 촬영 시작해 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Start intervalopnamen in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Inicie o disparo por intervalo no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中开始间隔拍摄"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中開始間隔拍攝"
+            ]
+          }
+        }
+      }
+    },
+    "Stop interval shooting in ${applicationName}": {
+      "comment": "A Siri phrase that stops nope.'s running interval series. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Stoppe die Intervallaufnahme in ${applicationName}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Detén el disparo a intervalos en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Arrête la prise de vue par intervalles dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Interrompi lo scatto a intervalli in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}でインターバル撮影を停止して"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 인터벌 촬영 중지해 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Stop intervalopnamen in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Pare o disparo por intervalo no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中停止间隔拍摄"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中停止間隔拍攝"
+            ]
+          }
+        }
+      }
+    },
+    "Switch to ${lens} in ${applicationName}": {
+      "comment": "A Siri phrase that switches nope.'s camera to a lens. ${lens} is a lens such as \"Wide\" or \"Front\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Wechsle in ${applicationName} zu ${lens}"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Cambia a ${lens} en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Passe à ${lens} dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Passa a ${lens} in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}で${lens}に切り替えて"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 ${lens}(으)로 전환해 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Wissel naar ${lens} in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Troque para ${lens} no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中切换到${lens}"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中切換到${lens}"
+            ]
+          }
+        }
+      }
+    },
     "Take a photo in ${delay} with ${applicationName}": {
       "comment": "A Siri phrase that takes a photo after a delay. ${delay} is \"3 Seconds\" or \"10 Seconds\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
       "extractionState": "manual",
@@ -345,6 +689,92 @@
         }
       }
     },
+    "Turn off the light in ${applicationName}": {
+      "comment": "A Siri phrase that turns off nope.'s steady light (the torch). ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Schalte das Licht in ${applicationName} aus"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Apaga la luz en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Éteins la lumière dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Spegni la luce in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}でライトをオフにして"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 조명 꺼 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Zet de lamp uit in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Desligue a luz no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中关闭灯光"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中關閉燈光"
+            ]
+          }
+        }
+      }
+    },
     "Turn on night mode in ${applicationName}": {
       "comment": "A Siri phrase that turns nope.'s night mode on. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
       "extractionState": "manual",
@@ -426,6 +856,92 @@
             "state": "needs_review",
             "values": [
               "開啟${applicationName}的夜間模式"
+            ]
+          }
+        }
+      }
+    },
+    "Turn on the light in ${applicationName}": {
+      "comment": "A Siri phrase that turns on nope.'s steady light (the torch). ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Schalte das Licht in ${applicationName} ein"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Enciende la luz en ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Allume la lumière dans ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Accendi la luce in ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}でライトをオンにして"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}에서 조명 켜 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Zet de lamp aan in ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Ligue a luz no ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中打开灯光"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "在${applicationName}中開啟燈光"
             ]
           }
         }

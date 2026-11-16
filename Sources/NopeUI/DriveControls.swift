@@ -67,7 +67,8 @@ enum DriveText {
     /// - Parameter result: How the burst ended.
     static func endMessage(_ result: BurstResult) -> String? {
         switch result.end {
-        case .stopped, .failed:
+        case .stopped, .failed, .countReached:
+            // A burst of a chosen count is a Siri or Shortcuts request, which Siri reports.
             nil
         case .limitReached:
             String(localized: "Burst stopped at \(result.saved) photos, the most one burst takes.", bundle: .module, comment: "Announced and shown when a burst stops because it reached its maximum number of photos. The number is that count of photos, such as 50.")
