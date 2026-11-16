@@ -173,6 +173,7 @@ struct ScaleSlider: View {
                 Text(verbatim: ControlText.name(control))
             }
             .accessibilityValue(Text(verbatim: SlotValue.text(for: control, in: model.manual)))
+            .nightModeTrackTint()
         }
     }
 }
@@ -239,6 +240,7 @@ struct TintAndPresets: View {
                 Text("Tint", bundle: .module, comment: "Label of the white balance tint slider (green to magenta).")
             }
             .accessibilityValue(Text(verbatim: model.manual.tint.formatted(.number.precision(.fractionLength(0)))))
+            .nightModeTrackTint()
         }
         Menu {
             ForEach(WhiteBalancePreset.allCases, id: \.self) { preset in

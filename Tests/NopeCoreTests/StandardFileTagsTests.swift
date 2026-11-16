@@ -76,7 +76,7 @@ struct StandardFileTagsTests {
             #expect(Set((tiff ?? [:]).keys).isSuperset(of: ["DateTime", "Make", "Model", "Software"]))
             #expect(
                 plan.allowlist(for: .raw, signed: false).textRules[dateTime]
-                    == (standardTags ? .oneOf(["", MetadataPlan.unknownDateTime]) : .exactly("")))
+                    == (standardTags ? .blankDate : .exactly("")))
         }
         // The unknown form has no digits: it says nothing about when the photo was taken.
         #expect(MetadataPlan.unknownDateTime.count == 19)

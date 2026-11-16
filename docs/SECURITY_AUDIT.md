@@ -333,9 +333,11 @@ complete file protection and is deleted at once (AGENTS.md, "Photos never linger
 - **Run:**
   - Code: every `write(to:` in Release code passes `.completeFileProtection` and is followed
     by deletion in a `defer`; `grep -rn 'write(to:\|FileManager\|temporaryDirectory' Sources App`.
-    The one Release write of a photo file is `ResourceStaging.stage(_:)` (the alternate of a
-    RAW pair, which PhotoKit accepts only from a file), removed by `PhotoKitLibrary` in a
-    `defer` after the change.
+    The one exception, and the one Release write of a photo file, is `ResourceStaging.stage(_:)`
+    (the alternate of a RAW pair, which PhotoKit accepts only from a file): it uses
+    `.completeFileProtectionUntilFirstUserAuthentication` (`ResourceStaging.protection`), so a
+    pair can be saved while the device is locked (the Lock Screen camera, or a save that ends
+    after the screen locks), and `PhotoKitLibrary` removes it in a `defer` after the change.
   - After a session of 50 photos in every format, download the container (Xcode › Devices and
     Simulators › the app › Download Container, or `xcrun simctl get_app_container booted
     com.photivra.nope.dev data` on the Simulator) and list every file:

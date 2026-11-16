@@ -281,6 +281,68 @@ struct SettingsPresetsTests {
         #expect(presets.lastResult == nil)
     }
 
+    /// A name is never used as a catalog key, so it shows as typed in Shortcuts, even when it
+    /// matches one of the app's strings or holds format characters.
+    @Test func theNameForShortcutsIsShownAsTyped() {
+        for name in ["Preset", "Factory Defaults", "100% %@ %lld", "Astro"] {
+            let preset = SettingsPreset(name: name, settings: NopeSettingsSnapshot(values: Data()), camera: .factory)
+            #expect(preset.verbatimName.key == "%@", "\(name)")
+            #expect(String(localized: preset.verbatimName) == name)
+            #expect(LocalizedStringResource(stringLiteral: name).key == name, "a literal resource looks the name up")
+        }
+    }
+
+    @Test func anUndoThatCanNotReadTheEarlierSettingsSaysSo() async throws {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        let presets = SettingsPresets(settings: settings)
+        let model = await CameraSetupTests.makeModel()
+        let result = await presets.apply(.factoryDefaults, camera: model, location: nil)
+        settings.setNightMode(true)
+        presets.beforeLastApply = SettingsPreset(
+            name: "", settings: NopeSettingsSnapshot(values: Data("damaged".utf8)), camera: .factory)
+
+        #expect(await presets.undo(camera: model, location: nil) == false)
+        #expect(settings.isNightModeOn, "nothing changed")
+        #expect(!presets.canUndo, "settings that can't be read are no longer offered")
+        #expect(presets.lastResult == result)
+    }
+
+    /// A preset with the astro helper on and "Manual controls" off: the helper turns manual
+    /// controls on for its frames. The app follows the option with a task that runs after the
+    /// apply; the apply already set the camera up, so the option isn't sent again.
+    @Test func aPresetsManualControlsChangeIsNotSentAgain() async throws {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        let presets = SettingsPresets(settings: settings)
+        let model = await CameraSetupTests.makeModel()
+        await model.send(.astro(.setOn(true)))
+        #expect(model.astro.isOn && model.manual.isEnabled && !settings.showsManualControls)
+        let astro = try presets.saveCurrent(named: "Astro", camera: model)
+        await model.send(.astro(.setOn(false)))
+        settings.setShowsManualControls(true)
+        await model.send(.manual(.setEnabled(true)))
+
+        await presets.apply(.saved(astro.id), camera: model, location: nil)
+        #expect(!settings.showsManualControls)
+        #expect(model.astro.isOn)
+        // What the app's task does when the option changed.
+        #expect(presets.handlesManualControlsChange(to: settings.showsManualControls))
+        #expect(model.astro.isOn, "the helper stays on")
+        // Sending it anyway would have turned the helper off with manual controls.
+        let copy = await CameraSetupTests.makeModel()
+        await copy.send(.astro(.setOn(true)))
+        await copy.send(.manual(.setEnabled(false)))
+        #expect(!copy.astro.isOn)
+
+        // The answer is given once: the person's next change is sent.
+        settings.setShowsManualControls(true)
+        #expect(!presets.handlesManualControlsChange(to: settings.showsManualControls))
+        // Without a camera, nothing was set up, so the change is sent.
+        await presets.apply(.factoryDefaults, camera: nil, location: nil)
+        #expect(!presets.handlesManualControlsChange(to: settings.showsManualControls))
+    }
+
     @Test func aBusyCameraChangesNothing() async throws {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)

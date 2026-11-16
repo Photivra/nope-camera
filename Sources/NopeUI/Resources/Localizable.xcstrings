@@ -7459,6 +7459,71 @@
         }
       }
     },
+    "Couldn't undo: the camera is busy, or the earlier settings can't be read. Nothing changed.": {
+      "comment": "Shown and spoken when Undo in the presets list changed nothing.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Widerrufen nicht möglich: Die Kamera ist beschäftigt oder die vorherigen Einstellungen können nicht gelesen werden. Nichts wurde geändert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se puede deshacer: la cámara está ocupada o no se pueden leer los ajustes anteriores. No ha cambiado nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impossible d’annuler : l’appareil photo est occupé ou les réglages précédents sont illisibles. Rien n’a changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impossibile annullare: la fotocamera è occupata o le impostazioni precedenti non sono leggibili. Non è cambiato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取り消せませんでした：カメラが使用中か、以前の設定を読み込めません。何も変更されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "실행 취소할 수 없음: 카메라가 사용 중이거나 이전 설정을 읽을 수 없습니다. 변경된 내용이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kan niet ongedaan maken: de camera is bezig of de eerdere instellingen kunnen niet worden gelezen. Er is niets gewijzigd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não foi possível desfazer: a câmera está ocupada ou os ajustes anteriores não podem ser lidos. Nada foi alterado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无法撤销：相机正忙，或无法读取之前的设置。未做任何更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "無法還原：相機正忙，或無法讀取先前的設定。未做任何變更。"
+          }
+        }
+      }
+    },
     "Fair": {
       "comment": "Live readout value: the camera system's pressure level is slightly raised.",
       "extractionState": "manual",

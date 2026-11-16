@@ -9434,6 +9434,71 @@
         }
       }
     },
+    "nope. is still doing an earlier request. Nothing changed.": {
+      "comment": "Siri's answer when the request waited too long behind an earlier Siri, Shortcuts or Apple Watch request that nope. was still doing. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. führt noch eine frühere Anfrage aus. Nichts wurde geändert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. sigue con una solicitud anterior. No ha cambiado nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. traite encore une demande précédente. Rien n’a changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. sta ancora eseguendo una richiesta precedente. Non è cambiato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.は前のリクエストをまだ処理中です。何も変更されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.이 아직 이전 요청을 처리하고 있습니다. 변경된 내용이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. is nog bezig met een eerder verzoek. Er is niets gewijzigd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. ainda está fazendo uma solicitação anterior. Nada foi alterado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 仍在处理之前的请求。未做任何更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 仍在處理先前的要求。未做任何變更。"
+          }
+        }
+      }
+    },
     "“%@” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.": {
       "comment": "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged.",
       "localizations": {

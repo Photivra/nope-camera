@@ -950,7 +950,12 @@ orientation and window size:
 
 The iPhone keeps its interface in portrait, so it uses ``stacked`` in both orientations and
 turns icons and text upright instead (``UprightUnit``); it meets ``column`` only while a
-rotated sheet is open over the camera.
+rotated sheet is open over the camera. A window that is regular in both size classes rotates
+for real, as on iPad: the unfolded inner display of a foldable iPhone (iPhone Duo) is such a
+window, and the system turns it with the device whatever the app asks, so it uses ``column``
+(``scrolling`` while taller than wide at accessibility sizes) and nothing turns upright
+(``isRegularSize(horizontal:vertical:)``). The Duo's outer display is a compact-width iPhone
+window and stays portrait.
 
 ## `CameraLayout/arrangement(for:isAccessibilitySize:isRegularSize:)`
 
@@ -994,6 +999,23 @@ case column
 ```
 
 The picture beside a trailing control column: iPad, and any window wider than tall.
+
+## `CameraLayout/isRegularSize(horizontal:vertical:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func isRegularSize(horizontal: UserInterfaceSizeClass?, vertical: UserInterfaceSizeClass?) -> Bool
+```
+
+Whether a window is regular in both size classes: a full-size iPad window, or the
+unfolded inner display of a foldable iPhone. Such a window rotates with the device, so
+the camera uses ``column`` beside the picture and turns nothing upright by itself.
+
+- Parameters:
+  - horizontal: The horizontal size class.
+  - vertical: The vertical size class.
+- Returns: `true` when both are regular.
 
 ## `CameraLayout/photoAspectRatio`
 
@@ -6169,6 +6191,75 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Whether night mode is on.
 
+## `NightModeSwitchStyle`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeSwitchStyle
+```
+
+The system switch, with ``NightStyle/trackTint`` on its track in night mode, so its knob
+stays distinct from the track while other tinted controls use the full night red. Outside
+night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
+with its own style keeps that style.
+
+## `NightModeSwitchStyle/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NightModeSwitchStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The toggle, drawn by the system.
+
+- Parameter configuration: The toggle's label and state.
+
+## `NightModeTrackTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeTrackTint
+```
+
+Puts ``NightStyle/trackTint`` on a control's track in night mode.
+
+## `NightModeTrackTint/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The control, with the track tint in night mode.
+
+- Parameter content: The control.
+
+## `NightModeTrackTint/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state.
+
 ## `NightStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -6196,8 +6287,10 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var controlTint: Color { get }
 ```
 
-The tint of system controls in night mode, before the multiply: a mid gray, which shows
-as a dark red, so a switch's white knob (shown red) stays visible on its track.
+The tint of system controls in night mode, before the multiply: white, shown as the full
+night red. Tinted text and icons (a back button, a picker's checkmark, a button in a list)
+need it: a mid gray showed as about `#800000`, under 2:1 against black and the dark red
+rows, below WCAG 2.2's 3:1 for icons (1.4.11) and 4.5:1 for text (1.4.3).
 
 ## `NightStyle/red`
 
@@ -6208,6 +6301,19 @@ static var red: Color { get }
 ```
 
 The one color of night mode: pure sRGB red.
+
+## `NightStyle/trackTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static var trackTint: Color { get }
+```
+
+The tint of a switch's track and a slider's filled track in night mode, before the
+multiply: a dark gray, shown as a dark red, so the knob or thumb (white, shown as the full
+red) stands out from the track by at least 3:1 (WCAG 2.2, 1.4.11). Applied by
+``NightModeSwitchStyle`` and `nightModeTrackTint()`.
 
 ## `OverlaySettingsView`
 
@@ -6764,6 +6870,16 @@ static let title: Text
 "Presets": the Settings row, the screen and the tray item.
 
 Its own key: "Presets" alone is the white balance presets menu.
+
+## `PresetText/undoFailed`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static var undoFailed: String { get }
+```
+
+What a failed Undo tells the person: nothing changed, and why it can happen.
 
 ## `PresetsScreen`
 
@@ -9275,6 +9391,22 @@ var angle: Angle { get }
 
 The angle that turns content upright for the person.
 
+## `UprightRotation/inWindow(isRegularSize:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+func inWindow(isRegularSize: Bool) -> UprightRotation
+```
+
+The turn upright content needs in a window, given the device's orientation: none in a
+window that is regular in both size classes (``CameraLayout/isRegularSize(horizontal:vertical:)``),
+because that window rotates with the device, as on iPad and on the unfolded inner display
+of a foldable iPhone, where the system turns the interface whatever the app asks.
+
+- Parameter isRegularSize: Whether the window is regular in both size classes.
+- Returns: This rotation in a portrait-only window, otherwise ``portrait``.
+
 ## `UprightRotation/isSideways`
 
 internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -9503,6 +9635,18 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 Draws the view in night mode's red on black while `isOn` is `true`.
 
 - Parameter isOn: Whether night mode is on.
+
+## `View/nightModeTrackTint()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func nightModeTrackTint() -> some View
+
+```
+
+Draws a switch's or slider's filled track in night mode's dark red
+(``NightStyle/trackTint``), so its knob or thumb stays visible on it.
 
 ## `View/pillShape()`
 
@@ -9825,6 +9969,42 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The warning.
+
+## `WindowUprightRotation`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor struct WindowUprightRotation
+```
+
+Clears ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` in a window that rotates with
+the device, so icons and text aren't turned twice: once by the interface and again as
+upright units. The size classes come from the environment, so the same rule covers an iPad
+and both displays of a foldable iPhone, and changes as it folds or unfolds.
+
+## `WindowUprightRotation/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the rotation its window needs.
+
+- Parameter content: The content.
+
+## `WindowUprightRotation/init()`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It reads everything from the environment.
 
 ## `WrappingRows`
 

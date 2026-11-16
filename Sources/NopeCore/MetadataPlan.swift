@@ -204,12 +204,12 @@ public struct MetadataPlan: Equatable, Sendable {
                 .exactly(Self.genericUniqueCameraModel)
         }
         // A DNG always carries these four, empty when their switch is off (issue #65). With the
-        // standard file tags on, the date is written as the standard's unknown form; the empty
-        // text also passes, since how AVFoundation stores the blank value is a device check and
-        // neither holds a date.
+        // standard file tags on, the date is written as the standard's unknown form; any blank
+        // date passes (empty, or blanks and colons however AVFoundation pads or trims them),
+        // since how it stores the value is a device check and none of them holds a date.
         for field in alwaysPresent {
             let rule: MetadataAllowlist.TextRule =
-                field == .dateTime && settings.writesStandardFileTags ? .oneOf(["", Self.unknownDateTime]) : .exactly("")
+                field == .dateTime && settings.writesStandardFileTags ? .blankDate : .exactly("")
             textRules[MetadataAllowlist.TagID(field.directory, field.tag)] = rule
         }
         switch format {

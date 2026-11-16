@@ -271,6 +271,83 @@ struct ShortcutTests {
         #expect(await request.value == .busy)
     }
 
+    @Test func aCancelledServerDoesNotEndTheServerThatReplacedIt() async {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let first = Task { await inbox.next() }
+        await waitUntil { inbox.isServed }
+        // The first server's cancellation ends its wait in a main-actor task, which runs only
+        // after the second server has taken over.
+        let second = Task { @MainActor in
+            first.cancel()
+            return await inbox.next()
+        }
+        #expect(await first.value == nil)
+        #expect(inbox.isServed)
+        let request = Task { await inbox.submit(.takePhoto(PhotoShortcut())) }
+        let pending = await second.value
+        #expect(pending?.request == .takePhoto(PhotoShortcut()))
+        guard let pending else { return request.cancel() }
+        pending.finish(.busy)
+        #expect(await request.value == .busy)
+    }
+
+    @Test func aCancelledCallerLeavesTheWaitingServerAlone() async {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await inbox.next() }
+        await waitUntil { inbox.isServed }
+        let cancelled = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await inbox.next()
+        }
+        #expect(await cancelled.value == nil)
+        #expect(inbox.isServed)
+        let request = Task { await inbox.submit(.selectLens(.front)) }
+        let pending = await server.value
+        #expect(pending?.request == .selectLens(.front))
+        guard let pending else { return request.cancel() }
+        pending.finish(.lensUnavailable)
+        #expect(await request.value == .lensUnavailable)
+    }
+
+    @Test func stoppingDoesNotWaitBehindALongerRequest() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
+        // The timeouts pass at once: a request left waiting in the queue would end at once.
+        let inbox = ShortcutInbox(sleep: { _ in })
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        defer { server.cancel() }
+        await waitUntil { inbox.isServed }
+        let photo = Task { await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 10))) }
+        await waitUntil { model.drive.countdown.isRunning }
+        #expect(ShortcutRequest.setLight(isOn: false).isInstant && ShortcutRequest.stopInterval.isInstant)
+        #expect(await inbox.submit(.setLight(isOn: false)) == .lightOff)
+        #expect(await inbox.submit(.stopInterval) == .noIntervalRunning)
+        #expect(model.drive.countdown.isRunning, "the countdown goes on")
+        await model.send(.drive(.cancelTimer))
+        #expect(await photo.value == .cancelled)
+    }
+
+    @Test func aRequestLeftWaitingBehindAnotherSaysSo() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.twoLenses)
+        let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
+        let inbox = ShortcutInbox(sleep: { _ in })
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        defer { server.cancel() }
+        await waitUntil { inbox.isServed }
+        let photo = Task { await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 10))) }
+        await waitUntil { model.drive.countdown.isRunning }
+        #expect(!ShortcutRequest.selectLens(.telephoto).isInstant)
+        // The camera is running; it is busy with the countdown, so the request isn't taken.
+        #expect(await inbox.submit(.selectLens(.telephoto)) == .busyWithEarlierRequest)
+        #expect(model.selectedLens?.kind != .telephoto)
+        await model.send(.drive(.cancelTimer))
+        #expect(await photo.value == .cancelled)
+        // Once the earlier request ended, the next one is taken.
+        #expect(await inbox.submit(.selectLens(.telephoto)) == .lensSelected(.telephoto))
+    }
+
     @Test func aRequestTakenAtOnceDoesNotTimeOut() async {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)

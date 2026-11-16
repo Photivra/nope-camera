@@ -25,6 +25,15 @@ public struct SettingsPreset: Codable, Identifiable, Equatable, Sendable {
     /// The name the person gave it, such as "Astro".
     public internal(set) var name: String
 
+    /// The name as a resource that shows it exactly as typed, for the Shortcuts app. The name
+    /// itself is never a string catalog key, so a name that matches one of the app's strings
+    /// (such as "Preset") isn't translated: the key is a placeholder that the name fills.
+    public var verbatimName: LocalizedStringResource {
+        var interpolation = String.LocalizationValue.StringInterpolation(literalCapacity: 0, interpolationCount: 1)
+        interpolation.appendInterpolation(name)
+        return LocalizedStringResource(String.LocalizationValue(stringInterpolation: interpolation))
+    }
+
     /// The encoding version the preset was written with.
     public let version: Int
 
@@ -204,8 +213,13 @@ public final class SettingsPresets {
     public private(set) var isApplying = false
 
     /// The settings and camera from before the last apply, which ``undo(camera:location:)``
-    /// restores, or `nil` when there is nothing to undo.
-    private var beforeLastApply: SettingsPreset?
+    /// restores, or `nil` when there is nothing to undo. Internal so tests can give it one that
+    /// can't be read.
+    var beforeLastApply: SettingsPreset?
+
+    /// The "Manual controls" option (``NopeSettings/showsManualControls``) the last apply or
+    /// undo set up on the camera itself, until ``handlesManualControlsChange(to:)`` reports it.
+    private var manualControlsSetUp: Bool?
 
     /// The settings the presets snapshot and replace.
     private let settings: NopeSettings
@@ -332,14 +346,33 @@ public final class SettingsPresets {
     /// - Parameters:
     ///   - camera: The camera to set up again, or `nil`.
     ///   - location: Location tagging, or `nil`.
-    /// - Returns: `true` when there was an apply to undo and the camera wasn't busy.
+    /// - Returns: `true` when the settings were restored; `false`, with nothing changed, when
+    ///   there was no apply to undo, the camera was busy, or the earlier settings couldn't be
+    ///   read (they can't be restored, so Undo is no longer offered). An interface says so.
     @discardableResult
     public func undo(camera: CameraModel?, location: LocationTagging?) async -> Bool {
         guard let before = beforeLastApply, camera?.isBusyForPresets != true, !isApplying else { return false }
         beforeLastApply = nil
+        guard await replaceSettings(with: before, camera: camera, location: location) != nil else { return false }
         lastResult = nil
-        await replaceSettings(with: before, camera: camera, location: location)
         return true
+    }
+
+    /// Whether a change of the "Manual controls" option (``NopeSettings/showsManualControls``)
+    /// was made by an apply or undo that already set the camera up for it, so an interface that
+    /// follows the option must not send it to the camera again.
+    ///
+    /// ``CameraModel/applyCameraSetup(_:manualControlsOn:)`` turns manual controls on or off
+    /// itself, before the astro helper, which turns them on again for its frames. An interface
+    /// that sent the changed option afterwards (a SwiftUI `.task(id:)` runs later) would turn
+    /// manual controls off under the helper, and so the helper too. Each apply's answer is given
+    /// once: the next change is the person's again.
+    ///
+    /// - Parameter isOn: The option's new value.
+    /// - Returns: `true` when the interface should skip sending it.
+    public func handlesManualControlsChange(to isOn: Bool) -> Bool {
+        defer { manualControlsSetUp = nil }
+        return manualControlsSetUp == isOn
     }
 
     /// Replaces the settings and the camera's state with a preset's.
@@ -361,6 +394,8 @@ public final class SettingsPresets {
         isApplying = true
         defer { isApplying = false }
         guard settings.apply(preset.settings) else { return nil }
+        // Set before the first wait, so an interface that follows the option sees it at once.
+        if camera != nil { manualControlsSetUp = settings.showsManualControls }
         var notices: [PresetNotice] = []
         if settings.metadata.isOn(.location) {
             settings.setMetadataItem(.location, isIncluded: false)

@@ -3,8 +3,10 @@ import Foundation
 /// Requests from Siri and Shortcuts (issue #62), performed with the same intents as the camera
 /// screen's own controls.
 extension CameraModel {
-    /// Performs each request from the inbox in turn, until the calling task is cancelled. Run it
-    /// for as long as the camera screen is shown, for example in a SwiftUI `.task`.
+    /// Performs the requests from the inbox, until the calling task is cancelled: one at a time,
+    /// except that an instant request (``ShortcutRequest/isInstant``) runs at once, alongside a
+    /// request still in progress. Run it for as long as the camera screen is shown, for example
+    /// in a SwiftUI `.task`.
     ///
     /// Side effects: as ``CameraIntent/capture`` and ``CameraIntent/selectLens(_:)``; a request
     /// may switch the lens, start the self-timer, take a photo and add it to Photos.
@@ -20,9 +22,29 @@ extension CameraModel {
     public func serveShortcuts(
         from inbox: ShortcutInbox, settings: NopeSettings? = nil, presets: SettingsPresets? = nil
     ) async {
-        while let pending = await inbox.next() {
-            pending.finish(await perform(pending.request, inbox: inbox, settings: settings, presets: presets))
+        // Each request runs in its own child task, so the inbox can hand over an instant request
+        // (turning the light off, stopping a series) while a longer one is still running; the
+        // inbox starts the longer ones one at a time. Cancelling this task cancels them too, and
+        // it returns when they have finished.
+        await withTaskGroup(of: Void.self) { group in
+            while true {
+                guard let pending = await inbox.next() else { break }
+                group.addTask { await self.finish(pending, inbox: inbox, settings: settings, presets: presets) }
+            }
         }
+    }
+
+    /// Performs one request and ends its wait with the outcome.
+    ///
+    /// - Parameters:
+    ///   - pending: The request.
+    ///   - inbox: The inbox, for its waits and timeouts.
+    ///   - settings: The person's settings, or `nil`.
+    ///   - presets: The person's settings presets, or `nil`.
+    private func finish(
+        _ pending: PendingShortcut, inbox: ShortcutInbox, settings: NopeSettings?, presets: SettingsPresets?
+    ) async {
+        pending.finish(await perform(pending.request, inbox: inbox, settings: settings, presets: presets))
     }
 
     /// Performs one request.

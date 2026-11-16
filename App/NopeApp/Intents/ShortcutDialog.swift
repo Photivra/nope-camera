@@ -37,6 +37,10 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "nope. is already taking a photo.",
                 comment: "Siri's answer when a photo, countdown or burst is already running. Keep \"nope.\" unchanged.")
+        case .busyWithEarlierRequest:
+            LocalizedStringResource(
+                "nope. is still doing an earlier request. Nothing changed.",
+                comment: "Siri's answer when the request waited too long behind an earlier Siri, Shortcuts or Apple Watch request that nope. was still doing. Keep \"nope.\" unchanged.")
         case .lensUnavailable:
             LocalizedStringResource(
                 "This device doesn't have that lens.",

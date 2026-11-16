@@ -281,6 +281,15 @@ content or metadata leaves the model. `SetNightModeIntent` calls `NopeSettings.s
 without opening the app. The app registers its `ShortcutInbox` and `NopeSettings` with
 `AppDependencyManager`, and `NopeShortcuts` lists the Siri phrases.
 
+The camera screen performs requests one at a time, each in its own child task: a request that
+arrives while another runs (for example during a Siri self-timer) waits for it, and if it has
+waited `ShortcutInbox.startTimeoutSeconds` it ends with `ShortcutOutcome.busyWithEarlierRequest`
+("nope. is still doing an earlier request. Nothing changed.") rather than claiming the camera
+isn't running. Turning the light off and stopping a series (`ShortcutRequest.isInstant`) never
+wait: the inbox hands them over at once, alongside the request in progress. Only one camera
+screen serves the inbox; a cancelled server ends only its own wait, never the one that replaced
+it.
+
 Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
 with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
 burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
@@ -579,8 +588,24 @@ The camera screen follows the approved layout in [`design/camera.html`](design/c
   open, the app lets the interface rotate (`EnvironmentValues.cameraPresentsSheet`).
 - **iPad, or any window wider than tall (column):** the interface rotates; the picture sits
   beside a trailing column with the shutter centered, and Settings and the format details open as
-  popovers. In a reduced window the camera shows the multitasking pause.
+  popovers. The column's halves above and below the shutter share its height, and the upper one
+  scrolls at large text sizes, so nothing passes under the shutter in a short window. In a
+  reduced window the camera shows the multitasking pause.
 - **Accessibility text sizes (scrolling):** the iPhone bands in a scroll view.
+- **Foldable iPhone (iPhone Duo):** the rule reads the window's size classes, not the device
+  model. The outer display (466 × 678 points, compact width and regular height, with the status
+  bar in a trailing strip) is an iPhone window: stacked, kept in portrait, with upright icons;
+  its bands overlay the picture's bottom, as on a 4.7-inch iPhone. The unfolded inner display
+  (951 × 669 points held like a book, 669 × 951 turned) is regular in both size classes, and the
+  system rotates it with the device whatever the app asks, so it is treated like an iPad window:
+  the column beside the 4:3 picture (scrolling while taller than wide at accessibility sizes),
+  and nothing turns as an upright unit (`CameraLayout.isRegularSize(horizontal:vertical:)`,
+  `UprightRotation.inWindow(isRegularSize:)`, applied by `CameraScreen`). The app delegate allows
+  every orientation for such a window, never forces it back to portrait when a sheet closes, and
+  asks UIKit again when the size classes change (`FollowsWindowSizeClasses`), so a phone folded
+  while on its side returns the outer display to portrait. Folding or unfolding changes only the
+  layout: the dial, the tray, sheets and runs (self-timer, interval, astro) are state in the
+  model or in `CameraReadyView` and carry over.
 
 Three registries let later features add to the camera without touching the layout:
 `QuickControls.builders` (tray items: buttons, switches or native menus), `StatePills.builders`
@@ -668,10 +693,14 @@ each is on the allowlist only where it holds nothing beyond what the switches al
 
 Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
 The one exception is the alternate of a RAW pair, which PhotoKit accepts only from a file
-(`PhotoKitMapping.Resource.addsFromFile`): `ResourceStaging` writes it with complete file
-protection under a random name in the temporary directory, Photos moves it into the library
-(`shouldMoveFile`), and anything left is deleted as soon as the change ends
-(docs/TESTING.md, "RAW pairs not saved (PhotoKit error 3300)").
+(`PhotoKitMapping.Resource.addsFromFile`): `ResourceStaging` writes it under a random name in
+the temporary directory, Photos moves it into the library (`shouldMoveFile`), and anything left
+is deleted as soon as the change ends (docs/TESTING.md, "RAW pairs not saved (PhotoKit error
+3300)"). The file is protected until the first unlock after the device starts
+(`completeFileProtectionUntilFirstUserAuthentication`, `ResourceStaging.protection`): Apple's
+complete protection makes a file unwritable and unreadable while the device is locked, which
+would split every pair the Lock Screen camera takes, or that finishes saving after the screen
+locks, into two photos.
 
 ### Signing
 
