@@ -16,8 +16,8 @@ signed with Content Credentials when signing is on.
 | `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests |
 | `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy`; `Intents/` holds the Siri and Shortcuts App Intents and `AppShortcuts.xcstrings` |
 | `App/NopeCaptureExtension/` | The Lock Screen camera (LockedCameraCapture capture extension), with its own privacy manifest |
-| `App/NopeControls/` | The "Open nope." control (WidgetKit control extension), with its own privacy manifest |
-| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent` and `Localizable.xcstrings` |
+| `App/NopeControls/` | The "Open nope." control and the Live Activity's layouts (WidgetKit extension), with its own privacy manifest |
+| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent`, `Localizable.xcstrings` and `Honesty.xcstrings`; the Live Activity's attributes, Stop intent and views (`SeriesActivity.swift`, app and `NopeControls` only) |
 | `Config/Base.xcconfig` | Shared build settings; includes the untracked `Config/Local.xcconfig` |
 | `docs/api/` | The API exported as Markdown from the DocC comments (generated) |
 
@@ -25,13 +25,13 @@ signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`), `SeriesScreenKeeper` with the `ScreenControlling` protocol, and the Live Activity (`LiveActivityCoordinator`, `LiveActivityContent`, the `LiveActivityPresenting` and `BackgroundTimeRequesting` protocols) | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents | Everything |
-| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the control uses only AppIntents, WidgetKit and SwiftUI |
+| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control and the Live Activity's layouts | Everything; `NopeControls` uses only `NopeCore` (the Live Activity's content), ActivityKit, AppIntents, WidgetKit and SwiftUI |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -265,6 +265,36 @@ defaults, and offers no button that opens another app; it has no storage and bat
 (their system reader uses API that extensions can't use). It shares `CameraPreviewView.swift`
 and `MotionGravitySource.swift` with the app through the project's file membership, with the
 `NOPE_CAPTURE_EXTENSION` compilation condition leaving out the Debug UI-test scenarios.
+
+### Live Activity (issue #64)
+
+iOS shows an app's Live Activity only while the app isn't on screen, and the camera stops when the
+app leaves the foreground, so the activity shows status, not shooting: a paused interval series
+(it continues when the app is opened again; Stop ends it), frames still being saved after a burst
+or astro run, a cancelled self-timer, and how each run ended, with whether the saved photos are
+signed. It is off by default (`NopeSettings.showsLiveActivity`).
+
+`LiveActivityCoordinator` (`NopeCore`) holds the rules. `CameraModel.liveActivityContent(...)`
+turns the model's state into a `LiveActivityContent` (kind, phase, counts, countdown end, signing,
+night mode) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
+model with Observation (`observe(_:)`, no polling) and calls a `LiveActivityPresenting`, which the
+app implements with ActivityKit (`SystemLiveActivities`): an activity can only be started in the
+foreground, so it starts when the run starts; while the app is in the foreground a change of the
+counts alone is sent at most every 30 seconds, and phase changes and the content at the moment
+the app leaves are sent at once; countdowns are drawn by the system from their end time. Updates
+are local only: no push type, no push token, no network. The coordinator also asks iOS for time to
+finish saving (`BackgroundTimeRequesting`, `UIApplication.beginBackgroundTask`) while photos are
+still being taken or saved out of the foreground. When the app leaves the foreground the camera
+screen cancels a running self-timer, since the camera can't take its photo then.
+
+The activity's layouts (Lock Screen and Dynamic Island) are in the `NopeControls` widget
+extension, the app's one WidgetKit extension: a Live Activity is drawn by a widget extension, and
+the control and the activity fit one `WidgetBundle`, so no second extension, privacy manifest or
+binary is needed. `NopeControls` links `NopeCore` for `LiveActivityContent`, which is the
+activity's content state, and the views (`App/Shared/SeriesActivity.swift`) are compiled into the
+app too, for a Debug gallery that the UI tests audit (`-NopeLiveActivityGallery`). The Stop button
+runs `StopSeriesIntent`, a `LiveActivityIntent`, which the system runs in the app's process; it
+calls `LiveActivityCoordinator.stopSeries(_:)`.
 
 ### The viewfinder
 

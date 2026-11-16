@@ -3066,6 +3066,18 @@ var isNightMode: Bool { get set }
 Whether night mode is on, for views that need a different color in it
 (``CameraColor``). Set by ``NightModeStyle``.
 
+## `EnvironmentValues/offersLiveActivity`
+
+public, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+var offersLiveActivity: Bool { get set }
+```
+
+Whether the device shows Live Activities and the person allows them for the app, so
+Settings offers the Live Activity switch (issue #64). `false` by default, as in the Lock
+Screen capture extension and previews; the app sets it from ActivityKit.
+
 ## `EnvironmentValues/openAppSettings`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`

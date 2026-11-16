@@ -1,4 +1,5 @@
 import AVKit
+import ActivityKit
 import AppIntents
 import NopeCapture
 import NopeCore
@@ -38,6 +39,14 @@ struct NopeApp: App {
     /// Location tagging for photos (issue #43): off until the person turns Location on.
     @State private var location = LocationTagging(provider: Self.makeLocationProvider())
 
+    /// The Live Activity for a series and its saving (issue #64), and the time to finish saving
+    /// after the app leaves the foreground.
+    @State private var liveActivities = LiveActivityCoordinator(
+        presenter: SystemLiveActivities(), backgroundTime: SystemBackgroundTime())
+
+    /// Whether the app is in the foreground, for the Live Activity.
+    @Environment(\.scenePhase) private var scenePhase
+
     /// Keeps the iPhone camera in portrait while sheets rotate.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
@@ -71,6 +80,9 @@ struct NopeApp: App {
             case .armed(let run):
                 Text(verbatim: "Debug run \(run.rawValue) armed. Close nope. and open it from the Home Screen.")
                     .padding()
+            case .none where LiveActivityGallery.isRequested:
+                // UI tests only: the Live Activity layouts (`-NopeLiveActivityGallery`).
+                LiveActivityGallery()
             case .none:
                 cameraScreen
             }
@@ -126,6 +138,16 @@ struct NopeApp: App {
             Task { await model.send(.drive(.hardwareButton(phase))) }
         }
         .environment(\.seriesScreenKeeper, screenKeeper)
+        // The Live Activity follows the camera model while the camera screen is shown; its Stop
+        // button stops the interval series here (StopSeriesIntent runs in the app).
+        .environment(\.offersLiveActivity, ActivityAuthorizationInfo().areActivitiesEnabled)
+        .task {
+            SeriesActivityActions.stop = { [liveActivities, model] in await liveActivities.stopSeries(model) }
+            await liveActivities.observe(model)
+        }
+        .onChange(of: scenePhase, initial: true) { _, phase in liveActivities.isInForeground = phase == .active }
+        .onChange(of: settings.showsLiveActivity, initial: true) { _, isOn in liveActivities.isEnabled = isOn }
+        .onChange(of: settings.isNightModeOn, initial: true) { _, isOn in liveActivities.isNightMode = isOn }
         // Siri and Shortcuts requests are performed while the camera screen is shown.
         .task { await model.serveShortcuts(from: Self.shortcuts) }
         #if DEBUG

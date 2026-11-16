@@ -116,9 +116,16 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .presentationBackground(.background)
         }
         .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
-        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery").
+        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The camera
+        // stops there, so the self-timer can't take its photo: it is cancelled, and the Live
+        // Activity says so (issue #64), rather than firing whenever the app comes back.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { Task { await model.send(.light(.setTorch(false))) } }
+            if phase == .background {
+                Task {
+                    await model.send(.light(.setTorch(false)))
+                    await model.send(.drive(.cancelTimer))
+                }
+            }
         }
         .preferredColorScheme(.dark)
         // Night mode: the home indicator, a white system bar, fades away until the screen is

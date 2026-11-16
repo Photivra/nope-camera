@@ -143,6 +143,16 @@ Related documentation in the repository:
 - ``SeriesScreenKeeper``
 - ``ScreenControlling``
 
+### Live Activity
+
+- ``LiveActivityCoordinator``
+- ``LiveActivityContent``
+- ``LiveActivityStatusLine``
+- ``LiveActivitySigningLine``
+- ``LiveActivityDismissal``
+- ``LiveActivityPresenting``
+- ``BackgroundTimeRequesting``
+
 ### Full-auto aids
 
 - ``AutoControlIntent``

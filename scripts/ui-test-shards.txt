@@ -73,6 +73,7 @@
 6 OverlayUITests/testGridOnlyAndLevelOnly 27
 6 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 23
 6 ShortcutUITests/testACancelledCountdownSaysNoPhotoWasTaken 14 est
+6 NopeAppUITests/testLiveActivityLayoutsPassAccessibilityAudits 300 est
 7 NopeAppUITests/testComparisonShotShowsBothPicturesAndTheirDetails 110
 7 NopeAppUITests/testExposureModesAndFixedAperture 43
 7 NopeAppUITests/testFocusAidsAtTheLargestTextSize 34
@@ -102,3 +103,4 @@
 8 NopeAppUITests/testStartInCleanViewSetting 44
 8 NopeAppUITests/testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself 26 est
 8 OverlayUITests/testOverlaySettingsAtTheLargestTextSize 80 est
+8 NopeAppUITests/testLiveActivitySwitchIsOffByDefaultAndTurnsOn 70 est

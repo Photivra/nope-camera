@@ -17,6 +17,7 @@
 		A1000000000000000000010C /* NopeCapture in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020A /* NopeCapture */; };
 		A1000000000000000000010D /* NopeDevelop in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020B /* NopeDevelop */; };
 		A1000000000000000000010E /* NopeSigning in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020C /* NopeSigning */; };
+		A100000000000000000064A1 /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000064A2 /* NopeCore */; };
 		A10000000000000000000108 /* NopeControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000506 /* NopeControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A10000000000000000000109 /* NopeCaptureExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000505 /* NopeCaptureExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -149,6 +150,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A100000000000000000064A1 /* NopeCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,6 +286,7 @@
 			);
 			name = NopeControls;
 			packageProductDependencies = (
+				A100000000000000000064A2 /* NopeCore */,
 			);
 			productName = NopeControls;
 			productReference = A10000000000000000000506 /* NopeControls.appex */;
@@ -462,6 +465,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -484,6 +488,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -688,6 +693,10 @@
 		A1000000000000000000020C /* NopeSigning */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NopeSigning;
+		};
+		A100000000000000000064A2 /* NopeCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = NopeCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

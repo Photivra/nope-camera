@@ -1,6 +1,13 @@
 import NopeCore
 import SwiftUI
 
+extension EnvironmentValues {
+    /// Whether the device shows Live Activities and the person allows them for the app, so
+    /// Settings offers the Live Activity switch (issue #64). `false` by default, as in the Lock
+    /// Screen capture extension and previews; the app sets it from ActivityKit.
+    @Entry public var offersLiveActivity = false
+}
+
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
 /// (issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
 /// signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
@@ -32,6 +39,9 @@ public struct SettingsScreen: View {
 
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
+
+    /// Whether to offer the Live Activity switch.
+    @Environment(\.offersLiveActivity) private var offersLiveActivity
 
     /// Creates the settings screen.
     ///
@@ -171,6 +181,18 @@ public struct SettingsScreen: View {
                         explanation: Text(
                             "Shows the live picture in red too. Only the screen changes; photos keep their colors.",
                             bundle: .module, comment: "Explains the Red Viewfinder switch, shown while night mode is on."))
+                }
+            }
+            if offersLiveActivity {
+                Toggle(
+                    isOn: Binding(get: { settings.showsLiveActivity }, set: { settings.setShowsLiveActivity($0) })
+                ) {
+                    SettingLabel(
+                        title: Text("Live Activity", bundle: .module, comment: "Switch and its Voice Control name: shows interval shooting, astro frames, a burst or the self-timer on the Lock Screen and in the Dynamic Island. Live Activity is the name of the iOS feature: use its name in the language's iOS."),
+                        explanation: Text(
+                            "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.",
+                            tableName: "Honesty", bundle: .module,
+                            comment: "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS."))
                 }
             }
             if deviceHasFrontCamera {

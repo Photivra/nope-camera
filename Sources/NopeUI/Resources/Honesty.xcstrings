@@ -8449,6 +8449,72 @@
         }
       }
     },
+    "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.": {
+      "comment": "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wenn du nope. während einer Serie oder beim Sichern von Fotos verlässt, zeigen der Sperrbildschirm und die Dynamic Island den Fortschritt. Nur Zahlen, auf diesem iPhone aktualisiert und nie irgendwohin gesendet. Standardmäßig aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Si sales de nope. durante una serie o mientras se guardan fotos, muestra el progreso en la pantalla bloqueada y en la Dynamic Island. Solo recuentos, actualizados en este iPhone y nunca enviados a ningún sitio. Desactivado de forma predeterminada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Si vous quittez nope. pendant une série ou l’enregistrement de photos, affiche la progression sur l’écran verrouillé et dans la Dynamic Island. Seulement des nombres, mis à jour sur cet iPhone et jamais envoyés nulle part. Désactivé par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se esci da nope. durante una serie o mentre le foto vengono salvate, mostra l’avanzamento nella schermata di blocco e nella Dynamic Island. Solo conteggi, aggiornati su questo iPhone e mai inviati altrove. Disattivato per impostazione predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "シリーズ撮影中や写真の保存中にnope.を離れると、ロック画面とDynamic Islandに進行状況を表示します。表示するのは枚数のみで、このiPhone上で更新され、どこにも送信されません。デフォルトはオフです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "시리즈 촬영 중이거나 사진을 저장하는 동안 nope.을 떠나면 잠금 화면과 Dynamic Island에 진행 상황을 표시합니다. 개수만 표시하며, 이 iPhone에서 업데이트되고 어디로도 전송되지 않습니다. 기본값은 끔입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Als je nope. verlaat tijdens een serie of terwijl foto’s worden bewaard, toont het de voortgang op het toegangsscherm en in het Dynamic Island. Alleen aantallen, bijgewerkt op deze iPhone en nooit ergens naartoe gestuurd. Standaard uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ao sair do nope. durante uma série ou enquanto as fotos são salvas, mostra o progresso na Tela Bloqueada e na Dynamic Island. Somente contagens, atualizadas neste iPhone e nunca enviadas a lugar nenhum. Desativado por padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在系列拍摄过程中或照片存储时离开 nope.，会在锁定屏幕和灵动岛上显示进度。仅显示数量，在这台 iPhone 上更新，从不发送到任何地方。默认关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在系列拍攝期間或照片儲存時離開 nope.，會在鎖定畫面和動態島上顯示進度。僅顯示數量，在這台 iPhone 上更新，絕不傳送到任何地方。預設為關閉。"
+          }
+        }
+      }
+    },
     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent.": {
       "comment": "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",

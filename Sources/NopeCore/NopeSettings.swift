@@ -64,6 +64,10 @@ public final class NopeSettings {
     /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
     public private(set) var tintsViewfinderInNightMode: Bool
 
+    /// Whether a Live Activity shows a series and its saving on the Lock Screen and in the
+    /// Dynamic Island (issue #64). Off by default.
+    public private(set) var showsLiveActivity: Bool
+
     /// Where the settings are stored.
     private let defaults: UserDefaults
 
@@ -90,6 +94,7 @@ public final class NopeSettings {
             ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
         isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
+        showsLiveActivity = defaults.bool(forKey: Key.showsLiveActivity)
         migrateManualControlsOption()
     }
 
@@ -319,6 +324,14 @@ public final class NopeSettings {
         defaults.set(isOn, forKey: Key.tintsViewfinderInNightMode)
     }
 
+    /// Turns the Live Activity on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether a Live Activity shows a series and its saving.
+    public func setShowsLiveActivity(_ isOn: Bool) {
+        showsLiveActivity = isOn
+        defaults.set(isOn, forKey: Key.showsLiveActivity)
+    }
+
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
     /// once: a stored value is kept unless this model already has one, and the old key is
     /// removed.
@@ -356,5 +369,7 @@ public final class NopeSettings {
         static let isNightModeOn = "NopeSettings.isNightModeOn"
         /// Whether night mode tints the viewfinder, a Boolean.
         static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
+        /// Whether the Live Activity is on, a Boolean.
+        static let showsLiveActivity = "NopeSettings.showsLiveActivity"
     }
 }

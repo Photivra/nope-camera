@@ -74,6 +74,17 @@ for any user-facing claim comes from
   exactly as without Compare. Identifying values (maker notes, location, unique IDs and serial
   numbers) are hidden until the person taps Show Value. The view's contents are hidden while
   the app isn't the active app. No network request is involved.
+- **Live Activity (issue #64):** off by default (Settings › Camera › Live Activity). While it is
+  on, an interval series, astro run, burst or self-timer shows a Live Activity on the Lock Screen
+  and in the Dynamic Island: counts and status only ("Paused: 42 of 120 photos taken", "Saving: 4
+  of 7 photos saved", whether the saved photos are signed), never image data, a thumbnail,
+  location or metadata. It is updated by the app on the device only (ActivityKit local updates):
+  the app never asks for a push token and sends nothing anywhere. Its content lives with the
+  system's Live Activity until it ends; the app ends it when the run ends (at once in the
+  foreground, two minutes later otherwise) and ends any left from an earlier launch. Whether the
+  switch is on or off, when the app leaves the foreground while photos are still being taken or
+  saved, it asks iOS for a little time to finish saving them
+  (`UIApplication.beginBackgroundTask`), which is not a background mode.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files except the paired copy above, which
   Photos moves into the library (photos otherwise go from memory to Photos). They log only why

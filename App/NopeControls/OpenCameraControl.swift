@@ -3,15 +3,16 @@ import SwiftUI
 import WidgetKit
 
 /// The controls the app offers in Control Center, on the Lock Screen and for the Action button
-/// (WidgetKit controls, iOS 18; issue #42).
+/// (WidgetKit controls, iOS 18; issue #42), and the Live Activity's layouts (issue #64).
 ///
-/// This extension only describes the control. It contains no camera, photo or settings code,
-/// and makes no network request (AGENTS.md, "No network").
+/// This extension only describes the control and draws the Live Activity. It contains no camera,
+/// photo or settings code, and makes no network request (AGENTS.md, "No network").
 @main
 struct NopeControls: WidgetBundle {
-    /// The one control: "Open nope."
+    /// The control "Open nope." and the Live Activity.
     var body: some Widget {
         OpenCameraControl()
+        SeriesLiveActivity()
     }
 }
 

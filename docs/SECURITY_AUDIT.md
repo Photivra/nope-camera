@@ -238,7 +238,8 @@ MASVS-NETWORK, MASVS-PRIVACY-1.
      `sudo tcpdump -i rvi0 -k -w nope-audit.pcapng` (`-k` adds process metadata where macOS
      provides it). Exercise every feature for at least 10 minutes: permissions, every lens,
      every format, every switch, location on and off, signing on and off, the Honesty screen,
-     settings, lock-screen capture, Control Center, Siri and Shortcuts. Stop with
+     settings, lock-screen capture, Control Center, Siri and Shortcuts, and the Live Activity
+     (a paused interval series and its Stop button, a burst saving after leaving). Stop with
      `rvictl -x <UDID>`. Open the file in Wireshark and filter by the app's process name; with
      no process metadata, compare against a baseline capture of the same length with the app
      closed.

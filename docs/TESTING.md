@@ -587,6 +587,29 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   Night Mode on and off, with the app closed and with it open (the screen turns red at once).
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
+### Live Activity on a device
+
+Issue #64. Turn on Settings › Camera › Live Activity first. Assumptions to confirm: the activity
+starts when a run starts in the foreground, the update sent as the app leaves reaches the system,
+and the time iOS gives to finish saving is enough for a burst's frames.
+
+- Interval series: start one (10 photos, 10 s), go to the Home Screen: the Dynamic Island and the
+  Lock Screen show "Paused: n of 10 photos taken. Open nope. to continue."; tapping the activity
+  opens the app and the series continues; going out again and pressing Stop ends the series and
+  the activity at once, and the app shows the series stopped.
+- Burst: hold the shutter in burst mode, go to the Home Screen while it saves: "Saving: n of m
+  photos saved", then "Photos saved: m" with "Signed." (or the unsigned line with signing off),
+  gone two minutes later; every frame is in Photos.
+- Astro: leave during the frames: the run stops, the activity shows the frames saving, then
+  "Stopped. Photos saved: n".
+- Self-timer: start a 10 s timer and lock the phone: the timer is cancelled and the activity says
+  "Stopped. No photo taken."; no photo is taken when the app is opened again.
+- In the foreground no activity is visible, and with the switch off none starts. Night mode shows
+  it red on black. VoiceOver reads the compact, expanded and Lock Screen layouts; larger text sizes
+  stay readable.
+- With Live Activities turned off for nope. in the Settings app, the switch isn't offered.
+- Network capture during these checks shows no traffic (`docs/SECURITY_AUDIT.md`, check 8).
+
 ### Low storage
 
 `PhotoSizeEstimate` uses upper bounds that are assumptions until measured: 2 bytes a pixel for
@@ -799,7 +822,8 @@ scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
 
 CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
 and runs `scripts/check-no-networking.sh` on both, with no exceptions; for the app it checks the
-app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`).
+app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`, which also draws
+the Live Activity).
 
 ## Checking signatures
 

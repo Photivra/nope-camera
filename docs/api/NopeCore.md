@@ -845,6 +845,43 @@ controls.
   - lens: The lens.
 - Returns: `true` when it is longer than ``handheldLimit(for:)``; `false` without a limit.
 
+## `BackgroundTimeRequesting`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor protocol BackgroundTimeRequesting : AnyObject
+```
+
+Asks iOS for a little time to finish saving photos after the app leaves the foreground. The app
+implements it with `UIApplication.beginBackgroundTask(withName:expirationHandler:)`, which is
+a limited extension of the app's run time, not a background mode (AGENTS.md, "Battery"); tests
+pass a fake.
+
+## `BackgroundTimeRequesting/beginBackgroundTime(onExpiration:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor func beginBackgroundTime(onExpiration: @escaping @MainActor () -> Void) -> Bool
+```
+
+Asks for time to finish. At most one request is open at a time.
+
+- Parameter onExpiration: Runs on the main actor when the time is about to run out. The
+  request is then over; don't call ``endBackgroundTime()`` for it.
+- Returns: Whether the system gave the time.
+
+## `BackgroundTimeRequesting/endBackgroundTime()`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor func endBackgroundTime()
+```
+
+Says the work is done, so the app can be suspended.
+
 ## `BatteryReading`
 
 public, declared in `Sources/NopeCore/DeviceStatus.swift`
@@ -1697,6 +1734,18 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether clean view is on: the interface hides every control that isn't essential. Off by
 default. Warnings that change what the photo is are never hidden.
 
+## `CameraModel/isFinishingPhotos`
+
+public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
+
+```swift
+@MainActor var isFinishingPhotos: Bool { get }
+```
+
+Whether photos are being taken or saved: a photo, a bracket, a burst or astro frames. When
+the app leaves the foreground then, it asks iOS for time to finish saving them
+(``BackgroundTimeRequesting``).
+
 ## `CameraModel/isMagnifying`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1727,6 +1776,48 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The live aids over the viewfinder: histogram, focus peaking and the live camera readout.
+
+## `CameraModel/liveActivityContent(continuing:isInForeground:now:)`
+
+public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
+
+```swift
+@MainActor func liveActivityContent(continuing kind: LiveActivityContent.Kind?, isInForeground: Bool, now: Date) -> LiveActivityContent?
+```
+
+The Live Activity's content for what runs now, or `nil` when nothing runs that it shows.
+
+An interval series, astro frames, a burst and the self-timer each have content while they
+run. Out of the foreground the camera stops, so a running interval series is
+``LiveActivityContent/Phase/paused`` (it continues when the app is open again) and a
+running burst or astro run is ``LiveActivityContent/Phase/saving`` (the frames already
+taken are being saved). The self-timer's photo keeps the timer's content while it is
+taken and saved.
+
+- Parameters:
+  - kind: The kind of the activity already shown, or `nil`.
+  - isInForeground: Whether the app is in the foreground.
+  - now: The current time, to say when a countdown ends.
+- Returns: The content, without night mode (the coordinator adds it).
+
+## `CameraModel/liveActivityOutcome(after:)`
+
+public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
+
+```swift
+@MainActor func liveActivityOutcome(after last: LiveActivityContent) -> LiveActivityContent
+```
+
+The final content of an activity whose run has ended: how it ended, how many photos were
+saved and whether they are signed.
+
+The model doesn't keep every run's result, so an ended interval series and a self-timer
+are judged from the last content shown. That content is current when the app is out of
+the foreground, the only time an activity is on screen: the camera has stopped, so nothing
+changes unseen.
+
+- Parameter last: The content shown last.
+- Returns: The final content.
 
 ## `CameraModel/location`
 
@@ -7871,6 +7962,839 @@ nonisolated static let torchLevels: [Double]
 The brightness levels an interface offers, from dim to full. A dim level suits close
 subjects, which a full torch would wash out.
 
+## `LiveActivityContent`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+struct LiveActivityContent
+```
+
+What the Live Activity shows on the Lock Screen and in the Dynamic Island while a series or
+its saving runs (issue #64): counts and status only, never image data, location or metadata
+(docs/PRIVACY.md, "Live Activity").
+
+``LiveActivityCoordinator`` makes one from the camera model and hands it to the app's
+``LiveActivityPresenting``, which shows it with ActivityKit. The app and its widget extension
+use it as the activity's content state, so it is `Codable`. An interface renders
+``kind``, ``statusLine``, ``signingLine`` and ``progress``; it holds no rules of its own.
+
+iOS shows an app's Live Activity only while the app isn't on screen, and the camera stops when
+the app leaves the foreground, so what people see is mostly a paused series, frames still being
+saved, or how the run ended.
+
+## `LiveActivityContent/Kind`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+enum Kind
+```
+
+What runs.
+
+## `LiveActivityContent/Kind/astro`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case astro
+```
+
+The astro helper's frames, and the countdown before them (issue #60).
+
+## `LiveActivityContent/Kind/burst`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case burst
+```
+
+A burst (issue #46).
+
+## `LiveActivityContent/Kind/interval`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case interval
+```
+
+An interval series (issue #48).
+
+## `LiveActivityContent/Kind/timer`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case timer
+```
+
+The self-timer and its photo (issue #39).
+
+## `LiveActivityContent/Phase`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+enum Phase
+```
+
+How far the run has got.
+
+## `LiveActivityContent/Phase/countingDown`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case countingDown
+```
+
+The countdown before the photo or the first frame runs; ``countdownEnd`` says when it
+ends.
+
+## `LiveActivityContent/Phase/failed`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case failed
+```
+
+A photo couldn't be taken or saved; the app says what went wrong.
+
+## `LiveActivityContent/Phase/finished`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case finished
+```
+
+The run ended as planned.
+
+## `LiveActivityContent/Phase/paused`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case paused
+```
+
+The app left during an interval series: the series continues when the app is opened
+again.
+
+## `LiveActivityContent/Phase/running`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case running
+```
+
+Photos are being taken, which happens only while the app is open.
+
+## `LiveActivityContent/Phase/saving`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case saving
+```
+
+The app left, so no more photos are taken; the ones taken are being saved.
+
+## `LiveActivityContent/Phase/savingPaused`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case savingPaused
+```
+
+The app left and iOS gave it no more time before every photo was saved; opening the
+app lets the save continue.
+
+## `LiveActivityContent/Phase/stopped`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case stopped
+```
+
+The run ended early: stopped, or the camera stopped, or the countdown was cancelled.
+
+## `LiveActivityContent/Signing`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+enum Signing
+```
+
+Whether the saved photos are signed (Content Credentials).
+
+## `LiveActivityContent/Signing/allSigned`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case allSigned
+```
+
+Every saved photo is signed.
+
+## `LiveActivityContent/Signing/notAllSigned`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case notAllSigned
+```
+
+At least one saved photo isn't signed.
+
+## `LiveActivityContent/canStop`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var canStop: Bool { get }
+```
+
+Whether the activity offers Stop: only for an interval series that runs or is paused,
+because only it has photos still to take that Stop would prevent. Every photo already
+taken is saved either way.
+
+## `LiveActivityContent/compactCount`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var compactCount: Int? { get }
+```
+
+The one number beside the Dynamic Island: the photos taken while they are being taken (and
+for an interval series, always), the photos saved once saving has begun, or `nil` during a
+countdown (the countdown is shown instead) and after a failure (a warning symbol is shown).
+
+## `LiveActivityContent/countdownEnd`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var countdownEnd: Date?
+```
+
+When the countdown ends, while ``phase`` is ``Phase/countingDown``; otherwise `nil`. The
+system counts down to it on screen, so the content isn't updated every second.
+
+## `LiveActivityContent/hasEnded`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var hasEnded: Bool { get }
+```
+
+Whether the run has ended, so the activity shows its final state.
+
+## `LiveActivityContent/init(kind:phase:taken:total:saved:countdownEnd:signing:isNightMode:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+init(kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil, signing: Signing? = nil, isNightMode: Bool = false)
+```
+
+Creates content.
+
+- Parameters:
+  - kind: What runs.
+  - phase: How far it has got.
+  - taken: The photos taken so far.
+  - total: The photos the run takes, or `nil`.
+  - saved: The photos saved so far.
+  - countdownEnd: When the countdown ends, or `nil`.
+  - signing: Whether the saved photos are signed, or `nil`.
+  - isNightMode: Whether night mode is on.
+
+## `LiveActivityContent/isNightMode`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var isNightMode: Bool
+```
+
+Whether night mode is on (issue #61), so the activity is red on black too.
+
+## `LiveActivityContent/kind`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var kind: Kind
+```
+
+What runs.
+
+## `LiveActivityContent/phase`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var phase: Phase
+```
+
+How far it has got.
+
+## `LiveActivityContent/progress`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var progress: Double? { get }
+```
+
+How far a run with a set number of photos has got, from 0 to 1, or `nil` for a run without
+one or a countdown.
+
+## `LiveActivityContent/saved`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var saved: Int
+```
+
+The photos saved so far.
+
+## `LiveActivityContent/signing`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var signing: Signing?
+```
+
+Whether the saved photos are signed, once the run has ended with photos saved; otherwise
+`nil`.
+
+## `LiveActivityContent/signingLine`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var signingLine: LiveActivitySigningLine? { get }
+```
+
+The line about signatures, once the run has ended with photos saved, or `nil`. A missing
+signature is never hidden (AGENTS.md, "Honesty").
+
+## `LiveActivityContent/startsActivity`
+
+internal, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var startsActivity: Bool { get }
+```
+
+Whether this content can start an activity: a countdown or a run that has just begun. An
+activity can only be started while the app is in the foreground (ActivityKit,
+`Activity.request`), so it starts when the run starts.
+
+## `LiveActivityContent/statusLine`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var statusLine: LiveActivityStatusLine { get }
+```
+
+The main line of text: what is happening, with the counts.
+
+## `LiveActivityContent/taken`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var taken: Int
+```
+
+The photos taken so far. For an interval series, photos skipped while the camera was
+paused are counted too, as on the camera screen (``IntervalProgress/taken``).
+
+## `LiveActivityContent/total`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var total: Int?
+```
+
+The photos the run takes, or `nil` when it has no set number (a burst or the self-timer).
+
+## `LiveActivityCoordinator`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor final class LiveActivityCoordinator
+```
+
+Starts, updates and ends the Live Activity that shows a series and its saving on the Lock
+Screen and in the Dynamic Island (issue #64), and asks for time to finish saving when the app
+leaves the foreground.
+
+The app owns one for its lifetime, runs ``observe(_:)`` while the camera screen is shown, and
+keeps ``isEnabled`` (the Settings switch, off by default), ``isInForeground`` and
+``isNightMode`` current. The coordinator follows the camera model; it holds no camera rules.
+
+- **Start:** an activity can only be started while the app is in the foreground (ActivityKit,
+  `Activity.request`), so it starts when an interval series, astro run, burst or self-timer
+  starts, if the switch is on and the person allows Live Activities.
+- **Updates:** local only, no push and no network. While the app is in the foreground the
+  activity isn't on screen, so a change of the counts alone is sent at most every
+  ``minimumUpdateInterval``; a change of phase, and the content when the app leaves the
+  foreground, are sent at once. A countdown is drawn by the system from its end time, with no
+  updates (AGENTS.md, "Battery": no timers that keep running).
+- **End:** when the run ends, at once if the app is in the foreground, where the camera screen
+  says how it went; otherwise its final content stays on the Lock Screen for
+  ``endedActivityDuration``. Stop on the activity ends it at once (``stopSeries(_:)``).
+- **Time to finish saving:** when the app leaves the foreground while photos are being taken or
+  saved (``CameraModel/isFinishingPhotos``), the coordinator asks iOS for time to finish, and
+  gives it back as soon as they are saved, whether or not the switch is on. If the time runs
+  out first, the activity says saving is paused until the app is opened again.
+
+## `LiveActivityCoordinator/apply(_:)`
+
+internal, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor func apply(_ model: CameraModel)
+```
+
+Brings the background time and the activity in line with the model's state.
+
+- Parameter model: The camera model.
+
+## `LiveActivityCoordinator/endedActivityDuration`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor static let endedActivityDuration: Double
+```
+
+How long an activity that ended while the app was out of the foreground stays on the Lock
+Screen, in seconds: two minutes, "a short time after saving finishes" (issue #64).
+
+## `LiveActivityCoordinator/init(presenter:backgroundTime:now:)`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor init(presenter: any LiveActivityPresenting, backgroundTime: any BackgroundTimeRequesting, now: @escaping () -> Date = Date.init)
+```
+
+Creates a coordinator with no activity shown.
+
+- Parameters:
+  - presenter: Shows the activity.
+  - backgroundTime: Asks for time to finish saving.
+  - now: Reads the current time. Tests pass their own.
+
+## `LiveActivityCoordinator/isEnabled`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor var isEnabled: Bool { get set }
+```
+
+Whether Live Activities are on: the Settings switch (``NopeSettings/showsLiveActivity``).
+Turning it off ends the shown activity at once.
+
+## `LiveActivityCoordinator/isInForeground`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor var isInForeground: Bool { get set }
+```
+
+Whether the app is in the foreground. The app sets it whenever its scene phase changes.
+
+## `LiveActivityCoordinator/isNightMode`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor var isNightMode: Bool { get set }
+```
+
+Whether night mode is on, so the activity is red on black too.
+
+## `LiveActivityCoordinator/minimumUpdateInterval`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor static let minimumUpdateInterval: Double
+```
+
+The shortest time between two updates that change only the counts, in seconds, while the
+app is in the foreground and the activity isn't on screen. An assumption to be checked on a
+device: rare enough to cost no noticeable battery, often enough to stay roughly current if
+the system shows the activity.
+
+## `LiveActivityCoordinator/observe(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor func observe(_ model: CameraModel) async
+```
+
+Follows the model until the calling task is cancelled: applies every change of the model
+or of ``isEnabled``, ``isInForeground`` and ``isNightMode`` as it happens. Nothing polls;
+it waits for Observation's change notifications.
+
+- Parameter model: The camera model.
+
+## `LiveActivityCoordinator/shown`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor var shown: LiveActivityContent? { get }
+```
+
+The content of the activity shown now, or `nil` when none is shown.
+
+## `LiveActivityCoordinator/stopSeries(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
+
+```swift
+@MainActor func stopSeries(_ model: CameraModel) async
+```
+
+Stops the interval series from the activity's Stop button, and ends the activity at once,
+with every photo already taken saved.
+
+- Parameter model: The camera model.
+
+## `LiveActivityDismissal`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+enum LiveActivityDismissal
+```
+
+How long an ended Live Activity stays on the Lock Screen.
+
+## `LiveActivityDismissal/after(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case after(Date)
+```
+
+It stays until this time, unless the person removes it first.
+
+## `LiveActivityDismissal/immediate`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case immediate
+```
+
+It goes away now.
+
+## `LiveActivityPresenting`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor protocol LiveActivityPresenting : AnyObject
+```
+
+Shows the Live Activity. The app implements it with ActivityKit, updated from the device only:
+no push token is ever requested and nothing is sent anywhere (AGENTS.md, "No network");
+tests pass a fake.
+
+One activity is shown at a time; ``LiveActivityCoordinator`` decides when it starts, changes
+and ends.
+
+## `LiveActivityPresenting/areActivitiesEnabled`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor var areActivitiesEnabled: Bool { get }
+```
+
+Whether the person allows Live Activities for the app, in the Settings app
+(ActivityKit, `ActivityAuthorizationInfo.areActivitiesEnabled`).
+
+## `LiveActivityPresenting/end(_:dismissal:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor func end(_ content: LiveActivityContent, dismissal: LiveActivityDismissal)
+```
+
+Ends the running activity, showing its final content until it is dismissed.
+
+- Parameters:
+  - content: What it shows last.
+  - dismissal: When it goes away.
+
+## `LiveActivityPresenting/start(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor func start(_ content: LiveActivityContent) -> Bool
+```
+
+Starts the activity with this content. Called only while the app is in the foreground.
+
+- Parameter content: What it shows.
+- Returns: Whether the system started it.
+
+## `LiveActivityPresenting/update(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+@MainActor func update(_ content: LiveActivityContent)
+```
+
+Changes what the running activity shows.
+
+- Parameter content: What it shows now.
+
+## `LiveActivitySigningLine`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+enum LiveActivitySigningLine
+```
+
+The line about signatures (``LiveActivityContent/signingLine``). Honesty wording: it never
+implies a photo is signed when it isn't.
+
+## `LiveActivitySigningLine/notAllSigned`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case notAllSigned
+```
+
+"Not every photo is signed. Open nope. for details."
+
+## `LiveActivitySigningLine/notSigned`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case notSigned
+```
+
+"Not signed. Open nope. for details.": the one saved photo isn't signed.
+
+## `LiveActivitySigningLine/signed`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case signed
+```
+
+"Signed.": every saved photo is signed.
+
+## `LiveActivityStatusLine`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+enum LiveActivityStatusLine
+```
+
+The main line of a Live Activity's text (``LiveActivityContent/statusLine``). Each case says
+what an interface shows; counts are numbers of photos.
+
+## `LiveActivityStatusLine/astroStartsIn`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case astroStartsIn
+```
+
+"Astro starts in" followed by the system's countdown.
+
+## `LiveActivityStatusLine/burstPhotosTaken(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case burstPhotosTaken(Int)
+```
+
+"Photos taken: 12": a burst runs.
+
+## `LiveActivityStatusLine/failed`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case failed
+```
+
+"A photo wasn't saved. Open nope. for details."
+
+## `LiveActivityStatusLine/frame(number:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case frame(number: Int, total: Int)
+```
+
+"Frame 5 of 20": the astro helper takes this frame.
+
+## `LiveActivityStatusLine/noPhotoTaken`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case noPhotoTaken
+```
+
+"Stopped. No photo taken."
+
+## `LiveActivityStatusLine/paused(taken:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case paused(taken: Int, total: Int)
+```
+
+"Paused: 42 of 120 photos taken. Open nope. to continue."
+
+## `LiveActivityStatusLine/photoIn`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case photoIn
+```
+
+"Photo in" followed by the system's countdown to ``LiveActivityContent/countdownEnd``.
+
+## `LiveActivityStatusLine/photosSaved(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case photosSaved(Int)
+```
+
+"Photos saved: 7."
+
+## `LiveActivityStatusLine/photosTaken(taken:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case photosTaken(taken: Int, total: Int)
+```
+
+"12 of 120 photos taken": an interval series runs.
+
+## `LiveActivityStatusLine/saving(saved:taken:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case saving(saved: Int, taken: Int)
+```
+
+"Saving: 4 of 7 photos saved."
+
+## `LiveActivityStatusLine/savingPaused`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case savingPaused
+```
+
+"Saving paused. Open nope. to finish."
+
+## `LiveActivityStatusLine/savingPhoto`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case savingPhoto
+```
+
+"Saving the photo…"
+
+## `LiveActivityStatusLine/seriesDone(taken:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case seriesDone(taken: Int, total: Int)
+```
+
+"Done: 120 of 120 photos taken."
+
+## `LiveActivityStatusLine/seriesStopped(taken:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case seriesStopped(taken: Int, total: Int)
+```
+
+"Stopped: 42 of 120 photos taken."
+
+## `LiveActivityStatusLine/stoppedPhotosSaved(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case stoppedPhotosSaved(Int)
+```
+
+"Stopped. Photos saved: 5."
+
+## `LiveActivityStatusLine/takingPhoto`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case takingPhoto
+```
+
+"Taking the photo…": the self-timer's photo is being taken.
+
 ## `LiveAnalysisNeeds`
 
 public, declared in `Sources/NopeCore/FrameAnalysis.swift`
@@ -12687,6 +13611,16 @@ static let save: String
 
 The save settings, as JSON-encoded ``SaveSettings``.
 
+## `NopeSettings/Key/showsLiveActivity`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let showsLiveActivity: String
+```
+
+Whether the Live Activity is on, a Boolean.
+
 ## `NopeSettings/Key/showsManualControls`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -13144,6 +14078,18 @@ Shows or hides the level, and saves the change.
 
 - Parameter isOn: Whether the level is shown.
 
+## `NopeSettings/setShowsLiveActivity(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setShowsLiveActivity(_ isOn: Bool)
+```
+
+Turns the Live Activity on or off, and saves the change.
+
+- Parameter isOn: Whether a Live Activity shows a series and its saving.
+
 ## `NopeSettings/setShowsLiveReadout(_:)`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -13215,6 +14161,17 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Sets the torch's brightness, and saves the change.
 
 - Parameter level: The brightness, moved inside ``LightModel/torchLevelRange``.
+
+## `NopeSettings/showsLiveActivity`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var showsLiveActivity: Bool { get set }
+```
+
+Whether a Live Activity shows a series and its saving on the Lock Screen and in the
+Dynamic Island (issue #64). Off by default.
 
 ## `NopeSettings/showsManualControls`
 
