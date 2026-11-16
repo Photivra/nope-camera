@@ -26,6 +26,7 @@ struct SettingsPresetsTests {
         "isNightModeOn": { $0.setNightMode(true) },
         "tintsViewfinderInNightMode": { $0.setTintsViewfinderInNightMode(true) },
         "followsFaces": { $0.setFollowsFaces(false) },
+        "showsLiveActivity": { $0.setShowsLiveActivity(true) },
         "photoSizes": {
             // A lens without Bayer RAW that offers two sizes; the larger isn't the default.
             let lens = Lens(
