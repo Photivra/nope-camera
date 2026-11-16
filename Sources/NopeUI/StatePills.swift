@@ -25,6 +25,10 @@ struct CameraControlContext {
     /// Whether the presets sheet is open, for the Presets tray item. The camera screen sets it.
     var showsPresets: Binding<Bool> = .constant(false)
 
+    /// Whether the Interval sheet is open, for the Drive menu and the Interval pill. The camera
+    /// screen sets it; a constant `false` elsewhere.
+    var showsIntervalSettings: Binding<Bool> = .constant(false)
+
     /// Creates a context.
     ///
     /// - Parameters:

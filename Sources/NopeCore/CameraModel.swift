@@ -356,7 +356,12 @@ public final class CameraModel {
     ///
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
     /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
-    func capture() async {
+    ///
+    /// - Parameter onceBracket: A bracket to take this time only, through the same bracket path
+    ///   as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
+    ///   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
+    ///   first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+    func capture(onceBracket: BracketSettings? = nil) async {
         guard canCapture, let lens = selectedLens else { return }
         deviceStatus.refresh()
         captureStatus = .capturing
@@ -365,7 +370,8 @@ public final class CameraModel {
         plan.location = location?.location(isOn: settings.metadata.isOn(.location))
         plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
         let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
-        if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
+        let frames = onceBracket.map(manual.bracketFrames(once:)) ?? manual.bracketFrames()
+        if let frames, let bracketBackend = backend as? any ManualCaptureBackend {
             await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
             return
         }

@@ -26,7 +26,7 @@ signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `IntervalShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the Apple Watch messages and both ends of their protocol (`WatchCommand`, `PhoneUpdate`, `WatchStatus`, `WatchResult`, `WatchMessageCoding`, `WatchCommandServer` with the `WatchLink` protocol, `WatchRemote` with the `PhoneLink` protocol), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `BracketShortcut`, `IntervalShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the Apple Watch messages and both ends of their protocol (`WatchCommand`, `PhoneUpdate`, `WatchStatus`, `WatchResult`, `WatchMessageCoding`, `WatchCommandServer` with the `WatchLink` protocol, `WatchRemote` with the `PhoneLink` protocol), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
@@ -157,8 +157,12 @@ when the camera opens and when the option changes.
   photo, and each is saved through the same pipeline as a single photo
   (`CaptureStatus.savedBracket`). Bayer RAW rules still apply: `.speed`, zoom 1.0, no
   multi-frame processing.
-- **Interval shooting** calls the same capture path as the shutter; its timer exists only while a
-  series runs, and the camera screen stops it when it disappears. While a series runs in the
+- **Interval shooting** calls the same capture path as the shutter; it works in full auto (each
+  photo a full-auto photo) and with manual controls on (each photo with the manual settings), and
+  turning manual controls off doesn't stop a series. It starts from the Interval drive mode's
+  shutter (`DriveMode.interval`), Start in the Interval sheet or Pro Tools (the same
+  `IntervalSection` in `NopeUI`), or Siri; the shutter stops a running series in any mode. Its
+  timer exists only while a series runs, and the camera screen stops it when it disappears. While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
   background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
@@ -253,7 +257,7 @@ keyboard and the status bar are drawn by the system and keep its dark appearance
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
 parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
-outcome. The camera screen runs `CameraModel.serveShortcuts(from:)` while it is shown: the model
+outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:)` while it is shown: the model
 waits for the camera to start (at most `ShortcutInbox.startTimeoutSeconds`, following its
 observable state, without polling), switches the lens if asked, then takes one photo at once or
 starts the self-timer with `.drive(.startTimer(seconds:))`, and reports a `ShortcutOutcome`:
@@ -268,13 +272,36 @@ burst and astro runs), ending with `BurstEnd.countReached`. The other requests f
 path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
 (`.setLight(isOn:)`, the tray's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
 `StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
-`.stopInterval`, the manual controls' `ManualControlIntent` values). Requests that need the
+`.stopInterval`, the `ManualControlIntent` values the Interval drive mode and Pro Tools send).
+`TakeBracketIntent` is a separate action from Take Photo, because a bracket and a burst are
+different captures with different limits: it asks for 3, 5 or 7 frames and a step of 1/3, 2/3,
+1 or 2 stops (`BracketShortcut` moves any value to the nearest of `BracketSettings.frameCounts`
+and `BracketSettings.steps`), checks the lens with `ManualControlsModel.canBracket(_:)` (the
+same limits as the Pro Tools bracket), waits up to two seconds for the camera's first exposure
+reading, and takes it once with `capture(onceBracket:)` through the same bracket path
+(`ManualControlsModel.bracketFrames(once:)`, planned around the last reading in full auto or the
+manual ISO and shutter where set). The person's bracket setting and manual controls don't
+change.
+
+Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
+Far Focus in one action, because the camera has one autofocus range restriction, so the two
+limits exclude each other) and `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
+in use) open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+`AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
+choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
+its settings to `serveShortcuts(from:settings:)`; the app then applies the new size as it does
+from Settings. `SetFastShutterIntent` and `SetFaceDetectionIntent` change only stored settings
+(`NopeSettings.setFastShutter(_:)`, `setFollowsFaces(_:)`), as `SetNightModeIntent` does, so they
+run without opening the app. None of them changes a manual value. App Shortcuts allows ten per
+app, all used by capture and eyes-free actions (photo, bracket, open, lens, light, interval and
+night mode), so these settings, which are set rather than used while shooting, are Shortcuts
+actions that a person can still run by voice through a shortcut they name. Requests that need the
 camera open the app, because the camera, the light and a series run only in the foreground
 (AGENTS.md, "Battery"). Turning the light off and stopping a series don't open the app: without
 a camera screen serving the inbox (`ShortcutInbox.isServed`) nothing is running, so they end at
-once with `ShortcutRequest.outcomeWithoutCameraScreen`. Interval shooting is part of the manual
-controls; with them off, the request says so (`ShortcutOutcome.needsManualControls`) and
-changes nothing. A request never starts while a photo, countdown, burst, series or astro run is
+once with `ShortcutRequest.outcomeWithoutCameraScreen`. A series started by Siri is the same as
+the Interval drive mode's: full auto, or the manual settings while manual controls are on; it
+never turns them on. A request never starts while a photo, countdown, burst, series or astro run is
 in progress (`ShortcutOutcome.busy`).
 
 Siri on a locked device: the app's intents can't take a photo without unlocking. A request that

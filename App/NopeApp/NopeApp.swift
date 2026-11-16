@@ -145,7 +145,7 @@ struct NopeApp: App {
         }
         .environment(\.seriesScreenKeeper, screenKeeper)
         // Siri and Shortcuts requests are performed while the camera screen is shown.
-        .task { await model.serveShortcuts(from: Self.shortcuts) }
+        .task { await model.serveShortcuts(from: Self.shortcuts, settings: settings) }
         // The Apple Watch app's shutter and status (issue #63), while the camera screen is shown.
         .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG

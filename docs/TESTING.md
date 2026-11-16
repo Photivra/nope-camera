@@ -520,10 +520,13 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
 `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
-`burst<count>` for Take Photo with a count, or `lens-ultraWide` for Switch Lens. The app sends
+`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket, or
+`lens-ultraWide` for Switch Lens. The app sends
 the request through the same `ShortcutInbox` the intents use and shows what Siri would say
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
-of three and a lens switch). The request logic (counts, lenses, the light, interval shooting,
+of three, a bracket in full auto and a lens switch). The Interval drive mode is covered by
+`testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
+and right-to-left. The request logic (counts, lenses, the light, interval shooting,
 requests without a camera screen) is unit tested in `ShortcutTests`.
 
 ## On-device checks
@@ -628,14 +631,23 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
 - Siri, other phrases: "Switch to Ultra Wide in nope." (and a lens the device lacks), "Turn on
   the light in nope." and "Turn off the light in nope." (the light comes on and goes off; with
   the app closed, turning it off says the light is off without opening the app), "Start interval
-  shooting in nope." with Manual Controls off (Siri says to turn them on; nothing changes) and on
-  (the series starts, the screen dims), and "Stop interval shooting in nope.".
+  shooting in nope." with Manual Controls off (the series runs in full auto; Manual Controls stay
+  off) and on (the photos use the manual settings; the screen dims), "Stop interval shooting in
+  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen in Pro Tools
+  (three photos at different exposures; the Pro Tools bracket and Manual Controls are unchanged
+  afterwards; on the front camera Siri says the lens can't take it).
 - Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
   Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
   Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
-  Interval Shooting, and Set Night Mode on and off, with the app closed and with it open (the
+  Interval Shooting, Take Bracket with 5 and 7 Photos and each Step (7 on a lens that takes fewer
+  says so), and Set Night Mode on and off, with the app closed and with it open (the
   screen turns red at once).
 - Siri does not mistake "Turn on the light in nope." for a HomeKit request.
+- Shortcuts settings actions: Set Focus Range to Close-Up, Far Focus and No Limit (the Close-Up
+  or Far Focus pill shows and goes; a lens without a range limit says so); Set Photo Size Largest
+  and Standard on a lens with a choice (Settings > Photo Size shows it; the next photo's size
+  changes) and on a Bayer RAW lens (says there is one size); Set Fast Shutter and Set Face
+  Detection with the app closed (Settings shows the new value when the app opens).
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
