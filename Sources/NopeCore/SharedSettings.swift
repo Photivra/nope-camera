@@ -167,6 +167,9 @@ final class DarwinNotificationListeners: @unchecked Sendable {
     /// The names with a registered callback.
     private var observedNames: Set<String> = []
 
+    /// Creates the registry. Use ``shared``: one per process.
+    private init() {}
+
     /// A new stream of the notifications with a name.
     ///
     /// - Parameter name: The notification's name.

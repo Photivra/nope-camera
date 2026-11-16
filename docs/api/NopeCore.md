@@ -4103,6 +4103,113 @@ Does nothing when a countdown already runs or `seconds` is less than 1.
   - fire: What happens at zero, such as taking a photo. It doesn't run when the countdown
     is cancelled.
 
+## `DarwinNotificationListeners`
+
+internal, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+final class DarwinNotificationListeners
+```
+
+The listeners for Darwin notifications in this process, by name.
+
+A Core Foundation callback is a C function that can't capture a listener, so one callback per
+name forwards to the streams registered here. The callback stays registered for the life of the
+process; a stream that ends is removed.
+
+## `DarwinNotificationListeners/deliver(_:)`
+
+internal, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+func deliver(_ name: String?)
+```
+
+Passes a notification to every open stream for its name.
+
+- Parameter name: The notification's name, `nil` if the system gave none.
+
+## `DarwinNotificationListeners/shared`
+
+internal, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static let shared: DarwinNotificationListeners
+```
+
+The listeners of this process.
+
+## `DarwinNotificationListeners/stream(for:)`
+
+internal, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+func stream(for name: String) -> AsyncStream<Void>
+```
+
+A new stream of the notifications with a name.
+
+- Parameter name: The notification's name.
+- Returns: The stream; it ends when its task is cancelled.
+
+## `DarwinSettingsChangeSignal`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+struct DarwinSettingsChangeSignal
+```
+
+The settings change signal as a Darwin notification (Core Foundation,
+`CFNotificationCenterGetDarwinNotifyCenter`), which the system delivers to every process that
+listens for the name, without polling (AGENTS.md, "Battery").
+
+The notification carries no data and never leaves the device.
+
+## `DarwinSettingsChangeSignal/changes()`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+func changes() -> AsyncStream<Void>
+```
+
+The notifications heard from now on.
+
+- Returns: A stream with one element per notification heard.
+
+## `DarwinSettingsChangeSignal/init(name:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+init(name: String)
+```
+
+Creates the signal.
+
+- Parameter name: The notification's name.
+
+## `DarwinSettingsChangeSignal/name`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+let name: String
+```
+
+The notification's name, from ``SharedSettingsStore/changeSignalName(groupIdentifier:)``.
+
+## `DarwinSettingsChangeSignal/post()`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+func post()
+```
+
+Posts the notification to every listening process.
+
 ## `DevelopedFileOptions`
 
 public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
@@ -12615,8 +12722,9 @@ the rules of ``SaveSettings`` and ``MetadataSettings`` (at least one format, the
 master switch). Each change is saved at once. The app passes ``save`` to
 ``CameraModel/saveSettings`` whenever it changes, so the next photo uses it.
 
-Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in the app's own
-`UserDefaults` on the device only. They are never synced through iCloud or sent anywhere.
+Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in `UserDefaults` on
+the device only: the app's App Group store, shared with its extensions (``SharedSettingsStore``).
+They are never synced through iCloud or sent anywhere.
 
 The model is isolated to the main actor, so an interface can read its properties directly.
 
@@ -12727,6 +12835,23 @@ static let torchLevel: String
 
 The torch's brightness, a number from 0.01 to 1.
 
+## `NopeSettings/apply(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+@discardableResult @MainActor func apply(_ snapshot: NopeSettingsSnapshot) -> Bool
+```
+
+Replaces the stored settings with a snapshot's, and reloads them.
+
+A setting missing from the snapshot goes back to its default. Every value is read back
+through the same rules as a stored one, so a value this version doesn't know falls back to
+the default (AGENTS.md, "Fail closed"). A snapshot that can't be read changes nothing.
+
+- Parameter snapshot: The snapshot, from ``makeSnapshot()``.
+- Returns: `true` when the snapshot could be read.
+
 ## `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -12744,6 +12869,17 @@ turned off.
   - format: A selected format.
   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
 - Returns: `false` when the format is the only one left that the device can save.
+
+## `NopeSettings/defaults`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor let defaults: UserDefaults
+```
+
+Where the settings are stored. ``SharedSettingsSync`` watches it and
+``makeSnapshot()`` copies it.
 
 ## `NopeSettings/developedLook`
 
@@ -12845,6 +12981,20 @@ brightness control.
 
 Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
 
+## `NopeSettings/makeSnapshot()`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+@MainActor func makeSnapshot() throws -> NopeSettingsSnapshot
+```
+
+Copies every stored setting, including values given as launch arguments.
+
+- Returns: The snapshot.
+- Throws: An error from `PropertyListSerialization` if a stored value isn't a property
+  list value, which ``NopeSettings`` never stores.
+
 ## `NopeSettings/metadata`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -12912,6 +13062,22 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 Which processed copy is paired with the RAW in Photos when RAW, HEIF and JPEG are all
 saved. ``RAWPairing/heif`` by default.
+
+## `NopeSettings/reload()`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@discardableResult @MainActor func reload() -> Bool
+```
+
+Reads every setting from the store again, for a change made by another process (a
+Control Center control) or by ``apply(_:)``.
+
+Only values that differ are assigned, so the interface redraws only for what changed. A
+setting added to this type needs a line here.
+
+- Returns: `true` when any setting changed.
 
 ## `NopeSettings/save`
 
@@ -13281,6 +13447,77 @@ public, declared in `Sources/NopeCore/OverlayOptions.swift`
 ```
 
 Moves the golden spiral to its next placement, and saves the change.
+
+## `NopeSettingsSnapshot`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+struct NopeSettingsSnapshot
+```
+
+A copy of every stored ``NopeSettings`` value, for a process that can't read the shared store:
+the Lock Screen camera (issue #42).
+
+Apple's LockedCameraCapture documentation says a capture extension "can't read from or write to
+the App Group's shared container", and offers the `appContext` of its `CameraCaptureIntent`
+instead: "up to four KB" that the app writes and the extension reads when it opens. The app
+writes a snapshot there whenever the settings change; the Lock Screen camera applies it to its
+own settings with ``NopeSettings/apply(_:)``, so it saves photos in the person's formats, with
+their metadata and signing choices and their night mode.
+
+The snapshot holds settings only: Booleans, names of choices and numbers. It holds no photo,
+location or other personal data, and stays on the device.
+
+It copies every key ``SharedSettingsStore/isSettingsKey(_:)`` accepts, so a setting added later
+is included without changing this type.
+
+## `NopeSettingsSnapshot/appContextLimit`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+static let appContextLimit: Int
+```
+
+The most bytes Apple allows in a `CameraCaptureIntent`'s `appContext` (LockedCameraCapture,
+"Creating a camera experience for the Lock Screen": "up to four KB").
+
+## `NopeSettingsSnapshot/encodedSize()`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+func encodedSize() throws -> Int
+```
+
+The size of the snapshot once encoded as JSON, the larger of the two encodings an
+`appContext` may use, in bytes. Compare it with ``appContextLimit``.
+
+- Returns: The size in bytes.
+- Throws: An `EncodingError` if the snapshot can't be encoded.
+
+## `NopeSettingsSnapshot/init(values:)`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+init(values: Data)
+```
+
+Creates a snapshot from its encoded values.
+
+- Parameter values: A binary property list of a dictionary from key to value.
+
+## `NopeSettingsSnapshot/values`
+
+public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+let values: Data
+```
+
+The stored values, as a binary property list of a dictionary from key to value.
 
 ## `OutputColorSpace`
 
@@ -16480,6 +16717,229 @@ case stopped
 ```
 
 The camera hasn't started yet. Show the viewfinder area empty, without a message.
+
+## `SettingsChangeSignaling`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+protocol SettingsChangeSignaling : Sendable
+```
+
+Tells other processes of the app (the app, its controls) that the shared settings changed,
+and hears when they did.
+
+The signal carries nothing: whoever hears it reads the store again (``NopeSettings/reload()``).
+``DarwinSettingsChangeSignal`` is the system's; tests use a fake.
+
+## `SettingsChangeSignaling/changes()`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+func changes() -> AsyncStream<Void>
+```
+
+The signals from now on, from any process, until the stream's task is cancelled.
+
+- Returns: One element per signal heard. Close signals may arrive as one.
+
+## `SettingsChangeSignaling/post()`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+func post()
+```
+
+Tells every listening process, this one included, that the settings changed.
+
+## `SharedSettingsStore`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+enum SharedSettingsStore
+```
+
+Where the person's settings are kept so that the app and its extensions read the same values:
+the `UserDefaults` of the app's App Group (issue #42).
+
+The app, the Control Center controls and any later extension of the app (a Live Activity, a
+Watch app's own extensions on the watch) open the same store with ``defaults(groupIdentifier:)``
+and wrap it in ``NopeSettings``. Each target reads the group's identifier from its own
+Info.plist (``groupIdentifierInfoKey``), which the build fills in from the bundle identifier,
+so no identifier or team is written in code.
+
+The Lock Screen camera can't use it: Apple's LockedCameraCapture documentation says a capture
+extension "can't read from or write to the App Group's shared container". It gets the settings
+as a ``NopeSettingsSnapshot`` instead.
+
+Privacy rule (AGENTS.md, "No network, no analytics"): the App Group container is on the device
+only. It is never synced through iCloud or sent anywhere.
+
+```swift
+let identifier = SharedSettingsStore.groupIdentifier(infoDictionary: Bundle.main.infoDictionary)
+if let identifier, let store = SharedSettingsStore.defaults(groupIdentifier: identifier) {
+    SharedSettingsStore.migrate(from: .standard, domainName: Bundle.main.bundleIdentifier ?? "", to: store)
+    let settings = NopeSettings(defaults: store)
+}
+```
+
+## `SharedSettingsStore/changeSignalName(groupIdentifier:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static func changeSignalName(groupIdentifier: String) -> String
+```
+
+The name of the system-wide notification that tells the app and its extensions the shared
+settings changed.
+
+- Parameter groupIdentifier: The App Group's identifier, so that two installed builds
+  (development and release) don't signal each other.
+- Returns: The notification name.
+
+## `SharedSettingsStore/defaults(groupIdentifier:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static func defaults(groupIdentifier: String) -> UserDefaults?
+```
+
+Opens the App Group's settings store.
+
+- Parameter groupIdentifier: The App Group's identifier, from
+  ``groupIdentifier(infoDictionary:)``.
+- Returns: The store, or `nil` when `UserDefaults` refuses the name.
+
+## `SharedSettingsStore/groupIdentifier(infoDictionary:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static func groupIdentifier(infoDictionary: [String : Any]?) -> String?
+```
+
+The App Group's identifier from a target's Info.plist.
+
+- Parameter infoDictionary: The target's Info.plist, normally `Bundle.main.infoDictionary`.
+- Returns: The identifier, or `nil` when the target has none (the Lock Screen camera) or
+  the build didn't fill it in.
+
+## `SharedSettingsStore/groupIdentifierInfoKey`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static let groupIdentifierInfoKey: String
+```
+
+The Info.plist key that holds the App Group's identifier, such as
+`group.com.photivra.nope.dev`. The build sets it from `NOPE_APP_GROUP_IDENTIFIER`.
+
+## `SharedSettingsStore/isSettingsKey(_:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static func isSettingsKey(_ key: String) -> Bool
+```
+
+Whether a `UserDefaults` key belongs to ``NopeSettings``: shared, migrated and part of a
+``NopeSettingsSnapshot``.
+
+- Parameter key: A key.
+- Returns: `true` for keys starting with ``keyPrefix`` and for the "Manual controls" key
+  used before `NopeSettings` existed, which `NopeSettings` migrates itself.
+
+## `SharedSettingsStore/keyPrefix`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static let keyPrefix: String
+```
+
+The prefix of every key ``NopeSettings`` stores.
+
+## `SharedSettingsStore/migrate(from:domainName:to:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+@discardableResult static func migrate(from old: UserDefaults, domainName: String, to shared: UserDefaults) -> Bool
+```
+
+Copies the settings stored by earlier versions in the app's own `UserDefaults` into the
+shared store, once.
+
+Only the app calls it, before it creates its ``NopeSettings``: an extension's own store is
+empty, so its call would mark the move done without moving anything. A value already in the
+shared store (set by a control before the app first ran) is kept. The old values stay where
+they were, so an earlier version still finds them; they are no longer read.
+
+Values given as launch arguments aren't copied: only the old store's persistent domain is.
+
+- Parameters:
+  - old: The app's own store, normally `UserDefaults.standard`.
+  - domainName: The old store's persistent domain: the app's bundle identifier for
+    `UserDefaults.standard`, or the suite name.
+  - shared: The shared store.
+- Returns: `true` when this call copied the settings, `false` when it was done before.
+
+## `SharedSettingsStore/migrationKey`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+static let migrationKey: String
+```
+
+The key that records, in the shared store, that the app's own settings were copied into it.
+
+## `SharedSettingsSync`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+@MainActor final class SharedSettingsSync
+```
+
+Keeps one process's ``NopeSettings`` in step with the other processes of the app.
+
+When this process changes the settings, it posts the signal, so the app's controls and the
+app's open screens update. When another process signals, it reloads the settings from the
+store, and the interface follows through Observation. No timer or polling is involved
+(AGENTS.md, "Battery").
+
+Keep the object for as long as the settings should follow; releasing it stops both.
+
+```swift
+let sync = SharedSettingsSync(settings: settings, signal: signal) {
+    // For example, refresh the Control Center controls.
+}
+```
+
+## `SharedSettingsSync/init(settings:signal:onChange:)`
+
+public, declared in `Sources/NopeCore/SharedSettings.swift`
+
+```swift
+@MainActor init(settings: NopeSettings, signal: any SettingsChangeSignaling, onChange: @escaping @MainActor () -> Void = {})
+```
+
+Starts following.
+
+- Parameters:
+  - settings: The settings to keep in step. Its store's changes are posted; the signal
+    reloads it.
+  - signal: The signal shared by the app's processes.
+  - onChange: Called on the main actor after this process changed the settings, or after
+    another process's change reloaded them. Not called for a signal that changed nothing,
+    such as this process's own.
 
 ## `ShortcutInbox`
 
