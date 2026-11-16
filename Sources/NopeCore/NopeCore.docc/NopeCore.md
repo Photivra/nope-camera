@@ -76,6 +76,14 @@ Related documentation in the repository:
 - ``MetadataItem``
 - ``LockedMetadataItem``
 
+### Shared settings
+
+- ``SharedSettingsStore``
+- ``SharedSettingsSync``
+- ``SettingsChangeSignaling``
+- ``DarwinSettingsChangeSignal``
+- ``NopeSettingsSnapshot``
+
 ### Saving
 
 - ``PhotoSaver``

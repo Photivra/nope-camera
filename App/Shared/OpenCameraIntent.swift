@@ -1,4 +1,5 @@
 import AppIntents
+import NopeCore
 
 /// Opens the app's camera from the Lock Screen, Control Center or the Action button (issue #42).
 ///
@@ -9,9 +10,14 @@ import AppIntents
 /// capture extension and the control's widget extension, so this file is in all three targets
 /// (App/Shared).
 ///
-/// It holds no rules and passes no app context: the camera starts as it does when opened from
-/// the Home Screen.
+/// It holds no rules. Its app context carries a copy of the person's settings
+/// (``NopeSettingsSnapshot``), which the app writes whenever they change
+/// (``SharedSettings/publishToLockScreenCamera(_:)``) and the Lock Screen camera reads when it
+/// opens, because Apple doesn't let a capture extension read the App Group's container.
 struct OpenCameraIntent: CameraCaptureIntent {
+    /// The settings the Lock Screen camera starts with, at most 4 KB (Apple's limit).
+    typealias AppContext = NopeSettingsSnapshot
+
     /// The name in the Shortcuts app and the controls gallery.
     static let title = LocalizedStringResource(
         "Open the Camera", comment: "The name of the action that opens nope.'s camera, in the Shortcuts app.")
