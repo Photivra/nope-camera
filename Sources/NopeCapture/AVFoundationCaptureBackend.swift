@@ -120,7 +120,8 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
             dimensions: photo.dimensions,
             exposureDuration: photo.exposureDuration,
             iso: photo.iso,
-            rawImageData: photo.rawImageData
+            rawImageData: photo.rawImageData,
+            rawClipping: photo.rawClipping
         )
     }
 
@@ -171,7 +172,8 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
                 dimensions: photo.dimensions,
                 exposureDuration: photo.exposureDuration,
                 iso: photo.iso,
-                rawImageData: photo.rawImageData
+                rawImageData: photo.rawImageData,
+                rawClipping: photo.rawClipping
             )
         }
     }

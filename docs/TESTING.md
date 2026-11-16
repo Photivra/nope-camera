@@ -529,7 +529,12 @@ iPad:
   from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
   for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
   `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
-  file sizes, and the tag list; with signing on, c2patool shows the same claim generator and
+  file sizes, and the tag list; RAW clipping (`RAWClippingMeter`) shows numbers, not "Not
+  measured", on every lens (record each lens's `CVPixelBufferGetPixelFormatType`, width, height
+  and bytes per row against the DNG's `ImageWidth`, `ImageLength`, `ActiveArea` and
+  `BitsPerSample`, and whether the buffer's values are shifted), a frame with a bare bulb or the
+  sun shows clipped highlights and a lens-cap frame clipped shadows (record both shares), and taking a RAW photo is no slower than before by more than the time the count
+  takes (Time Profiler, `clipping(of:dng:)`); with signing on, c2patool shows the same claim generator and
   description; the timings look plausible;
 - manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
   controls turned on: see "Manual controls on a device" below;
@@ -739,7 +744,8 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   live aid is off, and the energy impact with them on is recorded in the release notes;
 - live camera readout: the values match the saved files' EXIF (ExposureTime, ISOSpeedRatings,
   FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
-  the torch show when another feature turns them on.
+  the torch show when another feature turns them on; with Keep Readout in Clean View on, the
+  readout stays in clean view and keeps updating, and with it off clean view hides it.
 
 ### Comparison shot on a device (issue #55)
 

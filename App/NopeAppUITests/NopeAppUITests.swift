@@ -1779,6 +1779,9 @@ final class NopeAppUITests: XCTestCase {
         openPhotoDetails(app)
         XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "RAW (DNG)").exists)
+        // The RAW clipping the simulated camera reports (SimulatedCaptureBackend.placeholderClipping).
+        XCTAssertTrue(element(app, containing: "0.4% of photosites").exists)
+        XCTAssertTrue(element(app, containing: "0.1% of photosites").exists)
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Saved and signed.")))
         // As for the format sheet (testFormatChipExplainsTheFormat): the list's system section
         // headers are reported as "partially unsupported" at the default size; the same list is

@@ -104,6 +104,10 @@ public struct OverlayOptions: Equatable, Sendable {
     /// Whether the live camera readout ("stats for nerds") is shown.
     public var showsLiveReadout = false
 
+    /// Whether the live camera readout stays shown in clean view ("pinned"); otherwise clean
+    /// view hides it with the other controls. Off by default.
+    public var pinsLiveReadout = false
+
     /// Creates the defaults: every overlay off, the rule-of-thirds grid style and the standard
     /// spiral placement.
     public init() {}
@@ -123,6 +127,7 @@ public struct OverlayOptions: Equatable, Sendable {
         showsFocusPeaking = defaults.bool(forKey: Key.showsFocusPeaking)
         showsHistogram = defaults.bool(forKey: Key.showsHistogram)
         showsLiveReadout = defaults.bool(forKey: Key.showsLiveReadout)
+        pinsLiveReadout = defaults.bool(forKey: Key.pinsLiveReadout)
     }
 
     /// Writes the options to a store.
@@ -136,6 +141,16 @@ public struct OverlayOptions: Equatable, Sendable {
         defaults.set(showsFocusPeaking, forKey: Key.showsFocusPeaking)
         defaults.set(showsHistogram, forKey: Key.showsHistogram)
         defaults.set(showsLiveReadout, forKey: Key.showsLiveReadout)
+        defaults.set(pinsLiveReadout, forKey: Key.pinsLiveReadout)
+    }
+
+    /// Whether the live camera readout is shown on a camera screen: when it is on, and in clean
+    /// view only when it is pinned (issue #52).
+    ///
+    /// - Parameter isCleanView: Whether clean view is on.
+    /// - Returns: `true` if the readout is shown.
+    public func showsLiveReadout(inCleanView isCleanView: Bool) -> Bool {
+        showsLiveReadout && (pinsLiveReadout || !isCleanView)
     }
 
     /// Whether any overlay is on, for the settings row's summary.
@@ -159,6 +174,8 @@ public struct OverlayOptions: Equatable, Sendable {
         static let showsHistogram = "NopeSettings.overlays.showsHistogram"
         /// Whether the live camera readout is shown, a Boolean.
         static let showsLiveReadout = "NopeSettings.overlays.showsLiveReadout"
+        /// Whether the live camera readout stays in clean view, a Boolean.
+        static let pinsLiveReadout = "NopeSettings.overlays.pinsLiveReadout"
     }
 }
 
@@ -221,6 +238,16 @@ extension NopeSettings {
     public func setShowsLiveReadout(_ isOn: Bool) {
         var options = overlays
         options.showsLiveReadout = isOn
+        setOverlays(options)
+    }
+
+    /// Pins the live camera readout so it stays in clean view, or unpins it, and saves the
+    /// change.
+    ///
+    /// - Parameter isOn: Whether the readout stays in clean view.
+    public func setPinsLiveReadout(_ isOn: Bool) {
+        var options = overlays
+        options.pinsLiveReadout = isOn
         setOverlays(options)
     }
 }

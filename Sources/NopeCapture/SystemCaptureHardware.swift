@@ -987,7 +987,10 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
             failed = true
             return
         }
-        let rawImageData = photo.isRawPhoto ? photo.fileDataRepresentation().flatMap(MetadataFileReader.rawImageData(ofDNG:)) : nil
+        let systemDNG = photo.isRawPhoto ? photo.fileDataRepresentation().map { MetadataFileReader.read($0, format: .raw) } : nil
+        let rawClipping = systemDNG.map { dng in
+            photo.pixelBuffer.map { Self.clipping(of: $0, dng: dng.inventory) } ?? .notMeasured(.noSamples)
+        }
         let size = photo.isRawPhoto ? photo.resolvedSettings.rawPhotoDimensions : photo.resolvedSettings.photoDimensions
         let frame = photo.bracketSettings as? AVCaptureManualExposureBracketedStillImageSettings
         photos.append(
@@ -995,7 +998,38 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
                 data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
                 exposureDuration: frame.map { $0.exposureDuration.seconds } ?? exposureDuration,
                 iso: frame.map { Double($0.iso) } ?? iso, pixelSample: photo.pixelBuffer.flatMap(Self.sample),
-                rawImageData: rawImageData))
+                rawImageData: systemDNG?.rawImageData, rawClipping: rawClipping))
+    }
+
+    /// Counts the clipped photosites of a RAW photo's sensor buffer (``RAWClippingMeter``),
+    /// against the levels of the camera's own DNG of the same photo.
+    ///
+    /// Reads every 16-bit sample of the active area once, row by row, from the locked buffer;
+    /// a multi-plane buffer, or one whose rows are shorter than its width of 16-bit samples, isn't
+    /// read. Privacy: only the counts are kept; the samples are never copied, stored or logged.
+    ///
+    /// - Parameters:
+    ///   - pixelBuffer: The photo's pixel buffer (`AVCapturePhoto.pixelBuffer`), the Bayer RAW
+    ///     samples of a RAW photo.
+    ///   - dng: The read-back of the camera's DNG.
+    /// - Returns: The clipping, or why it wasn't measured.
+    private static func clipping(of pixelBuffer: CVPixelBuffer, dng: MetadataInventory) -> RAWClippingResult {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        guard !CVPixelBufferIsPlanar(pixelBuffer), width * 2 <= bytesPerRow, let base = CVPixelBufferGetBaseAddress(pixelBuffer)
+        else { return .notMeasured(.unsupportedLayout) }
+        let pattern = (CVBufferCopyAttachment(pixelBuffer, kCVPixelBufferVersatileBayerKey_BayerPattern, nil) as? NSNumber)?.intValue
+        return RAWClippingMeter.measure(
+            pixelFormat: CVPixelBufferGetPixelFormatType(pixelBuffer), versatileBayerPattern: pattern, width: width,
+            height: height, dng: dng
+        ) { row, column in
+            // The meter reads only rows below height and columns below width, and each row
+            // holds width 16-bit samples (checked above), so each read is in bounds.
+            UInt16(littleEndian: base.loadUnaligned(fromByteOffset: row * bytesPerRow + column * 2, as: UInt16.self))
+        }
     }
 
     /// Reads the bytes at ``PictureCheck/sampleOffsets(byteCount:)`` from the buffer's first

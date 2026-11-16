@@ -183,6 +183,9 @@ public struct PhotoDetails: Equatable, Sendable {
     public let signature: SignatureStatus
     /// How long each step took.
     public let timings: SaveTimings
+    /// The clipping counted from the RAW sensor data at capture time, or why it wasn't measured;
+    /// `nil` for a photo without RAW (a lens's processed fallback).
+    public let rawClipping: RAWClippingResult?
 
     /// Creates details.
     ///
@@ -193,10 +196,12 @@ public struct PhotoDetails: Equatable, Sendable {
     ///   - lockedItems: The locked items kept.
     ///   - signature: The signature status.
     ///   - timings: The timings.
+    ///   - rawClipping: The RAW clipping, or `nil`.
     public init(
         files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem],
-        signature: SignatureStatus, timings: SaveTimings
+        signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil
     ) {
+        self.rawClipping = rawClipping
         self.files = files
         self.exposure = exposure
         self.items = items
@@ -285,10 +290,11 @@ extension PhotoDetails {
     ///   - look: The look HEIF and JPEG were developed with.
     ///   - signature: The photo's signature status.
     ///   - timings: The measured timings.
+    ///   - rawClipping: The clipping counted at capture time, or `nil`.
     /// - Returns: The details.
     static func build(
         files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus,
-        timings: SaveTimings
+        timings: SaveTimings, rawClipping: RAWClippingResult? = nil
     ) -> PhotoDetails {
         let inventories = files.map(\.readBack.file.inventory)
         let formats = Set(files.map(\.file.format))
@@ -298,7 +304,7 @@ extension PhotoDetails {
             items: MetadataItem.allCases.map { item in
                 ItemReceipt(item: item, state: state(of: item, settings: plan.settings, inventories: inventories))
             },
-            lockedItems: lockedItems(for: formats), signature: signature, timings: timings)
+            lockedItems: lockedItems(for: formats), signature: signature, timings: timings, rawClipping: rawClipping)
     }
 
     /// One file's details.
