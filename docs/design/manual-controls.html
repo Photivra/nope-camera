@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: manual controls</title>
+<style>
+  /* Tokens, phone frame, type scale and figure layout: copied from ux-v3.html. */
+  :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#5fe0d0; --amber:#ffb340; --red:#ff453a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+  header, .notes { max-width:1180px; margin:0 auto; padding:28px 16px 4px; }
+  h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.02em; }
+  header p { margin:0; color:var(--muted); max-width:820px; }
+  .grid { max-width:1180px; margin:0 auto; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:30px 26px; }
+  figure { margin:0; }
+  figcaption { margin-top:12px; font-size:13px; color:var(--muted); }
+  figcaption b { color:var(--ink); display:block; font-size:14px; margin-bottom:2px; }
+  /* phone: 300px wide ≈ 0.75 × 402 pt; all sizes below are drawn at that scale */
+  .phone { position:relative; width:300px; height:652px; border-radius:46px; background:#000; overflow:hidden; box-shadow:0 0 0 10px #1c1c1e, 0 20px 40px rgba(0,0,0,.25); margin:10px auto 0; color:#fff; font-size:12px; }
+  .phone.land { width:652px; height:300px; max-width:100%; }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:94px; height:27px; background:#000; border-radius:20px; z-index:9; }
+  .land .island { top:50%; left:10px; transform:translateY(-50%); width:27px; height:94px; }
+  .top { position:absolute; top:42px; left:12px; right:12px; height:34px; display:flex; align-items:center; justify-content:space-between; z-index:5; }
+  .pills { display:flex; gap:5px; min-width:84px; }
+  .pill { height:24px; padding:0 8px; border-radius:12px; display:flex; align-items:center; gap:4px; font-size:11px; font-weight:600; background:rgba(58,58,60,.92); }
+  .pill.amber { color:#000; background:var(--amber); }
+  .chip { height:28px; padding:0 11px; border-radius:14px; display:flex; align-items:center; gap:5px; font-weight:600; font-size:12px; color:var(--teal); background:rgba(58,58,60,.92); }
+  .ib { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; font-size:16px; background:rgba(58,58,60,.92); }
+  .vf { position:absolute; left:0; right:0; top:84px; height:400px; background:
+      radial-gradient(120px 90px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(260px 200px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .land .vf { top:0; bottom:0; left:84px; width:400px; height:auto; }
+  .row { position:absolute; left:0; right:0; top:492px; height:34px; display:flex; justify-content:center; align-items:center; gap:8px; z-index:5; }
+  .lens { height:30px; min-width:38px; padding:0 8px; border-radius:15px; display:grid; place-items:center; font-weight:600; background:rgba(58,58,60,.92); }
+  .lens.on { background:#fff; color:#000; font-weight:700; }
+  .tray-btn { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; background:rgba(58,58,60,.92); font-size:14px; margin-left:6px; }
+  .bottom { position:absolute; left:0; right:0; bottom:28px; height:84px; display:flex; align-items:center; justify-content:space-between; padding:0 30px; }
+  .slot { width:44px; height:44px; }
+  .thumb { width:44px; height:44px; border-radius:9px; background:linear-gradient(135deg,#8a6a3e,#3d5a6b); box-shadow:0 0 0 1.5px #fff, 0 0 0 2.5px #000; position:relative; }
+  .thumb .seal { position:absolute; right:-6px; top:-6px; width:18px; height:18px; border-radius:50%; background:var(--teal); color:#000; font-size:10px; display:grid; place-items:center; box-shadow:0 0 0 1.5px #000; }
+  .shutter { width:66px; height:66px; border-radius:50%; border:4px solid #fff; box-shadow:0 0 0 1px #000 inset, 0 0 0 1px rgba(0,0,0,.6); display:grid; place-items:center; }
+  .shutter::after { content:""; width:52px; height:52px; border-radius:50%; background:#fff; }
+  .flip { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:17px; background:rgba(58,58,60,.92); }
+  /* night: red on black, state by fill vs outline + symbol (ux-v3) */
+  .night, .night .lens, .night .pill, .night .ib, .night .flip, .night .chip { color:var(--red); }
+  .night .vf { filter:sepia(1) saturate(6) hue-rotate(-50deg) brightness(.5); }
+  .night .lens, .night .pill, .night .ib, .night .flip, .night .chip, .night .tray-btn { background:#1a0000; border:1px solid #5a1410; }
+  .night .lens.on { background:var(--red); color:#000; }
+  .night .shutter { border-color:var(--red); } .night .shutter::after { background:var(--red); }
+  /* sheets and forms (ux-v3) */
+  .ok { color:var(--teal); }
+  .settings { background:#000; }
+  .settings .sec { padding:12px 30px 5px; font-size:11px; text-transform:uppercase; color:#8e8e93; }
+  .settings .gr { margin:0 14px; background:#1c1c1e; border-radius:11px; overflow:hidden; }
+  .settings .rw { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 13px; border-bottom:.5px solid #38383a; font-size:14px; }
+  .settings .rw:last-child { border-bottom:0; }
+  .settings .rw small { color:#8e8e93; font-size:13px; white-space:nowrap; }
+  .tog { flex:0 0 auto; width:42px; height:25px; border-radius:13px; background:#34c759; position:relative; }
+  .tog::after { content:""; position:absolute; right:2px; top:2px; width:21px; height:21px; border-radius:50%; background:#fff; }
+  .tog.off { background:#39393d; } .tog.off::after { left:2px; right:auto; }
+  .notes h2 { font-size:18px; margin:22px 0 8px; }
+  .notes ul { margin:0; padding-left:20px; }
+  .notes li { margin:5px 0; }
+  table { border-collapse:collapse; font-size:13px; margin-top:6px; }
+  td, th { text-align:left; padding:5px 10px 5px 0; vertical-align:top; border-bottom:1px solid rgba(128,128,128,.25); }
+  th { color:var(--muted); font-weight:600; }
+
+  /* ---- Additions for this file ---- */
+  .set { max-width:1180px; margin:0 auto; padding:0 16px; display:flex; flex-wrap:wrap; gap:4px 14px; font-size:13px; color:var(--muted); }
+  .set a, .notes a, figcaption a { color:inherit; text-decoration:underline; }
+  .ver { margin-top:8px !important; font-size:13px; }
+  h2.part { max-width:1180px; margin:26px auto 0; padding:0 16px; font-size:18px; }
+  .sym { width:1em; height:1em; vertical-align:-.12em; fill:none; stroke:currentColor; }
+  /* Manual-controls phone: top bar 44 · picture · lens row 44 · readout 44 · shutter row 88 (pt) */
+  .man .row { top:486px; height:33px; }
+  .man .bottom { bottom:24px; height:70px; }
+  /* readout row: six controls and the options button, 44 pt targets, A/M above the value */
+  .ro { position:absolute; left:3px; right:3px; top:521px; display:flex; justify-content:center; gap:3px; z-index:5; }
+  .ro .b { flex:0 0 auto; min-width:33px; height:33px; padding:0 4.5px; border-radius:17px; background:#333; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1; }
+  .ro .b i { font-style:normal; font-size:8px; font-weight:600; }
+  .ro .b span { font-size:9.5px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .ro .b.sel { background:#fff; color:#000; font-weight:700; }
+  .ro .b .sym { width:13px; height:13px; }
+    /* dial: over the picture's bottom on a dark backing */
+  .dial { position:absolute; left:6px; right:6px; bottom:174px; padding:9px 9px 8px; border-radius:8px; background:rgba(0,0,0,.8); z-index:6; color:#fff; }
+  .dial .hd { display:flex; align-items:baseline; gap:6px; font-size:13px; font-weight:600; }
+  .dial .hd .v { font-variant-numeric:tabular-nums; }
+  .dial .hd .m { margin-left:auto; font-size:9.5px; font-weight:400; font-variant-numeric:tabular-nums; }
+  .dial .ctl { display:flex; align-items:center; gap:6px; margin:7px 0 6px; }
+  .cb { flex:0 0 auto; min-width:33px; height:33px; padding:0 7px; border-radius:17px; display:grid; place-items:center; background:#333; font-size:11px; font-weight:600; }
+  .cb.sel { background:#fff; color:#000; font-weight:700; }
+  .sl { flex:1; margin:0 10px; height:4px; border-radius:2px; background:rgba(120,120,128,.5); position:relative; }
+  .sl::before { content:""; position:absolute; left:0; top:0; bottom:0; width:var(--p,50%); border-radius:2px; background:#0a84ff; }
+  .sl::after { content:""; position:absolute; top:50%; left:var(--p,50%); width:20px; height:20px; transform:translate(-50%,-50%); border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .seg { flex:1; display:flex; padding:2px; border-radius:7px; background:rgba(118,118,128,.3); }
+  .seg span { flex:1; text-align:center; padding:5px 0; font-size:10px; border-radius:6px; }
+  .seg span.on { background:#636366; font-weight:600; }
+  .dial .rng { font-size:9.5px; }
+  .dial .note { font-size:10px; margin:6px 0; }
+  .dial .tint { display:flex; align-items:center; gap:8px; font-size:9.5px; margin:2px 0 4px; }
+  .dial .pre { display:inline-block; color:#0a84ff; font-size:11px; padding:6px 0; }
+  .hint { position:absolute; left:50%; top:100px; transform:translateX(-50%); white-space:nowrap; padding:6px 9px; border-radius:8px; background:rgba(0,0,0,.8); font-size:10.5px; z-index:6; }
+  .hist { position:absolute; right:6px; top:90px; padding:6px; border-radius:8px; background:rgba(0,0,0,.8); z-index:6; font-size:8px; }
+  .hist .gph { width:96px; height:36px; border-bottom:1px solid rgba(255,255,255,.5); background:linear-gradient(90deg, transparent 0 4%, rgba(255,255,255,.85) 4% 6%, transparent 6% 9%, rgba(255,255,255,.85) 9% 11%, transparent 11%),
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 30%, transparent 30%) 14% 100%/18% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 55%, transparent 55%) 34% 100%/18% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 45%, transparent 45%) 54% 100%/16% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 70%, transparent 70%) 76% 100%/14% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 100%, transparent 100%) 100% 100%/5% 100% no-repeat; }
+  .hist .w { color:var(--amber); font-weight:600; margin-top:2px; }
+  .peak { position:absolute; left:120px; top:150px; width:120px; height:110px; z-index:2;
+      background:radial-gradient(circle, rgba(255,51,217,.75) 0 1.6px, transparent 1.8px) 0 0/7px 7px;
+      -webkit-mask:radial-gradient(60px 50px at 50% 52%, #000 55%, transparent 72%); mask:radial-gradient(60px 50px at 50% 52%, #000 55%, transparent 72%); }
+  .vf.clip::after { content:""; position:absolute; left:52%; top:34%; width:90px; height:70px; border-radius:50%; background:#fffef6; filter:blur(6px); }
+  /* native menu over the camera (dark appearance) */
+  .menu { position:absolute; z-index:8; width:190px; border-radius:13px; background:rgba(44,44,46,.98); box-shadow:0 10px 30px rgba(0,0,0,.5); overflow:hidden; font-size:13px; }
+  .menu div { display:flex; justify-content:space-between; align-items:center; padding:10px 13px; border-bottom:.5px solid #48484a; }
+  .menu div:last-child { border-bottom:0; }
+  .menu .dis { color:#6e6e73; }
+  .menu small { color:#98989f; font-size:11px; }
+  /* Pro Tools: full-screen form with an inline title */
+  .pt .ttl { padding:48px 16px 2px; text-align:center; font-size:14px; font-weight:600; }
+  .pt .ft { padding:6px 30px 0; font-size:10.5px; color:#8e8e93; line-height:1.35; }
+  .pt .rw .lbl small { display:block; white-space:normal; font-size:10.5px; line-height:1.3; margin-top:1px; }
+  .pt .rw .lnk { color:#0a84ff; }
+  .pt .rw .red { color:#ff453a; }
+  .pt.light { background:#f2f2f7; color:#000; }
+  .pt.light .gr { background:#fff; }
+  .pt.light .rw { border-color:#c6c6c8; }
+  .pt.light .rw .lnk { color:#007aff; }
+  .ud { width:9px; height:11px; vertical-align:-1px; margin-left:3px; fill:none; stroke:currentColor; stroke-width:1.6; }
+  /* night mode for the readout and dial: white × red, so selected = red fill, black text */
+  .night .ro .b, .night .cb { background:#140000; color:var(--red); border:1px solid #5a1410; }
+  .night .ro .b.sel, .night .cb.sel { background:var(--red); color:#000; border-color:var(--red); }
+  .night .dial { color:var(--red); background:rgba(0,0,0,.85); border:1px solid #3a0c0a; }
+  .night .sl { background:#3a0000; } .night .sl::before { background:#800000; } .night .sl::after { background:var(--red); }
+  .tintnote { position:absolute; left:50%; top:96px; transform:translateX(-50%); font-size:10px; color:var(--red); background:#000; padding:2px 7px; border-radius:8px; z-index:6; }
+  /* VoiceOver cursor */
+  .vo { position:absolute; z-index:9; border:3px solid #000; outline:2px solid #fff; border-radius:19px; }
+  .say { position:absolute; left:10px; right:10px; top:96px; z-index:9; padding:9px 11px; border-radius:12px; background:rgba(28,28,30,.96); border:1px solid rgba(255,255,255,.15); font-size:11.5px; line-height:1.4; }
+  .say b { display:block; font-size:10px; color:#98989f; font-weight:600; text-transform:uppercase; margin-bottom:2px; }
+  /* largest text: scrolling layout */
+  .ax { position:absolute; left:0; right:0; top:44px; bottom:0; padding:0 12px; display:flex; flex-direction:column; gap:9px; }
+  .ax .tb { display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  .ax .tb .pill, .ax .tb .chip { height:34px; font-size:17px; border-radius:17px; padding:0 12px; }
+  .ax .tb .ib { width:44px; height:44px; font-size:22px; }
+  .ax .pic { height:140px; border-radius:2px; background:
+      radial-gradient(60px 45px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(130px 100px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); width:105px; margin:0 auto; }
+  .ax .lst { background:#000; border:1px solid #2c2c2e; border-radius:9px; padding:9px; display:flex; flex-direction:column; gap:10px; }
+  .ax h4 { margin:0; font-size:21px; line-height:1.15; }
+  .ax .tr { display:flex; justify-content:space-between; align-items:center; font-size:20px; }
+  .ax .stp { display:flex; border-radius:9px; background:#2c2c2e; }
+  .ax .stp span { width:46px; text-align:center; font-size:22px; padding:2px 0; }
+  .ax .stp span + span { border-left:1px solid #48484a; }
+  .ax .sub { font-size:20px; color:#98989f; }
+  /* landscape: the layout stays put; each readout turns upright */
+  .land .lcol { position:absolute; top:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; z-index:5; }
+  .land .lcol .b { width:auto; }
+  .land .shcol { position:absolute; right:10px; top:0; bottom:0; width:66px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:26px 0; }
+  .land .ro { position:static; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- slider.horizontal.3-style glyph -->
+    <symbol id="sliders" viewBox="0 0 16 16"><path d="M2 4h12M2 8h12M2 12h12" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="4" r="1.9" fill="currentColor" stroke="none"/><circle cx="5" cy="8" r="1.9" fill="currentColor" stroke="none"/><circle cx="11" cy="12" r="1.9" fill="currentColor" stroke="none"/></symbol>
+    <!-- chevron.up.chevron.down-style glyph for menu pickers -->
+    <symbol id="updown" viewBox="0 0 9 11"><path d="M1.5 4 4.5 1 7.5 4M1.5 7 4.5 10 7.5 7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<header>
+  <h1>nope. — manual controls</h1>
+  <p>The manual controls as the app ships them: the M pill, one readout row, a dial per control with − and + steppers and Auto, and Pro Tools. Drawn in the v3 look: filled white = selected, teal only for verified facts, amber only for warnings (always with a symbol and words), a dark backing for anything over the picture. Sizes are drawn at 0.75 × points; every target is at least 44 pt. Mockups only.</p>
+  <p class="ver">Design version: 0.3.0 (2026-11-16)</p>
+</header>
+<nav class="set" aria-label="Design files">
+  <span>Design set:</span>
+  <a href="camera.html">camera.html</a>
+  <a href="settings.html">settings.html</a>
+  <a href="manual-controls.html" aria-current="page">manual-controls.html</a>
+  <a href="icon.html">icon.html</a>
+</nav>
+
+<h2 class="part">The readout row</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>1 · Manual Controls on</b>Turned on with the Manual Controls switch in Settings (<a href="settings.html">settings.html</a>); off by default. The M pill (sliders symbol and "M") sits with the other state pills; its action is Turn Off Manual Controls. Below the lens row, one readout row in a fixed order: exposure compensation, ISO, shutter, aperture, focus, white balance, then the sliders button. Each readout shows A or M above the value in use, so the mode never depends on color. Focus is a word (Near, Middle, Far): iOS reports no distance.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div><div class="pill">🔒 AE-L</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:brightness(.75)"></div>
+      <div class="menu" style="right:8px;top:388px"><div>All Auto <span>Ⓐ</span></div><div>Pro Tools <svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 400</span></div><div class="b"><i>A</i><span>1/250</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Far</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>2 · The last button: All Auto and Pro Tools</b>A native menu. All Auto returns every control to automatic in one tap, closes the open dial, plays a success haptic and announces "Full auto"; it is dimmed while everything is already on Auto. Pro Tools opens the sheet (figures 14–16). Here ISO is set by hand (M) and exposure is locked, so a lock pill reads "AE-L" ("AF-L" for focus, "AE/AF" for both); tap it to unlock.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="row" style="top:470px"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro" style="top:506px"><div class="b"><i>M</i><span>+0.3</span></div><div class="b"><i>M</i><span>ISO 12,096</span></div><div class="b"><i>M</i><span>1/71,429</span></div><div class="b"><i>M</i><span>f/1.48</span></div></div><div class="ro" style="top:542px"><div class="b"><i>M</i><span>Near</span></div><div class="b"><i>M</i><span>10,000 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom" style="bottom:4px"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>3 · When seven don't fit: two rows</b>Values never truncate or break inside a number. When the seven buttons don't fit side by side (long values, a narrow phone, larger text), the row becomes a grid: four readouts, then the last two and the sliders button. On a 4.7-inch iPhone the lens row and readout overlay the bottom of the picture on a dark backing (<a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+</div>
+
+<h2 class="part">The dials</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="hd">ISO <span class="v">400</span><span class="m">-0.7 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:46%"></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="rng">This lens: 54 – 12,096</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b sel"><i>M</i><span>ISO 400</span></div><div class="b"><i>M</i><span>1/250</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>4 · ISO, set by hand</b>Pressing a readout fills it white and opens its dial over the bottom of the picture; pressing it again closes it. The dial: name and value, the meter (how the exposure compares with the camera's reading), then − and + around a native slider over the lens's real steps, and Auto. ISO steps are the nominal third stops (… 100, 125, 160, 200 …) inside the lens's range, plus the range's own ends. Any step or slider move sets the control to Manual. Example range from the app's simulated wide lens.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="hd">Shutter <span class="v">1/120</span><span class="m">0.0 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:58%"></div><div class="cb">+</div><div class="cb sel">Auto</div></div>
+        <div class="rng">This lens: 1/71,429 – 1 s</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b sel"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>5 · Shutter on Auto</b>Auto is filled white while the camera sets the value, and the dial shows the value in use. Pressing Auto in Auto fixes the value in use (Manual); pressing it in Manual hands the control back. Shutter steps are third stops from 1/16000 to 30 s, limited to what the lens reports, plus the range's ends; below 0.3 s as fractions, from 0.3 s in seconds.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="hint">✋ Hold it steady or use a tripod.</div>
+      <div class="dial"><div class="hd">Shutter <span class="v">1 s</span><span class="m">+0.3 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:100%"></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="rng">This lens: 1/71,429 – 1 s</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 54</span></div><div class="b sel"><i>M</i><span>1 s</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>M</i><span>Far</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>6 · Long exposure</b>The slider ends at the longest exposure the lens reports (the scale has third stops up to 30 s; this example lens stops at 1 s). A shutter too slow to hold by hand shows a plain hint, "Hold it steady or use a tripod.", on a dark backing; it isn't a warning about the photo, so it isn't amber, and nothing is changed. The Astro helper sets the longest shutter and highest ISO for night-sky runs (<a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="hd">Aperture <span class="v">f/2.8</span><span class="m">0.0 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="seg"><span>f/1.48</span><span>f/1.8</span><span class="on">f/2.8</span><span>f/4</span></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="rng">This lens: f/1.48 – f/4</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 250</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b sel"><i>M</i><span>f/2.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>7 · Aperture, on a lens that can change it</b>Instead of a slider, a segmented picker of the stops the lens recommends (iOS 27 reports them per format), widest first. Offered only where the lens supports aperture priority. Example stops from the app's simulated manual scenario; a real lens shows its own.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="hd">Aperture <span class="v">f/2.2</span><span class="m">0.0 EV</span></div>
+        <div class="note">This lens has a fixed aperture.</div>
+        <div class="rng">This lens: f/2.2</div></div>
+      <div class="row"><div class="lens on">0.5×</div><div class="lens">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b sel"><i>A</i><span>f/2.2</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>8 · Fixed aperture</b>A control the lens can't set keeps its place, so nothing jumps around. With a fixed aperture the readout shows the lens's f-number and the dial explains why there are no steppers. VoiceOver reads "Fixed, f/2.2". A control the lens can't set at all shows "n/a" and "Not available on this lens."</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"><div class="peak"></div></div>
+      <div class="dial"><div class="hd">Focus <span class="v">Near</span><span class="m">0.0 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:25%"></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="rng">This lens: Closest to Far</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b sel"><i>M</i><span>Near</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>9 · Focus, with peaking</b>A relative scale from Closest to Far in twenty steps; the value is a word (Near, Middle, Far), never a distance, because iOS reports only a lens position. Focus Peaking (Pro Tools or Settings › Viewfinder Overlays, off by default) fills the sharpest edges in magenta: a color that isn't one of teal, amber or white. It is drawn on the picture only and never saved.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:sepia(.35) saturate(1.3)"></div>
+      <div class="dial" style="bottom:174px"><div class="hd">White Balance <span class="v">3,200 K</span><span class="m">0.0 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:9%"></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="tint">Tint <div class="sl" style="--p:50%"></div></div>
+        <div class="pre">Presets</div>
+        <div class="rng">This lens: 2,500 K – 10,000 K</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 160</span></div><div class="b"><i>A</i><span>1/60</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b sel"><i>M</i><span>3,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>10 · White balance in kelvin</b>2,500–10,000 K in 100 K steps, a Tint slider (green to magenta, −150 to +150 in steps of 5), and a Presets menu. The range is the app's, the same on every lens that allows manual white balance.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:brightness(.75)"></div>
+      <div class="menu" style="left:30px;top:150px"><div>Tungsten</div><div>Fluorescent</div><div>Daylight</div><div>Cloudy</div><div>Shade</div></div>
+      <div class="dial"><div class="hd">White Balance <span class="v">5,200 K</span><span class="m">0.0 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:36%"></div><div class="cb">+</div><div class="cb sel">Auto</div></div>
+        <div class="tint">Tint <div class="sl" style="--p:50%"></div></div>
+        <div class="pre">Presets</div>
+        <div class="rng">This lens: 2,500 K – 10,000 K</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b sel"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>11 · White balance presets</b>Tungsten 3,200 K, Fluorescent 4,000 K, Daylight 5,500 K, Cloudy 6,500 K, Shade 7,500 K, each with no tint. Choosing one sets white balance to Manual at that value.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf clip"></div>
+      <div class="hist"><div class="gph"></div><div>Preview</div><div class="w">☀︎⚠︎ Highlights clipped</div></div>
+      <div class="dial"><div class="hd">Exposure Compensation <span class="v">+1.0</span><span class="m">0.0 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:67%"></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="rng">This lens: -3.0 – +3.0</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b sel"><i>M</i><span>+1.0</span></div><div class="b"><i>A</i><span>ISO 64</span></div><div class="b"><i>A</i><span>1/500</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Far</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>12 · Exposure compensation and the highlight warning</b>±3 EV in third stops (narrower if the lens allows less); it applies to whatever is on Auto. The highlight warning comes from the live histogram (Pro Tools or Settings › Viewfinder Overlays, off by default), top right on a dark backing: "Highlights clipped" or "Shadows clipped" in amber with a symbol. It is labeled "Preview" because it measures the processed live preview, not the RAW; the RAW's own clipping is in the photo's details after the shot.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="hd">Exposure Compensation <span class="v">0.0</span><span class="m">-0.3 EV</span></div>
+        <div class="note">Exposure compensation works only while ISO or the shutter is on Auto.</div>
+        <div class="rng">This lens: -3.0 – +3.0</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b sel"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 200</span></div><div class="b"><i>M</i><span>1/125</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>13 · Compensation with ISO and shutter both set</b>With nothing on Auto there is nothing to compensate, so the dial says why instead of showing steppers; the meter still reads. The readout keeps its place.</figcaption>
+  </figure>
+</div>
+
+<h2 class="part">Pro Tools</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings pt"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw">Exposure Mode <small>Shutter Priority<svg class="ud"><use href="#updown"/></svg></small></div></div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw">Metering <small>Center<svg class="ud"><use href="#updown"/></svg></small></div></div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw">Exposure Lock (AE-L) <span class="tog off"></span></div><div class="rw">Focus Lock (AF-L) <span class="tog off"></span></div></div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw">Bracketing <span class="tog"></span></div><div class="rw">Frames <small>3<svg class="ud"><use href="#updown"/></svg></small></div><div class="rw">Step <small>1 EV<svg class="ud"><use href="#updown"/></svg></small></div></div>
+      <div class="ft">Each frame is a separate single-frame photo. Nothing is merged.</div>
+    </div>
+    <figcaption><b>14 · Pro Tools: modes, metering, locks, bracketing</b>A full-screen form, following the system appearance (night mode turns it red on black). Each section appears only when the lens supports it. Exposure Mode: Program, Shutter Priority, ISO Priority, Manual (S and I where iOS reports them for the lens's format); in S you set the shutter and the camera sets ISO. Metering: Center, Spot, Whole Frame (spot and whole frame need iOS 26). AE-L and AF-L are switches; AE-L needs ISO, shutter and aperture on Auto, AF-L needs focus on Auto. Bracketing: 3, 5 or 7 frames (up to what the lens can take), ⅓ EV, ⅔ EV, 1 EV or 2 EV apart, through the system's manual exposure bracket. Each frame is its own photo.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings pt light"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw"><b>Interval Shooting</b></div><div class="rw">Interval <small>10 sec<svg class="ud"><use href="#updown"/></svg></small></div><div class="rw">Photos <small>10<svg class="ud"><use href="#updown"/></svg></small></div><div class="rw"><span class="lnk">Start</span></div></div>
+      <div class="ft">Each photo is separate. Nothing is combined. Keep nope. open while the series runs.<br><br>Each photo is taken in full auto, or with your manual settings while Manual Controls are on.</div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw"><span class="lbl">Focus Peaking<small>Highlights the sharpest edges in magenta.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Histogram<small>Shown with the manual controls. It measures the processed live preview, not the RAW.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Live Camera Readout<small>The camera's live values, such as shutter, ISO, focus and white balance.</small></span><span class="tog off"></span></div></div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw"><span class="lnk">Done</span></div></div>
+    </div>
+    <figcaption><b>15 · Pro Tools, scrolled: interval and live aids</b>Shown here in the light appearance. The interval section is the same one the Drive menu opens in full auto: 1 s to 1 h between photos, 2 to 999 photos, Start (Stop while a series runs). Then the live aid switches, the same ones as in Settings, and Done as a row of the form.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings pt"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="sec"></div>
+      <div class="gr"><div class="rw">Exposure Mode <small>Shutter Priority<svg class="ud"><use href="#updown"/></svg></small></div></div>
+      <div class="menu" style="right:14px;top:120px;width:200px"><div>&nbsp;&nbsp;&nbsp;Program</div><div>✓ Shutter Priority</div><div>&nbsp;&nbsp;&nbsp;ISO Priority</div><div>&nbsp;&nbsp;&nbsp;Manual</div></div>
+    </div>
+    <figcaption><b>16 · Choosing an exposure mode</b>A native menu picker. The mode follows what is set by hand: P when neither ISO nor shutter is set, S for shutter only, I for ISO only, M for both. Choosing S, I or M fixes the values in use for the controls it takes over; choosing P returns ISO and shutter to Auto.</figcaption>
+  </figure>
+</div>
+
+<section class="notes">
+  <h2>Interval shooting in full auto</h2>
+  <p>Interval shooting also works with Manual Controls off, from the Drive menu in the quick-controls tray, with an Interval pill and the shutter starting and stopping the series. It is drawn with the camera screen: see <a href="camera.html">camera.html</a>.</p>
+  <h2>Manual Controls settings</h2>
+  <p>The app has no Manual Controls settings page. Settings › Camera has one switch, Manual Controls ("Shows manual controls on the camera screen. Off by default."); turning it off returns every control to Auto and turns bracketing off. Focus Peaking, Histogram and Live Camera Readout live in Settings › Viewfinder Overlays and in Pro Tools. See <a href="settings.html">settings.html</a>.</p>
+</section>
+
+<h2 class="part">Accessibility, night mode and landscape</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="ax">
+        <div class="tb"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+        <div class="pic"></div>
+        <div class="lst">
+          <h4>Exposure Compensation</h4>
+          <div class="tr">Manual <span class="tog off"></span></div>
+          <div class="tr">0.0 <div class="stp"><span>−</span><span>+</span></div></div>
+          <h4>ISO</h4>
+          <div class="tr">Manual <span class="tog"></span></div>
+          <div class="tr">200 <div class="stp"><span>−</span><span>+</span></div></div>
+          <h4>Shutter</h4>
+          <div class="tr">Manual <span class="tog off"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>17 · Largest text sizes</b>At accessibility text sizes the camera scrolls, and the readout row and dials become a list: one block per control in the same order, each with its name, a Manual switch and a stepper with the value. A control the lens can't set shows its value in words ("Fixed, f/2.2"). The sliders button (All Auto, Pro Tools) follows the list, then the lens buttons and ⋯.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="say"><b>VoiceOver</b>"ISO, Manual, 200. Button. Adjustable."<br>Swipe up or down: one step. Double-tap: opens the dial. Actions: Switch to Auto, All Auto.</div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 200</span></div><div class="b"><i>A</i><span>1/125</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="vo" style="left:41px;top:518px;width:54px;height:39px"></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>18 · VoiceOver</b>Each readout is one adjustable element: its full name ("Exposure Compensation", "White Balance") and a value of Auto or Manual and the value ("Fixed, f/2.2", "Not available"). Swiping changes the value without opening the dial. Voice Control accepts the short and full names ("WB", "White Balance"). Every icon button has a label and the Large Content Viewer.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone man night"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="sym"><use href="#sliders"/></svg>M</div></div><div class="chip">◈ RAW + HEIF</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="hd">Shutter <span class="v">1/30</span><span class="m">-0.3 EV</span></div>
+        <div class="ctl"><div class="cb">−</div><div class="sl" style="--p:72%"></div><div class="cb">+</div><div class="cb">Auto</div></div>
+        <div class="rng">This lens: 1/71,429 – 1 s</div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="tray-btn">⋯</div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 800</span></div><div class="b sel"><i>M</i><span>1/30</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b"><i>M</i><span>Far</span></div><div class="b"><i>A</i><span>3,800 K</span></div><div class="b"><svg class="sym"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb" style="filter:sepia(1) saturate(4) hue-rotate(-50deg) brightness(.6)"></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>19 · Night mode</b>Everything is drawn red on black. The selected readout and Auto are filled red with black text; the others are red on a near-black fill, so states differ by fill and by the A/M letter, not by color. The viewfinder keeps its natural colors unless Red Viewfinder is on (shown tinted here; see <a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+
+  <figure style="grid-column:1/-1">
+    <div class="phone land man"><div class="island"></div>
+      <div class="ib" style="position:absolute;left:44px;top:12px">⚙︎</div>
+      <div class="vf"></div>
+      <div class="pill" style="position:absolute;left:94px;top:10px;z-index:5"><svg class="sym"><use href="#sliders"/></svg>M</div>
+      <div class="chip" style="position:absolute;left:140px;top:8px;z-index:5">◈ RAW + HEIF</div>
+      <div class="lcol" style="left:490px"><div class="tray-btn" style="margin:0 0 6px">⋯</div><div class="lens on">1×</div><div class="lens">0.5×</div></div>
+      <div class="lcol" style="left:530px"><div class="ro"><div class="b"><svg class="sym"><use href="#sliders"/></svg></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>f/1.8</span></div><div class="b sel"><i>M</i><span>1/250</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>0.0</span></div></div></div>
+      <div class="shcol"><div class="flip">⟲</div><div class="shutter"></div><div class="thumb"><div class="seal">✓</div></div></div>
+    </div>
+    <figcaption><b>20 · iPhone on its side</b>The camera layout stays put, so the readout row runs along the long edge beside the lens row, and each readout turns upright as one unit, taking its turned size so nothing overlaps. Pills and the format chip move over the picture; only Settings stays in the top band. The open dial turns upright the same way and wraps to the picture's height (<a href="camera.html">camera.html</a> has the full landscape screen).</figcaption>
+  </figure>
+</div>
+
+<section class="notes">
+  <h2>Controls at a glance</h2>
+  <table>
+    <tr><th>Control</th><th>Readout</th><th>Dial</th><th>Steps and range</th></tr>
+    <tr><td>Exposure Compensation (EV)</td><td>+0.3</td><td>− slider + · Auto</td><td>Third stops, ±3 EV or the lens's narrower range. Only while ISO or the shutter is on Auto.</td></tr>
+    <tr><td>ISO</td><td>ISO 200</td><td>− slider + · Auto</td><td>Nominal third stops (10 … 25,600) inside the lens's range, plus its ends.</td></tr>
+    <tr><td>Shutter</td><td>1/125 · 1 s</td><td>− slider + · Auto</td><td>Third stops 1/16000 … 30 s inside the lens's range, plus its ends.</td></tr>
+    <tr><td>Aperture</td><td>f/1.8</td><td>− segmented stops + · Auto, or "This lens has a fixed aperture."</td><td>The lens's recommended stops.</td></tr>
+    <tr><td>Focus</td><td>Near · Middle · Far</td><td>− slider + · Auto</td><td>Relative 0–1 in 0.05 steps, "Closest to Far". No distances.</td></tr>
+    <tr><td>White Balance (WB)</td><td>5,200 K</td><td>− slider + · Auto, Tint, Presets</td><td>2,500–10,000 K in 100 K steps; tint −150 to +150 in 5s.</td></tr>
+  </table>
+  <h2>Rules behind it</h2>
+  <ul>
+    <li>Full auto is the default; manual controls appear only with the Settings switch, and the M pill turns them off again.</li>
+    <li>One readout row, fixed order; a control the lens can't set keeps its place ("Fixed" values or "n/a").</li>
+    <li>Filled white = the open readout and Auto while the camera sets the value. A/M letters carry the mode without color.</li>
+    <li>Every value has a button: − and + step it, Auto hands it back, All Auto resets everything. No gesture is required.</li>
+    <li>Anything over the picture (dial, hint, histogram) sits on a dark backing; amber only for the clipping warnings, always with a symbol and words.</li>
+    <li>Multi-frame tools never merge: each bracket frame and each interval photo is its own single-frame photo.</li>
+  </ul>
+</section>
+</body>
+</html>
