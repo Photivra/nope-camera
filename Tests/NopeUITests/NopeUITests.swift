@@ -142,6 +142,52 @@ struct CameraLayoutTests {
         #expect(!UprightRotation.portrait.isSideways)
         #expect(UprightRotation.landscapeLeft.isSideways)
     }
+
+    // iPhone Duo, measured on its Simulator (iOS 27.2): the space inside the safe area and the
+    // size classes on each display.
+
+    @Test func duoOuterDisplayStacksInBothOrientations() {
+        // 466 × 678 pt, with the status bar in a trailing strip: 382 × 644 inside the safe area,
+        // compact width and regular height. The interface stays portrait when the phone turns,
+        // so the space is the same sideways.
+        let outer = CGSize(width: 382, height: 644)
+        let isRegular = CameraLayout.isRegularSize(horizontal: .compact, vertical: .regular)
+        #expect(!isRegular)
+        #expect(CameraLayout.arrangement(for: outer, isAccessibilitySize: false, isRegularSize: isRegular) == .stacked)
+        #expect(CameraLayout.arrangement(for: outer, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
+        // The whole 4:3 picture and the bands don't fit one above the other, so the bands
+        // overlay the picture's bottom, as on a 4.7-inch iPhone.
+        let space = CGSize(width: 382, height: 644 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
+        #expect(CameraLayout.bandsOverlayPicture(in: space, bandsHeight: 88))
+        // Icons and text turn upright on the outer display.
+        #expect(UprightRotation.landscapeLeft.inWindow(isRegularSize: isRegular) == .landscapeLeft)
+        #expect(UprightRotation.landscapeRight.inWindow(isRegularSize: isRegular) == .landscapeRight)
+    }
+
+    @Test func duoInnerDisplayUsesTheColumnAndRotatesForReal() {
+        // 951 × 669 pt held like a book (867 × 635 inside the safe area), 669 × 951 turned
+        // (669 × 835): regular in both size classes, so the window rotates as on iPad.
+        let isRegular = CameraLayout.isRegularSize(horizontal: .regular, vertical: .regular)
+        #expect(isRegular)
+        let wide = CGSize(width: 867, height: 635)
+        let tall = CGSize(width: 669, height: 835)
+        #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: false, isRegularSize: isRegular) == .column)
+        #expect(CameraLayout.arrangement(for: tall, isAccessibilitySize: false, isRegularSize: isRegular) == .column)
+        #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: true, isRegularSize: isRegular) == .column)
+        #expect(CameraLayout.arrangement(for: tall, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
+        #expect(CameraLayout.pictureAspectRatio(in: wide) == CameraLayout.photoAspectRatio)
+        #expect(CameraLayout.pictureAspectRatio(in: tall) == 1 / CameraLayout.photoAspectRatio)
+        // The interface already turns with the device, so nothing turns again as an upright unit.
+        #expect(UprightRotation.landscapeLeft.inWindow(isRegularSize: isRegular) == .portrait)
+        #expect(UprightRotation.landscapeRight.inWindow(isRegularSize: isRegular) == .portrait)
+        #expect(UprightRotation.portrait.inWindow(isRegularSize: isRegular) == .portrait)
+    }
+
+    @Test func regularSizeNeedsBothSizeClasses() {
+        #expect(!CameraLayout.isRegularSize(horizontal: .regular, vertical: .compact))
+        #expect(!CameraLayout.isRegularSize(horizontal: .compact, vertical: .compact))
+        #expect(!CameraLayout.isRegularSize(horizontal: nil, vertical: .regular))
+    }
 }
 
 @MainActor

@@ -13,7 +13,12 @@ import SwiftUI
 ///
 /// The iPhone keeps its interface in portrait, so it uses ``stacked`` in both orientations and
 /// turns icons and text upright instead (``UprightUnit``); it meets ``column`` only while a
-/// rotated sheet is open over the camera.
+/// rotated sheet is open over the camera. A window that is regular in both size classes rotates
+/// for real, as on iPad: the unfolded inner display of a foldable iPhone (iPhone Duo) is such a
+/// window, and the system turns it with the device whatever the app asks, so it uses ``column``
+/// (``scrolling`` while taller than wide at accessibility sizes) and nothing turns upright
+/// (``isRegularSize(horizontal:vertical:)``). The Duo's outer display is a compact-width iPhone
+/// window and stays portrait.
 enum CameraLayout: Equatable {
     /// Bands above and below the picture: an iPhone in portrait.
     case stacked
@@ -52,6 +57,18 @@ enum CameraLayout: Equatable {
         // narrow for the enlarged manual controls list.
         if isAccessibilitySize { return .scrolling }
         return isRegularSize ? .column : .stacked
+    }
+
+    /// Whether a window is regular in both size classes: a full-size iPad window, or the
+    /// unfolded inner display of a foldable iPhone. Such a window rotates with the device, so
+    /// the camera uses ``column`` beside the picture and turns nothing upright by itself.
+    ///
+    /// - Parameters:
+    ///   - horizontal: The horizontal size class.
+    ///   - vertical: The vertical size class.
+    /// - Returns: `true` when both are regular.
+    static func isRegularSize(horizontal: UserInterfaceSizeClass?, vertical: UserInterfaceSizeClass?) -> Bool {
+        horizontal == .regular && vertical == .regular
     }
 
     /// Whether the lens row and manual readout must overlay the bottom of the picture, on a dark

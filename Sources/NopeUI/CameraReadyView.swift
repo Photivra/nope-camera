@@ -151,7 +151,7 @@ struct CameraReadyView: View {
     private var layout: CameraLayout {
         CameraLayout.arrangement(
             for: size, isAccessibilitySize: dynamicTypeSize.isAccessibilitySize,
-            isRegularSize: horizontalSizeClass == .regular && verticalSizeClass == .regular)
+            isRegularSize: CameraLayout.isRegularSize(horizontal: horizontalSizeClass, vertical: verticalSizeClass))
     }
 
     /// Whether the bands are shown: not in clean view.
@@ -376,9 +376,12 @@ struct CameraReadyView: View {
     }
 
     /// The trailing column: Settings, lenses and ⋯ at the top, the shutter centered, the camera
-    /// flip and the thumbnail at the bottom. It scrolls if the text is too large to fit.
+    /// flip and the thumbnail at the bottom. The top part scrolls if the text is too large to
+    /// fit, and stops above the shutter: the two halves around the shutter share the height
+    /// equally, so the shutter stays centered and nothing scrolls under it, even in a short
+    /// window such as the unfolded inner display of a foldable iPhone held like a book.
     private var controlColumn: some View {
-        ZStack {
+        VStack(spacing: CameraStyle.targetSpacing) {
             VStack(spacing: CameraStyle.targetSpacing) {
                 if showsControls {
                     SettingsButton(action: openSettings)
@@ -393,13 +396,16 @@ struct CameraReadyView: View {
                     }
                     .scrollBounceBehavior(.basedOnSize)
                 }
-                Spacer(minLength: ShutterButton.diameter + 2 * CameraStyle.targetSpacing)
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            shutter
+            VStack(spacing: CameraStyle.targetSpacing) {
                 if showsControls, let flip = flipTarget {
                     CameraFlipButton { select(flip) }
                 }
                 thumbnailOrShowControls
             }
-            shutter
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .frame(minWidth: ShutterButton.diameter + 2 * CameraStyle.targetSpacing)
         .padding(.vertical)

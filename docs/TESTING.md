@@ -993,6 +993,38 @@ tripod (issue #60):
 - the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
   an assumption), and every frame taken before is saved.
 
+### iPhone Duo (foldable) on a device
+
+The layout rule is unit-tested at the Duo's measured sizes (`CameraLayoutTests`), and the
+layouts, folding and unfolding were checked on the iPhone Duo Simulator (iOS 27.2). In the
+Simulator, Device Hub's Closed, Partially Open and Open buttons fold and unfold the device (no
+`simctl` command does); `xcrun devicectl device orientation set --device <udid> <orientation>`
+turns it. After a fold, UI test queries wait about a minute for the app to idle, so a UI test
+can't fold the device; no UI test covers folding, and no CI job runs on the Duo. The Simulator
+has no camera, so these checks need a real iPhone Duo:
+
+- the outer display: the stacked layout in portrait, upright icons and text with the phone on
+  its side, the bands over the picture's bottom, and the status bar strip not covering a control;
+- the inner display held like a book and turned: the column layout, the interface turning with
+  the phone, the preview and the saved photos upright (`AVCaptureDevice.RotationCoordinator`,
+  with the inner display's own orientation), and the level's horizon and the grid's spiral in
+  the right place (they assume the interface is portrait; on the inner display and on iPad the
+  interface turns);
+- folding and unfolding with the live view open, during a self-timer, an interval series and an
+  astro run: whether the capture session is interrupted (`AVCaptureSession.wasInterruptedNotification`,
+  and its reason), whether the scene leaves the foreground, and that the run continues or pauses
+  and continues as it says; the self-timer is cancelled only if the app really leaves the
+  foreground; record what happens here;
+- folding with the phone on its side returns the outer display to portrait; the half-open
+  (Partially Open) posture: what the system shows and whether the camera keeps running;
+- the lens row lists only the cameras the Duo reports (expected: ultra wide, wide and front, no
+  telephoto), each with Bayer RAW, and a RAW plus HEIF photo is saved on each;
+- which camera the inner display uses for selfies (the rear cameras or a front camera), and
+  whether the front camera changes when folding;
+- the system camera handoff: the "Open nope." control and the Lock Screen camera
+  (`NopeCaptureExtension`) on each display, and opening the app from the Lock Screen camera
+  after unfolding.
+
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 
 ## The C2PA library and the networking check

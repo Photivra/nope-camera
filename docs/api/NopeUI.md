@@ -950,7 +950,12 @@ orientation and window size:
 
 The iPhone keeps its interface in portrait, so it uses ``stacked`` in both orientations and
 turns icons and text upright instead (``UprightUnit``); it meets ``column`` only while a
-rotated sheet is open over the camera.
+rotated sheet is open over the camera. A window that is regular in both size classes rotates
+for real, as on iPad: the unfolded inner display of a foldable iPhone (iPhone Duo) is such a
+window, and the system turns it with the device whatever the app asks, so it uses ``column``
+(``scrolling`` while taller than wide at accessibility sizes) and nothing turns upright
+(``isRegularSize(horizontal:vertical:)``). The Duo's outer display is a compact-width iPhone
+window and stays portrait.
 
 ## `CameraLayout/arrangement(for:isAccessibilitySize:isRegularSize:)`
 
@@ -994,6 +999,23 @@ case column
 ```
 
 The picture beside a trailing control column: iPad, and any window wider than tall.
+
+## `CameraLayout/isRegularSize(horizontal:vertical:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func isRegularSize(horizontal: UserInterfaceSizeClass?, vertical: UserInterfaceSizeClass?) -> Bool
+```
+
+Whether a window is regular in both size classes: a full-size iPad window, or the
+unfolded inner display of a foldable iPhone. Such a window rotates with the device, so
+the camera uses ``column`` beside the picture and turns nothing upright by itself.
+
+- Parameters:
+  - horizontal: The horizontal size class.
+  - vertical: The vertical size class.
+- Returns: `true` when both are regular.
 
 ## `CameraLayout/photoAspectRatio`
 
@@ -9296,6 +9318,22 @@ var angle: Angle { get }
 
 The angle that turns content upright for the person.
 
+## `UprightRotation/inWindow(isRegularSize:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+func inWindow(isRegularSize: Bool) -> UprightRotation
+```
+
+The turn upright content needs in a window, given the device's orientation: none in a
+window that is regular in both size classes (``CameraLayout/isRegularSize(horizontal:vertical:)``),
+because that window rotates with the device, as on iPad and on the unfolded inner display
+of a foldable iPhone, where the system turns the interface whatever the app asks.
+
+- Parameter isRegularSize: Whether the window is regular in both size classes.
+- Returns: This rotation in a portrait-only window, otherwise ``portrait``.
+
 ## `UprightRotation/isSideways`
 
 internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -9858,6 +9896,42 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The warning.
+
+## `WindowUprightRotation`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor struct WindowUprightRotation
+```
+
+Clears ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` in a window that rotates with
+the device, so icons and text aren't turned twice: once by the interface and again as
+upright units. The size classes come from the environment, so the same rule covers an iPad
+and both displays of a foldable iPhone, and changes as it folds or unfolds.
+
+## `WindowUprightRotation/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the rotation its window needs.
+
+- Parameter content: The content.
+
+## `WindowUprightRotation/init()`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It reads everything from the environment.
 
 ## `WrappingRows`
 

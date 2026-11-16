@@ -86,6 +86,9 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .nightModeStyle(settings.isNightModeOn)
+        // Nothing turns upright in a window that rotates with the device (iPad, or the inner
+        // display of a foldable iPhone).
+        .modifier(WindowUprightRotation())
         // The live viewfinder is always drawn here, behind the interface, in the frame the ready
         // camera reserves for it (``ViewfinderFrame``), so night mode's red multiply reaches only
         // nope.'s own interface. It is the same view in every mode: on a device a new viewfinder

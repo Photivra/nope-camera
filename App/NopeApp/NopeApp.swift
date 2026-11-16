@@ -130,6 +130,7 @@ struct NopeApp: App {
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
+        .modifier(FollowsWindowSizeClasses())
         .environment(\.cameraGravitySource, Self.gravitySource)
         .environment(\.cameraPresentsSheet, SheetPresentationAction { AppDelegate.setSheetPresented($0) })
         // Open Settings goes to nope.'s own page in the Settings app (UIKit,
