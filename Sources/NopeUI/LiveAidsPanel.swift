@@ -208,6 +208,16 @@ enum LiveReadoutText {
         Text("Live Camera Readout", bundle: .module, comment: "Name of the optional overlay that lists the camera's live technical values (shutter, ISO, focus, white balance, and so on), and of its switch.")
     }
 
+    /// The readout's short name in the quick-controls tray, "Readout".
+    static var shortTitle: Text {
+        Text("Readout", bundle: .module, comment: "Name of the live camera readout in the quick-controls tray, where space is short; the full name is Live Camera Readout.")
+    }
+
+    /// The name of the choice that keeps the readout on screen in clean view.
+    static var pinTitle: Text {
+        Text("Keep Readout in Clean View", bundle: .module, comment: "Switch, and choice in the quick-controls tray: the live camera readout stays on screen when clean view hides the other controls.")
+    }
+
     /// The readout's lines for a reading: several values share a line, separated by " · ", so
     /// the readout stays small over the picture.
     ///

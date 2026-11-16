@@ -456,6 +456,201 @@
         }
       }
     },
+    "Interval shooting needs Manual Controls. Turn them on in nope. Settings.": {
+      "comment": "Siri's answer when interval shooting was asked for while manual controls are off. \"Manual Controls\" is the option's name in Settings. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Für die Intervallaufnahme wird „Manuelle Steuerung“ benötigt. Schalte sie in den nope.-Einstellungen ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El disparo a intervalos requiere Controles manuales. Actívalos en los ajustes de nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La prise de vue par intervalles nécessite Commandes manuelles. Activez-les dans les réglages de nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lo scatto a intervalli richiede Controlli manuali. Attivali nelle impostazioni di nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影には「マニュアル操作」が必要です。nope. の設定でオンにしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영에는 수동 조작이 필요합니다. nope. 설정에서 켜세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Voor intervalopnamen is Handmatige bediening nodig. Zet die aan in de instellingen van nope."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O disparo por intervalo precisa de Controles manuais. Ative-os nos ajustes do nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄需要“手动控制”。请在 nope. 设置中打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝需要「手動控制」。請在 nope. 設定中開啟。"
+          }
+        }
+      }
+    },
+    "Interval shooting started.": {
+      "comment": "Siri's answer after nope. started a series of photos at a fixed interval.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme gestartet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo a intervalos iniciado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise de vue par intervalles démarrée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto a intervalli avviato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影を開始しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영을 시작했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen gestart."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo por intervalo iniciado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄已开始。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝已開始。"
+          }
+        }
+      }
+    },
+    "Interval shooting stopped. The photos taken are saved.": {
+      "comment": "Siri's answer after nope.'s interval series was stopped; the photos already taken are kept.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme gestoppt. Die aufgenommenen Fotos sind gesichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo a intervalos detenido. Las fotos tomadas están guardadas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise de vue par intervalles arrêtée. Les photos prises sont enregistrées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto a intervalli interrotto. Le foto scattate sono salvate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影を停止しました。撮影した写真は保存されています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영을 중지했습니다. 찍은 사진은 저장되어 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen gestopt. De gemaakte foto’s zijn bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo por intervalo parado. As fotos tiradas estão salvas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄已停止。已拍摄的照片已存储。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝已停止。已拍攝的照片已儲存。"
+          }
+        }
+      }
+    },
     "Lens": {
       "comment": "A setting of nope.'s Take Photo action: which camera to use.",
       "localizations": {
@@ -517,6 +712,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "鏡頭"
+          }
+        }
+      }
+    },
+    "More than one takes a burst: separate photos, as fast as the camera allows, up to 50.": {
+      "comment": "Explains the Number of Photos setting of nope.'s Take Photo action.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bei mehr als einem Foto entsteht eine Serie: einzelne Fotos, so schnell die Kamera es erlaubt, bis zu 50."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Más de una toma una ráfaga: fotos separadas, tan rápido como permita la cámara, hasta 50."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Plus d’une prend une rafale : des photos séparées, aussi vite que l’appareil le permet, jusqu’à 50."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Più di una scatta una raffica: foto separate, alla velocità consentita dalla fotocamera, fino a 50."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "2枚以上にするとバースト撮影になります。カメラが可能な限りの速さで個別の写真を最大50枚撮影します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "2장 이상이면 연속 촬영합니다. 카메라가 허용하는 만큼 빠르게 개별 사진을 최대 50장 찍습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Meer dan één maakt een burst: losse foto’s, zo snel als de camera toelaat, tot 50."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mais de uma tira uma sequência: fotos separadas, tão rápido quanto a câmera permitir, até 50."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "多于一张时连拍：以相机允许的最快速度拍摄单独的照片，最多 50 张。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "多於一張時連拍：以相機允許的最快速度拍攝個別照片，最多 50 張。"
           }
         }
       }
@@ -911,6 +1171,396 @@
         }
       }
     },
+    "No interval series is running.": {
+      "comment": "Siri's answer when asked to stop interval shooting while none runs.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Es läuft keine Intervallserie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No hay ninguna serie a intervalos en curso."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucune série par intervalles n’est en cours."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuna serie a intervalli in corso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影は実行されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "진행 중인 인터벌 촬영이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Er loopt geen intervalreeks."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nenhuma série por intervalo está em andamento."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "没有正在进行的间隔拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "沒有正在進行的間隔拍攝。"
+          }
+        }
+      }
+    },
+    "Now using the front camera.": {
+      "comment": "Siri's answer after nope. switched to the front (selfie) camera.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jetzt mit der Frontkamera."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ahora con la cámara frontal."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Appareil avant sélectionné."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ora è attiva la fotocamera anteriore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "前面カメラに切り替えました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이제 전면 카메라를 사용합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nu met de camera aan de voorkant."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Agora usando a câmera frontal."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切换到前置摄像头。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切換到前置相機。"
+          }
+        }
+      }
+    },
+    "Now using the telephoto camera.": {
+      "comment": "Siri's answer after nope. switched to the telephoto rear camera.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jetzt mit der Telekamera."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ahora con la cámara teleobjetivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Téléobjectif sélectionné."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ora è attivo il teleobiettivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "望遠カメラに切り替えました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이제 망원 카메라를 사용합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nu met de telecamera."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Agora usando a câmera teleobjetiva."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切换到长焦摄像头。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切換到望遠相機。"
+          }
+        }
+      }
+    },
+    "Now using the ultra wide camera.": {
+      "comment": "Siri's answer after nope. switched to the ultra wide rear camera.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jetzt mit der Ultraweitwinkelkamera."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ahora con la cámara ultra gran angular."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Appareil ultra grand-angle sélectionné."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ora è attiva la fotocamera ultra grandangolare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "超広角カメラに切り替えました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이제 울트라 와이드 카메라를 사용합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nu met de ultragroothoekcamera."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Agora usando a câmera ultra-angular."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切换到超广角摄像头。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切換到超廣角相機。"
+          }
+        }
+      }
+    },
+    "Now using the wide camera.": {
+      "comment": "Siri's answer after nope. switched to the wide (main) rear camera.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jetzt mit der Weitwinkelkamera."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ahora con la cámara gran angular."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Appareil grand-angle sélectionné."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ora è attiva la fotocamera grandangolare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "広角カメラに切り替えました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이제 와이드 카메라를 사용합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nu met de groothoekcamera."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Agora usando a câmera grande-angular."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切换到广角摄像头。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已切換到廣角相機。"
+          }
+        }
+      }
+    },
+    "Number of Photos": {
+      "comment": "A setting of nope.'s actions: how many photos to take.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Anzahl der Fotos"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Número de fotos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nombre de photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Numero di foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真の枚数"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 수"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aantal foto’s"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Número de fotos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片数量"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片數量"
+          }
+        }
+      }
+    },
     "Off": {
       "comment": "Night mode turned off, in nope.'s Set Night Mode action.",
       "localizations": {
@@ -1236,6 +1886,136 @@
         }
       }
     },
+    "Opens nope. and starts a series of photos at a fixed interval. Needs Manual Controls on in nope. Settings.": {
+      "comment": "Describes nope.'s Start Interval Shooting action in the Shortcuts app. \"Manual Controls\" is the option's name in Settings. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Öffnet nope. und startet eine Fotoserie in festem Abstand. Dafür muss „Manuelle Steuerung“ in den nope.-Einstellungen eingeschaltet sein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre nope. e inicia una serie de fotos a intervalos fijos. Requiere activar Controles manuales en los ajustes de nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ouvre nope. et démarre une série de photos à intervalle fixe. Nécessite d’activer Commandes manuelles dans les réglages de nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apre nope. e avvia una serie di foto a intervalli fissi. Richiede Controlli manuali attivi nelle impostazioni di nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開いて、一定間隔の連続写真を開始します。nope. の設定で「マニュアル操作」をオンにする必要があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.을(를) 열고 일정한 간격으로 사진 촬영을 시작합니다. nope. 설정에서 수동 조작을 켜야 합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opent nope. en start een fotoreeks met een vaste tussentijd. Zet hiervoor Handmatige bediening aan in de instellingen van nope."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre o nope. e inicia uma série de fotos em intervalos fixos. É preciso ativar Controles manuais nos ajustes do nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开 nope. 并按固定间隔开始拍摄一组照片。需要在 nope. 设置中打开“手动控制”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打開 nope. 並以固定間隔開始拍攝一系列照片。需要在 nope. 設定中開啟「手動控制」。"
+          }
+        }
+      }
+    },
+    "Opens nope. and switches the camera to a lens.": {
+      "comment": "Describes nope.'s Switch Lens action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Öffnet nope. und wechselt die Kamera zu einem Objektiv."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre nope. y cambia la cámara a una lente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ouvre nope. et passe l’appareil photo sur un objectif."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apre nope. e passa la fotocamera a un obiettivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開いて、カメラのレンズを切り替えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.을(를) 열고 카메라 렌즈를 전환합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opent nope. en zet de camera op een lens."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre o nope. e troca a câmera para uma lente."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开 nope. 并将相机切换到某个镜头。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打開 nope. 並將相機切換到某個鏡頭。"
+          }
+        }
+      }
+    },
     "Opens nope. and takes a photo with the current settings, after an optional delay.": {
       "comment": "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "localizations": {
@@ -1297,6 +2077,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "打開 nope. 並以目前的設定拍照，可選擇延遲拍攝。"
+          }
+        }
+      }
+    },
+    "Opens nope. and turns on the steady light. It turns off when nope. closes.": {
+      "comment": "Describes nope.'s Turn On the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Öffnet nope. und schaltet das Dauerlicht ein. Es geht aus, wenn nope. geschlossen wird."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre nope. y enciende la luz continua. Se apaga al cerrar nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ouvre nope. et allume la lumière continue. Elle s’éteint quand nope. se ferme."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apre nope. e accende la luce continua. Si spegne quando nope. si chiude."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開いて、常時点灯ライトをオンにします。nope. を閉じるとオフになります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.을(를) 열고 지속 조명을 켭니다. nope.을(를) 닫으면 꺼집니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opent nope. en zet de vaste lamp aan. Die gaat uit als nope. sluit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre o nope. e liga a luz contínua. Ela desliga quando o nope. fecha."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开 nope. 并开启常亮灯光。关闭 nope. 时会熄灭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打開 nope. 並開啟常亮燈光。關閉 nope. 時會熄滅。"
           }
         }
       }
@@ -1626,6 +2471,71 @@
         }
       }
     },
+    "Seconds Between Photos": {
+      "comment": "A setting of nope.'s Start Interval Shooting action: the time from one photo to the next, in seconds.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sekunden zwischen Fotos"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Segundos entre fotos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Secondes entre les photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Secondi tra le foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真の間隔（秒）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 간 간격(초)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Seconden tussen foto’s"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Segundos entre as fotos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片间隔秒数"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片間隔秒數"
+          }
+        }
+      }
+    },
     "Set Night Mode": {
       "comment": "The name of nope.'s action that turns night mode on or off, in the Shortcuts app.",
       "localizations": {
@@ -1756,6 +2666,396 @@
         }
       },
       "extractionState": "manual"
+    },
+    "Start Interval Shooting": {
+      "comment": "The name of nope.'s action that starts a series of photos taken at a fixed interval, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme starten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Iniciar disparo a intervalos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Démarrer la prise de vue par intervalles"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avvia scatto a intervalli"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影を開始"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영 시작"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen starten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Iniciar disparo por intervalo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "开始间隔拍摄"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開始間隔拍攝"
+          }
+        }
+      }
+    },
+    "Start interval shooting": {
+      "comment": "How nope.'s Start Interval Shooting action reads in the Shortcuts editor.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme starten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Iniciar disparo a intervalos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Démarrer la prise de vue par intervalles"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avvia scatto a intervalli"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影を開始"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영 시작"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen starten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Iniciar disparo por intervalo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "开始间隔拍摄"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開始間隔拍攝"
+          }
+        }
+      }
+    },
+    "Stop Interval Shooting": {
+      "comment": "The name of nope.'s action that stops a running series of interval photos, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme stoppen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detener disparo a intervalos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Arrêter la prise de vue par intervalles"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Interrompi scatto a intervalli"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影を停止"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영 중지"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen stoppen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Parar disparo por intervalo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止间隔拍摄"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止間隔拍攝"
+          }
+        }
+      }
+    },
+    "Stops nope.'s interval series. Photos already taken are kept.": {
+      "comment": "Describes nope.'s Stop Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stoppt die Intervallserie von nope. Bereits aufgenommene Fotos bleiben erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detiene la serie a intervalos de nope. Las fotos ya tomadas se conservan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Arrête la série par intervalles de nope. Les photos déjà prises sont conservées."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Interrompe la serie a intervalli di nope. Le foto già scattate vengono conservate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. のインターバル撮影を停止します。撮影済みの写真は残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.의 인터벌 촬영을 중지합니다. 이미 찍은 사진은 유지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stopt de intervalreeks van nope. Al gemaakte foto’s blijven bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Para a série por intervalo do nope. As fotos já tiradas são mantidas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止 nope. 的间隔拍摄。已拍摄的照片会保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "停止 nope. 的間隔拍攝。已拍攝的照片會保留。"
+          }
+        }
+      }
+    },
+    "Switch Lens": {
+      "comment": "The name of nope.'s action that switches the camera to another lens, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Objektiv wechseln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cambiar de lente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Changer d’objectif"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cambia obiettivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "レンズを切り替える"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "렌즈 전환"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wissel van lens"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Trocar lente"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "切换镜头"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "切換鏡頭"
+          }
+        }
+      }
+    },
+    "Switch to ${lens}": {
+      "comment": "How nope.'s Switch Lens action reads in the Shortcuts editor. ${lens} is a lens such as \"Wide\". Keep ${lens} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zu ${lens} wechseln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cambiar a ${lens}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Passer à ${lens}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Passa a ${lens}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "${lens}に切り替える"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "${lens}(으)로 전환"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wissel naar ${lens}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Trocar para ${lens}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "切换到${lens}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "切換到${lens}"
+          }
+        }
+      }
     },
     "Take Photo": {
       "comment": "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri.",
@@ -2014,6 +3314,201 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "目前無法使用相機。"
+          }
+        }
+      }
+    },
+    "The light is off.": {
+      "comment": "Siri's answer after nope.'s steady light (the torch) was turned off, or was already off.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Licht ist aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luz está apagada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La lumière est éteinte."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luce è spenta."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトはオフです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명이 꺼져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De lamp is uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A luz está desligada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光已关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光已關閉。"
+          }
+        }
+      }
+    },
+    "The light is on.": {
+      "comment": "Siri's answer after nope. turned its steady light (the torch) on.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Licht ist an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luz está encendida."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La lumière est allumée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luce è accesa."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトをオンにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명이 켜졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De lamp is aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A luz está ligada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光已打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光已開啟。"
+          }
+        }
+      }
+    },
+    "The light isn't available right now.": {
+      "comment": "Siri's answer when the system didn't allow the steady light (torch), for example because the phone is warm, or the night sky helper keeps it off.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Licht ist gerade nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luz no está disponible ahora."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La lumière n’est pas disponible pour le moment."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luce non è disponibile al momento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "現在ライトは使用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "지금은 조명을 사용할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De lamp is nu niet beschikbaar."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A luz não está disponível agora."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光暂时不可用。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光暫時無法使用。"
           }
         }
       }
@@ -2278,6 +3773,201 @@
         }
       }
     },
+    "This lens has no light.": {
+      "comment": "Siri's answer when the lens in use has no steady light (torch), for example the front camera.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Objektiv hat kein Licht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente no tiene luz."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cet objectif n’a pas de lumière."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questo obiettivo non ha una luce."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このレンズにはライトがありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 렌즈에는 조명이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deze lens heeft geen lamp."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente não tem luz."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此镜头没有灯光。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此鏡頭沒有燈光。"
+          }
+        }
+      }
+    },
+    "Turn Off the Light": {
+      "comment": "The name of nope.'s action that turns the camera's steady light (the torch) off, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licht ausschalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apagar la luz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Éteindre la lumière"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spegni la luce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトをオフにする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명 끄기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lamp uitzetten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desligar a luz"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭灯光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉燈光"
+          }
+        }
+      }
+    },
+    "Turn On the Light": {
+      "comment": "The name of nope.'s action that turns the camera's steady light (the torch) on, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Licht einschalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Encender la luz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Allumer la lumière"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Accendi la luce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトをオンにする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명 켜기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lamp aanzetten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ligar a luz"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开灯光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開啟燈光"
+          }
+        }
+      }
+    },
     "Turns nope.'s night mode on or off: every nope. screen in red on black.": {
       "comment": "Describes nope.'s Set Night Mode action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "localizations": {
@@ -2339,6 +4029,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "開啟或關閉 nope. 的夜間模式：nope. 的所有畫面都以黑底紅字顯示。"
+          }
+        }
+      }
+    },
+    "Turns off nope.'s steady light.": {
+      "comment": "Describes nope.'s Turn Off the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schaltet das Dauerlicht von nope. aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apaga la luz continua de nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Éteint la lumière continue de nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spegne la luce continua di nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. の常時点灯ライトをオフにします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.의 지속 조명을 끕니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zet de vaste lamp van nope. uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desliga a luz contínua do nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭 nope. 的常亮灯光。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉 nope. 的常亮燈光。"
           }
         }
       }

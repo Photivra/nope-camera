@@ -163,13 +163,19 @@ struct WatchTests {
         #expect(model.watchStatus == .busy)
         model.drive.endBurst(.stopped)
         #expect(model.watchStatus == .ready)
+        model.astro.beginRun()
+        #expect(model.watchStatus == .busy)
     }
 
     @Test func outcomesBecomeResults() {
         #expect(WatchResult(ShortcutOutcome.saved(isSigned: true)) == .saved(isSigned: true))
         #expect(WatchResult(ShortcutOutcome.savedSeveral(allSigned: false)) == .savedSeveral(allSigned: false))
         #expect(WatchResult(ShortcutOutcome.notSaved(.saveFailed)) == .notSaved)
-        #expect(WatchResult(ShortcutOutcome.lensUnavailable) == .notSaved)
+        let otherRequests: [ShortcutOutcome] = [
+            .lensUnavailable, .lensSelected(.wide), .lightOn, .lightOff, .noLight, .lightUnavailable,
+            .intervalStarted, .intervalStopped, .noIntervalRunning, .needsManualControls,
+        ]
+        for outcome in otherRequests { #expect(WatchResult(outcome) == .notSaved) }
         #expect(WatchResult(ShortcutOutcome.cancelled) == .cancelled)
         #expect(WatchResult(ShortcutOutcome.busy) == .busy)
         #expect(WatchResult(ShortcutOutcome.cameraUnavailable(.needsPermission)) == .notTaken(.needsPermission))

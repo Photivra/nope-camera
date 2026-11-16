@@ -102,6 +102,7 @@ enum QuickControls {
         exposure,
         grid,
         level,
+        liveReadout,
         fastShutter,
         closeUp,
         magnifier,

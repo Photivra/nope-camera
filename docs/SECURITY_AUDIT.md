@@ -34,7 +34,7 @@ relies on. Checks that need hardware say **Device**. Free, open-source or Apple 
 | Location | Only if the user turns the location switch on: Core Location in memory, then the saved file | Reveals where the user was |
 | Device identity | Maker notes, serial numbers, unique IDs, exact model; the signing certificate if it were reused | Links photos to one device or to each other |
 | The signing key | A new Secure Enclave key per photo, discarded after signing | A reused or exported key would link photos, or let someone sign altered files |
-| Settings | `UserDefaults` in the app container | Low sensitivity, but must hold no photo data or identifiers |
+| Settings | `UserDefaults` in the App Group container shared by the app and its controls (and a copy in the Lock Screen camera's app context) | Low sensitivity, but must hold no photo data or identifiers |
 
 ### Who the adversaries are
 
@@ -130,8 +130,13 @@ archive (`Products/Applications/NopeApp.app`).
 ### 4. Entitlements
 
 MASVS-PLATFORM, least privilege. Allowed keys are in `security/allowed-entitlements.txt`
-(today only `com.apple.developer.locked-camera-capture`, kept for the lock-screen capture
-extension; no target requests it or any other entitlement as of 0.2.0).
+(`com.apple.developer.locked-camera-capture`, kept for the lock-screen capture extension and
+requested by no target, and `com.apple.security.application-groups`). Since 0.3.0 the app
+(`App/NopeApp.entitlements`) and the controls extension (`App/NopeControls.entitlements`) request
+one App Group, `$(NOPE_APP_GROUP_IDENTIFIER)` = `group.$(NOPE_BUNDLE_IDENTIFIER)`
+(`Config/Base.xcconfig`), for the shared settings (`docs/PRIVACY.md`, "Settings shared with the
+extensions"). The Lock Screen camera doesn't request it: Apple doesn't let a capture extension use
+an App Group's container.
 
 - **Run:**
   - `scripts/check-security.sh` (source `.entitlements` files).
@@ -139,9 +144,10 @@ extension; no target requests it or any other entitlement as of 0.2.0).
     `codesign -d --entitlements - --xml NopeApp.app | plutil -p -`.
 - **Pass:** the signed binary has only `application-identifier`,
   `com.apple.developer.team-identifier`, `get-task-allow` = false (distribution builds),
-  `keychain-access-groups` only if Xcode adds its default, and the allowlisted keys. No
-  iCloud, App Groups, associated domains, push, network extension, background modes or
-  HealthKit. Any extra key is a Blocker until it is allowlisted by a reviewed pull request.
+  `keychain-access-groups` only if Xcode adds its default, and the allowlisted keys. The app
+  and `NopeControls` have exactly one App Group, `group.<bundle identifier>`;
+  `NopeCaptureExtension` has none. No iCloud, associated domains, push, network extension,
+  background modes or HealthKit. Any extra key is a Blocker until it is allowlisted by a reviewed pull request.
   The Apple Watch app (`NopeWatch`) has no entitlements file: WatchConnectivity needs none, and
   a watch app can't share the iPhone app's App Group, so it gets its status over
   WatchConnectivity only.
@@ -183,7 +189,10 @@ app and for each third-party SDK it bundles
 tracking, no tracking domains, no collected data and no required-reason APIs.
 
 **State as of 2026-11-12:** the manifest declares `NSPrivacyAccessedAPICategoryUserDefaults`
-with `CA92.1`, for the settings (`NopeSettings`, stored in the app's own `UserDefaults`).
+with `CA92.1` and `1C8F.1`, for the settings (`NopeSettings`, stored in the App Group's
+`UserDefaults` since 0.3.0, moved once from the app's own). The controls extension's manifest
+declares it with `1C8F.1` (it reads and writes night mode in the App Group); the Lock Screen
+camera's with `CA92.1` (its own container).
 It also declares `NSPrivacyAccessedAPICategorySystemBootTime` with `35F9.1`, because Release
 code calls `ProcessInfo.systemUptime` to throttle exposure readings
 (`Sources/NopeCapture/SystemCaptureHardware.swift`), and
@@ -192,7 +201,7 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
 
 | Category | Expected 1.0 use | Reason code (recheck on Apple's page before submission) |
 |---|---|---|
-| `NSPrivacyAccessedAPICategoryUserDefaults` | Settings: formats, the master switch and each metadata item, signing, manual controls, clean view (declared, `CA92.1`) | `CA92.1`: read and write data only the app itself uses |
+| `NSPrivacyAccessedAPICategoryUserDefaults` | Settings: formats, the master switch and each metadata item, signing, manual controls, clean view (declared, `CA92.1` and `1C8F.1`) | `CA92.1`: read and write data only the app itself uses; `1C8F.1`: data shared with the app's own extensions in its App Group |
 | `NSPrivacyAccessedAPICategoryDiskSpace` | `volumeAvailableCapacityForImportantUsageKey` for the low storage warning, the number of photos that fit, and stopping a burst before storage runs out (declared, `App/NopeApp/Camera/DeviceStatusReader.swift`, issue #44) | `E174.1`: check space before writing files; `85F4.1`: show disk space to the person (as a number of photos) |
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
@@ -346,8 +355,12 @@ complete file protection and is deleted at once (AGENTS.md, "Photos never linger
 
 MASVS-STORAGE-2, MASVS-PRIVACY-2.
 
-- **Run:** after using every setting, read the preferences file:
-  `plutil -p <container>/Library/Preferences/<bundle id>.plist`.
+- **Run:** after using every setting, read the preferences files: the App Group's
+  `plutil -p <group container>/Library/Preferences/group.<bundle id>.plist` (the group
+  container's path is under `xcrun simctl get_app_container booted <bundle id> groups` in the
+  Simulator, or in a downloaded device container), and the app's own
+  `plutil -p <container>/Library/Preferences/<bundle id>.plist`, which after the move holds the
+  old copy and Debug-only keys only.
 - **Pass:** only the documented setting keys (switch states, formats, options), with Boolean
   or enum values. No photo data, metadata values, file names, dates of use, counters, device
   identifiers or the user's name and copyright text unless the user entered it for that switch.
@@ -408,9 +421,10 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   import, clipboard reads (`UIPasteboard`), drag-and-drop receivers or code loaded at run
   time. Any byte-level parser (the project's own tag reader) has fuzz tests, and every
   `Unsafe` use is in `security/allowed-unsafe.txt` (`scripts/check-security.sh`). App Intents
-  parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds;
-  an unknown lens takes no photo), and the intents return only whether a photo was saved and
-  signed, never image data or metadata.
+  parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds
+  and the count to 1 to 50; `IntervalSettings` clamps an interval series; an unknown lens takes
+  no photo and changes nothing), and the intents return only whether a photo was saved and
+  signed or what changed, never image data or metadata.
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis

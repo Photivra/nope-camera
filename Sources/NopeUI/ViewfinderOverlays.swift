@@ -12,7 +12,7 @@ extension EnvironmentValues {
 ///
 /// Everything here is on screen only and never written to the photo (issues #40, #47, #51 and
 /// #52). Nothing takes touches, so the viewfinder's own gestures still work. The guides stay in
-/// clean view; the histogram and the readout don't.
+/// clean view; the histogram doesn't, and the readout only when it is pinned.
 ///
 /// It tells the model what the live analysis must measure and whether the readout is on, as
 /// the options and the screen change, and turns both off when it goes away (AGENTS.md,
@@ -59,9 +59,9 @@ struct ViewfinderOverlays: View {
             for: options, manualControlsShown: model.manual.isEnabled, isCleanView: model.isCleanView)
     }
 
-    /// Whether the live readout is shown: on, supported, and not in clean view.
+    /// Whether the live readout is shown: on, supported, and not in clean view unless pinned.
     private var showsStats: Bool {
-        options.showsLiveReadout && model.live.isSupported && !model.isCleanView && model.sessionStatus == .running
+        options.showsLiveReadout(inCleanView: model.isCleanView) && model.live.isSupported && model.sessionStatus == .running
     }
 
     /// The overlays.

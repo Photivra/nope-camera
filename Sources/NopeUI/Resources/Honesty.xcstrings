@@ -1255,6 +1255,72 @@
         }
       }
     },
+    "Counted on the RAW sensor data when the photo was taken, over every photosite of the active area. Clipped highlights are within 0.5% of the white level or above it; clipped shadows are within 0.5% of the black level or below it, where 0.5% is of the range between the two levels.": {
+      "comment": "Footer in the photo details: how the RAW clipping is defined and measured. A photosite is one sensor element. The white and black levels are the RAW file's own values. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Beim Aufnehmen an den RAW-Sensordaten gezählt, über alle Sensorpixel des aktiven Bereichs. Beschnittene Lichter liegen höchstens 0,5 % unter dem Weißwert oder darüber; beschnittene Tiefen höchstens 0,5 % über dem Schwarzwert oder darunter. Die 0,5 % beziehen sich auf den Bereich zwischen den beiden Werten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contado en los datos RAW del sensor al tomar la foto, en todos los fotositos del área activa. Las altas luces recortadas están a menos del 0,5 % del nivel de blanco o por encima; las sombras recortadas, a menos del 0,5 % del nivel de negro o por debajo. El 0,5 % es del rango entre ambos niveles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compté sur les données RAW du capteur à la prise de vue, sur tous les photosites de la zone active. Les hautes lumières écrêtées sont à moins de 0,5 % du niveau de blanc ou au-dessus ; les ombres bouchées à moins de 0,5 % du niveau de noir ou en dessous. Les 0,5 % portent sur l’écart entre les deux niveaux."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contato sui dati RAW del sensore al momento dello scatto, su tutti i fotositi dell’area attiva. Le alte luci tagliate sono entro lo 0,5% dal livello del bianco o sopra; le ombre tagliate entro lo 0,5% dal livello del nero o sotto. Lo 0,5% è riferito all’intervallo tra i due livelli."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影時にRAWセンサーデータで、有効領域のすべてのフォトサイトを数えています。白飛びは白レベルから0.5%以内かそれ以上、黒つぶれは黒レベルから0.5%以内かそれ以下です。0.5%は2つのレベルの間の幅に対する割合です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진을 찍을 때 RAW 센서 데이터에서 유효 영역의 모든 포토사이트를 셉니다. 하이라이트 클리핑은 화이트 레벨에서 0.5% 이내이거나 그 이상, 섀도 클리핑은 블랙 레벨에서 0.5% 이내이거나 그 이하입니다. 0.5%는 두 레벨 사이 범위에 대한 비율입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geteld op de RAW-sensorgegevens toen de foto werd genomen, over elke fotosite van het actieve gebied. Geclipte hooglichten liggen binnen 0,5% van het witniveau of erboven; geclipte schaduwen binnen 0,5% van het zwartniveau of eronder, waarbij 0,5% geldt voor het bereik tussen beide niveaus."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contado nos dados RAW do sensor quando a foto foi tirada, em todos os fotossítios da área ativa. Realces cortados ficam a até 0,5% do nível de branco ou acima dele; sombras cortadas, a até 0,5% do nível de preto ou abaixo dele. Os 0,5% são do intervalo entre os dois níveis."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍摄时在 RAW 传感器数据上统计，涵盖有效区域内的每个感光单元。高光剪切指距白电平 0.5% 以内或更高；暗部剪切指距黑电平 0.5% 以内或更低。0.5% 指两个电平之间范围的比例。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍攝時在 RAW 感光元件資料上統計，涵蓋有效區域內的每個感光單元。高光剪切指距白電平 0.5% 以內或更高；暗部剪切指距黑電平 0.5% 以內或更低。0.5% 指兩個電平之間範圍的比例。"
+          }
+        }
+      }
+    },
     "Custom": {
       "comment": "Settings row value: the person chose the optional details one by one. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -4485,6 +4551,336 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "不在檔案中：曝光設定在「設定」中已關閉。"
+          }
+        }
+      }
+    },
+    "Not measured: nope. can't read how this camera lays out its RAW samples.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample format isn't one nope. reads. Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: nope. kann nicht lesen, wie diese Kamera ihre RAW-Werte anordnet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: nope. no puede leer cómo organiza esta cámara sus muestras RAW."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : nope. ne sait pas lire la disposition des échantillons RAW de cet appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: nope. non sa leggere come questa fotocamera dispone i campioni RAW."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：nope. はこのカメラのRAWサンプルの並びを読み取れません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: nope.은 이 카메라의 RAW 샘플 배열을 읽을 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: nope. kan niet lezen hoe deze camera zijn RAW-samples ordent."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: o nope. não consegue ler como esta câmera organiza as amostras RAW."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：nope. 无法读取此相机 RAW 样本的排列方式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：nope. 無法讀取此相機 RAW 樣本的排列方式。"
+          }
+        }
+      }
+    },
+    "Not measured: the RAW samples and the RAW file differ in size.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera's RAW samples and its RAW file don't have the same size, so they can't be compared.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: RAW-Werte und RAW-Datei haben unterschiedliche Größen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: las muestras RAW y el archivo RAW tienen tamaños distintos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : les échantillons RAW et le fichier RAW n’ont pas la même taille."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: i campioni RAW e il file RAW hanno dimensioni diverse."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：RAWサンプルとRAWファイルのサイズが異なります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: RAW 샘플과 RAW 파일의 크기가 다릅니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: de RAW-samples en het RAW-bestand verschillen in grootte."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: as amostras RAW e o arquivo RAW têm tamanhos diferentes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：RAW 样本与 RAW 文件的尺寸不同。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：RAW 樣本與 RAW 檔案的尺寸不同。"
+          }
+        }
+      }
+    },
+    "Not measured: the RAW samples don't fit the RAW file's white level.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample values are larger than the RAW file's white level allows, so they can't be compared.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: Die RAW-Werte passen nicht zum Weißwert der RAW-Datei."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: las muestras RAW no encajan con el nivel de blanco del archivo RAW."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : les échantillons RAW ne correspondent pas au niveau de blanc du fichier RAW."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: i campioni RAW non corrispondono al livello del bianco del file RAW."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：RAWサンプルがRAWファイルの白レベルに合いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: RAW 샘플이 RAW 파일의 화이트 레벨과 맞지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: de RAW-samples passen niet bij het witniveau van het RAW-bestand."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: as amostras RAW não se encaixam no nível de branco do arquivo RAW."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：RAW 样本与 RAW 文件的白电平不符。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：RAW 樣本與 RAW 檔案的白電平不符。"
+          }
+        }
+      }
+    },
+    "Not measured: the camera gave no RAW samples to count.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera returned no RAW sensor samples with the photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: Die Kamera hat keine RAW-Werte zum Zählen geliefert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: la cámara no dio muestras RAW que contar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : l’appareil n’a fourni aucun échantillon RAW à compter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: la fotocamera non ha fornito campioni RAW da contare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：カメラから数えるためのRAWサンプルが得られませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: 카메라가 셀 RAW 샘플을 제공하지 않았습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: de camera gaf geen RAW-samples om te tellen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: a câmera não forneceu amostras RAW para contar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：相机没有提供可统计的 RAW 样本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：相機沒有提供可統計的 RAW 樣本。"
+          }
+        }
+      }
+    },
+    "Not measured: the camera's RAW file doesn't give black and white levels that nope. can apply.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the RAW file's black and white levels are missing or in a form nope. doesn't apply. Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: Die RAW-Datei der Kamera enthält keine Schwarz- und Weißwerte, die nope. anwenden kann."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: el archivo RAW de la cámara no da niveles de negro y blanco que nope. pueda aplicar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : le fichier RAW de l’appareil ne donne pas de niveaux de noir et de blanc que nope. puisse appliquer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: il file RAW della fotocamera non fornisce livelli di nero e di bianco che nope. possa applicare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：カメラのRAWファイルに、nope. が適用できる黒レベルと白レベルがありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: 카메라의 RAW 파일에 nope.이 적용할 수 있는 블랙 및 화이트 레벨이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: het RAW-bestand van de camera geeft geen zwart- en witniveaus die nope. kan toepassen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: o arquivo RAW da câmera não traz níveis de preto e branco que o nope. possa aplicar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：相机的 RAW 文件没有提供 nope. 可以使用的黑电平和白电平。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：相機的 RAW 檔案沒有提供 nope. 可以使用的黑電平和白電平。"
           }
         }
       }

@@ -503,10 +503,12 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 ### Siri and Shortcuts in the UI tests
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
-`-NopeSimulatedShortcut <seconds>`: the app sends a Take Photo request through the same
-`ShortcutInbox` the intent uses and shows what Siri would say (`ShortcutUITests`: a delay with
-the countdown, a cancelled countdown, and no camera access). The request logic is unit tested in
-`ShortcutTests`.
+`-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
+`burst<count>` for Take Photo with a count, or `lens-ultraWide` for Switch Lens. The app sends
+the request through the same `ShortcutInbox` the intents use and shows what Siri would say
+(`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
+of three and a lens switch). The request logic (counts, lenses, the light, interval shooting,
+requests without a camera screen) is unit tested in `ShortcutTests`.
 
 ## On-device checks
 
@@ -543,7 +545,12 @@ iPad:
   from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
   for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
   `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
-  file sizes, and the tag list; with signing on, c2patool shows the same claim generator and
+  file sizes, and the tag list; RAW clipping (`RAWClippingMeter`) shows numbers, not "Not
+  measured", on every lens (record each lens's `CVPixelBufferGetPixelFormatType`, width, height
+  and bytes per row against the DNG's `ImageWidth`, `ImageLength`, `ActiveArea` and
+  `BitsPerSample`, and whether the buffer's values are shifted), a frame with a bare bulb or the
+  sun shows clipped highlights and a lens-cap frame clipped shadows (record both shares), and taking a RAW photo is no slower than before by more than the time the count
+  takes (Time Profiler, `clipping(of:dng:)`); with signing on, c2patool shows the same claim generator and
   description; the timings look plausible;
 - manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
   controls turned on: see "Manual controls on a device" below;
@@ -595,13 +602,51 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   default), signed, and passes the read-back; the thumbnail opens the photo's details, not
   Photos; Settings changes made there don't change the app's settings; the volume buttons take a
   photo; first use before the app was ever opened (camera and Photos prompts) behaves sensibly.
+  Settings: see "Shared settings" below.
 - Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
   signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
   access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
-- Siri while the iPhone is locked: Siri asks to unlock before opening the app.
-- Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
-  Night Mode on and off, with the app closed and with it open (the screen turns red at once).
+- Siri while the iPhone is locked: "Take a photo with nope." asks to unlock before opening the
+  app. "Open the camera in nope.": record whether Siri opens the Lock Screen camera, asks to
+  unlock, or refuses (not documented by Apple; docs/ARCHITECTURE.md).
+- Siri, other phrases: "Switch to Ultra Wide in nope." (and a lens the device lacks), "Turn on
+  the light in nope." and "Turn off the light in nope." (the light comes on and goes off; with
+  the app closed, turning it off says the light is off without opening the app), "Start interval
+  shooting in nope." with Manual Controls off (Siri says to turn them on; nothing changes) and on
+  (the series starts, the screen dims), and "Stop interval shooting in nope.".
+- Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
+  Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
+  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
+  Interval Shooting, and Set Night Mode on and off, with the app closed and with it open (the
+  screen turns red at once).
+- Siri does not mistake "Turn on the light in nope." for a HomeKit request.
 - Check in each of the 11 languages that Siri accepts the localized phrases.
+
+### Shared settings, the Night Mode control and the Lock Screen camera on a device
+
+Issue #42. Assumptions to confirm: cross-process delivery of the settings change signal (a
+Darwin notification) between the app and `NopeControls`; that `NopeControls` may write
+`OpenCameraIntent`'s app context (Apple documents the app and the capture extension); and that
+the Lock Screen camera reads the app context quickly enough not to be ended for having no camera
+view.
+
+- Signing: a device build with automatic signing registers `group.<bundle identifier>` for the
+  app and `NopeControls`; `codesign -d --entitlements - --xml` on each shows exactly that one App
+  Group, and none on `NopeCaptureExtension`.
+- Upgrade: install 0.2.0, change several settings (formats, a detail, signing off, night mode
+  on), install this build over it: the settings are kept.
+- Control: add Night Mode in Control Center and on the Lock Screen. It shows the app's state;
+  turning it on with the app open turns the app red at once (also while Control Center covers the
+  app); with the app in the background or closed, the app is red when opened. Turning night mode
+  on or off in the app (Settings, the tray or the Set Night Mode shortcut) updates the control.
+- Lock Screen camera: with night mode on, RAW plus HEIF plus JPEG, a detail on and signing off
+  in the app, lock the device and open "Open nope.": the camera opens red, without a white flash,
+  and its photo has those formats, that detail and no signature. Change night mode from the
+  Night Mode control on the Lock Screen, then open the camera again: it follows. A setting
+  changed in the Lock Screen camera doesn't change the app's. With the Location switch on in the
+  app, a photo from the Lock Screen camera has no location.
+- After these checks the App Group's preferences file holds only `NopeSettings.` keys and the
+  migration key (`docs/SECURITY_AUDIT.md`, check 12).
 
 ### Apple Watch on a device (issue #63)
 
@@ -742,7 +787,8 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   live aid is off, and the energy impact with them on is recorded in the release notes;
 - live camera readout: the values match the saved files' EXIF (ExposureTime, ISOSpeedRatings,
   FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
-  the torch show when another feature turns them on.
+  the torch show when another feature turns them on; with Keep Readout in Clean View on, the
+  readout stays in clean view and keeps updating, and with it off clean view hides it.
 
 ### Comparison shot on a device (issue #55)
 

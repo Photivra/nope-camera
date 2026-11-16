@@ -9,6 +9,11 @@ CURRENT_PROJECT_VERSION = 1
 
 NOPE_BUNDLE_IDENTIFIER = com.photivra.nope.dev
 PRODUCT_BUNDLE_IDENTIFIER = $(NOPE_BUNDLE_IDENTIFIER)
+
+// The App Group that the app and its Control Center controls share for the person's settings
+// (issue #42), named after the bundle identifier so each build has its own. The entitlements and
+// the Info.plists read it; automatic signing registers it. No team ID is involved.
+NOPE_APP_GROUP_IDENTIFIER = group.$(NOPE_BUNDLE_IDENTIFIER)
 CODE_SIGN_STYLE = Automatic
 DEVELOPMENT_TEAM =
 

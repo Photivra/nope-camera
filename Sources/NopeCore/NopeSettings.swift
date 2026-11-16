@@ -9,8 +9,9 @@ import Observation
 /// master switch). Each change is saved at once. The app passes ``save`` to
 /// ``CameraModel/saveSettings`` whenever it changes, so the next photo uses it.
 ///
-/// Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in the app's own
-/// `UserDefaults` on the device only. They are never synced through iCloud or sent anywhere.
+/// Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in `UserDefaults` on
+/// the device only: the app's App Group store, shared with its extensions (``SharedSettingsStore``).
+/// They are never synced through iCloud or sent anywhere.
 ///
 /// The model is isolated to the main actor, so an interface can read its properties directly.
 ///
@@ -64,8 +65,9 @@ public final class NopeSettings {
     /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
     public private(set) var tintsViewfinderInNightMode: Bool
 
-    /// Where the settings are stored.
-    private let defaults: UserDefaults
+    /// Where the settings are stored. ``SharedSettingsSync`` watches it and
+    /// ``makeSnapshot()`` copies it.
+    let defaults: UserDefaults
 
     /// Loads the settings, using the default for any value not stored yet or not readable.
     ///
@@ -317,6 +319,44 @@ public final class NopeSettings {
     public func setTintsViewfinderInNightMode(_ isOn: Bool) {
         tintsViewfinderInNightMode = isOn
         defaults.set(isOn, forKey: Key.tintsViewfinderInNightMode)
+    }
+
+    /// Reads every setting from the store again, for a change made by another process (a
+    /// Control Center control) or by ``apply(_:)``.
+    ///
+    /// Only values that differ are assigned, so the interface redraws only for what changed. A
+    /// setting added to this type needs a line here.
+    ///
+    /// - Returns: `true` when any setting changed.
+    @discardableResult
+    public func reload() -> Bool {
+        let stored = NopeSettings(defaults: defaults)
+        let changes = [
+            update(\.save, from: stored),
+            update(\.showsManualControls, from: stored),
+            update(\.startsInCleanView, from: stored),
+            update(\.overlays, from: stored),
+            update(\.fastShutter, from: stored),
+            update(\.flashMode, from: stored),
+            update(\.torchLevel, from: stored),
+            update(\.isNightModeOn, from: stored),
+            update(\.tintsViewfinderInNightMode, from: stored),
+        ]
+        return changes.contains(true)
+    }
+
+    /// Copies one setting from freshly loaded settings if it differs.
+    ///
+    /// - Parameters:
+    ///   - keyPath: The setting.
+    ///   - stored: Settings just loaded from the same store.
+    /// - Returns: `true` when the value changed.
+    private func update<Value: Equatable>(
+        _ keyPath: ReferenceWritableKeyPath<NopeSettings, Value>, from stored: NopeSettings
+    ) -> Bool {
+        guard self[keyPath: keyPath] != stored[keyPath: keyPath] else { return false }
+        self[keyPath: keyPath] = stored[keyPath: keyPath]
+        return true
     }
 
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,

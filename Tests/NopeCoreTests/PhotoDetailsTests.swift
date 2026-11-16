@@ -98,6 +98,34 @@ struct PhotoDetailsTests {
         #expect(details.lockedItems == [.imageLayout, .orientation, .colorProfile])
     }
 
+    @Test func rawClippingSharesPerColorAndOverall() {
+        let clipping = RAWClipping(channels: [
+            RAWClipping.Channel(color: .red, photosites: 4, highlights: 1, shadows: 0),
+            RAWClipping.Channel(color: .green, photosites: 8, highlights: 0, shadows: 2),
+            RAWClipping.Channel(color: .blue, photosites: 4, highlights: 1, shadows: 2),
+        ])
+        #expect(clipping.photosites == 16)
+        #expect(clipping.highlights == 2 && clipping.shadows == 4)
+        #expect(clipping.highlightShare == 0.125)
+        #expect(clipping.shadowShare == 0.25)
+        #expect(clipping.channels[0].highlightShare == 0.25)
+        #expect(clipping.channels[1].shadowShare == 0.25)
+        // Nothing counted reads as no clipping, not as a division by zero.
+        let empty = RAWClipping(channels: [RAWClipping.Channel(color: .red, photosites: 0, highlights: 0, shadows: 0)])
+        #expect(empty.highlightShare == 0 && empty.shadowShare == 0)
+        #expect(empty.channels[0].highlightShare == 0)
+        #expect(RAWClipping.margin == 0.005)
+        #expect(RAWClippingFailure.allCases.count == 5)
+    }
+
+    @Test func detailsKeepTheRAWClipping() {
+        let measured = PhotoDetails.build(
+            files: [Self.checked(.raw, Self.rawInventory)], plan: MetadataPlan(settings: MetadataSettings(), appVersion: "0.2.0"),
+            look: .standard, signature: .signed, timings: SaveTimings(), rawClipping: .notMeasured(.sizeMismatch))
+        #expect(measured.rawClipping == .notMeasured(.sizeMismatch))
+        #expect(Self.build([Self.checked(.raw, Self.rawInventory)]).rawClipping == nil)
+    }
+
     @Test func theFallbackIsProcessedByTheDevice() {
         let details = Self.build([Self.checked(.heif, MetadataInventory(), byDevice: true)])
         #expect(details.files[0].processing == .byDevice)

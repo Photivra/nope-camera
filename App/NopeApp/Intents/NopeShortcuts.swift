@@ -5,7 +5,9 @@ import AppIntents
 /// Each phrase names the app through `.applicationName`, as App Intents requires. The phrases
 /// are localized in all launch languages in `AppShortcuts.xcstrings`.
 struct NopeShortcuts: AppShortcutsProvider {
-    /// Take a photo (optionally in 3 or 10 seconds), and night mode on or off.
+    /// Take a photo (optionally in 3 or 10 seconds), open the camera, switch lenses, the light
+    /// and night mode on or off, and interval shooting. Apple allows at most ten App Shortcuts
+    /// per app; this lists nine.
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: TakePhotoIntent(),
@@ -17,6 +19,42 @@ struct NopeShortcuts: AppShortcutsProvider {
             shortTitle: LocalizedStringResource(
                 "Take Photo", comment: "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri."),
             systemImageName: "camera")
+        AppShortcut(
+            intent: OpenCameraIntent(),
+            phrases: ["Open the camera in \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Open the Camera", comment: "The name of the action that opens nope.'s camera, in the Shortcuts app."),
+            systemImageName: "camera.viewfinder")
+        AppShortcut(
+            intent: SwitchLensIntent(),
+            phrases: ["Switch to \(\.$lens) in \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Switch Lens", comment: "The name of nope.'s action that switches the camera to another lens, in the Shortcuts app."),
+            systemImageName: "camera.aperture")
+        AppShortcut(
+            intent: TurnOnLightIntent(),
+            phrases: ["Turn on the light in \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Turn On the Light", comment: "The name of nope.'s action that turns the camera's steady light (the torch) on, in the Shortcuts app."),
+            systemImageName: "flashlight.on.fill")
+        AppShortcut(
+            intent: TurnOffLightIntent(),
+            phrases: ["Turn off the light in \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Turn Off the Light", comment: "The name of nope.'s action that turns the camera's steady light (the torch) off, in the Shortcuts app."),
+            systemImageName: "flashlight.off.fill")
+        AppShortcut(
+            intent: StartIntervalIntent(),
+            phrases: ["Start interval shooting in \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Start Interval Shooting", comment: "The name of nope.'s action that starts a series of photos taken at a fixed interval, in the Shortcuts app."),
+            systemImageName: "timer")
+        AppShortcut(
+            intent: StopIntervalIntent(),
+            phrases: ["Stop interval shooting in \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Stop Interval Shooting", comment: "The name of nope.'s action that stops a running series of interval photos, in the Shortcuts app."),
+            systemImageName: "stop.circle")
         AppShortcut(
             intent: SetNightModeIntent(isOn: true),
             phrases: ["Turn on night mode in \(.applicationName)"],

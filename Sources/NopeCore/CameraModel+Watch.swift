@@ -8,7 +8,8 @@ extension CameraModel {
     /// A camera that is still starting counts as ``WatchCameraProblem/notRunning``: a photo is
     /// taken for the watch only when the camera is already running, so nothing is taken later by
     /// surprise (issue #63, "Done when"). Busy follows the same rule as a Siri request: a photo
-    /// being taken or saved, or a countdown or burst.
+    /// being taken or saved, or a countdown, burst, interval series or astro
+    /// run.
     public var watchStatus: WatchStatus {
         switch state {
         case .needsPermission: return .unavailable(.needsPermission)
@@ -19,7 +20,8 @@ extension CameraModel {
         }
         if let seconds = drive.countdown.remainingSeconds { return .countingDown(secondsLeft: seconds) }
         let isTakingPhoto = captureStatus == .capturing || captureStatus == .saving
-        if isTakingPhoto || drive.isBusy { return .busy }
+        let isRunningSeries = drive.isBusy || manual.intervalProgress != nil || astro.isRunning
+        if isTakingPhoto || isRunningSeries { return .busy }
         return canCapture ? .ready : .unavailable(.notRunning)
     }
 }
@@ -41,15 +43,17 @@ extension WatchCameraProblem {
 extension WatchResult {
     /// The watch's result for how a photo request through the ``ShortcutInbox`` ended.
     ///
-    /// The watch never asks for a lens, so ``ShortcutOutcome/lensUnavailable`` can't happen; it
-    /// would be reported as not saved.
+    /// The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
+    /// interval series) can't happen; they would be reported as not saved.
     ///
     /// - Parameter outcome: How the request ended.
     init(_ outcome: ShortcutOutcome) {
         switch outcome {
         case .saved(let isSigned): self = .saved(isSigned: isSigned)
         case .savedSeveral(let allSigned): self = .savedSeveral(allSigned: allSigned)
-        case .notSaved, .lensUnavailable: self = .notSaved
+        case .notSaved, .lensUnavailable, .lensSelected, .lightOn, .lightOff, .noLight, .lightUnavailable,
+            .intervalStarted, .intervalStopped, .noIntervalRunning, .needsManualControls:
+            self = .notSaved
         case .cancelled: self = .cancelled
         case .busy: self = .busy
         case .cameraUnavailable(let reason): self = .notTaken(WatchCameraProblem(reason))

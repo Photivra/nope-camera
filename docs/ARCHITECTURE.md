@@ -16,9 +16,9 @@ signed with Content Credentials when signing is on.
 | `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests, the extensions, and the `NopeWatch` app with its `NopeWatchUITests` (embedded in the iPhone app) |
 | `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy`; `Intents/` holds the Siri and Shortcuts App Intents and `AppShortcuts.xcstrings` |
 | `App/NopeCaptureExtension/` | The Lock Screen camera (LockedCameraCapture capture extension), with its own privacy manifest |
-| `App/NopeControls/` | The "Open nope." control (WidgetKit control extension), with its own privacy manifest |
+| `App/NopeControls/` | The "Open nope." and Night Mode controls (WidgetKit control extension), with its own privacy manifest; its entitlements are `App/NopeControls.entitlements` |
 | `App/NopeWatch/` | The Apple Watch app (issue #63): a remote shutter and delay for the iPhone app over WatchConnectivity, with its own `Localizable.xcstrings` and privacy manifest; `App/NopeWatchUITests/` holds its UI tests |
-| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent` and `Localizable.xcstrings` |
+| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent`, `SharedSettings` (the App Group store and change signal) and `Localizable.xcstrings` |
 | `Config/Base.xcconfig` | Shared build settings; includes the untracked `Config/Local.xcconfig` |
 | `docs/api/` | The API exported as Markdown from the DocC comments (generated) |
 
@@ -26,14 +26,14 @@ signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the Apple Watch messages and both ends of their protocol (`WatchCommand`, `PhoneUpdate`, `WatchStatus`, `WatchResult`, `WatchMessageCoding`, `WatchCommandServer` with the `WatchLink` protocol, `WatchRemote` with the `PhoneLink` protocol), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `IntervalShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the Apple Watch messages and both ends of their protocol (`WatchCommand`, `PhoneUpdate`, `WatchStatus`, `WatchResult`, `WatchMessageCoding`, `WatchCommandServer` with the `WatchLink` protocol, `WatchRemote` with the `PhoneLink` protocol), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents and the Apple Watch link (`PhoneWatchSession`) | Everything |
 | Watch app (`NopeWatch`) | The Apple Watch remote shutter: hosts `WatchRemote` from `NopeCore` with a WatchConnectivity link and its own SwiftUI screen; it takes no photos | `NopeCore`, SwiftUI, WatchConnectivity |
-| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the control uses only AppIntents, WidgetKit and SwiftUI |
+| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the controls use only `NopeCore` (for `NopeSettings`), AppIntents, WidgetKit and SwiftUI |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -257,16 +257,94 @@ content or metadata leaves the model. `SetNightModeIntent` calls `NopeSettings.s
 without opening the app. The app registers its `ShortcutInbox` and `NopeSettings` with
 `AppDependencyManager`, and `NopeShortcuts` lists the Siri phrases.
 
+Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
+with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
+burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
+path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
+(`.setLight(isOn:)`, the tray's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
+`StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
+`.stopInterval`, the manual controls' `ManualControlIntent` values). Requests that need the
+camera open the app, because the camera, the light and a series run only in the foreground
+(AGENTS.md, "Battery"). Turning the light off and stopping a series don't open the app: without
+a camera screen serving the inbox (`ShortcutInbox.isServed`) nothing is running, so they end at
+once with `ShortcutRequest.outcomeWithoutCameraScreen`. Interval shooting is part of the manual
+controls; with them off, the request says so (`ShortcutOutcome.needsManualControls`) and
+changes nothing. A request never starts while a photo, countdown, burst, series or astro run is
+in progress (`ShortcutOutcome.busy`).
+
+Siri on a locked device: the app's intents can't take a photo without unlocking. A request that
+opens the app needs the device unlocked (iOS asks first), and the camera only runs in the
+foreground. The Lock Screen capture extension can't serve requests either: Apple documents that
+the system launches it only from a control in Control Center, on the Lock Screen or on the
+Action button ("Creating a camera experience for the Lock Screen", LockedCameraCapture), that it
+can't read or write the App Group container, and that its container is erased when it is
+suspended, so no request can reach it from the app's process. `CameraCaptureIntent` passes only
+an `appContext` the app or extension wrote earlier, not a per-launch request. The "Open the
+camera in nope." phrase runs `OpenCameraIntent`, the `CameraCaptureIntent` the control runs;
+whether Siri opens the capture extension from it on a locked device isn't documented, so it is
+a device check (docs/TESTING.md).
+
 `OpenCameraIntent` is a `CameraCaptureIntent`, compiled into the app, the capture extension and
 the control extension (`App/Shared`), as Apple requires. The `NopeControls` extension offers it
 as the "Open nope." control for Control Center, the Lock Screen and the Action button. On a
 locked device the system opens `NopeCaptureExtension`, which runs the same `CameraModel` and
 `PhotoSaver` as the app (RAW, the allowlist and read-back, a signature per photo, add-only
-saving). It sees only its own container, so it keeps its own settings, starting from the
-defaults, and offers no button that opens another app; it has no storage and battery warnings
+saving). It sees only its own container (not the App Group's), so it starts from the copy of the
+person's settings in `OpenCameraIntent`'s app context (see "Shared settings" below), and offers no
+button that opens another app; it has no location reader and no storage and battery warnings
 (their system reader uses API that extensions can't use). It shares `CameraPreviewView.swift`
 and `MotionGravitySource.swift` with the app through the project's file membership, with the
 `NOPE_CAPTURE_EXTENSION` compilation condition leaving out the Debug UI-test scenarios.
+
+### Shared settings: App Group, controls and the Lock Screen camera (issue #42)
+
+The person's settings live in one place that every target of the app can read: the
+`UserDefaults` of the App Group `$(NOPE_APP_GROUP_IDENTIFIER)` (`group.$(NOPE_BUNDLE_IDENTIFIER)`,
+`Config/Base.xcconfig`). The app (`App/NopeApp.entitlements`) and `NopeControls`
+(`App/NopeControls.entitlements`) request it; each reads the name from its Info.plist key
+`NopeAppGroupIdentifier` (`App/NopeApp-Info.plist`, `App/NopeControls/Info.plist`).
+
+```
+ app: NopeSettings ──┐                               ┌── NopeControls: NightModeControl
+                     ├──▶ App Group UserDefaults ◀───┤     (value provider, SetNightModeControlIntent)
+ SharedSettingsSync ─┘                               │
+        ▲ │ Darwin notification "<group>.settings-changed" (posted by the writer, heard by all)
+        │ ▼
+ app ── makeSnapshot() ──▶ OpenCameraIntent.updateAppContext ──▶ NopeCaptureExtension: apply(_:)
+```
+
+- **`NopeCore` API** (`SharedSettings.swift`, `NopeSettingsSnapshot.swift`):
+  `SharedSettingsStore` (`groupIdentifier(infoDictionary:)`, `defaults(groupIdentifier:)`,
+  `migrate(from:domainName:to:)`, `changeSignalName(groupIdentifier:)`, `isSettingsKey(_:)`);
+  `SettingsChangeSignaling` and `DarwinSettingsChangeSignal`; `SharedSettingsSync`;
+  `NopeSettings.reload()`, `makeSnapshot()` and `apply(_:)`; `NopeSettingsSnapshot`. The app-side
+  glue for every target is `App/Shared/SharedSettings.swift` (`SharedSettings.store()`,
+  `appStore()`, `changeSignal`, `publishToLockScreenCamera(_:)`) and `NopeControlKind`.
+- **Moving old settings.** The app's first launch with the App Group copies every
+  `NopeSettings.` key from its standard `UserDefaults` once (`migrate`), keeping any value a
+  control already wrote. Extensions never migrate: their own stores are empty.
+- **Changes between processes, without polling.** `SharedSettingsSync` posts the Darwin
+  notification whenever this process writes the store (`UserDefaults.didChangeNotification`, which
+  is posted only for this process's writes, before the setter returns), and calls
+  `NopeSettings.reload()` when it hears one, assigning only the values that changed. The app also
+  reloads when it returns to the foreground, for a notification sent while it was suspended. After
+  a change the app refreshes the Night Mode control (`ControlCenter.reloadControls(ofKind:)`) and
+  hands the settings to the Lock Screen camera.
+- **The Night Mode control** (`NightModeControl`, a `ControlWidgetToggle`) reads
+  `NopeSettings.isNightModeOn` from the App Group in its value provider and sets it with
+  `SetNightModeControlIntent` (a `SetValueIntent`, hidden from Shortcuts), which then posts the
+  signal and updates the Lock Screen camera's copy.
+- **The Lock Screen camera can't open the App Group** (Apple: a capture extension "can't read from
+  or write to the App Group's shared container"). The app writes a `NopeSettingsSnapshot` (a
+  property list of every `NopeSettings.` key, well under Apple's 4 KB `appContext` limit, checked
+  by a test) to `OpenCameraIntent.updateAppContext(_:)` at launch and after every change; the
+  extension shows black until it has read and applied it, so it never starts in the wrong mode.
+  Its changes last until it closes.
+- **Later targets.** A Live Activity or widget extension joins the same App Group (an entitlement
+  and the Info.plist key) and uses `SharedSettings.store()` and `changeSignal`. A Watch app can't
+  share an App Group with the iPhone (each device has its own containers): on the watch, the Watch
+  app and its own extensions can share a group the same way, and the iPhone would send a
+  `NopeSettingsSnapshot` across with WatchConnectivity.
 
 ### Apple Watch remote shutter (issue #63)
 
@@ -294,7 +372,8 @@ On the watch, `WatchSessionLink` is the WatchConnectivity adapter, and `RemoteSh
 only screen: the status and result lines (symbol and words; teal for a verified fact, amber for a
 warning), the shutter or Cancel Timer, and the delay as a pushed list. Haptics confirm the
 shutter, each countdown second and the result; VoiceOver announces the countdown and the
-result. The watch app has no entitlements; WatchConnectivity needs none.
+result. The watch app has no entitlements; WatchConnectivity needs none. It needs none of the person's settings, so
+it has no App Group and is sent no `NopeSettingsSnapshot`.
 
 ### The viewfinder
 
@@ -341,7 +420,8 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 - **Live camera readout** ("stats for nerds"): the values AVFoundation reports
   (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
   four a second) while the readout is shown; no second set of observations and no video. Hidden
-  in clean view.
+  in clean view unless pinned (`OverlayOptions.pinsLiveReadout`, "Keep Readout in Clean View",
+  `OverlayOptions.showsLiveReadout(inCleanView:)`).
 
 ```
  NopeUI ViewfinderOverlays ── setNeeds / setShowsStats ──▶ CameraModel.live (LiveViewModel)
@@ -418,6 +498,19 @@ injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The c
 shows the thumbnail in the last-photo slot: a tap opens Photos through
 `EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
 and accessibility actions offer Open in Photos and Photo Details.
+
+**RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
+has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
+adapter counts the photo's own uncompressed Bayer buffer (`AVCapturePhoto.pixelBuffer`) at
+capture time: `RAWClippingMeter` (NopeCapture) reads every 16-bit sample of the active area once
+into a histogram per position of the 2 × 2 color filter pattern, takes the size, active area, bit
+depth and black and white levels from the read-back of the camera's own DNG of the same photo,
+and gives `RAWClippingResult` (NopeCore): per-color counts of photosites within 0.5% of the white
+level or above, and within 0.5% of the black level or below. It reads the four 14-bit Bayer
+formats and 16-bit versatile Bayer (with its pattern attachment); it accepts the buffer's values
+as they are, or shifted up by the difference in bit depth when every value's low bits are zero,
+and otherwise reports why it didn't measure (`RAWClippingFailure`). The result travels with
+`CapturedPhoto.rawClipping` into `PhotoDetails.rawClipping`; only the counts are kept.
 
 **Why the DNG's metadata is written by AVFoundation.** ImageIO can't write DNG: on macOS 27 and
 the iOS 27 Simulator, `CGImageDestinationCopyTypeIdentifiers()` doesn't list
