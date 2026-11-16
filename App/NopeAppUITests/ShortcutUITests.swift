@@ -11,8 +11,14 @@ final class ShortcutUITests: XCTestCase {
     /// Launches the app with a simulated camera and a Take Photo request with this delay.
     @MainActor
     func launch(_ scenario: String, delaySeconds: Int) -> XCUIApplication {
+        launch(scenario, request: String(delaySeconds))
+    }
+
+    /// Launches the app with a simulated camera and a request (`SimulatedShortcut`).
+    @MainActor
+    func launch(_ scenario: String, request: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", String(delaySeconds)]
+        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request]
         app.launchAfterThePreviousRunExits()
         return app
     }
@@ -53,5 +59,24 @@ final class ShortcutUITests: XCTestCase {
         let message = result(app)
         XCTAssertTrue(message.waitForExistence(timeout: 20))
         XCTAssertEqual(message.label, "Camera access is off for nope. You can turn it on in the Settings app.")
+    }
+
+    @MainActor
+    func testACountTakesABurstThenSaysThePhotosWereSaved() {
+        let app = launch("noRAW", request: "burst3")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "Photos saved and signed.")
+        // The burst of a chosen count isn't announced as stopped at the burst limit.
+        XCTAssertFalse(app.staticTexts["Burst stopped at 3 photos, the most one burst takes."].exists)
+    }
+
+    @MainActor
+    func testSwitchingLensesSaysWhichCamera() {
+        let app = launch("slowSaving", request: "lens-ultraWide")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 20))
+        XCTAssertEqual(message.label, "Now using the ultra wide camera.")
+        XCTAssertTrue(app.buttons["Ultra Wide"].isSelected)
     }
 }

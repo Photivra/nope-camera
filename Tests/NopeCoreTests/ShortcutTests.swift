@@ -27,6 +27,8 @@ struct ShortcutTests {
     ) async -> ShortcutOutcome {
         let server = Task { await model.serveShortcuts(from: inbox) }
         defer { server.cancel() }
+        // As in the app, where the camera screen serves the inbox before Siri's request arrives.
+        await waitUntil { inbox.isServed }
         return await inbox.submit(request)
     }
 
@@ -289,5 +291,176 @@ struct ShortcutTests {
         #expect(await inbox.wait(timeoutSeconds: 1) { model.state != .starting } == false)
         await model.send(.start)
         #expect(await inbox.wait(timeoutSeconds: 1) { model.state != .starting })
+    }
+
+    // MARK: - Count
+
+    @Test func countsAreChecked() {
+        #expect(PhotoShortcut().count == 1)
+        #expect(PhotoShortcut(count: 0).count == 1)
+        #expect(PhotoShortcut(count: 7).count == 7)
+        #expect(PhotoShortcut(count: 500).count == DriveModel.maximumBurstFrames)
+        #expect(PhotoShortcut(timer: nil, customDelaySeconds: nil).count == 1)
+        #expect(PhotoShortcut(timer: .threeSeconds, customDelaySeconds: nil, count: 4).count == 4)
+    }
+
+    @Test func aCountTakesABurstOfThatManyFrames() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend)
+        let outcome = await run(.takePhoto(PhotoShortcut(count: 3)), on: model)
+        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(await backend.captureRequests.count == 3)
+        #expect(model.drive.lastBurst == BurstResult(end: .countReached, saved: 3))
+        #expect(model.drive.mode == .single)
+    }
+
+    @Test func theLargestCountEndsAsTheBurstLimit() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend)
+        let outcome = await run(.takePhoto(PhotoShortcut(count: DriveModel.maximumBurstFrames)), on: model)
+        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(model.drive.lastBurst == BurstResult(end: .limitReached, saved: DriveModel.maximumBurstFrames))
+    }
+
+    @Test func aDelayWithACountTakesTheBurstAfterTheCountdown() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
+        let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        defer { server.cancel() }
+        let request = Task { await inbox.submit(.takePhoto(PhotoShortcut(delaySeconds: 1, count: 2))) }
+        await waitUntil { model.drive.countdown.isRunning }
+        #expect(await backend.captureRequests.isEmpty)
+        await tick(ticker)
+        #expect(await request.value == .savedSeveral(allSigned: false))
+        #expect(await backend.captureRequests.count == 2)
+    }
+
+    // MARK: - Switching lenses
+
+    @Test func switchesLenses() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.twoLenses)
+        let model = await makeModel(backend)
+        #expect(await run(.selectLens(.telephoto), on: model) == .lensSelected(.telephoto))
+        #expect(model.selectedLens?.kind == .telephoto)
+        // The lens in use is kept, without restarting the camera.
+        #expect(await run(.selectLens(.telephoto), on: model) == .lensSelected(.telephoto))
+        #expect(await backend.startRequests.count == 2)
+        #expect(await run(.selectLens(.front), on: model) == .lensUnavailable)
+        #expect(await backend.captureRequests.isEmpty)
+    }
+
+    @Test func switchingLensesWaitsForACountdown() async {
+        let ticker = Ticker()
+        let backend = ScriptedBackend(capabilities: CameraModelTests.twoLenses)
+        let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
+        await model.send(.drive(.startTimer(seconds: 5)))
+        #expect(await run(.selectLens(.telephoto), on: model) == .busy)
+        #expect(model.selectedLens?.kind == .wide)
+        model.drive.countdown.cancel()
+    }
+
+    @Test func aLensSwitchTheCameraCanNotDoIsReported() async {
+        let denied = ScriptedBackend(permission: .denied, capabilities: CameraModelTests.twoLenses)
+        #expect(await run(.selectLens(.telephoto), on: await makeModel(denied)) == .cameraUnavailable(.permissionDenied))
+        let failing = ScriptedBackend(capabilities: CameraModelTests.twoLenses, startErrors: [nil, .configurationFailed])
+        #expect(await run(.selectLens(.telephoto), on: await makeModel(failing)) == .cameraUnavailable(.notRunning))
+    }
+
+    // MARK: - Light
+
+    @Test func turnsTheLightOnAndOff() async {
+        let (model, backend) = await LightModelTests.running()
+        #expect(await run(.setLight(isOn: true), on: model) == .lightOn)
+        #expect(model.light.isTorchOn)
+        #expect(await run(.setLight(isOn: false), on: model) == .lightOff)
+        #expect(!model.light.isTorchOn)
+        #expect(await backend.torchRequests.count == 2)
+    }
+
+    @Test func aLightTheSystemRefusesIsReported() async {
+        let (model, backend) = await LightModelTests.running()
+        await backend.setAvailable(false)
+        #expect(await run(.setLight(isOn: true), on: model) == .lightUnavailable)
+    }
+
+    @Test func aLensWithoutALightSaysSo() async {
+        let model = await makeModel(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        #expect(await run(.setLight(isOn: true), on: model) == .noLight)
+        let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
+        #expect(await run(.setLight(isOn: true), on: denied) == .cameraUnavailable(.permissionDenied))
+    }
+
+    // MARK: - Interval shooting
+
+    /// A started camera with manual controls, on or off, whose interval sleeps never end.
+    func makeManualModel(enabled: Bool = true) async -> (CameraModel, ScriptedManualBackend) {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver(), sleep: Self.neverTimesOut)
+        await model.send(.start)
+        if enabled { await model.send(.manual(.setEnabled(true))) }
+        return (model, backend)
+    }
+
+    @Test func intervalValuesKeepWhatIsNotGiven() {
+        let chosen = IntervalSettings(interval: 30, count: 20)
+        #expect(IntervalShortcut().settings(over: chosen) == chosen)
+        #expect(IntervalShortcut(intervalSeconds: 5).settings(over: chosen) == IntervalSettings(interval: 5, count: 20))
+        #expect(IntervalShortcut(count: 4).settings(over: chosen) == IntervalSettings(interval: 30, count: 4))
+        #expect(IntervalShortcut(intervalSeconds: 0, count: 5000).settings(over: chosen) == IntervalSettings(interval: 1, count: 999))
+    }
+
+    @Test func startsAndStopsAnIntervalSeries() async {
+        let (model, backend) = await makeManualModel()
+        let outcome = await run(.startInterval(IntervalShortcut(intervalSeconds: 5, count: 3)), on: model)
+        #expect(outcome == .intervalStarted)
+        #expect(model.manual.interval == IntervalSettings(interval: 5, count: 3))
+        #expect(model.manual.intervalProgress != nil)
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        #expect(await backend.captureCount == 1)
+        // A running series makes other requests busy.
+        #expect(await run(.startInterval(IntervalShortcut()), on: model) == .busy)
+        #expect(await run(.takePhoto(PhotoShortcut()), on: model) == .busy)
+        #expect(await run(.stopInterval, on: model) == .intervalStopped)
+        #expect(model.manual.intervalProgress == nil)
+        #expect(await run(.stopInterval, on: model) == .noIntervalRunning)
+    }
+
+    @Test func intervalShootingNeedsManualControls() async {
+        let (model, backend) = await makeManualModel(enabled: false)
+        #expect(await run(.startInterval(IntervalShortcut()), on: model) == .needsManualControls)
+        #expect(!model.manual.isEnabled)
+        #expect(await backend.captureCount == 0)
+        let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
+        #expect(await run(.startInterval(IntervalShortcut()), on: denied) == .cameraUnavailable(.permissionDenied))
+    }
+
+    // MARK: - Without a camera screen
+
+    @Test func requestsThatNeedNoCameraEndAtOnceWithoutACameraScreen() async {
+        // The timeouts never pass: a request that waited would never end.
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        #expect(!inbox.isServed)
+        #expect(await inbox.submit(.setLight(isOn: false)) == .lightOff)
+        #expect(await inbox.submit(.stopInterval) == .noIntervalRunning)
+        let waiting: [ShortcutRequest] = [
+            .takePhoto(PhotoShortcut()), .selectLens(.wide), .setLight(isOn: true), .startInterval(IntervalShortcut()),
+        ]
+        #expect(waiting.allSatisfy { $0.outcomeWithoutCameraScreen == nil })
+    }
+
+    @Test func theInboxKnowsWhenACameraScreenServesIt() async {
+        let model = await makeModel()
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await model.serveShortcuts(from: inbox) }
+        await waitUntil { inbox.isServed }
+        #expect(inbox.isServed)
+        // With a camera screen, turning the light off is performed by it.
+        #expect(await inbox.submit(.setLight(isOn: false)) == .lightOff)
+        #expect(inbox.isServed)
+        server.cancel()
+        await waitUntil { !inbox.isServed }
+        #expect(!inbox.isServed)
     }
 }
