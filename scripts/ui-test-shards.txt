@@ -122,3 +122,4 @@
 5 NopeAppUITests/testPresetsAtTheLargestTextSize 88 est
 1 NopeAppUITests/testPresetsInRightToLeftLayout 54 est
 8 NopeAppUITests/testPresetsFromTheTrayInNightMode 48 est
+1 ShortcutUITests/testApplyPresetSaysWhatChangedAndCanBeUndone 50 est

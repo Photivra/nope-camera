@@ -5,7 +5,7 @@ import Observation
 /// back.
 ///
 /// The app owns one inbox for its lifetime. An App Intent calls ``submit(_:)`` and waits for the
-/// outcome; the camera screen runs ``CameraModel/serveShortcuts(from:settings:)`` while it is shown, which
+/// outcome; the camera screen runs ``CameraModel/serveShortcuts(from:settings:presets:)`` while it is shown, which
 /// takes each request in turn and performs it.
 ///
 /// ```swift

@@ -781,6 +781,136 @@
         }
       }
     },
+    "Apply ${preset}": {
+      "comment": "How nope.'s Apply Preset action reads in the Shortcuts editor. ${preset} is a preset's name, such as \"Factory Defaults\". Keep ${preset} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "${preset} anwenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplicar ${preset}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Appliquer ${preset}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Applica ${preset}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "${preset} を適用"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "${preset} 적용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "${preset} toepassen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplicar ${preset}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "应用 ${preset}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "套用 ${preset}"
+          }
+        }
+      }
+    },
+    "Apply Preset": {
+      "comment": "The name of nope.'s action that applies a settings preset (Factory Defaults or one the person saved), in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset anwenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplicar preajuste"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Appliquer un préréglage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Applica preimpostazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットを適用"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋 적용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset toepassen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplicar predefinição"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "应用预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "套用預設"
+          }
+        }
+      }
+    },
     "Astro": {
       "comment": "Title on nope.'s Live Activity: the night sky helper, which takes a series of single RAW frames.",
       "localizations": {
@@ -1687,6 +1817,201 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "臉部偵測已開啟。"
+          }
+        }
+      }
+    },
+    "Factory Defaults": {
+      "comment": "Built-in settings preset that returns every setting to what a fresh install has.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Werkseinstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores de fábrica"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages d’usine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni di fabbrica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "工場出荷時の設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "공장 초기 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fabrieksinstellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrões de fábrica"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "出厂默认设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "原廠預設值"
+          }
+        }
+      }
+    },
+    "Factory Defaults applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.": {
+      "comment": "Siri's answer after nope. applied Factory Defaults but, for example, the camera wasn't on. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Werkseinstellungen angewendet, aber einige Einstellungen konnten nicht wie gesichert angewendet werden. „Presets“ in nope. zeigt, welche, und kann es widerrufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores de fábrica aplicados, pero algunos ajustes no se pudieron aplicar tal como se guardaron. Preajustes en nope. muestra cuáles y puede deshacerlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages d’usine appliqués, mais certains réglages n’ont pas pu être appliqués tels qu’enregistrés. Préréglages dans nope. indique lesquels et permet d’annuler."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni di fabbrica applicate, ma alcune impostazioni non sono state applicate come salvate. Preimpostazioni in nope. mostra quali e permette di annullare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "工場出荷時の設定を適用しましたが、一部の設定は保存どおりに適用できませんでした。nope. の「プリセット」でどれかを確認し、取り消せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "공장 초기 설정을 적용했지만 일부 설정은 저장된 대로 적용할 수 없었습니다. nope.의 프리셋에서 어떤 설정인지 확인하고 실행 취소할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fabrieksinstellingen toegepast, maar sommige instellingen konden niet worden toegepast zoals bewaard. Presets in nope. toont welke en kan het herstellen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrões de fábrica aplicados, mas alguns ajustes não puderam ser aplicados como salvos. Predefinições no nope. mostra quais e pode desfazer."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已应用出厂默认设置，但部分设置未能按存储的方式应用。nope. 中的“预设”会显示是哪些，并可撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已套用原廠預設值，但部分設定未能按儲存的方式套用。nope. 中的「預設」會顯示是哪些，並可還原。"
+          }
+        }
+      }
+    },
+    "Factory Defaults applied. You can undo it in Presets.": {
+      "comment": "Siri's answer after nope. returned every setting to a fresh install's. Presets is the name of the list in nope.'s Settings.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Werkseinstellungen angewendet. Du kannst das unter „Presets“ widerrufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores de fábrica aplicados. Puedes deshacerlo en Preajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages d’usine appliqués. Vous pouvez annuler dans Préréglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni di fabbrica applicate. Puoi annullare in Preimpostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "工場出荷時の設定を適用しました。「プリセット」で取り消せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "공장 초기 설정을 적용했습니다. 프리셋에서 실행 취소할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fabrieksinstellingen toegepast. Je kunt dit herstellen in Presets."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrões de fábrica aplicados. Você pode desfazer em Predefinições."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已应用出厂默认设置。可在“预设”中撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已套用原廠預設值。可在「預設」中還原。"
           }
         }
       }
@@ -4037,6 +4362,71 @@
         }
       }
     },
+    "Opens nope. and applies a settings preset: Factory Defaults or one you saved. You can undo it in Presets.": {
+      "comment": "Describes nope.'s Apply Preset action in the Shortcuts app. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Öffnet nope. und wendet ein Einstellungs-Preset an: Werkseinstellungen oder eines, das du gesichert hast. Du kannst es unter „Presets“ widerrufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre nope. y aplica un preajuste de ajustes: Valores de fábrica o uno que hayas guardado. Puedes deshacerlo en Preajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ouvre nope. et applique un préréglage : Réglages d’usine ou un préréglage que vous avez enregistré. Vous pouvez l’annuler dans Préréglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apre nope. e applica una preimpostazione: Impostazioni di fabbrica o una che hai salvato. Puoi annullarla in Preimpostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開き、設定プリセット（工場出荷時の設定または保存したプリセット）を適用します。「プリセット」で取り消せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.을(를) 열고 설정 프리셋(공장 초기 설정 또는 저장한 프리셋)을 적용합니다. 프리셋에서 실행 취소할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opent nope. en past een preset toe: Fabrieksinstellingen of een preset die je hebt bewaard. Je kunt het herstellen in Presets."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre o nope. e aplica uma predefinição: Padrões de fábrica ou uma que você salvou. Você pode desfazer em Predefinições."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开 nope. 并应用设置预设：出厂默认设置或你存储的预设。可在“预设”中撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打開 nope. 並套用設定預設：原廠預設值或你儲存的預設。可在「預設」中還原。"
+          }
+        }
+      }
+    },
     "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one.": {
       "comment": "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "localizations": {
@@ -5138,6 +5528,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "已拍攝：%lld 張"
+          }
+        }
+      }
+    },
+    "Preset": {
+      "comment": "A setting of nope.'s Apply Preset action: which settings preset to apply.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preajuste"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Préréglage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preimpostazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predefinição"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設"
           }
         }
       }
@@ -7419,6 +7874,71 @@
         }
       }
     },
+    "That preset can't be found. Nothing changed.": {
+      "comment": "Siri's answer when the settings preset asked for was deleted or can't be read.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Preset wurde nicht gefunden. Nichts wurde geändert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se encuentra ese preajuste. No ha cambiado nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ce préréglage est introuvable. Rien n’a changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impossibile trovare la preimpostazione. Non è cambiato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "そのプリセットが見つかりません。何も変更されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "해당 프리셋을 찾을 수 없습니다. 변경된 사항이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die preset is niet gevonden. Er is niets gewijzigd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não foi possível encontrar essa predefinição. Nada foi alterado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "找不到该预设。未做任何更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "找不到該預設。未做任何更改。"
+          }
+        }
+      }
+    },
     "The camera isn't available right now.": {
       "comment": "Siri's answer when the camera didn't start, is in use by another app or is paused.",
       "localizations": {
@@ -8780,6 +9300,136 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 正在拍照。"
+          }
+        }
+      }
+    },
+    "“%@” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.": {
+      "comment": "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„%@“ angewendet, aber einige Einstellungen konnten nicht wie gesichert angewendet werden. „Presets“ in nope. zeigt, welche, und kann es widerrufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se ha aplicado «%@», pero algunos ajustes no se pudieron aplicar tal como se guardaron. Preajustes en nope. muestra cuáles y puede deshacerlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "« %@ » appliqué, mais certains réglages n’ont pas pu être appliqués tels qu’enregistrés. Préréglages dans nope. indique lesquels et permet d’annuler."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%@» applicata, ma alcune impostazioni non sono state applicate come salvate. Preimpostazioni in nope. mostra quali e permette di annullare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「%@」を適用しましたが、一部の設定は保存どおりに適用できませんでした。nope. の「プリセット」でどれかを確認し、取り消せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’을(를) 적용했지만 일부 설정은 저장된 대로 적용할 수 없었습니다. nope.의 프리셋에서 어떤 설정인지 확인하고 실행 취소할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’ toegepast, maar sommige instellingen konden niet worden toegepast zoals bewaard. Presets in nope. toont welke en kan het herstellen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“%@” aplicada, mas alguns ajustes não puderam ser aplicados como salvos. Predefinições no nope. mostra quais e pode desfazer."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已应用“%@”，但部分设置未能按存储的方式应用。nope. 中的“预设”会显示是哪些，并可撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已套用「%@」，但部分設定未能按儲存的方式套用。nope. 中的「預設」會顯示是哪些，並可還原。"
+          }
+        }
+      }
+    },
+    "“%@” applied. You can undo it in Presets.": {
+      "comment": "Siri's answer after nope. applied a saved settings preset. The placeholder is the preset's name, in the language's quotation marks. Presets is the name of the list in nope.'s Settings.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„%@“ angewendet. Du kannst das unter „Presets“ widerrufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se ha aplicado «%@». Puedes deshacerlo en Preajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "« %@ » appliqué. Vous pouvez annuler dans Préréglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%@» applicata. Puoi annullare in Preimpostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「%@」を適用しました。「プリセット」で取り消せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’ 적용됨. 프리셋에서 실행 취소할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’ toegepast. Je kunt dit herstellen in Presets."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“%@” aplicada. Você pode desfazer em Predefinições."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已应用“%@”。可在“预设”中撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已套用「%@」。可在「預設」中還原。"
           }
         }
       }

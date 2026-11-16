@@ -43,7 +43,11 @@ struct NopeApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     /// The saved settings presets (issue #72), stored with the settings on the device.
-    @State private var presets = SettingsPresets(settings: Self.sharedSettings)
+    @State private var presets = Self.sharedPresets
+
+    /// The presets object, created once so the Apply Preset action lists and applies the same
+    /// presets the camera screen shows (``ApplyPresetIntent``).
+    private static let sharedPresets = SettingsPresets(settings: sharedSettings)
 
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
@@ -74,6 +78,8 @@ struct NopeApp: App {
         let shortcuts = Self.shortcuts
         AppDependencyManager.shared.add(dependency: settings)
         AppDependencyManager.shared.add(dependency: shortcuts)
+        let presets = Self.sharedPresets
+        AppDependencyManager.shared.add(dependency: presets)
         _ = Self.settingsSync
         Self.watchSession.activate()
     }
@@ -165,7 +171,7 @@ struct NopeApp: App {
         .onChange(of: settings.showsLiveActivity, initial: true) { _, isOn in liveActivities.isEnabled = isOn }
         .onChange(of: settings.isNightModeOn, initial: true) { _, isOn in liveActivities.isNightMode = isOn }
         // Siri and Shortcuts requests are performed while the camera screen is shown.
-        .task { await model.serveShortcuts(from: Self.shortcuts, settings: settings) }
+        .task { await model.serveShortcuts(from: Self.shortcuts, settings: settings, presets: presets) }
         // The Apple Watch app's shutter and status (issue #63), while the camera screen is shown.
         .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG

@@ -98,6 +98,12 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "This lens can't take that bracket.",
                 comment: "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.")
+        case .presetApplied(let result):
+            presetMessage(for: result)
+        case .presetUnavailable:
+            LocalizedStringResource(
+                "That preset can't be found. Nothing changed.",
+                comment: "Siri's answer when the settings preset asked for was deleted or can't be read.")
         case .cameraUnavailable(.needsPermission):
             LocalizedStringResource(
                 "Open nope. to allow camera access.",
@@ -114,6 +120,32 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "The camera isn't available right now.",
                 comment: "Siri's answer when the camera didn't start, is in use by another app or is paused.")
+        }
+    }
+
+    /// What Siri says after a preset was applied: which one, whether everything applied as saved,
+    /// and that the Presets list can undo it.
+    ///
+    /// - Parameter result: The result of the apply.
+    /// - Returns: A whole, localized sentence.
+    static func presetMessage(for result: PresetApplyResult) -> LocalizedStringResource {
+        switch (result.name, result.notices.isEmpty) {
+        case (nil, true):
+            LocalizedStringResource(
+                "Factory Defaults applied. You can undo it in Presets.",
+                comment: "Siri's answer after nope. returned every setting to a fresh install's. Presets is the name of the list in nope.'s Settings.")
+        case (nil, false):
+            LocalizedStringResource(
+                "Factory Defaults applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.",
+                comment: "Siri's answer after nope. applied Factory Defaults but, for example, the camera wasn't on. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.")
+        case (let name?, true):
+            LocalizedStringResource(
+                "“\(name)” applied. You can undo it in Presets.",
+                comment: "Siri's answer after nope. applied a saved settings preset. The placeholder is the preset's name, in the language's quotation marks. Presets is the name of the list in nope.'s Settings.")
+        case (let name?, false):
+            LocalizedStringResource(
+                "“\(name)” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.",
+                comment: "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged.")
         }
     }
 }

@@ -675,7 +675,12 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   or Far Focus pill shows and goes; a lens without a range limit says so); Set Photo Size Largest
   and Standard on a lens with a choice (Settings > Photo Size shows it; the next photo's size
   changes) and on a Bayer RAW lens (says there is one size); Set Fast Shutter and Set Face
-  Detection with the app closed (Settings shows the new value when the app opens).
+  Detection with the app closed (Settings shows the new value when the app opens). Apply
+  Preset: the picker lists Factory Defaults and the saved presets (a renamed preset shows its new
+  name, a deleted one is gone); with the app closed it opens, applies the preset (lens, values
+  and settings), says it can be undone in Presets, and Presets shows Undo; with a preset that has
+  Location on and access declined, it says some settings couldn't be applied; the light stays
+  off.
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Live Activity on a device

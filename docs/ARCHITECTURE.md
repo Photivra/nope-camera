@@ -257,7 +257,7 @@ keyboard and the status bar are drawn by the system and keep its dark appearance
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
 parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
-outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:)` while it is shown: the model
+outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:presets:)` while it is shown: the model
 waits for the camera to start (at most `ShortcutInbox.startTimeoutSeconds`, following its
 observable state, without polling), switches the lens if asked, then takes one photo at once or
 starts the self-timer with `.drive(.startTimer(seconds:))`, and reports a `ShortcutOutcome`:
@@ -285,11 +285,11 @@ change.
 
 Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
 Far Focus in one action, because the camera has one autofocus range restriction, so the two
-limits exclude each other) and `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
-in use) open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+limits exclude each other), `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
+in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
 `AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
 choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
-its settings to `serveShortcuts(from:settings:)`; the app then applies the new size as it does
+its settings to `serveShortcuts(from:settings:presets:)`; the app then applies the new size as it does
 from Settings. `SetFastShutterIntent` and `SetFaceDetectionIntent` change only stored settings
 (`NopeSettings.setFastShutter(_:)`, `setFollowsFaces(_:)`), as `SetNightModeIntent` does, so they
 run without opening the app. None of them changes a manual value. App Shortcuts allows ten per
@@ -449,6 +449,15 @@ Nothing applies a preset on its own: the app never changes the person's settings
   Presets in the quick-controls tray (`PresetsSheet`, a sheet so night mode stays red): Factory
   Defaults and the saved presets, each applied with one tap; the result, its notices and Undo;
   Save Current Settings (`PresetNameScreen`) and Rename or Delete (`EditPresetsScreen`).
+- **Shortcuts.** `ApplyPresetIntent` (a Shortcuts action with no Siri phrase; every App Shortcut
+  slot is used) picks a `PresetEntity` (Factory Defaults, then the saved presets, from
+  `PresetQuery` over the app's `SettingsPresets`, registered with `AppDependencyManager`). It
+  opens the app and sends `ShortcutRequest.applyPreset(_:)` through the inbox; the model waits for
+  the camera, then calls the same `SettingsPresets.apply(_:camera:location:)` (a camera that
+  can't start leaves the camera values unchanged, `PresetNotice.cameraNotReady`). The outcome,
+  `ShortcutOutcome.presetApplied(_:)`, `.busy` or `.presetUnavailable`, becomes one spoken
+  sentence: which preset, whether everything applied as saved, and that Presets can undo it,
+  because the apply leaves the same Undo in the Presets list. A preset never turns the light on.
 
 ### Apple Watch remote shutter (issue #63)
 

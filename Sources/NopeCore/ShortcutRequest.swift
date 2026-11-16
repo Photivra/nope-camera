@@ -5,7 +5,7 @@ import Foundation
 ///
 /// The app's intents hold no rules of their own (AGENTS.md, "Siri and Shortcuts"): an intent
 /// turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports the
-/// ``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:settings:)`` performs it with the same intents
+/// ``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:settings:presets:)`` performs it with the same intents
 /// as the on-screen controls.
 public enum ShortcutRequest: Equatable, Sendable {
     /// Take one photo or a burst, after an optional delay, with an optional lens.
@@ -34,6 +34,9 @@ public enum ShortcutRequest: Equatable, Sendable {
     /// Choose the photo size of a lens that offers more than one, as Settings > Photo Size does.
     case setPhotoSize(PhotoSizeShortcut)
 
+    /// Apply a settings preset (issue #72), as tapping it in the Presets list does.
+    case applyPreset(PresetChoice)
+
     /// What the request ends with when no camera screen is open to take it, or `nil` when it
     /// waits for one (``ShortcutInbox/startTimeoutSeconds``).
     ///
@@ -46,7 +49,7 @@ public enum ShortcutRequest: Equatable, Sendable {
         case .setLight(isOn: false): .lightOff
         case .stopInterval: .noIntervalRunning
         case .takePhoto, .takeBracket, .selectLens, .setLight(isOn: true), .startInterval, .setFocusRange,
-            .setPhotoSize:
+            .setPhotoSize, .applyPreset:
             nil
         }
     }
@@ -310,6 +313,14 @@ public enum ShortcutOutcome: Equatable, Sendable {
 
     /// The camera can't take a photo now. Say why, from the reason.
     case cameraUnavailable(CameraUnavailability)
+
+    /// A settings preset was applied. Say which (Factory Defaults or the preset's name), whether
+    /// everything applied as saved or the Presets list shows what didn't, and that it can be
+    /// undone in the Presets list.
+    case presetApplied(PresetApplyResult)
+
+    /// The preset asked for no longer exists or can't be read. Say so; nothing changed.
+    case presetUnavailable
 }
 
 /// Why the camera couldn't take a photo for a ``ShortcutRequest``.

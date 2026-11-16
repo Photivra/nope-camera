@@ -1678,6 +1678,32 @@ Side effects: may switch the lens, which restarts the camera.
   camera isn't on, ``PresetNotice/lensUnavailable`` when the device has no such lens, and
   ``PresetNotice/cameraValuesAdjusted`` when any other value differs from the preset's.
 
+## `CameraModel/applyPreset(_:presets:inbox:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+PresetShortcut.swift`
+
+```swift
+@MainActor func applyPreset(_ choice: PresetChoice, presets: SettingsPresets?, inbox: ShortcutInbox) async -> ShortcutOutcome
+```
+
+Applies a preset for a request, through the same path as the Presets list
+(``SettingsPresets/apply(_:camera:location:)``): every setting, then the camera's lens,
+exposure and drive values, with Location only through its permission prompt. A preset
+never turns the light on (``CameraSetup`` doesn't hold it). The apply can be undone in the
+Presets list, as one made there.
+
+The request waits for the camera to start, so the lens and exposure apply too; if the
+camera can't start, the settings still apply and the result says the camera values
+didn't (``PresetNotice/cameraNotReady``).
+
+- Parameters:
+  - choice: The preset.
+  - presets: The person's presets, or `nil` when the interface has none.
+  - inbox: The inbox, for its waits and timeouts.
+- Returns: ``ShortcutOutcome/presetApplied(_:)``, ``ShortcutOutcome/busy`` while photos
+  are being taken, or ``ShortcutOutcome/presetUnavailable`` when the preset doesn't exist
+  or can't be read.
+
 ## `CameraModel/astro`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1745,6 +1771,20 @@ internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 How long a bracket request waits for the camera's first exposure reading, which the
 bracket's frames are planned around, in seconds. An assumption, to be confirmed on a
 device: the camera reports readings several times a second once it runs.
+
+## `CameraModel/cameraProblem(inbox:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor func cameraProblem(inbox: ShortcutInbox) async -> CameraUnavailability?
+```
+
+Waits for the camera to finish starting, at most ``ShortcutInbox/startTimeoutSeconds``,
+then says why it can't take a photo, if it can't.
+
+- Parameter inbox: The inbox, for its wait and timeout.
+- Returns: Why the camera can't take a photo, or `nil` when it can.
 
 ## `CameraModel/cameraSetup`
 
@@ -2147,12 +2187,12 @@ The outcome a capture status reports.
 - Parameter status: The status after the photo.
 - Returns: The outcome.
 
-## `CameraModel/perform(_:inbox:settings:)`
+## `CameraModel/perform(_:inbox:settings:presets:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 
 ```swift
-@MainActor func perform(_ request: ShortcutRequest, inbox: ShortcutInbox, settings: NopeSettings?) async -> ShortcutOutcome
+@MainActor func perform(_ request: ShortcutRequest, inbox: ShortcutInbox, settings: NopeSettings?, presets: SettingsPresets?) async -> ShortcutOutcome
 ```
 
 Performs one request.
@@ -2161,6 +2201,7 @@ Performs one request.
   - request: What was asked for.
   - inbox: The inbox, for its waits and timeouts.
   - settings: The person's settings, or `nil`.
+  - presets: The person's settings presets, or `nil`.
 - Returns: How it ended.
 
 ## `CameraModel/photoSizes`
@@ -2293,12 +2334,12 @@ Side effects: ``CameraIntent/requestPermission`` may show the system camera prom
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
 
-## `CameraModel/serveShortcuts(from:settings:)`
+## `CameraModel/serveShortcuts(from:settings:presets:)`
 
 public, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 
 ```swift
-@MainActor func serveShortcuts(from inbox: ShortcutInbox, settings: NopeSettings? = nil) async
+@MainActor func serveShortcuts(from inbox: ShortcutInbox, settings: NopeSettings? = nil, presets: SettingsPresets? = nil) async
 ```
 
 Performs each request from the inbox in turn, until the calling task is cancelled. Run it
@@ -2313,6 +2354,8 @@ may switch the lens, start the self-timer, take a photo and add it to Photos.
     (``ShortcutRequest/setPhotoSize(_:)``), or `nil` when the interface stores none; such
     a request then says the lens offers no choice. The interface applies the changed
     setting to the camera, as it does for its own settings screen.
+  - presets: The person's settings presets, for ``ShortcutRequest/applyPreset(_:)``, or
+    `nil` when the interface has none; such a request then says the preset can't be found.
 
 ## `CameraModel/sessionStatus`
 
@@ -18765,6 +18808,41 @@ case factoryDefaults
 Every setting as a fresh install has it. Always available, and can't be changed or
 deleted.
 
+## `PresetChoice/factoryDefaultsIdentifier`
+
+public, declared in `Sources/NopeCore/CameraModel+PresetShortcut.swift`
+
+```swift
+static let factoryDefaultsIdentifier: String
+```
+
+The identifier of Factory Defaults in ``identifier``.
+
+## `PresetChoice/identifier`
+
+public, declared in `Sources/NopeCore/CameraModel+PresetShortcut.swift`
+
+```swift
+var identifier: String { get }
+```
+
+A stable text identifier, for an interface that names presets outside the app (a Shortcuts
+action): ``factoryDefaultsIdentifier`` or the saved preset's UUID.
+
+## `PresetChoice/init(identifier:)`
+
+public, declared in `Sources/NopeCore/CameraModel+PresetShortcut.swift`
+
+```swift
+init?(identifier: String)
+```
+
+The preset an ``identifier`` names.
+
+- Parameter identifier: ``factoryDefaultsIdentifier`` or a saved preset's UUID.
+- Returns: The choice, or `nil` for text that is neither. Whether a saved preset still
+  exists is checked when it is applied.
+
 ## `PresetChoice/saved(_:)`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
@@ -20782,7 +20860,7 @@ Hands requests from Siri and Shortcuts (issue #62) to the camera screen, and the
 back.
 
 The app owns one inbox for its lifetime. An App Intent calls ``submit(_:)`` and waits for the
-outcome; the camera screen runs ``CameraModel/serveShortcuts(from:settings:)`` while it is shown, which
+outcome; the camera screen runs ``CameraModel/serveShortcuts(from:settings:presets:)`` while it is shown, which
 takes each request in turn and performs it.
 
 ```swift
@@ -21087,6 +21165,28 @@ case photoSizeSet
 
 The lens's photo size is now the one asked for, from the next photo. Say so.
 
+## `ShortcutOutcome/presetApplied(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case presetApplied(PresetApplyResult)
+```
+
+A settings preset was applied. Say which (Factory Defaults or the preset's name), whether
+everything applied as saved or the Presets list shows what didn't, and that it can be
+undone in the Presets list.
+
+## `ShortcutOutcome/presetUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case presetUnavailable
+```
+
+The preset asked for no longer exists or can't be read. Say so; nothing changed.
+
 ## `ShortcutOutcome/saved(isSigned:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -21123,8 +21223,18 @@ point that runs one of the app's App Intents (issue #62).
 
 The app's intents hold no rules of their own (AGENTS.md, "Siri and Shortcuts"): an intent
 turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports the
-``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:settings:)`` performs it with the same intents
+``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:settings:presets:)`` performs it with the same intents
 as the on-screen controls.
+
+## `ShortcutRequest/applyPreset(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case applyPreset(PresetChoice)
+```
+
+Apply a settings preset (issue #72), as tapping it in the Presets list does.
 
 ## `ShortcutRequest/outcomeWithoutCameraScreen`
 
@@ -23168,7 +23278,7 @@ init(_ outcome: ShortcutOutcome)
 The watch's result for how a photo request through the ``ShortcutInbox`` ended.
 
 The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
-interval series, a bracket, the focus range, a photo size) can't happen; they would be
+interval series, a bracket, the focus range, a photo size, a preset) can't happen; they would be
 reported as not saved.
 
 - Parameter outcome: How the request ended.
