@@ -32,6 +32,9 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// The person's settings, shown and changed in the settings sheet.
     private let settings: NopeSettings
 
+    /// The saved settings presets (issue #72), or `nil` to offer none.
+    private let presets: SettingsPresets?
+
     /// Whether the settings sheet is open.
     @State private var showsSettings = false
 
@@ -44,13 +47,16 @@ public struct CameraScreen<Viewfinder: View>: View {
     ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     ///     and runs `CameraModel.observeEvents()` while it is visible.
     ///   - settings: The person's settings, opened from the Settings button.
+    ///   - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    ///     `nil` to offer none (the Lock Screen camera, which can't read them).
     ///   - viewfinder: Makes the live viewfinder from the model's preview source.
     public init(
-        model: CameraModel, settings: NopeSettings,
+        model: CameraModel, settings: NopeSettings, presets: SettingsPresets? = nil,
         @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder
     ) {
         self.model = model
         self.settings = settings
+        self.presets = presets
         self.viewfinder = viewfinder
     }
 
@@ -108,7 +114,7 @@ public struct CameraScreen<Viewfinder: View>: View {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
-                lenses: model.capabilities?.lenses ?? [])
+                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
                 .nightModeStyle(settings.isNightModeOn)
                 .preferredColorScheme(settings.isNightModeOn ? .dark : nil)
                 .frame(idealWidth: 480, idealHeight: 720)
@@ -196,7 +202,9 @@ public struct CameraScreen<Viewfinder: View>: View {
         case .ready(let capabilities):
             // The ready camera leaves the picture's frame clear; the viewfinder is drawn behind
             // it (see body).
-            CameraReadyView(model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true })
+            CameraReadyView(
+                model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true },
+                presets: presets)
         }
     }
 }

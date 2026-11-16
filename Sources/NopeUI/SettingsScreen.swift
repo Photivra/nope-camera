@@ -9,9 +9,9 @@ extension EnvironmentValues {
 }
 
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
-/// (issue #68, "Settings"): Photos (formats, look, file options, photo size), Privacy (the master
-/// switch, signing, the details), Camera (manual controls, clean view, face detection, night mode,
-/// front camera mirroring) and More (Accessibility, Honesty, About).
+/// (issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options, photo size),
+/// Privacy (the master switch, signing, the details), Camera (manual controls, clean view, face
+/// detection, night mode, front camera mirroring) and More (Accessibility, Honesty, About).
 ///
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
@@ -40,6 +40,12 @@ public struct SettingsScreen: View {
     /// The device's lenses, for the Photo Size row (shown only when a lens offers a choice).
     private let lenses: [Lens]
 
+    /// The saved settings presets, or `nil` to hide the Presets row.
+    private let presets: SettingsPresets?
+
+    /// The camera, whose lens and exposure a preset saves and sets, or `nil`.
+    private let camera: CameraModel?
+
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
 
@@ -59,10 +65,15 @@ public struct SettingsScreen: View {
     ///     location service, which hides the Location switch.
     ///   - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
     ///     row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
+    ///   - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
+    ///   - camera: The camera, whose lens and exposure presets save and set, or `nil`.
     public init(
         settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true,
-        location: LocationTagging? = nil, lenses: [Lens] = []
+        location: LocationTagging? = nil, lenses: [Lens] = [], presets: SettingsPresets? = nil,
+        camera: CameraModel? = nil
     ) {
+        self.presets = presets
+        self.camera = camera
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
         self.deviceHasFrontCamera = deviceHasFrontCamera
@@ -74,6 +85,11 @@ public struct SettingsScreen: View {
     public var body: some View {
         NavigationStack {
             Form {
+                if let presets {
+                    Section {
+                        PresetsScreen.link(presets: presets, settings: settings, camera: camera)
+                    }
+                }
                 photosSection
                 privacySection
                 cameraSection

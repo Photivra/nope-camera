@@ -859,6 +859,72 @@
         }
       }
     },
+    "A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.": {
+      "comment": "Explains what a settings preset contains. Location is the name of the privacy switch.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ein Preset enthält jede Einstellung: Fotos, Datenschutz, Kamera sowie Objektiv, Belichtung und Aufnahmemodus. Ein Preset mit „Standort“ fragt trotzdem nach dem Standortzugriff."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Un preajuste guarda todos los ajustes: fotos, privacidad, cámara y el objetivo, la exposición y el modo de disparo. Un preajuste que incluye Ubicación sigue pidiendo acceso a la ubicación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Un préréglage contient chaque réglage : photos, confidentialité, appareil photo, ainsi que l’objectif, l’exposition et le mode de déclenchement. Un préréglage qui inclut Localisation demande toujours l’accès à la localisation."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Una preimpostazione contiene ogni impostazione: foto, privacy, fotocamera, e l’obiettivo, l’esposizione e la modalità di scatto. Una preimpostazione che include Posizione chiede comunque l’accesso alla posizione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットにはすべての設定が含まれます：写真、プライバシー、カメラ、そしてレンズ、露出、ドライブモード。「位置情報」を含むプリセットでも、位置情報へのアクセスは改めて確認されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋에는 모든 설정이 담깁니다: 사진, 개인 정보 보호, 카메라, 그리고 렌즈, 노출, 드라이브 모드. 위치를 포함한 프리셋도 위치 접근 권한을 요청합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Een preset bevat elke instelling: foto’s, privacy, camera, en de lens, belichting en opnamemodus. Een preset met Locatie vraagt nog steeds om toegang tot je locatie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Uma predefinição guarda todos os ajustes: fotos, privacidade, câmera, além da lente, da exposição e do modo de disparo. Uma predefinição que inclui Localização ainda pede acesso à localização."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "预设包含所有设置：照片、隐私、相机，以及镜头、曝光和驱动模式。包含“位置”的预设仍会请求位置访问权限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設包含所有設定：照片、隱私權、相機，以及鏡頭、曝光和驅動模式。包含「位置」的預設仍會要求位置取用權限。"
+          }
+        }
+      }
+    },
     "About and Licenses": {
       "comment": "Settings row and screen title: version, license and third-party notices.",
       "extractionState": "manual",
@@ -1255,6 +1321,72 @@
         }
       }
     },
+    "Another preset has this name.": {
+      "comment": "Shown under the preset name field when a saved preset already has the name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ein anderes Preset hat diesen Namen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Otro preajuste tiene este nombre."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Un autre préréglage porte ce nom."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Un’altra preimpostazione ha questo nome."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "この名前のプリセットがすでにあります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 이름의 프리셋이 이미 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Een andere preset heeft deze naam."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Outra predefinição tem este nome."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已有预设使用此名称。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已有預設使用此名稱。"
+          }
+        }
+      }
+    },
     "Aperture": {
       "comment": "Name of the lens aperture (f-number) control.",
       "extractionState": "manual",
@@ -1317,6 +1449,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "光圈"
+          }
+        }
+      }
+    },
+    "Applies every setting in the preset.": {
+      "comment": "VoiceOver hint of a settings preset in the list.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wendet jede Einstellung des Presets an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplica todos los ajustes del preajuste."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Applique chaque réglage du préréglage."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Applica ogni impostazione della preimpostazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットのすべての設定を適用します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋의 모든 설정을 적용합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Past elke instelling van de preset toe."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplica todos os ajustes da predefinição."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "应用预设中的所有设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "套用預設中的所有設定。"
+          }
+        }
+      }
+    },
+    "Apply a Preset": {
+      "comment": "Header of the list of settings presets: tapping one applies all of its settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset anwenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplicar un preajuste"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Appliquer un préréglage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Applica una preimpostazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットを適用"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋 적용"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset toepassen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aplicar uma predefinição"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "应用预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "套用預設"
           }
         }
       }
@@ -5413,6 +5677,138 @@
         }
       }
     },
+    "Delete Preset": {
+      "comment": "Button that deletes a saved settings preset. The current settings don't change.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset löschen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Eliminar preajuste"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Supprimer le préréglage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elimina preimpostazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットを削除"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋 삭제"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verwijder preset"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apagar predefinição"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "刪除預設"
+          }
+        }
+      }
+    },
+    "Deleting a preset doesn't change your current settings.": {
+      "comment": "Shown under the Delete Preset button.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Löschen eines Presets ändert deine aktuellen Einstellungen nicht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Eliminar un preajuste no cambia tus ajustes actuales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Supprimer un préréglage ne modifie pas vos réglages actuels."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Eliminare una preimpostazione non cambia le impostazioni attuali."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットを削除しても、現在の設定は変わりません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋을 삭제해도 현재 설정은 바뀌지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Een preset verwijderen verandert je huidige instellingen niet."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apagar uma predefinição não altera seus ajustes atuais."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除预设不会更改当前设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "刪除預設不會更改目前的設定。"
+          }
+        }
+      }
+    },
     "Details": {
       "comment": "Button and screen title in the compare view: the metadata of nope.'s photo and of the phone-processed version, side by side.",
       "extractionState": "manual",
@@ -6205,6 +6601,138 @@
         }
       }
     },
+    "Enter a name.": {
+      "comment": "Shown under the preset name field when it is empty.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gib einen Namen ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Escribe un nombre."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Saisissez un nom."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Inserisci un nome."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "名前を入力してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이름을 입력하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Voer een naam in."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Digite um nome."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "输入名称。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "輸入名稱。"
+          }
+        }
+      }
+    },
+    "Every setting as on a fresh install. Saved presets are kept.": {
+      "comment": "Explains the Factory Defaults preset.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jede Einstellung wie nach einer Neuinstallation. Gesicherte Presets bleiben erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Todos los ajustes como en una instalación nueva. Los preajustes guardados se conservan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque réglage comme après une nouvelle installation. Les préréglages enregistrés sont conservés."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni impostazione come dopo una nuova installazione. Le preimpostazioni salvate restano."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "すべての設定を新規インストール時の状態にします。保存したプリセットは残ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "모든 설정을 새로 설치한 상태로 되돌립니다. 저장된 프리셋은 유지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke instelling zoals na een nieuwe installatie. Bewaarde presets blijven behouden."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Todos os ajustes como numa instalação nova. As predefinições salvas são mantidas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "所有设置恢复为全新安装时的状态。已存储的预设会保留。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "所有設定恢復為全新安裝時的狀態。已儲存的預設會保留。"
+          }
+        }
+      }
+    },
     "Exposure": {
       "comment": "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.",
       "extractionState": "manual",
@@ -6795,6 +7323,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "臉部偵測"
+          }
+        }
+      }
+    },
+    "Factory Defaults": {
+      "comment": "Built-in settings preset that returns every setting to what a fresh install has.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Werkseinstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores de fábrica"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages d’usine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni di fabbrica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "工場出荷時の設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "공장 초기 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fabrieksinstellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrões de fábrica"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "出厂默认设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "原廠預設值"
+          }
+        }
+      }
+    },
+    "Factory Defaults applied.": {
+      "comment": "Shown after the Factory Defaults preset was applied.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Werkseinstellungen angewendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores de fábrica aplicados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages d’usine appliqués."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni di fabbrica applicate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "工場出荷時の設定を適用しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "공장 초기 설정을 적용했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fabrieksinstellingen toegepast."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrões de fábrica aplicados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已应用出厂默认设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已套用原廠預設值。"
           }
         }
       }
@@ -8607,6 +9267,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "對焦中央"
+          }
+        }
+      }
+    },
+    "For example, Astro": {
+      "comment": "Placeholder of the preset name field.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zum Beispiel Astro"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Por ejemplo, Astro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Par exemple, Astro"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Per esempio, Astro"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "例：星空"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "예: 천체"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bijvoorbeeld Astro"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Por exemplo, Astro"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "例如：星空"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "例如：星空"
           }
         }
       }
@@ -13297,6 +14023,72 @@
         }
       }
     },
+    "Name": {
+      "comment": "Label of the field for a settings preset's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Name"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nombre"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nom"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nome"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "名前"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이름"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Naam"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nome"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "名稱"
+          }
+        }
+      }
+    },
     "Near": {
       "comment": "Focus position in the nearest third of the lens's relative range. Not a distance.",
       "extractionState": "manual",
@@ -13821,6 +14613,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "未拍攝照片：相機傳送了空白畫面。"
+          }
+        }
+      }
+    },
+    "No saved presets yet. Save your current settings to come back to them with one tap.": {
+      "comment": "Shown under the presets list before any preset is saved.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Noch keine gesicherten Presets. Sichere deine aktuellen Einstellungen, um mit einem Tippen zu ihnen zurückzukehren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aún no hay preajustes guardados. Guarda tus ajustes actuales para volver a ellos con un toque."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucun préréglage enregistré pour l’instant. Enregistrez vos réglages actuels pour y revenir d’un toucher."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuna preimpostazione salvata. Salva le impostazioni attuali per tornarci con un tocco."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存したプリセットはまだありません。現在の設定を保存すると、ワンタップで戻せます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장된 프리셋이 아직 없습니다. 현재 설정을 저장하면 한 번의 탭으로 돌아올 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nog geen bewaarde presets. Bewaar je huidige instellingen om er met één tik naar terug te gaan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ainda não há predefinições salvas. Salve seus ajustes atuais para voltar a eles com um toque."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "尚无存储的预设。存储当前设置，即可一键返回。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "尚無儲存的預設。儲存目前的設定，即可一點返回。"
           }
         }
       }
@@ -14547,6 +15405,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "未儲存：此版本的 App 無法儲存照片。"
+          }
+        }
+      }
+    },
+    "Nothing changed.": {
+      "comment": "Shown above the reason when a settings preset couldn't be applied.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nichts wurde geändert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No ha cambiado nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rien n’a changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non è cambiato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "何も変更されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "변경된 사항이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Er is niets gewijzigd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nada foi alterado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未做任何更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未做任何更改。"
           }
         }
       }
@@ -17599,6 +18523,138 @@
         }
       }
     },
+    "Rename Preset": {
+      "comment": "Title of the screen that renames a saved settings preset.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset umbenennen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renombrar preajuste"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renommer le préréglage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rinomina preimpostazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセット名を変更"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋 이름 변경"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wijzig naam van preset"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renomear predefinição"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重命名预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重新命名預設"
+          }
+        }
+      }
+    },
+    "Rename or Delete": {
+      "comment": "Link to the list of saved presets, where each can be renamed or deleted.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Umbenennen oder löschen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renombrar o eliminar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renommer ou supprimer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rinomina o elimina"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "名前を変更または削除"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이름 변경 또는 삭제"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wijzig naam of verwijder"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renomear ou apagar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重命名或删除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重新命名或刪除"
+          }
+        }
+      }
+    },
     "Reset": {
       "comment": "Button that returns one manual control to automatic.",
       "extractionState": "manual",
@@ -17863,6 +18919,138 @@
         }
       }
     },
+    "Save": {
+      "comment": "Button that saves a settings preset under the typed name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewaar"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存"
+          }
+        }
+      }
+    },
+    "Save Current Settings": {
+      "comment": "Link that saves every current setting as a new named preset.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aktuelle Einstellungen sichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardar ajustes actuales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrer les réglages actuels"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva impostazioni attuali"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "現在の設定を保存"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "현재 설정 저장"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Huidige instellingen bewaren"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvar ajustes atuais"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储当前设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存目前設定"
+          }
+        }
+      }
+    },
     "Save Each Photo As": {
       "comment": "Section header above the list of file formats.",
       "extractionState": "manual",
@@ -17925,6 +19113,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "每張照片儲存為"
+          }
+        }
+      }
+    },
+    "Save Preset": {
+      "comment": "Title of the screen that names a new settings preset.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset sichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Guardar preajuste"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enregistrer le préréglage"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salva preimpostazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットを保存"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋 저장"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preset bewaren"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Salvar predefinição"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "存储预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "儲存預設"
           }
         }
       }
@@ -18651,6 +19905,144 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "設定"
+          }
+        }
+      }
+    },
+    "Settings presets: title": {
+      "comment": "Settings row, screen title and camera tray item: named sets of every setting that can be applied at once.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Presets"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Presets"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preajustes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Préréglages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Preimpostazioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセット"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Presets"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predefinições"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "预设"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設"
+          }
+        }
+      }
+    },
+    "Settings restored.": {
+      "comment": "VoiceOver announcement after Undo returned every setting to what it was before the preset.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Einstellungen wiederhergestellt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes restaurados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages rétablis."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni ripristinate."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定を元に戻しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "설정을 복원했습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Instellingen hersteld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes restaurados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已恢复设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已回復設定。"
           }
         }
       }
@@ -19581,6 +20973,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "較小的副本分享更快，佔用空間更少。RAW 保留每一個像素。"
+          }
+        }
+      }
+    },
+    "Some camera values were changed to what this lens supports.": {
+      "comment": "Shown after applying a settings preset whose exposure values the lens can't use exactly.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Einige Kamerawerte wurden an die Möglichkeiten dieses Objektivs angepasst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Algunos valores de la cámara se han ajustado a lo que admite este objetivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Certaines valeurs de l’appareil photo ont été ajustées à ce que prend en charge cet objectif."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alcuni valori della fotocamera sono stati adattati a ciò che supporta questo obiettivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一部のカメラの値を、このレンズで使える値に変更しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "일부 카메라 값이 이 렌즈가 지원하는 값으로 바뀌었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sommige camerawaarden zijn aangepast aan wat deze lens ondersteunt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alguns valores da câmera foram ajustados ao que esta lente permite."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "部分相机数值已更改为此镜头支持的值。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "部分相機數值已更改為此鏡頭支援的值。"
           }
         }
       }
@@ -22165,6 +23623,138 @@
         }
       }
     },
+    "The camera is taking photos. Try again when it's done.": {
+      "comment": "Shown when a settings preset can't be applied during a countdown, burst, series or astro run.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera nimmt gerade Fotos auf. Versuche es erneut, wenn sie fertig ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara está tomando fotos. Inténtalo de nuevo cuando termine."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo prend des photos. Réessayez une fois terminé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera sta scattando foto. Riprova quando ha finito."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラが撮影中です。終わってからもう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 사진을 촬영하는 중입니다. 끝난 후 다시 시도하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera neemt foto’s. Probeer het opnieuw als hij klaar is."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera está tirando fotos. Tente de novo quando terminar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机正在拍摄照片。完成后再试一次。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機正在拍攝照片。完成後再試一次。"
+          }
+        }
+      }
+    },
+    "The camera isn't on, so the lens and camera values didn't change.": {
+      "comment": "Shown after applying a settings preset before the camera is allowed or started.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera ist nicht eingeschaltet, daher wurden Objektiv und Kamerawerte nicht geändert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara no está activa, así que el objetivo y los valores de la cámara no han cambiado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo n’est pas actif ; l’objectif et les valeurs de l’appareil photo n’ont donc pas changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La fotocamera non è attiva, quindi l’obiettivo e i valori della fotocamera non sono cambiati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラがオンになっていないため、レンズとカメラの値は変更されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 켜져 있지 않아 렌즈와 카메라 값이 바뀌지 않았습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera staat niet aan, dus de lens en camerawaarden zijn niet gewijzigd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera não está ligada, então a lente e os valores da câmera não mudaram."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相机未开启，因此镜头和相机数值未更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "相機未開啟，因此鏡頭和相機數值未更改。"
+          }
+        }
+      }
+    },
     "The camera isn't sending a picture.": {
       "comment": "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera.",
       "extractionState": "manual",
@@ -23089,6 +24679,72 @@
         }
       }
     },
+    "This device has no lens like the preset's, so the lens didn't change.": {
+      "comment": "Shown after applying a settings preset saved with a lens this device doesn't have.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Gerät hat kein Objektiv wie das des Presets, daher wurde das Objektiv nicht gewechselt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Este dispositivo no tiene un objetivo como el del preajuste, así que el objetivo no ha cambiado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cet appareil n’a pas d’objectif comme celui du préréglage ; l’objectif n’a donc pas changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questo dispositivo non ha un obiettivo come quello della preimpostazione, quindi l’obiettivo non è cambiato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このデバイスにはプリセットと同じ種類のレンズがないため、レンズは変更されていません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 기기에는 프리셋과 같은 렌즈가 없어 렌즈가 바뀌지 않았습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dit apparaat heeft geen lens zoals die van de preset, dus de lens is niet gewijzigd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Este dispositivo não tem uma lente como a da predefinição, então a lente não mudou."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此设备没有与预设相同的镜头，因此镜头未更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此裝置沒有與預設相同的鏡頭，因此鏡頭未更改。"
+          }
+        }
+      }
+    },
     "This lens has a fixed aperture.": {
       "comment": "Explains why the aperture can't be changed on this lens.",
       "extractionState": "manual",
@@ -23217,6 +24873,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "此鏡頭：%@"
+          }
+        }
+      }
+    },
+    "This preset can't be read.": {
+      "comment": "Shown when a saved settings preset is damaged and can't be applied.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Preset kann nicht gelesen werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Este preajuste no se puede leer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ce préréglage ne peut pas être lu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questa preimpostazione non può essere letta."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このプリセットは読み込めません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 프리셋을 읽을 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deze preset kan niet worden gelezen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta predefinição não pode ser lida."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无法读取此预设。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "無法讀取此預設。"
           }
         }
       }
@@ -24475,6 +26197,72 @@
         }
       }
     },
+    "Undo": {
+      "comment": "Button that returns every setting to what it was before the preset was applied.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Widerrufen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deshacer"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Annuler"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Annulla"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "取り消す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "실행 취소"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Herstel"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desfazer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撤销"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "還原"
+          }
+        }
+      }
+    },
     "Unlock": {
       "comment": "Action of the lock pill on the camera: unlocks exposure and focus.",
       "extractionState": "manual",
@@ -24603,6 +26391,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "解鎖對焦和曝光"
+          }
+        }
+      }
+    },
+    "Use %lld characters or fewer.": {
+      "comment": "Shown under the preset name field when the name is too long. The placeholder is the most characters allowed.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verwende höchstens %lld Zeichen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Usa %lld caracteres o menos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Utilisez %lld caractères au maximum."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Usa al massimo %lld caratteri."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld文字以内にしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld자 이하로 입력하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gebruik maximaal %lld tekens."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Use até %lld caracteres."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最多使用 %lld 个字符。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最多使用 %lld 個字元。"
           }
         }
       }
@@ -26055,6 +27909,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope.：%@"
+          }
+        }
+      }
+    },
+    "“%@” applied.": {
+      "comment": "Shown after a saved settings preset was applied. The placeholder is the preset's name, in the language's quotation marks.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„%@“ angewendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se ha aplicado «%@»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "« %@ » appliqué."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "«%@» applicata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「%@」を適用しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’ 적용됨."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’ toegepast."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“%@” aplicada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已应用“%@”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已套用「%@」。"
           }
         }
       }

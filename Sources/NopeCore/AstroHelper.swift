@@ -49,7 +49,7 @@ public final class AstroModel {
     public static let frameCounts = [5, 10, 20, 30, 50, 100, 200, 300]
 
     /// The frame count a run starts with.
-    public static let defaultFrameCount = 20
+    nonisolated public static let defaultFrameCount = 20
 
     /// At or below this charge, unplugged, a run stops before the next frame: 10%. An
     /// assumption to be checked on a device: low enough not to stop a run the person can still
