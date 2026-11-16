@@ -45,7 +45,9 @@ enum AstroText {
         switch result.end {
         case .stopped, .failed:
             nil
-        case .limitReached:
+        case .limitReached, .countReached:
+            // Astro runs end at their own frame count with limitReached; countReached is a Siri
+            // burst's, listed so the switch covers every case.
             String(localized: "Astro finished. Frames saved: \(result.saved)", bundle: .module, comment: "Announced to VoiceOver when the night sky helper has taken all its frames. The number is how many frames were saved.")
         case .storageFull:
             String(localized: "Astro stopped: storage is full. Frames saved: \(result.saved)", bundle: .module, comment: "Announced to VoiceOver when the night sky helper stops because the next frame wouldn't fit in storage. The number is how many frames were saved.")

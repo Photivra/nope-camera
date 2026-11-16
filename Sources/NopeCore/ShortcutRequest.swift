@@ -8,11 +8,39 @@ import Foundation
 /// ``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:)`` performs it with the same intents
 /// as the on-screen controls.
 public enum ShortcutRequest: Equatable, Sendable {
-    /// Take one photo, after an optional delay, with an optional lens.
+    /// Take one photo or a burst, after an optional delay, with an optional lens.
     case takePhoto(PhotoShortcut)
+
+    /// Switch to a lens of this kind, as the lens buttons do.
+    case selectLens(Lens.Kind)
+
+    /// Turn the light (the torch) on or off, as the Light switch in the quick-controls tray does.
+    case setLight(isOn: Bool)
+
+    /// Start an interval series, as Start in Pro Tools does.
+    case startInterval(IntervalShortcut)
+
+    /// Stop the running interval series, as its Stop button does.
+    case stopInterval
+
+    /// What the request ends with when no camera screen is open to take it, or `nil` when it
+    /// waits for one (``ShortcutInbox/startTimeoutSeconds``).
+    ///
+    /// Turning the light off and stopping a series don't need the camera: without a camera
+    /// screen, the camera isn't running, so the light is already off and no series runs
+    /// (AGENTS.md, "Battery": the light turns off and the session stops when the camera screen
+    /// isn't in use). Their intents therefore run without opening the app.
+    public var outcomeWithoutCameraScreen: ShortcutOutcome? {
+        switch self {
+        case .setLight(isOn: false): .lightOff
+        case .stopInterval: .noIntervalRunning
+        case .takePhoto, .selectLens, .setLight(isOn: true), .startInterval: nil
+        }
+    }
 }
 
-/// The parameters of a "Take Photo" request: the delay before the shot and the lens.
+/// The parameters of a "Take Photo" request: the delay before the shot, the lens and how many
+/// photos.
 ///
 /// Every value is checked here, so an intent can pass what the person typed in Shortcuts as it
 /// is.
@@ -29,15 +57,24 @@ public struct PhotoShortcut: Equatable, Sendable {
     /// The kind of lens to use, or `nil` for the lens already selected.
     public let lensKind: Lens.Kind?
 
+    /// How many photos, from 1 to ``DriveModel/maximumBurstFrames``. One takes a single photo
+    /// (an exposure bracket that is on in the manual controls still applies, as it does to the
+    /// shutter); more takes a burst of exactly that many frames with the burst's own loop, each
+    /// frame its own photo.
+    public let count: Int
+
     /// Creates a request.
     ///
     /// - Parameters:
     ///   - delaySeconds: The delay in seconds. Values below 0 become 0, and values above
     ///     ``maximumDelaySeconds`` become ``maximumDelaySeconds``.
     ///   - lensKind: The kind of lens, or `nil` for the lens already selected.
-    public init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil) {
+    ///   - count: How many photos. Values below 1 become 1, and values above
+    ///     ``DriveModel/maximumBurstFrames`` become ``DriveModel/maximumBurstFrames``.
+    public init(delaySeconds: Int = 0, lensKind: Lens.Kind? = nil, count: Int = 1) {
         self.delaySeconds = min(max(delaySeconds, 0), Self.maximumDelaySeconds)
         self.lensKind = lensKind
+        self.count = min(max(count, 1), DriveModel.maximumBurstFrames)
     }
 
     /// Creates a request from a preset delay and an optional custom one, as the "Take Photo"
@@ -47,8 +84,39 @@ public struct PhotoShortcut: Equatable, Sendable {
     ///   - timer: The preset delay, or `nil` for none.
     ///   - customDelaySeconds: A custom delay in seconds, or `nil` to use the preset.
     ///   - lensKind: The kind of lens, or `nil` for the lens already selected.
-    public init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil) {
-        self.init(delaySeconds: customDelaySeconds ?? timer?.seconds ?? 0, lensKind: lensKind)
+    ///   - count: How many photos, or `nil` for one.
+    public init(timer: SelfTimerDelay?, customDelaySeconds: Int?, lensKind: Lens.Kind? = nil, count: Int? = nil) {
+        self.init(delaySeconds: customDelaySeconds ?? timer?.seconds ?? 0, lensKind: lensKind, count: count ?? 1)
+    }
+}
+
+/// The parameters of a "Start Interval Shooting" request: the time between photos and how many,
+/// each `nil` to keep the value chosen in Pro Tools (``ManualControlsModel/interval``).
+///
+/// Values are moved into the ranges ``IntervalSettings`` allows.
+public struct IntervalShortcut: Equatable, Sendable {
+    /// The time from one photo to the next in seconds, or `nil` to keep the chosen one.
+    public let intervalSeconds: Double?
+
+    /// How many photos the series takes, or `nil` to keep the chosen number.
+    public let count: Int?
+
+    /// Creates a request.
+    ///
+    /// - Parameters:
+    ///   - intervalSeconds: The time between photos in seconds, or `nil` to keep the chosen one.
+    ///   - count: The number of photos, or `nil` to keep the chosen number.
+    public init(intervalSeconds: Double? = nil, count: Int? = nil) {
+        self.intervalSeconds = intervalSeconds
+        self.count = count
+    }
+
+    /// The series to run: this request's values over the chosen ones.
+    ///
+    /// - Parameter chosen: The interval and count chosen in Pro Tools.
+    /// - Returns: The settings, each value inside its allowed range.
+    public func settings(over chosen: IntervalSettings) -> IntervalSettings {
+        IntervalSettings(interval: intervalSeconds ?? chosen.interval, count: count ?? chosen.count)
     }
 }
 
@@ -73,11 +141,42 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// The countdown was cancelled on the device, so no photo was taken. Say so.
     case cancelled
 
-    /// A photo, countdown or burst was already in progress. Say so; nothing changed.
+    /// A photo, countdown, burst, interval series or astro run was already in progress. Say so;
+    /// nothing changed.
     case busy
 
-    /// The device has no lens of the kind asked for. Say so; nothing was taken.
+    /// The device has no lens of the kind asked for. Say so; nothing was taken or changed.
     case lensUnavailable
+
+    /// The camera now uses a lens of this kind. Say which.
+    case lensSelected(Lens.Kind)
+
+    /// The light is on. Say so.
+    case lightOn
+
+    /// The light is off. Say so.
+    case lightOff
+
+    /// The lens in use has no light. Say so; nothing changed.
+    case noLight
+
+    /// The light was asked for, but the system didn't allow it (for example while the device is
+    /// hot) or the astro helper keeps it off. Say the light isn't available right now.
+    case lightUnavailable
+
+    /// An interval series started. Say so; the camera screen shows its progress.
+    case intervalStarted
+
+    /// The interval series was stopped. Say so; every photo already taken is saved.
+    case intervalStopped
+
+    /// No interval series was running, so nothing was stopped. Say so.
+    case noIntervalRunning
+
+    /// Interval shooting is part of the manual controls, which are off. Say they can be turned
+    /// on in the app's Settings; the request doesn't turn them on (manual settings are the
+    /// person's to change).
+    case needsManualControls
 
     /// The camera can't take a photo now. Say why, from the reason.
     case cameraUnavailable(CameraUnavailability)
