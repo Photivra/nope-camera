@@ -19,14 +19,30 @@ struct OverlayOptionsTests {
         settings.setShowsFocusPeaking(true)
         settings.setShowsHistogram(true)
         settings.setShowsLiveReadout(true)
+        settings.setPinsLiveReadout(true)
         #expect(settings.overlays.isAnyOn)
 
         let reloaded = NopeSettings(defaults: scratch.defaults).overlays
         #expect(reloaded == settings.overlays)
         #expect(reloaded.showsGrid && reloaded.showsLevel && reloaded.showsFocusPeaking)
-        #expect(reloaded.showsHistogram && reloaded.showsLiveReadout)
+        #expect(reloaded.showsHistogram && reloaded.showsLiveReadout && reloaded.pinsLiveReadout)
         #expect(reloaded.gridStyle == .goldenSpiral)
         #expect(reloaded.spiralPlacement == SpiralPlacement(index: 1))
+    }
+
+    @Test func theReadoutHidesInCleanViewUnlessPinned() {
+        var options = OverlayOptions()
+        #expect(!options.pinsLiveReadout)
+        #expect(!options.showsLiveReadout(inCleanView: false))
+        // Pinned but off: still hidden.
+        options.pinsLiveReadout = true
+        #expect(!options.showsLiveReadout(inCleanView: true))
+        options.showsLiveReadout = true
+        #expect(options.showsLiveReadout(inCleanView: true))
+        #expect(options.showsLiveReadout(inCleanView: false))
+        options.pinsLiveReadout = false
+        #expect(!options.showsLiveReadout(inCleanView: true))
+        #expect(options.showsLiveReadout(inCleanView: false))
     }
 
     @Test func eachOptionAloneTurnsTheSummaryOn() {

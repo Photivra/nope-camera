@@ -5,7 +5,7 @@ import SwiftUI
 /// opened from the last-photo thumbnail.
 ///
 /// A native list with one section per topic, each with a heading VoiceOver can jump between:
-/// the files, the exposure as written, the processing, the signature, the details kept and left
+/// the files, the RAW clipping, the exposure as written, the processing, the signature, the details kept and left
 /// out, everything the read-back found, and the timings. Every value comes from
 /// `SavedPhoto.details`; a value the file doesn't hold isn't shown.
 ///
@@ -102,6 +102,9 @@ struct PhotoDetailsSections: View {
             }
         } header: {
             Text("Files", bundle: .module, comment: "Heading in the photo details: the files saved for this photo.")
+        }
+        if let clipping = details.rawClipping {
+            RAWClippingSection(result: clipping)
         }
         signatureSection
         exposureSection
@@ -283,6 +286,103 @@ struct PhotoDetailsSections: View {
             Text("Off in Settings", tableName: "Honesty", bundle: .module, comment: "In the photo details, why a metadata item isn't in the files: the person's switch for it is off.")
         case .nothingToWrite:
             Text("On, but there was nothing to write", tableName: "Honesty", bundle: .module, comment: "In the photo details, why a metadata item isn't in the files although its switch is on: the camera gave no value for it, such as no location or no lens corrections.")
+        }
+    }
+}
+
+/// The clipping counted from the RAW sensor data when the photo was taken (issue #53): the share
+/// of photosites that are clipped highlights and clipped shadows, then each color's, with the
+/// definition under them; or why it wasn't measured.
+struct RAWClippingSection: View {
+    /// The clipping, or why it wasn't measured.
+    let result: RAWClippingResult
+
+    /// Creates the section.
+    ///
+    /// - Parameter result: The clipping, or why it wasn't measured.
+    init(result: RAWClippingResult) {
+        self.result = result
+    }
+
+    /// The section.
+    var body: some View {
+        Section {
+            switch result {
+            case .measured(let clipping):
+                DetailRow(
+                    title: Text("Clipped Highlights", bundle: .module, comment: "Row in the photo details: the share of the RAW's photosites recorded at or near the white level (full)."),
+                    value: Self.share(clipping.highlightShare))
+                DetailRow(
+                    title: Text("Clipped Shadows", bundle: .module, comment: "Row in the photo details: the share of the RAW's photosites recorded at or near the black level (no signal)."),
+                    value: Self.share(clipping.shadowShare))
+                ForEach(clipping.channels, id: \.color) { channel in
+                    DetailRow(
+                        title: Self.name(of: channel.color),
+                        value: Text(
+                            "Highlights \(Self.percent(channel.highlightShare)), shadows \(Self.percent(channel.shadowShare))", bundle: .module,
+                            comment: "In the photo details, one color of the RAW sensor's color filter: the share of its photosites that are clipped highlights, then clipped shadows, as percentages."))
+                }
+            case .notMeasured(let failure):
+                Self.reason(failure)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        } header: {
+            Text("Clipping in the RAW", bundle: .module, comment: "Heading in the photo details: how much of the RAW sensor data is clipped (recorded as full white or as black). RAW is a file format name.")
+        } footer: {
+            if case .measured = result {
+                Text(
+                    "Counted on the RAW sensor data when the photo was taken, over every photosite of the active area. Clipped highlights are within 0.5% of the white level or above it; clipped shadows are within 0.5% of the black level or below it, where 0.5% is of the range between the two levels.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Footer in the photo details: how the RAW clipping is defined and measured. A photosite is one sensor element. The white and black levels are the RAW file's own values. Must not claim more than the English.")
+            }
+        }
+    }
+
+    /// A share of photosites, such as "0.4% of photosites".
+    ///
+    /// - Parameter share: The share, 0 to 1.
+    /// - Returns: The text.
+    static func share(_ share: Double) -> Text {
+        Text("\(percent(share)) of photosites", bundle: .module, comment: "In the photo details: a share of the RAW's photosites, such as 0.4% of photosites. A photosite is one sensor element.")
+    }
+
+    /// A share as a percentage with up to two significant digits, such as "0.4%" or "0.0012%",
+    /// so a small share never reads as 0; exactly 0 is "0%".
+    ///
+    /// - Parameter share: The share, 0 to 1.
+    /// - Returns: The percentage, in the current language.
+    static func percent(_ share: Double) -> String {
+        share.formatted(.percent.precision(.significantDigits(1...2)))
+    }
+
+    /// The name of a color of the color filter.
+    ///
+    /// - Parameter color: The color.
+    /// - Returns: The name.
+    static func name(of color: CFAColor) -> Text {
+        switch color {
+        case .red: Text("Red", bundle: .module, comment: "In the photo details: the red photosites of the RAW sensor's color filter.")
+        case .green: Text("Green", bundle: .module, comment: "In the photo details: the green photosites of the RAW sensor's color filter.")
+        case .blue: Text("Blue", bundle: .module, comment: "In the photo details: the blue photosites of the RAW sensor's color filter.")
+        }
+    }
+
+    /// Why the clipping wasn't measured, in plain words.
+    ///
+    /// - Parameter failure: The reason.
+    /// - Returns: The text, from `Honesty.xcstrings`.
+    static func reason(_ failure: RAWClippingFailure) -> Text {
+        switch failure {
+        case .noSamples:
+            Text("Not measured: the camera gave no RAW samples to count.", tableName: "Honesty", bundle: .module, comment: "In the photo details, why the RAW clipping isn't shown: the camera returned no RAW sensor samples with the photo.")
+        case .unsupportedLayout:
+            Text("Not measured: nope. can't read how this camera lays out its RAW samples.", tableName: "Honesty", bundle: .module, comment: "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample format isn't one nope. reads. Keep nope. unchanged.")
+        case .levelsUnreadable:
+            Text("Not measured: the camera's RAW file doesn't give black and white levels that nope. can apply.", tableName: "Honesty", bundle: .module, comment: "In the photo details, why the RAW clipping isn't shown: the RAW file's black and white levels are missing or in a form nope. doesn't apply. Keep nope. unchanged.")
+        case .sizeMismatch:
+            Text("Not measured: the RAW samples and the RAW file differ in size.", tableName: "Honesty", bundle: .module, comment: "In the photo details, why the RAW clipping isn't shown: the camera's RAW samples and its RAW file don't have the same size, so they can't be compared.")
+        case .scaleMismatch:
+            Text("Not measured: the RAW samples don't fit the RAW file's white level.", tableName: "Honesty", bundle: .module, comment: "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample values are larger than the RAW file's white level allows, so they can't be compared.")
         }
     }
 }

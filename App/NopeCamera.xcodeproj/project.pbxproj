@@ -17,7 +17,7 @@
 		A1000000000000000000010C /* NopeCapture in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020A /* NopeCapture */; };
 		A1000000000000000000010D /* NopeDevelop in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020B /* NopeDevelop */; };
 		A1000000000000000000010E /* NopeSigning in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020C /* NopeSigning */; };
-		A100000000000000000064A1 /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000064A2 /* NopeCore */; };
+		A1000000000000000000010F /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1000000000000000000020D /* NopeCore */; };
 		A10000000000000000000108 /* NopeControls.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000506 /* NopeControls.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A10000000000000000000109 /* NopeCaptureExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000505 /* NopeCaptureExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -74,6 +74,8 @@
 /* Begin PBXFileReference section */
 		A10000000000000000000501 /* nope.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = nope.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000502 /* NopeAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000507 /* NopeControls.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeControls.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000508 /* NopeApp-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "NopeApp-Info.plist"; sourceTree = "<group>"; };
 		A10000000000000000000503 /* NopeApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NopeApp.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000504 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = ../Config/Base.xcconfig; sourceTree = "<group>"; };
 		A10000000000000000000505 /* NopeCaptureExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = NopeCaptureExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -150,7 +152,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A100000000000000000064A1 /* NopeCore in Frameworks */,
+				A1000000000000000000010F /* NopeCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,6 +164,8 @@
 			children = (
 				A10000000000000000000504 /* Base.xcconfig */,
 				A10000000000000000000503 /* NopeApp.entitlements */,
+				A10000000000000000000508 /* NopeApp-Info.plist */,
+				A10000000000000000000507 /* NopeControls.entitlements */,
 				A10000000000000000000601 /* NopeApp */,
 				A10000000000000000000602 /* NopeAppUITests */,
 				A10000000000000000000603 /* Shared */,
@@ -286,7 +290,7 @@
 			);
 			name = NopeControls;
 			packageProductDependencies = (
-				A100000000000000000064A2 /* NopeCore */,
+				A1000000000000000000020D /* NopeCore */,
 			);
 			productName = NopeControls;
 			productReference = A10000000000000000000506 /* NopeControls.appex */;
@@ -460,6 +464,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
+				INFOPLIST_FILE = "NopeApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
@@ -483,6 +488,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
+				INFOPLIST_FILE = "NopeApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
@@ -566,6 +572,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NopeControls.entitlements;
 				INFOPLIST_FILE = NopeControls/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -583,6 +590,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = NopeControls.entitlements;
 				INFOPLIST_FILE = NopeControls/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -694,7 +702,7 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = NopeSigning;
 		};
-		A100000000000000000064A2 /* NopeCore */ = {
+		A1000000000000000000020D /* NopeCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NopeCore;
 		};

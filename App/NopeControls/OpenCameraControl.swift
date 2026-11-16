@@ -5,13 +5,15 @@ import WidgetKit
 /// The controls the app offers in Control Center, on the Lock Screen and for the Action button
 /// (WidgetKit controls, iOS 18; issue #42), and the Live Activity's layouts (issue #64).
 ///
-/// This extension only describes the control and draws the Live Activity. It contains no camera,
-/// photo or settings code, and makes no network request (AGENTS.md, "No network").
+/// This extension describes the controls, changes only the shared Night Mode setting, through
+/// `NopeSettings` in the App Group's store, and draws the Live Activity (issue #64). It contains
+/// no camera or photo code, and makes no network request (AGENTS.md, "No network").
 @main
 struct NopeControls: WidgetBundle {
-    /// The control "Open nope." and the Live Activity.
+    /// The controls, "Open nope." and the Night Mode switch, and the Live Activity.
     var body: some Widget {
         OpenCameraControl()
+        NightModeControl()
         SeriesLiveActivity()
     }
 }
@@ -21,7 +23,7 @@ struct NopeControls: WidgetBundle {
 /// is locked, and the app when it isn't.
 struct OpenCameraControl: ControlWidget {
     /// The control's identifier, stable across releases so a placed control keeps working.
-    static let kind = "com.photivra.nope.controls.open-camera"
+    static let kind = NopeControlKind.openCamera
 
     /// The control: the camera symbol and its name.
     var body: some ControlWidgetConfiguration {

@@ -5353,6 +5353,16 @@ The name of a pressure level.
 
 - Parameter pressure: The level.
 
+## `LiveReadoutText/pinTitle`
+
+internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
+
+```swift
+@MainActor static var pinTitle: Text { get }
+```
+
+The name of the choice that keeps the readout on screen in clean view.
+
 ## `LiveReadoutText/processingRow(_:)`
 
 internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
@@ -5380,6 +5390,16 @@ the readout stays small over the picture.
   - reading: The hardware's values.
   - lens: The lens in use, or `nil`.
   - format: The format of the next photo, or `nil`; its name says whether it is Bayer RAW.
+
+## `LiveReadoutText/shortTitle`
+
+internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
+
+```swift
+@MainActor static var shortTitle: Text { get }
+```
+
+The readout's short name in the quick-controls tray, "Readout".
 
 ## `LiveReadoutText/signed(_:fractionLength:)`
 
@@ -6110,7 +6130,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 opened from the last-photo thumbnail.
 
 A native list with one section per topic, each with a heading VoiceOver can jump between:
-the files, the exposure as written, the processing, the signature, the details kept and left
+the files, the RAW clipping, the exposure as written, the processing, the signature, the details kept and left
 out, everything the read-back found, and the timings. Every value comes from
 `SavedPhoto.details`; a value the file doesn't hold isn't shown.
 
@@ -6797,6 +6817,19 @@ on a lens with a torch. Its brightness is on the Light pill that appears while i
 
 - Parameter context: The model and settings.
 
+## `QuickControls/liveReadout(_:)`
+
+internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+
+```swift
+@MainActor static func liveReadout(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Live camera readout: a menu of Off, On, and On that stays in clean view (issue #52), the
+same choices as the switches in Settings and Pro Tools.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/magnifier(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -6944,6 +6977,103 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Whether the items wrap into rows instead of scrolling.
+
+## `RAWClippingSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct RAWClippingSection
+```
+
+The clipping counted from the RAW sensor data when the photo was taken (issue #53): the share
+of photosites that are clipped highlights and clipped shadows, then each color's, with the
+definition under them; or why it wasn't measured.
+
+## `RAWClippingSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The section.
+
+## `RAWClippingSection/init(result:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(result: RAWClippingResult)
+```
+
+Creates the section.
+
+- Parameter result: The clipping, or why it wasn't measured.
+
+## `RAWClippingSection/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func name(of color: CFAColor) -> Text
+```
+
+The name of a color of the color filter.
+
+- Parameter color: The color.
+- Returns: The name.
+
+## `RAWClippingSection/percent(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func percent(_ share: Double) -> String
+```
+
+A share as a percentage with up to two significant digits, such as "0.4%" or "0.0012%",
+so a small share never reads as 0; exactly 0 is "0%".
+
+- Parameter share: The share, 0 to 1.
+- Returns: The percentage, in the current language.
+
+## `RAWClippingSection/reason(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func reason(_ failure: RAWClippingFailure) -> Text
+```
+
+Why the clipping wasn't measured, in plain words.
+
+- Parameter failure: The reason.
+- Returns: The text, from `Honesty.xcstrings`.
+
+## `RAWClippingSection/result`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let result: RAWClippingResult
+```
+
+The clipping, or why it wasn't measured.
+
+## `RAWClippingSection/share(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func share(_ share: Double) -> Text
+```
+
+A share of photosites, such as "0.4% of photosites".
+
+- Parameter share: The share, 0 to 1.
+- Returns: The text.
 
 ## `ResourceWarningAnnouncements`
 
@@ -8722,7 +8852,7 @@ text sizes, the histogram and the live camera readout (``LiveAidsPanel``).
 
 Everything here is on screen only and never written to the photo (issues #40, #47, #51 and
 #52). Nothing takes touches, so the viewfinder's own gestures still work. The guides stay in
-clean view; the histogram and the readout don't.
+clean view; the histogram doesn't, and the readout only when it is pinned.
 
 It tells the model what the live analysis must measure and whether the readout is on, as
 the options and the screen change, and turns both off when it goes away (AGENTS.md,
