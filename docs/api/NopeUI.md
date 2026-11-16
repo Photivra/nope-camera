@@ -1058,7 +1058,7 @@ The top bar's height, in points (issue #68, "Point budget").
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor struct CameraReadyView<Viewfinder> where Viewfinder : View
+@MainActor struct CameraReadyView
 ```
 
 The camera when it is ready, in the approved clean layout (issue #68, "UX v3").
@@ -1084,6 +1084,9 @@ Clean view leaves only the picture, the shutter, a Show Controls button in the t
 place and any warning. Every gesture has a button: swiping the picture down or up is a
 shortcut for Hide Controls (in the tray) and Show Controls.
 
+The picture's frame is left clear and reported (``ViewfinderFrame``): ``CameraScreen`` draws
+the live viewfinder there, behind this view, so it stays the same view in every mode.
+
 ## `CameraReadyView/body`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
@@ -1094,12 +1097,12 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The screen.
 
-## `CameraReadyView/init(model:settings:lenses:openSettings:viewfinder:)`
+## `CameraReadyView/init(model:settings:lenses:openSettings:)`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void, @ViewBuilder viewfinder: () -> Viewfinder)
+@MainActor init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void)
 ```
 
 Creates the ready view.
@@ -1109,7 +1112,6 @@ Creates the ready view.
   - settings: The person's settings.
   - lenses: The lenses, in display order.
   - openSettings: Opens Settings.
-  - viewfinder: Makes the live viewfinder.
 
 ## `CameraReadyView/lenses`
 
@@ -1150,16 +1152,6 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 The person's settings.
-
-## `CameraReadyView/viewfinder`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-@MainActor let viewfinder: Viewfinder
-```
-
-The live viewfinder from the app.
 
 ## `CameraScreen`
 
@@ -5768,51 +5760,6 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 
 Whether Pro Tools is shown; the camera screen presents it.
 
-## `NaturalViewfinderFrame`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-struct NaturalViewfinderFrame
-```
-
-Where the ready camera reserves room for a viewfinder in natural colors while night mode is
-on, for ``CameraScreen`` to draw it behind the red interface (issue #61). `nil` otherwise.
-
-## `NaturalViewfinderFrame/defaultValue`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-static var defaultValue: Anchor<CGRect>? { get }
-```
-
-No frame: the viewfinder is drawn in place.
-
-## `NaturalViewfinderFrame/init()`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-init()
-```
-
-Creates the key. It holds no state.
-
-## `NaturalViewfinderFrame/reduce(value:nextValue:)`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
-```
-
-Keeps the first frame reported.
-
-- Parameters:
-  - value: The frame so far.
-  - nextValue: The next frame reported.
-
 ## `NightModeStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -8617,8 +8564,7 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 Draws the view enlarged around the magnifier's point while the focus magnifier is on.
 The ready camera applies it to the picture and focus peaking, and ``CameraScreen`` to the
-natural-color viewfinder it draws behind the red interface in night mode, so all three
-stay aligned. The layout frame doesn't change, so the caller clips it.
+live viewfinder it draws behind the interface, so all three stay aligned. The layout frame doesn't change, so the caller clips it.
 
 - Parameter model: The camera model.
 
@@ -8703,6 +8649,53 @@ Turns this block upright as one unit while the iPhone is on its side.
 
 - Parameter sidewaysWidth: The width text wraps at while sideways, or `nil` for the
   natural width.
+
+## `ViewfinderFrame`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+struct ViewfinderFrame
+```
+
+Where the ready camera reserves room for the live viewfinder, for ``CameraScreen`` to draw it
+behind the interface: so night mode's red stays off the picture (issue #61), and so switching
+night mode or Red Viewfinder never replaces the viewfinder (on a device, its preview layer).
+`nil` outside the ready camera.
+
+## `ViewfinderFrame/defaultValue`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static var defaultValue: Anchor<CGRect>? { get }
+```
+
+No frame: there is no picture to fill.
+
+## `ViewfinderFrame/init()`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+init()
+```
+
+Creates the key. It holds no state.
+
+## `ViewfinderFrame/reduce(value:nextValue:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
+```
+
+Keeps the first frame reported.
+
+- Parameters:
+  - value: The frame so far.
+  - nextValue: The next frame reported.
 
 ## `ViewfinderOverlays`
 

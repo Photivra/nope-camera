@@ -231,10 +231,14 @@ mode and brightness are `NopeSettings.flashMode` and `torchLevel`, passed in by 
 and of each sheet: every text style is drawn white, then everything is multiplied by pure red,
 so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
 turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
-colors, the ready camera leaves its frame clear and reports it (`NaturalViewfinderFrame`), and
-`CameraScreen` draws the viewfinder there, behind the red interface. The focus magnifier is the
-same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in the ready camera,
-and on the natural-color viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
+colors, the ready camera leaves its frame clear and reports it (`ViewfinderFrame`), and
+`CameraScreen` draws the viewfinder there, behind the red interface, in every mode; Red
+Viewfinder multiplies only that view by red. The viewfinder is never moved or rebuilt when night
+mode or Red Viewfinder changes: on a device a new viewfinder is a new
+`AVCaptureVideoPreviewLayer`, which attaches to the running capture session on the main thread,
+and switching night mode froze the camera in 0.2.0 (`NightModeViewfinderTests`). The focus
+magnifier is the same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in
+the ready camera, and on the viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
 keyboard and the status bar are drawn by the system and keep its dark appearance.
 
 ### Siri, Shortcuts, Control Center and the Lock Screen (issues #42, #62)

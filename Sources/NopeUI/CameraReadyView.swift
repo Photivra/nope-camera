@@ -23,7 +23,10 @@ import SwiftUI
 /// Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
 /// place and any warning. Every gesture has a button: swiping the picture down or up is a
 /// shortcut for Hide Controls (in the tray) and Show Controls.
-struct CameraReadyView<Viewfinder: View>: View {
+///
+/// The picture's frame is left clear and reported (``ViewfinderFrame``): ``CameraScreen`` draws
+/// the live viewfinder there, behind this view, so it stays the same view in every mode.
+struct CameraReadyView: View {
     /// The model to render and send intents to.
     let model: CameraModel
 
@@ -35,9 +38,6 @@ struct CameraReadyView<Viewfinder: View>: View {
 
     /// Opens Settings.
     let openSettings: () -> Void
-
-    /// The live viewfinder from the app.
-    let viewfinder: Viewfinder
 
     /// The current text size; accessibility sizes switch to the scrolling layout.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -116,16 +116,11 @@ struct CameraReadyView<Viewfinder: View>: View {
     ///   - settings: The person's settings.
     ///   - lenses: The lenses, in display order.
     ///   - openSettings: Opens Settings.
-    ///   - viewfinder: Makes the live viewfinder.
-    init(
-        model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void,
-        @ViewBuilder viewfinder: () -> Viewfinder
-    ) {
+    init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void) {
         self.model = model
         self.settings = settings
         self.lenses = lenses
         self.openSettings = openSettings
-        self.viewfinder = viewfinder()
     }
 
     /// The registries' context.
@@ -621,13 +616,14 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// is laid out left to right in every language: it is a picture, and a tapped point must
     /// mean the same place in the camera.
     private var viewfinderLayer: some View {
-        viewfinderContent
+        // Clear: CameraScreen draws the live viewfinder behind it.
+        Color.clear
             // Focus peaking is drawn on the picture itself, so the magnifier enlarges it too.
             .overlay { FocusPeakingLayer(model: model) }
             .focusMagnified(model)
             // Reported outside the enlargement, so CameraScreen gets the picture's own frame and
-            // enlarges the natural-color viewfinder the same way (FocusMagnifier).
-            .background { naturalViewfinderFrame }
+            // enlarges the viewfinder the same way (FocusMagnifier).
+            .background { Color.clear.anchorPreference(key: ViewfinderFrame.self, value: .bounds) { $0 } }
             .overlay { FocusSquareLayer(model: model, part: .square) }
             .accessibilityIgnoresInvertColors()
             .accessibilityElement(children: .ignore)
@@ -674,30 +670,6 @@ struct CameraReadyView<Viewfinder: View>: View {
                     FocusText.lock
                 }
             }
-        }
-    }
-
-    /// Whether the viewfinder is drawn by ``CameraScreen`` behind the red interface: night mode
-    /// with natural colors, so the red tint doesn't reach the picture. The photo is never
-    /// changed either way.
-    private var drawsNaturalViewfinder: Bool {
-        isNightMode && !settings.tintsViewfinderInNightMode
-    }
-
-    /// The live viewfinder, or a clear area where ``CameraScreen`` draws it from behind.
-    @ViewBuilder private var viewfinderContent: some View {
-        if drawsNaturalViewfinder {
-            Color.clear
-        } else {
-            viewfinder
-        }
-    }
-
-    /// The frame ``CameraScreen`` fills with the natural-color viewfinder
-    /// (``NaturalViewfinderFrame``), or nothing.
-    @ViewBuilder private var naturalViewfinderFrame: some View {
-        if drawsNaturalViewfinder {
-            Color.clear.anchorPreference(key: NaturalViewfinderFrame.self, value: .bounds) { $0 }
         }
     }
 
@@ -905,13 +877,15 @@ struct ShowControlsButton: View {
     }
 }
 
-/// Where the ready camera reserves room for a viewfinder in natural colors while night mode is
-/// on, for ``CameraScreen`` to draw it behind the red interface (issue #61). `nil` otherwise.
-struct NaturalViewfinderFrame: PreferenceKey {
+/// Where the ready camera reserves room for the live viewfinder, for ``CameraScreen`` to draw it
+/// behind the interface: so night mode's red stays off the picture (issue #61), and so switching
+/// night mode or Red Viewfinder never replaces the viewfinder (on a device, its preview layer).
+/// `nil` outside the ready camera.
+struct ViewfinderFrame: PreferenceKey {
     /// Creates the key. It holds no state.
     init() {}
 
-    /// No frame: the viewfinder is drawn in place.
+    /// No frame: there is no picture to fill.
     static var defaultValue: Anchor<CGRect>? { nil }
 
     /// Keeps the first frame reported.
