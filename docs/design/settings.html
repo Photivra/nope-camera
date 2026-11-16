@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>nope. design: settings and system screens</title>
 <style>
-  /* Shared tokens, phone frame, type scale and figure layout: copied from ux-v3.html. */
+  /* Shared tokens, phone frame, type scale and figure layout: from the v3 visual language (issue #68). */
   :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#5fe0d0; --amber:#ffb340; --red:#ff453a; }
+  /* Night mode uses the app's one night color, pure sRGB red (NightStyle.red); --red elsewhere is the system red for destructive actions. */
+  .night, .nightla { --red:#ff0000; }
   @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }

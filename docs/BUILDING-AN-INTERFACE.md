@@ -82,7 +82,7 @@ To take requests from Siri and Shortcuts, run `serveShortcuts(from:settings:pres
 ## The standard camera layout
 
 `NopeUI`'s camera screen is one interface on this contract, following the approved layout in
-[`design/ux-v3.html`](design/ux-v3.html). If you extend it rather than replace it, add camera
+[`design/camera.html`](design/camera.html). If you extend it rather than replace it, add camera
 toggles to `QuickControls.builders`, non-default states to `StatePills.builders` and persistent
 warnings to `CameraWarnings.builders`; the layout places them. The app target supplies four
 environment values: `cameraUprightRotation` (which way up the iPhone is held),

@@ -13,7 +13,7 @@ honesty claims (the RAW badge, the no-RAW fallback wording, the privacy and sign
 the Honesty screen), which are in `Honesty.xcstrings` and need a fluent human review before
 release.
 
-``CameraScreen`` follows the approved clean layout (issue #68, `docs/design/ux-v3.html`): in
+``CameraScreen`` follows the approved clean layout (issue #68; current design in `docs/design/camera.html`): in
 full auto a format chip, Settings, the lens row below the 4:3 picture with a quick-controls
 button, the shutter, a camera flip and the last-photo slot. State pills, warning chips, the
 quick-controls tray and the manual readout row with its dial appear only when needed; later

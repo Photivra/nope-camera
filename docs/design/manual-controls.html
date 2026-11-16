@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>nope. design: manual controls</title>
 <style>
-  /* Tokens, phone frame, type scale and figure layout: copied from ux-v3.html. */
+  /* Tokens, phone frame, type scale and figure layout: from the v3 visual language (issue #68). */
   :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#5fe0d0; --amber:#ffb340; --red:#ff453a; }
+  /* Night mode uses the app's one night color, pure sRGB red (NightStyle.red); --red elsewhere is the system red for destructive actions. */
+  .night, .nightla { --red:#ff0000; }
   @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
@@ -43,13 +45,13 @@
   .shutter { width:66px; height:66px; border-radius:50%; border:4px solid #fff; box-shadow:0 0 0 1px #000 inset, 0 0 0 1px rgba(0,0,0,.6); display:grid; place-items:center; }
   .shutter::after { content:""; width:52px; height:52px; border-radius:50%; background:#fff; }
   .flip { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:17px; background:rgba(58,58,60,.92); }
-  /* night: red on black, state by fill vs outline + symbol (ux-v3) */
+  /* night: red on black, state by fill vs outline + symbol (v3 rules) */
   .night, .night .lens, .night .pill, .night .ib, .night .flip, .night .chip { color:var(--red); }
   .night .vf { filter:sepia(1) saturate(6) hue-rotate(-50deg) brightness(.5); }
   .night .lens, .night .pill, .night .ib, .night .flip, .night .chip, .night .tray-btn { background:#1a0000; border:1px solid #5a1410; }
   .night .lens.on { background:var(--red); color:#000; }
   .night .shutter { border-color:var(--red); } .night .shutter::after { background:var(--red); }
-  /* sheets and forms (ux-v3) */
+  /* sheets and forms (v3 rules) */
   .ok { color:var(--teal); }
   .settings { background:#000; }
   .settings .sec { padding:12px 30px 5px; font-size:11px; text-transform:uppercase; color:#8e8e93; }

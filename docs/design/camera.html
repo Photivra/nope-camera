@@ -5,8 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>nope. design: camera</title>
 <style>
-  /* Tokens, phone frame, type scale and figure layout: copied from ux-v3.html. */
+  /* Tokens, phone frame, type scale and figure layout: from the v3 visual language (issue #68). */
   :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#5fe0d0; --amber:#ffb340; --red:#ff453a; }
+  /* Night mode uses the app's one night color, pure sRGB red (NightStyle.red); --red elsewhere is the system red for destructive actions. */
+  .night, .nightla { --red:#ff0000; }
   @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
   * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
@@ -318,7 +320,7 @@
 
 <header>
   <h1>nope. design: camera</h1>
-  <p>The camera screen and everything that opens from it, drawn from the 0.3.0 app (<code>Sources/NopeUI</code>, <code>App/</code>) in the v3 visual language (issue #68). It replaces <code>ux-v3.html</code> as the camera design. Sizes are drawn at 0.75 × points; every target is at least 44 pt. Mockups only: where a drawing and the app differ, the app is right.</p>
+  <p>The camera screen and everything that opens from it, drawn from the 0.3.0 app (<code>Sources/NopeUI</code>, <code>App/</code>) in the v3 visual language (issue #68). It replaces the v3 mockup as the camera design. Sizes are drawn at 0.75 × points; every target is at least 44 pt. Mockups only: where a drawing and the app differ, the app is right.</p>
   <p class="meta">Design version: 0.3.0 (2026-11-16) · Set: <b>camera.html</b> · <a href="settings.html">settings.html</a> (Settings and system screens) · <a href="manual-controls.html">manual-controls.html</a> (manual dials and Pro Tools) · <a href="icon.html">icon.html</a> (app icon) · <a href="README.md">README.md</a></p>
 </header>
 

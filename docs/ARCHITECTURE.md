@@ -552,7 +552,7 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 
 ### Camera layout
 
-The camera screen follows the approved layout in [`design/ux-v3.html`](design/ux-v3.html)
+The camera screen follows the approved layout in [`design/camera.html`](design/camera.html)
 (issue #68). `CameraLayout` chooses the arrangement from the space and the text size:
 
 - **iPhone (stacked):** top bar (pills, format chip, Settings), the whole 4:3 picture, the lens

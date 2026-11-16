@@ -1,31 +1,19 @@
-# Design files
+# Design
 
-Static HTML mockups for nope. Open any file in a browser; none of them is part of the app build.
+The current design of nope., as static HTML mockups. Open any file in a browser; none of them is part of the app build.
 
-## Current
+**Design version: 0.3.0 (2026-11-16).** Every file shows the same version, and each matches the app as of that release: labels, order and behavior come from the code. Sample values (file sizes, lens ranges, timings) are examples.
 
-| File | What it is |
+| File | What it covers |
 | --- | --- |
-| [ux-v3.html](ux-v3.html) | The approved camera layout (issue #68): screens, the control map and the rules behind them. The app follows this file. |
+| [camera.html](camera.html) | The camera screen in full auto and manual, landscape, iPad, the 4.7-inch overlay and right-to-left. Also covers the quick-controls tray, Flash and Light, and Drive (self-timer, burst, interval). Further sections: the thumbnail and What's in This Photo, save feedback, status chips, focus aids, Compare, Astro and Presets. The rest covers night mode, the Live Activity, the Apple Watch remote, and Siri and Shortcuts results. |
+| [settings.html](settings.html) | Settings and every page in it: Presets, Photos, Camera, Viewfinder Overlays, Privacy, Accessibility, Honesty, About and Licenses. It also has first run and the permission states, plus the Lock Screen camera, Control Center, the Action button and the Camera Control. It ends with the camera pause messages. |
+| [manual-controls.html](manual-controls.html) | The manual readout row and each control's dial (ISO, shutter, aperture, focus, white balance, exposure). Also Pro Tools with bracketing, largest text, VoiceOver, night mode and landscape. |
+| [icon.html](icon.html) | App icon concepts in the current colors, with their default, dark, tinted and light versions. The final icon is a brand asset; see [TRADEMARKS.md](../../TRADEMARKS.md). |
 
-## History
+## Rules for this folder
 
-Earlier rounds, kept for reference. Where they differ from `ux-v3.html` or from the app, the app and `ux-v3.html` are correct.
-
-| File | What it is |
-| --- | --- |
-| [history/2026-11-14-ux-v2.html](history/2026-11-14-ux-v2.html) | UX v2, the round reviewed before v3. |
-| [history/2026-11-11-screens.html](history/2026-11-11-screens.html) | First full set of screens: camera, settings, privacy, licenses. |
-| [history/2026-11-11-manual-controls.html](history/2026-11-11-manual-controls.html) | First manual-controls design. |
-| [history/2026-11-11-comp.html](history/2026-11-11-comp.html) | First camera comp. |
-
-## Icon
-
-| File | What it is |
-| --- | --- |
-| [icon/2026-11-11-icon-concepts.html](icon/2026-11-11-icon-concepts.html) | App icon concepts. The final icon is a brand asset; see [TRADEMARKS.md](../../TRADEMARKS.md). |
-
-## Notes
-
-- `history/2026-11-11-comp.html` and `history/2026-11-11-manual-controls.html` load the Tabler Icons webfont (MIT) from a CDN to draw their icons.
-- New mockups go in this folder. When one is approved, it becomes the "Current" file, and the one it replaces moves to `history/` with its date.
+- Only the current design is kept here. When a release changes the UI, update these files in the same release and set the version line above. Older versions stay in git history.
+- Colors: teal only for verified facts, amber only for warnings (always with a symbol and words), filled white for the selected item, and no yellow. Night mode is the app's pure red on black.
+- The files are self-contained: inline CSS and SVG, with no scripts, fonts or other external requests.
+- When a mockup and the app disagree, the app is right; fix the mockup.
