@@ -386,6 +386,23 @@ adds to describe the image itself (checked by the read-back). No thumbnail is em
 (AGENTS.md, "Encoders"); a 16-bit image is written as 10-bit HEIF (`Depth` reads back as 10
 with ImageIO on macOS 27 and the iOS 27 Simulator).
 
+## `PhotoEncoder/colorSpaceTagged(_:as:)`
+
+internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
+
+```swift
+static func colorSpaceTagged(_ properties: [String : Any], as space: OutputColorSpace) -> [String : Any]
+```
+
+The properties with EXIF `ColorSpace`, where present, stating the color space the copy is
+encoded in: 1 (sRGB) for an sRGB copy, otherwise the value the plan wrote ("Uncalibrated"
+for Display P3, Exif 2.32, `ColorSpace`).
+
+- Parameters:
+  - properties: The metadata from `MetadataPlan`.
+  - space: The color space of the encoded image.
+- Returns: The properties for the encoder.
+
 ## `PhotoEncoder/encode(_:settings:properties:)`
 
 internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`

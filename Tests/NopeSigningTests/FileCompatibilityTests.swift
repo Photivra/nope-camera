@@ -42,6 +42,11 @@ struct FileCompatibilityTests {
         try await CompatibilityRun.check(compatibilityCase)
     }
 
+    @Test(arguments: CompatibilityCase.standardTagsOff)
+    func standardFileTagsOff(_ compatibilityCase: CompatibilityCase) async throws {
+        try await CompatibilityRun.check(compatibilityCase)
+    }
+
     @Test(arguments: CompatibilityCase.processedFallbacks)
     func processedFallbacks(_ compatibilityCase: CompatibilityCase) async throws {
         try await CompatibilityRun.check(compatibilityCase)
@@ -76,6 +81,11 @@ struct FileCompatibilityTests {
         let items = Set(CompatibilityCase.metadataClasses.flatMap(\.metadata.enabledItems))
         #expect(items == Set(MetadataItem.allCases))
         #expect(Set(all.map(\.metadata.signsPhotos)) == [true, false])
+        #expect(Set(all.map(\.metadata.writesStandardFileTags)) == [true, false])
+        for format in PhotoFormat.allCases {
+            #expect(all.contains { !$0.metadata.writesStandardFileTags && $0.formats.contains(format) && $0.fallback == nil })
+        }
+        #expect(Set(all.filter { !$0.metadata.writesStandardFileTags }.compactMap(\.fallback)) == Set(ProcessedFallback.allCases))
         #expect(Set(all.map(\.orientation)) == Set(1...8))
         #expect(Set(all.map(\.mirrored)) == [true, false])
         for format in PhotoFormat.allCases {
@@ -147,7 +157,7 @@ struct CompatibilityCase: Sendable, CustomTestStringConvertible {
 
     /// Every case.
     static var all: [CompatibilityCase] {
-        metadataClasses + lenses + fileOptions + processedFallbacks + orientations + locations + series
+        metadataClasses + lenses + fileOptions + standardTagsOff + processedFallbacks + orientations + locations + series
     }
 
     /// A location south of the equator, west of Greenwich and below sea level, so every
@@ -212,6 +222,30 @@ struct CompatibilityCase: Sendable, CustomTestStringConvertible {
                                 name: "options-\(quality.rawValue)-\(depth.rawValue)bit-\(space.rawValue)-\(look.rawValue)",
                                 formats: [.heif, .jpeg], look: look, options: options))
                     }
+                }
+            }
+        }
+        return cases
+    }
+
+    /// The Standard File Tags off (the minimal set; every other case has them on, the default):
+    /// first launch and every item on, signed and unsigned, as RAW, HEIF and JPEG and as each
+    /// processed fallback.
+    static var standardTagsOff: [CompatibilityCase] {
+        var cases: [CompatibilityCase] = []
+        for (name, settings) in [("first-launch", MetadataSettings()), ("all-on", allOn)] {
+            for signed in [true, false] {
+                var metadata = settings
+                metadata.signsPhotos = signed
+                metadata.writesStandardFileTags = false
+                let suffix = "\(name)-\(signed ? "signed" : "unsigned")"
+                let place = settings.isOn(.location) ? location : nil
+                cases.append(CompatibilityCase(name: "standard-tags-off-\(suffix)", metadata: metadata, location: place))
+                for fallback in ProcessedFallback.allCases {
+                    cases.append(
+                        CompatibilityCase(
+                            name: "standard-tags-off-fallback-\(fallback == .heif ? "heif" : "jpeg")-\(suffix)", metadata: metadata,
+                            fallback: fallback, location: place))
                 }
             }
         }
@@ -543,7 +577,11 @@ enum FileCheck {
             expectedRawImageData: file.format == .raw ? readBack.file.rawImageData : nil)
         #expect(violations.isEmpty, "\(label): \(violations)")
         let present = Set(readBack.file.inventory.tags.map { MetadataAllowlist.TagID($0.directory, $0.tag) })
-        let missing = writtenTags(written).subtracting(present)
+        // ImageIO drops EXIF `ColorSpace` from a Display P3 JPEG (`StandardFileTagsEncodingTests`).
+        var missing = writtenTags(written).subtracting(present)
+        if file.format == .jpeg, expectedColorSpace(of: file, case: compatibilityCase) == CGColorSpace.displayP3 {
+            missing.remove(MetadataAllowlist.TagID(.exif, 0xA001))
+        }
         #expect(missing.isEmpty, "\(label): written but not in the file: \(missing.sorted { $0.tag < $1.tag })")
 
         // A signed file validates; an unsigned one has no manifest.

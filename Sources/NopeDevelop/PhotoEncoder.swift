@@ -24,10 +24,29 @@ enum PhotoEncoder {
     static func encode(
         _ image: CGImage, settings: EncodingSettings, properties: [String: Any]
     ) throws(CaptureError) -> Data {
-        var options = properties
+        var options = colorSpaceTagged(properties, as: settings.colorSpace)
         options[kCGImageDestinationEmbedThumbnail as String] = false
         for (key, value) in settings.imageDestinationOptions() { options[key] = value }
         return try encode(try prepare(image, for: settings), typeIdentifier: settings.typeIdentifier, options: options)
+    }
+
+    /// The properties with EXIF `ColorSpace`, where present, stating the color space the copy is
+    /// encoded in: 1 (sRGB) for an sRGB copy, otherwise the value the plan wrote ("Uncalibrated"
+    /// for Display P3, Exif 2.32, `ColorSpace`).
+    ///
+    /// - Parameters:
+    ///   - properties: The metadata from `MetadataPlan`.
+    ///   - space: The color space of the encoded image.
+    /// - Returns: The properties for the encoder.
+    static func colorSpaceTagged(_ properties: [String: Any], as space: OutputColorSpace) -> [String: Any] {
+        let key = kCGImagePropertyExifColorSpace as String
+        guard space == .sRGB, var exif = properties[kCGImagePropertyExifDictionary as String] as? [String: Any],
+            exif[key] != nil
+        else { return properties }
+        exif[key] = 1
+        var result = properties
+        result[kCGImagePropertyExifDictionary as String] = exif
+        return result
     }
 
     /// Converts an image to the depth and color space the settings ask for, or returns it

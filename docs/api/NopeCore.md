@@ -10443,6 +10443,16 @@ case exactly(String)
 
 Exactly this text.
 
+## `MetadataAllowlist/TextRule/oneOf(_:)`
+
+public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
+
+```swift
+case oneOf([String])
+```
+
+Exactly one of these texts.
+
 ## `MetadataAllowlist/TextRule/prefix(_:)`
 
 public, declared in `Sources/NopeCore/MetadataAllowlist.swift`
@@ -12026,6 +12036,30 @@ from what the system wrote (AGENTS.md, "Metadata is allowlisted and verified"). 
 starts from an empty dictionary and copies in only the values of fields in
 ``MetadataField/catalog`` that the switches allow, so a tag a future iOS adds is never copied.
 
+## `MetadataPlan/addStandardFileTags(for:to:)`
+
+internal, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+func addStandardFileTags(for format: PhotoFormat, to result: inout [String : Any])
+```
+
+Adds the standard file tags (``MetadataSettings/writesStandardFileTags``) a file doesn't
+have yet: in a HEIF or JPEG the EXIF `ExifVersion`, `ComponentsConfiguration`,
+`FlashpixVersion` and `ColorSpace`, and in any file with a GPS directory its `GPSVersionID`. Each is a fixed
+value from the Exif standard on the allowlist (locked image structure, or the location
+item's GPS fields), so nothing identifying is added; a value the source already has is
+kept.
+
+ImageIO writes no `YCbCrPositioning` (IFD0 `0x0213`): `CGImageProperties.h` has no key for
+it, and neither the `{TIFF}` dictionary nor an XMP `tiff:YCbCrPositioning` tag puts it in
+a JPEG's EXIF (macOS 27.2, 2026-11-16). It also drops `ColorSpace` from a Display P3
+JPEG; a Display P3 HEIF keeps it (`docs/TESTING.md`, "External validators").
+
+- Parameters:
+  - format: The file's format.
+  - result: The property dictionary being built.
+
 ## `MetadataPlan/allowlist(for:signed:)`
 
 public, declared in `Sources/NopeCore/MetadataPlan.swift`
@@ -12129,6 +12163,27 @@ static let dublinCoreNamespace: String
 
 The Dublin Core namespace, used by ImageIO for `creator` and `rights` (XMP part 1, 8.3).
 
+## `MetadataPlan/exifVersion`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let exifVersion: [Int]
+```
+
+`ExifVersion` 2.32 ("0232"), the version ImageIO writes into the files it encodes itself.
+
+## `MetadataPlan/flashpixVersion`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let flashpixVersion: [Int]
+```
+
+`FlashpixVersion` 1.0, the only version the Exif standard defines (Exif 2.32,
+`FlashpixVersion`, "0100").
+
 ## `MetadataPlan/genericUniqueCameraModel`
 
 public, declared in `Sources/NopeCore/MetadataPlan.swift`
@@ -12140,6 +12195,16 @@ static let genericUniqueCameraModel: String
 The `UniqueCameraModel` a DNG carries when ``MetadataItem/exactCameraModel`` is off. The
 DNG standard requires the tag (DNG 1.7, "UniqueCameraModel"), so the app writes a value
 that names no device.
+
+## `MetadataPlan/gpsVersion`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let gpsVersion: [Int]
+```
+
+`GPSVersionID` 2.3.0.0, the version of the GPS directory in Exif 2.3 and later.
 
 ## `MetadataPlan/heifBlocks`
 
@@ -12335,7 +12400,9 @@ Measured on an iPhone 16 Pro Max with iOS 27.2.1 (issue #65):
 the replacement metadata's `{TIFF}` dictionary has all four keys. Leaving out any one of
 them fails; an empty string for each works; `NSNull` doesn't. Apple doesn't document the
 requirement. Privacy rule: when a field's switch is off, the app writes an empty string, never
-a placeholder value, so the DNG still says nothing about the date, camera or software.
+a made-up value, so the DNG still says nothing about the date, camera or software; with the
+standard file tags on, the date is the Exif standard's all-blank "unknown" form instead
+(``unknownDateTime``), which holds no date either.
 
 ## `MetadataPlan/settings`
 
@@ -12389,6 +12456,32 @@ wrote, so reading it as the system's own value would nest the app's name:
 - Parameter software: The source's `Software` value, if any.
 - Returns: The system's version, or `nil` if there is none (also for an empty value).
 
+## `MetadataPlan/uncalibratedColorSpace`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let uncalibratedColorSpace: Int
+```
+
+`ColorSpace` for any color space other than sRGB: "Uncalibrated" (Exif 2.32, `ColorSpace`,
+`0xFFFF`). `PhotoEncoder` writes 1 (sRGB) for an sRGB copy.
+
+## `MetadataPlan/unknownDateTime`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let unknownDateTime: String
+```
+
+The `DateTime` a DNG carries when its date switch is off and the standard file tags are
+on: the Exif standard's form for an unknown date, "all the character spaces except colons
+filled with blank characters" (Exif 2.32 and 3.0, `DateTime`). It says nothing about when
+the photo was taken, and `exiftool -validate` accepts it, where it reports an empty string
+as an invalid date. It is still a value, so AVFoundation's need for the key (issue #65)
+is met.
+
 ## `MetadataPlan/value(of:in:)`
 
 internal, declared in `Sources/NopeCore/MetadataPlan.swift`
@@ -12439,6 +12532,17 @@ static let xmpNamespace: String
 ```
 
 The XMP basic namespace (XMP part 1, 8.4).
+
+## `MetadataPlan/ycbcrComponentsConfiguration`
+
+public, declared in `Sources/NopeCore/MetadataPlan.swift`
+
+```swift
+static let ycbcrComponentsConfiguration: [Int]
+```
+
+`ComponentsConfiguration` for a YCbCr image: Y, Cb, Cr and an unused fourth component
+(Exif 2.32, `ComponentsConfiguration`, "4 5 6 0" is RGB, "1 2 3 0" the default for YCbCr).
 
 ## `MetadataReadBack`
 
@@ -12668,6 +12772,25 @@ var signsPhotos: Bool
 
 Whether each photo is signed with Content Credentials. Outside the master switch; on by
 default.
+
+## `MetadataSettings/writesStandardFileTags`
+
+public, declared in `Sources/NopeCore/MetadataSettings.swift`
+
+```swift
+var writesStandardFileTags: Bool { get set }
+```
+
+Whether files carry the tags the Exif standard requires that say nothing about the photo,
+the device or the person ("Standard File Tags", owner decision 2026-11-16): on by default,
+and outside the master switch, like ``signsPhotos``.
+
+When on, ``MetadataPlan`` writes into HEIF and JPEG files the EXIF `ExifVersion` (2.32),
+`ComponentsConfiguration` (Y, Cb, Cr), `FlashpixVersion` (1.0) and `ColorSpace` (sRGB, or
+uncalibrated for Display P3), into every file with a location the GPS `GPSVersionID`
+(2.3.0.0), and into a DNG whose date switch is off a `DateTime` of blanks and colons,
+the Exif standard's "unknown" form, instead of an empty string. Off writes the minimal set
+the app wrote before. None of the values identifies anything.
 
 ## `MetadataVerifier`
 
@@ -13561,6 +13684,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Sets the torch's brightness, and saves the change.
 
 - Parameter level: The brightness, moved inside ``LightModel/torchLevelRange``.
+
+## `NopeSettings/setWritesStandardFileTags(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setWritesStandardFileTags(_ isOn: Bool)
+```
+
+Turns the standard file tags on or off, and saves the change.
+
+- Parameter isOn: See ``MetadataSettings/writesStandardFileTags``.
 
 ## `NopeSettings/showsManualControls`
 

@@ -199,6 +199,14 @@ public final class NopeSettings {
         store()
     }
 
+    /// Turns the standard file tags on or off, and saves the change.
+    ///
+    /// - Parameter isOn: See ``MetadataSettings/writesStandardFileTags``.
+    public func setWritesStandardFileTags(_ isOn: Bool) {
+        save.metadata.writesStandardFileTags = isOn
+        store()
+    }
+
     /// Sets how the HEIF and JPEG copies are developed, and saves the change.
     ///
     /// - Parameter look: The look.

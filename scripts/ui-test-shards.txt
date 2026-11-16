@@ -18,6 +18,7 @@
 2 NopeAppUITests/testRefusedLightIsExplainedAndCanBeCleared 27
 2 NopeAppUITests/testSelfTimerCountsDownAndCanBeCancelled 46
 2 NopeAppUITests/testSettingsInRightToLeftLayout 256
+2 NopeAppUITests/testStandardFileTagsAreOnByDefaultAndCanBeTurnedOff 52 est
 2 NopeAppUITests/testStatePillsChangeOrReset 41
 3 NopeAppUITests/testBlankPictureAtTheLargestTextSize 41
 3 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 48

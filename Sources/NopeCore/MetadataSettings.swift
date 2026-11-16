@@ -95,6 +95,25 @@ public struct MetadataSettings: Equatable, Codable, Sendable {
     /// nothing is written.
     public var copyrightNotice: String
 
+    /// Whether files carry the standard file tags. Stored as an optional so settings saved before
+    /// it existed still decode; read ``writesStandardFileTags``.
+    private var storedWritesStandardFileTags: Bool?
+
+    /// Whether files carry the tags the Exif standard requires that say nothing about the photo,
+    /// the device or the person ("Standard File Tags", owner decision 2026-11-16): on by default,
+    /// and outside the master switch, like ``signsPhotos``.
+    ///
+    /// When on, ``MetadataPlan`` writes into HEIF and JPEG files the EXIF `ExifVersion` (2.32),
+    /// `ComponentsConfiguration` (Y, Cb, Cr), `FlashpixVersion` (1.0) and `ColorSpace` (sRGB, or
+    /// uncalibrated for Display P3), into every file with a location the GPS `GPSVersionID`
+    /// (2.3.0.0), and into a DNG whose date switch is off a `DateTime` of blanks and colons,
+    /// the Exif standard's "unknown" form, instead of an empty string. Off writes the minimal set
+    /// the app wrote before. None of the values identifies anything.
+    public var writesStandardFileTags: Bool {
+        get { storedWritesStandardFileTags ?? true }
+        set { storedWritesStandardFileTags = newValue ? nil : false }
+    }
+
     /// The settings on first launch: every optional detail removed, photos signed, and no name
     /// or copyright entered.
     public init() {
@@ -103,6 +122,7 @@ public struct MetadataSettings: Equatable, Codable, Sendable {
         signsPhotos = true
         ownerName = ""
         copyrightNotice = ""
+        storedWritesStandardFileTags = nil
     }
 
     /// Whether the interface should show "Custom": the master switch is off.
