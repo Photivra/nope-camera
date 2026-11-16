@@ -169,7 +169,7 @@ public enum WatchMessageCoding {
     }
 
     /// A message body with the protocol version.
-    struct Envelope<Body: Codable>: Codable {
+    private struct Envelope<Body: Codable>: Codable {
         /// The protocol version the sender uses.
         let version: Int
 
@@ -179,7 +179,7 @@ public enum WatchMessageCoding {
 
     /// Only the version of a message, read first so a message of another version is recognized
     /// even when its body has changed.
-    struct VersionOnly: Codable {
+    private struct VersionOnly: Codable {
         /// The protocol version the sender uses.
         let version: Int
     }
