@@ -5,29 +5,80 @@ import Testing
 
 /// A settings change signal that records posts and delivers signals on request.
 final class FakeChangeSignal: SettingsChangeSignaling, @unchecked Sendable {
-    /// Guards the counters and the stream.
+    /// Lives as long as the stream from ``changes()``, so its release shows the listener ended.
+    private final class Listener: Sendable {}
+
+    /// Guards everything below.
     private let lock = NSLock()
 
     /// How many times ``post()`` was called.
     private var postCount = 0
 
-    /// The open stream's continuation.
-    private var continuation: AsyncStream<Void>.Continuation?
+    /// Signals delivered that the listener hasn't taken yet.
+    private var pending = 0
+
+    /// The listener's wait for the next signal.
+    private var waiter: CheckedContinuation<Void?, Never>?
+
+    /// The stream's listener, while its stream exists.
+    private weak var listener: Listener?
 
     /// The number of posts so far.
     var posts: Int { lock.withLock { postCount } }
+
+    /// Whether the listener stopped listening: its task ended or was cancelled, and the stream
+    /// was released.
+    var listenerEnded: Bool { lock.withLock { listener == nil } }
 
     func post() {
         lock.withLock { postCount += 1 }
     }
 
     func changes() -> AsyncStream<Void> {
-        AsyncStream { continuation in lock.withLock { self.continuation = continuation } }
+        let listener = Listener()
+        lock.withLock { self.listener = listener }
+        return AsyncStream(unfolding: { [self] in
+            withExtendedLifetime(listener) {}
+            return await nextSignal()
+        })
+    }
+
+    /// The next signal, or `nil` when the listening task is cancelled.
+    private func nextSignal() async -> Void? {
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                // Checked under the lock, so a cancellation either comes first and is seen
+                // here, or comes after and finds the waiter.
+                let answer: Void?? = lock.withLock {
+                    if Task.isCancelled { return .some(nil) }
+                    guard pending == 0 else {
+                        pending -= 1
+                        return .some(())
+                    }
+                    waiter = continuation
+                    return nil
+                }
+                if let answer { continuation.resume(returning: answer) }
+            }
+        } onCancel: {
+            lock.withLock {
+                defer { waiter = nil }
+                return waiter
+            }?.resume(returning: nil)
+        }
     }
 
     /// Delivers a signal as if another process had posted it.
     func deliverFromAnotherProcess() {
-        _ = lock.withLock { continuation }?.yield()
+        let waiting: CheckedContinuation<Void?, Never>? = lock.withLock {
+            guard let waiter else {
+                pending += 1
+                return nil
+            }
+            self.waiter = nil
+            return waiter
+        }
+        waiting?.resume(returning: ())
     }
 }
 
@@ -239,6 +290,27 @@ struct NopeSettingsSnapshotTests {
 
 @MainActor
 struct SharedSettingsSyncTests {
+    /// Another process's change, signalled and reloaded: a torch level no earlier step used.
+    /// The reload task takes signals in order, after the main-actor work queued before it, so
+    /// once the level shows, everything queued earlier has run. Two rounds, because that work
+    /// may queue more (a reported change).
+    ///
+    /// - Parameters:
+    ///   - scratch: The store.
+    ///   - settings: The settings being kept in step.
+    ///   - signal: The signal.
+    ///   - rounds: The round numbers to use, distinct within a test.
+    static func reloadAfterQueuedWork(
+        _ scratch: ScratchDefaults, _ settings: NopeSettings, _ signal: FakeChangeSignal, rounds: [Int]
+    ) async {
+        for round in rounds {
+            let level = 0.1 + Double(round) / 100
+            NopeSettings(defaults: UserDefaults(suiteName: scratch.name)!).setTorchLevel(level)
+            signal.deliverFromAnotherProcess()
+            #expect(await eventually { settings.torchLevel == level })
+        }
+    }
+
     @Test func ownChangesArePostedAndReported() async {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)
@@ -251,12 +323,12 @@ struct SharedSettingsSyncTests {
         #expect(signal.posts >= 1)
         #expect(await eventually { changes == 1 })
 
-        // Several values written together are reported once.
+        // Several values written together are reported once: after the work they queued has
+        // run (and two reloads, each reported), there is one more change, not several.
         settings.setOverlays(OverlayOptions())
-        let posts = signal.posts
-        #expect(posts > 2)
-        try? await Task.sleep(for: .milliseconds(50))
-        #expect(changes == 2)
+        #expect(signal.posts > 2)
+        await Self.reloadAfterQueuedWork(scratch, settings, signal, rounds: [1, 2])
+        #expect(changes == 4, "changes: \(changes)")
         withExtendedLifetime(sync) {}
     }
 
@@ -271,15 +343,15 @@ struct SharedSettingsSyncTests {
         // mode on; its write isn't this store object's change.
         NopeSettings(defaults: UserDefaults(suiteName: scratch.name)!).setNightMode(true)
         #expect(!settings.isNightModeOn)
-        try? await Task.sleep(for: .milliseconds(20))
         signal.deliverFromAnotherProcess()
         #expect(await eventually { settings.isNightModeOn })
         #expect(changes == 1, "changes: \(changes)")
 
-        // A signal that changes nothing, such as the echo of this process's own, isn't reported.
+        // A signal that changes nothing, such as the echo of this process's own, isn't reported:
+        // the next signal, which changes something, is taken after it and is the only report.
         signal.deliverFromAnotherProcess()
-        try? await Task.sleep(for: .milliseconds(50))
-        #expect(changes == 1, "changes: \(changes)")
+        await Self.reloadAfterQueuedWork(scratch, settings, signal, rounds: [1])
+        #expect(changes == 2, "changes: \(changes)")
         withExtendedLifetime(sync) {}
     }
 
@@ -289,8 +361,9 @@ struct SharedSettingsSyncTests {
         let signal = FakeChangeSignal()
         let sync = SharedSettingsSync(settings: settings, signal: signal)
         settings.setNightMode(true)
-        try? await Task.sleep(for: .milliseconds(50))
         #expect(signal.posts >= 1)
+        // The default handler runs (and does nothing) once the queued work has run.
+        await Self.reloadAfterQueuedWork(scratch, settings, signal, rounds: [1, 2])
         withExtendedLifetime(sync) {}
     }
 
@@ -300,25 +373,30 @@ struct SharedSettingsSyncTests {
         let signal = FakeChangeSignal()
         var sync: SharedSettingsSync? = SharedSettingsSync(settings: settings, signal: signal)
         #expect(sync != nil)
+        #expect(!signal.listenerEnded)
         sync = nil
-        try? await Task.sleep(for: .milliseconds(20))
+        // The reload task is cancelled, so it stops listening; a later signal reaches no one.
+        #expect(await eventually { signal.listenerEnded })
         NopeSettings(defaults: scratch.defaults).setNightMode(true)
         signal.deliverFromAnotherProcess()
-        try? await Task.sleep(for: .milliseconds(50))
         #expect(!settings.isNightModeOn)
-        settings.setNightMode(false)
+        // The store object's own changes are no longer posted either: the observer is gone.
+        settings.setTorchLevel(0.9)
         #expect(signal.posts == 0)
     }
 
     @Test func releasedSettingsEndTheReloads() async {
         let scratch = ScratchDefaults()
         let signal = FakeChangeSignal()
+        var changes = 0
         var settings: NopeSettings? = NopeSettings(defaults: scratch.defaults)
-        let sync = SharedSettingsSync(settings: settings!, signal: signal)
+        let sync = SharedSettingsSync(settings: settings!, signal: signal) { changes += 1 }
         settings = nil
+        NopeSettings(defaults: UserDefaults(suiteName: scratch.name)!).setNightMode(true)
         signal.deliverFromAnotherProcess()
-        try? await Task.sleep(for: .milliseconds(50))
-        #expect(settings == nil)
+        // The next signal finds the settings gone and ends the reload task.
+        #expect(await eventually { signal.listenerEnded })
+        #expect(changes == 0)
         withExtendedLifetime(sync) {}
     }
 }
