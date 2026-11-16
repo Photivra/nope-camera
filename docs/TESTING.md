@@ -124,10 +124,11 @@ contents aren't the cause. Apple's documentation doesn't state this rule.
 
 **Fix.** `PhotoKitLibrary` adds each pair's alternate from a file and everything else from
 memory (`PhotoKitMapping.Resource.addsFromFile`, `PhotoKitMapping.prepare(_:stage:)`). The file
-is written by `ResourceStaging` with complete file protection under a random name in the app's
+is written by `ResourceStaging` (protected until the first unlock after the device starts,
+so it can be written and read while the device is locked) under a random name in the app's
 temporary directory, moved into the library (`shouldMoveFile`), and anything left is deleted as
 soon as the change ends, whether or not it succeeded. If the file can't be written (for example,
-while the device is locked a file with complete protection can't be created), the pair is saved
+before the first unlock after the device starts, or when storage is full), the pair is saved
 as two photos from memory, so the photo is still saved. A failed change logs the error's domain
 and code (and its underlying error's), and each request's resource types, marked private; the
 person sees only the plain banner. A Debug build run from Xcode shows the private values in

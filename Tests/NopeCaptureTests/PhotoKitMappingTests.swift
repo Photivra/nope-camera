@@ -184,6 +184,21 @@ struct ResourceStagingTests {
         #expect(throws: (any Error).self) { try staging.stage(PhotoFile(format: .heif, data: Data([1]))) }
     }
 
+    /// A staged file can be written and read while the device is locked (the Lock Screen
+    /// camera, a save that ends after the screen locks): protected until the first unlock, not
+    /// with complete protection.
+    @Test func stagedFilesAreProtectedUntilTheFirstUnlock() throws {
+        #expect(ResourceStaging.protection == .completeFileProtectionUntilFirstUserAuthentication)
+        let directory = try Self.directory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = try ResourceStaging(directory: directory).stage(PhotoFile(format: .heif, data: Data([1])))
+        let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+        // The Simulator may not report a protection class; a device does.
+        if let protection = attributes[.protectionKey] as? FileProtectionType {
+            #expect(protection == .completeUntilFirstUserAuthentication)
+        }
+    }
+
     @Test func theDefaultDirectoryIsTheTemporaryDirectory() {
         #expect(ResourceStaging().directory == FileManager.default.temporaryDirectory)
     }

@@ -664,10 +664,14 @@ each is on the allowlist only where it holds nothing beyond what the switches al
 
 Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
 The one exception is the alternate of a RAW pair, which PhotoKit accepts only from a file
-(`PhotoKitMapping.Resource.addsFromFile`): `ResourceStaging` writes it with complete file
-protection under a random name in the temporary directory, Photos moves it into the library
-(`shouldMoveFile`), and anything left is deleted as soon as the change ends
-(docs/TESTING.md, "RAW pairs not saved (PhotoKit error 3300)").
+(`PhotoKitMapping.Resource.addsFromFile`): `ResourceStaging` writes it under a random name in
+the temporary directory, Photos moves it into the library (`shouldMoveFile`), and anything left
+is deleted as soon as the change ends (docs/TESTING.md, "RAW pairs not saved (PhotoKit error
+3300)"). The file is protected until the first unlock after the device starts
+(`completeFileProtectionUntilFirstUserAuthentication`, `ResourceStaging.protection`): Apple's
+complete protection makes a file unwritable and unreadable while the device is locked, which
+would split every pair the Lock Screen camera takes, or that finishes saving after the screen
+locks, into two photos.
 
 ### Signing
 

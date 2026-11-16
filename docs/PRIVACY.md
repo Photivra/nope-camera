@@ -31,9 +31,13 @@ for any user-facing claim comes from
   file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
   that the photo holds only the details you chose." Files aren't written to disk, with one
   exception PhotoKit requires: the processed copy paired with a RAW is added to Photos from a
-  file, written with complete file protection under a random name in the app's temporary
-  directory, moved into Photos, and deleted as soon as the save ends if anything is left
-  (`docs/TESTING.md`, "RAW pairs not saved (PhotoKit error 3300)").
+  file, written under a random name in the app's temporary directory, moved into Photos, and
+  deleted as soon as the save ends if anything is left (`docs/TESTING.md`, "RAW pairs not saved
+  (PhotoKit error 3300)"). That file is protected until the device is first unlocked after it
+  starts (`completeFileProtectionUntilFirstUserAuthentication`), not with complete protection:
+  a file with complete protection can't be written while the device is locked, so a pair taken
+  with the Lock Screen camera, or still saving after the screen locked, would be split into two
+  photos. It exists only for the moment the save takes.
 - **Signing:** every file is signed with Content Credentials when the signature switch is on
   (the default), and the screen says "Saved and signed." If signing fails, the photo is saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
