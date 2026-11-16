@@ -20666,7 +20666,8 @@ init(_ outcome: ShortcutOutcome)
 The watch's result for how a photo request through the ``ShortcutInbox`` ended.
 
 The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
-interval series) can't happen; they would be reported as not saved.
+interval series, a bracket, the focus range, a photo size) can't happen; they would be
+reported as not saved.
 
 - Parameter outcome: How the request ended.
 
