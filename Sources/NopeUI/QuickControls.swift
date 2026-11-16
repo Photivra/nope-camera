@@ -105,6 +105,7 @@ enum QuickControls {
         liveReadout,
         fastShutter,
         closeUp,
+        farFocus,
         magnifier,
         astro,
         compare,
@@ -164,6 +165,19 @@ enum QuickControls {
         return QuickControlItem(
             id: "closeUp", title: CloseUpText.title, systemImage: "camera.macro",
             kind: .toggle(isOn: manual.nearFocusLimit) { context.send(.auto(.setNearFocusLimit($0))) })
+    }
+
+    /// Far Focus: limits autofocus to far subjects, so it doesn't catch a near branch or a window
+    /// (issue #57). An advanced option: shown with manual controls on where the lens supports
+    /// it, or while it is on.
+    ///
+    /// - Parameter context: The model and settings.
+    static func farFocus(_ context: CameraControlContext) -> QuickControlItem? {
+        let manual = context.model.manual
+        guard (manual.isEnabled && manual.capabilities.supportsFarFocusLimit) || manual.farFocusLimit else { return nil }
+        return QuickControlItem(
+            id: "farFocus", title: FarFocusText.title, systemImage: "mountain.2",
+            kind: .toggle(isOn: manual.farFocusLimit) { context.send(.auto(.setFarFocusLimit($0))) })
     }
 
     /// Magnify: shows the viewfinder enlarged around the focus point, for checking focus

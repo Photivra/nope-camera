@@ -114,7 +114,7 @@ public struct CameraScreen<Viewfinder: View>: View {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
-                presets: presets, camera: model)
+                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
                 .nightModeStyle(settings.isNightModeOn)
                 .preferredColorScheme(settings.isNightModeOn ? .dark : nil)
                 .frame(idealWidth: 480, idealHeight: 720)

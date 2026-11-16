@@ -46,6 +46,9 @@ struct NopeApp: App {
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
 
+    /// The link to the Apple Watch app (issue #63), whose commands go through ``shortcuts``.
+    private static let watchSession = PhoneWatchSession()
+
     /// Location tagging for photos (issue #43): off until the person turns Location on.
     @State private var location = LocationTagging(provider: Self.makeLocationProvider())
 
@@ -57,12 +60,15 @@ struct NopeApp: App {
 
     /// Registers what the App Intents need: the settings and the Siri and Shortcuts inbox
     /// (App Intents, `AppDependencyManager`).
+    /// Activates the link to the Apple Watch app (WatchConnectivity), so a watch command that
+    /// launches the app is delivered.
     init() {
         let settings = Self.sharedSettings
         let shortcuts = Self.shortcuts
         AppDependencyManager.shared.add(dependency: settings)
         AppDependencyManager.shared.add(dependency: shortcuts)
         _ = Self.settingsSync
+        Self.watchSession.activate()
     }
 
     /// The app's single window, showing the camera screen.
@@ -140,6 +146,8 @@ struct NopeApp: App {
         .environment(\.seriesScreenKeeper, screenKeeper)
         // Siri and Shortcuts requests are performed while the camera screen is shown.
         .task { await model.serveShortcuts(from: Self.shortcuts) }
+        // The Apple Watch app's shutter and status (issue #63), while the camera screen is shown.
+        .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
         .task { await SimulatedShortcut.run(with: Self.shortcuts) }
@@ -172,6 +180,14 @@ struct NopeApp: App {
         // choice changes (in Settings or the quick-controls tray).
         .task(id: settings.fastShutter) {
             await model.send(.auto(.setFastShutter(settings.fastShutter)))
+        }
+        // Face Detection (issue #57): applied when the camera opens and whenever it changes.
+        .task(id: settings.followsFaces) {
+            await model.send(.auto(.setFollowsFaces(settings.followsFaces)))
+        }
+        // The photo size of each lens that offers a choice (issue #57).
+        .task(id: settings.photoSizes) {
+            await model.send(.setPhotoSizes(settings.photoSizes))
         }
         // "Start in clean view": applied when the camera opens and whenever the option changes;
         // the camera's own button still toggles clean view at any time.

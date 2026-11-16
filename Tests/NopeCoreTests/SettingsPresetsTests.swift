@@ -25,6 +25,14 @@ struct SettingsPresetsTests {
         "torchLevel": { $0.setTorchLevel(0.75) },
         "isNightModeOn": { $0.setNightMode(true) },
         "tintsViewfinderInNightMode": { $0.setTintsViewfinderInNightMode(true) },
+        "followsFaces": { $0.setFollowsFaces(false) },
+        "photoSizes": {
+            // A lens without Bayer RAW that offers two sizes; the larger isn't the default.
+            let lens = Lens(
+                id: "sizes", kind: .wide, bayerRAWFormat: nil,
+                photoDimensions: [PhotoDimensions(width: 4032, height: 3024), PhotoDimensions(width: 8064, height: 6048)])
+            $0.setPhotoSize(PhotoDimensions(width: 8064, height: 6048), for: lens)
+        },
     ]
 
     /// `NopeSettings` properties that aren't settings: where they are stored, and Observation's

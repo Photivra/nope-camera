@@ -178,7 +178,7 @@ Creates the encoding settings for a developed format with the person's options.
 
 - Parameters:
   - format: The format to encode.
-  - options: The compression, HEIF bit depth and color space.
+  - options: The compression, HEIF bit depth, color space and size.
 - Returns: `nil` for `PhotoFormat.raw`, which is saved as the camera's DNG and never
   re-encoded.
 
@@ -207,6 +207,17 @@ JPEG's maximum quality for `kCGImageDestinationLossyCompressionQuality`.
 
 Apple documents the value range as 0.0 to 1.0, where 1.0 is maximum image quality:
 [kCGImageDestinationLossyCompressionQuality](https://developer.apple.com/documentation/imageio/kcgimagedestinationlossycompressionquality).
+
+## `EncodingSettings/size`
+
+public, declared in `Sources/NopeDevelop/EncodingSettings.swift`
+
+```swift
+let size: OutputSize
+```
+
+The size of the encoded image, as a fraction of the developed image's.
+`OutputSize.full` unless the person chose a smaller copy (`DevelopedFileOptions`).
 
 ## `EncodingSettings/typeIdentifier`
 
@@ -384,7 +395,8 @@ only the property dictionary `MetadataPlan` built from the allowlist, plus what 
 adds to describe the image itself (checked by the read-back). No thumbnail is embedded
 (`kCGImageDestinationEmbedThumbnail` is `false`). HEIF uses the system HEIF encoder only
 (AGENTS.md, "Encoders"); a 16-bit image is written as 10-bit HEIF (`Depth` reads back as 10
-with ImageIO on macOS 27 and the iOS 27 Simulator).
+with ImageIO on macOS 27 and the iOS 27 Simulator). A smaller copy (`OutputSize`) is drawn
+at its size before encoding, and its EXIF pixel dimensions are set to that size.
 
 ## `PhotoEncoder/encode(_:settings:properties:)`
 
@@ -421,21 +433,22 @@ Encodes an image with ImageIO.
 - Throws: `CaptureError.developmentFailed` if ImageIO can't create the file type or
   finish the file.
 
-## `PhotoEncoder/prepare(_:bitsPerComponent:colorSpaceName:)`
+## `PhotoEncoder/prepare(_:bitsPerComponent:colorSpaceName:size:)`
 
 internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
 
 ```swift
-static func prepare(_ image: CGImage, bitsPerComponent bits: Int, colorSpaceName: CFString) throws(CaptureError) -> CGImage
+static func prepare(_ image: CGImage, bitsPerComponent bits: Int, colorSpaceName: CFString, size: PhotoDimensions? = nil) throws(CaptureError) -> CGImage
 ```
 
-Converts an image to a depth and a named color space, or returns it unchanged when it
-already has them.
+Converts an image to a depth, a named color space and a size, or returns it unchanged
+when it already has them.
 
 - Parameters:
   - image: The image.
   - bits: The bits per component, 8 or 16.
   - colorSpaceName: A Core Graphics color space name, such as `CGColorSpace.sRGB`.
+  - size: The size to draw it at, or `nil` for its own size.
 - Returns: The image to encode.
 - Throws: `CaptureError.developmentFailed` if the color space or the conversion fails.
 
@@ -447,19 +460,35 @@ internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
 static func prepare(_ image: CGImage, for settings: EncodingSettings) throws(CaptureError) -> CGImage
 ```
 
-Converts an image to the depth and color space the settings ask for, or returns it
+Converts an image to the depth, color space and size the settings ask for, or returns it
 unchanged when it already has them.
 
 Core Graphics converts colors when it draws into a context of another color space
 (Quartz 2D Programming Guide, "Color and Color Spaces"), so an sRGB file gets sRGB colors,
-not Display P3 values relabeled. The image's size and pixels are otherwise unchanged; this
-is encoding, not development.
+not Display P3 values relabeled. A smaller copy is scaled in the same draw. The pixels are
+otherwise unchanged; this is encoding, not development.
 
 - Parameters:
   - image: The developed image, 16 bits per channel in Display P3.
   - settings: The encoding settings.
 - Returns: The image to encode.
 - Throws: `CaptureError.developmentFailed` if the conversion fails.
+
+## `PhotoEncoder/resized(_:to:)`
+
+internal, declared in `Sources/NopeDevelop/PhotoEncoder.swift`
+
+```swift
+static func resized(_ properties: [String : Any], to image: CGImage) -> [String : Any]
+```
+
+The properties with the EXIF pixel dimensions, where present, set to a smaller copy's
+size, so the file never states the RAW's size for fewer pixels.
+
+- Parameters:
+  - properties: The metadata from `MetadataPlan`.
+  - image: The image that is encoded.
+- Returns: The properties for the encoder.
 
 ## `RAWDeveloper`
 

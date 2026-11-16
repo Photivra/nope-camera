@@ -159,6 +159,21 @@ Related documentation in the repository:
 - ``FramePoint``
 - ``AssistSettings``
 
+### Apple Watch remote shutter
+
+- ``WatchRemote``
+- ``PhoneLink``
+- ``WatchCommandServer``
+- ``WatchLink``
+- ``WatchCommand``
+- ``WatchDelay``
+- ``WatchStatus``
+- ``WatchCameraProblem``
+- ``WatchResult``
+- ``PhoneUpdate``
+- ``WatchMessageCoding``
+- ``WatchMessageError``
+
 ### Hardware
 
 - ``CaptureBackend``

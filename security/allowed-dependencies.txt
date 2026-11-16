@@ -9,3 +9,12 @@ swift-asn1
 swift-crypto
 # Android (planned): the C2PA Android binding.
 c2pa-android
+
+# CI-only file validators (issue #58), never part of the app: run by the file-compat job on the
+# test fixtures. Installed at pinned versions with SHA-256 checks by
+# scripts/install-file-validators.sh. Maintainer-approved 2026-11-16; Adobe's dng_validate is not.
+# c2patool 0.28.4, MIT or Apache-2.0, https://github.com/contentauth/c2patool (release asset).
+c2patool
+# exiftool 13.55 (Image-ExifTool), Perl Artistic License or GPL-1.0-or-later, https://exiftool.org
+# (downloads from SourceForge, or CPAN).
+exiftool

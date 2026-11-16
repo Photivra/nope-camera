@@ -1,7 +1,7 @@
 import Foundation
 
 /// A photo size in pixels.
-public struct PhotoDimensions: Equatable, Hashable, Sendable {
+public struct PhotoDimensions: Equatable, Hashable, Codable, Sendable {
     /// The width, in pixels.
     public let width: Int
 

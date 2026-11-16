@@ -93,7 +93,18 @@ struct AssistSettings
 ```
 
 The automatic aids ``DeviceControls/init(settings:lens:assist:)`` adds to the person's
-settings: the tapped point, the near focus limit and the longest auto exposure.
+settings: the tapped point, the near or far focus limit, face detection and the longest auto
+exposure.
+
+## `AssistSettings/farFocusLimit`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+var farFocusLimit: Bool
+```
+
+Whether autofocus is limited to far subjects. Never on with ``nearFocusLimit``.
 
 ## `AssistSettings/focusTarget`
 
@@ -105,12 +116,23 @@ var focusTarget: FocusTarget?
 
 Where autofocus and auto exposure are aimed, or `nil` for the center.
 
-## `AssistSettings/init(focusTarget:nearFocusLimit:longestShutter:)`
+## `AssistSettings/followsFaces`
 
 public, declared in `Sources/NopeCore/AutoControls.swift`
 
 ```swift
-init(focusTarget: FocusTarget? = nil, nearFocusLimit: Bool = false, longestShutter: Double? = nil)
+var followsFaces: Bool
+```
+
+Whether faces the camera detects steer autofocus and auto exposure. `true` by default, the
+system's own behavior (`AVCaptureDevice.isFaceDrivenAutoFocusEnabled`).
+
+## `AssistSettings/init(focusTarget:nearFocusLimit:longestShutter:farFocusLimit:followsFaces:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+init(focusTarget: FocusTarget? = nil, nearFocusLimit: Bool = false, longestShutter: Double? = nil, farFocusLimit: Bool = false, followsFaces: Bool = true)
 ```
 
 Creates aids. With no arguments, none.
@@ -119,6 +141,10 @@ Creates aids. With no arguments, none.
   - focusTarget: The tapped point, or `nil`.
   - nearFocusLimit: Whether autofocus is limited to near subjects.
   - longestShutter: The longest auto exposure in seconds, or `nil`.
+  - farFocusLimit: Whether autofocus is limited to far subjects. Ignored while
+    `nearFocusLimit` is on.
+  - followsFaces: Whether detected faces steer autofocus and auto exposure. Defaults to
+    `true`.
 
 ## `AssistSettings/longestShutter`
 
@@ -635,8 +661,8 @@ enum AutoControlIntent
 
 A request that works in full auto as well as with manual controls, wrapped in
 ``CameraIntent/auto(_:)``: tap to focus and expose, the focus and exposure lock, exposure
-compensation, the Close-Up focus limit, the fast shutter rule, the close-up suggestion and
-the focus magnifier.
+compensation, the Close-Up and Far Focus limits, face detection, the fast shutter rule, the
+close-up suggestion and the focus magnifier.
 
 None of them changes a manual setting: while a control is set manually, the camera keeps the
 person's value, and a tap only aims what is still automatic (issue #56, "Manual controls: up
@@ -692,6 +718,17 @@ case setExposureCompensation(Double)
 Set exposure compensation, in EV, moved inside the lens's range (the Exposure control
 in full auto). 0 is none.
 
+## `AutoControlIntent/setFarFocusLimit(_:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case setFarFocusLimit(Bool)
+```
+
+Limit autofocus to far subjects, or lift the limit (Far Focus, issue #57). Turning it on
+lifts the near limit.
+
 ## `AutoControlIntent/setFastShutter(_:)`
 
 public, declared in `Sources/NopeCore/AutoControls.swift`
@@ -701,6 +738,17 @@ case setFastShutter(FastShutter)
 ```
 
 Choose how fast a shutter full auto prefers.
+
+## `AutoControlIntent/setFollowsFaces(_:)`
+
+public, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+case setFollowsFaces(Bool)
+```
+
+Let faces the camera detects steer autofocus and auto exposure (the system's default), or
+stop them (issue #57). Applies only while focus or exposure is automatic.
 
 ## `AutoControlIntent/setMagnifier(_:)`
 
@@ -721,7 +769,8 @@ public, declared in `Sources/NopeCore/AutoControls.swift`
 case setNearFocusLimit(Bool)
 ```
 
-Limit autofocus to near subjects, or lift the limit (Close-Up).
+Limit autofocus to near subjects, or lift the limit (Close-Up). Turning it on lifts the
+far limit.
 
 ## `AutoControlIntent/stepExposureCompensation(by:)`
 
@@ -1445,6 +1494,21 @@ case setCleanView(Bool)
 Turn clean view on or off. Clean view hides every control that isn't essential, leaving
 the viewfinder and the shutter; it never changes a setting.
 
+## `CameraIntent/setPhotoSizes(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case setPhotoSizes([Lens.ID : PhotoDimensions])
+```
+
+Use the person's photo size for each lens (``NopeSettings/photoSizes``, issue #57). Send
+it when the camera screen appears and whenever the choice changes. When the selected
+lens's size changes, the camera is reconfigured; a size a lens doesn't offer
+(``Lens/photoSizeChoices``) is ignored.
+
+- Parameter sizes: The chosen size for each lens.
+
 ## `CameraIntent/start`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -1912,6 +1976,17 @@ Performs one request.
   - inbox: The inbox, for its waits and timeouts.
 - Returns: How it ended.
 
+## `CameraModel/photoSizes`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var photoSizes: [Lens.ID : PhotoDimensions] { get set }
+```
+
+The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
+the camera starts with a lens. Empty by default: every lens at its default size.
+
 ## `CameraModel/pressAstroShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2142,6 +2217,23 @@ location when the Location switch is on, as a single photo does.
   - endAtLimit: What the run reports when it takes all `limit` frames.
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
+
+## `CameraModel/watchStatus`
+
+public, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+@MainActor var watchStatus: WatchStatus { get }
+```
+
+What the camera is doing, as the watch shows it. It reads only observable state, so a
+``WatchCommandServer`` can follow it without polling.
+
+A camera that is still starting counts as ``WatchCameraProblem/notRunning``: a photo is
+taken for the watch only when the camera is already running, so nothing is taken later by
+surprise (issue #63, "Done when"). Busy follows the same rule as a Siri request: a photo
+being taken or saved, or a countdown, burst, interval series or astro
+run.
 
 ## `CameraPermission`
 
@@ -3636,12 +3728,12 @@ has Bayer RAW, such as the Debug-only tag check (docs/TESTING.md, "Tag check").
   - format: The format to capture. A Bayer RAW format must be one the lens supports.
   - metadata: The metadata plan. Defaults to the first-launch settings.
 
-## `CaptureRequest/init(lens:metadata:flashMode:)`
+## `CaptureRequest/init(lens:metadata:flashMode:photoSize:)`
 
 public, declared in `Sources/NopeCore/CaptureRequest.swift`
 
 ```swift
-init(lens: Lens, metadata: MetadataPlan = MetadataPlan(), flashMode: FlashMode = .off)
+init(lens: Lens, metadata: MetadataPlan = MetadataPlan(), flashMode: FlashMode = .off, photoSize: PhotoDimensions? = nil)
 ```
 
 Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:)``.
@@ -3651,6 +3743,7 @@ Creates a request for a lens, choosing the format with ``CaptureFormat/init(for:
   - metadata: The metadata plan. Defaults to the first-launch settings: every optional
     detail removed.
   - flashMode: When the flash fires. Defaults to off.
+  - photoSize: The photo size to configure, or `nil` for the lens's default.
 
 ## `CaptureRequest/lens`
 
@@ -3673,6 +3766,17 @@ let metadata: MetadataPlan
 The plan the photo's metadata is built from. The backend writes the file with
 ``MetadataPlan/properties(for:from:orientation:)``, never with the system's full
 metadata.
+
+## `CaptureRequest/photoSize`
+
+public, declared in `Sources/NopeCore/CaptureRequest.swift`
+
+```swift
+let photoSize: PhotoDimensions?
+```
+
+The photo size to configure (`AVCapturePhotoOutput.maxPhotoDimensions`): one of the lens's
+``Lens/photoDimensions``, from ``Lens/photoSize(for:)``. `nil` for the lens's default.
 
 ## `CaptureStatus`
 
@@ -4965,7 +5069,7 @@ struct DevelopedFileOptions
 ```
 
 How the HEIF and JPEG copies the app develops from the RAW are encoded: compression, HEIF bit
-depth and color space (issue #57, "File").
+depth, color space and size (issue #57, "File").
 
 Owner principle (issue #57): anything about the file that the device lets an app control is
 the person's to choose, behind the advanced options, with the defaults working on their own.
@@ -5051,6 +5155,17 @@ The compression chosen for a developed format.
 - Parameter format: ``PhotoFormat/heif`` or ``PhotoFormat/jpeg``.
 - Returns: The format's quality; ``CompressionQuality/maximum`` for RAW, which is never
   re-encoded.
+
+## `DevelopedFileOptions/size`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var size: OutputSize { get set }
+```
+
+The size of both copies, as a fraction of the RAW's width and height.
+``OutputSize/full`` by default: the RAW's own size, as before this option existed.
 
 ## `DevelopedLook`
 
@@ -5452,6 +5567,17 @@ let exposure: Exposure
 
 The exposure.
 
+## `DeviceControls/farFocusLimit`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+let farFocusLimit: Bool
+```
+
+Whether autofocus is limited to far subjects (`autoFocusRangeRestriction = .far`). Never
+on with ``nearFocusLimit``.
+
 ## `DeviceControls/focus`
 
 public, declared in `Sources/NopeCore/DeviceControls.swift`
@@ -5462,12 +5588,25 @@ let focus: Focus
 
 The focus.
 
-## `DeviceControls/init(exposure:focus:whiteBalance:metering:pointOfInterest:nearFocusLimit:longestAutoExposure:)`
+## `DeviceControls/followsFaces`
 
 public, declared in `Sources/NopeCore/DeviceControls.swift`
 
 ```swift
-init(exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode, pointOfInterest: PointOfInterest? = nil, nearFocusLimit: Bool = false, longestAutoExposure: Double? = nil)
+let followsFaces: Bool
+```
+
+Whether faces the camera detects steer autofocus and auto exposure
+(`isFaceDrivenAutoFocusEnabled` and `isFaceDrivenAutoExposureEnabled`). `true` leaves the
+system's automatic choice; `false` turns both off. A backend sets each only where the lens
+focuses or exposes automatically, because AVFoundation raises an exception otherwise.
+
+## `DeviceControls/init(exposure:focus:whiteBalance:metering:pointOfInterest:nearFocusLimit:longestAutoExposure:farFocusLimit:followsFaces:)`
+
+public, declared in `Sources/NopeCore/DeviceControls.swift`
+
+```swift
+init(exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode, pointOfInterest: PointOfInterest? = nil, nearFocusLimit: Bool = false, longestAutoExposure: Double? = nil, farFocusLimit: Bool = false, followsFaces: Bool = true)
 ```
 
 Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:lens:assist:)``.
@@ -5480,6 +5619,10 @@ Creates controls from their parts. ``ManualControlsModel`` uses ``init(settings:
   - pointOfInterest: The tapped point, or `nil`. Defaults to `nil`.
   - nearFocusLimit: Whether autofocus is limited to near subjects. Defaults to `false`.
   - longestAutoExposure: The longest auto exposure in seconds, or `nil`. Defaults to `nil`.
+  - farFocusLimit: Whether autofocus is limited to far subjects. Defaults to `false`;
+    ignored while `nearFocusLimit` is on.
+  - followsFaces: Whether detected faces steer autofocus and auto exposure. Defaults to
+    `true`.
 
 ## `DeviceControls/init(settings:lens:assist:)`
 
@@ -5500,8 +5643,9 @@ Builds the controls for settings on a lens.
 
 - The automatic aids apply only to what is automatic: the tapped point aims autofocus
   only while focus is automatic, and auto exposure only while exposure is automatic; the
-  near focus limit needs autofocus; the longest shutter needs auto exposure. Each needs
-  the lens to support it.
+  near and far focus limits need autofocus; the longest shutter needs auto exposure. Each
+  needs the lens to support it. Face detection is passed on as it is; the backend applies
+  it to whatever is automatic.
 
 - Parameters:
   - settings: The person's settings.
@@ -8114,6 +8258,29 @@ The four-character code of the lens's single-frame Bayer RAW pixel format, such 
 When it's `nil`, the lens can only give ``processedFallback``, which has some device
 processing, and the interface must say so (issue #1, "No-RAW fallback").
 
+## `Lens/defaultPhotoSize`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+var defaultPhotoSize: PhotoDimensions? { get }
+```
+
+The default photo size: the smallest the lens reports, the camera's own default
+(`AVCapturePhotoSettings.maxPhotoDimensions`) and the size the app has always used.
+
+## `Lens/deferredOnlySize`
+
+internal, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+static let deferredOnlySize: PhotoDimensions
+```
+
+The 24 MP size AVFoundation delivers only through deferred photo delivery, which the app
+turns off: "The maxPhotoDimensions setting for 24MP (5712, 4284), when supported, is only
+serviced as 24MP via deferred photo delivery" (`AVCapturePhotoOutput.h`).
+
 ## `Lens/equivalentFocalLength`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -8263,6 +8430,39 @@ let photoDimensions: [PhotoDimensions]
 ```
 
 The photo sizes the lens's format supports, smallest first.
+
+## `Lens/photoSize(for:)`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+func photoSize(for choice: PhotoDimensions?) -> PhotoDimensions?
+```
+
+The photo size to configure for a person's choice: the choice when the lens offers it
+(``photoSizeChoices``), otherwise ``defaultPhotoSize``.
+
+- Parameter choice: The size the person chose for this lens, or `nil`.
+- Returns: The size, or `nil` when the lens reported none.
+
+## `Lens/photoSizeChoices`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+var photoSizeChoices: [PhotoDimensions] { get }
+```
+
+The photo sizes a person can choose between on this lens, smallest first (issue #57), or
+an empty list when there is no choice.
+
+- A lens with Bayer RAW has no choice: its RAW is always the sensor's binned 12 MP readout,
+  whatever the photo size (capability survey, item 1), and its HEIF and JPEG are developed
+  from that RAW (their size is ``OutputSize``).
+- A lens without Bayer RAW offers the sizes its format reports
+  (`supportedMaxPhotoDimensions`) for its processed fallback, without the deferred-only
+  24 MP size.
+- Fewer than two sizes is no choice.
 
 ## `Lens/processedFallback`
 
@@ -9723,6 +9923,18 @@ let supportsExposurePoint: Bool
 Whether auto exposure can meter a chosen point (`isExposurePointOfInterestSupported`), for
 tap to expose.
 
+## `ManualCapabilities/supportsFarFocusLimit`
+
+public, declared in `Sources/NopeCore/ManualCapabilities.swift`
+
+```swift
+var supportsFarFocusLimit: Bool { get }
+```
+
+Whether autofocus can be limited to far subjects, for the Far Focus limit (issue #57).
+The same answer as ``supportsNearFocusLimit``: the camera's range restriction offers
+near and far together (`AVCaptureDevice.AutoFocusRangeRestriction`).
+
 ## `ManualCapabilities/supportsFocusLock`
 
 public, declared in `Sources/NopeCore/ManualCapabilities.swift`
@@ -10362,6 +10574,17 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Shutter to start from before the first reading, in seconds: 1/60 s.
 
+## `ManualControlsModel/farFocusLimit`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var farFocusLimit: Bool { get set }
+```
+
+Whether autofocus is limited to far subjects (Far Focus, issue #57). Off by default; never
+on with ``nearFocusLimit``; reset by All Auto.
+
 ## `ManualControlsModel/fastShutter`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -10400,6 +10623,18 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 Where autofocus and auto exposure are aimed after a tap, and whether they are locked
 there, or `nil` for continuous auto at the center. Cleared when the scene changes (unless
 locked), on a lens change and by All Auto.
+
+## `ManualControlsModel/followsFaces`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var followsFaces: Bool { get set }
+```
+
+Whether faces the camera detects steer autofocus and auto exposure. On by default, the
+system's behavior; the app sets it from the person's Face Detection setting
+(``AutoControlIntent/setFollowsFaces(_:)``). All Auto doesn't change it.
 
 ## `ManualControlsModel/handle(_:capture:)`
 
@@ -10583,7 +10818,7 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 @MainActor func resetAids() -> Bool
 ```
 
-Clears the tapped point and the near focus limit, for All Auto.
+Clears the tapped point and the near and far focus limits, for All Auto.
 
 - Returns: Whether anything changed.
 
@@ -10635,6 +10870,19 @@ Sets exposure compensation, in EV, inside the lens's range. Works in full auto (
 
 - Parameter value: The compensation, in EV.
 
+## `ManualControlsModel/setFarFocusLimit(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func setFarFocusLimit(_ isOn: Bool) async
+```
+
+Turns the far focus limit on or off. Turning it on lifts the near limit.
+
+- Parameter isOn: Whether autofocus is limited to far subjects. Turning it on does
+  nothing on a lens that can't limit its range.
+
 ## `ManualControlsModel/setFastShutter(_:)`
 
 internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
@@ -10646,6 +10894,18 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 Chooses how fast a shutter full auto prefers, and applies the new limit.
 
 - Parameter choice: The choice.
+
+## `ManualControlsModel/setFollowsFaces(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func setFollowsFaces(_ isOn: Bool) async
+```
+
+Lets detected faces steer autofocus and auto exposure, or stops them.
+
+- Parameter isOn: Whether faces steer them; `true` is the system's default.
 
 ## `ManualControlsModel/setLongestAutoShutter(_:)`
 
@@ -10667,7 +10927,8 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 @MainActor func setNearFocusLimit(_ isOn: Bool) async
 ```
 
-Turns the near focus limit on or off.
+Turns the near focus limit on or off. Turning it on lifts the far limit: the camera
+has one range restriction (`AVCaptureDevice.autoFocusRangeRestriction`).
 
 - Parameter isOn: Whether autofocus is limited to near subjects. Turning it on does
   nothing on a lens that can't limit its range.
@@ -13571,6 +13832,16 @@ static let flashMode: String
 
 When the flash fires, a ``FlashMode`` raw value.
 
+## `NopeSettings/Key/followsFaces`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let followsFaces: String
+```
+
+Whether detected faces steer autofocus and auto exposure, a Boolean.
+
 ## `NopeSettings/Key/isNightModeOn`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -13590,6 +13861,16 @@ static let legacyManualControls: String
 ```
 
 The key the "Manual controls" option used before `NopeSettings`, migrated once.
+
+## `NopeSettings/Key/photoSizes`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let photoSizes: String
+```
+
+The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
 
 ## `NopeSettings/Key/save`
 
@@ -13730,6 +14011,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 When the flash fires, remembered between launches. ``FlashMode/off`` by default. The app
 passes it to ``CameraModel/light`` with ``LightIntent/setFlashMode(_:)``.
 
+## `NopeSettings/followsFaces`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var followsFaces: Bool { get set }
+```
+
+Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
+#57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
+with ``AutoControlIntent/setFollowsFaces(_:)``.
+
 ## `NopeSettings/formats`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -13858,6 +14151,33 @@ The viewfinder overlays: grid, level, focus peaking, histogram and live camera r
 Every overlay is off by default. Change them with the setters in `OverlayOptions.swift`
 or ``setOverlays(_:)``.
 
+## `NopeSettings/photoSize(for:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func photoSize(for lens: Lens) -> PhotoDimensions?
+```
+
+The photo size chosen for a lens, as the camera will use it: the choice when the lens
+offers it, otherwise the lens's default.
+
+- Parameter lens: A lens.
+- Returns: The size, or `nil` when the lens reported none.
+
+## `NopeSettings/photoSizes`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var photoSizes: [Lens.ID : PhotoDimensions] { get set }
+```
+
+The photo size chosen for each lens that offers a choice (``Lens/photoSizeChoices``,
+issue #57). Empty by default: every lens at its default size. The app passes it to the
+camera with ``CameraIntent/setPhotoSizes(_:)``. Lens identifiers are the app's own and
+stay on the device.
+
 ## `NopeSettings/rawPairing`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -13966,6 +14286,18 @@ Sets when the flash fires, and saves the change.
 
 - Parameter mode: The flash mode.
 
+## `NopeSettings/setFollowsFaces(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setFollowsFaces(_ isOn: Bool)
+```
+
+Turns Face Detection on or off, and saves the change.
+
+- Parameter isOn: Whether detected faces steer autofocus and auto exposure.
+
 ## `NopeSettings/setFormat(_:isSelected:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -14043,6 +14375,21 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Replaces the viewfinder overlay options, and saves the change.
 
 - Parameter options: The new options.
+
+## `NopeSettings/setPhotoSize(_:for:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setPhotoSize(_ size: PhotoDimensions, for lens: Lens)
+```
+
+Chooses a lens's photo size, and saves the change. Choosing the lens's default removes
+the stored choice.
+
+- Parameters:
+  - size: One of the lens's ``Lens/photoSizeChoices``; any other size does nothing.
+  - lens: The lens.
 
 ## `NopeSettings/setPinsLiveReadout(_:)`
 
@@ -14368,6 +14715,76 @@ case sRGB
 
 sRGB, for sites and screens that show only sRGB. Colors outside sRGB are clipped to it.
 
+## `OutputSize`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+enum OutputSize
+```
+
+The size of the developed copies, as a fraction of the RAW's width and height (issue #57,
+"Downscaled size").
+
+A smaller copy is for sharing or saving space; the RAW always keeps every pixel. The encoder
+draws the developed image into a smaller bitmap with Core Graphics' high-quality
+interpolation, so the copy's exact size is known and its EXIF `PixelXDimension` and
+`PixelYDimension` match it. A fraction, rather than a pixel count, keeps the choice the same
+on every lens and never enlarges a photo.
+
+## `OutputSize/dimensions(of:)`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+func dimensions(of size: PhotoDimensions) -> PhotoDimensions
+```
+
+The size of a copy of an image.
+
+- Parameter size: The developed image's size, in pixels.
+- Returns: Each side times ``scale``, rounded, and at least 1 pixel.
+
+## `OutputSize/full`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case full
+```
+
+The RAW's own width and height. The default.
+
+## `OutputSize/half`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case half
+```
+
+Half the width and height: a quarter of the pixels (about 3 MP from a 12 MP RAW).
+
+## `OutputSize/quarter`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+case quarter
+```
+
+A quarter of the width and height: a sixteenth of the pixels (about 0.75 MP from 12 MP).
+
+## `OutputSize/scale`
+
+public, declared in `Sources/NopeCore/DevelopedFileOptions.swift`
+
+```swift
+var scale: Double { get }
+```
+
+The fraction of the width and height the copy keeps: 1, 0.5 or 0.25.
+
 ## `OverlayOptions`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -14686,6 +15103,43 @@ internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
 
 The timeout for a camera screen to take the request, cancelled when one does.
 
+## `PhoneLink`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor protocol PhoneLink : AnyObject
+```
+
+The Apple Watch side's link to the iPhone app: sends a message and waits for the reply.
+
+The watch app implements it with WatchConnectivity (`WCSession.sendMessageData`); tests and
+the watch UI tests pass a fake. Only the bytes of ``WatchCommand`` values cross it.
+
+## `PhoneLink/isPhoneReachable`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var isPhoneReachable: Bool { get }
+```
+
+Whether the iPhone app can get a message now (`WCSession.isReachable`).
+
+## `PhoneLink/send(_:)`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor func send(_ message: Data) async throws -> Data
+```
+
+Sends a message to the iPhone app and waits for its reply.
+
+- Parameter message: The encoded ``WatchCommand``.
+- Returns: The encoded ``PhoneUpdate`` the phone replied with.
+- Throws: When the message couldn't be delivered or the phone didn't reply.
+
 ## `PhoneProcessedPhoto`
 
 public, declared in `Sources/NopeCore/Comparison.swift`
@@ -14759,6 +15213,54 @@ let metadata: MetadataInventory
 
 Everything metadata-like in ``data``, read by the project's own tag reader
 (``MetadataFileReader``): what the phone's version carries by default.
+
+## `PhoneUpdate`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+struct PhoneUpdate
+```
+
+What the phone sends the watch: the camera's status, and the result of the watch's last photo
+request when there is one.
+
+Every reply to a ``WatchCommand`` is one, and the phone also sends one whenever the status
+changes or a photo ends while the watch app is reachable.
+
+## `PhoneUpdate/init(status:result:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+init(status: WatchStatus, result: WatchResult? = nil)
+```
+
+Creates an update.
+
+- Parameters:
+  - status: The camera's status.
+  - result: A new result, or `nil`.
+
+## `PhoneUpdate/result`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+let result: WatchResult?
+```
+
+The result of the last photo the watch asked for, or `nil` when there is no new result.
+
+## `PhoneUpdate/status`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+let status: WatchStatus
+```
+
+The camera's status.
 
 ## `PhotoComparison`
 
@@ -20489,6 +20991,861 @@ case unavailable
 The person asked for the light, but the system didn't allow it or turned it off, for
 example because the device is too hot. The light is off. An interface says so until the
 person turns the light off or tries again.
+
+## `WatchCameraProblem`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchCameraProblem
+```
+
+Why the phone's camera can't take a photo for the watch.
+
+## `WatchCameraProblem/init(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+init(_ reason: CameraUnavailability)
+```
+
+The watch's problem for a Siri and Shortcuts reason.
+
+- Parameter reason: Why the camera couldn't take a photo for a request.
+
+## `WatchCameraProblem/needsPermission`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case needsPermission
+```
+
+Camera access hasn't been asked for yet. Say to open the app on the phone to allow it.
+
+## `WatchCameraProblem/noCamera`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case noCamera
+```
+
+The phone has no camera the app can use. Say so.
+
+## `WatchCameraProblem/notRunning`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case notRunning
+```
+
+The camera isn't running: the camera screen isn't open on the phone, the app is in the
+background, or the camera is starting, paused or in use elsewhere. Say to open the app on
+the phone.
+
+## `WatchCameraProblem/permissionDenied`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case permissionDenied
+```
+
+Camera access is declined or restricted. Say it can be turned on in the phone's Settings
+app.
+
+## `WatchCommand`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchCommand
+```
+
+The messages between the Apple Watch app and the iPhone app (issue #63): commands from the
+watch, and the camera's status and results from the phone.
+
+Both apps encode and decode them with ``WatchMessageCoding``; the apps' WatchConnectivity
+adapters only carry the bytes. Only commands and short status cross the link, never image
+data or metadata (issue #63, "How it talks to the phone").
+
+The iPhone app answers with ``WatchCommandServer``; the watch app sends through
+``WatchRemote``.
+
+## `WatchCommand/cancelTimer`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case cancelTimer
+```
+
+Stops a running self-timer countdown, so no photo is taken.
+
+## `WatchCommand/requestStatus`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case requestStatus
+```
+
+Asks for the camera's status, for example when the watch app opens.
+
+## `WatchCommand/takePhoto(delay:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case takePhoto(delay: WatchDelay)
+```
+
+Takes one photo with the phone's current settings, after the delay.
+
+## `WatchCommandServer`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor final class WatchCommandServer
+```
+
+Answers the Apple Watch app's commands on the iPhone (issue #63), and keeps the watch up to
+date while its app is open.
+
+It holds no capture logic of its own: a photo goes through the app's ``ShortcutInbox``, as a
+Siri request does, so the camera screen takes it with the same intents as its own shutter,
+and a delay runs the camera's self-timer (``DriveIntent/startTimer(seconds:)``). A photo is
+asked for only while ``CameraModel/watchStatus`` is ``WatchStatus/ready``; otherwise the
+watch hears why at once and nothing is taken.
+
+```swift
+let server = WatchCommandServer(model: model, inbox: inbox, link: session)
+// When a message arrives: reply with the bytes this returns.
+let reply = await server.reply(to: message)
+// While the camera screen is shown:
+.task { await server.sendStatusChanges() }
+```
+
+Battery rule (AGENTS.md, "Battery"): nothing polls. Status changes are followed with
+Observation, and a message is sent only while the watch app is reachable.
+
+## `WatchCommandServer/inbox`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor let inbox: ShortcutInbox
+```
+
+Where photo requests go; the camera screen serves it.
+
+## `WatchCommandServer/init(model:inbox:link:)`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor init(model: CameraModel, inbox: ShortcutInbox, link: any WatchLink)
+```
+
+Creates a server.
+
+- Parameters:
+  - model: The camera.
+  - inbox: The app's Siri and Shortcuts inbox, which the camera screen serves.
+  - link: The link to the watch app.
+
+## `WatchCommandServer/lastSentStatus`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor var lastSentStatus: WatchStatus? { get }
+```
+
+The status last sent, so an unchanged status isn't sent again.
+
+## `WatchCommandServer/link`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor let link: any WatchLink
+```
+
+The link to the watch app.
+
+## `WatchCommandServer/model`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera.
+
+## `WatchCommandServer/notServingReply`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor static let notServingReply: Data
+```
+
+The reply to send when no camera screen serves the watch: the app was started in the
+background, or its camera screen isn't shown. It says the camera isn't running.
+
+## `WatchCommandServer/reply(to:)`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor func reply(to message: Data) async -> Data
+```
+
+Handles a message from the watch app and returns the reply.
+
+Side effects: a ``WatchCommand/takePhoto(delay:)`` may start the self-timer, take a photo
+and add it to Photos, through the inbox; its result is sent to the watch when the photo
+ends. A ``WatchCommand/cancelTimer`` stops a running countdown.
+
+- Parameter message: The bytes the watch sent.
+- Returns: The encoded ``PhoneUpdate``: the status after the command, with a result when
+  there is one (``WatchResult/notUnderstood`` for a message this version can't read).
+
+## `WatchCommandServer/sendStatusChanges()`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor func sendStatusChanges() async
+```
+
+Sends the status to the watch each time it changes, while the watch app is reachable,
+until the calling task is cancelled. Run it while the camera screen is shown.
+
+## `WatchCommandServer/undeliveredResult`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor var undeliveredResult: WatchResult? { get }
+```
+
+A result that couldn't be delivered because the watch app wasn't reachable. It goes with
+the next reply, then is cleared.
+
+## `WatchDelay`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchDelay
+```
+
+The delays the watch offers before the photo: none, or the self-timer's 3 and 10 seconds
+(issue #63, "Scope").
+
+## `WatchDelay/none`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case none
+```
+
+No delay: the photo is taken at once.
+
+## `WatchDelay/seconds`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+var seconds: Int { get }
+```
+
+The delay, in seconds.
+
+## `WatchDelay/tenSeconds`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case tenSeconds
+```
+
+Ten seconds.
+
+## `WatchDelay/threeSeconds`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case threeSeconds
+```
+
+Three seconds.
+
+## `WatchLink`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor protocol WatchLink : AnyObject
+```
+
+The iPhone side's link to the watch app: sends a message to it while it is reachable.
+
+The app implements it with WatchConnectivity (`WCSession.sendMessageData`); tests pass a
+fake. Only the bytes of ``PhoneUpdate`` values cross it.
+
+## `WatchLink/isWatchReachable`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor var isWatchReachable: Bool { get }
+```
+
+Whether the watch app can get a message now: it is open on a paired watch
+(`WCSession.isReachable`).
+
+## `WatchLink/send(_:)`
+
+public, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor func send(_ message: Data) async -> Bool
+```
+
+Sends a message to the watch app.
+
+- Parameter message: The encoded ``PhoneUpdate``.
+- Returns: Whether the message was delivered.
+
+## `WatchMessageCoding`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchMessageCoding
+```
+
+Turns ``WatchCommand`` and ``PhoneUpdate`` values into bytes for WatchConnectivity
+(`WCSession.sendMessageData(_:replyHandler:errorHandler:)`) and back.
+
+Each message is JSON with a protocol version. A message of another version, or one that
+doesn't decode, throws ``WatchMessageError``, so the receiver can answer
+``WatchResult/notUnderstood`` instead of guessing.
+
+## `WatchMessageCoding/decodeCommand(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+static func decodeCommand(_ data: Data) throws(WatchMessageError) -> WatchCommand
+```
+
+Decodes a command the watch sent.
+
+- Parameter data: The bytes received.
+- Returns: The command.
+- Throws: ``WatchMessageError`` when the bytes aren't a command of this version.
+
+## `WatchMessageCoding/decodeUpdate(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+static func decodeUpdate(_ data: Data) throws(WatchMessageError) -> PhoneUpdate
+```
+
+Decodes an update the phone sent.
+
+- Parameter data: The bytes received.
+- Returns: The update.
+- Throws: ``WatchMessageError`` when the bytes aren't an update of this version.
+
+## `WatchMessageCoding/encode(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+static func encode(_ command: WatchCommand) -> Data
+```
+
+Encodes a command from the watch.
+
+- Parameter command: The command.
+- Returns: The bytes to send.
+
+## `WatchMessageCoding/encode(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+static func encode(_ update: PhoneUpdate) -> Data
+```
+
+Encodes an update from the phone.
+
+- Parameter update: The update.
+- Returns: The bytes to send.
+
+## `WatchMessageCoding/version`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+static let version: Int
+```
+
+The protocol version both apps must share. Increase it when a message changes in a way an
+older app can't read.
+
+## `WatchMessageError`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchMessageError
+```
+
+Why a watch message couldn't be decoded.
+
+## `WatchMessageError/otherVersion(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case otherVersion(Int)
+```
+
+The message is of another protocol version, given.
+
+## `WatchMessageError/unreadable`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case unreadable
+```
+
+The bytes aren't a message this version knows.
+
+## `WatchRemote`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor final class WatchRemote
+```
+
+The Apple Watch app's model (issue #63): the shutter and the delay, and the phone camera's
+status and the last result.
+
+The watch takes no photos and runs no timer of its own: it sends ``WatchCommand`` values to
+the iPhone app, whose camera does the capture and whose self-timer counts down. The watch
+shows what the phone reports. An interface reads ``display``, ``lastResult`` and
+``delay``, and calls ``takePhoto()``, ``cancelTimer()`` and ``refresh()``.
+
+```swift
+let remote = WatchRemote(link: session)
+await remote.refresh()          // when the app opens
+remote.delay = .threeSeconds
+await remote.takePhoto()        // display: .waiting, then .countingDown(3), …
+remote.lastResult               // .saved(isSigned: true)
+```
+
+## `WatchRemote/Display`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+enum Display
+```
+
+What the watch shows, from the link and the phone's status.
+
+## `WatchRemote/Display/connecting`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+case connecting
+```
+
+The watch hasn't heard from the phone yet. Show a neutral placeholder.
+
+## `WatchRemote/Display/countingDown(secondsLeft:)`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+case countingDown(secondsLeft: Int)
+```
+
+The phone's self-timer runs, with the seconds left. Show, announce and offer cancel.
+
+## `WatchRemote/Display/phoneNotReachable`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+case phoneNotReachable
+```
+
+The iPhone app can't be reached: the phone is away, off or locked out of the link.
+Say to keep the phone nearby with the app open.
+
+## `WatchRemote/Display/ready`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+case ready
+```
+
+The phone's camera is ready. Enable the shutter.
+
+## `WatchRemote/Display/unavailable(_:)`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+case unavailable(WatchCameraProblem)
+```
+
+The phone's camera can't take a photo now. Say why.
+
+## `WatchRemote/Display/waiting`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+case waiting
+```
+
+A photo was asked for and the phone is taking or saving one, or is busy with
+another. Keep the shutter disabled.
+
+## `WatchRemote/canCancelTimer`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var canCancelTimer: Bool { get }
+```
+
+Whether a countdown runs that the watch can cancel.
+
+## `WatchRemote/canTakePhoto`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var canTakePhoto: Bool { get }
+```
+
+Whether the shutter is enabled: the phone's camera is ready and no photo is awaited.
+
+## `WatchRemote/cancelTimer()`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor func cancelTimer() async
+```
+
+Asks the phone to stop its countdown, so no photo is taken. Does nothing unless
+``canCancelTimer``.
+
+## `WatchRemote/delay`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var delay: WatchDelay { get set }
+```
+
+The delay for the next photo. The watch keeps it only while its app runs.
+
+## `WatchRemote/display`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var display: Display { get }
+```
+
+What the watch shows now.
+
+## `WatchRemote/init(link:)`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor init(link: any PhoneLink)
+```
+
+Creates a model that hasn't reached the phone yet.
+
+- Parameter link: The link to the iPhone app.
+
+## `WatchRemote/isAwaitingResult`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var isAwaitingResult: Bool { get set }
+```
+
+Whether a photo was asked for and its result hasn't arrived yet.
+
+## `WatchRemote/lastResult`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var lastResult: WatchResult? { get set }
+```
+
+How the last photo the watch asked for ended, or `nil` before one ends. Cleared when the
+next photo is asked for.
+
+## `WatchRemote/link`
+
+internal, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor let link: any PhoneLink
+```
+
+The link to the iPhone app.
+
+## `WatchRemote/reachabilityChanged(isReachable:)`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor func reachabilityChanged(isReachable: Bool) async
+```
+
+Follows a change in whether the phone can be reached (`WCSession` reachability).
+
+- Parameter isReachable: Whether the phone is reachable now.
+
+## `WatchRemote/receive(_:)`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor func receive(_ message: Data)
+```
+
+Applies a message the phone sent without being asked: a status change or a result.
+
+- Parameter message: The bytes received.
+
+## `WatchRemote/refresh()`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor func refresh() async
+```
+
+Asks the phone for its status. Call it when the watch app opens or becomes active, and
+when the phone becomes reachable.
+
+## `WatchRemote/status`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var status: WatchStatus? { get set }
+```
+
+The phone's last reported status, or `nil` before the first reply.
+
+## `WatchRemote/takePhoto()`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor func takePhoto() async
+```
+
+Asks the phone to take a photo after ``delay``. Does nothing unless ``canTakePhoto``.
+
+Side effects on the phone: its self-timer may start, and a photo is taken and added to
+Photos with the phone's current settings. The result arrives in ``lastResult``.
+
+## `WatchResult`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchResult
+```
+
+How a photo the watch asked for ended. Like ``ShortcutOutcome``, it says only whether photos
+were saved and signed, never image data or metadata.
+
+## `WatchResult/busy`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case busy
+```
+
+A photo, countdown, burst or series was already in progress. Say so; nothing changed.
+
+## `WatchResult/cancelled`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case cancelled
+```
+
+The countdown was cancelled, on the watch or on the phone. Say no photo was taken.
+
+## `WatchResult/init(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+init(_ outcome: ShortcutOutcome)
+```
+
+The watch's result for how a photo request through the ``ShortcutInbox`` ended.
+
+The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
+interval series) can't happen; they would be reported as not saved.
+
+- Parameter outcome: How the request ended.
+
+## `WatchResult/init(refusing:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+init?(refusing status: WatchStatus)
+```
+
+The result of asking for a photo while the camera isn't ready, or `nil` when it is.
+
+- Parameter status: The camera's status when the request arrived.
+
+## `WatchResult/notSaved`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case notSaved
+```
+
+The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved and that
+the phone shows why.
+
+## `WatchResult/notTaken(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case notTaken(WatchCameraProblem)
+```
+
+Nothing was taken because the camera can't take a photo now. Say why.
+
+## `WatchResult/notUnderstood`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case notUnderstood
+```
+
+The other app sent a message this version can't read, because the two apps are different
+versions. Say to update the app on both devices.
+
+## `WatchResult/saved(isSigned:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case saved(isSigned: Bool)
+```
+
+One photo was saved. Say "Saved and signed", or "Saved, not signed" when `isSigned` is
+false.
+
+## `WatchResult/savedSeveral(allSigned:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case savedSeveral(allSigned: Bool)
+```
+
+An exposure bracket was saved, because bracketing is on in the phone's manual controls.
+Say "Photos saved and signed", or that not all of them are signed.
+
+## `WatchStatus`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+enum WatchStatus
+```
+
+What the phone's camera is doing, as the watch shows it.
+
+## `WatchStatus/busy`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case busy
+```
+
+A photo, burst or series is being taken or saved. Keep the shutter disabled.
+
+## `WatchStatus/countingDown(secondsLeft:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case countingDown(secondsLeft: Int)
+```
+
+The self-timer runs. Show and announce the seconds left, and offer to cancel.
+
+## `WatchStatus/ready`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case ready
+```
+
+The camera is running and a photo can be taken. Show the shutter enabled.
+
+## `WatchStatus/unavailable(_:)`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+case unavailable(WatchCameraProblem)
+```
+
+The camera can't take a photo now. Say why, from the problem.
 
 ## `WhiteBalance`
 
