@@ -276,7 +276,7 @@ enum NightStyle {
     /// The tint of a switch's track and a slider's filled track in night mode, before the
     /// multiply: a dark gray, shown as a dark red, so the knob or thumb (white, shown as the full
     /// red) stands out from the track by at least 3:1 (WCAG 2.2, 1.4.11). Applied by
-    /// ``NightModeSwitchStyle`` and ``View/nightModeTrackTint()``.
+    /// ``NightModeSwitchStyle`` and `nightModeTrackTint()`.
     static var trackTint: Color { Color(white: 0.3) }
 }
 
@@ -285,12 +285,14 @@ enum NightStyle {
 /// night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
 /// with its own style keeps that style.
 struct NightModeSwitchStyle: ToggleStyle {
+    /// Creates the style. It holds no state.
+    init() {}
+
     /// The toggle, drawn by the system.
     ///
     /// - Parameter configuration: The toggle's label and state.
     func makeBody(configuration: Configuration) -> some View {
         Toggle(configuration)
-            .toggleStyle(.automatic)
             .nightModeTrackTint()
     }
 }
