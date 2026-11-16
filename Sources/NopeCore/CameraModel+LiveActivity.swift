@@ -97,7 +97,7 @@ extension CameraModel {
         outcome.signing = signingOfSavedPhotos
         switch result.end {
         case .failed: outcome.phase = .failed
-        case .limitReached: outcome.phase = .finished
+        case .limitReached, .countReached: outcome.phase = .finished
         case .stopped: outcome.phase = finishesWhenStopped ? .finished : .stopped
         case .storageFull, .cameraStopped, .batteryLow: outcome.phase = .stopped
         }

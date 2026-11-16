@@ -255,7 +255,8 @@ struct LiveActivityTests {
         #expect(model.liveActivityOutcome(after: burst).phase == .stopped)
         model.captureStatus = .savedBurst([signed, signed, signed])
         for (end, phase) in [
-            (BurstEnd.stopped, Content.Phase.finished), (.limitReached, .finished), (.storageFull, .stopped),
+            (BurstEnd.stopped, Content.Phase.finished), (.limitReached, .finished), (.countReached, .finished),
+            (.storageFull, .stopped),
             (.cameraStopped, .stopped), (.batteryLow, .stopped),
         ] {
             model.drive.beginBurst()
