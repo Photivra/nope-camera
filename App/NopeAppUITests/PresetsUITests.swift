@@ -60,6 +60,19 @@ extension NopeAppUITests {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Factory Defaults")).firstMatch
     }
 
+    /// Scrolls Settings back to its first row, Presets, and opens it.
+    @MainActor
+    func openPresetsRow(_ app: XCUIApplication) {
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch
+        var swipes = 0
+        while !(row.exists && row.isHittable) && swipes < 8 {
+            app.swipeDown()
+            swipes += 1
+        }
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Presets"].waitForExistence(timeout: 5))
+    }
+
     /// Goes back one screen.
     @MainActor
     func backOneScreen(_ app: XCUIApplication) {
@@ -78,9 +91,7 @@ extension NopeAppUITests {
         let mirror = mirrorSwitch(app)
         mirror.switches.firstMatch.tap()
         XCTAssertEqual(mirror.value as? String, "1")
-        app.swipeDown()
-        app.swipeDown()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch.tap()
+        openPresetsRow(app)
         tapListButton(app, "Save Current Settings")
         XCTAssertTrue(app.textFields.firstMatch.waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
@@ -97,25 +108,19 @@ extension NopeAppUITests {
         XCTAssertEqual(mirrorSwitch(app).value as? String, "0")
 
         // The preset turns it on again, and Undo turns it back off.
-        app.swipeDown()
-        app.swipeDown()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch.tap()
+        openPresetsRow(app)
         app.buttons["Selfie"].tap()
         XCTAssertTrue(element(app, containing: "“Selfie” applied.").waitForExistence(timeout: 5))
         backOneScreen(app)
         XCTAssertEqual(mirrorSwitch(app).value as? String, "1")
-        app.swipeDown()
-        app.swipeDown()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch.tap()
+        openPresetsRow(app)
         app.buttons["Undo"].tap()
         XCTAssertFalse(app.buttons["Undo"].waitForExistence(timeout: 2))
         backOneScreen(app)
         XCTAssertEqual(mirrorSwitch(app).value as? String, "0")
 
         // Rename, then delete.
-        app.swipeDown()
-        app.swipeDown()
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch.tap()
+        openPresetsRow(app)
         tapListButton(app, "Rename or Delete")
         XCTAssertTrue(app.navigationBars["Rename or Delete"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
