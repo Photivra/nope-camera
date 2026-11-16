@@ -528,8 +528,9 @@ off. An empty field says nothing about the date, camera or software. With Standa
 (`MetadataPlan.unknownDateTime`), which `exiftool -validate` accepts where it reports the empty
 text as an invalid date; it holds no date either. The read-back accepts each of the four when its
 switch is off only if it is that value (empty: one NUL, a count of 0, only NULs, or the tag left
-out; or exactly the blank date): which encoding AVFoundation writes is a device check below; any
-other text fails. HEIF
+out; and for `DateTime` with Standard File Tags on, any blank date: at most 19 characters, each a
+blank or a colon, with or without NUL padding): which encoding AVFoundation writes is a device
+check below; a digit or any other text fails. HEIF
 and JPEG don't need them, so they leave them out when the switch is off. `UniqueCameraModel`
 keeps its "Generic camera" value.
 
