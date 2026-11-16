@@ -241,3 +241,36 @@ struct DriveTextTests {
         #expect(DriveText.systemImage(for: .burst) != DriveText.systemImage(for: .single))
     }
 }
+
+/// Night mode's colors after the red multiply meet WCAG 2.2 contrast (issue #61).
+@MainActor
+struct NightStyleContrastTests {
+    /// The WCAG 2.2 relative luminance of a color after night mode's multiply by pure red: only
+    /// its red channel is left.
+    static func nightLuminance(_ color: Color) -> Double {
+        0.2126 * Double(color.resolve(in: EnvironmentValues()).linearRed)
+    }
+
+    /// The WCAG 2.2 contrast ratio of two relative luminances.
+    static func contrast(_ first: Double, _ second: Double) -> Double {
+        (max(first, second) + 0.05) / (min(first, second) + 0.05)
+    }
+
+    /// Tinted text and icons (a back button, a checkmark) are the full red, at least 4.5:1 on
+    /// black; a mid gray tint showed as about 1.9:1.
+    @Test func tintedTextAndIconsAreTheFullRed() {
+        let tint = Self.nightLuminance(NightStyle.controlTint)
+        #expect(tint == Self.nightLuminance(.white))
+        #expect(Self.contrast(tint, 0) >= 4.5)
+        #expect(Self.contrast(Self.nightLuminance(Color(white: 0.5)), 0) < 3)
+    }
+
+    /// A switch's knob and a slider's thumb (white, shown as the full red) stand out from their
+    /// filled track by at least 3:1, as WCAG 2.2 asks of a control's parts (1.4.11).
+    @Test func knobsStandOutFromTheirTracks() {
+        let knob = Self.nightLuminance(.white)
+        let track = Self.nightLuminance(NightStyle.trackTint)
+        #expect(Self.contrast(knob, track) >= 3)
+        #expect(track > 0, "the track still shows as a dark red")
+    }
+}

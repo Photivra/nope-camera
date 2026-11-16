@@ -355,6 +355,7 @@ struct AutoExposureDial: View {
                 Text("Exposure", bundle: .module, comment: "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.")
             }
             .accessibilityValue(Text(verbatim: valueText))
+            .nightModeTrackTint()
         }
     }
 

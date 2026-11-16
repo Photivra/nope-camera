@@ -389,6 +389,7 @@ struct ComparisonPicturesView: View {
                 Text("Divider", bundle: .module, comment: "Name of the slider in the compare view that moves the divider between nope.'s photo and the phone-processed version.")
             }
             .accessibilityValue(splitValue)
+            .nightModeTrackTint()
             HStack(spacing: CameraStyle.targetSpacing) {
                 Button {
                     setZoom(zoom - Self.zoomStep)
