@@ -50,7 +50,7 @@ public protocol ManualCaptureBackend: CaptureBackend {
 /// except ``setEnabled(_:)``.
 public enum ManualControlIntent: Equatable, Sendable {
     /// Turn manual controls on or off: the "Manual controls" option in Settings. Turning them
-    /// off returns everything to automatic and stops an interval series.
+    /// off returns everything to automatic; a running interval series continues in full auto.
     case setEnabled(Bool)
 
     /// Set a control to a value, switching it to Manual. Units: EV for exposure compensation,
@@ -94,7 +94,8 @@ public enum ManualControlIntent: Equatable, Sendable {
     /// Choose the interval and photo count of the next interval series.
     case setInterval(IntervalSettings)
 
-    /// Start an interval series with the chosen settings.
+    /// Start an interval series with the chosen settings. Works in full auto too: each photo is
+    /// then a full-auto photo; with manual controls on, each uses the manual settings.
     case startInterval
 
     /// Stop a running interval series.

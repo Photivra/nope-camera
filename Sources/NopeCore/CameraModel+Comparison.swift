@@ -8,7 +8,7 @@ extension CameraModel {
     /// interface shows "Hold the camera steady or use a tripod. Two photos are taken, a moment
     /// apart." while it is `true`.
     public var comparisonAppliesToNextPhoto: Bool {
-        comparison.isOn && drive.mode != .burst && !astro.isOn && manual.intervalProgress == nil
+        comparison.isOn && drive.mode != .burst && drive.mode != .interval && !astro.isOn && manual.intervalProgress == nil
             && manual.bracketFrames() == nil
     }
 

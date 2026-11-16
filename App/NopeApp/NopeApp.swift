@@ -162,7 +162,7 @@ struct NopeApp: App {
         .onChange(of: settings.showsLiveActivity, initial: true) { _, isOn in liveActivities.isEnabled = isOn }
         .onChange(of: settings.isNightModeOn, initial: true) { _, isOn in liveActivities.isNightMode = isOn }
         // Siri and Shortcuts requests are performed while the camera screen is shown.
-        .task { await model.serveShortcuts(from: Self.shortcuts) }
+        .task { await model.serveShortcuts(from: Self.shortcuts, settings: settings) }
         // The Apple Watch app's shutter and status (issue #63), while the camera screen is shown.
         .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG

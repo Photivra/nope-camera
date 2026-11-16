@@ -106,6 +106,9 @@ struct CameraReadyView: View {
     /// Whether the astro helper's settings are shown (issue #60).
     @State private var showsAstroSettings = false
 
+    /// Whether the Interval sheet is shown (the Drive menu's Interval Shooting).
+    @State private var showsIntervalSettings = false
+
     /// The viewfinder's size, to turn a touch into a point in the picture.
     @State private var viewfinderSize = CGSize.zero
 
@@ -127,6 +130,7 @@ struct CameraReadyView: View {
     private var context: CameraControlContext {
         var context = CameraControlContext(model: model, settings: settings)
         context.showsExposureDial = $showsExposureDial
+        context.showsIntervalSettings = $showsIntervalSettings
         return context
     }
 
@@ -199,7 +203,14 @@ struct CameraReadyView: View {
                 .presentationSizing(.page)
         }
         .onChange(of: model.astro.isOn) { _, isOn in if !isOn { showsAstroSettings = false } }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        // A sheet with an opaque background on iPad too, as the astro settings above.
+        .sheet(isPresented: $showsIntervalSettings) {
+            IntervalSheet(model: model)
+                .nightModeStyle(isNightMode)
+                .presentationBackground(.background)
+                .presentationDetents([.large])
+        }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
         .onChange(of: model.captureStatus) { _, status in record(status) }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil

@@ -12,6 +12,7 @@
 2 NopeAppUITests/testControlGridPanelAndAllAuto 56
 2 NopeAppUITests/testDeclinedLocationStaysOffAndSaysHowToAllowIt 37
 2 NopeAppUITests/testDeviceWithoutRAWAtTheLargestTextSize 15
+2 NopeAppUITests/testIntervalShootingFromTheDriveMenuInFullAuto 40 est
 2 NopeAppUITests/testLightStaysOnWhileTakingPhotosAndTurnsOffFromItsPill 49
 2 NopeAppUITests/testLocationStatesAtTheLargestTextSize 35
 2 NopeAppUITests/testPhotoSizeOfALensWithoutRAW 56 est
@@ -25,6 +26,7 @@
 3 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 48
 3 NopeAppUITests/testDeniedOffersOpenSettings 19
 3 NopeAppUITests/testFileOptionsChangeAndRestore 43
+3 NopeAppUITests/testIntervalSheetAtTheLargestTextSizeAndRightToLeft 50 est
 3 NopeAppUITests/testNightModeCameraWithPhotoWarningAndLight 65
 3 NopeAppUITests/testPhotoSizeAtTheLargestTextSize 36 est
 3 NopeAppUITests/testRedViewfinderOption 24
@@ -49,6 +51,7 @@
 4 OverlayUITests/testFlatLevelSaysItPointsDown 9
 4 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 46
 4 OverlayUITests/testOverlaySettingsAndProTools 65
+4 ShortcutUITests/testABracketIsTakenOnceInFullAuto 14 est
 5 NopeAppUITests/testCompareViewAtTheLargestTextSizeAndRightToLeft 82
 5 NopeAppUITests/testDimLightSaysHoldItSteady 20
 5 NopeAppUITests/testFirstRunAtTheLargestTextSizeAndRightToLeft 145

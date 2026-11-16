@@ -345,6 +345,92 @@
         }
       }
     },
+    "Take a bracket with ${applicationName}": {
+      "comment": "A Siri phrase that takes an exposure bracket (several separate photos at different exposures) with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Nimm eine Belichtungsreihe mit ${applicationName} auf"
+            ]
+          }
+        },
+        "es": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Toma un horquillado con ${applicationName}"
+            ]
+          }
+        },
+        "fr": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Prends un bracketing avec ${applicationName}"
+            ]
+          }
+        },
+        "it": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Scatta un bracketing con ${applicationName}"
+            ]
+          }
+        },
+        "ja": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}でブラケット撮影して"
+            ]
+          }
+        },
+        "ko": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "${applicationName}로 브라케팅 촬영해 줘"
+            ]
+          }
+        },
+        "nl": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Maak een bracketing met ${applicationName}"
+            ]
+          }
+        },
+        "pt-BR": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "Tire um bracketing com o ${applicationName}"
+            ]
+          }
+        },
+        "zh-Hans": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}进行包围曝光拍摄"
+            ]
+          }
+        },
+        "zh-Hant": {
+          "stringSet": {
+            "state": "needs_review",
+            "values": [
+              "用${applicationName}進行包圍曝光拍攝"
+            ]
+          }
+        }
+      }
+    },
     "Take a photo in ${delay} with ${applicationName}": {
       "comment": "A Siri phrase that takes a photo after a delay. ${delay} is \"3 Seconds\" or \"10 Seconds\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
       "extractionState": "manual",

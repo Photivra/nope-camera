@@ -1192,6 +1192,84 @@ static let steps: [Double]
 
 The steps between frames the app offers, in EV: 1/3, 2/3, 1 and 2 stops.
 
+## `BracketShortcut`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+struct BracketShortcut
+```
+
+The parameters of a "Take Bracket" request: the frames, the step between them, the delay and
+the lens.
+
+The bracket is taken once, through the same bracket path as the one in Pro Tools, whether or
+not manual controls are on; the person's own bracket setting doesn't change. Values are moved
+to the nearest the app offers (``BracketSettings/frameCounts`` and ``BracketSettings/steps``);
+whether the lens can take it is checked when it is taken.
+
+## `BracketShortcut/bracket`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let bracket: BracketSettings
+```
+
+The frames and the step, each one the app offers.
+
+## `BracketShortcut/delaySeconds`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let delaySeconds: Int
+```
+
+The delay before the bracket, in seconds, from 0 to ``PhotoShortcut/maximumDelaySeconds``.
+
+## `BracketShortcut/init(frameCount:step:delaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(frameCount: Int, step: Double, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+```
+
+Creates a request.
+
+- Parameters:
+  - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
+  - step: The exposure difference between neighboring frames in EV (stops), moved to the
+    nearest of ``BracketSettings/steps``.
+  - delaySeconds: The delay in seconds, kept within 0 to ``PhotoShortcut/maximumDelaySeconds``.
+  - lensKind: The kind of lens, or `nil` for the lens already selected.
+
+## `BracketShortcut/lensKind`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let lensKind: Lens.Kind?
+```
+
+The kind of lens to use, or `nil` for the lens already selected.
+
+## `BracketShortcut/nearest(_:in:)`
+
+internal, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+static func nearest<Value>(_ value: Value, in values: [Value]) -> Value where Value : Comparable, Value : Numeric
+```
+
+The value in a list closest to a value: the first of two equally close ones.
+
+- Parameters:
+  - value: The value.
+  - values: The values offered; not empty.
+- Returns: The closest.
+
 ## `BurstEnd`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -1631,6 +1709,18 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 The hardware the model asks for permission, capabilities and photos.
 
+## `CameraModel/bracketReadingTimeoutSeconds`
+
+internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
+
+```swift
+@MainActor static let bracketReadingTimeoutSeconds: Double
+```
+
+How long a bracket request waits for the camera's first exposure reading, which the
+bracket's frames are planned around, in seconds. An assumption, to be confirmed on a
+device: the camera reports readings several times a second once it runs.
+
 ## `CameraModel/canCapture`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -1650,8 +1740,8 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 @MainActor var canPressShutter: Bool { get }
 ```
 
-Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst
-or astro run runs, which pressing the shutter stops.
+Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
+interval series or astro run runs, which pressing the shutter stops.
 
 ## `CameraModel/canUseAstro`
 
@@ -1675,18 +1765,23 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The device's capabilities while ``state`` is ``CameraState/ready(_:)``, otherwise `nil`.
 
-## `CameraModel/capture()`
+## `CameraModel/capture(onceBracket:)`
 
 internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor func capture() async
+@MainActor func capture(onceBracket: BracketSettings? = nil) async
 ```
 
 Takes one photo with the selected lens, if the camera can capture now.
 
 A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
 camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
+
+- Parameter onceBracket: A bracket to take this time only, through the same bracket path
+  as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
+  Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
+  first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
 
 ## `CameraModel/captureFormat`
 
@@ -2005,12 +2100,12 @@ The outcome a capture status reports.
 - Parameter status: The status after the photo.
 - Returns: The outcome.
 
-## `CameraModel/perform(_:inbox:)`
+## `CameraModel/perform(_:inbox:settings:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 
 ```swift
-@MainActor func perform(_ request: ShortcutRequest, inbox: ShortcutInbox) async -> ShortcutOutcome
+@MainActor func perform(_ request: ShortcutRequest, inbox: ShortcutInbox, settings: NopeSettings?) async -> ShortcutOutcome
 ```
 
 Performs one request.
@@ -2018,6 +2113,7 @@ Performs one request.
 - Parameters:
   - request: What was asked for.
   - inbox: The inbox, for its waits and timeouts.
+  - settings: The person's settings, or `nil`.
 - Returns: How it ended.
 
 ## `CameraModel/photoSizes`
@@ -2050,9 +2146,9 @@ internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 @MainActor func pressShutter() async
 ```
 
-What the shutter does: stops a running countdown or burst, or else applies the drive mode:
-one photo, the self-timer, or a burst. While the astro helper is on, it starts or stops
-an astro run instead (``AstroModel``).
+What the shutter does: stops a running countdown, burst or interval series, or else
+applies the drive mode: one photo, the self-timer, a burst or an interval series. While
+the astro helper is on, it starts or stops an astro run instead (``AstroModel``).
 
 ## `CameraModel/previewSource`
 
@@ -2150,12 +2246,12 @@ Side effects: ``CameraIntent/requestPermission`` may show the system camera prom
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
 
-## `CameraModel/serveShortcuts(from:)`
+## `CameraModel/serveShortcuts(from:settings:)`
 
 public, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 
 ```swift
-@MainActor func serveShortcuts(from inbox: ShortcutInbox) async
+@MainActor func serveShortcuts(from inbox: ShortcutInbox, settings: NopeSettings? = nil) async
 ```
 
 Performs each request from the inbox in turn, until the calling task is cancelled. Run it
@@ -2164,7 +2260,12 @@ for as long as the camera screen is shown, for example in a SwiftUI `.task`.
 Side effects: as ``CameraIntent/capture`` and ``CameraIntent/selectLens(_:)``; a request
 may switch the lens, start the self-timer, take a photo and add it to Photos.
 
-- Parameter inbox: Where the app's App Intents leave their requests.
+- Parameters:
+  - inbox: Where the app's App Intents leave their requests.
+  - settings: The person's settings, for requests that change a stored setting of a lens
+    (``ShortcutRequest/setPhotoSize(_:)``), or `nil` when the interface stores none; such
+    a request then says the lens offers no choice. The interface applies the changed
+    setting to the camera, as it does for its own settings screen.
 
 ## `CameraModel/sessionStatus`
 
@@ -2177,21 +2278,21 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the camera is running, and if not, why. Meaningful while ``state`` is
 ``CameraState/ready(_:)``.
 
-## `CameraModel/startTimer(seconds:frames:)`
+## `CameraModel/startTimer(seconds:shot:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func startTimer(seconds: Int, frames: Int = 1)
+@MainActor func startTimer(seconds: Int, shot: (@MainActor () async -> Void)? = nil)
 ```
 
-Starts the self-timer, which takes one photo, or a burst, when it reaches zero. Ignored
-while a photo can't be taken or a countdown or burst runs.
+Starts the self-timer, which takes one photo when it reaches zero, or what `shot` takes.
+Ignored while a photo can't be taken or a countdown or burst runs.
 
 - Parameters:
   - seconds: The delay, in seconds.
-  - frames: How many photos at zero: 1 for one photo, more for a burst of that many
-    frames (a Siri or Shortcuts request with a count, issue #62).
+  - shot: What to take at zero instead of one photo, such as the burst or bracket a Siri
+    or Shortcuts request asked for (issue #62), or `nil` for one photo.
 
 ## `CameraModel/state`
 
@@ -5419,8 +5520,8 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 enum DriveMode
 ```
 
-What one press of the shutter does: take one photo, start the self-timer, or take a burst
-(issue #68, "Drive"). Single is the default.
+What one press of the shutter does: take one photo, start the self-timer, take a burst, or
+start an interval series (issue #68, "Drive"). Single is the default.
 
 ## `DriveMode/allCases`
 
@@ -5430,7 +5531,7 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 static let allCases: [DriveMode]
 ```
 
-Every mode, in the order an interface lists them: single, 3 s, 10 s, burst.
+Every mode, in the order an interface lists them: single, 3 s, 10 s, burst, interval.
 
 ## `DriveMode/burst`
 
@@ -5441,6 +5542,18 @@ case burst
 ```
 
 A rapid run of single, unprocessed frames, each saved as its own photo (issue #46).
+
+## `DriveMode/interval`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case interval
+```
+
+An interval series (issue #48): separate photos at a fixed interval, with the interval
+and count chosen with ``ManualControlIntent/setInterval(_:)``
+(``ManualControlsModel/interval``). It works in full auto and with manual controls on.
 
 ## `DriveMode/single`
 
@@ -6094,6 +6207,48 @@ let width: Int
 ```
 
 The number of columns.
+
+## `FocusRangeChoice`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum FocusRangeChoice
+```
+
+The autofocus range a "Set Focus Range" request asks for. The camera has one range
+restriction (`AVCaptureDevice.autoFocusRangeRestriction`), so Close-Up and Far Focus exclude
+each other.
+
+## `FocusRangeChoice/closeUp`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case closeUp
+```
+
+Close-Up: autofocus limited to near subjects (``AutoControlIntent/setNearFocusLimit(_:)``).
+
+## `FocusRangeChoice/far`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case far
+```
+
+Far Focus: autofocus limited to far subjects (``AutoControlIntent/setFarFocusLimit(_:)``).
+
+## `FocusRangeChoice/unlimited`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case unlimited
+```
+
+No limit: autofocus searches the whole range, the default.
 
 ## `FocusRangeReading`
 
@@ -10520,7 +10675,7 @@ case setEnabled(Bool)
 ```
 
 Turn manual controls on or off: the "Manual controls" option in Settings. Turning them
-off returns everything to automatic and stops an interval series.
+off returns everything to automatic; a running interval series continues in full auto.
 
 ## `ManualControlIntent/setExposureLock(_:)`
 
@@ -10614,7 +10769,8 @@ public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
 case startInterval
 ```
 
-Start an interval series with the chosen settings.
+Start an interval series with the chosen settings. Works in full auto too: each photo is
+then a full-auto photo; with manual controls on, each uses the manual settings.
 
 ## `ManualControlIntent/step(_:by:)`
 
@@ -10749,6 +10905,24 @@ yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that does
 The base exposure is the person's ISO and shutter where set, otherwise the camera's
 reading, which already includes exposure compensation.
 
+## `ManualControlsModel/bracketFrames(once:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func bracketFrames(once bracket: BracketSettings) -> [BracketFrame]?
+```
+
+The frames of a bracket taken once, for a Siri or Shortcuts request (issue #62), whether
+or not manual controls are on. It leaves ``bracket`` and every setting as they are.
+
+The base exposure is the person's ISO and shutter where set (only while manual controls
+are on; otherwise the settings are automatic), otherwise the camera's last reading.
+
+- Parameter bracket: The bracket.
+- Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
+  camera hasn't reported an exposure yet.
+
 ## `ManualControlsModel/canAdjustExposureCompensation`
 
 public, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
@@ -10758,6 +10932,20 @@ public, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 ```
 
 Whether the selected lens can set exposure compensation now.
+
+## `ManualControlsModel/canBracket(_:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func canBracket(_ bracket: BracketSettings) -> Bool
+```
+
+Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
+frame count is one ``bracketFrameCounts`` offers, and the step is one of
+``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+
+- Parameter bracket: The bracket.
 
 ## `ManualControlsModel/canLockExposure`
 
@@ -10931,7 +11119,9 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Handles one intent. ``CameraModel/send(_:)`` calls it.
 
-Settings intents and starting a series have no effect while manual controls are off.
+Settings intents have no effect while manual controls are off. Interval shooting works
+in full auto too (each photo is then a full-auto photo), so choosing, starting and
+stopping a series always applies.
 
 - Parameters:
   - intent: The intent.
@@ -17514,6 +17704,93 @@ static let rawBytesPerPixel: Double
 
 Bytes a pixel for Bayer RAW.
 
+## `PhotoSizeShortcut`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+struct PhotoSizeShortcut
+```
+
+The parameters of a "Set Photo Size" request: the lens and the size.
+
+## `PhotoSizeShortcut/Size`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum Size
+```
+
+The size, of those the lens offers (``Lens/photoSizeChoices``).
+
+## `PhotoSizeShortcut/Size/largest`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case largest
+```
+
+The largest size the lens offers.
+
+## `PhotoSizeShortcut/Size/standard`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case standard
+```
+
+The lens's default, smallest size (``Lens/defaultPhotoSize``).
+
+## `PhotoSizeShortcut/dimensions(on:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+func dimensions(on lens: Lens) -> PhotoDimensions?
+```
+
+The photo size this request chooses on a lens.
+
+- Parameter lens: The lens.
+- Returns: The size, or `nil` when the lens offers no choice of size.
+
+## `PhotoSizeShortcut/init(lensKind:size:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(lensKind: Lens.Kind? = nil, size: Size)
+```
+
+Creates a request.
+
+- Parameters:
+  - lensKind: The kind of lens, or `nil` for the lens in use.
+  - size: The size.
+
+## `PhotoSizeShortcut/lensKind`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let lensKind: Lens.Kind?
+```
+
+The kind of lens, or `nil` for the lens in use.
+
+## `PhotoSizeShortcut/size`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let size: Size
+```
+
+The size.
+
 ## `PhotoThumbnail`
 
 public, declared in `Sources/NopeCore/PhotoThumbnail.swift`
@@ -18960,7 +19237,7 @@ Hands requests from Siri and Shortcuts (issue #62) to the camera screen, and the
 back.
 
 The app owns one inbox for its lifetime. An App Intent calls ``submit(_:)`` and waits for the
-outcome; the camera screen runs ``CameraModel/serveShortcuts(from:)`` while it is shown, which
+outcome; the camera screen runs ``CameraModel/serveShortcuts(from:settings:)`` while it is shown, which
 takes each request in turn and performs it.
 
 ```swift
@@ -19080,6 +19357,17 @@ How a ``ShortcutRequest`` ended, for Siri or Shortcuts to say.
 It reports only whether photos were saved and signed, never image data or metadata
 (issue #62, "Privacy"). Each case says what an intent should say.
 
+## `ShortcutOutcome/bracketUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case bracketUnavailable
+```
+
+The lens in use can't take the bracket asked for: it has no manual exposure, or takes
+fewer frames in one bracket. Say so; nothing was taken.
+
 ## `ShortcutOutcome/busy`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -19110,6 +19398,26 @@ case cancelled
 ```
 
 The countdown was cancelled on the device, so no photo was taken. Say so.
+
+## `ShortcutOutcome/focusRangeSet(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusRangeSet(FocusRangeChoice)
+```
+
+Autofocus now has this range. Say which.
+
+## `ShortcutOutcome/focusRangeUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusRangeUnavailable
+```
+
+The lens can't limit its autofocus range. Say so; nothing changed.
 
 ## `ShortcutOutcome/intervalStarted`
 
@@ -19182,18 +19490,6 @@ case lightUnavailable
 The light was asked for, but the system didn't allow it (for example while the device is
 hot) or the astro helper keeps it off. Say the light isn't available right now.
 
-## `ShortcutOutcome/needsManualControls`
-
-public, declared in `Sources/NopeCore/ShortcutRequest.swift`
-
-```swift
-case needsManualControls
-```
-
-Interval shooting is part of the manual controls, which are off. Say they can be turned
-on in the app's Settings; the request doesn't turn them on (manual settings are the
-person's to change).
-
 ## `ShortcutOutcome/noIntervalRunning`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -19214,6 +19510,17 @@ case noLight
 
 The lens in use has no light. Say so; nothing changed.
 
+## `ShortcutOutcome/noPhotoSizeChoice`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case noPhotoSizeChoice
+```
+
+The lens offers only one photo size (a lens with Bayer RAW always takes its full-size
+RAW). Say so; nothing changed.
+
 ## `ShortcutOutcome/notSaved(_:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -19224,6 +19531,16 @@ case notSaved(CaptureError)
 
 The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved, and
 that the app shows why.
+
+## `ShortcutOutcome/photoSizeSet`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case photoSizeSet
+```
+
+The lens's photo size is now the one asked for, from the next photo. Say so.
 
 ## `ShortcutOutcome/saved(isSigned:)`
 
@@ -19261,7 +19578,7 @@ point that runs one of the app's App Intents (issue #62).
 
 The app's intents hold no rules of their own (AGENTS.md, "Siri and Shortcuts"): an intent
 turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports the
-``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:)`` performs it with the same intents
+``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:settings:)`` performs it with the same intents
 as the on-screen controls.
 
 ## `ShortcutRequest/outcomeWithoutCameraScreen`
@@ -19290,6 +19607,17 @@ case selectLens(Lens.Kind)
 
 Switch to a lens of this kind, as the lens buttons do.
 
+## `ShortcutRequest/setFocusRange(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case setFocusRange(FocusRangeChoice)
+```
+
+Limit autofocus to near or far subjects, or lift the limit, as Close-Up and Far Focus in
+the quick-controls tray do.
+
 ## `ShortcutRequest/setLight(isOn:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -19299,6 +19627,16 @@ case setLight(isOn: Bool)
 ```
 
 Turn the light (the torch) on or off, as the Light switch in the quick-controls tray does.
+
+## `ShortcutRequest/setPhotoSize(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case setPhotoSize(PhotoSizeShortcut)
+```
+
+Choose the photo size of a lens that offers more than one, as Settings > Photo Size does.
 
 ## `ShortcutRequest/startInterval(_:)`
 
@@ -19319,6 +19657,17 @@ case stopInterval
 ```
 
 Stop the running interval series, as its Stop button does.
+
+## `ShortcutRequest/takeBracket(_:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case takeBracket(BracketShortcut)
+```
+
+Take one exposure bracket, after an optional delay, with an optional lens, without
+changing the bracket chosen in Pro Tools.
 
 ## `ShortcutRequest/takePhoto(_:)`
 
@@ -21274,7 +21623,8 @@ init(_ outcome: ShortcutOutcome)
 The watch's result for how a photo request through the ``ShortcutInbox`` ended.
 
 The watch asks only for a photo, so the outcomes of other requests (a lens, the light, an
-interval series) can't happen; they would be reported as not saved.
+interval series, a bracket, the focus range, a photo size) can't happen; they would be
+reported as not saved.
 
 - Parameter outcome: How the request ended.
 
