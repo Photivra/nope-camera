@@ -100,6 +100,48 @@ extension ImageIOTests {
             }
         }
 
+        /// Every copy size, for HEIF and JPEG: the file opens at the scaled size, passes the
+        /// read-back, and its EXIF pixel dimensions state the scaled size.
+        @Test(arguments: [PhotoFormat.heif, .jpeg])
+        func everyCopySizeOpensAtItsSize(format: PhotoFormat) throws {
+            var settings = MetadataSettings()
+            settings.set(.exposureSettings, isOn: true)
+            let plan = MetadataPlan(settings: settings)
+            let source: [String: Any] = ["{Exif}": ["PixelXDimension": 32, "PixelYDimension": 24, "ISOSpeedRatings": [100]]]
+            for size in OutputSize.allCases {
+                var options = DevelopedFileOptions()
+                options.size = size
+                let encoding = try #require(EncodingSettings(format: format, options: options))
+                #expect(encoding.size == size)
+                let data = try PhotoEncoder.encode(
+                    try testImage(), settings: encoding, properties: plan.properties(for: format, from: source, orientation: 1))
+                let readBack = try ImageIOReadBack().readBack(PhotoFile(format: format, data: data))
+                let violations = MetadataVerifier.violations(
+                    in: readBack, allowlist: plan.allowlist(for: format, signed: false), expectedRawImageData: nil)
+                #expect(violations.isEmpty, "\(size): \(violations)")
+                let imageSource = try #require(CGImageSourceCreateWithData(data as CFData, nil))
+                let image = try #require(CGImageSourceCreateImageAtIndex(imageSource, 0, nil))
+                let expected = size.dimensions(of: PhotoDimensions(width: 32, height: 24))
+                #expect(image.width == expected.width && image.height == expected.height, "\(size)")
+                let properties = try #require(CGImageSourceCopyPropertiesAtIndex(imageSource, 0, nil) as? [String: Any])
+                let exif = try #require(properties["{Exif}"] as? [String: Any])
+                #expect(exif["PixelXDimension"] as? Int == expected.width, "\(size)")
+                #expect(exif["PixelYDimension"] as? Int == expected.height, "\(size)")
+            }
+        }
+
+        @Test func resizingLeavesPropertiesWithoutPixelDimensionsAlone() throws {
+            let image = try testImage()
+            let none: [String: Any] = ["{TIFF}": ["Orientation": 1]]
+            #expect(PhotoEncoder.resized(none, to: image).keys.sorted() == ["{TIFF}"])
+            let other = PhotoEncoder.resized(["{Exif}": ["ISOSpeedRatings": [100]]], to: image)
+            let exif = try #require(other["{Exif}"] as? [String: Any])
+            #expect(exif.keys.sorted() == ["ISOSpeedRatings"])
+            let smaller = try PhotoEncoder.prepare(
+                image, bitsPerComponent: 16, colorSpaceName: CGColorSpace.displayP3, size: PhotoDimensions(width: 16, height: 12))
+            #expect(smaller.width == 16 && smaller.height == 12)
+        }
+
         @Test func theDeveloperUsesTheOptions() async throws {
             var options = DevelopedFileOptions()
             options.heifBitDepth = .eight

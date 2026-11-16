@@ -2,8 +2,8 @@ import Foundation
 
 /// A request that works in full auto as well as with manual controls, wrapped in
 /// ``CameraIntent/auto(_:)``: tap to focus and expose, the focus and exposure lock, exposure
-/// compensation, the Close-Up focus limit, the fast shutter rule, the close-up suggestion and
-/// the focus magnifier.
+/// compensation, the Close-Up and Far Focus limits, face detection, the fast shutter rule, the
+/// close-up suggestion and the focus magnifier.
 ///
 /// None of them changes a manual setting: while a control is set manually, the camera keeps the
 /// person's value, and a tap only aims what is still automatic (issue #56, "Manual controls: up
@@ -35,8 +35,17 @@ public enum AutoControlIntent: Equatable, Sendable {
     /// action and the − and + buttons send ±1).
     case stepExposureCompensation(by: Int)
 
-    /// Limit autofocus to near subjects, or lift the limit (Close-Up).
+    /// Limit autofocus to near subjects, or lift the limit (Close-Up). Turning it on lifts the
+    /// far limit.
     case setNearFocusLimit(Bool)
+
+    /// Limit autofocus to far subjects, or lift the limit (Far Focus, issue #57). Turning it on
+    /// lifts the near limit.
+    case setFarFocusLimit(Bool)
+
+    /// Let faces the camera detects steer autofocus and auto exposure (the system's default), or
+    /// stop them (issue #57). Applies only while focus or exposure is automatic.
+    case setFollowsFaces(Bool)
 
     /// Choose how fast a shutter full auto prefers.
     case setFastShutter(FastShutter)
@@ -100,7 +109,8 @@ public struct FocusTarget: Equatable, Sendable {
 }
 
 /// The automatic aids ``DeviceControls/init(settings:lens:assist:)`` adds to the person's
-/// settings: the tapped point, the near focus limit and the longest auto exposure.
+/// settings: the tapped point, the near or far focus limit, face detection and the longest auto
+/// exposure.
 public struct AssistSettings: Equatable, Sendable {
     /// Where autofocus and auto exposure are aimed, or `nil` for the center.
     public var focusTarget: FocusTarget?
@@ -112,6 +122,13 @@ public struct AssistSettings: Equatable, Sendable {
     /// default.
     public var longestShutter: Double?
 
+    /// Whether autofocus is limited to far subjects. Never on with ``nearFocusLimit``.
+    public var farFocusLimit: Bool
+
+    /// Whether faces the camera detects steer autofocus and auto exposure. `true` by default, the
+    /// system's own behavior (`AVCaptureDevice.isFaceDrivenAutoFocusEnabled`).
+    public var followsFaces: Bool
+
     /// No aids: the camera's defaults.
     public static let none = AssistSettings()
 
@@ -121,10 +138,19 @@ public struct AssistSettings: Equatable, Sendable {
     ///   - focusTarget: The tapped point, or `nil`.
     ///   - nearFocusLimit: Whether autofocus is limited to near subjects.
     ///   - longestShutter: The longest auto exposure in seconds, or `nil`.
-    public init(focusTarget: FocusTarget? = nil, nearFocusLimit: Bool = false, longestShutter: Double? = nil) {
+    ///   - farFocusLimit: Whether autofocus is limited to far subjects. Ignored while
+    ///     `nearFocusLimit` is on.
+    ///   - followsFaces: Whether detected faces steer autofocus and auto exposure. Defaults to
+    ///     `true`.
+    public init(
+        focusTarget: FocusTarget? = nil, nearFocusLimit: Bool = false, longestShutter: Double? = nil,
+        farFocusLimit: Bool = false, followsFaces: Bool = true
+    ) {
         self.focusTarget = focusTarget
         self.nearFocusLimit = nearFocusLimit
         self.longestShutter = longestShutter
+        self.farFocusLimit = farFocusLimit && !nearFocusLimit
+        self.followsFaces = followsFaces
     }
 }
 

@@ -9,9 +9,9 @@ extension EnvironmentValues {
 }
 
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
-/// (issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
-/// signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
-/// and More (Accessibility, Honesty, About).
+/// (issue #68, "Settings"): Photos (formats, look, file options, photo size), Privacy (the master
+/// switch, signing, the details), Camera (manual controls, clean view, face detection, night mode,
+/// front camera mirroring) and More (Accessibility, Honesty, About).
 ///
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
@@ -37,6 +37,9 @@ public struct SettingsScreen: View {
     /// Location tagging, or `nil` to hide the Location switch.
     private let location: LocationTagging?
 
+    /// The device's lenses, for the Photo Size row (shown only when a lens offers a choice).
+    private let lenses: [Lens]
+
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
 
@@ -54,14 +57,17 @@ public struct SettingsScreen: View {
     ///     Pass `true` when it isn't known yet.
     ///   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     ///     location service, which hides the Location switch.
+    ///   - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
+    ///     row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
     public init(
         settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true,
-        location: LocationTagging? = nil
+        location: LocationTagging? = nil, lenses: [Lens] = []
     ) {
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
         self.deviceHasFrontCamera = deviceHasFrontCamera
         self.location = location
+        self.lenses = lenses
     }
 
     /// The form and its toolbar.
@@ -99,6 +105,7 @@ public struct SettingsScreen: View {
                 LookSettingsView.link(settings: settings)
                 FileOptionsSettingsView.link(settings: settings)
             }
+            PhotoSizeSettingsView.link(settings: settings, lenses: lenses)
         } header: {
             // Its own key: "Photos" alone is the photo count picker in Pro Tools, translated as a count.
             Text(String(localized: "Settings section: Photos", defaultValue: "Photos", bundle: .module, comment: "Settings section header for the formats and look each photo is saved with (a heading, not a count)."))
@@ -162,6 +169,13 @@ public struct SettingsScreen: View {
                         bundle: .module, comment: "Explains the clean view switch."))
             }
             FastShutterSettingsView.link(settings: settings)
+            Toggle(isOn: Binding(get: { settings.followsFaces }, set: { settings.setFollowsFaces($0) })) {
+                SettingLabel(
+                    title: Text("Face Detection", bundle: .module, comment: "Switch: faces the camera detects steer autofocus and auto exposure."),
+                    explanation: Text(
+                        "Autofocus and auto exposure follow faces the camera finds. On by default.",
+                        bundle: .module, comment: "Explains the Face Detection switch."))
+            }
             OverlaySettingsView.link(settings: settings)
             Toggle(isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) })) {
                 SettingLabel(

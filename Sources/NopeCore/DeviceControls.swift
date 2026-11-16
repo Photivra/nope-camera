@@ -98,6 +98,16 @@ public struct DeviceControls: Equatable, Sendable {
     /// Whether autofocus is limited to near subjects (`autoFocusRangeRestriction = .near`).
     public let nearFocusLimit: Bool
 
+    /// Whether autofocus is limited to far subjects (`autoFocusRangeRestriction = .far`). Never
+    /// on with ``nearFocusLimit``.
+    public let farFocusLimit: Bool
+
+    /// Whether faces the camera detects steer autofocus and auto exposure
+    /// (`isFaceDrivenAutoFocusEnabled` and `isFaceDrivenAutoExposureEnabled`). `true` leaves the
+    /// system's automatic choice; `false` turns both off. A backend sets each only where the lens
+    /// focuses or exposes automatically, because AVFoundation raises an exception otherwise.
+    public let followsFaces: Bool
+
     /// The longest shutter auto exposure may use, in seconds (`activeMaxExposureDuration`), or
     /// `nil` for the camera's default. Set only with ``Exposure/automatic(compensation:)``.
     public let longestAutoExposure: Double?
@@ -116,9 +126,14 @@ public struct DeviceControls: Equatable, Sendable {
     ///   - pointOfInterest: The tapped point, or `nil`. Defaults to `nil`.
     ///   - nearFocusLimit: Whether autofocus is limited to near subjects. Defaults to `false`.
     ///   - longestAutoExposure: The longest auto exposure in seconds, or `nil`. Defaults to `nil`.
+    ///   - farFocusLimit: Whether autofocus is limited to far subjects. Defaults to `false`;
+    ///     ignored while `nearFocusLimit` is on.
+    ///   - followsFaces: Whether detected faces steer autofocus and auto exposure. Defaults to
+    ///     `true`.
     public init(
         exposure: Exposure, focus: Focus, whiteBalance: WhiteBalanceControl, metering: MeteringMode,
-        pointOfInterest: PointOfInterest? = nil, nearFocusLimit: Bool = false, longestAutoExposure: Double? = nil
+        pointOfInterest: PointOfInterest? = nil, nearFocusLimit: Bool = false, longestAutoExposure: Double? = nil,
+        farFocusLimit: Bool = false, followsFaces: Bool = true
     ) {
         self.exposure = exposure
         self.focus = focus
@@ -127,6 +142,8 @@ public struct DeviceControls: Equatable, Sendable {
         self.pointOfInterest = pointOfInterest
         self.nearFocusLimit = nearFocusLimit
         self.longestAutoExposure = longestAutoExposure
+        self.farFocusLimit = farFocusLimit && !nearFocusLimit
+        self.followsFaces = followsFaces
     }
 
     /// Builds the controls for settings on a lens.
@@ -140,8 +157,9 @@ public struct DeviceControls: Equatable, Sendable {
     ///
     /// - The automatic aids apply only to what is automatic: the tapped point aims autofocus
     ///   only while focus is automatic, and auto exposure only while exposure is automatic; the
-    ///   near focus limit needs autofocus; the longest shutter needs auto exposure. Each needs
-    ///   the lens to support it.
+    ///   near and far focus limits need autofocus; the longest shutter needs auto exposure. Each
+    ///   needs the lens to support it. Face detection is passed on as it is; the backend applies
+    ///   it to whatever is automatic.
     ///
     /// - Parameters:
     ///   - settings: The person's settings.
@@ -174,6 +192,8 @@ public struct DeviceControls: Equatable, Sendable {
             return PointOfInterest(point: target.devicePoint, focuses: focuses, exposes: exposes, locks: target.isLocked)
         }
         nearFocusLimit = assist.nearFocusLimit && autoFocuses && capabilities.supportsNearFocusLimit
+        farFocusLimit = assist.farFocusLimit && !nearFocusLimit && autoFocuses && capabilities.supportsFarFocusLimit
+        followsFaces = assist.followsFaces
         longestAutoExposure =
             autoExposes
             ? lens.exposureDurationRange.flatMap { range in assist.longestShutter.map { $0.limited(to: range) } } : nil
