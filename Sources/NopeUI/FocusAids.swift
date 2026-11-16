@@ -18,8 +18,7 @@ enum FocusMagnifier {
 extension View {
     /// Draws the view enlarged around the magnifier's point while the focus magnifier is on.
     /// The ready camera applies it to the picture and focus peaking, and ``CameraScreen`` to the
-    /// natural-color viewfinder it draws behind the red interface in night mode, so all three
-    /// stay aligned. The layout frame doesn't change, so the caller clips it.
+    /// live viewfinder it draws behind the interface, so all three stay aligned. The layout frame doesn't change, so the caller clips it.
     ///
     /// - Parameter model: The camera model.
     func focusMagnified(_ model: CameraModel) -> some View {

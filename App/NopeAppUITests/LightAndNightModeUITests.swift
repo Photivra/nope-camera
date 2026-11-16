@@ -127,6 +127,31 @@ extension NopeAppUITests {
         XCTAssertEqual(centerColor(app, of: app.otherElements["Viewfinder"].frame), .red)
     }
 
+    /// The viewfinder is drawn behind the camera interface in every mode, so it stays the same
+    /// view when night mode changes; in the scrolling layout it must still move with the
+    /// picture.
+    @MainActor
+    func testViewfinderFollowsThePictureInTheScrollingLayout() throws {
+        let app = launch("allow", extraArguments: Self.largestTextSize + ["-NopeSimulatedViewfinder", "white"])
+        continuePastFirstRun(app)
+        let viewfinder = app.otherElements["Viewfinder"]
+        XCTAssertTrue(viewfinder.waitForExistence(timeout: 10))
+        settle()
+        let before = viewfinder.frame
+        XCTAssertEqual(centerColor(app, of: before), .white)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+        start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -120)))
+        settle()
+        let after = viewfinder.frame
+        XCTAssertLessThan(after.minY, before.minY - 40, "the layout scrolled")
+        // The white picture is where the viewfinder element is now, and not below it, where it
+        // was before the scroll.
+        let visible = after.intersection(app.windows.firstMatch.frame)
+        XCTAssertEqual(centerColor(app, of: visible), .white)
+        let below = CGRect(x: after.minX, y: after.maxY + 8, width: after.width, height: 2)
+        XCTAssertNotEqual(centerColor(app, of: below), .white)
+    }
+
     @MainActor
     func testNightModeSettingsScreensPassAccessibilityAudits() throws {
         let app = launch("photosDenied", extraArguments: Self.nightModeOn)

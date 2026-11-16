@@ -80,10 +80,13 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .nightModeStyle(settings.isNightModeOn)
-        // Night mode with natural colors: the viewfinder is drawn behind the red screen, in the
-        // frame the ready camera reserves for it, so only nope.'s own interface turns red. The
-        // focus magnifier enlarges it here, as it enlarges the picture and focus peaking there.
-        .backgroundPreferenceValue(NaturalViewfinderFrame.self) { anchor in
+        // The live viewfinder is always drawn here, behind the interface, in the frame the ready
+        // camera reserves for it (``ViewfinderFrame``), so night mode's red multiply reaches only
+        // nope.'s own interface. It is the same view in every mode: on a device a new viewfinder
+        // is a new preview layer, which attaches to the running capture session on the main
+        // thread and made switching night mode freeze the camera. Red Viewfinder tints it here.
+        // The focus magnifier enlarges it here, as it enlarges the picture and focus peaking there.
+        .backgroundPreferenceValue(ViewfinderFrame.self) { anchor in
             if let anchor, let source = model.previewSource {
                 GeometryReader { proxy in
                     let frame = proxy[anchor]
@@ -92,8 +95,10 @@ public struct CameraScreen<Viewfinder: View>: View {
                         .focusMagnified(model)
                         .environment(\.layoutDirection, .leftToRight)
                         .clipped()
+                        .colorMultiply(tintsViewfinder ? NightStyle.red : .white)
                         .offset(x: frame.minX, y: frame.minY)
                 }
+                .accessibilityIgnoresInvertColors()
                 .accessibilityHidden(true)
             }
         }
@@ -128,6 +133,11 @@ public struct CameraScreen<Viewfinder: View>: View {
         .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
         // The screen stays awake and dimmed during a series; a countdown or burst stops here.
         .seriesScreen(model, isNightMode: settings.isNightModeOn)
+    }
+
+    /// Whether the viewfinder is drawn in night mode's red: night mode with Red Viewfinder on.
+    private var tintsViewfinder: Bool {
+        settings.isNightModeOn && settings.tintsViewfinderInNightMode
     }
 
     /// Whether the camera is ready, so the Settings button is in the camera layout.
@@ -176,13 +186,9 @@ public struct CameraScreen<Viewfinder: View>: View {
                 )
             )
         case .ready(let capabilities):
-            CameraReadyView(model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true }) {
-                if let source = model.previewSource {
-                    viewfinder(source)
-                } else {
-                    Color.black
-                }
-            }
+            // The ready camera leaves the picture's frame clear; the viewfinder is drawn behind
+            // it (see body).
+            CameraReadyView(model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true })
         }
     }
 }

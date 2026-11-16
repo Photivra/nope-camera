@@ -618,7 +618,10 @@ frame, from the photos' capture times).
   manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
   popovers); list what the system still draws (status bar, menus, alerts); the app never changes
   the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
-  Viewfinder; energy with the red viewfinder on (Instruments).
+  Viewfinder; energy with the red viewfinder on (Instruments);
+- night mode and Red Viewfinder switch at once from the tray and from Settings › Camera, with the
+  live picture never freezing, going black or restarting (Instruments Hangs: no hang on the
+  switch; the 0.2.0 build rebuilt the preview layer each time).
 
 ### Manual controls on a device
 
