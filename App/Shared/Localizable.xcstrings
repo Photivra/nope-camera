@@ -651,6 +651,71 @@
         }
       }
     },
+    "Autofocus has no range limit.": {
+      "comment": "Siri's answer after nope.'s autofocus range limit (Close-Up or Far Focus) was lifted.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Der Autofokus hat keine Bereichsbeschränkung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El autoenfoque no tiene límite de rango."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La mise au point automatique n’a plus de limite de plage."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’autofocus non ha limiti di intervallo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "オートフォーカスの範囲制限を解除しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "자동 초점에 범위 제한이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De autofocus heeft geen bereikbeperking."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O foco automático não tem limite de intervalo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自动对焦已无范围限制。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自動對焦已無範圍限制。"
+          }
+        }
+      }
+    },
     "Camera access is off for nope. You can turn it on in the Settings app.": {
       "comment": "Siri's answer when camera access was declined. Keep \"nope.\" unchanged; Settings is the iOS app.",
       "localizations": {
@@ -712,6 +777,201 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 的相機取用權限已關閉，你可以在「設定」App 中開啟。"
+          }
+        }
+      }
+    },
+    "Chooses how fast a shutter nope.'s full auto prefers, to avoid blur.": {
+      "comment": "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Legt fest, wie kurz die Verschlusszeit in der Vollautomatik von nope. sein soll, um Unschärfe zu vermeiden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elige qué tan rápida prefiere la obturación el modo automático total de nope., para evitar el desenfoque."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Choisit la rapidité d’obturation que préfère le mode entièrement automatique de nope., pour éviter le flou."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sceglie quanto rapido preferisce l’otturatore l’automatico completo di nope., per evitare il mosso."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ブレを防ぐため、nope. のフルオートが優先するシャッター速度を選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "흔들림을 피하기 위해 nope.의 완전 자동이 선호하는 셔터 속도를 선택합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kiest hoe snel de sluiter is die de volautomatische stand van nope. verkiest, om onscherpte te voorkomen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Escolhe a velocidade de obturador que o automático total do nope. prefere, para evitar desfoque."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "选择 nope. 全自动模式偏好的快门速度，以避免模糊。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "選擇 nope. 全自動模式偏好的快門速度，以避免模糊。"
+          }
+        }
+      }
+    },
+    "Close-Up": {
+      "comment": "Quick control and pill on the camera: limits autofocus to near subjects, for small things close to the lens.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nahaufnahme"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Primer plano"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gros plan"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Primo piano"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "接写"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "근접"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Close-up"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Close-up"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "近摄"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "近拍"
+          }
+        }
+      }
+    },
+    "Close-Up is on.": {
+      "comment": "Siri's answer after nope. limited autofocus to near subjects. Close-Up is the camera control's name.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nahaufnahme ist eingeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Primer plano está activado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gros plan est activé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Primo piano è attivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "接写をオンにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "근접이 켜졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Close-up staat aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Close-up está ativado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "近摄已打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "近拍已開啟。"
           }
         }
       }
@@ -846,6 +1106,597 @@
         }
       }
     },
+    "Face Detection": {
+      "comment": "Switch: faces the camera detects steer autofocus and auto exposure.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichtserkennung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detección de caras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Détection des visages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rilevamento volti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detecção de rostos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "面部检测"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "臉部偵測"
+          }
+        }
+      }
+    },
+    "Face Detection is off.": {
+      "comment": "Siri's answer after nope.'s Face Detection was turned off.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Gesichtserkennung ist ausgeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La detección de caras está desactivada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La détection des visages est désactivée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il rilevamento volti è disattivato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出をオフにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식이 꺼졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning staat uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A detecção de rostos está desativada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "人脸检测已关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "臉部偵測已關閉。"
+          }
+        }
+      }
+    },
+    "Face Detection is on.": {
+      "comment": "Siri's answer after nope.'s Face Detection was turned on.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Gesichtserkennung ist eingeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La detección de caras está activada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La détection des visages est activée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il rilevamento volti è attivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出をオンにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식이 켜졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning staat aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A detecção de rostos está ativada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "人脸检测已打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "臉部偵測已開啟。"
+          }
+        }
+      }
+    },
+    "Far Focus": {
+      "comment": "Quick control and pill on the camera: limits autofocus to far subjects, such as a landscape seen past near branches.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fernfokus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfoque lejano"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mise au point lointaine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Messa a fuoco lontana"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景フォーカス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "원거리 초점"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verre focus"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foco distante"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "远景对焦"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景對焦"
+          }
+        }
+      }
+    },
+    "Far Focus is on.": {
+      "comment": "Siri's answer after nope. limited autofocus to far subjects. Far Focus is the camera control's name.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fernfokus ist eingeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfoque lejano está activado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mise au point lointaine est activée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Messa a fuoco lontana è attiva."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景フォーカスをオンにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "원거리 초점이 켜졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verre focus staat aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foco distante está ativado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "远景对焦已打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景對焦已開啟。"
+          }
+        }
+      }
+    },
+    "Fast Shutter": {
+      "comment": "Setting and quick control: how fast a shutter full auto prefers, to avoid blur.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kurze Verschlusszeit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Obturación rápida"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Obturation rapide"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Otturatore veloce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高速シャッター"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 셔터"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Snelle sluiter"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Obturador rápido"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速快门"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速快門"
+          }
+        }
+      }
+    },
+    "Fast Shutter is set.": {
+      "comment": "Siri's answer after nope.'s Fast Shutter setting was changed.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kurze Verschlusszeit ist eingestellt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La obturación rápida está ajustada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’obturation rapide est réglée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’otturatore rapido è impostato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高速シャッターを設定しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 셔터가 설정되었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Snelle sluiter is ingesteld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O obturador rápido está ajustado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速快门已设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速快門已設定。"
+          }
+        }
+      }
+    },
+    "Fast shutter: Standard": {
+      "comment": "Fast shutter choice: full auto aims for a shutter fast enough to hold by hand. The default.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Estándar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "표준"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "标准"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準"
+          }
+        }
+      }
+    },
+    "Focus Range": {
+      "comment": "A setting of nope.'s Set Focus Range action: which subjects autofocus looks for.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fokusbereich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rango de enfoque"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Plage de mise au point"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallo di messa a fuoco"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フォーカス範囲"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "초점 범위"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focusbereik"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalo de foco"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "对焦范围"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "對焦範圍"
+          }
+        }
+      }
+    },
     "Frames": {
       "comment": "A setting of nope.'s Take Bracket action: how many photos the bracket takes.",
       "localizations": {
@@ -907,6 +1758,136 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "張數"
+          }
+        }
+      }
+    },
+    "Freeze Fast Motion (1/1000 s)": {
+      "comment": "Fast shutter choice: full auto keeps the shutter at 1/1000 second or faster. Keep the fraction.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schnelle Bewegung einfrieren (1/1000 s)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Congelar movimiento rápido (1/1000 s)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Figer les mouvements rapides (1/1000 s)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Congela il movimento rapido (1/1000 s)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "速い動きを止める（1/1000秒）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 움직임 정지(1/1000초)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Snelle beweging bevriezen (1/1000 s)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Congelar movimento rápido (1/1000 s)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "定格快速动作（1/1000 秒）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "凝結快速動作（1/1000 秒）"
+          }
+        }
+      }
+    },
+    "Freeze Motion (1/500 s)": {
+      "comment": "Fast shutter choice: full auto keeps the shutter at 1/500 second or faster. Keep the fraction.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewegung einfrieren (1/500 s)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Congelar movimiento (1/500 s)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Figer le mouvement (1/500 s)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Congela il movimento (1/500 s)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "動きを止める（1/500秒）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "움직임 정지(1/500초)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Beweging bevriezen (1/500 s)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Congelar movimento (1/500 s)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "定格动作（1/500 秒）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "凝結動作（1/500 秒）"
           }
         }
       }
@@ -1102,6 +2083,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "間隔拍攝已停止。已拍攝的照片已儲存。"
+          }
+        }
+      }
+    },
+    "Largest": {
+      "comment": "A choice of nope.'s Set Photo Size action: the largest photo size the lens offers.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Größte"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Más grande"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La plus grande"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La più grande"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最大"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "최대"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Grootste"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Maior"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最大"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "最大"
           }
         }
       }
@@ -1622,6 +2668,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "不延遲"
+          }
+        }
+      }
+    },
+    "No Limit": {
+      "comment": "A choice of nope.'s Set Focus Range action: autofocus searches near and far.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Keine Beschränkung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sin límite"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucune limite"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessun limite"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "制限なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "제한 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geen beperking"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sem limite"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无限制"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "無限制"
           }
         }
       }
@@ -2341,6 +3452,136 @@
         }
       }
     },
+    "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one.": {
+      "comment": "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Öffnet nope. und wählt bei einem Objektiv mit mehreren Fotogrößen die Standard- oder die größte Größe."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre nope. y elige el tamaño estándar o el más grande de una lente que ofrece más de uno."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ouvre nope. et choisit la taille standard ou la plus grande d’un objectif qui en propose plusieurs."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apre nope. e sceglie la dimensione standard o la più grande di un obiettivo che ne offre più di una."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開いて、複数のサイズがあるレンズの標準または最大の写真サイズを選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.을(를) 열고 여러 크기를 제공하는 렌즈의 표준 또는 최대 사진 크기를 선택합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opent nope. en kiest de standaard- of de grootste fotogrootte van een lens die er meer dan één biedt."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre o nope. e escolhe o tamanho padrão ou o maior de uma lente que oferece mais de um."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开 nope. 并为提供多种尺寸的镜头选择标准或最大的照片尺寸。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打開 nope. 並為提供多種尺寸的鏡頭選擇標準或最大的照片尺寸。"
+          }
+        }
+      }
+    },
+    "Opens nope. and limits autofocus to near subjects (Close-Up) or far subjects (Far Focus), or lifts the limit.": {
+      "comment": "Describes nope.'s Set Focus Range action in the Shortcuts app. Close-Up and Far Focus are the names of the camera's controls. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Öffnet nope. und beschränkt den Autofokus auf nahe Motive (Nahaufnahme) oder ferne Motive (Fernfokus) oder hebt die Beschränkung auf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre nope. y limita el autoenfoque a sujetos cercanos (Primer plano) o lejanos (Enfoque lejano), o quita el límite."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ouvre nope. et limite la mise au point automatique aux sujets proches (Gros plan) ou lointains (Mise au point lointaine), ou lève la limite."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apre nope. e limita l’autofocus ai soggetti vicini (Primo piano) o lontani (Messa a fuoco lontana), oppure rimuove il limite."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. を開いて、オートフォーカスを近くの被写体（接写）または遠くの被写体（遠景フォーカス）に限定するか、限定を解除します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.을(를) 열고 자동 초점을 가까운 피사체(근접) 또는 먼 피사체(원거리 초점)로 제한하거나 제한을 해제합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opent nope. en beperkt de autofocus tot onderwerpen dichtbij (Close-up) of veraf (Verre focus), of heft de beperking op."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Abre o nope. e limita o foco automático a objetos próximos (Close-up) ou distantes (Foco distante), ou remove o limite."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开 nope. 并将自动对焦限制在近处主体（近摄）或远处主体（远景对焦），或取消限制。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打開 nope. 並將自動對焦限制在近處主體（近拍）或遠處主體（遠景對焦），或取消限制。"
+          }
+        }
+      }
+    },
     "Opens nope. and starts a series of photos at a fixed interval.": {
       "comment": "Describes nope.'s Start Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "localizations": {
@@ -2731,6 +3972,71 @@
         }
       }
     },
+    "Photo Size": {
+      "comment": "Settings row and screen title: the size of photos from lenses that offer more than one.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogröße"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamaño de la foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taille des photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dimensione foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真のサイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 크기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogrootte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamanho da foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片尺寸"
+          }
+        }
+      }
+    },
     "Photo saved and signed.": {
       "comment": "Siri's answer after nope. took and saved a signed photo.",
       "localizations": {
@@ -3056,6 +4362,201 @@
         }
       }
     },
+    "Set Face Detection": {
+      "comment": "The name of nope.'s action that turns Face Detection on or off, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichtserkennung festlegen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar la detección de caras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la détection des visages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta rilevamento volti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出を設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning instellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar detecção de rostos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置人脸检测"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定臉部偵測"
+          }
+        }
+      }
+    },
+    "Set Fast Shutter": {
+      "comment": "The name of nope.'s action that chooses how fast a shutter full auto prefers, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kurze Verschlusszeit festlegen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar la obturación rápida"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler l’obturation rapide"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta otturatore rapido"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高速シャッターを設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 셔터 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Snelle sluiter instellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar obturador rápido"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置快速快门"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定快速快門"
+          }
+        }
+      }
+    },
+    "Set Focus Range": {
+      "comment": "The name of nope.'s action that limits autofocus to near or far subjects, or lifts the limit, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fokusbereich festlegen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar el rango de enfoque"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la plage de mise au point"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta intervallo di messa a fuoco"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フォーカス範囲を設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "초점 범위 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focusbereik instellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar intervalo de foco"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置对焦范围"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定對焦範圍"
+          }
+        }
+      }
+    },
     "Set Night Mode": {
       "comment": "The name of nope.'s action that turns night mode on or off, in the Shortcuts app.",
       "localizations": {
@@ -3117,6 +4618,266 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "設定夜間模式"
+          }
+        }
+      }
+    },
+    "Set Photo Size": {
+      "comment": "The name of nope.'s action that chooses the photo size of a lens, in the Shortcuts app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogröße festlegen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar el tamaño de la foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la taille des photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta dimensione foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真のサイズを設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 크기 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogrootte instellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar tamanho da foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置照片尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定照片尺寸"
+          }
+        }
+      }
+    },
+    "Set face detection to ${isOn}": {
+      "comment": "How nope.'s Set Face Detection action reads in the Shortcuts editor. ${isOn} is \"On\" or \"Off\". Keep ${isOn} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichtserkennung auf ${isOn} setzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Poner la detección de caras en ${isOn}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la détection des visages sur ${isOn}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta il rilevamento volti su ${isOn}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出を${isOn}にする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식을 ${isOn}(으)로 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning op ${isOn} zetten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar a detecção de rostos para ${isOn}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "将人脸检测设为${isOn}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "將臉部偵測設為${isOn}"
+          }
+        }
+      }
+    },
+    "Set fast shutter to ${choice}": {
+      "comment": "How nope.'s Set Fast Shutter action reads in the Shortcuts editor. ${choice} is a choice such as \"Standard\". Keep ${choice} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kurze Verschlusszeit auf ${choice} setzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar la obturación rápida a ${choice}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler l’obturation rapide sur ${choice}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta l’otturatore rapido su ${choice}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "高速シャッターを${choice}に設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 셔터를 ${choice}(으)로 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Snelle sluiter instellen op ${choice}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar o obturador rápido para ${choice}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "将快速快门设为${choice}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "將快速快門設為${choice}"
+          }
+        }
+      }
+    },
+    "Set focus range to ${range}": {
+      "comment": "How nope.'s Set Focus Range action reads in the Shortcuts editor. ${range} is a choice such as \"Close-Up\". Keep ${range} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fokusbereich auf ${range} setzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar el rango de enfoque a ${range}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la plage de mise au point sur ${range}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta l’intervallo di messa a fuoco su ${range}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フォーカス範囲を${range}に設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "초점 범위를 ${range}(으)로 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focusbereik instellen op ${range}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar o intervalo de foco para ${range}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "将对焦范围设为${range}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "將對焦範圍設為${range}"
           }
         }
       }
@@ -3186,6 +4947,136 @@
         }
       },
       "extractionState": "manual"
+    },
+    "Set photo size to ${size}": {
+      "comment": "How nope.'s Set Photo Size action reads in the Shortcuts editor. ${size} is \"Standard\" or \"Largest\". Keep ${size} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogröße auf ${size} setzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar el tamaño de la foto a ${size}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la taille des photos sur ${size}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta la dimensione foto su ${size}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真のサイズを${size}に設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 크기를 ${size}(으)로 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogrootte instellen op ${size}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar o tamanho da foto para ${size}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "将照片尺寸设为${size}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "將照片尺寸設為${size}"
+          }
+        }
+      }
+    },
+    "Standard": {
+      "comment": "Developed look: normal-looking HEIF and JPEG.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Estándar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "표준"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "标准"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準"
+          }
+        }
+      }
     },
     "Start Interval Shooting": {
       "comment": "The name of nope.'s action that starts a series of photos taken at a fixed interval, in the Shortcuts app.",
@@ -4228,6 +6119,71 @@
         }
       }
     },
+    "The photo size is set.": {
+      "comment": "Siri's answer after nope. changed a lens's photo size; it applies from the next photo.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Fotogröße ist eingestellt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El tamaño de la foto está ajustado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La taille des photos est réglée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La dimensione foto è impostata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真のサイズを設定しました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 크기가 설정되었습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De fotogrootte is ingesteld."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O tamanho da foto está ajustado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片尺寸已设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片尺寸已設定。"
+          }
+        }
+      }
+    },
     "The photo wasn't saved. nope. shows why.": {
       "comment": "Siri's answer when the photo couldn't be taken or saved. Keep \"nope.\" unchanged.",
       "localizations": {
@@ -4488,6 +6444,71 @@
         }
       }
     },
+    "This lens can't limit its focus range.": {
+      "comment": "Siri's answer when the lens in use can't limit autofocus to near or far subjects.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Objektiv kann seinen Fokusbereich nicht beschränken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente no puede limitar su rango de enfoque."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cet objectif ne peut pas limiter sa plage de mise au point."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questo obiettivo non può limitare l’intervallo di messa a fuoco."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このレンズではフォーカス範囲を制限できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 렌즈는 초점 범위를 제한할 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deze lens kan het focusbereik niet beperken."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente não pode limitar o intervalo de foco."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此镜头无法限制对焦范围。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此鏡頭無法限制對焦範圍。"
+          }
+        }
+      }
+    },
     "This lens can't take that bracket.": {
       "comment": "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.",
       "localizations": {
@@ -4614,6 +6635,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "此鏡頭沒有燈光。"
+          }
+        }
+      }
+    },
+    "This lens has only one photo size.": {
+      "comment": "Siri's answer when the lens offers no choice of photo size.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dieses Objektiv hat nur eine Fotogröße."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente solo tiene un tamaño de foto."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cet objectif n’a qu’une taille de photo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questo obiettivo ha una sola dimensione foto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "このレンズの写真サイズは1つだけです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 렌즈는 사진 크기가 하나뿐입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deze lens heeft maar één fotogrootte."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Esta lente tem apenas um tamanho de foto."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此镜头只有一种照片尺寸。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "此鏡頭只有一種照片尺寸。"
           }
         }
       }
@@ -4874,6 +6960,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "關閉 nope. 的常亮燈光。"
+          }
+        }
+      }
+    },
+    "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure.": {
+      "comment": "Describes nope.'s Set Face Detection action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Legt fest, ob erkannte Gesichter Autofokus und automatische Belichtung von nope. steuern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Activa o desactiva que las caras que detecta la cámara guíen el autoenfoque y la exposición automática de nope."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Active ou désactive le fait que les visages détectés guident la mise au point et l’exposition automatiques de nope."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Attiva o disattiva se i volti rilevati guidano l’autofocus e l’esposizione automatica di nope."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラが検出した顔で nope. のオートフォーカスと自動露出を調整するかをオン／オフします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라가 인식한 얼굴이 nope.의 자동 초점과 자동 노출을 조정할지 켜거나 끕니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zet aan of uit of gezichten die de camera herkent de autofocus en automatische belichting van nope. sturen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ativa ou desativa se os rostos detectados guiam o foco e a exposição automáticos do nope."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "打开或关闭相机检测到的人脸是否引导 nope. 的自动对焦和自动曝光。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "開啟或關閉相機偵測到的臉部是否引導 nope. 的自動對焦和自動曝光。"
           }
         }
       }

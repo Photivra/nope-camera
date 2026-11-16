@@ -5,7 +5,7 @@ import Foundation
 ///
 /// The app's intents hold no rules of their own (AGENTS.md, "Siri and Shortcuts"): an intent
 /// turns its parameters into a request, hands it to a ``ShortcutInbox`` and reports the
-/// ``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:)`` performs it with the same intents
+/// ``ShortcutOutcome``. ``CameraModel/serveShortcuts(from:settings:)`` performs it with the same intents
 /// as the on-screen controls.
 public enum ShortcutRequest: Equatable, Sendable {
     /// Take one photo or a burst, after an optional delay, with an optional lens.
@@ -27,6 +27,13 @@ public enum ShortcutRequest: Equatable, Sendable {
     /// Stop the running interval series, as its Stop button does.
     case stopInterval
 
+    /// Limit autofocus to near or far subjects, or lift the limit, as Close-Up and Far Focus in
+    /// the quick-controls tray do.
+    case setFocusRange(FocusRangeChoice)
+
+    /// Choose the photo size of a lens that offers more than one, as Settings > Photo Size does.
+    case setPhotoSize(PhotoSizeShortcut)
+
     /// What the request ends with when no camera screen is open to take it, or `nil` when it
     /// waits for one (``ShortcutInbox/startTimeoutSeconds``).
     ///
@@ -38,7 +45,9 @@ public enum ShortcutRequest: Equatable, Sendable {
         switch self {
         case .setLight(isOn: false): .lightOff
         case .stopInterval: .noIntervalRunning
-        case .takePhoto, .takeBracket, .selectLens, .setLight(isOn: true), .startInterval: nil
+        case .takePhoto, .takeBracket, .selectLens, .setLight(isOn: true), .startInterval, .setFocusRange,
+            .setPhotoSize:
+            nil
         }
     }
 }
@@ -145,6 +154,60 @@ public struct BracketShortcut: Equatable, Sendable {
     }
 }
 
+/// The autofocus range a "Set Focus Range" request asks for. The camera has one range
+/// restriction (`AVCaptureDevice.autoFocusRangeRestriction`), so Close-Up and Far Focus exclude
+/// each other.
+public enum FocusRangeChoice: Equatable, Sendable {
+    /// No limit: autofocus searches the whole range, the default.
+    case unlimited
+
+    /// Close-Up: autofocus limited to near subjects (``AutoControlIntent/setNearFocusLimit(_:)``).
+    case closeUp
+
+    /// Far Focus: autofocus limited to far subjects (``AutoControlIntent/setFarFocusLimit(_:)``).
+    case far
+}
+
+/// The parameters of a "Set Photo Size" request: the lens and the size.
+public struct PhotoSizeShortcut: Equatable, Sendable {
+    /// The size, of those the lens offers (``Lens/photoSizeChoices``).
+    public enum Size: Equatable, Sendable {
+        /// The lens's default, smallest size (``Lens/defaultPhotoSize``).
+        case standard
+
+        /// The largest size the lens offers.
+        case largest
+    }
+
+    /// The kind of lens, or `nil` for the lens in use.
+    public let lensKind: Lens.Kind?
+
+    /// The size.
+    public let size: Size
+
+    /// Creates a request.
+    ///
+    /// - Parameters:
+    ///   - lensKind: The kind of lens, or `nil` for the lens in use.
+    ///   - size: The size.
+    public init(lensKind: Lens.Kind? = nil, size: Size) {
+        self.lensKind = lensKind
+        self.size = size
+    }
+
+    /// The photo size this request chooses on a lens.
+    ///
+    /// - Parameter lens: The lens.
+    /// - Returns: The size, or `nil` when the lens offers no choice of size.
+    public func dimensions(on lens: Lens) -> PhotoDimensions? {
+        let choices = lens.photoSizeChoices
+        switch size {
+        case .standard: return choices.first
+        case .largest: return choices.last
+        }
+    }
+}
+
 /// The parameters of a "Start Interval Shooting" request: the time between photos and how many,
 /// each `nil` to keep the value chosen in Pro Tools (``ManualControlsModel/interval``).
 ///
@@ -227,6 +290,19 @@ public enum ShortcutOutcome: Equatable, Sendable {
 
     /// No interval series was running, so nothing was stopped. Say so.
     case noIntervalRunning
+
+    /// Autofocus now has this range. Say which.
+    case focusRangeSet(FocusRangeChoice)
+
+    /// The lens can't limit its autofocus range. Say so; nothing changed.
+    case focusRangeUnavailable
+
+    /// The lens's photo size is now the one asked for, from the next photo. Say so.
+    case photoSizeSet
+
+    /// The lens offers only one photo size (a lens with Bayer RAW always takes its full-size
+    /// RAW). Say so; nothing changed.
+    case noPhotoSizeChoice
 
     /// The lens in use can't take the bracket asked for: it has no manual exposure, or takes
     /// fewer frames in one bracket. Say so; nothing was taken.

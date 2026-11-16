@@ -136,7 +136,7 @@ struct NopeApp: App {
         }
         .environment(\.seriesScreenKeeper, screenKeeper)
         // Siri and Shortcuts requests are performed while the camera screen is shown.
-        .task { await model.serveShortcuts(from: Self.shortcuts) }
+        .task { await model.serveShortcuts(from: Self.shortcuts, settings: settings) }
         #if DEBUG
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
         .task { await SimulatedShortcut.run(with: Self.shortcuts) }

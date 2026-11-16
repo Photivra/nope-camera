@@ -576,4 +576,92 @@ struct ShortcutTests {
         await waitUntil { !inbox.isServed }
         #expect(!inbox.isServed)
     }
+
+    // MARK: - Focus range
+
+    @Test func setsTheFocusRange() async {
+        let backend = ScriptedManualBackend(lenses: [AutoFixtures.handheld])
+        let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
+        await model.send(.start)
+        #expect(await run(.setFocusRange(.closeUp), on: model) == .focusRangeSet(.closeUp))
+        #expect(model.manual.nearFocusLimit && !model.manual.farFocusLimit)
+        #expect(await run(.setFocusRange(.far), on: model) == .focusRangeSet(.far))
+        #expect(model.manual.farFocusLimit && !model.manual.nearFocusLimit)
+        #expect(await run(.setFocusRange(.unlimited), on: model) == .focusRangeSet(.unlimited))
+        #expect(!model.manual.farFocusLimit && !model.manual.nearFocusLimit)
+        // Manual values stay as they were.
+        #expect(model.manual.settings == .automatic)
+        #expect(!model.manual.isEnabled)
+    }
+
+    @Test func aLensThatCanNotLimitItsFocusSaysSo() async {
+        let (model, _) = await makeManualModel(enabled: false)
+        #expect(await run(.setFocusRange(.closeUp), on: model) == .focusRangeUnavailable)
+        #expect(await run(.setFocusRange(.far), on: model) == .focusRangeUnavailable)
+        #expect(!model.manual.nearFocusLimit && !model.manual.farFocusLimit)
+        let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
+        #expect(await run(.setFocusRange(.closeUp), on: denied) == .cameraUnavailable(.permissionDenied))
+        #expect(ShortcutRequest.setFocusRange(.far).outcomeWithoutCameraScreen == nil)
+    }
+
+    // MARK: - Photo size
+
+    /// A camera with a RAW wide lens and a front lens without RAW that offers two sizes.
+    func makeSizeModel(
+        sleep: @escaping @Sendable (Double) async throws -> Void = { _ in }
+    ) async -> (CameraModel, NopeSettings) {
+        let front = CaptureSettingValueTests.fallbackLens
+        let capabilities = DeviceCapabilities(lenses: [CameraModelTests.wideRAW, front])
+        let model = CameraModel(backend: ScriptedBackend(capabilities: capabilities), saver: CameraModelTests.saver(), sleep: sleep)
+        await model.send(.start)
+        let store = UserDefaults(suiteName: "ShortcutTests.photoSize.\(UUID().uuidString)")!
+        return (model, NopeSettings(defaults: store))
+    }
+
+    /// Submits a request to a camera screen that serves the inbox with the settings.
+    func run(_ request: ShortcutRequest, on model: CameraModel, settings: NopeSettings?) async -> ShortcutOutcome {
+        let inbox = ShortcutInbox(sleep: Self.neverTimesOut)
+        let server = Task { await model.serveShortcuts(from: inbox, settings: settings) }
+        defer { server.cancel() }
+        await waitUntil { inbox.isServed }
+        return await inbox.submit(request)
+    }
+
+    @Test func choosesALensPhotoSize() async {
+        let (model, settings) = await makeSizeModel()
+        let front = CaptureSettingValueTests.fallbackLens
+        let largest = PhotoSizeShortcut(lensKind: .front, size: .largest)
+        #expect(largest.dimensions(on: front) == CaptureSettingValueTests.large)
+        #expect(await run(.setPhotoSize(largest), on: model, settings: settings) == .photoSizeSet)
+        #expect(settings.photoSize(for: front) == CaptureSettingValueTests.large)
+        let standard = PhotoSizeShortcut(lensKind: .front, size: .standard)
+        #expect(await run(.setPhotoSize(standard), on: model, settings: settings) == .photoSizeSet)
+        #expect(settings.photoSizes.isEmpty)
+        #expect(ShortcutRequest.setPhotoSize(standard).outcomeWithoutCameraScreen == nil)
+    }
+
+    @Test func aLensWithOneSizeOrNoSettingsSaysThereIsNoChoice() async {
+        let (model, settings) = await makeSizeModel()
+        // The lens in use, the wide lens with Bayer RAW, always takes its full-size RAW.
+        let inUse = PhotoSizeShortcut(size: .largest)
+        #expect(inUse.dimensions(on: CameraModelTests.wideRAW) == nil)
+        #expect(await run(.setPhotoSize(inUse), on: model, settings: settings) == .noPhotoSizeChoice)
+        let front = PhotoSizeShortcut(lensKind: .front, size: .largest)
+        #expect(await run(.setPhotoSize(front), on: model, settings: nil) == .noPhotoSizeChoice)
+        #expect(await run(.setPhotoSize(PhotoSizeShortcut(lensKind: .telephoto, size: .largest)), on: model, settings: settings)
+            == .lensUnavailable)
+        #expect(settings.photoSizes.isEmpty)
+    }
+
+    @Test func aPhotoSizeWaitsForARunningCountdownAndNeedsTheCamera() async {
+        let ticker = Ticker()
+        let (model, settings) = await makeSizeModel(sleep: { _ in await ticker.sleep() })
+        await model.send(.drive(.startTimer(seconds: 5)))
+        let front = PhotoSizeShortcut(lensKind: .front, size: .largest)
+        #expect(await run(.setPhotoSize(front), on: model, settings: settings) == .busy)
+        model.drive.countdown.cancel()
+        #expect(settings.photoSizes.isEmpty)
+        let denied = await makeModel(ScriptedBackend(permission: .denied, capabilities: CameraModelTests.oneLens))
+        #expect(await run(.setPhotoSize(front), on: denied, settings: settings) == .cameraUnavailable(.permissionDenied))
+    }
 }

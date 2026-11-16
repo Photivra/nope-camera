@@ -255,7 +255,7 @@ keyboard and the status bar are drawn by the system and keep its dark appearance
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
 parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
-outcome. The camera screen runs `CameraModel.serveShortcuts(from:)` while it is shown: the model
+outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:)` while it is shown: the model
 waits for the camera to start (at most `ShortcutInbox.startTimeoutSeconds`, following its
 observable state, without polling), switches the lens if asked, then takes one photo at once or
 starts the self-timer with `.drive(.startTimer(seconds:))`, and reports a `ShortcutOutcome`:
@@ -279,7 +279,21 @@ same limits as the Pro Tools bracket), waits up to two seconds for the camera's 
 reading, and takes it once with `capture(onceBracket:)` through the same bracket path
 (`ManualControlsModel.bracketFrames(once:)`, planned around the last reading in full auto or the
 manual ISO and shutter where set). The person's bracket setting and manual controls don't
-change. Requests that need the
+change.
+
+Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
+Far Focus in one action, because the camera has one autofocus range restriction, so the two
+limits exclude each other) and `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
+in use) open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+`AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
+choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
+its settings to `serveShortcuts(from:settings:)`; the app then applies the new size as it does
+from Settings. `SetFastShutterIntent` and `SetFaceDetectionIntent` change only stored settings
+(`NopeSettings.setFastShutter(_:)`, `setFollowsFaces(_:)`), as `SetNightModeIntent` does, so they
+run without opening the app. None of them changes a manual value. App Shortcuts allows ten per
+app, all used by capture and eyes-free actions (photo, bracket, open, lens, light, interval and
+night mode), so these settings, which are set rather than used while shooting, are Shortcuts
+actions that a person can still run by voice through a shortcut they name. Requests that need the
 camera open the app, because the camera, the light and a series run only in the foreground
 (AGENTS.md, "Battery"). Turning the light off and stopping a series don't open the app: without
 a camera screen serving the inbox (`ShortcutInbox.isServed`) nothing is running, so they end at

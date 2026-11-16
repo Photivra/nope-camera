@@ -627,6 +627,11 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   says so), and Set Night Mode on and off, with the app closed and with it open (the
   screen turns red at once).
 - Siri does not mistake "Turn on the light in nope." for a HomeKit request.
+- Shortcuts settings actions: Set Focus Range to Close-Up, Far Focus and No Limit (the Close-Up
+  or Far Focus pill shows and goes; a lens without a range limit says so); Set Photo Size Largest
+  and Standard on a lens with a choice (Settings > Photo Size shows it; the next photo's size
+  changes) and on a Bayer RAW lens (says there is one size); Set Fast Shutter and Set Face
+  Detection with the app closed (Settings shows the new value when the app opens).
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device

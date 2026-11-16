@@ -76,6 +76,24 @@ enum ShortcutDialog {
         case .noIntervalRunning:
             LocalizedStringResource(
                 "No interval series is running.", comment: "Siri's answer when asked to stop interval shooting while none runs.")
+        case .focusRangeSet(.unlimited):
+            LocalizedStringResource(
+                "Autofocus has no range limit.", comment: "Siri's answer after nope.'s autofocus range limit (Close-Up or Far Focus) was lifted.")
+        case .focusRangeSet(.closeUp):
+            LocalizedStringResource(
+                "Close-Up is on.", comment: "Siri's answer after nope. limited autofocus to near subjects. Close-Up is the camera control's name.")
+        case .focusRangeSet(.far):
+            LocalizedStringResource(
+                "Far Focus is on.", comment: "Siri's answer after nope. limited autofocus to far subjects. Far Focus is the camera control's name.")
+        case .focusRangeUnavailable:
+            LocalizedStringResource(
+                "This lens can't limit its focus range.", comment: "Siri's answer when the lens in use can't limit autofocus to near or far subjects.")
+        case .photoSizeSet:
+            LocalizedStringResource(
+                "The photo size is set.", comment: "Siri's answer after nope. changed a lens's photo size; it applies from the next photo.")
+        case .noPhotoSizeChoice:
+            LocalizedStringResource(
+                "This lens has only one photo size.", comment: "Siri's answer when the lens offers no choice of photo size.")
         case .bracketUnavailable:
             LocalizedStringResource(
                 "This lens can't take that bracket.",

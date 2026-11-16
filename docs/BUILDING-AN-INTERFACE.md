@@ -76,7 +76,7 @@ phases as `.drive(.hardwareButton(_:))`. Pass a `DeviceStatusReading` to `Camera
 `SeriesScreenKeeper.update(isSeriesRunning:isInForeground:)` so the screen stays awake and is
 dimmed, with a visible way to brighten it.
 
-To take requests from Siri and Shortcuts, run `serveShortcuts(from:)` with the app's
+To take requests from Siri and Shortcuts, run `serveShortcuts(from:settings:)` with the app's
 `ShortcutInbox` in a `.task` while the camera is shown; the intents call `submit(_:)`.
 
 ## The standard camera layout

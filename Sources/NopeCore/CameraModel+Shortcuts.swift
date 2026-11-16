@@ -9,10 +9,15 @@ extension CameraModel {
     /// Side effects: as ``CameraIntent/capture`` and ``CameraIntent/selectLens(_:)``; a request
     /// may switch the lens, start the self-timer, take a photo and add it to Photos.
     ///
-    /// - Parameter inbox: Where the app's App Intents leave their requests.
-    public func serveShortcuts(from inbox: ShortcutInbox) async {
+    /// - Parameters:
+    ///   - inbox: Where the app's App Intents leave their requests.
+    ///   - settings: The person's settings, for requests that change a stored setting of a lens
+    ///     (``ShortcutRequest/setPhotoSize(_:)``), or `nil` when the interface stores none; such
+    ///     a request then says the lens offers no choice. The interface applies the changed
+    ///     setting to the camera, as it does for its own settings screen.
+    public func serveShortcuts(from inbox: ShortcutInbox, settings: NopeSettings? = nil) async {
         while let pending = await inbox.next() {
-            pending.finish(await perform(pending.request, inbox: inbox))
+            pending.finish(await perform(pending.request, inbox: inbox, settings: settings))
         }
     }
 
@@ -21,8 +26,9 @@ extension CameraModel {
     /// - Parameters:
     ///   - request: What was asked for.
     ///   - inbox: The inbox, for its waits and timeouts.
+    ///   - settings: The person's settings, or `nil`.
     /// - Returns: How it ended.
-    func perform(_ request: ShortcutRequest, inbox: ShortcutInbox) async -> ShortcutOutcome {
+    func perform(_ request: ShortcutRequest, inbox: ShortcutInbox, settings: NopeSettings?) async -> ShortcutOutcome {
         switch request {
         case .takePhoto(let photo): await takePhoto(photo, inbox: inbox)
         case .takeBracket(let bracket): await takeBracket(bracket, inbox: inbox)
@@ -30,6 +36,8 @@ extension CameraModel {
         case .setLight(let isOn): await setLight(isOn, inbox: inbox)
         case .startInterval(let series): await startInterval(series, inbox: inbox)
         case .stopInterval: await stopInterval()
+        case .setFocusRange(let range): await setFocusRange(range, inbox: inbox)
+        case .setPhotoSize(let size): await setPhotoSize(size, settings: settings, inbox: inbox)
         }
     }
 
@@ -190,6 +198,53 @@ extension CameraModel {
         guard manual.intervalProgress != nil else { return .noIntervalRunning }
         await send(.manual(.stopInterval))
         return .intervalStopped
+    }
+
+    /// Limits autofocus to near or far subjects, or lifts the limit, with
+    /// ``AutoControlIntent/setNearFocusLimit(_:)`` and ``AutoControlIntent/setFarFocusLimit(_:)``,
+    /// as Close-Up and Far Focus in the tray do. The limit lasts while the camera runs on this
+    /// lens, as the tray's does.
+    ///
+    /// - Parameters:
+    ///   - range: The range.
+    ///   - inbox: The inbox, for its waits and timeouts.
+    /// - Returns: How it ended.
+    private func setFocusRange(_ range: FocusRangeChoice, inbox: ShortcutInbox) async -> ShortcutOutcome {
+        if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
+        switch range {
+        case .unlimited:
+            await send(.auto(.setNearFocusLimit(false)))
+            await send(.auto(.setFarFocusLimit(false)))
+        case .closeUp:
+            guard manual.capabilities.supportsNearFocusLimit else { return .focusRangeUnavailable }
+            await send(.auto(.setNearFocusLimit(true)))
+        case .far:
+            guard manual.capabilities.supportsFarFocusLimit else { return .focusRangeUnavailable }
+            await send(.auto(.setFarFocusLimit(true)))
+        }
+        return .focusRangeSet(range)
+    }
+
+    /// Chooses a lens's photo size in the person's settings
+    /// (``NopeSettings/setPhotoSize(_:for:)``), as Settings > Photo Size does. The lenses and
+    /// their sizes are known once the camera has started.
+    ///
+    /// - Parameters:
+    ///   - request: The lens and the size.
+    ///   - settings: The person's settings, or `nil` when the interface stores none.
+    ///   - inbox: The inbox, for its waits and timeouts.
+    /// - Returns: How it ended.
+    private func setPhotoSize(
+        _ request: PhotoSizeShortcut, settings: NopeSettings?, inbox: ShortcutInbox
+    ) async -> ShortcutOutcome {
+        if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
+        let kind = request.lensKind ?? selectedLens?.kind
+        guard let lens = capabilities?.lenses.first(where: { $0.kind == kind }) else { return .lensUnavailable }
+        guard let settings, let size = request.dimensions(on: lens) else { return .noPhotoSizeChoice }
+        // A new size restarts the camera, which would end a burst or a series part-way.
+        guard !isTakingPhoto, !isRunningSeries else { return .busy }
+        settings.setPhotoSize(size, for: lens)
+        return .photoSizeSet
     }
 
     /// Whether a countdown, a burst, an interval series or an astro run is in progress, so a
