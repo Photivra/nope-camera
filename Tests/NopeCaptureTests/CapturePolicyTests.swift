@@ -40,6 +40,16 @@ struct CapturePolicyTests {
         #expect(configuration.photoSettings.processedFormat == .jpeg)
     }
 
+    /// Issue #57: the request's photo size is configured when the lens reports it.
+    @Test func aChosenPhotoSizeIsUsedOnlyWhenTheLensReportsIt() throws {
+        let front = Lens(id: "front", kind: .front, bayerRAWFormat: nil, photoDimensions: Self.sizes)
+        let large = try #require(CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: front, photoSize: Self.sizes[0])))
+        #expect(large.maxPhotoDimensions == Self.sizes[0])
+        let unknown = try #require(
+            CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: front, photoSize: PhotoDimensions(width: 2, height: 1))))
+        #expect(unknown.maxPhotoDimensions == Self.sizes[1])
+    }
+
     @Test func fileFormatFollowsThePlan() throws {
         let raw = try #require(CapturePolicy.photoSettings(for: .bayerRAW(pixelFormat: "bgg4")))
         #expect(CapturePolicy.fileFormat(of: raw) == .raw)

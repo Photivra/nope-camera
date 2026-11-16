@@ -64,6 +64,15 @@ public final class ManualControlsModel {
     /// Auto.
     public internal(set) var nearFocusLimit = false
 
+    /// Whether autofocus is limited to far subjects (Far Focus, issue #57). Off by default; never
+    /// on with ``nearFocusLimit``; reset by All Auto.
+    public internal(set) var farFocusLimit = false
+
+    /// Whether faces the camera detects steer autofocus and auto exposure. On by default, the
+    /// system's behavior; the app sets it from the person's Face Detection setting
+    /// (``AutoControlIntent/setFollowsFaces(_:)``). All Auto doesn't change it.
+    public internal(set) var followsFaces = true
+
     /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default.
     public internal(set) var fastShutter = FastShutter.handheld
 
