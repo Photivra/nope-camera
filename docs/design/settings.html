@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: settings and system screens</title>
+<style>
+  /* Shared tokens, phone frame, type scale and figure layout: copied from ux-v3.html. */
+  :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#5fe0d0; --amber:#ffb340; --red:#ff453a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+  header, .notes { max-width:1180px; margin:0 auto; padding:28px 16px 4px; }
+  h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.02em; }
+  header p { margin:0 0 6px; color:var(--muted); max-width:820px; }
+  header a, .notes a, figcaption a { color:inherit; }
+  h2.part { max-width:1180px; margin:26px auto 0; padding:0 16px; font-size:19px; letter-spacing:-.01em; }
+  .grid { max-width:1180px; margin:0 auto; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:30px 26px; }
+  figure { margin:0; }
+  figcaption { margin-top:12px; font-size:13px; color:var(--muted); }
+  figcaption b { color:var(--ink); display:block; font-size:14px; margin-bottom:2px; }
+  figcaption code { font-size:11.5px; }
+  /* phone: 300px wide ≈ 0.75 × 402 pt; all sizes below are drawn at that scale */
+  .phone { position:relative; width:300px; height:652px; border-radius:46px; background:#000; overflow:hidden; box-shadow:0 0 0 10px #1c1c1e, 0 20px 40px rgba(0,0,0,.25); margin:10px auto 0; color:#fff; font-size:12px; }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:94px; height:27px; background:#000; border-radius:20px; z-index:12; }
+  .top { position:absolute; top:42px; left:12px; right:12px; height:34px; display:flex; align-items:center; justify-content:space-between; z-index:5; }
+  .pills { display:flex; gap:5px; min-width:84px; }
+  .chip { height:28px; padding:0 11px; border-radius:14px; display:flex; align-items:center; gap:5px; font-weight:600; font-size:12px; color:var(--teal); background:rgba(58,58,60,.92); }
+  .ib { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; font-size:16px; background:rgba(58,58,60,.92); }
+  .vf { position:absolute; left:0; right:0; top:84px; height:400px; background:
+      radial-gradient(120px 90px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(260px 200px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .row { position:absolute; left:0; right:0; top:492px; height:34px; display:flex; justify-content:center; align-items:center; gap:8px; z-index:5; }
+  .lens { height:30px; min-width:38px; padding:0 8px; border-radius:15px; display:grid; place-items:center; font-weight:600; background:rgba(58,58,60,.92); }
+  .lens.on { background:#fff; color:#000; font-weight:700; }
+  .tray-btn { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; background:rgba(58,58,60,.92); font-size:14px; margin-left:6px; }
+  .bottom { position:absolute; left:0; right:0; bottom:28px; height:84px; display:flex; align-items:center; justify-content:space-between; padding:0 30px; }
+  .slot { width:44px; height:44px; }
+  .thumb { width:44px; height:44px; border-radius:9px; background:linear-gradient(135deg,#8a6a3e,#3d5a6b); box-shadow:0 0 0 1.5px #fff, 0 0 0 2.5px #000; position:relative; }
+  .thumb .seal { position:absolute; right:-6px; top:-6px; width:18px; height:18px; border-radius:50%; background:var(--teal); color:#000; font-size:10px; display:grid; place-items:center; box-shadow:0 0 0 1.5px #000; }
+  .shutter { width:66px; height:66px; border-radius:50%; border:4px solid #fff; box-shadow:0 0 0 1px #000 inset, 0 0 0 1px rgba(0,0,0,.6); display:grid; place-items:center; }
+  .shutter::after { content:""; width:52px; height:52px; border-radius:50%; background:#fff; }
+  .flip { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:17px; background:rgba(58,58,60,.92); }
+  .banner { position:absolute; left:10px; right:10px; top:92px; border-radius:14px; padding:10px 12px; background:rgba(28,28,30,.96); border:1px solid rgba(255,255,255,.15); z-index:7; font-size:12px; line-height:1.35; }
+  .banner .acts { display:flex; gap:8px; margin-top:8px; align-items:center; }
+  .banner .acts span { padding:6px 10px; border-radius:12px; background:#fff; color:#000; font-weight:600; }
+  .night, .night .lens, .night .ib, .night .flip, .night .chip { color:var(--red); }
+  .night .vf { filter:sepia(1) saturate(6) hue-rotate(-50deg) brightness(.5); }
+  .night .lens, .night .ib, .night .flip, .night .chip, .night .tray-btn { background:#1a0000; border:1px solid #5a1410; }
+  .night .lens.on { background:var(--red); color:#000; }
+  .night .shutter { border-color:var(--red); } .night .shutter::after { background:var(--red); }
+  .ipad { width:100%; max-width:640px; height:470px; border-radius:30px; }
+  .ipad .vf { top:22px; bottom:22px; left:22px; right:120px; height:auto; border-radius:6px; }
+  .ipad .col { position:absolute; right:0; top:0; bottom:0; width:120px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:22px 0; z-index:5; }
+  .ipad .lensv { display:flex; flex-direction:column; gap:6px; }
+  .notes h2 { font-size:18px; margin:22px 0 8px; }
+  .notes ol, .notes ul { margin:0; padding-left:20px; }
+  .notes li { margin:5px 0; }
+  .notes li span { color:var(--muted); }
+  table { border-collapse:collapse; font-size:13px; margin-top:6px; }
+  td, th { text-align:left; padding:5px 10px 5px 0; vertical-align:top; border-bottom:1px solid rgba(128,128,128,.25); }
+  th { color:var(--muted); font-weight:600; }
+  .tog { width:42px; height:25px; border-radius:13px; background:#34c759; position:relative; }
+  .tog::after { content:""; position:absolute; right:2px; top:2px; width:21px; height:21px; border-radius:50%; background:#fff; }
+  .tog.off { background:#39393d; } .tog.off::after { left:2px; right:auto; }
+
+  /* Settings and its pages (this file). Settings follows the system appearance: light, dark,
+     and night mode (red on black). Each theme sets the same color roles. */
+  .settings { --sbg:#000; --grp:#1c1c1e; --txt:#fff; --sec:#8e8e93; --sep:#38383a; --tint:#0a84ff; --on:#34c759; --offt:#39393d; --knob:#fff; --del:#ff453a; --fld:#1c1c1e; }
+  .settings.light { --sbg:#f2f2f7; --grp:#fff; --txt:#000; --sec:#6d6d72; --sep:#c6c6c8; --tint:#007aff; --on:#34c759; --offt:#e9e9eb; --knob:#fff; --del:#ff3b30; }
+  .settings.night { --sbg:#000; --grp:#120000; --txt:var(--red); --sec:var(--red); --sep:#3a0c0a; --tint:#8a0a06; --on:#7a0000; --offt:#2a0000; --knob:var(--red); --del:var(--red); }
+  .sh { position:absolute; left:0; right:0; top:46px; bottom:0; border-radius:12px 12px 0 0; background:var(--sbg); color:var(--txt); overflow:hidden; }
+  .settings.night .sh { border-top:1px solid #3a0c0a; }
+  .settings.full .sh { top:0; border-radius:0; padding-top:40px; }
+  .nb { height:40px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; font-size:15px; }
+  .nb .bk { color:var(--tint); }
+  .nb .dn { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; background:var(--grp); color:var(--txt); font-size:15px; font-weight:700; }
+  .nb .ti { font-weight:600; position:absolute; left:0; right:0; text-align:center; pointer-events:none; }
+  .nb.in { border-bottom:.5px solid var(--sep); }
+  .lt { padding:0 16px 2px; font-size:26px; font-weight:700; letter-spacing:-.02em; line-height:1.15; }
+  .sec { padding:12px 30px 5px; font-size:11px; text-transform:uppercase; color:var(--sec); }
+  .gr { margin:0 14px; background:var(--grp); border-radius:11px; overflow:hidden; }
+  .gr + .gr { margin-top:14px; }
+  .rw { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 13px; border-bottom:.5px solid var(--sep); font-size:14px; line-height:1.25; }
+  .rw:last-child { border-bottom:0; }
+  .rw small { color:var(--sec); font-size:13px; white-space:nowrap; flex:0 0 auto; }
+  .rw .l { display:flex; flex-direction:column; min-width:0; }
+  .rw .l em { font-style:normal; font-size:11.5px; color:var(--sec); margin-top:2px; line-height:1.3; }
+  .rw.na > span:first-child, .rw.na .l > span { color:var(--sec); }
+  .rw.tint { color:var(--tint); }
+  .rw.del { color:var(--del); }
+  .rw.note { font-size:11.5px; line-height:1.35; }
+  .rw.ph { color:var(--sec); }
+  .rw .ck { color:var(--tint); font-weight:700; }
+  .rw.ic { justify-content:flex-start; align-items:flex-start; }
+  .rw.ic svg { flex:0 0 auto; width:20px; height:20px; color:var(--tint); margin-top:1px; }
+  .settings .tog { flex:0 0 auto; background:var(--on); }
+  .settings .tog::after { background:var(--knob); box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .settings .tog.off { background:var(--offt); }
+  .settings.night .tog.off { border:1px solid #5a1410; }
+  .ft { padding:6px 30px 0; font-size:11.5px; line-height:1.35; color:var(--sec); }
+  .ft + .ft { padding-top:5px; }
+  .lock { width:14px; height:14px; color:var(--sec); flex:0 0 auto; }
+  .hon { padding:4px 16px; }
+  .hon h4 { margin:14px 0 8px; font-size:17px; }
+  .hon p { margin:0 0 11px; font-size:12px; line-height:1.4; color:var(--sec); }
+  .hon p b { display:block; color:var(--txt); font-size:13.5px; margin-bottom:1px; }
+  .legal { padding:6px 16px; font-size:12.5px; line-height:1.4; }
+  .legal p { margin:0 0 9px; }
+  .kb { position:absolute; left:0; right:0; bottom:0; height:200px; background:#2b2b2d; border-top:.5px solid #444; display:grid; grid-template-rows:repeat(4,1fr); gap:7px; padding:8px 4px 26px; }
+  .kb div { display:flex; gap:5px; justify-content:center; }
+  .kb span { flex:0 0 24px; height:34px; border-radius:5px; background:#6b6b6e; }
+  .kb span.w { flex:0 0 140px; } .kb span.m { flex:0 0 38px; background:#464648; }
+  .swipe { display:flex; }
+  .swipe .rw { flex:1; transform:translateX(-64px); margin-right:-64px; border-bottom:0; }
+  .swipe .sd { width:64px; background:#ff3b30; color:#fff; display:grid; place-items:center; font-size:13px; font-weight:600; }
+  /* largest text (AX5 at 0.75 scale) */
+  .ax .rw { font-size:29px; padding:12px 13px; line-height:1.2; }
+  .ax .rw .l em { font-size:22px; }
+  .ax .ft { font-size:22px; padding:8px 20px 0; }
+  .ax .sec { font-size:22px; padding:16px 20px 6px; }
+  .ax .tog { align-self:center; }
+  /* right-to-left */
+  [dir=rtl] .rw, [dir=rtl] .rw *, [dir=rtl] .lt, [dir=rtl] .sec { unicode-bidi:plaintext; text-align:right; }
+  [dir=rtl] .tog::after { right:auto; left:2px; }
+  [dir=rtl] .tog.off::after { left:auto; right:2px; }
+  [dir=rtl] .swipe .rw { transform:none; }
+
+  /* full-screen states (first run, permissions): the camera screen's dark appearance */
+  .fs { position:absolute; inset:0; padding:92px 24px 0; }
+  .fs .gear { position:absolute; top:44px; right:14px; width:36px; height:36px; border-radius:50%; background:#333; display:grid; place-items:center; font-size:17px; }
+  .fs h3 { margin:0 0 18px; font-size:26px; letter-spacing:-.02em; }
+  .stmt { display:flex; gap:12px; align-items:flex-start; font-size:15px; line-height:1.35; margin-bottom:16px; }
+  .stmt svg { flex:0 0 auto; width:22px; height:22px; color:#0a84ff; margin-top:1px; }
+  .fnote { font-size:11.5px; color:#98989f; line-height:1.35; }
+  .cont { position:absolute; left:18px; right:18px; bottom:36px; padding:11px; border-radius:12px; background:rgba(120,120,128,.32); color:#0a84ff; text-align:center; font-weight:600; font-size:14px; }
+  .msg { position:absolute; left:24px; right:24px; top:210px; text-align:center; }
+  .msg svg { width:44px; height:44px; color:#98989f; }
+  .msg b { display:block; font-size:19px; margin:10px 0 6px; }
+  .msg p { margin:0 0 16px; color:#98989f; font-size:13px; line-height:1.4; }
+  .msg .bt { display:inline-block; padding:10px 18px; border-radius:12px; background:rgba(120,120,128,.32); color:#0a84ff; font-weight:600; font-size:14px; }
+  .status { position:absolute; left:34px; right:34px; top:216px; padding:14px; border-radius:12px; background:#000; text-align:center; font-size:13px; line-height:1.35; z-index:7; }
+  .status svg { width:30px; height:30px; display:block; margin:0 auto 8px; }
+  .wa { color:var(--amber); }
+  .dim { position:absolute; inset:0; background:rgba(0,0,0,.45); z-index:9; }
+  /* system-drawn (iOS) elements: alerts, Lock Screen, Control Center, Shortcuts */
+  .alert { position:absolute; left:40px; right:40px; top:200px; border-radius:14px; background:rgba(50,50,52,.98); text-align:center; z-index:10; color:#fff; overflow:hidden; }
+  .alert .at { padding:15px 14px 13px; font-size:11.5px; line-height:1.35; }
+  .alert .at b { display:block; font-size:13.5px; margin-bottom:4px; line-height:1.25; }
+  .alert .ab { border-top:.5px solid #545458; padding:10px 6px; color:#0a84ff; font-size:14px; }
+  .alert .ab.b { font-weight:600; }
+  .ls { position:absolute; inset:0; background:radial-gradient(260px 300px at 70% 25%, #3f5f74 0, #1f2f3b 55%, #10161b 100%); }
+  .ls .clk { position:absolute; top:84px; left:0; right:0; text-align:center; font-size:66px; font-weight:600; letter-spacing:-.02em; }
+  .ls .dt { position:absolute; top:66px; left:0; right:0; text-align:center; font-size:14px; font-weight:600; }
+  .ls .lb { position:absolute; bottom:40px; width:48px; height:48px; border-radius:50%; background:rgba(40,40,44,.7); display:grid; place-items:center; }
+  .ls .lb svg { width:22px; height:22px; }
+  .ls .hi { position:absolute; bottom:8px; left:50%; transform:translateX(-50%); width:120px; height:4px; border-radius:2px; background:#fff; }
+  .la { position:absolute; left:12px; right:12px; top:396px; border-radius:20px; background:rgba(28,28,30,.9); padding:12px; display:flex; gap:10px; align-items:center; font-size:12px; line-height:1.3; }
+  .la svg { width:24px; height:24px; flex:0 0 auto; }
+  .la .tx { flex:1; min-width:0; }
+  .la .tx b { display:block; font-size:13.5px; }
+  .la .pg { height:4px; border-radius:2px; background:rgba(255,255,255,.25); margin-top:6px; }
+  .la .pg i { display:block; height:4px; border-radius:2px; background:#fff; width:35%; }
+  .la .stp { flex:0 0 auto; padding:7px 10px; border-radius:14px; background:rgba(255,255,255,.18); font-weight:600; display:flex; gap:4px; align-items:center; }
+  .la .stp svg { width:12px; height:12px; }
+  .dyn { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:150px; height:27px; border-radius:20px; background:#000; z-index:13; display:flex; justify-content:space-between; align-items:center; padding:0 10px; font-size:11px; font-weight:600; }
+  .dyn svg { width:14px; height:14px; }
+  .cc { position:absolute; inset:0; background:rgba(20,24,28,.86); padding:70px 22px 0; }
+  .cc .tiles { display:grid; grid-template-columns:repeat(4,56px); gap:14px; justify-content:center; }
+  .cc .tl { width:56px; height:56px; border-radius:50%; background:rgba(120,120,128,.4); display:grid; place-items:center; }
+  .cc .tl svg { width:24px; height:24px; }
+  .cc .tl.on { background:#fff; color:#000; }
+  .cc .tl.big { grid-column:span 2; width:126px; border-radius:28px; justify-content:start; padding-left:16px; grid-auto-flow:column; gap:8px; font-size:11px; font-weight:600; text-align:left; }
+  .cc .cap { font-size:10px; text-align:center; margin-top:5px; color:#ddd; }
+  .cc .wrap { display:flex; flex-direction:column; align-items:center; }
+  .sc { position:absolute; inset:0; background:#000; padding:52px 14px 0; }
+  .sc .tls { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
+  .sc .tl { height:74px; border-radius:14px; background:#2c2c2e; padding:9px 10px; font-size:12px; font-weight:600; display:flex; flex-direction:column; justify-content:space-between; }
+  .sc .tl svg { width:20px; height:20px; color:#0a84ff; }
+  .side { position:absolute; width:4px; border-radius:2px; background:#8e8e93; z-index:14; }
+  .callout { position:absolute; z-index:14; font-size:11px; line-height:1.3; background:#1c1c1e; border:1px solid #48484a; border-radius:10px; padding:7px 9px; }
+  svg.ic { width:18px; height:18px; }
+  .sym { position:absolute; width:0; height:0; overflow:hidden; }
+</style>
+</head>
+<body>
+<svg class="sym" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="i-cambadge" viewBox="0 0 24 24"><path d="M2 8h4l2-3h6l2 3h3v4M2 8v11h11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="10" cy="13" r="3" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="19" r="1.3" fill="currentColor"/><circle cx="19.5" cy="19" r="1.3" fill="currentColor"/><circle cx="23" cy="19" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor"/></symbol>
+    <symbol id="i-torch" viewBox="0 0 24 24"><path d="M8 3h8v4l-2 3v11h-4V10L8 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-aperture" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3l3.5 8M21 12l-8 1.5M16 19.5l-5-6.5M5 18l5-6.5M4.5 7.5l8 1"/></g></symbol>
+    <symbol id="i-seal" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 2l2.4 2 3.1-.3.9 3 2.7 1.6-1 3 1 3-2.7 1.6-.9 3-3.1-.3L12 22l-2.4-2-3.1.3-.9-3-2.7-1.6 1-3-1-3 2.7-1.6.9-3 3.1.3z"/><path d="M8 12l3 3 5-6"/></g></symbol>
+    <symbol id="i-wifislash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M3 3l18 18"/></g><circle cx="12" cy="19.5" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-press" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="11" height="20" rx="3"/><path d="M4 6v4M4 13v4"/></g></symbol>
+    <symbol id="i-kbd" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.5M10 10h.5M14 10h.5M18 10h.5M7 14h10"/></g></symbol>
+    <symbol id="i-timer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4"/></g></symbol>
+    <symbol id="i-tap" viewBox="0 0 24 24"><path d="M9 12V5a2 2 0 0 1 4 0v6l4 1a2 2 0 0 1 1.5 2.3L17 21H9l-4-5 1.5-1.5L9 16z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-therm" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 8v8M17 5h3M17 9h3"/></g></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></g></symbol>
+    <symbol id="i-tri" viewBox="0 0 24 24"><path d="M12 2.5L23 21H1z" fill="currentColor"/><path d="M12 9v5.5M12 17.5v.5" stroke="#000" stroke-width="2.2" stroke-linecap="round"/></symbol>
+    <symbol id="i-triline" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3L22 20H2z"/><path d="M12 10v4M12 17v.5"/></g></symbol>
+    <symbol id="i-vslash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="13" height="10" rx="2"/><path d="M15 11l6-3v8l-6-3M3 3l18 18"/></g></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-viewfinder" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8V4h4M17 4h4v4M21 16v4h-4M7 20H3v-4"/><circle cx="12" cy="12" r="3.5"/></g></symbol>
+    <symbol id="i-stack" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5M3 16.5l9 5 9-5"/></g></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></g></symbol>
+  </defs>
+</svg>
+
+<header>
+  <h1>nope. design: settings and system screens</h1>
+  <p><b>Design version: 0.3.0 (2026-11-16).</b> Other files in this set: <a href="camera.html">camera.html</a> (the camera screen, its chips, banners and sheets) · <a href="manual-controls.html">manual-controls.html</a> (manual dials and Pro Tools) · <a href="icon.html">icon.html</a> (app icon).</p>
+  <p>Settings, its pages, first run, permissions and what nope. shows outside the app, drawn from the 0.3.0 code: row names, order, values and footers are the English strings in the source (<code>Sources/NopeUI</code>, <code>App/</code>). Settings follows the system appearance (light or dark, and red on black in night mode); the camera screen and its states are always dark. Every row is one line with its explanation under its name, as the app does: section footers were reported by the accessibility audit as not following Dynamic Type. iOS-drawn screens (alerts, Lock Screen, Control Center, Shortcuts) are marked as system UI; only the words nope. supplies are nope.'s. Sizes are drawn at 0.75 × points. Mockups only.</p>
+</header>
+
+<!-- ============================================================ -->
+<h2 class="part">Settings</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span></span><span class="dn">✓</span></div>
+        <div class="lt">Settings</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Presets <small>0 ›</small></div></div>
+        <div class="sec">Photos</div>
+        <div class="gr"><div class="rw">Formats <small>RAW (DNG) and HEIF ›</small></div><div class="rw">Look <small>Standard ›</small></div><div class="rw">File Options <small>Default ›</small></div><div class="rw">Photo Size <small>Default ›</small></div></div>
+        <div class="sec">Privacy</div>
+        <div class="gr">
+          <div class="rw">Remove All Optional Details <span class="tog"></span></div>
+          <div class="rw">Choose Details <small>All Optional Removed ›</small></div>
+          <div class="rw"><span class="l"><span>Sign Each Photo</span><em>Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.</em></span><span class="tog"></span></div>
+        </div>
+        <div class="sec">Camera</div>
+        <div class="gr"><div class="rw"><span class="l"><span>Manual Controls</span><em>Shows manual controls on the camera screen. Off by default.</em></span><span class="tog off"></span></div></div>
+      </div>
+    </div>
+    <figcaption><b>1 · Settings, light appearance (a fresh install)</b>A sheet from the camera's ⚙︎ button, in every camera state, so settings and Honesty are reachable before camera access. Presets comes first, alone, with the number saved. Look and File Options show only while HEIF or JPEG is saved; Photo Size only when a lens offers more than one size. Each row shows its value; the system checkmark closes. <code>SettingsScreen.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span></span><span class="ti">Settings</span><span class="dn">✓</span></div>
+        <div class="sec">Camera</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Manual Controls</span><em>Shows manual controls on the camera screen. Off by default.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Start in Clean View</span><em>The camera opens with only the viewfinder and the shutter. Warnings about the photo always show.</em></span><span class="tog off"></span></div>
+          <div class="rw">Fast Shutter <small>Standard ›</small></div>
+          <div class="rw"><span class="l"><span>Face Detection</span><em>Autofocus and auto exposure follow faces the camera finds. On by default.</em></span><span class="tog"></span></div>
+          <div class="rw">Viewfinder Overlays <small>Off ›</small></div>
+          <div class="rw"><span class="l"><span>Night Mode</span><em>Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness: dim it in Control Center, or with Reduce White Point in the Accessibility settings.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Live Activity</span><em>When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.</em></span><span class="tog off"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>2 · Settings, Camera section (scrolled)</b>Manual Controls is a switch, not a page: the dials it shows are in <a href="manual-controls.html">manual-controls.html</a>. Live Activity appears only where the device shows Live Activities and they are allowed for nope. Every default is stated in the explanation where it matters ("Off by default").</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span></span><span class="ti">Settings</span><span class="dn">✓</span></div>
+        <div class="gr" style="margin-top:10px">
+          <div class="rw"><span class="l"><span>Live Activity</span><em>When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Mirror Front Camera</span><em>Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.</em></span><span class="tog off"></span></div>
+        </div>
+        <div class="sec">More</div>
+        <div class="gr"><div class="rw">Accessibility <small>›</small></div><div class="rw">Honesty <small>›</small></div><div class="rw">About and Licenses <small>›</small></div></div>
+      </div>
+    </div>
+    <figcaption><b>3 · Settings, end of the list</b>Mirror Front Camera shows only on a device with a front camera. More holds the three information pages. Nothing here is hidden behind a gesture: every page is a row.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span></span><span class="dn">✓</span></div>
+        <div class="lt">Settings</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Presets <small>2 ›</small></div></div>
+        <div class="sec">Photos</div>
+        <div class="gr"><div class="rw">Formats <small>RAW (DNG), HEIF, and JPEG ›</small></div><div class="rw">Look <small>Flat ›</small></div><div class="rw">File Options <small>Custom ›</small></div></div>
+        <div class="sec">Privacy</div>
+        <div class="gr">
+          <div class="rw">Remove All Optional Details <span class="tog off"></span></div>
+          <div class="rw">Choose Details <small>Custom ›</small></div>
+          <div class="rw"><span class="l"><span>Sign Each Photo</span><em>Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.</em></span><span class="tog off"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>4 · Settings, dark appearance, changed values</b>The same list in dark. The values say what changed: two presets, three formats (a system list, "and" in the language), Flat look, Custom file options and details. Signing off here is also an amber "Not Signed" chip on the camera and "Saved. Not signed: signing is off in Settings." after each photo (<a href="camera.html">camera.html</a>). No Photo Size row: this device has no lens with a choice.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings night"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span></span><span class="ti">Settings</span><span class="dn">✓</span></div>
+        <div class="sec">Camera</div>
+        <div class="gr">
+          <div class="rw">Fast Shutter <small>Standard ›</small></div>
+          <div class="rw"><span class="l"><span>Face Detection</span><em>Autofocus and auto exposure follow faces the camera finds. On by default.</em></span><span class="tog"></span></div>
+          <div class="rw">Viewfinder Overlays <small>On ›</small></div>
+          <div class="rw"><span class="l"><span>Night Mode</span><em>Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness: dim it in Control Center, or with Reduce White Point in the Accessibility settings.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Red Viewfinder</span><em>Shows the live picture in red too. Only the screen changes; photos keep their colors.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Mirror Front Camera</span><em>Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.</em></span><span class="tog off"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>5 · Settings in night mode</b>Always a sheet at night (also on iPad, instead of the popover). Everything is drawn white and multiplied by red, so secondary text is the same full red as primary text (a dimmer red would fall below 4.5:1). Switches differ by knob position and fill. Red Viewfinder appears only while Night Mode is on. <code>CameraStyle.swift</code> (NightModeStyle)</figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">Presets</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Presets</div>
+        <div class="sec">Apply a Preset</div>
+        <div class="gr"><div class="rw"><span class="l"><span>Factory Defaults</span><em>Every setting as on a fresh install. Saved presets are kept.</em></span></div></div>
+        <div class="ft">No saved presets yet. Save your current settings to come back to them with one tap.</div>
+        <div class="gr" style="margin-top:22px"><div class="rw">Save Current Settings <small>›</small></div></div>
+        <div class="ft">A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.</div>
+        <div class="ft">Presets are kept on this device only.</div>
+      </div>
+    </div>
+    <figcaption><b>6 · Presets, none saved yet</b>Tapping a preset applies it at once; there is no confirmation step because Undo follows. The same list opens from Presets in the camera's quick-controls tray, as its own sheet with ✓. It isn't offered in the Lock Screen camera. <code>PresetsScreen.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Presets</div>
+        <div class="gr" style="margin-top:12px">
+          <div class="rw"><span class="l"><span style="font-weight:600">“Astro” applied.</span><em>Location stays off, because location access isn't allowed for nope. You can allow it in Settings.</em></span></div>
+          <div class="rw tint">Undo</div>
+        </div>
+        <div class="sec">Apply a Preset</div>
+        <div class="gr"><div class="rw"><span class="l"><span>Factory Defaults</span><em>Every setting as on a fresh install. Saved presets are kept.</em></span></div><div class="rw">Astro</div><div class="rw">Bugs at night</div></div>
+        <div class="gr" style="margin-top:22px"><div class="rw">Save Current Settings <small>›</small></div><div class="rw">Rename or Delete <small>›</small></div></div>
+        <div class="ft">A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.</div>
+        <div class="ft">Presets are kept on this device only.</div>
+      </div>
+    </div>
+    <figcaption><b>7 · After applying a preset</b>The result comes first, with any notices, and VoiceOver announces it. Undo stays until the list closes. Other notices: "This device has no lens like the preset's, so the lens didn't change.", "Some camera values were changed to what this lens supports.", "The camera isn't on, so the lens and camera values didn't change.", "The camera is taking photos. Try again when it's done." (then "Nothing changed."), "This preset can't be read."</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Presets</span><span class="dn">✓</span></div>
+        <div class="lt">Save Preset</div>
+        <div class="gr" style="margin-top:14px"><div class="rw">Astro<span style="color:var(--tint);font-weight:300;margin-right:auto">|</span></div></div>
+        <div class="ft">Another preset has this name.</div>
+      </div>
+      <div class="kb"><div><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div><span class="m"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span class="m"></span></div><div><span class="m"></span><span class="w"></span><span class="m" style="flex-basis:60px"></span></div></div>
+    </div>
+    <figcaption><b>8 · Save Preset</b>One name field ("Name", placeholder "For example, Astro") that grows with its text; Return or ✓ saves. A name that can't be saved does nothing and the footer says why: "Enter a name." (only once something was typed and removed), "Use 40 characters or fewer.", "Another preset has this name." No disabled button: disabled buttons failed the contrast audit.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Presets</span><span></span></div>
+        <div class="lt">Rename or Delete</div>
+        <div class="gr" style="margin-top:14px">
+          <div class="rw">Astro <small>›</small></div>
+          <div class="swipe" style="border-top:.5px solid var(--sep)"><div class="rw">Bugs at night <small>›</small></div><div class="sd">Delete</div></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>9 · Rename or Delete</b>Shown only once a preset is saved. Each row opens its rename screen; swiping a row deletes it (the system swipe action). Deleting never changes the current settings.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Rename or Delete</span><span class="dn">✓</span></div>
+        <div class="lt">Rename Preset</div>
+        <div class="gr" style="margin-top:14px"><div class="rw">Bugs at night</div></div>
+        <div class="gr" style="margin-top:28px"><div class="rw del">Delete Preset</div></div>
+        <div class="ft">Deleting a preset doesn't change your current settings.</div>
+      </div>
+    </div>
+    <figcaption><b>10 · Rename Preset</b>The same name field, filled in, with the same rules, and a destructive Delete Preset button with its consequence under it.</figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">Photos: formats, look, file options, photo size</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Formats</div>
+        <div class="sec">Save Each Photo As</div>
+        <div class="gr"><div class="rw">RAW (DNG) <span class="ck">✓</span></div><div class="rw">HEIF <span class="ck">✓</span></div><div class="rw">JPEG</div></div>
+        <div class="ft">At least one format is required.</div>
+      </div>
+    </div>
+    <figcaption><b>11 · Formats (default: RAW and HEIF)</b>A native checkmark list. The last selected format can't be turned off. Format names aren't translated. The camera's format chip opens the same list under an explanation of the next photo (<a href="camera.html">camera.html</a>). <code>FormatsSettingsView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Formats</div>
+        <div class="sec">Save Each Photo As</div>
+        <div class="gr"><div class="rw">RAW (DNG) <span class="ck">✓</span></div><div class="rw">HEIF <span class="ck">✓</span></div><div class="rw">JPEG <span class="ck">✓</span></div></div>
+        <div class="ft">At least one format is required.</div>
+        <div class="gr" style="margin-top:22px"><div class="rw"><span class="l"><span>Paired with RAW</span><em>Photos keeps one copy with the RAW as a single photo. The other copy is saved as a separate photo.</em></span><small>HEIF ›</small></div></div>
+      </div>
+    </div>
+    <figcaption><b>12 · Formats, all three: Paired with RAW</b>Offered only when RAW, HEIF and JPEG are all saved on a device with RAW: it says why there are two items in Photos. A pushed list (HEIF, JPEG; HEIF by default), as in File Options: a menu picker failed the night mode color tests.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Formats</div>
+        <div class="sec">Save Each Photo As</div>
+        <div class="gr"><div class="rw na"><span class="l"><span>RAW (DNG)</span><em>Not available on this device</em></span></div><div class="rw">HEIF <span class="ck">✓</span></div><div class="rw">JPEG</div></div>
+        <div class="ft">At least one format is required.</div>
+        <div class="ft">This device's cameras don't provide unprocessed RAW.</div>
+      </div>
+    </div>
+    <figcaption><b>13 · Formats on a device without RAW</b>The no-RAW message: the RAW row stays visible, unavailable, with the reason, and the footer says it plainly. The camera also labels such photos (the format chip and the lens's "No RAW", in <a href="camera.html">camera.html</a>). First run doesn't change on these devices.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Look</div>
+        <div class="sec">HEIF and JPEG Look</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Standard</span><em>One overall tone curve, so the photo looks normal.</em></span><span class="ck">✓</span></div>
+          <div class="rw"><span class="l"><span>Flat</span><em>No contrast curve: closest to the sensor, so it looks flat and low in contrast.</em></span></div>
+        </div>
+        <div class="gr" style="margin-top:22px"><div class="rw note">This changes only the HEIF and JPEG copies. The RAW is never changed.</div></div>
+      </div>
+    </div>
+    <figcaption><b>14 · Look</b>An inline picker with each look's one-line explanation. The note is a row, not a footer, so it follows Dynamic Type. Its wording is a processing claim, kept in <code>Honesty.xcstrings</code>. <code>LookSettingsView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">File Options</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">HEIF Compression <small>System Default ›</small></div><div class="rw note" style="color:var(--sec)">Lower quality makes smaller files, with visible compression in fine detail.</div></div>
+        <div class="gr"><div class="rw">HEIF Bit Depth <small>10-bit ›</small></div><div class="rw note" style="color:var(--sec)">10-bit keeps smoother gradients. 8-bit files are smaller.</div></div>
+        <div class="gr"><div class="rw">Color Space <small>Display P3 ›</small></div><div class="rw note" style="color:var(--sec)">Display P3 keeps the camera's colors. sRGB suits sites and screens that show only sRGB; colors outside it are clipped.</div></div>
+        <div class="gr"><div class="rw">Copy Size <small>Full Size ›</small></div><div class="rw note" style="color:var(--sec)">Smaller copies are quicker to share and take less space. The RAW keeps every pixel.</div></div>
+        <div class="gr"><div class="rw note">This changes only the HEIF and JPEG copies. The RAW is never changed.</div></div>
+      </div>
+    </div>
+    <figcaption><b>15 · File Options (defaults)</b>Advanced options; the defaults need no change. Each picker has a short name so its value fits, and its explanation in the row below. JPEG Compression (default Maximum Quality) appears only while JPEG is saved, the HEIF rows only while HEIF is. <code>FileOptionsSettingsView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹ Settings</span><span class="ti">File Options</span><span></span></div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Copy Size <small>Half Size ›</small></div><div class="rw note" style="color:var(--sec)">Smaller copies are quicker to share and take less space. The RAW keeps every pixel.</div></div>
+        <div class="gr"><div class="rw note">This changes only the HEIF and JPEG copies. The RAW is never changed.</div><div class="rw">Restore Defaults</div></div>
+        <div class="sec" style="margin-top:14px">Pushed list: HEIF Compression</div>
+        <div class="gr"><div class="rw">System Default <span class="ck">✓</span></div><div class="rw">Maximum Quality</div><div class="rw">High Quality</div><div class="rw">Medium Quality</div></div>
+      </div>
+    </div>
+    <figcaption><b>16 · File Options changed, and a pushed choice list</b>Restore Defaults appears once any option differs, in primary text (tinted form text failed the contrast audit on the dark background); the Settings row then says Custom. Every picker in Settings is a pushed list: menus clipped long values such as "System Default" at large text sizes. Copy Size: Full Size, Half Size, Quarter Size.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Photo Size</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Front <small>12 MP (4032 × 3024) ›</small></div></div>
+        <div class="gr"><div class="rw note">These lenses have no RAW, so each photo is the phone's processed file. A larger size has more pixels and bigger files. The smallest size is the default.</div></div>
+      </div>
+    </div>
+    <figcaption><b>17 · Photo Size</b>One pushed picker per lens that offers more than one size, which is only a lens without RAW (a RAW lens always takes the sensor's binned RAW). Each size reads "megapixels (width × height)", from what the lens reports; the lens and sizes here are an example. The row is hidden when no lens has a choice. <code>PhotoSizeSettingsView.swift</code></figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">Camera: Fast Shutter and Viewfinder Overlays</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Fast Shutter</div>
+        <div class="sec">Fast Shutter</div>
+        <div class="gr"><div class="rw">Standard <span class="ck">✓</span></div><div class="rw">Freeze Motion (1/500 s)</div><div class="rw">Freeze Fast Motion (1/1000 s)</div></div>
+        <div class="gr" style="margin-top:22px"><div class="rw note">In full auto, the camera prefers the fastest shutter that still exposes well, so photos blur less. Standard aims for a speed you can hold by hand. Manual controls are never changed.</div></div>
+      </div>
+    </div>
+    <figcaption><b>18 · Fast Shutter</b>The same choice as Fast Shutter in the quick-controls tray and the Set Fast Shutter shortcut. It only steers full auto. <code>FocusAids.swift</code> (FastShutterSettingsView)</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Viewfinder Overlays</div>
+        <div class="sec">Guides</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Grid</span><em>Guide lines over the viewfinder. They aren't saved in the photo.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Level</span><em>A horizon bar, or a top-down level when you point straight down. Uses the motion sensors only while it shows.</em></span><span class="tog off"></span></div>
+        </div>
+        <div class="sec">Grid Style</div>
+        <div class="gr"><div class="rw">Thirds <span class="ck">✓</span></div><div class="rw">4 × 4</div><div class="rw">Square</div><div class="rw">Golden Ratio</div><div class="rw">Golden Spiral</div></div>
+      </div>
+    </div>
+    <figcaption><b>19 · Viewfinder Overlays: grid and level</b>All overlays are off by default; the Settings row says On when any is on. Grid Style is an inline list that grows with the text size and shows only while Grid is on. The same choices are in the tray's Grid menu (Off and each style). <code>OverlaySettingsView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹</span><span class="ti">Viewfinder Overlays</span><span></span></div>
+        <div class="sec">Grid Style</div>
+        <div class="gr"><div class="rw">Golden Ratio</div><div class="rw">Golden Spiral <span class="ck">✓</span></div><div class="rw">Turn Spiral <small>3 of 8</small></div></div>
+        <div class="sec">Live Aids</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Focus Peaking</span><em>Highlights the sharpest edges in magenta.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Histogram</span><em>Shown with the manual controls. It measures the processed live preview, not the RAW.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Live Camera Readout</span><em>The camera's live values, such as shutter, ISO, focus and white balance.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Keep Readout in Clean View</span><em>Keeps the readout on screen when the other controls are hidden.</em></span><span class="tog off"></span></div>
+        </div>
+        <div class="gr" style="margin-top:14px"><div class="rw note">Live aids are measured on the preview, a few times a second, only while they show. Nothing is saved.</div></div>
+      </div>
+    </div>
+    <figcaption><b>20 · Golden spiral, peaking, histogram, readout</b>Turn Spiral is a button (also a VoiceOver, Voice Control and Switch Control action) that moves the spiral to its next of eight placements. Keep Readout in Clean View shows only while the readout is on. The same live-aid switches are in Pro Tools (<a href="manual-controls.html">manual-controls.html</a>); how they draw is in <a href="camera.html">camera.html</a>.</figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">Privacy: Choose Details, Location and signing</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Choose Details</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Remove All Optional Details <span class="tog"></span></div></div>
+        <div class="ft">On: each photo keeps only what it needs to open. Off: choose each item below.</div>
+        <div class="sec">In Each Photo</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Location</span><em>Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Date and Time Taken</span><em>Off: Photos sorts it by the date it was saved instead.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Sub-Second Time</span><em>Off: nothing visible changes.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Time Zone</span><em>Off: the photo's local time can't be converted to other time zones.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Camera Make and Model</span><em>Off: apps can't show which device took it.</em></span><span class="tog off"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>21 · Choose Details (default: everything optional removed)</b>The master switch is on by default, so every item is off. Each item says what turning it off costs. Turning any item on turns the master switch off. All wording is a privacy claim, in <code>Honesty.xcstrings</code>. <code>PrivacySettingsView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹ Settings</span><span class="ti">Choose Details</span><span></span></div>
+        <div class="sec">In Each Photo</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Lens Make and Model</span><em>Off: apps can't show which lens took it.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Exact Model for RAW Editors</span><em>Off: some RAW editors can't choose their color profile for this camera and use the file's own color data instead. The DNG standard requires this item, so nope. writes a generic value instead.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Lens Correction Instructions</span><em>Off: editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>Exposure Settings</span><em>Shutter speed, ISO, aperture and focal length. Off: you can't see later how the photo was taken.</em></span><span class="tog"></span></div>
+          <div class="rw"><span class="l"><span>iOS Version</span><em>Off: nothing visible changes.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>Maker Notes</span><em>Hold the time since the device restarted and IDs for each photo, which can link your photos. Off: nothing visible changes.</em></span><span class="tog off"></span></div>
+          <div class="rw"><span class="l"><span>App Name and Version</span><em>Off: apps can't show what made the file.</em></span><span class="tog"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>22 · Choose Details, master off (each item at its default)</b>Turning the master off sets every item to its documented default (<code>docs/PRIVACY.md</code>): on for date, camera and lens, exact model, lens corrections, exposure and app name; off for location, sub-second time, time zone, iOS version and maker notes. "Your Name and Copyright" isn't offered: it needs text entry, which isn't built, so it stays off.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹ Settings</span><span class="ti">Choose Details</span><span></span></div>
+        <div class="gr" style="margin-top:12px"><div class="rw"><span class="l"><span>Standard File Tags</span><em>Fixed values the file standard asks for, such as version numbers and the color space. They say nothing about you, your phone or the photo. On by default.</em></span><span class="tog"></span></div></div>
+        <div class="sec">Always Saved</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Image Size and Layout</span><em>Without it, the file can't be read at all.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+          <div class="rw"><span class="l"><span>Color Filter Pattern</span><em>Tells editors which pixels are red, green and blue. Without it, the RAW has no color.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+          <div class="rw"><span class="l"><span>Black and White Levels</span><em>Without them, shadows and highlights come out wrong.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+          <div class="rw"><span class="l"><span>Color Data and White Balance</span><em>Without them, colors are wrong.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+          <div class="rw"><span class="l"><span>DNG Version</span><em>Required by the DNG standard. Editors refuse the file without it.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+          <div class="rw"><span class="l"><span>Orientation</span><em>Without it, the photo shows sideways or upside down.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+          <div class="rw"><span class="l"><span>Color Profile (HEIF and JPEG)</span><em>Without it, colors look washed out or oversaturated.</em></span><svg class="lock"><use href="#i-lock"/></svg></div>
+        </div>
+        <div class="ft">A photo can't be opened or shown correctly without these. None of them identify you or link your photos.</div>
+      </div>
+    </div>
+    <figcaption><b>23 · Standard File Tags and Always Saved</b>Standard File Tags sits outside the master switch, on by default. The locked items each show a lock and why they can't be removed; VoiceOver reads each as one element with the value "Locked".</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Choose Details</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Remove All Optional Details <span class="tog off"></span></div></div>
+        <div class="ft">On: each photo keeps only what it needs to open. Off: choose each item below.</div>
+        <div class="sec">In Each Photo</div>
+        <div class="gr"><div class="rw"><span class="l"><span>Location</span><em>Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.</em></span><span class="tog off"></span></div></div>
+      </div>
+      <div class="dim"></div>
+      <div class="alert"><div class="at"><b>Allow “nope.” to use your location?</b>nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.</div><div class="ab">Allow Once</div><div class="ab">Allow While Using App</div><div class="ab">Don't Allow</div></div>
+    </div>
+    <figcaption><b>24 · Location: the explanation, then the system prompt</b>The lead-in is the Location row itself: what it writes and what turning it off costs, read before the switch is touched. Turning it on asks iOS for access first (system alert; the purpose string is nope.'s). If access isn't allowed, the switch stays off. On the camera, Location on is an amber chip (<a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Choose Details</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Remove All Optional Details <span class="tog off"></span></div></div>
+        <div class="ft">On: each photo keeps only what it needs to open. Off: choose each item below.</div>
+        <div class="sec">In Each Photo</div>
+        <div class="gr">
+          <div class="rw"><span class="l"><span>Location</span><em>Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.</em></span><span class="tog off"></span></div>
+          <div class="rw note">Location access is off for nope., so photos can't include a location. To add one, allow location access in Settings.</div>
+          <div class="rw">Open Settings</div>
+          <div class="rw"><span class="l"><span>Date and Time Taken</span><em>Off: Photos sorts it by the date it was saved instead.</em></span><span class="tog"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>25 · Location access declined</b>Right under the switch: why it can't be on, and Open Settings (primary text, for contrast). When a restriction such as Screen Time blocks location, the row reads "Location access isn't allowed on this device, so photos can't include a location." with no button. Access is read again when the page opens.</figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">Accessibility, Honesty, About and Licenses</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Accessibility</div>
+        <div class="sec">Taking Photos</div>
+        <div class="gr"><div class="rw ic"><svg><use href="#i-press"/></svg><span>The volume buttons, and the Camera Control on iPhones that have one, take a photo.</span></div><div class="rw ic"><svg><use href="#i-kbd"/></svg><span>With a hardware keyboard, the Space bar takes a photo.</span></div></div>
+        <div class="sec">Self-Timer and Burst</div>
+        <div class="gr"><div class="rw ic"><svg><use href="#i-timer"/></svg><span>Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown.</span></div></div>
+        <div class="sec">Feedback</div>
+        <div class="gr"><div class="rw ic"><svg><use href="#i-tap"/></svg><span>On iPhone, a tap you can feel confirms each press of the shutter and each saved photo.</span></div><div class="rw ic"><svg><use href="#i-speaker"/></svg><span>VoiceOver says when each photo is saved and signed, or what went wrong.</span></div></div>
+      </div>
+    </div>
+    <figcaption><b>26 · Accessibility</b>Facts only: none of these has a switch yet, so the page shows no control that does nothing. Settings for them will add rows here. <code>AccessibilitySettingsView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Honesty</div>
+        <div class="hon">
+          <h4>What nope. Never Does</h4>
+          <p><b>No Network</b>nope. contains no networking code and makes no network connections.</p>
+          <p><b>No Data Collected</b>nope. contains no analytics, crash-reporting or advertising code, and collects no data.</p>
+          <p><b>Check It Yourself</b>Turn on App Privacy Report (Settings › Privacy &amp; Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none.</p>
+          <p><b>The RAW Is Never Changed</b>The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it.</p>
+          <p><b>Location Only If You Turn It On</b>Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.</p>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>27 · Honesty, What nope. Never Does</b>One scrolling page of statements, each a heading and a sentence read by VoiceOver as one element; section headings are VoiceOver headings. It names Apple's settings but doesn't open them. Continues with "The Comparison Photo Is Never Saved" and "Apple Watch Sends Only Commands". There are no subpages. <code>HonestyScreen.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹ Settings</span><span class="ti">Honesty</span><span></span></div>
+        <div class="hon">
+          <h4>What iOS May Still Do</h4>
+          <p><b>iOS Connections</b>iOS itself, for example iCloud Photos, makes its own connections.</p>
+          <p><b>iCloud Photos</b>With standard protection, Apple holds the keys to iCloud Photos. With Advanced Data Protection, only your devices do. Some photo metadata and Shared Albums stay under standard protection.</p>
+          <p><b>Enhanced Visual Search</b>Photos may privately compare landmark regions with Apple's servers (Enhanced Visual Search). You can turn it off in Settings › Apps › Photos.</p>
+          <p><b>Analysis in Photos</b>Photos uses on-device analysis to recognize people and pets and to classify scenes. Names you give people sync through iCloud.</p>
+          <p><b>Share with App Developers</b>If you opt in, Apple may share aggregated, non-identifying crash and usage statistics with developers. They never include your photos. It's in Settings › Privacy &amp; Security › Analytics &amp; Improvements.</p>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>28 · Honesty, What iOS May Still Do</b>What happens outside nope.'s control, stated with the setting names iOS uses. Continues with "Sharing from Photos" and "Faces and Autofocus".</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹ Settings</span><span class="ti">Honesty</span><span></span></div>
+        <div class="hon">
+          <p><b>Faces and Autofocus</b>iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.</p>
+          <h4>What No App Can Remove</h4>
+          <p><b>The Sensor's Noise Pattern</b>Every camera sensor leaves a faint, unique noise pattern. With enough of your photos, forensic tools can match them to the same camera. No app can fully remove it.</p>
+          <p><b>This Build and the Source</b>Apple encrypts and re-signs App Store apps, so there's no standard way to confirm a download was built from our public source.</p>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>29 · Honesty, What No App Can Remove</b>The page ends with the limits no camera app can get around. Every statement is backed by a source cited in <code>docs/research/privacy-claims.md</code>.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">About and Licenses</div>
+        <div class="sec" style="text-transform:none">PHOTIVRA NOPE CAMERA</div>
+        <div class="gr"><div class="rw">Version <small>0.3.0 (1)</small></div></div>
+        <div class="sec">License</div>
+        <div class="gr"><div class="rw">GNU General Public License, version 3 only (GPL-3.0-only) <small>›</small></div><div class="rw" style="color:var(--sec)">nope. is free software: you can redistribute it and modify it under the terms of this license.</div></div>
+        <div class="sec">Third-Party Notices</div>
+        <div class="gr"><div class="rw">This product includes DNG technology under license by Adobe.</div><div class="rw">Notices and Trademarks <small>›</small></div></div>
+        <div class="ft">Photivra, Nope Camera, the app icon and the wordmark are trademarks and aren't covered by the GPL.</div>
+        <div class="sec">Source Code</div>
+        <div class="gr"><div class="rw tint">https://github.com/Photivra/nope-camera</div></div>
+        <div class="ft">Opens in your browser. nope. itself makes no network connections.</div>
+      </div>
+    </div>
+    <figcaption><b>30 · About and Licenses, with the trademark note</b>The version and build come from the app's Info.plist. The Adobe DNG notice is shown as written. The trademark statement is the footer of Third-Party Notices. The source link hands the address to the system browser; nope. makes no request. <code>AboutScreen.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹</span><span class="ti">Notices and Trademarks</span><span></span></div>
+        <div class="legal">
+          <p>Photivra Nope Camera<br>Copyright (C) 2026 Shackelford Creative, LLC</p>
+          <p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 3 (GPL-3.0-only). See LICENSE.</p>
+          <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
+          <p>Additional terms under section 7 of the GNU General Public License<br>------------------------------------------------------------------</p>
+          <p>Under section 7(e), this license does not grant any right to use the trade names, trademarks, service marks, product names, logos, or other branding of Shackelford Creative, LLC, including "Photivra", "Nope Camera", the app icon, and the wordmark. See TRADEMARKS.md. A modified version must be distributed under a different name and icon.</p>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>31 · Notices and Trademarks (and License)</b>The bundled <code>NOTICE</code> (and, from the License row, the GPL-3.0 text), exactly as written and untranslated, one paragraph at a time in the body font, rewrapped to the screen so it grows with Dynamic Type; text is selectable. Inline title; a long title leaves the back button as its chevron.</figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">One page at the largest text size and right to left</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone settings light ax"><div class="island"></div>
+      <div class="sh">
+        <div class="nb in"><span class="bk">‹</span><span class="ti" style="font-size:17px">Choose Details</span><span></span></div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Remove All Optional Details <span class="tog"></span></div></div>
+        <div class="ft">On: each photo keeps only what it needs to open. Off: choose each item below.</div>
+        <div class="sec">In Each Photo</div>
+        <div class="gr"><div class="rw"><span class="l"><span>Location</span><em>Latitude, longitude and altitude, while the camera is open. Off: nothing is lost.</em></span><span class="tog off"></span></div></div>
+      </div>
+    </div>
+    <figcaption><b>32 · Largest text size (AX5): Choose Details</b>Names and explanations wrap onto as many lines as they need; nothing is cut off and the page scrolls. The explanations are rows, not footers, so they grow too. The switch stays beside its name. The presets screens and night mode are UI-tested at this size with accessibility audits.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings light" dir="rtl"><div class="island"></div>
+      <div class="sh">
+        <div class="nb"><span></span><span class="dn">✓</span></div>
+        <div class="lt">Settings</div>
+        <div class="gr" style="margin-top:12px"><div class="rw">Presets <small>‹ 2</small></div></div>
+        <div class="sec">Photos</div>
+        <div class="gr"><div class="rw">Formats <small>‹ RAW (DNG) and HEIF</small></div><div class="rw">Look <small>‹ Standard</small></div><div class="rw">File Options <small>‹ Default</small></div></div>
+        <div class="sec">Privacy</div>
+        <div class="gr">
+          <div class="rw">Remove All Optional Details <span class="tog"></span></div>
+          <div class="rw">Choose Details <small>‹ All Optional Removed</small></div>
+          <div class="rw"><span class="l"><span>Sign Each Photo</span><em>Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.</em></span><span class="tog"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>33 · Right to left: Settings</b>The whole list mirrors: names start on the right, values, chevrons and switches move to the left, and the switch's on position mirrors. Drawn with the English strings, as the right-to-left UI tests run (no right-to-left language ships yet). Format names and numbers keep their own direction.</figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">First run and permissions</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="fs"><div class="gear">⚙︎</div>
+        <h3>nope.</h3>
+        <div class="stmt"><svg><use href="#i-aperture"/></svg><span>Photos with as little processing as this phone allows.</span></div>
+        <div class="stmt"><svg><use href="#i-seal"/></svg><span>Each photo is signed, so changes can be detected.</span></div>
+        <div class="stmt"><svg><use href="#i-wifislash"/></svg><span>nope. never connects to the internet and keeps nothing about you.</span></div>
+        <div class="fnote">Next, iOS asks for camera access. Photos access is asked the first time you save.</div>
+      </div>
+      <div class="cont">Continue</div>
+    </div>
+    <figcaption><b>34 · First run, the camera prompt's lead-in</b>Shown before camera access is asked: the name as a heading in the system font (not the wordmark), three statements, and a note on what iOS asks next. "Each photo is signed" is a statement here, not its own screen. Continue is the bordered system button, pinned below the text so it stays in reach when the text scrolls; Settings (⚙︎) is reachable. <code>FirstRunView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="fs"><div class="gear">⚙︎</div>
+        <h3>nope.</h3>
+        <div class="stmt"><svg><use href="#i-aperture"/></svg><span>Photos with as little processing as this phone allows.</span></div>
+        <div class="stmt"><svg><use href="#i-seal"/></svg><span>Each photo is signed, so changes can be detected.</span></div>
+        <div class="stmt"><svg><use href="#i-wifislash"/></svg><span>nope. never connects to the internet and keeps nothing about you.</span></div>
+      </div>
+      <div class="cont">Continue</div>
+      <div class="dim"></div>
+      <div class="alert" style="top:230px"><div class="at"><b>“nope.” Would Like to Access the Camera</b>nope. uses the camera to take the photos you ask for.</div><div style="display:flex"><div class="ab" style="flex:1;border-right:.5px solid #545458">Don't Allow</div><div class="ab b" style="flex:1">Allow</div></div></div>
+    </div>
+    <figcaption><b>35 · Camera prompt (system alert)</b>Continue shows the iOS camera prompt in context; only the purpose string is nope.'s.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="fs"><div class="gear">⚙︎</div></div>
+      <div class="msg"><svg><use href="#i-cambadge"/></svg><b>Camera Access Is Off</b><p>To take photos, turn on camera access for nope. in the Settings app.</p><span class="bt">Open Settings</span></div>
+    </div>
+    <figcaption><b>36 · Camera access denied</b>A plain message with Open Settings, which opens nope.'s page in the Settings app. Built from plain text and buttons so the symbol grows with Dynamic Type; at large sizes it scrolls. Settings (⚙︎) stays above the content. <code>CameraScreen.swift</code>, <code>StatusMessageView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="fs"><div class="gear">⚙︎</div></div>
+      <div class="msg"><svg><use href="#i-camera"/></svg><b>No Camera Available</b><p>This device has no camera that nope. can use.</p></div>
+    </div>
+    <figcaption><b>37 · No usable camera</b>The same message layout, with no action. While access is being checked, "Starting the camera…" shows with a spinner.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="slot"></div><div class="shutter"></div><div class="flip">⟲</div></div>
+      <div class="dim"></div>
+      <div class="alert" style="top:220px"><div class="at"><b>“nope.” Would Like to Add to your Photos</b>nope. adds the photos you take to your photo library. It can't see your existing photos.</div><div style="display:flex"><div class="ab" style="flex:1;border-right:.5px solid #545458">Don't Allow</div><div class="ab b" style="flex:1">Allow</div></div></div>
+    </div>
+    <figcaption><b>38 · Photos prompt at the first save (system alert)</b>Asked the first time a photo is saved, as first run said. Add-only access: nope. can't see the library. The purpose string is nope.'s; the alert is iOS's.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="banner" style="top:100px"><div style="display:flex;gap:8px;align-items:flex-start"><svg class="ic wa" style="flex:0 0 auto"><use href="#i-tri"/></svg><span>Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app.</span></div><div class="acts"><span>Open Settings</span><span style="margin-left:auto;background:none;color:#fff;font-size:15px">✕</span></div></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="slot"></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>39 · Photos access denied</b>The failure banner from <a href="camera.html">camera.html</a>: amber triangle and words, on a dark backing, staying until dismissed or the next good save, with one action, Open Settings. Nothing was added to Photos. <code>CaptureFeedback.swift</code></figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">Outside the app</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="ls"><div class="dt">Monday, November 16</div><div class="clk">9:41</div>
+        <div class="lb" style="left:34px"><svg><use href="#i-torch"/></svg></div>
+        <div class="lb" style="right:34px"><svg><use href="#i-camera"/></svg></div>
+        <div class="hi"></div>
+      </div>
+      <div class="callout" style="right:14px;bottom:100px;width:150px">Open nope. (control chosen by the person in place of the Lock Screen camera button)</div>
+    </div>
+    <figcaption><b>40 · Lock Screen control</b>System UI. The "Open nope." control (camera symbol; "Opens the nope. camera.") can replace a Lock Screen button. On a locked device it opens the Lock Screen camera (next figure) without unlocking. <code>App/NopeControls/OpenCameraControl.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>41 · Lock Screen camera</b>The same camera screen (<a href="camera.html">camera.html</a>) and the same save pipeline: RAW, the details allowlist and read-back, a signature per photo, add-only saving. It starts with a copy of the person's settings, so night mode, formats and signing match; changes last until it closes. Left out, because a locked device can't offer them: Presets, Location, the storage and battery warnings, Astro, and any button that opens another app (Open Settings, Open in Photos). <code>App/NopeCaptureExtension</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="cc">
+        <div class="tiles">
+          <div class="wrap"><div class="tl"><svg><use href="#i-camera"/></svg></div><div class="cap">Open nope.</div></div>
+          <div class="wrap"><div class="tl on"><svg><use href="#i-moon"/></svg></div><div class="cap">Night Mode<br>On</div></div>
+          <div class="wrap"><div class="tl"><svg><use href="#i-torch"/></svg></div><div class="cap">&nbsp;</div></div>
+          <div class="wrap"><div class="tl"><svg><use href="#i-sun"/></svg></div><div class="cap">&nbsp;</div></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>42 · Control Center controls</b>System UI; the person adds and places the controls. Two come from nope.: "Open nope." and "Night Mode" ("Turns nope.'s night mode on or off: every nope. screen in red on black."), a switch that shows On or Off and changes the same setting as Settings; an open app follows at once. Both can also go on the Lock Screen. <code>NightModeControl.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone settings"><div class="island"></div>
+      <div class="sh" style="top:0;border-radius:0;padding-top:44px">
+        <div class="nb"><span class="bk">‹ Settings</span><span></span></div>
+        <div class="lt">Action Button</div>
+        <div style="margin:18px auto 0;width:150px;height:150px;border-radius:36px;background:#1c1c1e;display:grid;place-items:center"><svg style="width:54px;height:54px"><use href="#i-camera"/></svg></div>
+        <div style="text-align:center;margin-top:12px;font-size:16px;font-weight:600">Controls</div>
+        <div class="gr" style="margin:12px 40px 0"><div class="rw">Open nope. <small>›</small></div></div>
+      </div>
+    </div>
+    <figcaption><b>43 · Action button</b>System UI (iOS Settings › Action Button › Controls). The same "Open nope." control can be assigned to the Action button; pressing it opens the camera, or the Lock Screen camera on a locked device. nope. adds nothing of its own here.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf"></div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="thumb"><div class="seal">✓</div></div><div class="shutter"></div><div class="flip">⟲</div></div>
+      <div class="side" style="left:0;top:150px;height:40px"></div>
+      <div class="side" style="left:0;top:200px;height:40px"></div>
+      <div class="side" style="right:0;top:420px;height:46px;background:#c7c7cc"></div>
+      <div class="callout" style="left:10px;top:150px;width:122px">Volume buttons: shutter</div>
+      <div class="callout" style="right:10px;top:396px;width:150px">Camera Control: press to take a photo</div>
+    </div>
+    <figcaption><b>44 · Camera Control and volume buttons</b>While the camera runs, a press takes the photo on release; in a self-timer mode it starts the countdown; held in burst mode it takes a burst until released. When the camera isn't running, the buttons keep their system behavior. The Lock Screen camera handles the buttons the same way. nope. adds no Camera Control adjustments (no exposure, zoom or lens slider).</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island" style="display:none"></div>
+      <div class="dyn"><svg><use href="#i-timer"/></svg><span>42</span></div>
+      <div class="ls"><div class="dt">Monday, November 16</div><div class="clk">9:41</div>
+        <div class="la"><svg><use href="#i-timer"/></svg><div class="tx"><b>Interval Shooting</b>Paused: 42 of 120 photos taken. Open nope. to continue.<div class="pg"><i></i></div></div><div class="stp"><svg><use href="#i-stop"/></svg>Stop</div></div>
+        <div class="hi"></div>
+      </div>
+    </div>
+    <figcaption><b>45 · Live Activity (when Settings › Live Activity is on)</b>System-hosted layouts drawn by nope.: the Lock Screen card and the Dynamic Island (symbol and count). Counts and status only: "Saving: 12 of 20 photos saved", "Photo in 0:07", "Done: 120 of 120 photos taken", "Signed." or "Not signed. Open nope. for details." Stop appears only for interval shooting and saves every photo already taken. In night mode it is red on black. <code>App/Shared/SeriesActivity.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="sc">
+        <div style="font-size:26px;font-weight:700;letter-spacing:-.02em">nope.</div>
+        <div class="tls">
+          <div class="tl"><svg><use href="#i-camera"/></svg>Take Photo</div>
+          <div class="tl"><svg><use href="#i-stack"/></svg>Take Bracket</div>
+          <div class="tl"><svg><use href="#i-viewfinder"/></svg>Open the Camera</div>
+          <div class="tl"><svg><use href="#i-aperture"/></svg>Switch Lens</div>
+          <div class="tl"><svg><use href="#i-torch"/></svg>Turn On the Light</div>
+          <div class="tl"><svg><use href="#i-torch"/></svg>Turn Off the Light</div>
+          <div class="tl"><svg><use href="#i-timer"/></svg>Start Interval Shooting</div>
+          <div class="tl"><svg><use href="#i-stop"/></svg>Stop Interval Shooting</div>
+          <div class="tl"><svg><use href="#i-moon"/></svg>Night Mode On</div>
+          <div class="tl"><svg><use href="#i-moon"/></svg>Night Mode Off</div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>46 · Siri and Shortcuts</b>System UI (the Shortcuts app); nope. has no Shortcuts page in its own Settings. The ten App Shortcuts, with Siri phrases such as "Take a photo with nope." and "Take a photo in 10 seconds with nope.". More actions without phrases: Apply Preset, Set Focus Range, Set Photo Size, Set Fast Shutter, Set Face Detection, Set Night Mode. Siri answers only whether the photo was saved and signed, or why not. <code>App/NopeApp/Intents/NopeShortcuts.swift</code></figcaption>
+  </figure>
+
+</div>
+
+<!-- ============================================================ -->
+<h2 class="part">System banners on the camera</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="status"><svg><use href="#i-pause"/></svg>The camera is in use by another app or a call. It comes back when that ends.</div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="slot"></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>47 · Interrupted</b>Over the viewfinder on solid black (a material backing was reported low contrast), with a large symbol above the words. The system resumes the camera; nope. never restarts it against the system. Pressing the shutter now says "No photo was taken: the camera is paused." <code>SessionStatusView.swift</code></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="status"><svg><use href="#i-therm"/></svg>The camera is paused to let your device cool down.</div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="slot"></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>48 · Too warm</b>When the device is too hot or under other system pressure. The same layout, with a thermometer. Separately, the Light can be refused when the device is warm: that is the "Light Unavailable" chip in <a href="camera.html">camera.html</a>.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone night"><div class="island"></div>
+      <div class="top"><div class="pills"></div><div class="chip">◈ RAW</div><div class="ib">⚙︎</div></div>
+      <div class="vf" style="filter:brightness(.2)"></div>
+      <div class="status" style="color:var(--red)"><svg><use href="#i-triline"/></svg>The camera couldn't start. Try another lens.</div>
+      <div class="row"><div class="lens">0.5×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn">⋯</div></div>
+      <div class="bottom"><div class="slot"></div><div class="shutter"></div><div class="flip">⟲</div></div>
+    </div>
+    <figcaption><b>49 · Couldn't start (night mode)</b>The same message in red on black. Other messages in this place: "The camera is paused by the system. It comes back by itself." (pause symbol) and "The camera isn't sending a picture." (video-off symbol), after nope. restarted a camera that only sent blank frames.</figcaption>
+  </figure>
+
+  <figure style="grid-column:1/-1">
+    <div class="phone ipad"><div class="island" style="display:none"></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="status" style="left:120px;right:240px;top:170px"><svg><use href="#i-pause"/></svg>The camera works only when nope. fills the screen.</div>
+      <div class="col"><div class="ib">⚙︎</div><div class="lensv"><div class="lens">0.5×</div><div class="lens on">1×</div></div><div class="shutter"></div><div class="slot"></div><div class="tray-btn">⋯</div></div>
+    </div>
+    <figcaption><b>50 · iPad in Split View, Slide Over or Stage Manager</b>iOS stops the camera while nope. shares the screen; nope. says so plainly and resumes when it fills the screen again.</figcaption>
+  </figure>
+
+</div>
+
+<section class="notes">
+  <h2>Settings map (0.3.0)</h2>
+  <table>
+    <tr><th>Top</th><td>Presets (count) › Apply a Preset (Factory Defaults, saved), Save Current Settings, Rename or Delete</td></tr>
+    <tr><th>Photos</th><td>Formats (RAW (DNG), HEIF, JPEG; Paired with RAW when all three) · Look (Standard, Flat)* · File Options (HEIF Compression, HEIF Bit Depth, JPEG Compression, Color Space, Copy Size)* · Photo Size (per lens without RAW)†</td></tr>
+    <tr><th>Privacy</th><td>Remove All Optional Details · Choose Details (master, In Each Photo, Standard File Tags, Always Saved) · Sign Each Photo</td></tr>
+    <tr><th>Camera</th><td>Manual Controls · Start in Clean View · Fast Shutter · Face Detection · Viewfinder Overlays (Grid, Level, Grid Style, Turn Spiral, Focus Peaking, Histogram, Live Camera Readout, Keep Readout in Clean View) · Night Mode · Red Viewfinder† · Live Activity† · Mirror Front Camera†</td></tr>
+    <tr><th>More</th><td>Accessibility · Honesty · About and Licenses (License, Notices and Trademarks, Source Code)</td></tr>
+  </table>
+  <p style="font-size:13px;color:var(--muted)">* only while HEIF or JPEG is saved. † only when it applies (a lens with a size choice; night mode on; Live Activities shown and allowed; a front camera).</p>
+  <h2>Rules behind it</h2>
+  <ul>
+    <li>Settings follows the system appearance; the camera screen and its states are always dark; night mode is red on black everywhere, including Settings, sheets and the Live Activity.</li>
+    <li>One line per row, with the explanation under the name, never in a footer that wouldn't grow with the text. Each row shows its current value.</li>
+    <li>Every picker is a pushed list or an inline list; no menus, which clipped long values and failed the night mode tests.</li>
+    <li>No disabled buttons and no tinted form text: both failed the contrast audit. A button that can't act yet says why.</li>
+    <li>Colors keep their v3 meaning: teal only for verified facts (none in Settings), amber only for warnings with a symbol and words, filled white for selected on the camera.</li>
+    <li>Privacy and processing wording lives in <code>Honesty.xcstrings</code> and never claims more than the English.</li>
+    <li>System-drawn screens show nope.'s words only where nope. supplies them (purpose strings, control names, Live Activity text).</li>
+  </ul>
+</section>
+</body>
+</html>
