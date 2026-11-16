@@ -78,6 +78,17 @@ for any user-facing claim comes from
   exactly as without Compare. Identifying values (maker notes, location, unique IDs and serial
   numbers) are hidden until the person taps Show Value. The view's contents are hidden while
   the app isn't the active app. No network request is involved.
+- **Apple Watch app (issue #63):** the watch app sends the iPhone app only commands (the
+  status, take a photo after none, 3 or 10 seconds, cancel the timer) and gets back only short
+  status: whether the camera is ready, the seconds left, and whether a photo was saved and signed
+  or why not. No image data, preview, thumbnail or metadata goes to the watch. The messages go
+  through WatchConnectivity (`WCSession.sendMessageData`), which watchOS and iOS carry on their own
+  connection between the paired devices; neither app opens a network connection, and
+  `scripts/check-no-networking.sh` checks the watch app's binary too. The watch app stores nothing
+  (the delay is kept only while it runs), logs nothing and has no entitlements. Its privacy
+  manifest declares no tracking, no tracking domains and no collected data; it declares
+  `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
+  iPhone app's settings code, which the watch app never runs.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files except the paired copy above, which
   Photos moves into the library (photos otherwise go from memory to Photos). They log only why
@@ -343,9 +354,10 @@ copy. Orientation is a locked item and the read-back accepts all eight values.
 ### Developed file options
 
 Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
-HEIF bit depth (10 or 8) and the color space (Display P3 or sRGB). They change only how the
-developed copies are encoded, never the RAW or any metadata; the defaults are the earlier
-encoding. Every combination is encoded and read back in the unit tests. The full list of what an
+HEIF bit depth (10 or 8), the color space (Display P3 or sRGB) and the copy size (full, half or a
+quarter of the RAW's width and height). They change only how the developed copies are encoded,
+never the RAW; the only metadata they touch is EXIF `PixelXDimension` and `PixelYDimension` of a
+smaller copy, set to its size. The defaults are the earlier encoding. Every combination is encoded and read back in the unit tests. The full list of what an
 app can control, and what the app offers, is in
 [`research/capture-and-file-settings.md`](research/capture-and-file-settings.md).
 

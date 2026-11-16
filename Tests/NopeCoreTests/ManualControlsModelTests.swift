@@ -68,13 +68,22 @@ struct ManualControlsModelTests {
 
     @Test func intentsAreIgnoredWhileOff() async {
         let (model, backend) = await makeModel(enabled: false)
-        await send(model, .setValue(.iso, 400), .setBracket(BracketSettings(frameCount: 3, step: 1)), .startInterval)
+        await send(model, .setValue(.iso, 400), .setBracket(BracketSettings(frameCount: 3, step: 1)))
         #expect(model.manual.settings == .automatic)
         #expect(model.manual.bracket == nil)
-        #expect(model.manual.intervalProgress == nil)
         await send(model, .setInterval(IntervalSettings(interval: 5, count: 3)))
         #expect(model.manual.interval == IntervalSettings(interval: 5, count: 3))
         #expect(await backend.applied.isEmpty)
+    }
+
+    @Test func intervalShootingRunsInFullAuto() async {
+        let (model, backend) = await makeModel(enabled: false)
+        await send(model, .setInterval(IntervalSettings(interval: 5, count: 2)), .startInterval)
+        await waitForSeries(model)
+        // Each photo is a full-auto photo: no manual control was applied.
+        #expect(await backend.captureCount == 2)
+        #expect(await backend.applied.isEmpty)
+        #expect(!model.manual.isEnabled)
     }
 
     @Test func turningOnStartsReadingsAndOffReturnsToFullAuto() async {
@@ -507,10 +516,12 @@ struct ManualControlsModelTests {
         #expect(await backend.captureCount == 0)
     }
 
-    @Test func turningOffStopsASeries() async {
+    @Test func turningOffKeepsASeriesRunningInFullAuto() async {
         let (model, _) = await makeModel(sleep: { _ in try await Task.sleep(for: .seconds(60)) })
         await send(model, .setInterval(IntervalSettings(interval: 60, count: 3)), .startInterval)
         await send(model, .setEnabled(false))
+        #expect(model.manual.intervalProgress != nil)
+        await send(model, .stopInterval)
         #expect(model.manual.intervalProgress == nil)
     }
 

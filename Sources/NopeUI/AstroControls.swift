@@ -32,7 +32,7 @@ enum AstroText {
             return Text("Taking astro frames. Press to stop.", bundle: .module, comment: "VoiceOver value of the shutter while the night sky helper takes its frames: pressing the shutter stops them.")
         }
         if model.drive.countdown.isRunning {
-            return DriveText.shutterValue(model.drive)
+            return DriveText.shutterValue(model)
         }
         return Text("Astro. Press to start the frames after the start delay.", bundle: .module, comment: "VoiceOver value of the shutter while the night sky helper is on: one press starts the self-timer, then the series of frames.")
     }

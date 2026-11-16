@@ -199,6 +199,72 @@
         }
       }
     },
+    "%lld MP (%lld × %lld)": {
+      "comment": "A photo size choice: megapixels (MP), then the width and height in pixels, such as 12 MP (4032 × 3024).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP (%lld × %lld)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP (%lld × %lld)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld Mpx (%lld × %lld)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP (%lld × %lld)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP（%lld × %lld）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP(%lld × %lld)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP (%lld × %lld)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP (%lld × %lld)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP（%lld × %lld）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld MP（%lld × %lld）"
+          }
+        }
+      }
+    },
     "%lld More Settings Changed": {
       "comment": "VoiceOver name of the +n pill on the camera: how many more settings are not at their defaults. The number is a count of settings.",
       "extractionState": "manual",
@@ -1977,6 +2043,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "自動"
+          }
+        }
+      }
+    },
+    "Autofocus and auto exposure follow faces the camera finds. On by default.": {
+      "comment": "Explains the Face Detection switch.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autofokus und automatische Belichtung folgen Gesichtern, die die Kamera findet. Standardmäßig an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El enfoque y la exposición automáticos siguen las caras que detecta la cámara. Activado de forma predeterminada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La mise au point et l'exposition automatiques suivent les visages détectés par l'appareil. Activé par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Messa a fuoco ed esposizione automatiche seguono i volti trovati dalla fotocamera. Attivo per impostazione predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "オートフォーカスと自動露出が、カメラが見つけた顔に合わせます。デフォルトでオンです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "자동 초점과 자동 노출이 카메라가 찾은 얼굴을 따라갑니다. 기본적으로 켜져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autofocus en automatische belichting volgen gezichten die de camera vindt. Standaard aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O foco e a exposição automáticos seguem os rostos que a câmera encontra. Ativado por padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自动对焦和自动曝光会跟随相机发现的面孔。默认开启。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自動對焦和自動曝光會跟隨相機找到的臉孔。預設開啟。"
           }
         }
       }
@@ -4687,6 +4819,72 @@
         }
       }
     },
+    "Copy Size": {
+      "comment": "Picker: the width and height of the HEIF and JPEG copies, compared with the RAW.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kopiegröße"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamaño de la copia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taille des copies"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dimensione copie"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "コピーのサイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사본 크기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Grootte van kopieën"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamanho das cópias"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "副本尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "副本尺寸"
+          }
+        }
+      }
+    },
     "Count: %lld": {
       "comment": "Compare view: how many times a container block appears in a file.",
       "extractionState": "manual",
@@ -5941,6 +6139,72 @@
         }
       }
     },
+    "Each photo is taken in full auto, or with your manual settings while Manual Controls are on.": {
+      "comment": "Explains which exposure the photos of an interval series use. \"Manual Controls\" is the option's name in Settings.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Jedes Foto wird vollautomatisch aufgenommen oder, wenn „Manuelle Steuerung“ eingeschaltet ist, mit deinen manuellen Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto se toma en automático total o, con Controles manuales activados, con tus ajustes manuales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chaque photo est prise en mode entièrement automatique ou, si Commandes manuelles est activé, avec vos réglages manuels."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni foto viene scattata in automatico completo o, con Controlli manuali attivi, con le tue impostazioni manuali."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "各写真はフルオートで、または「マニュアル操作」がオンのときは手動設定で撮影されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "각 사진은 완전 자동으로, 또는 수동 조작이 켜져 있으면 수동 설정으로 촬영됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke foto wordt volautomatisch gemaakt, of met je handmatige instellingen als Handmatige bediening aan staat."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada foto é tirada no automático total ou, com Controles manuais ativados, com seus ajustes manuais."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每张照片都以全自动拍摄；打开“手动控制”时则使用你的手动设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每張照片都以全自動拍攝；開啟「手動控制」時則使用你的手動設定。"
+          }
+        }
+      }
+    },
     "Exposure": {
       "comment": "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.",
       "extractionState": "manual",
@@ -6469,6 +6733,72 @@
         }
       }
     },
+    "Face Detection": {
+      "comment": "Switch: faces the camera detects steer autofocus and auto exposure.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichtserkennung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detección de caras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Détection des visages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rilevamento volti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Detecção de rostos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "面部检测"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "臉部偵測"
+          }
+        }
+      }
+    },
     "Fair": {
       "comment": "Live readout value: the camera system's pressure level is slightly raised.",
       "extractionState": "manual",
@@ -6597,6 +6927,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "遠"
+          }
+        }
+      }
+    },
+    "Far Focus": {
+      "comment": "Quick control and pill on the camera: limits autofocus to far subjects, such as a landscape seen past near branches.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fernfokus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfoque lejano"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mise au point lointaine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Messa a fuoco lontana"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景フォーカス"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "원거리 초점"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verre focus"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Foco distante"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "远景对焦"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景對焦"
           }
         }
       }
@@ -8611,6 +9007,72 @@
         }
       }
     },
+    "Full Size": {
+      "comment": "Copy size choice: the same width and height as the RAW.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Volle Größe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamaño completo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taille réelle"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dimensione piena"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "フルサイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "전체 크기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Volledige grootte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamanho total"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "完整尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "完整尺寸"
+          }
+        }
+      }
+    },
     "Full auto": {
       "comment": "Announced after All Auto returned every control to automatic.",
       "extractionState": "manual",
@@ -9465,6 +9927,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "HEIF 與 JPEG 風格"
+          }
+        }
+      }
+    },
+    "Half Size": {
+      "comment": "Copy size choice: half the width and height of the RAW (a quarter of the pixels).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Halbe Größe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mitad del tamaño"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Demi-taille"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Metà dimensione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1/2サイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1/2 크기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Halve grootte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Metade do tamanho"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一半尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "一半尺寸"
           }
         }
       }
@@ -10393,6 +10921,72 @@
         }
       }
     },
+    "Interval Settings": {
+      "comment": "Action of the interval pill on the camera: opens the time between photos and the number of photos.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervall-Einstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes de intervalo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réglages de l’intervalle"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Impostazioni intervallo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバルの設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalinstellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustes de intervalo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔設定"
+          }
+        }
+      }
+    },
     "Interval Shooting": {
       "comment": "Section title: a series of photos taken at a fixed interval.",
       "extractionState": "manual",
@@ -10455,6 +11049,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "間隔拍攝"
+          }
+        }
+      }
+    },
+    "Interval series running. Press to stop.": {
+      "comment": "VoiceOver value of the shutter while an interval series runs: pressing the shutter stops it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallserie läuft. Zum Stoppen drücken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie a intervalos en curso. Pulsa para detenerla."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Série par intervalles en cours. Appuyez pour l’arrêter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Serie a intervalli in corso. Premi per interromperla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影中。押すと停止します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영 중입니다. 누르면 중지됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalreeks loopt. Druk om te stoppen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Série por intervalo em andamento. Pressione para parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄进行中。按下可停止。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝進行中。按下可停止。"
+          }
+        }
+      }
+    },
+    "Interval shooting. Press to start the series.": {
+      "comment": "VoiceOver value of the shutter in the interval drive mode: one press starts a series of photos at a fixed interval.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallaufnahme. Zum Starten der Serie drücken."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo a intervalos. Pulsa para iniciar la serie."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Prise de vue par intervalles. Appuyez pour démarrer la série."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scatto a intervalli. Premi per avviare la serie."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル撮影。押すと開始します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌 촬영. 누르면 촬영을 시작합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalopnamen. Druk om de reeks te starten."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disparo por intervalo. Pressione para iniciar a série."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔拍摄。按下可开始拍摄。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔拍攝。按下可開始拍攝。"
           }
         }
       }
@@ -14815,6 +15541,72 @@
         }
       }
     },
+    "Photo Size": {
+      "comment": "Settings row and screen title: the size of photos from lenses that offer more than one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogröße"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamaño de la foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taille des photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dimensione foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "写真のサイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진 크기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotogrootte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tamanho da foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "照片尺寸"
+          }
+        }
+      }
+    },
     "Photo in %@": {
       "comment": "Self-timer progress on the camera: the photo is taken after this many seconds. The value is a short number of seconds, such as 3s, formatted by the system.",
       "extractionState": "manual",
@@ -14877,6 +15669,150 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "%@後拍照"
+          }
+        }
+      }
+    },
+    "Photo size: Custom": {
+      "comment": "Settings row value: at least one lens takes photos at a size other than its default.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Angepasst"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personalizado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personnalisé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personalizzato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カスタム"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사용자 지정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aangepast"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personalizado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自訂"
+          }
+        }
+      }
+    },
+    "Photo size: Default": {
+      "comment": "Settings row value: every lens takes photos at its default size.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predeterminado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Par défaut"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Predefinito"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "デフォルト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "기본값"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設"
           }
         }
       }
@@ -16065,6 +17001,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "畫質優先"
+          }
+        }
+      }
+    },
+    "Quarter Size": {
+      "comment": "Copy size choice: a quarter of the width and height of the RAW.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Viertelgröße"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Un cuarto del tamaño"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Quart de taille"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Un quarto della dimensione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1/4サイズ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1/4 크기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kwart grootte"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Um quarto do tamanho"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "四分之一尺寸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "四分之一尺寸"
           }
         }
       }
@@ -18447,6 +19449,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "單張照片"
+          }
+        }
+      }
+    },
+    "Smaller copies are quicker to share and take less space. The RAW keeps every pixel.": {
+      "comment": "Explains the copy size picker. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kleinere Kopien lassen sich schneller teilen und brauchen weniger Platz. Das RAW behält jedes Pixel."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Las copias más pequeñas se comparten más rápido y ocupan menos espacio. El RAW conserva todos los píxeles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les copies plus petites se partagent plus vite et prennent moins de place. Le RAW garde tous les pixels."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le copie più piccole si condividono più in fretta e occupano meno spazio. Il RAW conserva ogni pixel."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "小さいコピーは共有が速く、容量も少なくて済みます。RAWはすべてのピクセルを保持します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "작은 사본은 더 빨리 공유되고 공간을 덜 차지합니다. RAW는 모든 픽셀을 유지합니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Kleinere kopieën zijn sneller te delen en nemen minder ruimte in. De RAW houdt elke pixel."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cópias menores são mais rápidas de compartilhar e ocupam menos espaço. O RAW mantém todos os pixels."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "较小的副本分享更快，占用空间更少。RAW 保留每一个像素。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "較小的副本分享更快，佔用空間更少。RAW 保留每一個像素。"
           }
         }
       }
@@ -21691,6 +22759,72 @@
         }
       }
     },
+    "These lenses have no RAW, so each photo is the phone's processed file. A larger size has more pixels and bigger files. The smallest size is the default.": {
+      "comment": "Explains the Photo Size screen. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Diese Objektive haben kein RAW, daher ist jedes Foto die bearbeitete Datei des Telefons. Eine größere Größe hat mehr Pixel und größere Dateien. Standard ist die kleinste Größe."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Estos objetivos no tienen RAW, así que cada foto es el archivo procesado del teléfono. Un tamaño mayor tiene más píxeles y archivos más grandes. El tamaño más pequeño es el predeterminado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ces objectifs n'ont pas de RAW : chaque photo est le fichier traité par le téléphone. Une taille plus grande a plus de pixels et des fichiers plus lourds. La plus petite taille est celle par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questi obiettivi non hanno RAW, quindi ogni foto è il file elaborato dal telefono. Una dimensione maggiore ha più pixel e file più grandi. La dimensione più piccola è quella predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "これらのレンズにはRAWがないため、各写真は電話が処理したファイルになります。大きいサイズほどピクセルが多く、ファイルも大きくなります。デフォルトは最小のサイズです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 렌즈에는 RAW가 없으므로 각 사진은 휴대폰이 처리한 파일입니다. 크기가 클수록 픽셀이 많고 파일도 큽니다. 기본값은 가장 작은 크기입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Deze lenzen hebben geen RAW, dus elke foto is het bewerkte bestand van de telefoon. Een groter formaat heeft meer pixels en grotere bestanden. Standaard is het kleinste formaat."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Estas lentes não têm RAW, então cada foto é o arquivo processado pelo telefone. Um tamanho maior tem mais pixels e arquivos maiores. O menor tamanho é o padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "这些镜头没有 RAW，因此每张照片都是手机处理过的文件。尺寸越大，像素越多，文件也越大。默认为最小尺寸。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "這些鏡頭沒有 RAW，因此每張照片都是手機處理過的檔案。尺寸越大，像素越多，檔案也越大。預設為最小尺寸。"
+          }
+        }
+      }
+    },
     "Third-Party Notices": {
       "comment": "Section header for notices required by other licenses.",
       "extractionState": "manual",
@@ -22809,6 +23943,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "關閉比較"
+          }
+        }
+      }
+    },
+    "Turn Off Far Focus": {
+      "comment": "Action of the Far Focus pill on the camera: lets autofocus focus at any distance again.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fernfokus ausschalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desactivar enfoque lejano"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Désactiver la mise au point lointaine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Disattiva messa a fuoco lontana"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "遠景フォーカスをオフ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "원거리 초점 끄기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verre focus uitschakelen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Desativar foco distante"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "关闭远景对焦"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "關閉遠景對焦"
           }
         }
       }

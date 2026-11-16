@@ -79,4 +79,14 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertEqual(message.label, "Now using the ultra wide camera.")
         XCTAssertTrue(app.buttons["Ultra Wide"].isSelected)
     }
+
+    @MainActor
+    func testABracketIsTakenOnceInFullAuto() {
+        // Manual controls stay off: the bracket is taken once without turning them on.
+        let app = launch("manual", request: "bracket3")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "Photos saved and signed.")
+        XCTAssertFalse(app.buttons["More Manual Controls"].exists)
+    }
 }

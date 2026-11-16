@@ -18,6 +18,10 @@ struct CameraControlContext {
     /// screen sets it; a constant `false` elsewhere.
     var showsExposureDial: Binding<Bool> = .constant(false)
 
+    /// Whether the Interval sheet is open, for the Drive menu and the Interval pill. The camera
+    /// screen sets it; a constant `false` elsewhere.
+    var showsIntervalSettings: Binding<Bool> = .constant(false)
+
     /// Creates a context.
     ///
     /// - Parameters:
@@ -125,6 +129,7 @@ enum StatePills {
         exposure,
         fastShutter,
         closeUp,
+        farFocus,
         magnifier,
         drive,
         astro,
@@ -309,6 +314,23 @@ enum StatePills {
                     id: "off", title: Text("Turn Off Close-Up", bundle: .module, comment: "Action of the Close-Up pill on the camera: lets autofocus focus at any distance again.")
                 ) {
                     context.send(.auto(.setNearFocusLimit(false)))
+                }
+            ])
+    }
+
+    /// "Far Focus" while autofocus is limited to far subjects (issue #57); its action turns the
+    /// limit off.
+    ///
+    /// - Parameter context: The model and settings.
+    static func farFocus(_ context: CameraControlContext) -> StatePill? {
+        guard context.model.manual.farFocusLimit else { return nil }
+        return StatePill(
+            id: "farFocus", systemImage: "mountain.2", text: FarFocusText.title, label: FarFocusText.title,
+            actions: [
+                StatePill.Action(
+                    id: "off", title: Text("Turn Off Far Focus", bundle: .module, comment: "Action of the Far Focus pill on the camera: lets autofocus focus at any distance again.")
+                ) {
+                    context.send(.auto(.setFarFocusLimit(false)))
                 }
             ])
     }

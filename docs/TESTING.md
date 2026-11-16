@@ -238,18 +238,34 @@ TEST_RUNNER_NOPE_COMPAT_FIXTURES=$PWD/compat-fixtures xcodebuild test -scheme No
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
   -only-testing:NopeSigningTests/FileCompatibilityTests
 scripts/check-file-compat.sh compat-fixtures          # every validator that is installed
-scripts/check-file-compat.sh --require "c2patool exiftool dng_validate" compat-fixtures
+# The pinned, checksum-verified validators CI uses, in a directory of your choice:
+PATH="$(scripts/install-file-validators.sh "$PWD/build/file-validators"):$PATH" \
+  scripts/check-file-compat.sh --require "c2patool exiftool" compat-fixtures
 ```
 
 `check-file-compat.sh` runs c2patool on every file (signed: `Valid` with
 `signingCredential.untrusted` the only failure; unsigned: no manifest), `exiftool -validate` on
-every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG. None of
-them is a project dependency, and none is in `security/allowed-dependencies.txt`. CI writes the
-fixtures in `unit-tests`; the `file-compat` job runs the validators only after the maintainer
-approves them by setting the repository variable `NOPE_FILE_VALIDATORS` to the approved list
-(for example `c2patool exiftool`), and fails if a listed validator is missing. `dng_validate`
-has no install step yet: it is built from Adobe's DNG SDK, whose license must be reviewed first.
+every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG when it is
+installed. None of them is part of the app. c2patool and exiftool are maintainer-approved for CI
+(`security/allowed-dependencies.txt`, `THIRD_PARTY.md`): `scripts/install-file-validators.sh`
+downloads c2patool 0.28.4 (the project's universal macOS release asset) and exiftool 13.55 (the
+latest production release, from SourceForge or CPAN), checks each against its pinned SHA-256
+before unpacking it, and checks the installed versions. CI writes the fixtures in `unit-tests`,
+and the `file-compat` job runs on every build with `--require "c2patool exiftool"`, so a missing
+validator fails it. `dng_validate` isn't approved and doesn't run in CI. Updating a pin is a
+reviewed change to the script, with the new checksum.
 `scripts/test-check-file-compat.sh` tests the script with stand-in validators.
+
+**Run locally on 2026-11-16** with `scripts/install-file-validators.sh` (c2patool 0.28.4,
+exiftool 13.55) on the 280 fixtures of this branch: `check-file-compat.sh --require "c2patool
+exiftool"` passed. c2patool reported every signed file `Valid` with `signingCredential.untrusted`
+the only failure, and no manifest in any unsigned file; exiftool `-validate` reported no errors.
+It printed warnings, which don't fail the check: on 106 of the JPEGs, "Missing required JPEG"
+tags `YCbCrPositioning` (0x0213), `ComponentsConfiguration` (0x9101) and on 90 of them
+`ColorSpace` (0xA001), on 19 `GPSVersionID` and on 6 `ExifVersion`; on 45 DNGs, "[minor] Invalid
+date/time format for EXIF:ModifyDate" (the empty `DateTime` a DNG carries with Date and Time off,
+issue #65). The JPEG tags are on the allowlist where they apply but ImageIO didn't write them;
+the files open. Whether to supply them is a follow-up.
 
 **Run locally on 2026-11-14** (Mac with macOS 27.2.1, iOS 27.2 Simulator), on the 260 files:
 c2patool 0.29.0 (installed on the Mac by hand) reported every signed file `Valid` with
@@ -332,6 +348,21 @@ upright; the tests check that the window stays portrait, the shutter stays below
 and Settings rotates. On iPad the window rotates and the shutter is in the column beside the
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
+
+The Apple Watch app (issue #63) has its own UI tests on the watch Simulator, with a simulated
+phone (`-NopeSimulatedPhone ready|notSigned|notRunning|permissionDenied|unreachable|countdown`,
+Debug builds only), because a UI test can't drive a paired iPhone:
+
+```sh
+xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeWatch \
+  -destination 'platform=watchOS Simulator,name=Apple Watch Series 12 (46mm),OS=27.2' CODE_SIGNING_ALLOWED=NO
+```
+
+They run the full accessibility audit in every state (ready, a signed and an unsigned result,
+the camera not running, camera access declined, the phone not reachable, the countdown and its
+cancel, the delay list, and the largest text size) with no exceptions. The audit flagged the
+title "nope." as a label that isn't human-readable, so the watch screen has no title. The watch
+tests aren't in the iPhone shard list; CI runs them in their own job.
 
 `audit(_:)` in `NopeAppUITests.swift` runs every audit with these documented exceptions; every
 other finding fails the test:
@@ -453,12 +484,13 @@ the local toolchain). Jobs:
 
 | Job | What it runs |
 |---|---|
-| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
+| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
 | `ui-tests 1/8` … `8/8` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
 | `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
-| `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
+| `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
+| `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
@@ -512,10 +544,13 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
 `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
-`burst<count>` for Take Photo with a count, or `lens-ultraWide` for Switch Lens. The app sends
+`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket, or
+`lens-ultraWide` for Switch Lens. The app sends
 the request through the same `ShortcutInbox` the intents use and shows what Siri would say
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
-of three and a lens switch). The request logic (counts, lenses, the light, interval shooting,
+of three, a bracket in full auto and a lens switch). The Interval drive mode is covered by
+`testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
+and right-to-left. The request logic (counts, lenses, the light, interval shooting,
 requests without a camera screen) is unit tested in `ShortcutTests`.
 
 ## On-device checks
@@ -620,14 +655,23 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
 - Siri, other phrases: "Switch to Ultra Wide in nope." (and a lens the device lacks), "Turn on
   the light in nope." and "Turn off the light in nope." (the light comes on and goes off; with
   the app closed, turning it off says the light is off without opening the app), "Start interval
-  shooting in nope." with Manual Controls off (Siri says to turn them on; nothing changes) and on
-  (the series starts, the screen dims), and "Stop interval shooting in nope.".
+  shooting in nope." with Manual Controls off (the series runs in full auto; Manual Controls stay
+  off) and on (the photos use the manual settings; the screen dims), "Stop interval shooting in
+  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen in Pro Tools
+  (three photos at different exposures; the Pro Tools bracket and Manual Controls are unchanged
+  afterwards; on the front camera Siri says the lens can't take it).
 - Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
   Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
   Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
-  Interval Shooting, and Set Night Mode on and off, with the app closed and with it open (the
+  Interval Shooting, Take Bracket with 5 and 7 Photos and each Step (7 on a lens that takes fewer
+  says so), and Set Night Mode on and off, with the app closed and with it open (the
   screen turns red at once).
 - Siri does not mistake "Turn on the light in nope." for a HomeKit request.
+- Shortcuts settings actions: Set Focus Range to Close-Up, Far Focus and No Limit (the Close-Up
+  or Far Focus pill shows and goes; a lens without a range limit says so); Set Photo Size Largest
+  and Standard on a lens with a choice (Settings > Photo Size shows it; the next photo's size
+  changes) and on a Bayer RAW lens (says there is one size); Set Fast Shutter and Set Face
+  Detection with the app closed (Settings shows the new value when the app opens).
 - Check in each of the 11 languages that Siri accepts the localized phrases.
 
 ### Shared settings, the Night Mode control and the Lock Screen camera on a device
@@ -655,6 +699,33 @@ view.
   app, a photo from the Lock Screen camera has no location.
 - After these checks the App Group's preferences file holds only `NopeSettings.` keys and the
   migration key (`docs/SECURITY_AUDIT.md`, check 12).
+
+### Apple Watch on a device (issue #63)
+
+Needs an iPhone with the app installed from Xcode (the watch app is embedded and installs on the
+paired Apple Watch through the Watch app, or automatically if that setting is on). Unverified
+assumptions to confirm: a watch command reaches the iPhone app while it is open and unlocked,
+`WCSession.isReachable` follows the watch app being open, and replies arrive within a second.
+
+- Pairing: the watch app appears on the paired watch, named "nope."; it opens to "Camera ready"
+  while the camera is open on the iPhone.
+- Shutter: Take Photo saves a photo on the iPhone (RAW plus HEIF by default, signed); the watch
+  says "Saved and signed" with a haptic; with signing off, "Saved, not signed" in amber.
+- Delays: 3 and 10 seconds start the iPhone's own self-timer (its countdown shows and speaks on
+  the iPhone); the watch shows "Photo in 3 seconds" and counts down with a light haptic each
+  second; Cancel Timer on the watch stops it and nothing is taken; cancelling on the iPhone shows
+  "Timer cancelled. No photo taken." on the watch.
+- Nothing taken when the camera isn't available: with the iPhone app in the background, closed,
+  or with Settings open over the camera, the watch says "Camera not available. Open nope. on your
+  phone." and Take Photo is disabled; opening the app later takes no photo. With camera access
+  declined, the watch says so. With the iPhone out of range or off, "Can't reach your phone".
+- A photo whose result the watch missed (lower the wrist during the countdown): raising it shows
+  the result.
+- VoiceOver on the watch reads the status, the shutter and the delay, and announces each
+  countdown second and the result; the largest text size keeps every control reachable by
+  scrolling.
+- App Privacy Report on the iPhone lists no domain for the app after these checks.
+- iPad: the app runs as before (WatchConnectivity isn't supported there and stays off).
 
 ### Low storage
 
@@ -730,6 +801,20 @@ Simulator (`FileOptionsEncodingTests`). On a device:
 - **File options** (issue #57): with each compression, HEIF bit depth and color space, a RAW plus
   HEIF plus JPEG photo is saved, opens in Photos and a RAW editor, and the HEIF's depth and both
   copies' color profile (exiftool `ProfileDescription`) match the choice;
+- **Copy Size** (issue #57): with Half Size and Quarter Size, the HEIF and JPEG open in Photos at
+  half (2016 × 1512 from a 12 MP RAW) and a quarter of the RAW's width and height, the RAW is
+  unchanged, and exiftool's `ExifImageWidth` and `ExifImageHeight` match the copy;
+- **Face Detection** (issue #57): with it on (the default), autofocus and exposure follow a face
+  in the frame in full auto, as before; with it off, they stay on the center (or the tapped
+  point) with a face in the frame, on the wide and the front camera; nothing in the files changes;
+- **Far Focus** (issue #57): with manual controls on, Far Focus in the tray, on each rear lens:
+  autofocus ignores a near subject (a hand or a branch close to the lens) and keeps the far scene
+  sharp; Close-Up then replaces it and back; the live readout's focus range shows the limit;
+- **Photo Size** (issue #57): on a device with a lens without Bayer RAW that reports more than
+  one size (the Debug tag check lists each lens's `supportedMaxPhotoDimensions`), each size saves
+  a processed photo of that size that opens in Photos; record the lenses and sizes. On a lens
+  with Bayer RAW, confirm the RAW is 12 MP whatever `maxPhotoDimensions` is (the reason the
+  choice isn't offered there);
 - **Paired with RAW** (issue #50): with RAW, HEIF and JPEG selected, Photos shows two items: the
   RAW paired with the chosen copy, and the other copy on its own; note how Photos labels the
   paired item and which copy it shows and shares by default, for each choice;
@@ -869,7 +954,8 @@ scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
 
 CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
 and runs `scripts/check-no-networking.sh` on both, with no exceptions; for the app it checks the
-app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`).
+app binary, both extension binaries (`NopeCaptureExtension`, `NopeControls`) and the embedded
+Apple Watch app (`Watch/NopeWatch.app/NopeWatch`).
 
 ## Checking signatures
 

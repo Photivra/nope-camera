@@ -11,8 +11,8 @@ import SwiftUI
 /// the App Intents do, and shows what Siri would say.
 ///
 /// Launch with `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in
-/// seconds (0 for none), `burst<count>` for Take Photo with a count, or `lens-ultraWide` for
-/// Switch Lens.
+/// seconds (0 for none), `burst<count>` for Take Photo with a count, `bracket<count>` for Take
+/// Bracket with that many frames one stop apart, or `lens-ultraWide` for Switch Lens.
 @MainActor
 enum SimulatedShortcut {
     /// The launch argument: `-NopeSimulatedShortcut`.
@@ -27,6 +27,9 @@ enum SimulatedShortcut {
         if let seconds = Int(value) { return .takePhoto(PhotoShortcut(delaySeconds: seconds)) }
         if value.hasPrefix("burst"), let count = Int(value.dropFirst("burst".count)) {
             return .takePhoto(PhotoShortcut(count: count))
+        }
+        if value.hasPrefix("bracket"), let count = Int(value.dropFirst("bracket".count)) {
+            return .takeBracket(BracketShortcut(frameCount: count, step: 1))
         }
         return value == "lens-ultraWide" ? .selectLens(.ultraWide) : nil
     }

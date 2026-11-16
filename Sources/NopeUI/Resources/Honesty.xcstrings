@@ -529,6 +529,72 @@
         }
       }
     },
+    "Apple Watch Sends Only Commands": {
+      "comment": "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Apple Watch sendet nur Befehle"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El Apple Watch solo envía órdenes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’Apple Watch n’envoie que des commandes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch invia solo comandi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watchが送るのは操作だけ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch는 명령만 보냅니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch stuurt alleen opdrachten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O Apple Watch envia apenas comandos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 只发送指令"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 只傳送指令"
+          }
+        }
+      }
+    },
     "Apple encrypts and re-signs App Store apps, so there's no standard way to confirm a download was built from our public source.": {
       "comment": "Claim 15 in docs/research/privacy-claims.md. App Store is Apple's name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -10227,6 +10293,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 從不寫入此項。"
+          }
+        }
+      }
+    },
+    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection.": {
+      "comment": "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. auf der Apple Watch sendet nur deine Befehle, etwa den Auslöser und die Verzögerung, an nope. auf deinem iPhone und erhält nur einen kurzen Status zurück, etwa „Gesichert und signiert“. Keine Fotos und keine Fotodetails gelangen auf die Uhr. watchOS und iOS übertragen diese Nachrichten über ihre eigene Verbindung zwischen deinen gekoppelten Geräten; nope. öffnet keine Netzwerkverbindung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. en el Apple Watch solo envía tus órdenes, como el disparador y el retardo, a nope. en tu iPhone, y solo recibe un estado breve, como «Guardada y firmada». Ninguna foto ni ningún detalle de las fotos llega al reloj. watchOS e iOS transmiten estos mensajes por su propia conexión entre tus dispositivos enlazados; nope. no abre ninguna conexión de red."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. sur l’Apple Watch envoie uniquement vos commandes, comme le déclencheur et le délai, à nope. sur votre iPhone, et ne reçoit en retour qu’un bref état, comme « Enregistrée et signée ». Aucune photo ni aucun détail de photo n’est envoyé à la montre. watchOS et iOS transmettent ces messages par leur propre connexion entre vos appareils jumelés ; nope. n’ouvre aucune connexion réseau."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. su Apple Watch invia solo i tuoi comandi, come lo scatto e il ritardo, a nope. sul tuo iPhone, e riceve solo uno stato breve, come “Salvata e firmata”. Nessuna foto né alcun dettaglio delle foto arriva all’orologio. watchOS e iOS trasmettono questi messaggi tramite la propria connessione tra i dispositivi abbinati; nope. non apre alcuna connessione di rete."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watchのnope.は、シャッターや遅延などの操作だけをiPhoneのnope.に送り、「保存・署名済み」などの短い状態だけを受け取ります。写真や写真の詳細がウォッチに送られることはありません。これらのメッセージは、ペアリングされたデバイス間の独自の接続を使ってwatchOSとiOSが運びます。nope.はネットワーク接続を開きません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch의 nope.는 셔터와 지연 같은 명령만 iPhone의 nope.로 보내고, '저장 및 서명됨' 같은 짧은 상태만 받습니다. 사진이나 사진 세부 정보는 워치로 전송되지 않습니다. 이 메시지는 watchOS와 iOS가 페어링된 기기 사이의 자체 연결로 전달하며, nope.는 네트워크 연결을 열지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. op Apple Watch stuurt alleen je opdrachten, zoals de sluiter en de vertraging, naar nope. op je iPhone, en krijgt alleen een korte status terug, zoals 'Bewaard en ondertekend'. Er gaan geen foto's of fotogegevens naar het horloge. watchOS en iOS brengen deze berichten over via hun eigen verbinding tussen je gekoppelde apparaten; nope. opent geen netwerkverbinding."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. no Apple Watch envia apenas seus comandos, como o obturador e o atraso, ao nope. no seu iPhone, e recebe de volta apenas um status curto, como “Salva e assinada”. Nenhuma foto nem detalhe de foto vai para o relógio. O watchOS e o iOS levam essas mensagens pela própria conexão entre seus dispositivos emparelhados; o nope. não abre nenhuma conexão de rede."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 上的 nope. 只会把你的指令（例如快门和延迟）发送到 iPhone 上的 nope.，并只收回简短的状态，例如“已存储并签名”。不会有任何照片或照片详细信息发送到手表。这些消息由 watchOS 和 iOS 通过你已配对设备之间的自有连接传送；nope. 不会打开任何网络连接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 上的 nope. 只會把你的指令（例如快門和延遲）傳送到 iPhone 上的 nope.，並只收回簡短的狀態，例如「已儲存並簽署」。不會有任何照片或照片詳細資訊傳送到手錶。這些訊息由 watchOS 和 iOS 透過你已配對裝置之間的自有連線傳送；nope. 不會開啟任何網路連線。"
           }
         }
       }

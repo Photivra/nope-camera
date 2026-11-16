@@ -809,6 +809,17 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 Whether the full-auto exposure dial is open, for the Exposure tray item. The camera
 screen sets it; a constant `false` elsewhere.
 
+## `CameraControlContext/showsIntervalSettings`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var showsIntervalSettings: Binding<Bool>
+```
+
+Whether the Interval sheet is open, for the Drive menu and the Interval pill. The camera
+screen sets it; a constant `false` elsewhere.
+
 ## `CameraFlipButton`
 
 internal, declared in `Sources/NopeUI/LensRow.swift`
@@ -2989,12 +3000,12 @@ A number of seconds in the system's short form, such as "3s" or "3 Sek.".
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func shutterValue(_ drive: DriveModel) -> Text?
+@MainActor static func shutterValue(_ model: CameraModel) -> Text?
 ```
 
 What the shutter does now, for VoiceOver, or `nil` in single mode with nothing running.
 
-- Parameter drive: The drive model.
+- Parameter model: The camera model.
 
 ## `DriveText/spokenSeconds(_:)`
 
@@ -3224,6 +3235,26 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 Takes the photo again.
 
+## `FarFocusText`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum FarFocusText
+```
+
+The name of the far focus limit (issue #57).
+
+## `FarFocusText/title`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var title: Text { get }
+```
+
+"Far Focus".
+
 ## `FastShutterSettingsView`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -3376,8 +3407,8 @@ internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
 @MainActor struct FileOptionsSettingsView
 ```
 
-How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth and color
-space, each a native picker with a one-line explanation, and a button that restores the
+How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth, color
+space and size, each a native picker with a one-line explanation, and a button that restores the
 defaults.
 
 Advanced options: Settings links to this screen only while HEIF or JPEG is selected, and the
@@ -3478,6 +3509,19 @@ internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
 A compression's name.
 
 - Parameter quality: The compression.
+- Returns: Its localized name.
+
+## `FileOptionsSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static func title(of size: OutputSize) -> Text
+```
+
+A size's name.
+
+- Parameter size: The size.
 - Returns: Its localized name.
 
 ## `FirstRunView`
@@ -4654,6 +4698,128 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 Stops the series.
+
+## `IntervalSection`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor struct IntervalSection
+```
+
+The interval and photo count of interval shooting (issue #48), with Start or Stop: one
+section, shown in the Interval sheet of the Drive menu and in Pro Tools, so both offer the
+same thing.
+
+A series works in full auto and with manual controls on; `NopeCore` holds the series
+(`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
+
+## `IntervalSection/body`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The pickers and the button, with the honesty footer.
+
+## `IntervalSection/didStart`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let didStart: () -> Void
+```
+
+Runs after Start, such as closing the sheet so the series can be seen.
+
+## `IntervalSection/init(model:didStart:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor init(model: CameraModel, didStart: @escaping () -> Void)
+```
+
+Creates the section.
+
+- Parameters:
+  - model: The camera model.
+  - didStart: Runs after Start.
+
+## `IntervalSection/intervals`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static let intervals: [Double]
+```
+
+The intervals offered, in seconds: 1 second to 1 hour.
+
+## `IntervalSection/model`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `IntervalSection/photoCounts`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static let photoCounts: [Int]
+```
+
+The photo counts offered for a series, from 2 to the 999 the app allows.
+
+## `IntervalSheet`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor struct IntervalSheet
+```
+
+The Interval sheet, opened from the Drive menu and the Interval pill: the series' interval
+and photo count, and Start. In the Interval drive mode the shutter starts the series too.
+
+## `IntervalSheet/body`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `IntervalSheet/init(model:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameter model: The camera model.
+
+## `IntervalSheet/model`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
 
 ## `LegalTextView`
 
@@ -6169,6 +6335,117 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 The photos of the last press of the shutter: one, or a bracket's frames.
 
+## `PhotoSizeSettingsView`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor struct PhotoSizeSettingsView
+```
+
+The photo size of each lens that offers more than one (issue #57): a pushed-list picker per
+lens, with the sizes the lens reports and a plain explanation.
+
+Advanced option: Settings links here only when a lens offers a choice
+(`Lens.photoSizeChoices`), which is a lens without Bayer RAW; a Bayer RAW lens always takes
+the sensor's binned RAW. The default is the smallest size, as before this option existed.
+The rules are in `Lens` and `NopeSettings`; this view only shows them.
+
+## `PhotoSizeSettingsView/body`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form: one picker per lens, then the explanation.
+
+## `PhotoSizeSettingsView/init(settings:lenses:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor init(settings: NopeSettings, lenses: [Lens])
+```
+
+Creates the screen.
+
+- Parameters:
+  - settings: The settings to show and change.
+  - lenses: The device's lenses; only those with a choice are shown.
+
+## `PhotoSizeSettingsView/lenses`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The lenses that offer a choice, in the order the camera lists them.
+
+## `PhotoSizeSettingsView/lensesWithChoices(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static func lensesWithChoices(_ lenses: [Lens]) -> [Lens]
+```
+
+The lenses that offer a choice of photo size.
+
+- Parameter lenses: The device's lenses.
+- Returns: Those with `Lens.photoSizeChoices`.
+
+## `PhotoSizeSettingsView/link(settings:lenses:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@ViewBuilder @MainActor static func link(settings: NopeSettings, lenses: [Lens]) -> some View
+
+```
+
+A navigation row to the screen, or nothing when no lens offers a choice.
+
+- Parameters:
+  - settings: The settings.
+  - lenses: The device's lenses.
+
+## `PhotoSizeSettingsView/rowTitle`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static var rowTitle: Text { get }
+```
+
+The row and screen title, "Photo Size".
+
+## `PhotoSizeSettingsView/settings`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings to show and change.
+
+## `PhotoSizeSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static func title(of size: PhotoDimensions) -> Text
+```
+
+A size's name: its megapixels and its width and height in pixels.
+
+- Parameter size: The size.
+- Returns: For example "12 MP (4032 × 3024)".
+
 ## `PrivacySettingsView`
 
 internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
@@ -6346,16 +6623,6 @@ Creates the sheet.
   - settings: The person's settings, for the focus peaking, histogram and live readout
     switches, or `nil` to leave them out.
 
-## `ProToolsSheet/intervals`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor static let intervals: [Double]
-```
-
-The intervals offered, in seconds: 1 second to 1 hour.
-
 ## `ProToolsSheet/model`
 
 internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
@@ -6365,16 +6632,6 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 The camera model.
-
-## `ProToolsSheet/photoCounts`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor static let photoCounts: [Int]
-```
-
-The photo counts offered for a series, from 2 to the 999 the app allows.
 
 ## `ProToolsSheet/settings`
 
@@ -6712,8 +6969,9 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func drive(_ context: CameraControlContext) -> QuickControlItem?
 ```
 
-Drive: a menu of single, the 3 and 10 second self-timer, and burst (issue #68). Bracket
-and interval shooting stay in Pro Tools, behind the manual controls.
+Drive: a menu of single, the 3 and 10 second self-timer, burst and interval shooting
+(issue #68). Choosing Interval Shooting also opens its settings (``IntervalSheet``).
+Bracketing stays in Pro Tools, behind the manual controls.
 
 - Parameter context: The model and settings.
 
@@ -6727,6 +6985,20 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Exposure: opens the exposure compensation dial in full auto (issue #41). Shown when the
 lens can compensate and manual controls are off; with them on, the readout row has it.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/farFocus(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func farFocus(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Far Focus: limits autofocus to far subjects, so it doesn't catch a near branch or a window
+(issue #57). An advanced option: shown with manual controls on where the lens supports
+it, or while it is on.
 
 - Parameter context: The model and settings.
 
@@ -7468,9 +7740,9 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 ```
 
 The settings: a short inset grouped list in a navigation stack, opened from the camera
-(issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
-signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
-and More (Accessibility, Honesty, About).
+(issue #68, "Settings"): Photos (formats, look, file options, photo size), Privacy (the master
+switch, signing, the details), Camera (manual controls, clean view, face detection, night mode,
+front camera mirroring) and More (Accessibility, Honesty, About).
 
 One line per row; each switch's explanation is in a footer or on its detail screen. Each
 row shows its current value, so the state reads at a glance. The screen renders a
@@ -7493,12 +7765,12 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 The form and its toolbar.
 
-## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:)`
+## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:lenses:)`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil)
+@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil, lenses: [Lens] = [])
 ```
 
 Creates the settings screen.
@@ -7512,6 +7784,8 @@ Creates the settings screen.
     Pass `true` when it isn't known yet.
   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     location service, which hides the Location switch.
+  - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
+    row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
 
 ## `SheetPresentationAction`
 
@@ -8136,8 +8410,9 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func drive(_ context: CameraControlContext) -> StatePill?
 ```
 
-The self-timer's delay ("3s") or "Burst" while the drive mode isn't single; its action
-returns to single photos.
+The self-timer's delay ("3s"), "Burst" or "Interval" while the drive mode isn't single;
+its action returns to single photos, and the Interval pill also opens the interval
+settings.
 
 - Parameter context: The model and settings.
 
@@ -8151,6 +8426,19 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The exposure compensation in full auto, such as "−0.7", while it isn't 0 (issue #41);
 its action resets it. With manual controls on, the readout row shows it instead.
+
+- Parameter context: The model and settings.
+
+## `StatePills/farFocus(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func farFocus(_ context: CameraControlContext) -> StatePill?
+```
+
+"Far Focus" while autofocus is limited to far subjects (issue #57); its action turns the
+limit off.
 
 - Parameter context: The model and settings.
 

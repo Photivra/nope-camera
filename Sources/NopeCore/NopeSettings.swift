@@ -65,6 +65,17 @@ public final class NopeSettings {
     /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
     public private(set) var tintsViewfinderInNightMode: Bool
 
+    /// Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
+    /// #57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
+    /// with ``AutoControlIntent/setFollowsFaces(_:)``.
+    public private(set) var followsFaces: Bool
+
+    /// The photo size chosen for each lens that offers a choice (``Lens/photoSizeChoices``,
+    /// issue #57). Empty by default: every lens at its default size. The app passes it to the
+    /// camera with ``CameraIntent/setPhotoSizes(_:)``. Lens identifiers are the app's own and
+    /// stay on the device.
+    public private(set) var photoSizes: [Lens.ID: PhotoDimensions]
+
     /// Where the settings are stored. ``SharedSettingsSync`` watches it and
     /// ``makeSnapshot()`` copies it.
     let defaults: UserDefaults
@@ -92,6 +103,11 @@ public final class NopeSettings {
             ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
         isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
+        followsFaces = defaults.object(forKey: Key.followsFaces) == nil || defaults.bool(forKey: Key.followsFaces)
+        // Unreadable sizes fall back to the defaults: every lens at its default size.
+        photoSizes = defaults.data(forKey: Key.photoSizes).flatMap {
+            try? JSONDecoder().decode([Lens.ID: PhotoDimensions].self, from: $0)
+        } ?? [:]
         migrateManualControlsOption()
     }
 
@@ -349,6 +365,8 @@ public final class NopeSettings {
             update(\.torchLevel, from: stored),
             update(\.isNightModeOn, from: stored),
             update(\.tintsViewfinderInNightMode, from: stored),
+            update(\.followsFaces, from: stored),
+            update(\.photoSizes, from: stored),
         ]
         return changes.contains(true)
     }
@@ -365,6 +383,36 @@ public final class NopeSettings {
         guard self[keyPath: keyPath] != stored[keyPath: keyPath] else { return false }
         self[keyPath: keyPath] = stored[keyPath: keyPath]
         return true
+    }
+
+    /// Turns Face Detection on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether detected faces steer autofocus and auto exposure.
+    public func setFollowsFaces(_ isOn: Bool) {
+        followsFaces = isOn
+        defaults.set(isOn, forKey: Key.followsFaces)
+    }
+
+    /// The photo size chosen for a lens, as the camera will use it: the choice when the lens
+    /// offers it, otherwise the lens's default.
+    ///
+    /// - Parameter lens: A lens.
+    /// - Returns: The size, or `nil` when the lens reported none.
+    public func photoSize(for lens: Lens) -> PhotoDimensions? {
+        lens.photoSize(for: photoSizes[lens.id])
+    }
+
+    /// Chooses a lens's photo size, and saves the change. Choosing the lens's default removes
+    /// the stored choice.
+    ///
+    /// - Parameters:
+    ///   - size: One of the lens's ``Lens/photoSizeChoices``; any other size does nothing.
+    ///   - lens: The lens.
+    public func setPhotoSize(_ size: PhotoDimensions, for lens: Lens) {
+        guard lens.photoSizeChoices.contains(size) else { return }
+        photoSizes[lens.id] = size == lens.defaultPhotoSize ? nil : size
+        // Encoding a dictionary of strings to pairs of integers can't fail.
+        defaults.set(try? JSONEncoder().encode(photoSizes), forKey: Key.photoSizes)
     }
 
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
@@ -404,5 +452,9 @@ public final class NopeSettings {
         static let isNightModeOn = "NopeSettings.isNightModeOn"
         /// Whether night mode tints the viewfinder, a Boolean.
         static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
+        /// Whether detected faces steer autofocus and auto exposure, a Boolean.
+        static let followsFaces = "NopeSettings.followsFaces"
+        /// The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
+        static let photoSizes = "NopeSettings.photoSizes"
     }
 }

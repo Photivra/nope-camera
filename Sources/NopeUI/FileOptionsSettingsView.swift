@@ -1,8 +1,8 @@
 import NopeCore
 import SwiftUI
 
-/// How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth and color
-/// space, each a native picker with a one-line explanation, and a button that restores the
+/// How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth, color
+/// space and size, each a native picker with a one-line explanation, and a button that restores the
 /// defaults.
 ///
 /// Advanced options: Settings links to this screen only while HEIF or JPEG is selected, and the
@@ -34,6 +34,7 @@ struct FileOptionsSettingsView: View {
                 Section { qualityPicker(for: .jpeg) }
             }
             Section { colorSpacePicker }
+            Section { sizePicker }
             // A row rather than a section footer: the accessibility audit reported footers as
             // not following Dynamic Type (see LookSettingsView).
             Section {
@@ -163,6 +164,45 @@ struct FileOptionsSettingsView: View {
             bundle: .module, comment: "Explains the color space picker. Display P3 and sRGB are color space names; keep them unchanged.")
             .font(.footnote)
             .foregroundStyle(CameraStyle.secondaryText)
+    }
+
+    /// The size picker.
+    @ViewBuilder
+    private var sizePicker: some View {
+        Picker(
+            selection: Binding(
+                get: { settings.fileOptions.size },
+                set: { size in
+                    var options = settings.fileOptions
+                    options.size = size
+                    settings.setFileOptions(options)
+                })
+        ) {
+            ForEach(OutputSize.allCases, id: \.self) { size in
+                Self.title(of: size).tag(size)
+            }
+        } label: {
+            Text("Copy Size", bundle: .module, comment: "Picker: the width and height of the HEIF and JPEG copies, compared with the RAW.")
+        }
+        // A pushed list: a menu's long value was reported clipped.
+        .pickerStyle(.navigationLink)
+        Text(
+            "Smaller copies are quicker to share and take less space. The RAW keeps every pixel.", bundle: .module,
+            comment: "Explains the copy size picker. RAW is a file format name.")
+            .font(.footnote)
+            .foregroundStyle(CameraStyle.secondaryText)
+    }
+
+    /// A size's name.
+    ///
+    /// - Parameter size: The size.
+    /// - Returns: Its localized name.
+    static func title(of size: OutputSize) -> Text {
+        switch size {
+        case .full: Text("Full Size", bundle: .module, comment: "Copy size choice: the same width and height as the RAW.")
+        case .half: Text("Half Size", bundle: .module, comment: "Copy size choice: half the width and height of the RAW (a quarter of the pixels).")
+        case .quarter: Text("Quarter Size", bundle: .module, comment: "Copy size choice: a quarter of the width and height of the RAW.")
+        }
     }
 
     /// A compression's name.

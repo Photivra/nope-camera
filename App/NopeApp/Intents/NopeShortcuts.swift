@@ -6,8 +6,8 @@ import AppIntents
 /// are localized in all launch languages in `AppShortcuts.xcstrings`.
 struct NopeShortcuts: AppShortcutsProvider {
     /// Take a photo (optionally in 3 or 10 seconds), open the camera, switch lenses, the light
-    /// and night mode on or off, and interval shooting. Apple allows at most ten App Shortcuts
-    /// per app; this lists nine.
+    /// and night mode on or off, interval shooting, and a bracket. Apple allows at most ten App
+    /// Shortcuts per app; this lists all ten.
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: TakePhotoIntent(),
@@ -19,6 +19,12 @@ struct NopeShortcuts: AppShortcutsProvider {
             shortTitle: LocalizedStringResource(
                 "Take Photo", comment: "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri."),
             systemImageName: "camera")
+        AppShortcut(
+            intent: TakeBracketIntent(),
+            phrases: ["Take a bracket with \(.applicationName)"],
+            shortTitle: LocalizedStringResource(
+                "Take Bracket", comment: "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app."),
+            systemImageName: "square.stack.3d.up")
         AppShortcut(
             intent: OpenCameraIntent(),
             phrases: ["Open the camera in \(.applicationName)"],

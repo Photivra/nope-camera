@@ -1360,11 +1360,22 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Restore Defaults"].exists)
         choose(app, "sRGB", inPickerLabeled: "Color Space")
         let restore = app.buttons["Restore Defaults"]
+        // Restore Defaults is the last row, below the fold since Copy Size (issue #57).
+        var swipes = 0
+        while !(restore.exists && restore.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
-        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
         goBack(app)
         XCTAssertTrue(element(app, containing: "Custom").waitForExistence(timeout: 5))
         open(app, row: "File Options")
+        swipes = 0
+        while !(restore.exists && restore.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
         restore.tap()
         XCTAssertFalse(restore.waitForExistence(timeout: 2))
@@ -1638,6 +1649,53 @@ final class NopeAppUITests: XCTestCase {
         let item = app.buttons[option]
         XCTAssertTrue(item.waitForExistence(timeout: 10), option)
         item.tap()
+    }
+
+    /// Interval shooting from the Drive menu, in full auto (manual controls off): its sheet, the
+    /// Interval pill, the shutter starting and stopping the series, and the dimmed screen.
+    @MainActor
+    func testIntervalShootingFromTheDriveMenuInFullAuto() throws {
+        let app = launch("noRAW")
+        chooseDrive(app, "Interval Shooting")
+        let start = app.buttons["Start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, containing: "Each photo is taken in full auto").exists)
+        try audit(app)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Interval Shooting"].waitForExistence(timeout: 5))
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertEqual(shutter.value as? String, "Interval shooting. Press to start the series.")
+        shutter.tap()
+        XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
+        let brighten = app.buttons["Brighten Screen"]
+        XCTAssertTrue(brighten.waitForExistence(timeout: 10))
+        brighten.tap()
+        XCTAssertFalse(brighten.waitForExistence(timeout: 2))
+        XCTAssertEqual(shutter.value as? String, "Interval series running. Press to stop.")
+        try audit(app)
+        shutter.tap()
+        XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testIntervalSheetAtTheLargestTextSizeAndRightToLeft() throws {
+        for arguments in [Self.largestTextSize, Self.rightToLeft] {
+            let app = launch("noRAW", extraArguments: arguments)
+            if arguments == Self.largestTextSize {
+                // The tray's button scrolls into view at the largest sizes.
+                let tray = app.buttons["Quick Controls"]
+                XCTAssertTrue(tray.waitForExistence(timeout: 20))
+                var swipes = 0
+                while !tray.isHittable && swipes < 6 {
+                    app.swipeUp()
+                    swipes += 1
+                }
+            }
+            chooseDrive(app, "Interval Shooting")
+            XCTAssertTrue(app.buttons["Start"].waitForExistence(timeout: 10))
+            try audit(app)
+            app.terminate()
+        }
     }
 
     @MainActor
