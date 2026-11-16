@@ -85,7 +85,7 @@ struct PresetEntity: AppEntity {
     init(_ preset: SettingsPreset) {
         id = PresetChoice.saved(preset.id).identifier
         // The person's own text: shown as typed, never looked up in a string catalog.
-        name = LocalizedStringResource(stringLiteral: preset.name)
+        name = preset.verbatimName
     }
 
     /// A preset with an identifier and a name.

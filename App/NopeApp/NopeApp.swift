@@ -198,8 +198,10 @@ struct NopeApp: App {
             await location.update(
                 isOn: settings.metadata.isOn(.location), cameraIsRunning: model.sessionStatus == .running)
         }
-        // The "Manual controls" option from Settings shows or hides the manual controls.
+        // The "Manual controls" option from Settings shows or hides the manual controls. A
+        // preset sets them up itself, with the astro helper, so its change isn't sent again.
         .task(id: settings.showsManualControls) {
+            guard !presets.handlesManualControlsChange(to: settings.showsManualControls) else { return }
             await model.send(.manual(.setEnabled(settings.showsManualControls)))
         }
         // "Fast Shutter": full auto's shutter rule, applied when the camera opens and whenever the

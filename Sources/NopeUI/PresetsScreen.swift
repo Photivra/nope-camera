@@ -21,6 +21,9 @@ struct PresetsScreen: View {
     /// The camera a preset saves and sets up, or `nil`.
     let camera: CameraModel?
 
+    /// Whether the last Undo changed nothing, so the result says so.
+    @State private var undoFailed = false
+
     /// Creates the list.
     ///
     /// - Parameters:
@@ -92,13 +95,21 @@ struct PresetsScreen: View {
                     Text(PresetText.notice(notice))
                     .font(.footnote)
                 }
+                if undoFailed {
+                    Text(PresetText.undoFailed)
+                        .font(.footnote)
+                }
             }
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityElement(children: .combine)
             if presets.canUndo {
                 Button {
                     Task {
-                        guard await presets.undo(camera: camera, location: camera?.location) else { return }
+                        undoFailed = !(await presets.undo(camera: camera, location: camera?.location))
+                        guard !undoFailed else {
+                            AccessibilityNotification.Announcement(PresetText.undoFailed).post()
+                            return
+                        }
                         AccessibilityNotification.Announcement(
                             String(localized: "Settings restored.", bundle: .module, comment: "VoiceOver announcement after Undo returned every setting to what it was before the preset.")
                         ).post()
@@ -117,7 +128,10 @@ struct PresetsScreen: View {
     ///   - label: Its name.
     private func applyButton(_ choice: PresetChoice, @ViewBuilder label: () -> some View) -> some View {
         Button {
-            Task { await presets.apply(choice, camera: camera, location: camera?.location) }
+            Task {
+                undoFailed = false
+                await presets.apply(choice, camera: camera, location: camera?.location)
+            }
         } label: {
             label()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -349,6 +363,11 @@ enum PresetText {
 
     /// What Factory Defaults does.
     static let factoryDefaultsExplanation = Text("Every setting as on a fresh install. Saved presets are kept.", bundle: .module, comment: "Explains the Factory Defaults preset.")
+
+    /// What a failed Undo tells the person: nothing changed, and why it can happen.
+    static var undoFailed: String {
+        String(localized: "Couldn't undo: the camera is busy, or the earlier settings can't be read. Nothing changed.", bundle: .module, comment: "Shown and spoken when Undo in the presets list changed nothing.")
+    }
 
     /// What an apply did, in one sentence.
     ///
