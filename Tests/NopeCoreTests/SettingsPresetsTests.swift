@@ -36,10 +36,20 @@ struct SettingsPresetsTests {
         Mirror(reflecting: value).children.compactMap(\.label).map { $0.hasPrefix("_") ? String($0.dropFirst()) : $0 }
     }
 
-    /// A property's value, as text, for comparing values of any type.
-    static func value(_ name: String, of settings: NopeSettings) -> String {
-        let child = Mirror(reflecting: settings).children.first { $0.label == name || $0.label == "_" + name }
-        return String(describing: child?.value)
+    /// A property's value, compared with `==` (text would list a set's members in any order).
+    struct Value: Equatable {
+        /// The value.
+        let value: Any?
+
+        static func == (lhs: Value, rhs: Value) -> Bool {
+            guard let left = lhs.value as? any Equatable else { return false }
+            return left.isEqual(to: rhs.value)
+        }
+    }
+
+    /// A property's value, for comparing values of any type.
+    static func value(_ name: String, of settings: NopeSettings) -> Value {
+        Value(value: Mirror(reflecting: settings).children.first { $0.label == name || $0.label == "_" + name }?.value)
     }
 
     @Test func everySettingIsSavedAndRestored() throws {
@@ -406,9 +416,12 @@ struct CameraSetupTests {
         setup.lens = CameraSetup.LensChoice(ManualFixtures.basicLens)
         // The ultra wide has no ISO priority: setting ISO alone fixes the shutter too.
         setup.iso = 400
+        // A start delay this version doesn't offer becomes the default, 10 seconds.
+        setup.astroStartDelay = 7
         let notices = await model.applyCameraSetup(setup, manualControlsOn: true)
         #expect(notices == [.cameraValuesAdjusted])
         #expect(model.manual.settings.shutter != nil)
+        #expect(model.astro.startDelay == .tenSeconds)
     }
 
     @Test func aMissingLensIsReportedAndTheRestApplies() async {
@@ -455,6 +468,13 @@ struct CameraSetupTests {
         #expect(decoded == setup)
         #expect(try JSONDecoder().decode(CameraSetup.self, from: Data("{}".utf8)) == .factory)
         #expect(throws: DecodingError.self) { try JSONDecoder().decode(CameraSetup.self, from: Data("[]".utf8)) }
+    }
+}
+
+extension Equatable {
+    /// Whether another value of any type is equal to this one.
+    func isEqual(to other: Any?) -> Bool {
+        (other as? Self) == self
     }
 }
 

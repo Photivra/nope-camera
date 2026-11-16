@@ -54,6 +54,12 @@ extension NopeAppUITests {
         return toggle
     }
 
+    /// The Factory Defaults row, whose label also holds its explanation.
+    @MainActor
+    func factoryDefaults(_ app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Factory Defaults")).firstMatch
+    }
+
     /// Goes back one screen.
     @MainActor
     func backOneScreen(_ app: XCUIApplication) {
@@ -82,7 +88,7 @@ extension NopeAppUITests {
         savePreset(app, named: "Selfie")
 
         // Factory Defaults turns it off; the saved preset is kept.
-        app.buttons["Factory Defaults"].tap()
+        factoryDefaults(app).tap()
         XCTAssertTrue(element(app, containing: "Factory Defaults applied.").waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Selfie"].exists)
         XCTAssertTrue(app.buttons["Undo"].exists)
@@ -117,7 +123,8 @@ extension NopeAppUITests {
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
-        field.tap()
+        // Tap the field's trailing end, so the cursor is after the name, and add an "s".
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
         field.typeText("s")
         app.navigationBars["Rename Preset"].buttons["Save"].tap()
         XCTAssertTrue(app.buttons["Selfies"].waitForExistence(timeout: 5))
@@ -148,7 +155,7 @@ extension NopeAppUITests {
         try audit(app)
 
         // Applying from the tray works as in Settings: Factory Defaults turns night mode off.
-        app.buttons["Factory Defaults"].tap()
+        factoryDefaults(app).tap()
         XCTAssertTrue(element(app, containing: "Factory Defaults applied.").waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
         let tray = app.buttons["Quick Controls"]
