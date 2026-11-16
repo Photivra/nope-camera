@@ -13,10 +13,11 @@ signed with Content Credentials when signing is on.
 | `Package.swift` | The `NopeKit` Swift package: every module and its tests |
 | `Sources/<Module>/` | One folder per module, each with a DocC catalog (`<Module>.docc`) |
 | `Tests/<Module>Tests/` | Swift Testing unit tests for each module |
-| `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests |
+| `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests, the extensions, and the `NopeWatch` app with its `NopeWatchUITests` (embedded in the iPhone app) |
 | `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy`; `Intents/` holds the Siri and Shortcuts App Intents and `AppShortcuts.xcstrings` |
 | `App/NopeCaptureExtension/` | The Lock Screen camera (LockedCameraCapture capture extension), with its own privacy manifest |
 | `App/NopeControls/` | The "Open nope." control (WidgetKit control extension), with its own privacy manifest |
+| `App/NopeWatch/` | The Apple Watch app (issue #63): a remote shutter and delay for the iPhone app over WatchConnectivity, with its own `Localizable.xcstrings` and privacy manifest; `App/NopeWatchUITests/` holds its UI tests |
 | `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent` and `Localizable.xcstrings` |
 | `Config/Base.xcconfig` | Shared build settings; includes the untracked `Config/Local.xcconfig` |
 | `docs/api/` | The API exported as Markdown from the DocC comments (generated) |
@@ -25,12 +26,13 @@ signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the Apple Watch messages and both ends of their protocol (`WatchCommand`, `PhoneUpdate`, `WatchStatus`, `WatchResult`, `WatchMessageCoding`, `WatchCommandServer` with the `WatchLink` protocol, `WatchRemote` with the `PhoneLink` protocol), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
-| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents | Everything |
+| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents and the Apple Watch link (`PhoneWatchSession`) | Everything |
+| Watch app (`NopeWatch`) | The Apple Watch remote shutter: hosts `WatchRemote` from `NopeCore` with a WatchConnectivity link and its own SwiftUI screen; it takes no photos | `NopeCore`, SwiftUI, WatchConnectivity |
 | Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the control uses only AppIntents, WidgetKit and SwiftUI |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
@@ -265,6 +267,34 @@ defaults, and offers no button that opens another app; it has no storage and bat
 (their system reader uses API that extensions can't use). It shares `CameraPreviewView.swift`
 and `MotionGravitySource.swift` with the app through the project's file membership, with the
 `NOPE_CAPTURE_EXTENSION` compilation condition leaving out the Debug UI-test scenarios.
+
+### Apple Watch remote shutter (issue #63)
+
+The watch app takes no photos and runs no timer. `WatchRemote` (in `NopeCore`, built for
+watchOS too) sends `WatchCommand` values (status, take a photo after none, 3 or 10 seconds,
+cancel the timer) and shows the `PhoneUpdate` the phone sends back: the camera's `WatchStatus`
+(ready, counting down, busy, or why it isn't available) and, when a photo ends, its
+`WatchResult` (saved and signed or not, or why not). `WatchMessageCoding` encodes both as JSON
+with a protocol version; a message of another version is answered with "not understood"
+instead of guessed at. Only commands and short status cross the link, never image data or
+metadata, so the watch shows no preview.
+
+On the iPhone, `PhoneWatchSession` (in the app target) is the WatchConnectivity adapter: it only
+carries bytes (`WCSession.sendMessageData`). While the camera screen is shown it runs a
+`WatchCommandServer`, which answers each command. A photo goes through the same
+`ShortcutInbox` as a Siri request, so the camera screen takes it with its own intents and a delay
+runs the camera's self-timer (`.drive(.startTimer(seconds:))`). A photo is asked for only while
+`CameraModel.watchStatus` is `ready`; otherwise the watch hears why at once and nothing is taken
+later. The server follows `watchStatus` with Observation and sends each change while the watch
+app is reachable; a result the watch missed comes with its next reply. While no camera screen is
+shown (the app in the background, or launched in the background by a watch message), the reply
+says the camera isn't running.
+
+On the watch, `WatchSessionLink` is the WatchConnectivity adapter, and `RemoteShutterView` the
+only screen: the status and result lines (symbol and words; teal for a verified fact, amber for a
+warning), the shutter or Cancel Timer, and the delay as a pushed list. Haptics confirm the
+shutter, each countdown second and the result; VoiceOver announces the countdown and the
+result. The watch app has no entitlements; WatchConnectivity needs none.
 
 ### The viewfinder
 

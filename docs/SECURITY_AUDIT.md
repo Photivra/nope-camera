@@ -142,6 +142,9 @@ extension; no target requests it or any other entitlement as of 0.2.0).
   `keychain-access-groups` only if Xcode adds its default, and the allowlisted keys. No
   iCloud, App Groups, associated domains, push, network extension, background modes or
   HealthKit. Any extra key is a Blocker until it is allowlisted by a reviewed pull request.
+  The Apple Watch app (`NopeWatch`) has no entitlements file: WatchConnectivity needs none, and
+  a watch app can't share the iPhone app's App Group, so it gets its status over
+  WatchConnectivity only.
 - **Apple docs:** [Entitlements](https://developer.apple.com/documentation/bundleresources/entitlements).
 
 ### 5. Info.plist: privacy strings and attack surface
@@ -205,6 +208,10 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
     package must add one.
   - Each extension target (lock-screen capture, widget controls) gets its own manifest if it
     ships code that uses a listed API.
+  - The Apple Watch app (`App/NopeWatch/PrivacyInfo.xcprivacy`, issue #63) declares
+    `UserDefaults` (`CA92.1`) only: its Release binary contains `NopeCore`'s `NopeSettings`, which
+    references `UserDefaults` though the watch never runs it (checked with `nm` on the 0.3.0
+    build); no boot time, disk space or file timestamp APIs were found in it.
   - In Xcode Organizer, select the archive and choose **Generate Privacy Report**; read the PDF.
   - `scripts/check-security.sh` (no tracking, no tracking domains).
 - **Pass:** every required-reason API in the Release binary is declared with a correct code;
@@ -224,7 +231,10 @@ AGENTS.md rule 4.
     the only allowed hits are links that open in the browser (the privacy policy, the C2PA
     checker, the source code), which hand the URL to the system and don't fetch anything in
     the app.
-  - The binary checks in check 3 (`nm -u`, `otool -L`) on the app and every framework.
+  - The binary checks in check 3 (`nm -u`, `otool -L`) on the app and every framework, and on
+    the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`). It links WatchConnectivity,
+    which carries the watch's commands over the system's paired-device connection; the app
+    opens no network connection of its own (`docs/PRIVACY.md`, "Apple Watch app").
 - **Pass:** no networking API in source or binary; every `URL` in the app is a link opened by
   the system browser.
 
