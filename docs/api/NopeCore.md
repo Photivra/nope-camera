@@ -396,9 +396,15 @@ photo that goes through the metadata allowlist, read-back and signing like any o
 - **The shutter** then starts the self-timer (``startDelay``), so touching the phone doesn't
   shake the first frame, and takes ``frameCount`` frames back to back, each saved while the
   next is exposed.
-- **A run stops** when the person stops it, when the next frame wouldn't fit in storage, when
-  the battery is at or below ``stopBatteryLevel`` and not charging, when the camera stops, or
-  at the first frame that can't be taken or saved. Every frame taken before that is saved.
+- **A run pauses** (``isPaused``, issue #64) when the app leaves the foreground or the camera
+  pauses (a call, another app, heat): the frames taken are saved, and a frame cut short is
+  taken again. When the app is open and the camera runs again, the start delay counts down
+  once more and the run continues, after storage and battery are checked again. Leaving during
+  the start delay starts the run paused.
+- **A run stops** when the person stops it (also while paused), when the next frame wouldn't
+  fit in storage, when the battery is at or below ``stopBatteryLevel`` and not charging, when
+  the camera stops for good (it failed), or at the first frame that can't be taken or saved
+  in the foreground. Every frame taken before that is saved.
 - **Turning it off** turns manual controls off again if the helper turned them on.
 
 ``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
@@ -491,6 +497,19 @@ public, declared in `Sources/NopeCore/AstroHelper.swift`
 ```
 
 Whether the helper is on.
+
+## `AstroModel/isPaused`
+
+public, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var isPaused: Bool { get set }
+```
+
+Whether the running frames are paused (issue #64): the app left the foreground, or the
+camera is paused (a call, another app, heat). ``progress`` keeps the frames taken; when
+the app is open and the camera runs again, the start delay counts down once more, so the
+phone is still, and the run continues after storage and battery are checked again.
 
 ## `AstroModel/isRunning`
 
@@ -586,6 +605,18 @@ internal, declared in `Sources/NopeCore/AstroHelper.swift`
 Records the helper as on or off.
 
 - Parameter isOn: Whether it is on.
+
+## `AstroModel/setPaused(_:)`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor func setPaused(_ isPaused: Bool)
+```
+
+Records the running frames as paused or not.
+
+- Parameter isPaused: Whether they are paused.
 
 ## `AstroModel/setStartDelay(_:)`
 
@@ -1609,6 +1640,24 @@ case setCleanView(Bool)
 Turn clean view on or off. Clean view hides every control that isn't essential, leaving
 the viewfinder and the shutter; it never changes a setting.
 
+## `CameraIntent/setInForeground(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case setInForeground(Bool)
+```
+
+The app came back to the foreground (`true`) or went to the background (`false`). Send it
+whenever the scene phase changes to or from the background (issue #64).
+
+Leaving cancels the self-timer, because the camera stops and can't take its photo. With
+the astro helper on, leaving pauses its frames instead (``AstroModel/isPaused``), or, during
+its start delay, starts the run paused; coming back with the camera running counts the
+start delay down again and continues the run.
+
+- Parameter isInForeground: Whether the app is in the foreground now.
+
 ## `CameraIntent/setPhotoSizes(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -1749,6 +1798,17 @@ Whether a light intent is refused because the helper is on: the light must stay 
 night sky frames, and it would ruin dark-adapted eyes.
 
 - Parameter intent: The light intent.
+
+## `CameraModel/astroShouldPause`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var astroShouldPause: Bool { get }
+```
+
+Whether the astro run should pause: the app is out of the foreground, or the camera is
+paused for a while (an interruption, heat, or starting again).
 
 ## `CameraModel/backend`
 
@@ -2040,9 +2100,20 @@ public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
 @MainActor var isFinishingPhotos: Bool { get }
 ```
 
-Whether photos are being taken or saved: a photo, a bracket, a burst or astro frames. When
-the app leaves the foreground then, it asks iOS for time to finish saving them
-(``BackgroundTimeRequesting``).
+Whether photos are being taken or saved: a photo, a bracket, a burst or astro frames that
+aren't paused. When the app leaves the foreground then, it asks iOS for time to finish
+saving them (``BackgroundTimeRequesting``); a paused astro run has saved every frame taken.
+
+## `CameraModel/isInForeground`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isInForeground: Bool { get set }
+```
+
+Whether the app is in the foreground, as the interface last said with
+``CameraIntent/setInForeground(_:)``. `true` until it says otherwise.
 
 ## `CameraModel/isMagnifying`
 
@@ -2086,10 +2157,10 @@ public, declared in `Sources/NopeCore/CameraModel+LiveActivity.swift`
 The Live Activity's content for what runs now, or `nil` when nothing runs that it shows.
 
 An interval series, astro frames, a burst and the self-timer each have content while they
-run. Out of the foreground the camera stops, so a running interval series is
-``LiveActivityContent/Phase/paused`` (it continues when the app is open again) and a
-running burst or astro run is ``LiveActivityContent/Phase/saving`` (the frames already
-taken are being saved). The self-timer's photo keeps the timer's content while it is
+run. Out of the foreground the camera stops, so a running interval series or astro run is
+``LiveActivityContent/Phase/paused`` (it continues when the app is open again; an astro run
+is paused in the foreground too while the camera is), and a running burst is
+``LiveActivityContent/Phase/saving`` (the frames already taken are being saved). The self-timer's photo keeps the timer's content while it is
 taken and saved.
 
 - Parameters:
@@ -2186,6 +2257,21 @@ The outcome a capture status reports.
 
 - Parameter status: The status after the photo.
 - Returns: The outcome.
+
+## `CameraModel/pauseAstroRun()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func pauseAstroRun() async -> Bool
+```
+
+Pauses the astro run until the app is in the foreground and the camera can take photos
+again, then counts the start delay down so the phone is still before the next frame. It
+waits for Observation's change notifications; nothing polls (AGENTS.md, "Battery").
+
+- Returns: `false` when the person stopped the run, `true` to continue: the run then
+  checks the camera, storage and battery again before the next frame.
 
 ## `CameraModel/perform(_:inbox:settings:presets:)`
 
@@ -2368,6 +2454,19 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the camera is running, and if not, why. Meaningful while ``state`` is
 ``CameraState/ready(_:)``.
 
+## `CameraModel/setInForeground(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func setInForeground(_ isInForeground: Bool)
+```
+
+Records whether the app is in the foreground, and applies it to the self-timer and the
+astro helper (``CameraIntent/setInForeground(_:)``).
+
+- Parameter isInForeground: Whether the app is in the foreground now.
+
 ## `CameraModel/startTimer(seconds:shot:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -2431,12 +2530,12 @@ Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 - Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
   shutter, or the count a Siri or Shortcuts request asked for (issue #62).
 
-## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:)`
+## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:pausesWithCamera:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached) async
+@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false) async
 ```
 
 Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -2450,6 +2549,9 @@ location when the Location switch is on, as a single photo does.
   - stopsOnLowBattery: Whether the run also stops when the battery is at or below
     ``AstroModel/stopBatteryLevel`` and not charging.
   - endAtLimit: What the run reports when it takes all `limit` frames.
+  - pausesWithCamera: Whether the run pauses instead of stopping when the app leaves the
+    foreground or the camera pauses, and continues afterwards (the astro helper, issue
+    #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again.
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
@@ -5171,6 +5273,21 @@ public, declared in `Sources/NopeCore/SelfTimer.swift`
 ```
 
 The seconds left, from the starting number down to 1, or `nil` when no countdown runs.
+
+## `Countdown/run(seconds:)`
+
+public, declared in `Sources/NopeCore/SelfTimer.swift`
+
+```swift
+@MainActor func run(seconds: Int) async -> Bool
+```
+
+Counts down and waits until the count reaches zero or the countdown is cancelled: the
+astro helper's start delay before it resumes a paused run (issue #64).
+
+- Parameter seconds: The delay, in seconds. Less than 1 doesn't wait.
+- Returns: `true` when the count reached zero, `false` when the countdown was cancelled or
+  another countdown was already running.
 
 ## `Countdown/start(seconds:fire:)`
 
@@ -9393,8 +9510,8 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 case paused
 ```
 
-The app left during an interval series: the series continues when the app is opened
-again.
+The app left during an interval series or astro run, or the camera paused an astro run:
+it continues when the app is open and the camera runs again.
 
 ## `LiveActivityContent/Phase/running`
 
@@ -9475,9 +9592,9 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 var canStop: Bool { get }
 ```
 
-Whether the activity offers Stop: only for an interval series that runs or is paused,
-because only it has photos still to take that Stop would prevent. Every photo already
-taken is saved either way.
+Whether the activity offers Stop: for an interval series or astro run that runs or is
+paused, because they have photos still to take that Stop would prevent. Every photo
+already taken is saved either way.
 
 ## `LiveActivityContent/compactCount`
 
@@ -9794,8 +9911,8 @@ public, declared in `Sources/NopeCore/LiveActivityCoordinator.swift`
 @MainActor func stopSeries(_ model: CameraModel) async
 ```
 
-Stops the interval series from the activity's Stop button, and ends the activity at once,
-with every photo already taken saved.
+Stops the interval series or astro run from the activity's Stop button, and ends the
+activity at once, with every photo already taken saved.
 
 - Parameter model: The camera model.
 
@@ -9985,6 +10102,16 @@ case frame(number: Int, total: Int)
 ```
 
 "Frame 5 of 20": the astro helper takes this frame.
+
+## `LiveActivityStatusLine/framesPaused(taken:total:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case framesPaused(taken: Int, total: Int)
+```
+
+"Paused: 4 of 20 frames. Open nope. to continue.": an astro run.
 
 ## `LiveActivityStatusLine/noPhotoTaken`
 
