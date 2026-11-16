@@ -102,3 +102,4 @@
 8 NopeAppUITests/testStartInCleanViewSetting 44
 8 NopeAppUITests/testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself 26 est
 8 OverlayUITests/testOverlaySettingsAtTheLargestTextSize 80 est
+6 NopeAppUITests/testViewfinderFollowsThePictureInTheScrollingLayout 60 est
