@@ -89,6 +89,17 @@ for any user-facing claim comes from
   switch is on or off, when the app leaves the foreground while photos are still being taken or
   saved, it asks iOS for a little time to finish saving them
   (`UIApplication.beginBackgroundTask`), which is not a background mode.
+- **Apple Watch app (issue #63):** the watch app sends the iPhone app only commands (the
+  status, take a photo after none, 3 or 10 seconds, cancel the timer) and gets back only short
+  status: whether the camera is ready, the seconds left, and whether a photo was saved and signed
+  or why not. No image data, preview, thumbnail or metadata goes to the watch. The messages go
+  through WatchConnectivity (`WCSession.sendMessageData`), which watchOS and iOS carry on their own
+  connection between the paired devices; neither app opens a network connection, and
+  `scripts/check-no-networking.sh` checks the watch app's binary too. The watch app stores nothing
+  (the delay is kept only while it runs), logs nothing and has no entitlements. Its privacy
+  manifest declares no tracking, no tracking domains and no collected data; it declares
+  `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
+  iPhone app's settings code, which the watch app never runs.
 - **Entitlements:** none.
 - **Files and logs:** Release builds write no files except the paired copy above, which
   Photos moves into the library (photos otherwise go from memory to Photos). They log only why

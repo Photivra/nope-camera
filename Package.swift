@@ -26,7 +26,7 @@ let c2paLibrary: Target =
 let package = Package(
     name: "NopeKit",
     defaultLocalization: "en",
-    platforms: [.iOS(.v18)],
+    platforms: [.iOS(.v18), .watchOS(.v11)],
     products: [
         .library(name: "NopeCore", targets: ["NopeCore"]),
         .library(name: "NopeCapture", targets: ["NopeCapture"]),

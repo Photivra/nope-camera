@@ -325,6 +325,21 @@ and Settings rotates. On iPad the window rotates and the shutter is in the colum
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
 
+The Apple Watch app (issue #63) has its own UI tests on the watch Simulator, with a simulated
+phone (`-NopeSimulatedPhone ready|notSigned|notRunning|permissionDenied|unreachable|countdown`,
+Debug builds only), because a UI test can't drive a paired iPhone:
+
+```sh
+xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeWatch \
+  -destination 'platform=watchOS Simulator,name=Apple Watch Series 12 (46mm),OS=27.2' CODE_SIGNING_ALLOWED=NO
+```
+
+They run the full accessibility audit in every state (ready, a signed and an unsigned result,
+the camera not running, camera access declined, the phone not reachable, the countdown and its
+cancel, the delay list, and the largest text size) with no exceptions. The audit flagged the
+title "nope." as a label that isn't human-readable, so the watch screen has no title. The watch
+tests aren't in the iPhone shard list; CI runs them in their own job.
+
 `audit(_:)` in `NopeAppUITests.swift` runs every audit with these documented exceptions; every
 other finding fails the test:
 
@@ -451,6 +466,7 @@ the local toolchain). Jobs:
 | `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
+| `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
@@ -670,6 +686,33 @@ view.
   app, a photo from the Lock Screen camera has no location.
 - After these checks the App Group's preferences file holds only `NopeSettings.` keys and the
   migration key (`docs/SECURITY_AUDIT.md`, check 12).
+
+### Apple Watch on a device (issue #63)
+
+Needs an iPhone with the app installed from Xcode (the watch app is embedded and installs on the
+paired Apple Watch through the Watch app, or automatically if that setting is on). Unverified
+assumptions to confirm: a watch command reaches the iPhone app while it is open and unlocked,
+`WCSession.isReachable` follows the watch app being open, and replies arrive within a second.
+
+- Pairing: the watch app appears on the paired watch, named "nope."; it opens to "Camera ready"
+  while the camera is open on the iPhone.
+- Shutter: Take Photo saves a photo on the iPhone (RAW plus HEIF by default, signed); the watch
+  says "Saved and signed" with a haptic; with signing off, "Saved, not signed" in amber.
+- Delays: 3 and 10 seconds start the iPhone's own self-timer (its countdown shows and speaks on
+  the iPhone); the watch shows "Photo in 3 seconds" and counts down with a light haptic each
+  second; Cancel Timer on the watch stops it and nothing is taken; cancelling on the iPhone shows
+  "Timer cancelled. No photo taken." on the watch.
+- Nothing taken when the camera isn't available: with the iPhone app in the background, closed,
+  or with Settings open over the camera, the watch says "Camera not available. Open nope. on your
+  phone." and Take Photo is disabled; opening the app later takes no photo. With camera access
+  declined, the watch says so. With the iPhone out of range or off, "Can't reach your phone".
+- A photo whose result the watch missed (lower the wrist during the countdown): raising it shows
+  the result.
+- VoiceOver on the watch reads the status, the shutter and the delay, and announces each
+  countdown second and the result; the largest text size keeps every control reachable by
+  scrolling.
+- App Privacy Report on the iPhone lists no domain for the app after these checks.
+- iPad: the app runs as before (WatchConnectivity isn't supported there and stays off).
 
 ### Low storage
 
@@ -898,8 +941,8 @@ scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
 
 CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
 and runs `scripts/check-no-networking.sh` on both, with no exceptions; for the app it checks the
-app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`, which also draws
-the Live Activity).
+app binary, both extension binaries (`NopeCaptureExtension`, `NopeControls`, which also draws
+the Live Activity) and the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`).
 
 ## Checking signatures
 
