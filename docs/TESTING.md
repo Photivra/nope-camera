@@ -933,6 +933,38 @@ Not measured yet. On an iPhone 16 Pro Max, for each lens and RAW, RAW + HEIF and
 shutter for a 20-frame burst and record frames per second here (time from the first to the last
 frame, from the photos' capture times).
 
+### Headphones as a remote shutter on a device (issue #81)
+
+Pending verification; nothing here is claimed in the store listing until it is checked. The app
+handles hardware buttons only through `onCameraCaptureEvent` (AVKit), so anything the system
+delivers as a capture event works without app code. From Apple's sources:
+- AirPods with the H2 chip send stem clicks as primary capture events from iOS 26; apps that
+  already use the capture event interaction get it with no change, and the system plays a default
+  tone for an AirPods click (WWDC25 session 253, "Enhancing your camera experience with capture
+  controls"). The person picks the click type in the AirPods settings ("Remote Camera Capture").
+  The SDK header says AirPods Camera Control is not available in the European Union
+  (`AVCaptureEventInteraction.h`, `defaultCaptureSoundDisabled`).
+- Wired EarPods: Apple's documentation doesn't say whether their volume buttons send capture
+  events to third-party apps. Record what happens.
+- Siri through AirPods uses the same App Shortcuts as Siri on the iPhone.
+
+Steps, on an iPhone with iOS 26 or later, with the app open on the camera screen (unlocked):
+- AirPods Pro 2, AirPods Pro 3 or AirPods 4: in the AirPods settings, choose a click type under
+  remote camera capture (record the section's exact name); press the stem once: one photo is saved and signed, and the tone plays; press and
+  hold: record whether it takes one photo or, in Burst, a burst until released.
+- Repeat with Drive set to 3 s and 10 s (the self-timer starts; a second press cancels it), Burst,
+  an interval series (a press starts and stops it, as the volume buttons do) and the astro helper
+  (a press starts the countdown); each behaves as the volume buttons do.
+- With the camera paused (another app using the camera) and with Settings open: record what a
+  stem press does; it must not take a photo while the camera isn't running.
+- Wired EarPods (Lightning or USB-C): press volume up and volume down on the cord in the same
+  modes; record whether each takes a photo or changes the volume.
+- Siri through AirPods ("Hey Siri" or press and hold the stem, as set): "Take a photo with
+  nope." and "Take a photo in 10 seconds with nope." with the app open and with it closed, the
+  iPhone unlocked; Siri says "Photo saved and signed." Record what happens while the iPhone is
+  locked (Siri asks to unlock, as on the iPhone).
+- Record the device, AirPods model and firmware, iOS version and region with the results.
+
 ### Flash, light and night mode on a device
 
 - the Light and Flash controls appear on each rear lens that has them and never on the front

@@ -524,7 +524,10 @@ is a `CaptureSessionPreviewSource`; the app target's `Viewfinder` view turns it 
 `AVCaptureVideoPreviewLayer` and passes it to `CameraScreen(model:settings:viewfinder:)`. The app also
 attaches `onCameraCaptureEvent` (AVKit), so the volume buttons and the Camera Control are the
 shutter (enabled only while `CameraModel.handlesHardwareButtons`, so the buttons keep their
-system behavior otherwise), and `CameraCommands`, so a hardware keyboard's Space bar is.
+system behavior otherwise), and `CameraCommands`, so a hardware keyboard's Space bar is. From iOS
+26, Apple delivers AirPods (H2 chip) stem clicks to the same handler as primary capture events,
+with a system tone, so they reach the same path with no app code (WWDC25 session 253); this is
+pending verification on a device (issue #81, `docs/TESTING.md`).
 
 `CaptureSessionPreviewSource.connect(_:)` attaches the session to the app's preview layer and
 keeps the preview and photos upright with `AVCaptureDevice.RotationCoordinator`
