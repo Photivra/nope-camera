@@ -961,7 +961,7 @@ delivers as a capture event works without app code. From Apple's sources:
 
 Steps, on an iPhone with iOS 26 or later, with the app open on the camera screen (unlocked):
 - AirPods Pro 2, AirPods Pro 3 or AirPods 4: in the AirPods settings, choose a click type under
-  remote camera capture (record the section's exact name); press the stem once: one photo is saved and signed, and the tone plays; press and
+  remote camera capture (record the section's exact name); press the stem once: one photo is saved (signed only if signing is on in Settings), and the tone plays; press and
   hold: record whether it takes one photo or, in Burst, a burst until released.
 - Repeat with Drive set to 3 s and 10 s (the self-timer starts; a second press cancels it), Burst,
   an interval series (a press starts and stops it, as the volume buttons do) and the astro helper
@@ -972,7 +972,7 @@ Steps, on an iPhone with iOS 26 or later, with the app open on the camera screen
   modes; record whether each takes a photo or changes the volume.
 - Siri through AirPods ("Hey Siri" or press and hold the stem, as set): "Take a photo with
   nope." and "Take a photo in 10 seconds with nope." with the app open and with it closed, the
-  iPhone unlocked; Siri says "Photo saved and signed." Record what happens while the iPhone is
+  iPhone unlocked; Siri says the photo was saved, and whether it was signed (signing is off by default) Record what happens while the iPhone is
   locked (Siri asks to unlock, as on the iPhone).
 - Record the device, AirPods model and firmware, iOS version and region with the results.
 
