@@ -220,15 +220,11 @@ extension View {
 }
 
 extension View {
-    /// Turns off the soft fade iOS 26 draws where scrolling content meets the screen's edges, so
-    /// text scrolled under the status bar keeps its contrast (the iPad audit reported faded text
-    /// at the top of the scrolling camera layout). Earlier versions have no such effect.
-    @ViewBuilder func hardScrollEdges() -> some View {
-        if #available(iOS 26, *) {
-            scrollEdgeEffectStyle(.hard, for: .all)
-        } else {
-            self
-        }
+    /// Turns off the soft fade iOS 26 and later draw where scrolling content meets the screen's
+    /// edges, so text scrolled under the status bar keeps its contrast (the iPad audit reported
+    /// faded text at the top of the scrolling camera layout).
+    func hardScrollEdges() -> some View {
+        scrollEdgeEffectStyle(.hard, for: .all)
     }
 }
 

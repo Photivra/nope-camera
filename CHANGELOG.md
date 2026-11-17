@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Changed
+- Supported versions (issue #78): the app now requires iOS and iPadOS 26 or later, and the Apple Watch app watchOS 26 or later (previously iOS 18 and watchOS 11); the two latest versions, 26 and 27, are supported. Devices that run only an earlier version, such as iPhone XS, XS Max and XR, are no longer supported. Deployment targets are 26.0 for every target and in `Package.swift`. The `#available(iOS 26, *)` checks and their fallbacks are removed (the exposure region of interest in `SystemCaptureHardware`, the hard scroll edges in `NopeUI`), and so is the `UIRequiresFullScreen = NO` build setting, which iOS 26 deprecates and whose value is the default; behavior on 26 and later is unchanged. `NightModeViewfinderTests` keeps `UIWindow(frame:)`, deprecated in iOS 26, behind a test helper, because the unit test process has no window scene. The README lists the supported devices. CI keeps running on the 27.2 Simulators, since the runner image has no version 26 Simulator runtimes; version 26 is covered at build time and in the on-device checks (`docs/TESTING.md`).
+
 ## [0.3.0] - 2026-11-16
 
 ### Added

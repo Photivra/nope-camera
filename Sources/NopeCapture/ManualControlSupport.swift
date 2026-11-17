@@ -27,7 +27,7 @@ struct ManualControlSupport: Equatable, Sendable {
     let lensPositionFocus: Bool
     /// `isLockingWhiteBalanceWithCustomDeviceGainsSupported`.
     let customWhiteBalance: Bool
-    /// iOS 26: `isExposureRectOfInterestSupported`.
+    /// `isExposureRectOfInterestSupported`.
     let exposureRegion: Bool
     /// `isFocusPointOfInterestSupported`.
     let focusPoint: Bool

@@ -401,8 +401,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                     lensAperture: AVCaptureDevice.currentLensAperture, duration: AVCaptureDevice.autoExposureDuration,
                     iso: AVCaptureDevice.autoISO)
         }
-        var exposureRegion = false
-        if #available(iOS 26.0, *) { exposureRegion = device.isExposureRectOfInterestSupported }
+        let exposureRegion = device.isExposureRectOfInterestSupported
         return ManualControlSupport(
             customExposure: device.isExposureModeSupported(.custom),
             continuousAutoExposure: device.isExposureModeSupported(.continuousAutoExposure),
@@ -467,7 +466,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///   - metering: The metering mode.
     ///   - device: The camera.
     private func applyMetering(_ metering: MeteringMode, to device: AVCaptureDevice) {
-        if #available(iOS 26.0, *), device.isExposureRectOfInterestSupported {
+        if device.isExposureRectOfInterestSupported {
             let minimum = device.minExposureRectOfInterestSize
             if let region = MeteringRegion.region(
                 for: metering, minimumWidth: Double(minimum.width), minimumHeight: Double(minimum.height))

@@ -3,7 +3,7 @@
 The owner principle (issue #57, AGENTS.md "Code"): anything about the file or the exposure that the
 device lets an app control should be controllable by the person, behind the manual or advanced
 options, with full auto as the default; and every file Photivra Nope Camera can save must open. This
-page lists every capture and file setting AVFoundation and ImageIO expose to an app on iOS 18 to 27,
+page lists every capture and file setting AVFoundation and ImageIO expose to an app on iOS 26 and 27,
 what the app offers, and why anything isn't offered. Keep it current when an SDK adds a setting.
 
 Sources are the iOS 27.2 SDK headers (Xcode 27.2): `AVFoundation/AVCapturePhotoOutput.h`

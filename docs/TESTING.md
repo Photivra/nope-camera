@@ -1,8 +1,8 @@
 # Testing
 
 Every change ships with tests (AGENTS.md, "Full test coverage"). This page says how to run them.
-Local toolchain: Xcode 27.2 with the iOS 27.2 Simulator. The app supports iOS and iPadOS 18.0
-and later.
+Local toolchain: Xcode 27.2 with the iOS 27.2 Simulator. The app supports iOS and iPadOS 26.0
+and later, and its Apple Watch app watchOS 26.0 and later (issue #78).
 
 ## Quick checks (seconds, no build)
 
@@ -551,6 +551,14 @@ the local toolchain). Jobs:
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
 
+Every job uses the iOS 27.2 and watchOS 27.2 Simulators. The app supports iOS, iPadOS and
+watchOS 26 and 27 (issue #78), but the `xcode-27` image has no iOS 26 or watchOS 26 Simulator
+runtime, and the `macos-26` image, which has them, has no Xcode 27, which the app needs (it
+uses iOS 27 APIs behind `#available(iOS 27, *)` checks). In CI, version 26 is checked at build
+time only: with the deployment target at 26.0, the compiler rejects any API newer than iOS or
+watchOS 26 that isn't behind an `#available` check. Running on version 26 is part of the
+on-device checks below.
+
 ### UI test shards
 
 The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
@@ -695,7 +703,8 @@ requests without a camera screen) is unit tested in `ShortcutTests`.
 ## On-device checks
 
 Some behavior can only be checked on hardware. Before a release, on at least one iPhone and one
-iPad:
+iPad, with at least one device (or, where hardware isn't needed, a Simulator) on iOS or iPadOS 26
+and one on 27, the oldest and newest supported versions (issue #78):
 
 - the camera permission prompt shows the localized `NSCameraUsageDescription`, and each answer
   leads to the right screen (`SystemCameraAuthorization`);
@@ -897,6 +906,8 @@ Needs an iPhone with the app installed from Xcode (the watch app is embedded and
 paired Apple Watch through the Watch app, or automatically if that setting is on). Unverified
 assumptions to confirm: a watch command reaches the iPhone app while it is open and unlocked,
 `WCSession.isReachable` follows the watch app being open, and replies arrive within a second.
+Run these checks with the watch on watchOS 26 and on watchOS 27 (issue #78), on a device or, for
+what needs no hardware, the watchOS Simulator.
 
 - Pairing: the watch app appears on the paired watch, named "nope."; it opens to "Camera ready"
   while the camera is open on the iPhone.

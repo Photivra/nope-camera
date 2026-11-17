@@ -45,7 +45,7 @@ user. The full design is in issue #1.
 
 ## Code
 
-- **Swift and SwiftUI, iOS and iPadOS 18+.** Use native frameworks first:
+- **Swift and SwiftUI, iOS and iPadOS 26+, watchOS 26+.** Use native frameworks first:
   - AVFoundation for capture and DNG metadata;
   - Core Image for RAW development;
   - ImageIO with the system HEIF encoder;
