@@ -945,6 +945,12 @@ frame, from the photos' capture times).
 - the light turns off when the app goes to the background, on a phone call or another camera
   app, on a lens without a light, and at a critical heat level; warm the device and check the
   "Light Unavailable" warning and that a lower level can be chosen;
+- a Light request before the camera is ready (issue #75): force-quit the app, open it, and turn
+  the Light on as soon as the switch shows, before the picture appears; the switch stays on and
+  the light comes on once the camera has started (or "Light Unavailable" shows), and it is never
+  silently off. Repeat 10 times from a cold start, and also right after switching lenses and
+  right after changing the Photo Size; record any try where the switch went back to off with no
+  light and no warning;
 - night mode at night: no white or blue element in the app's own screens (camera, tray, pills,
   manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
   popovers); list what the system still draws (status bar, menus, alerts); the app never changes

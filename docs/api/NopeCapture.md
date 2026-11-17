@@ -268,7 +268,9 @@ func setTorch(level: Double?) async -> TorchStatus
 Turns the running lens's torch on at a level, or off.
 
 - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-- Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+- Returns: The light's state. While the session isn't configured (before a start, or
+  while it is reconfigured), a request for the light is `TorchStatus.pending`, never a
+  silent `TorchStatus.off` (issue #75); `LightModel` applies it after the start.
 
 ## `AVFoundationCaptureBackend/startSession(_:)`
 
@@ -875,8 +877,9 @@ The system may refuse a level while the device is hot (`AVErrorTorchLevelUnavail
 or make the torch unavailable (`isTorchAvailable`); the light then stays off.
 
 - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-- Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
-  is attached.
+- Returns: The light's state afterwards. While no camera with a torch is attached (during
+  discovery, a teardown or a reconfiguration), a request for the light is
+  `TorchStatus.pending` and a request to turn it off is `TorchStatus.off` (issue #75).
 
 ## `CaptureHardware/stop()`
 

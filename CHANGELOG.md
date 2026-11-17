@@ -6,6 +6,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+- Turning the Light on before the camera was ready (right after opening the app, or while it switched lenses or settings) could silently leave it off (issue #75): the light model kept the request but showed the switch as off, and the capture backend and hardware answered "off" while no camera input was attached. Such a request is now `TorchStatus.pending`: the switch stays on, and the light is applied once the camera has started, coming on or showing "Light Unavailable". An "off" answer to a request for the light is reported as unavailable, a light that comes on after the person turned it off is turned off again, and a failed start turns a waiting light off. Unit tests request the light before the session starts, attach the input, and check that it comes on or is reported unavailable. To be verified on a device from a cold start.
+
 ## [0.3.0] - 2026-11-16
 
 ### Added

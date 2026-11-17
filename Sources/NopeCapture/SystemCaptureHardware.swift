@@ -237,10 +237,15 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// `AVErrorTorchLevelUnavailable` (`AVCaptureDevice.h`, `setTorchModeOn(level:)`); the light
     /// is then left off and reported unavailable, rather than silently brighter or dimmer.
     ///
+    /// Without an attached camera that has a torch (during discovery, which attaches each
+    /// camera in turn, or between a teardown and the next attach), a request for the light
+    /// can't be applied yet: it is answered `.pending`, not `.off`, and `LightModel` applies it
+    /// after the start (issue #75).
+    ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
     /// - Returns: The light's state afterwards.
     private func switchTorch(level: Double?) -> TorchStatus {
-        guard let device = currentInput?.device, device.hasTorch else { return .off }
+        guard let device = currentInput?.device, device.hasTorch else { return level == nil ? .off : .pending }
         guard let level else {
             turnTorchOff(device)
             return .off

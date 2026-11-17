@@ -80,11 +80,68 @@ struct LightCaptureTests {
         let hardware = FakeHardware(cameras: [cameraWithLight("wide")])
         let backend = AVFoundationCaptureBackend(
             hardware: hardware, authorization: FakeAuthorization(current: .authorized, afterRequest: .authorized))
-        #expect(await backend.setTorch(level: 0.5) == .off)
+        // Before the start the light can't be switched yet: a request for it is pending, never a
+        // silent "off" (issue #75), and the hardware isn't asked.
+        #expect(await backend.setTorch(level: 0.5) == .pending)
+        #expect(await backend.setTorch(level: nil) == .off)
         let wide = try #require(await backend.deviceCapabilities().lens(withID: "wide"))
         try await backend.startSession(CaptureRequest(lens: wide))
         #expect(await backend.setTorch(level: 0.5) == .on(level: 0.5))
         #expect(await backend.setTorch(level: nil) == .off)
         #expect(await hardware.torchRequests == [0.5, nil])
+    }
+
+    @Test func hardwareWithoutAnInputAnswersPending() async {
+        let hardware = FakeHardware(cameras: [cameraWithLight("wide")])
+        #expect(await hardware.setTorch(level: 0.5) == .pending)
+        #expect(await hardware.setTorch(level: nil) == .off)
+    }
+
+    /// Issue #75: the Light is turned on before the camera has started (its input isn't attached
+    /// yet); once the input is attached, the light comes on, or is reported unavailable. It is
+    /// never silently turned off.
+    @MainActor
+    @Test(arguments: [true, false])
+    func lightRequestedBeforeTheStartIsAppliedOnceTheInputIsAttached(torchAvailable: Bool) async throws {
+        let hardware = FakeHardware(cameras: [cameraWithLight("wide")])
+        await hardware.setTorchAvailable(torchAvailable)
+        await hardware.holdConfigure()
+        let backend = AVFoundationCaptureBackend(
+            hardware: hardware, authorization: FakeAuthorization(current: .authorized, afterRequest: .authorized))
+        let model = CameraModel(backend: backend)
+        let start = Task { await model.send(.start) }
+        // The lens is chosen and the session is being configured: no input is attached yet.
+        while await !hardware.isConfigureHeld { await Task.yield() }
+        #expect(model.light.supportsTorch)
+        #expect(await !hardware.isInputAttached)
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .pending)
+        #expect(await backend.setTorch(level: 0.25) == .pending)
+        #expect(await hardware.torchRequests.isEmpty)
+        // The input is attached and the session starts: the request is applied.
+        await hardware.releaseConfigure()
+        await start.value
+        #expect(model.sessionStatus == .running)
+        #expect(model.light.torch == (torchAvailable ? .on(level: LightModel.defaultTorchLevel) : .unavailable))
+        #expect(await hardware.torchRequests == [LightModel.defaultTorchLevel])
+    }
+
+    /// A failed start turns a waiting light off instead of leaving it waiting (issue #75).
+    @MainActor
+    @Test func failedStartTurnsAWaitingLightOff() async throws {
+        let hardware = FakeHardware(cameras: [cameraWithLight("wide")], configureError: .configurationFailed)
+        await hardware.holdConfigure()
+        let backend = AVFoundationCaptureBackend(
+            hardware: hardware, authorization: FakeAuthorization(current: .authorized, afterRequest: .authorized))
+        let model = CameraModel(backend: backend)
+        let start = Task { await model.send(.start) }
+        while await !hardware.isConfigureHeld { await Task.yield() }
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .pending)
+        await hardware.releaseConfigure()
+        await start.value
+        #expect(model.sessionStatus == .failed(.configurationFailed))
+        #expect(model.light.torch == .off)
+        #expect(await hardware.torchRequests.isEmpty)
     }
 }

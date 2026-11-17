@@ -362,6 +362,9 @@ public final class CameraModel {
             await light.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
+            // The camera didn't start, so a light waiting for it is turned off rather than left
+            // waiting (issue #75).
+            await light.cameraDidPause()
         }
     }
 
