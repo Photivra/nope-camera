@@ -280,11 +280,13 @@ struct RegistryTests {
         #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
     }
 
-    @Test func trayEndsWithHideControls() {
+    @Test func quickMenuHasNoHideControlsTileAndStartsOff() {
+        // Hide Controls is in Q's foot, and Drive and Astro on the drive strip (BUILD-SPEC 3.6).
         let context = Self.context(suite: "RegistryTests.tray")
-        let items = QuickControls.current(context)
-        #expect(items.last?.id == "hideControls")
-        #expect(items.allSatisfy { !$0.isOn })
+        let ids = QuickControls.current(context).map(\.id)
+        #expect(!ids.contains("hideControls") && !ids.contains("drive") && !ids.contains("astro"))
+        #expect(ids.contains("focusPeaking"))
+        #expect(QuickControls.current(context).allSatisfy { !$0.isOn })
     }
 
     @Test func trayItemsReportWhetherTheyAreOn() {
