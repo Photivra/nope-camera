@@ -42,6 +42,10 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// Whether the settings sheet is open.
     @State private var showsSettings = false
 
+    /// Where Settings is, kept outside its presentation so it stays on its page when the
+    /// presentation changes (night mode on iPad, a fold on the iPhone Duo).
+    @State private var settingsNavigation = SettingsNavigation()
+
     /// Makes the live viewfinder for the model's preview source.
     private let viewfinder: (any CameraPreviewSource) -> Viewfinder
 
@@ -131,11 +135,12 @@ public struct CameraScreen<Viewfinder: View>: View {
         }
         .background(.background)
         // A popover on iPad (a sheet in night mode, see AdaptivePresentation); a sheet on iPhone.
-        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn) {
+        // Night mode turned on in the popover moves Settings to the sheet at once, on the same page.
+        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn, switchesToSheet: true) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
-                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
+                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model, navigation: settingsNavigation)
                 .nightModeStyle(settings.isNightModeOn)
                 // The system's light or dark setting, not the camera's dark appearance.
                 .screenAppearance(.system, isNightMode: settings.isNightModeOn)
@@ -144,7 +149,18 @@ public struct CameraScreen<Viewfinder: View>: View {
                 // audit.
                 .presentationBackground(.background)
         }
-        .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsSettings) { _, isPresenting in
+            presentsSheet(isPresenting)
+            // Settings opens at its list again next time.
+            if !isPresenting { settingsNavigation.reset() }
+        }
+        // Opens Settings at a page or row (the Photo Format sheet's All Photo Settings and Look).
+        .environment(
+            \.openSettingsAt,
+            OpenSettingsAction { id in
+                settingsNavigation.open(id)
+                showsSettings = true
+            })
         // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The model
         // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
         // and continue (issue #64).

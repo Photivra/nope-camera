@@ -4,7 +4,8 @@ import SwiftUI
 /// buttons, haptics and spoken feedback (issue #68, "Settings").
 ///
 /// It lists only what is built; none of these have a switch yet, so the screen shows facts and
-/// no control that does nothing. Settings for them (issue #37) add rows here.
+/// no control that does nothing. Settings for them (issue #37) add rows here. The Night Mode
+/// entry says how to dim the screen, which nope. never does itself.
 struct AccessibilitySettingsView: View {
     /// Creates the screen.
     init() {}
@@ -30,8 +31,8 @@ struct AccessibilitySettingsView: View {
                 row(
                     systemImage: "timer",
                     Text(
-                        "Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown.", bundle: .module,
-                        comment: "Accessibility screen: the self-timer and burst. A burst is a rapid run of separate photos. Drive is the name of the camera's quick control for the self-timer and burst; Quick Controls is the row of camera toggles. VoiceOver is Apple's screen reader; keep the name unchanged."))
+                        "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it. VoiceOver says each second of the countdown.", bundle: .module,
+                        comment: "Accessibility screen: the self-timer and burst. Timer and Burst are the words of the drive strip above the shutter; use their translations. A burst is a rapid run of separate photos. VoiceOver is Apple's screen reader; keep the name unchanged."))
             } header: {
                 Text("Self-Timer and Burst", bundle: .module, comment: "Accessibility screen section header: the self-timer and burst modes of the shutter.")
             }
@@ -49,13 +50,23 @@ struct AccessibilitySettingsView: View {
             } header: {
                 Text("Feedback", bundle: .module, comment: "Accessibility screen section header: haptics and spoken feedback.")
             }
+            Section {
+                row(
+                    systemImage: "sun.min",
+                    Text(
+                        "nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings.",
+                        bundle: .module,
+                        comment: "Accessibility screen, Night Mode: how to dim the screen. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS."))
+            } header: {
+                Text(SettingsText.nightMode)
+            }
         }
         .navigationTitle(Self.title)
     }
 
     /// The row and screen title, "Accessibility".
     static var title: Text {
-        Text("Accessibility", bundle: .module, comment: "Settings row and screen title: taking photos without looking at the screen (hardware buttons, haptics, spoken feedback).")
+        Text(SettingsText.accessibility)
     }
 
     /// One fact with its symbol.

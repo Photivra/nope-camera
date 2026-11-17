@@ -159,7 +159,10 @@ struct SelectableCapsuleStyle: ButtonStyle {
 /// With `prefersSheet` (night mode) it is a sheet on iPad too: the iPad popover is translucent
 /// glass whatever its presentation background, so the picture and the system's colors showed
 /// through night mode's red on black. The style is chosen when the content opens and kept
-/// while it is open, so turning night mode on or off inside it doesn't close it.
+/// while it is open, so turning night mode off inside it, rotating, resizing or folding doesn't
+/// close it. With `switchesToSheet` (Settings), turning night mode on inside an open popover
+/// moves the content to the sheet at once (owner decision of 2026-11-17, issue #74): the content
+/// keeps its place when its state lives outside it (`SettingsNavigation`).
 struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// How the content is shown.
     enum Style {
@@ -175,6 +178,9 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// Whether a sheet is wanted in a regular-width window too.
     let prefersSheet: Bool
 
+    /// Whether an open popover becomes the sheet when `prefersSheet` turns on.
+    let switchesToSheet: Bool
+
     /// The presented content.
     let presented: () -> Presented
 
@@ -189,10 +195,15 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// - Parameters:
     ///   - isPresented: Whether the content is shown.
     ///   - prefersSheet: Whether a sheet is wanted in a regular-width window too.
+    ///   - switchesToSheet: Whether an open popover becomes the sheet when `prefersSheet` turns on.
     ///   - presented: The presented content.
-    init(isPresented: Binding<Bool>, prefersSheet: Bool, presented: @escaping () -> Presented) {
+    init(
+        isPresented: Binding<Bool>, prefersSheet: Bool, switchesToSheet: Bool = false,
+        presented: @escaping () -> Presented
+    ) {
         _isPresented = isPresented
         self.prefersSheet = prefersSheet
+        self.switchesToSheet = switchesToSheet
         self.presented = presented
     }
 
@@ -210,6 +221,10 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
             .popover(isPresented: shown(as: .popover)) { presented().environment(\.isPresentedInPopover, true) }
             .sheet(isPresented: shown(as: .sheet), content: presented)
             .onChange(of: isPresented, initial: true) { _, isOpen in openStyle = isOpen ? currentStyle : nil }
+            .onChange(of: prefersSheet) { _, wantsSheet in
+                guard switchesToSheet, wantsSheet, isPresented, openStyle == .popover else { return }
+                openStyle = .sheet
+            }
     }
 
     /// Whether the content is shown in the style.
@@ -220,7 +235,9 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
         Binding {
             isPresented && (openStyle ?? currentStyle) == style
         } set: { isOpen in
-            if !isOpen { isPresented = false }
+            // Only the style in use closes the content: the popover the switch to the sheet
+            // dismisses must not close it.
+            if !isOpen, (openStyle ?? currentStyle) == style { isPresented = false }
         }
     }
 }
@@ -232,11 +249,15 @@ extension View {
     /// - Parameters:
     ///   - isPresented: Whether the content is shown.
     ///   - prefersSheet: Whether a sheet is wanted on iPad too, as in night mode.
+    ///   - switchesToSheet: Whether an open popover becomes the sheet when `prefersSheet` turns on.
     ///   - content: The presented content.
     func adaptivePresentation<Presented: View>(
-        isPresented: Binding<Bool>, prefersSheet: Bool = false, @ViewBuilder content: @escaping () -> Presented
+        isPresented: Binding<Bool>, prefersSheet: Bool = false, switchesToSheet: Bool = false,
+        @ViewBuilder content: @escaping () -> Presented
     ) -> some View {
-        modifier(AdaptivePresentation(isPresented: isPresented, prefersSheet: prefersSheet, presented: content))
+        modifier(
+            AdaptivePresentation(
+                isPresented: isPresented, prefersSheet: prefersSheet, switchesToSheet: switchesToSheet, presented: content))
     }
 }
 
@@ -298,20 +319,95 @@ enum NightStyle {
     static var trackTint: Color { Color(white: 0.3) }
 }
 
-/// The system switch, with ``NightStyle/trackTint`` on its track in night mode, so its knob
-/// stays distinct from the track while other tinted controls use the full night red. Outside
-/// night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
-/// with its own style keeps that style.
+/// The switch in night mode: on is a filled track with a dark knob, off is an outlined track
+/// with a red knob (`docs/design/BUILD-SPEC.md`, 3.10, "Night mode"), so on and off differ by
+/// more than the knob's side, as the 0.3.0 night-mode finding asked. Outside night mode it is
+/// the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle with its own style
+/// keeps that style.
 struct NightModeSwitchStyle: ToggleStyle {
     /// Creates the style. It holds no state.
     init() {}
 
-    /// The toggle, drawn by the system.
+    /// The toggle: the system's outside night mode, ``NightModeSwitch`` in it.
     ///
     /// - Parameter configuration: The toggle's label and state.
     func makeBody(configuration: Configuration) -> some View {
-        Toggle(configuration)
-            .nightModeTrackTint()
+        NightModeSwitch(configuration: configuration)
+    }
+}
+
+/// The drawing of ``NightModeSwitchStyle``. Night mode multiplies everything by pure red
+/// (``NightModeStyle``), so it draws in white and grays: white shows as the full night red.
+/// It is a button that VoiceOver, Voice Control and Switch Control see as the system switch
+/// (`accessibilityRepresentation`).
+struct NightModeSwitch: View {
+    /// The toggle's label and state.
+    let configuration: ToggleStyleConfiguration
+
+    /// Whether night mode is on.
+    @Environment(\.isNightMode) private var isNightMode
+
+    /// Whether the switch can be changed.
+    @Environment(\.isEnabled) private var isEnabled
+
+    /// Whether Reduce Motion is on: the knob then moves without animation.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The track's size, the system switch's size (UIKit `UISwitch`, 51 × 31 points), so a
+    /// row's height doesn't change when night mode turns on.
+    static let trackSize = CGSize(width: 51, height: 31)
+
+    /// The space between the knob and the track's edge.
+    static let knobInset: CGFloat = 2
+
+    /// Creates the switch.
+    ///
+    /// - Parameter configuration: The toggle's label and state.
+    init(configuration: ToggleStyleConfiguration) {
+        self.configuration = configuration
+    }
+
+    /// The system switch, or the night drawing.
+    var body: some View {
+        if isNightMode {
+            Button {
+                configuration.isOn.toggle()
+            } label: {
+                HStack(spacing: NopeSpace.s) {
+                    configuration.label
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    track
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .opacity(isEnabled ? 1 : NopeMotion.disabledOpacity)
+            .accessibilityRepresentation {
+                Toggle(isOn: configuration.$isOn) { configuration.label }
+            }
+        } else {
+            Toggle(configuration)
+        }
+    }
+
+    /// The track and knob: filled with a dark knob when on, outlined with a red knob when off.
+    private var track: some View {
+        let isOn = configuration.isOn
+        let knob = Self.trackSize.height - Self.knobInset * 2
+        return ZStack(alignment: isOn ? .trailing : .leading) {
+            Capsule()
+                .fill(isOn ? Color.white : Color.clear)
+            Capsule()
+                .strokeBorder(NopeColor.nightOutlineUnderMultiply, lineWidth: NopeSize.warningOutline)
+                .opacity(isOn ? 0 : 1)
+            Circle()
+                .fill(isOn ? Color.black : Color.white)
+                .frame(width: knob, height: knob)
+                .padding(Self.knobInset)
+        }
+        .frame(width: Self.trackSize.width, height: Self.trackSize.height)
+        .animation(reduceMotion ? nil : NopeMotion.select, value: isOn)
+        .accessibilityHidden(true)
     }
 }
 
