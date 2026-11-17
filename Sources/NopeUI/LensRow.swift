@@ -187,7 +187,7 @@ struct QuickControlsButton: View {
     var body: some View {
         Button(action: action) {
             Label {
-                Text("Quick Controls", bundle: .module, comment: "VoiceOver and Voice Control name of the button at the end of the lens row that opens a row of camera toggles, and of that row.")
+                QuickControlsText.title
             } icon: {
                 Image(systemName: isOpen ? "xmark" : "ellipsis")
             }
@@ -196,6 +196,7 @@ struct QuickControlsButton: View {
         .buttonStyle(SelectableCapsuleStyle(isSelected: isOpen))
         .accessibilityAddTraits(isOpen ? .isSelected : [])
         .accessibilityShowsLargeContentViewer()
+        .accessibilityIdentifier("quickMenuButton")
         .uprightUnit()
     }
 }

@@ -281,9 +281,24 @@ struct CameraReadyView: View {
                 picture: { pictureArea(clusterOverPicture: rotation.isSideways) },
                 dial: { stackedDial },
                 bands: {
-                    bands
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
+                    if showsControls, showsTray {
+                        // Covered by Q's panel while it is open; their space is kept.
+                        Color.clear.frame(height: bandsHeight)
+                    } else {
+                        bands
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
+                    }
                 })
+                .overlay(alignment: rotation.isSideways ? .bottomTrailing : .bottom) {
+                    if showsControls, showsTray {
+                        QuickPanel(context: context, isPresented: $showsTray, openSettings: openSettings)
+                            .frame(maxWidth: rotation.isSideways ? NopeSize.panelMaxWidth : nil)
+                            .padding(.horizontal, NopeSpace.xs)
+                            .padding(.bottom, NopeSpace.xs)
+                            .transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
+                    }
+                }
+                .animation(NopeMotion.panel(reduceMotion: reduceMotion), value: showsTray)
             shutterRow
                 .frame(minHeight: CameraLayout.shutterRowHeight)
                 .padding(.horizontal)
@@ -294,7 +309,11 @@ struct CameraReadyView: View {
     private var scrolling: some View {
         // The shutter row stays pinned below the scroll view, so the shutter is always in reach.
         VStack(spacing: 0) {
-            scrollingContent
+            if showsControls, showsTray {
+                QuickMenuList(context: context, isPresented: $showsTray, openSettings: openSettings)
+            } else {
+                scrollingContent
+            }
             shutterRow
                 .padding(.horizontal)
                 .padding(.vertical, CameraStyle.targetSpacing)
@@ -341,10 +360,6 @@ struct CameraReadyView: View {
                     }
                     VStack(spacing: CameraStyle.targetSpacing) {
                         LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID, isVertical: true) { select($0) }
-                        QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
-                        if showsTray {
-                            QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
-                        }
                     }
                 }
             }
@@ -361,9 +376,6 @@ struct CameraReadyView: View {
                     .overlay(alignment: .bottom) {
                         VStack(spacing: CameraStyle.targetSpacing) {
                             if showsControls {
-                                if showsTray {
-                                    QuickControlsTray(items: QuickControls.current(context), wraps: true) { showsTray = false }
-                                }
                                 if showsExposureDial {
                                     AutoExposureDial(model: model) { showsExposureDial = false }
                                 }
@@ -381,6 +393,15 @@ struct CameraReadyView: View {
                     }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(alignment: .bottomTrailing) {
+                if showsControls, showsTray {
+                    QuickPanel(context: context, isPresented: $showsTray, openSettings: openSettings)
+                        .frame(maxWidth: NopeSize.panelMaxWidth)
+                        .padding(NopeSpace.xs)
+                        .transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
+                }
+            }
+            .animation(NopeMotion.panel(reduceMotion: reduceMotion), value: showsTray)
             controlColumn
         }
     }
@@ -466,14 +487,13 @@ struct CameraReadyView: View {
         if showsControls {
             VStack(spacing: 0) {
                 HStack(spacing: CameraStyle.targetSpacing) {
-                    if showsTray {
-                        QuickControlsTray(items: QuickControls.current(context)) { showsTray = false }
-                    } else {
-                        Spacer(minLength: 0)
-                        LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID) { select($0) }
-                        Spacer(minLength: 0)
+                    Spacer(minLength: 0)
+                    LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID) { select($0) }
+                    Spacer(minLength: 0)
+                    if let flip = flipTarget {
+                        CameraFlipButton { select(flip) }
+                            .uprightUnit()
                     }
-                    QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
                 }
                 .frame(minHeight: CameraStyle.minimumTarget)
                 .padding(.horizontal, CameraStyle.targetSpacing)
@@ -498,9 +518,8 @@ struct CameraReadyView: View {
             shutter
             ZStack {
                 Color.clear.frame(width: 1, height: 1)
-                if showsControls, let flip = flipTarget {
-                    CameraFlipButton { select(flip) }
-                        .uprightUnit()
+                if showsControls {
+                    QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
                 }
             }
             .frame(maxWidth: .infinity)
