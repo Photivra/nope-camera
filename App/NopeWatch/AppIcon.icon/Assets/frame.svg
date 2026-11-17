@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- nope. app icon, frame layer: the four corners of a landscape frame. Geometry from docs/design/icon.html (128-unit grid, 8-unit square-cap strokes) scaled by 8 and outlined as filled paths. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<path fill="#EDEDEE" d="M96 192H320V256H160V416H96Z M928 192H704V256H864V416H928Z M96 768H320V704H160V544H96Z M928 768H704V704H864V544H928Z"/>
+</svg>
