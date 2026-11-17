@@ -9844,13 +9844,13 @@ live viewfinder it draws behind the interface, so all three stay aligned. The la
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@ViewBuilder @MainActor func hardScrollEdges() -> some View
+@MainActor func hardScrollEdges() -> some View
 
 ```
 
-Turns off the soft fade iOS 26 draws where scrolling content meets the screen's edges, so
-text scrolled under the status bar keeps its contrast (the iPad audit reported faded text
-at the top of the scrolling camera layout). Earlier versions have no such effect.
+Turns off the soft fade iOS 26 and later draw where scrolling content meets the screen's
+edges, so text scrolled under the status bar keeps its contrast (the iPad audit reported
+faded text at the top of the scrolling camera layout).
 
 ## `View/nightModeStyle(_:)`
 
