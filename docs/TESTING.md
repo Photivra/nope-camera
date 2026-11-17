@@ -548,7 +548,9 @@ Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and w
 has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
 changes of the light or dark setting apply, see "UI tests and accessibility audits"), installs the
 app and launches it once, then runs the shard. The watch job does the same with `scripts/prepare-simulator.sh` before
-`test-without-building`: in the 0.3.0 run its first test failed to launch the watch app within
+`test-without-building`, and names the watch Simulator by the identifier the script prints: on
+the runner its name also matches the iPhone it is paired with, and `build-for-testing` stopped
+with "multiple devices matched" (`xcodebuild test` had accepted the name). in the 0.3.0 run its first test failed to launch the watch app within
 XCTest's limit (301 s) and the next failed to terminate that launch; the watch app hadn't
 changed since its last passing run.
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
