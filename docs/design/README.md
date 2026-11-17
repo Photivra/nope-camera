@@ -10,6 +10,7 @@ The current design of nope., as static HTML mockups. Open any file in a browser;
 | [settings.html](settings.html) | Settings and every page in it: Presets, Photos, Camera, Viewfinder Overlays, Privacy, Accessibility, Honesty, About and Licenses. It also has first run and the permission states, plus the Lock Screen camera, Control Center, the Action button and the Camera Control. It ends with the camera pause messages. |
 | [manual-controls.html](manual-controls.html) | The manual readout row and each control's dial (ISO, shutter, aperture, focus, white balance, exposure). Also Pro Tools with bracketing, largest text, VoiceOver, night mode and landscape. |
 | [icon.html](icon.html) | App icon concepts in the current colors, with their default, dark, tinted and light versions. The final icon is a brand asset; see [TRADEMARKS.md](../../TRADEMARKS.md). |
+| [redesign-options/overview.html](redesign-options/overview.html) | Options for the redesign (issue 74), not the current design: three directions (A · Bands, B · Reach, C · Strip), each as the camera screen, the Q quick menu and Astro on iPhone, with a PNG of every screen, the paths to common options, a comparison and a recommendation. Removed once a direction is chosen and drawn in the files above. |
 
 ## Rules for this folder
 

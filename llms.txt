@@ -24,6 +24,7 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/TESTING.md](docs/TESTING.md): how to run the checks, unit tests, UI tests and documentation build; CI jobs
 - [docs/PRIVACY.md](docs/PRIVACY.md): what the app writes and removes, and the metadata plan
 - [docs/design/README.md](docs/design/README.md): the current design set (camera, settings and system screens, manual controls, icon), matching the app
+- [docs/design/redesign-options/overview.html](docs/design/redesign-options/overview.html): options for the redesign (issue 74), three directions with the same three screens each; not the current design
 - [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md): threat model, every pre-release security check with how to run it and pass criteria, and the sign-off checklist
 
 ## Store and privacy policy (drafts, need human review)
