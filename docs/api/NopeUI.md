@@ -1526,8 +1526,12 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 @MainActor static func signing(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
 ```
 
-"Not Signed" while signing is off in Settings, or after the last photo couldn't be
-signed. A missing signature is always stated, never hidden (issue #1).
+"Not Signed" after the last photo couldn't be signed while signing is on. A missing
+signature is always stated, never hidden (issue #1).
+
+Signing is off by default (issue #80), so signing that is off is not a warning: the
+message after each save says "Saved. Not signed: signing is off in Settings.", and the
+photo's details say it isn't signed.
 
 - Parameters:
   - context: The model and settings.
@@ -4194,9 +4198,11 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 ```
 
 Says what the next photo will be, at the top of the camera: a teal seal and the formats it is
-saved in ("RAW + HEIF") for a single-frame RAW, or an amber warning, "No RAW on This Lens", for
-the labeled processed fallback. Tapping it opens the explanation and the formats
-(``FormatDetailsSheet``).
+saved in ("RAW + HEIF") for a single-frame RAW, or an amber warning, "Processed: No RAW on This
+Lens", for the labeled processed fallback: the "Processed" marker, shown before the photo is
+taken (issue #80) unless the person turns it off in Settings
+(`NopeSettings/showsProcessedMarker`). Tapping it opens the explanation, the lens's
+processing note and the formats (``FormatDetailsSheet``).
 
 The wording is an honesty claim, so it lives in `Honesty.xcstrings` (AGENTS.md, "Honesty
 wording is kept apart"). Teal marks only the fact the camera reported (the lens gives Bayer
@@ -4294,7 +4300,9 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 ```
 
 The format chip's sheet: what the next photo is, in plain words, then the formats and the
-look, the same controls as in Settings. A popover on iPad, a sheet on iPhone.
+look, the same controls as in Settings. For a lens without RAW, the explanation is followed by
+the lens's processing note (``ProcessingNote``, issue #80). A popover on iPad, a sheet on
+iPhone.
 
 ## `FormatDetailsSheet/body`
 
@@ -4316,6 +4324,16 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 Whether any camera on the device gives Bayer RAW.
 
+## `FormatDetailsSheet/distortionCorrection`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor let distortionCorrection: DistortionCorrection
+```
+
+The selected lens's distortion correction, for the processing note of a lens without RAW.
+
 ## `FormatDetailsSheet/format`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
@@ -4326,12 +4344,12 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 The format of the next photo.
 
-## `FormatDetailsSheet/init(settings:format:deviceSupportsBayerRAW:)`
+## `FormatDetailsSheet/init(settings:format:deviceSupportsBayerRAW:distortionCorrection:)`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, format: CaptureFormat, deviceSupportsBayerRAW: Bool)
+@MainActor init(settings: NopeSettings, format: CaptureFormat, deviceSupportsBayerRAW: Bool, distortionCorrection: DistortionCorrection = .notSwitchable)
 ```
 
 Creates the sheet.
@@ -4340,6 +4358,8 @@ Creates the sheet.
   - settings: The person's settings.
   - format: The format of the next photo.
   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+  - distortionCorrection: The selected lens's distortion correction
+    (`Lens/distortionCorrection`). Defaults to the value that claims least.
 
 ## `FormatDetailsSheet/settings`
 
@@ -7284,6 +7304,89 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 
 The person's settings, for the live aid switches, or `nil` to leave them out.
 
+## `ProcessingNote`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor struct ProcessingNote
+```
+
+The processing note of a lens without Bayer RAW (issue #80), opened from the "Processed"
+marker: what the phone's camera does to that lens's photo, what the app turns off, whether
+the lens lets the app turn off distortion correction, and what the app itself does to the
+files it saves.
+
+Each paragraph is its own row, so VoiceOver reads them one at a time and the form scrolls
+between them at the largest text sizes. Every sentence describes the code as it is:
+- the phone's processing is whatever the camera's pipeline applies to a processed photo,
+  which AVFoundation offers no switch for;
+- the switches the app turns off are `ProcessingSwitches.leastProcessing` in `NopeCapture`;
+- the distortion line is what the camera reports (`DistortionCorrection`);
+- the fallback file is saved as the camera made it (`PhotoSaver`), and HEIF and JPEG copies
+  of a RAW are developed as `DevelopedLook` documents.
+
+The wording is a processing claim, so it lives in `Honesty.xcstrings` (AGENTS.md, "Honesty
+wording is kept apart").
+
+## `ProcessingNote/body`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The note's paragraphs, one row each.
+
+## `ProcessingNote/distortion(_:)`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor static func distortion(_ correction: DistortionCorrection) -> Text
+```
+
+Whether a lens lets the app turn off distortion correction, in plain words. Also used in
+the photo's details.
+
+- Parameter correction: The lens's distortion correction.
+- Returns: The sentence.
+
+## `ProcessingNote/distortionCorrection`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor let distortionCorrection: DistortionCorrection
+```
+
+Whether the lens lets the app turn off distortion correction.
+
+## `ProcessingNote/fallback`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor let fallback: ProcessedFallback
+```
+
+The lens's processed format.
+
+## `ProcessingNote/init(fallback:distortionCorrection:)`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor init(fallback: ProcessedFallback, distortionCorrection: DistortionCorrection)
+```
+
+Creates the note.
+
+- Parameters:
+  - fallback: The lens's processed format.
+  - distortionCorrection: Whether the lens lets the app turn off distortion correction.
+
 ## `QuickControlButton`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -8550,7 +8653,8 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 The settings: a short inset grouped list in a navigation stack, opened from the camera
 (issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options, photo size),
 Privacy (the master switch, signing, the details), Camera (manual controls, clean view, face
-detection, night mode, front camera mirroring) and More (Accessibility, Honesty, About).
+detection, the "Processed" marker, night mode, front camera mirroring) and More
+(Accessibility, Honesty, About).
 
 One line per row; each switch's explanation is in a footer or on its detail screen. Each
 row shows its current value, so the state reads at a glance. The screen renders a
@@ -8594,7 +8698,8 @@ Creates the settings screen.
   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     location service, which hides the Location switch.
   - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
-    row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
+    row when one offers a choice (`Lens/photoSizeChoices`), and the "Processed" marker
+    switch when one has no Bayer RAW. Defaults to none.
   - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
   - camera: The camera, whose lens and exposure presets save and set, or `nil`.
 

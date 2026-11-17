@@ -157,7 +157,8 @@ struct CaptureSettingStorageTests {
     @Test func defaultsAreTheSystemBehavior() {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)
-        #expect(settings.followsFaces)
+        // Face Detection is off by default (issue #80).
+        #expect(!settings.followsFaces)
         #expect(settings.photoSizes.isEmpty)
         #expect(settings.photoSize(for: CaptureSettingValueTests.fallbackLens) == CaptureSettingValueTests.small)
     }
@@ -166,12 +167,12 @@ struct CaptureSettingStorageTests {
         let scratch = ScratchDefaults()
         let lens = CaptureSettingValueTests.fallbackLens
         let settings = NopeSettings(defaults: scratch.defaults)
-        settings.setFollowsFaces(false)
+        settings.setFollowsFaces(true)
         settings.setPhotoSize(CaptureSettingValueTests.large, for: lens)
         // A size the lens doesn't offer is ignored.
         settings.setPhotoSize(CaptureSettingValueTests.deferredOnly, for: lens)
         let reloaded = NopeSettings(defaults: scratch.defaults)
-        #expect(!reloaded.followsFaces)
+        #expect(reloaded.followsFaces)
         #expect(reloaded.photoSizes == [lens.id: CaptureSettingValueTests.large])
         #expect(reloaded.photoSize(for: lens) == CaptureSettingValueTests.large)
         reloaded.setPhotoSize(CaptureSettingValueTests.small, for: lens)

@@ -39,6 +39,8 @@ struct LensTests {
         #expect(lens.supportsBayerRAW)
         #expect(lens.bayerRAWFormat == "rgg4")
         #expect(lens.processedFallback == .heif)
+        // A lens that doesn't say claims least: its fallback may be corrected (issue #80).
+        #expect(lens.distortionCorrection == .notSwitchable)
         #expect(lens.magnification == nil)
         #expect(lens.isoRange == nil)
         #expect(lens.exposureDurationRange == nil)
@@ -156,8 +158,9 @@ struct PermissionTests {
 }
 
 struct PhotoFormatTests {
-    @Test func defaultIsRAWAndHEIF() {
-        #expect(PhotoFormat.defaultSelection == [.raw, .heif])
+    @Test func defaultIsRAWOnly() {
+        // Issue #80.
+        #expect(PhotoFormat.defaultSelection == [.raw])
     }
 
     @Test(arguments: [(PhotoFormat.raw, false), (.heif, true), (.jpeg, true)])

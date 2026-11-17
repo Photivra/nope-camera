@@ -7,14 +7,15 @@ import Testing
 func camera(
     _ id: String, _ type: CameraDeviceDescription.DeviceType, _ position: CameraDeviceDescription.Position = .back,
     fieldOfView: Double = 70, virtual: Bool = false,
-    raw: [CameraDeviceDescription.RAWPixelFormat] = [.init(code: 0x6267_6734, isBayer: true)], hevc: Bool = true
+    raw: [CameraDeviceDescription.RAWPixelFormat] = [.init(code: 0x6267_6734, isBayer: true)], hevc: Bool = true,
+    distortionSwitch: Bool = false
 ) -> CameraDeviceDescription {
     CameraDeviceDescription(
         uniqueID: id, deviceType: type, position: position, isVirtual: virtual, rawPixelFormats: raw,
         supportsHEVC: hevc, isoRange: 50...12800, exposureDurationRange: 0.000014...1, aperture: .fixed(1.78),
         maxBracketedPhotoCount: 8,
         photoDimensions: [PhotoDimensions(width: 8064, height: 6048), PhotoDimensions(width: 4032, height: 3024)],
-        fieldOfViewDegrees: fieldOfView)
+        fieldOfViewDegrees: fieldOfView, canTurnOffDistortionCorrection: distortionSwitch)
 }
 
 struct LensCatalogTests {
@@ -56,6 +57,16 @@ struct LensCatalogTests {
         #expect(lens.aperture == .fixed(1.78))
         #expect(lens.maxBracketedPhotoCount == 8)
         #expect(lens.photoDimensions.first == PhotoDimensions(width: 4032, height: 3024))
+    }
+
+    @Test func distortionCorrectionIsWhatTheCameraReports() throws {
+        // Issue #80: a camera that offers the switch has it turned off; one that doesn't may
+        // correct its processed photos.
+        let lenses = LensCatalog.lenses(from: [
+            camera("ultra", .ultraWide, fieldOfView: 106, distortionSwitch: true), camera("wide", .wideAngle),
+        ])
+        #expect(lenses.first { $0.id == "ultra" }?.distortionCorrection == .turnedOff)
+        #expect(lenses.first { $0.id == "wide" }?.distortionCorrection == .notSwitchable)
     }
 
     @Test func proRAWIsNotBayerRAW() throws {

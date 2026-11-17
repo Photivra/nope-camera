@@ -8,7 +8,7 @@ import Testing
 
 struct SaveSettingsOptionTests {
     @Test func defaultsAreTheEarlierBehavior() {
-        let settings = SaveSettings()
+        let settings = SaveSettings.rawPlusHEIFSigned
         #expect(settings.rawPairing == .heif)
         #expect(!settings.mirrorsFrontCamera)
         #expect(settings.fileOptions == DevelopedFileOptions())
@@ -28,7 +28,7 @@ struct SaveSettingsOptionTests {
     }
 
     @Test func changedOptionsRoundTripAndDefaultsCompareEqual() throws {
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.rawPairing = .jpeg
         settings.mirrorsFrontCamera = true
         var options = DevelopedFileOptions()
@@ -48,7 +48,7 @@ struct SaveSettingsOptionTests {
         settings.rawPairing = .heif
         settings.mirrorsFrontCamera = false
         settings.fileOptions = DevelopedFileOptions()
-        #expect(settings == SaveSettings())
+        #expect(settings == SaveSettings.rawPlusHEIFSigned)
     }
 
     /// The copy size (issue #57): full by default, stored only when changed, and file options
@@ -78,7 +78,7 @@ struct SaveSettingsOptionTests {
     }
 
     @Test func thePairingChoiceAppliesOnlyWithAllThreeFormats() {
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         #expect(settings.offersRAWPairingChoice)
         settings.setFormat(.raw, isSelected: false)
@@ -108,6 +108,8 @@ struct NopeSettingsOptionTests {
         #expect(settings.rawPairing == .heif)
         #expect(!settings.mirrorsFrontCamera)
         #expect(settings.fileOptions.isDefault)
+        #expect(!settings.offersRAWPairingChoice(deviceSupportsBayerRAW: true))
+        settings.setFormat(.heif, isSelected: true)
         #expect(!settings.offersRAWPairingChoice(deviceSupportsBayerRAW: true))
         settings.setFormat(.jpeg, isSelected: true)
         #expect(settings.offersRAWPairingChoice(deviceSupportsBayerRAW: true))
@@ -192,7 +194,7 @@ struct PhotoSaverOptionTests {
     @Test(arguments: RAWPairing.allCases)
     func theChosenCopyIsPairedWithTheRAW(pairing: RAWPairing) async throws {
         let library = FakeLibrary()
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         settings.rawPairing = pairing
         let saved = try await PhotoSaverTests.saver(library: library).save(PhotoSaverTests.rawPhoto(), settings: settings)
@@ -206,7 +208,7 @@ struct PhotoSaverOptionTests {
 
     @Test func theFileOptionsArePassedToTheDeveloper() async throws {
         let developer = OptionsDeveloper()
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         var options = DevelopedFileOptions()
         options.heifBitDepth = .eight

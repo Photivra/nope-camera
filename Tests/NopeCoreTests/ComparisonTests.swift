@@ -149,6 +149,8 @@ struct ComparisonTests {
         let renderer = RecordingRenderer()
         let clock = SteppingClock()
         let model = await Self.model(backend, library: library, renderer: renderer, now: clock.now)
+        // RAW plus HEIF, so the compare view shows the developed HEIF.
+        model.saveSettings = .rawPlusHEIFSigned
         await model.send(.comparison(.setOn(true)))
         await model.send(.capture)
 

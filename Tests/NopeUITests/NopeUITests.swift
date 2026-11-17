@@ -22,9 +22,9 @@ struct LocalizationTests {
         let value = bundle.localizedString(forKey: "Allow Camera Access", value: "MISSING", table: nil)
         #expect(value != "MISSING")
         #expect(value != "Allow Camera Access")
-        let honesty = bundle.localizedString(forKey: "No RAW on This Lens", value: "MISSING", table: "Honesty")
+        let honesty = bundle.localizedString(forKey: "Processed: No RAW on This Lens", value: "MISSING", table: "Honesty")
         #expect(honesty != "MISSING")
-        #expect(honesty != "No RAW on This Lens")
+        #expect(honesty != "Processed: No RAW on This Lens")
     }
 }
 
@@ -265,11 +265,19 @@ struct RegistryTests {
         #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
     }
 
-    @Test func signingOffOrFailedIsAWarning() {
+    @Test func onlyAFailedSignatureIsAWarning() {
+        // Signing is off by default (issue #80): off is not a warning, even after a photo.
         let context = Self.context(suite: "RegistryTests.signing")
+        #expect(!context.settings.signsPhotos)
+        #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
+        // With signing on, a photo that couldn't be signed is a warning until the next one is.
+        context.settings.setSignsPhotos(true)
         #expect(CameraWarnings.current(context, lastSignature: .unsigned(.failed)).map(\.id) == ["signing"])
-        context.settings.setSignsPhotos(false)
-        #expect(CameraWarnings.current(context, lastSignature: nil).map(\.id) == ["signing"])
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.signedFileFailedCheck)).map(\.id) == ["signing"])
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: .signed).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
     }
 
     @Test func trayEndsWithHideControls() {

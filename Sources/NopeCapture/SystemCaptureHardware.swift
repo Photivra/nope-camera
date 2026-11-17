@@ -372,6 +372,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                 PhotoDimensions(width: Int($0.width), height: Int($0.height))
             },
             fieldOfViewDegrees: Double(format.videoFieldOfView),
+            canTurnOffDistortionCorrection: device.isGeometricDistortionCorrectionSupported,
             manualControls: Self.manualSupport(of: device),
             // Read with this camera attached: the list is "for the current capture session
             // configuration" (`AVCapturePhotoOutput.supportedFlashModes`).

@@ -68,23 +68,21 @@ enum CameraWarnings {
                 comment: "Explains the Light Unavailable warning. Light and Quick Controls are the names of camera controls."))
     }
 
-    /// "Not Signed" while signing is off in Settings, or after the last photo couldn't be
-    /// signed. A missing signature is always stated, never hidden (issue #1).
+    /// "Not Signed" after the last photo couldn't be signed while signing is on. A missing
+    /// signature is always stated, never hidden (issue #1).
+    ///
+    /// Signing is off by default (issue #80), so signing that is off is not a warning: the
+    /// message after each save says "Saved. Not signed: signing is off in Settings.", and the
+    /// photo's details say it isn't signed.
     ///
     /// - Parameters:
     ///   - context: The model and settings.
     ///   - lastSignature: The signature of the last photo saved this session, or `nil`.
     static func signing(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning? {
-        let explanation: Text
-        if !context.settings.signsPhotos {
-            explanation = Text(
-                "Photos aren't signed: signing is off in Settings.", tableName: "Honesty", bundle: .module,
-                comment: "Warning on the camera while the person has turned signing off in the app's settings: new photos get no Content Credentials signature. Honesty wording: never imply photos are signed.")
-        } else if case .unsigned(let reason) = lastSignature, reason != .turnedOff {
-            explanation = Text(verbatim: CaptureMessages.message(for: .unsigned(reason)))
-        } else {
+        guard context.settings.signsPhotos, case .unsigned(let reason) = lastSignature, reason != .turnedOff else {
             return nil
         }
+        let explanation = Text(verbatim: CaptureMessages.message(for: .unsigned(reason)))
         return CameraWarning(
             id: "signing",
             title: Text("Not Signed", tableName: "Honesty", bundle: .module, comment: "Warning chip on the camera: photos are saved without a Content Credentials signature. Honesty wording: never imply photos are signed."),

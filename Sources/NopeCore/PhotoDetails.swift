@@ -186,6 +186,10 @@ public struct PhotoDetails: Equatable, Sendable {
     /// The clipping counted from the RAW sensor data at capture time, or why it wasn't measured;
     /// `nil` for a photo without RAW (a lens's processed fallback).
     public let rawClipping: RAWClippingResult?
+    /// For a lens's processed fallback, whether the app could turn off the camera's geometric
+    /// distortion correction on that lens, as the camera reported it (issue #80); `nil` for a
+    /// photo with RAW, whose files never have the correction (``DistortionCorrection``).
+    public let distortionCorrection: DistortionCorrection?
 
     /// Creates details.
     ///
@@ -197,11 +201,15 @@ public struct PhotoDetails: Equatable, Sendable {
     ///   - signature: The signature status.
     ///   - timings: The timings.
     ///   - rawClipping: The RAW clipping, or `nil`.
+    ///   - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    ///     `nil`.
     public init(
         files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem],
-        signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil
+        signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil,
+        distortionCorrection: DistortionCorrection? = nil
     ) {
         self.rawClipping = rawClipping
+        self.distortionCorrection = distortionCorrection
         self.files = files
         self.exposure = exposure
         self.items = items
@@ -291,10 +299,12 @@ extension PhotoDetails {
     ///   - signature: The photo's signature status.
     ///   - timings: The measured timings.
     ///   - rawClipping: The clipping counted at capture time, or `nil`.
+    ///   - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    ///     `nil`.
     /// - Returns: The details.
     static func build(
         files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus,
-        timings: SaveTimings, rawClipping: RAWClippingResult? = nil
+        timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil
     ) -> PhotoDetails {
         let inventories = files.map(\.readBack.file.inventory)
         let formats = Set(files.map(\.file.format))
@@ -304,7 +314,8 @@ extension PhotoDetails {
             items: MetadataItem.allCases.map { item in
                 ItemReceipt(item: item, state: state(of: item, settings: plan.settings, inventories: inventories))
             },
-            lockedItems: lockedItems(for: formats), signature: signature, timings: timings, rawClipping: rawClipping)
+            lockedItems: lockedItems(for: formats), signature: signature, timings: timings, rawClipping: rawClipping,
+            distortionCorrection: distortionCorrection)
     }
 
     /// One file's details.

@@ -405,7 +405,8 @@ struct ManualControlsModelTests {
             return
         }
         #expect(photos.count == 3)
-        #expect(photos.allSatisfy { $0.signature == .unsigned(.unavailable) })
+        // Signing is off by default (issue #80).
+        #expect(photos.allSatisfy { $0.signature == .unsigned(.turnedOff) })
     }
 
     @Test func bracketInShutterPriorityChangesISO() async throws {

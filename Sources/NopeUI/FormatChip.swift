@@ -2,9 +2,11 @@ import NopeCore
 import SwiftUI
 
 /// Says what the next photo will be, at the top of the camera: a teal seal and the formats it is
-/// saved in ("RAW + HEIF") for a single-frame RAW, or an amber warning, "No RAW on This Lens", for
-/// the labeled processed fallback. Tapping it opens the explanation and the formats
-/// (``FormatDetailsSheet``).
+/// saved in ("RAW + HEIF") for a single-frame RAW, or an amber warning, "Processed: No RAW on This
+/// Lens", for the labeled processed fallback: the "Processed" marker, shown before the photo is
+/// taken (issue #80) unless the person turns it off in Settings
+/// (`NopeSettings/showsProcessedMarker`). Tapping it opens the explanation, the lens's
+/// processing note and the formats (``FormatDetailsSheet``).
 ///
 /// The wording is an honesty claim, so it lives in `Honesty.xcstrings` (AGENTS.md, "Honesty
 /// wording is kept apart"). Teal marks only the fact the camera reported (the lens gives Bayer
@@ -61,13 +63,13 @@ struct FormatChip: View {
         .accessibilityShowsLargeContentViewer()
     }
 
-    /// "RAW + HEIF", or "No RAW on This Lens".
+    /// "RAW + HEIF", or "Processed: No RAW on This Lens".
     private var title: Text {
         if format.isBayerRAW {
             // Left-to-right marks keep "RAW + HEIF" in reading order in right-to-left layouts.
             Text(verbatim: "\u{200E}" + Self.names(of: savedFormats) + "\u{200E}")
         } else {
-            Text("No RAW on This Lens", tableName: "Honesty", bundle: .module, comment: "Badge: the selected lens can't save RAW, so photos get device processing.")
+            Text("Processed: No RAW on This Lens", tableName: "Honesty", bundle: .module, comment: "Marker on the camera before the photo is taken: the selected lens can't save RAW, so its photos are processed by the phone. RAW is a file format name.")
         }
     }
 
@@ -110,13 +112,18 @@ struct FormatChip: View {
 }
 
 /// The format chip's sheet: what the next photo is, in plain words, then the formats and the
-/// look, the same controls as in Settings. A popover on iPad, a sheet on iPhone.
+/// look, the same controls as in Settings. For a lens without RAW, the explanation is followed by
+/// the lens's processing note (``ProcessingNote``, issue #80). A popover on iPad, a sheet on
+/// iPhone.
 struct FormatDetailsSheet: View {
     /// The person's settings.
     let settings: NopeSettings
 
     /// The format of the next photo.
     let format: CaptureFormat
+
+    /// The selected lens's distortion correction, for the processing note of a lens without RAW.
+    let distortionCorrection: DistortionCorrection
 
     /// Whether any camera on the device gives Bayer RAW.
     let deviceSupportsBayerRAW: Bool
@@ -130,9 +137,15 @@ struct FormatDetailsSheet: View {
     ///   - settings: The person's settings.
     ///   - format: The format of the next photo.
     ///   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-    init(settings: NopeSettings, format: CaptureFormat, deviceSupportsBayerRAW: Bool) {
+    ///   - distortionCorrection: The selected lens's distortion correction
+    ///     (`Lens/distortionCorrection`). Defaults to the value that claims least.
+    init(
+        settings: NopeSettings, format: CaptureFormat, deviceSupportsBayerRAW: Bool,
+        distortionCorrection: DistortionCorrection = .notSwitchable
+    ) {
         self.settings = settings
         self.format = format
+        self.distortionCorrection = distortionCorrection
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
     }
 
@@ -150,8 +163,16 @@ struct FormatDetailsSheet: View {
         }
     }
 
+    /// What the next photo is, in plain words, and for a lens without RAW its processing note.
+    @ViewBuilder private var explanation: some View {
+        summary
+        if case .processedFallback(let fallback) = format {
+            ProcessingNote(fallback: fallback, distortionCorrection: distortionCorrection)
+        }
+    }
+
     /// What the next photo is, in plain words, after a teal seal or an amber warning symbol.
-    private var explanation: some View {
+    private var summary: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: format.isBayerRAW ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
                 .foregroundStyle(format.isBayerRAW ? CameraStyle.fact : CameraStyle.warning)

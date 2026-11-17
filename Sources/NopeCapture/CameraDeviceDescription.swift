@@ -108,6 +108,10 @@ struct CameraDeviceDescription: Equatable, Sendable {
     /// The active format's horizontal field of view, in degrees (`videoFieldOfView`).
     let fieldOfViewDegrees: Double
 
+    /// Whether the camera lets apps turn its geometric distortion correction off
+    /// (`isGeometricDistortionCorrectionSupported`); the app then does (issue #80).
+    let canTurnOffDistortionCorrection: Bool
+
     /// The camera's answers about manual control.
     let manualControls: ManualControlSupport
 
@@ -134,6 +138,8 @@ struct CameraDeviceDescription: Equatable, Sendable {
     ///   - maxBracketedPhotoCount: The most frames in one bracketed capture.
     ///   - photoDimensions: The supported maximum photo sizes, as reported.
     ///   - fieldOfViewDegrees: The horizontal field of view, in degrees.
+    ///   - canTurnOffDistortionCorrection: Whether the camera lets apps turn its geometric
+    ///     distortion correction off. Defaults to `false`.
     ///   - manualControls: The camera's answers about manual control. Defaults to none.
     ///   - flashModes: The supported flash modes. Defaults to none.
     ///   - hasTorch: Whether the camera has a torch. Defaults to `false`.
@@ -141,7 +147,8 @@ struct CameraDeviceDescription: Equatable, Sendable {
         uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool,
         rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>,
         exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int,
-        photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none,
+        photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false,
+        manualControls: ManualControlSupport = .none,
         flashModes: [FlashMode] = [], hasTorch: Bool = false
     ) {
         self.uniqueID = uniqueID
@@ -156,6 +163,7 @@ struct CameraDeviceDescription: Equatable, Sendable {
         self.maxBracketedPhotoCount = maxBracketedPhotoCount
         self.photoDimensions = photoDimensions
         self.fieldOfViewDegrees = fieldOfViewDegrees
+        self.canTurnOffDistortionCorrection = canTurnOffDistortionCorrection
         self.manualControls = manualControls
         self.flashModes = flashModes
         self.hasTorch = hasTorch

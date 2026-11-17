@@ -25,7 +25,8 @@ struct SettingsPresetsTests {
         "torchLevel": { $0.setTorchLevel(0.75) },
         "isNightModeOn": { $0.setNightMode(true) },
         "tintsViewfinderInNightMode": { $0.setTintsViewfinderInNightMode(true) },
-        "followsFaces": { $0.setFollowsFaces(false) },
+        "followsFaces": { $0.setFollowsFaces(true) },
+        "showsProcessedMarker": { $0.setShowsProcessedMarker(false) },
         "showsLiveActivity": { $0.setShowsLiveActivity(true) },
         "photoSizes": {
             // A lens without Bayer RAW that offers two sizes; the larger isn't the default.
@@ -119,6 +120,44 @@ struct SettingsPresetsTests {
 
         #expect(settings.apply(older.settings))
         #expect(!settings.isNightModeOn)
+    }
+
+    @Test func factoryDefaultsGiveTheIssue80Defaults() async {
+        // RAW only, signing off, Face Detection off and the Processed marker on (issue #80).
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        settings.setFormat(.heif, isSelected: true)
+        settings.setSignsPhotos(true)
+        settings.setFollowsFaces(true)
+        settings.setShowsProcessedMarker(false)
+        _ = await SettingsPresets(settings: settings).apply(.factoryDefaults, camera: nil, location: nil)
+        #expect(settings.formats == [.raw])
+        #expect(!settings.signsPhotos)
+        #expect(!settings.followsFaces)
+        #expect(settings.showsProcessedMarker)
+    }
+
+    @Test func aPresetSavedBeforeTheNewDefaultsDecodesAndKeepsItsChoices() throws {
+        // Saved by 0.x before issue #80: RAW plus HEIF and signing stored as the person left
+        // them; Face Detection and the Processed marker never stored.
+        let save = #"{"formats":["raw","heif"],"metadata":{"removesAllOptionalDetails":true,"enabledItems":[],"signsPhotos":true,"ownerName":"","copyrightNotice":""},"developedLook":"standard"}"#
+        let values: [String: Any] = [NopeSettings.Key.save: Data(save.utf8), NopeSettings.Key.isNightModeOn: true]
+        let plist = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
+        let json = #"{"id":"7A3F4B2E-0C1D-4E5F-8A9B-112233445566","name":"Before","version":1,"settings":{"values":""#
+            + plist.base64EncodedString() + #""},"camera":{}}"#
+        let preset = try JSONDecoder().decode(SettingsPreset.self, from: Data(json.utf8))
+        #expect(preset.name == "Before")
+        #expect(preset.camera == .factory)
+
+        let settings = NopeSettings(defaults: ScratchDefaults().defaults)
+        #expect(settings.apply(preset.settings))
+        // What the preset stored is kept.
+        #expect(settings.formats == [.raw, .heif])
+        #expect(settings.signsPhotos)
+        #expect(settings.isNightModeOn)
+        // What it never stored takes today's defaults.
+        #expect(!settings.followsFaces)
+        #expect(settings.showsProcessedMarker)
     }
 
     @Test func aMinimalPresetDecodesWithDefaults() throws {

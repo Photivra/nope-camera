@@ -528,6 +528,17 @@ let aperture: ApertureRange
 
 The aperture, as f-numbers.
 
+## `CameraDeviceDescription/canTurnOffDistortionCorrection`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let canTurnOffDistortionCorrection: Bool
+```
+
+Whether the camera lets apps turn its geometric distortion correction off
+(`isGeometricDistortionCorrectionSupported`); the app then does (issue #80).
+
 ## `CameraDeviceDescription/deviceType`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
@@ -580,12 +591,12 @@ let hasTorch: Bool
 Whether the camera has a torch that can be turned on (`hasTorch` and
 `isTorchModeSupported(.on)`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:flashModes:hasTorch:)`
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:canTurnOffDistortionCorrection:manualControls:flashModes:hasTorch:)`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
 ```
 
 Creates a camera description.
@@ -603,6 +614,8 @@ Creates a camera description.
   - maxBracketedPhotoCount: The most frames in one bracketed capture.
   - photoDimensions: The supported maximum photo sizes, as reported.
   - fieldOfViewDegrees: The horizontal field of view, in degrees.
+  - canTurnOffDistortionCorrection: Whether the camera lets apps turn its geometric
+    distortion correction off. Defaults to `false`.
   - manualControls: The camera's answers about manual control. Defaults to none.
   - flashModes: The supported flash modes. Defaults to none.
   - hasTorch: Whether the camera has a torch. Defaults to `false`.

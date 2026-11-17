@@ -1849,6 +1849,138 @@
         }
       }
     },
+    "Distortion correction: this lens doesn't let apps turn it off or report whether it's used, so its photos may be corrected for lens distortion.": {
+      "comment": "Processing note and photo details: the lens offers no switch for the camera's geometric distortion correction, which reshapes the picture. Keep \"may\": it isn't known whether the correction is applied. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verzeichnungskorrektur: Bei diesem Objektiv können Apps sie nicht ausschalten, und es meldet nicht, ob sie verwendet wird. Seine Fotos können daher eine korrigierte Objektivverzeichnung haben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Corrección de distorsión: esta lente no permite que las apps la desactiven ni indica si se usa, así que sus fotos pueden tener corregida la distorsión de la lente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correction de la distorsion : cet objectif ne permet pas aux apps de la désactiver ni n’indique si elle est utilisée, ses photos peuvent donc être corrigées de la distorsion de l’objectif."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correzione della distorsione: questo obiettivo non consente alle app di disattivarla né indica se viene usata, quindi le sue foto possono essere corrette per la distorsione dell'obiettivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "歪み補正：このレンズではアプリがオフにできず、使われているかどうかも報告されないため、写真にはレンズの歪み補正がかかっている可能性があります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "왜곡 보정: 이 렌즈는 앱이 끌 수 없고 사용 여부도 알려 주지 않으므로, 사진에 렌즈 왜곡 보정이 적용되어 있을 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vervormingscorrectie: bij deze lens kunnen apps die niet uitschakelen en de lens meldt niet of ze wordt gebruikt, dus de foto's kunnen gecorrigeerd zijn voor lensvervorming."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correção de distorção: esta lente não permite que os apps a desativem nem informa se ela é usada, então suas fotos podem ter a distorção da lente corrigida."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "畸变校正：此镜头不允许 App 关闭它，也不报告是否使用，因此其照片可能经过镜头畸变校正。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "變形校正：此鏡頭不允許 App 關閉它，也不回報是否使用，因此其照片可能經過鏡頭變形校正。"
+          }
+        }
+      }
+    },
+    "Distortion correction: this lens lets apps turn it off, and nope. does.": {
+      "comment": "Processing note and photo details: the lens lets the app turn off the camera's geometric distortion correction, which reshapes the picture. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verzeichnungskorrektur: Bei diesem Objektiv können Apps sie ausschalten, und nope. tut das."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Corrección de distorsión: esta lente permite que las apps la desactiven, y nope. lo hace."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correction de la distorsion : cet objectif permet aux apps de la désactiver, et nope. le fait."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correzione della distorsione: questo obiettivo consente alle app di disattivarla, e nope. lo fa."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "歪み補正：このレンズではアプリがオフにでき、nope. はオフにしています。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "왜곡 보정: 이 렌즈는 앱이 끌 수 있게 하며, nope.은 이를 끕니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vervormingscorrectie: bij deze lens kunnen apps die uitschakelen, en nope. doet dat."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Correção de distorção: esta lente permite que os apps a desativem, e o nope. a desativa."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "畸变校正：此镜头允许 App 关闭它，nope. 会将其关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "變形校正：此鏡頭允許 App 關閉它，nope. 會將其關閉。"
+          }
+        }
+      }
+    },
     "Each frame is a separate single-frame photo. Nothing is merged.": {
       "comment": "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.",
       "extractionState": "manual",
@@ -2043,72 +2175,6 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "每張照片都是獨立的，不會合併。拍攝期間請保持 nope. 開啟。"
-          }
-        }
-      }
-    },
-    "Each photo is signed, so changes can be detected.": {
-      "comment": "First-run statement 2 of 3: photos get a Content Credentials signature (on by default). Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Jedes Foto wird signiert, damit Änderungen erkannt werden können."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Cada foto se firma, para que se puedan detectar los cambios."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Chaque photo est signée, pour que les modifications puissent être détectées."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Ogni foto è firmata, così le modifiche possono essere rilevate."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "各写真に署名するので、変更を検出できます。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "모든 사진에 서명하므로 변경 사항을 감지할 수 있습니다."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Elke foto wordt ondertekend, zodat wijzigingen kunnen worden opgemerkt."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Cada foto é assinada, para que alterações possam ser detectadas."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "每张照片都会签名，因此可以检测到更改。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "每張照片都會簽署，因此可以偵測到變更。"
           }
         }
       }
@@ -2373,6 +2439,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "曝光設定"
+          }
+        }
+      }
+    },
+    "Face Detection is off unless you turn it on in nope.'s settings. With it on, iOS may detect faces in the viewfinder to decide where to focus and how to expose. nope. doesn't read or save which faces it found.": {
+      "comment": "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Face Detection is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Gesichtserkennung ist aus, außer du schaltest sie in den Einstellungen von nope. ein. Ist sie an, erkennt iOS im Sucher möglicherweise Gesichter, um Schärfe und Belichtung festzulegen. nope. liest oder speichert nicht, welche Gesichter erkannt wurden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La Detección de caras está desactivada a menos que la actives en los ajustes de nope. Con ella activada, es posible que iOS detecte caras en el visor para decidir dónde enfocar y cómo exponer. nope. no lee ni guarda qué caras ha encontrado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La détection des visages est désactivée sauf si vous l’activez dans les réglages de nope. Lorsqu’elle est activée, iOS peut détecter des visages dans le viseur pour choisir où faire la mise au point et comment exposer. nope. ne lit ni n’enregistre les visages trouvés."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il Rilevamento volti è disattivato a meno che tu non lo attivi nelle impostazioni di nope. Quando è attivo, iOS può rilevare i volti nel mirino per decidere dove mettere a fuoco e come esporre. nope. non legge né salva quali volti ha trovato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出は、nope. の設定でオンにしない限りオフです。オンにすると、iOS はピントと露出を決めるために、ビューファインダー内の顔を検出することがあります。nope. は検出された顔の情報を読み取ったり保存したりしません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식은 nope. 설정에서 켜지 않는 한 꺼져 있습니다. 켜면 iOS가 초점과 노출을 정하기 위해 뷰파인더에서 얼굴을 감지할 수 있습니다. nope.은 감지된 얼굴 정보를 읽거나 저장하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gezichtsherkenning staat uit, tenzij je die aanzet in de instellingen van nope. Staat ze aan, dan kan iOS gezichten in de zoeker herkennen om scherpstelling en belichting te bepalen. nope. leest of bewaart niet welke gezichten zijn gevonden."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A Detecção de rostos fica desativada a menos que você a ative nos ajustes do nope. Com ela ativada, o iOS pode detectar rostos no visor para decidir onde focar e como expor. O nope. não lê nem salva quais rostos foram encontrados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "除非你在 nope. 的设置中开启，否则面部检测为关闭。开启后，iOS 可能会在取景器中检测人脸，以决定对焦位置和曝光方式。nope. 不会读取或保存检测到的人脸。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "除非你在 nope. 的設定中開啟，否則臉部偵測為關閉。開啟後，iOS 可能會在觀景窗中偵測人臉，以決定對焦位置和曝光方式。nope. 不會讀取或儲存偵測到的人臉。"
           }
         }
       }
@@ -3301,68 +3433,68 @@
         }
       }
     },
-    "Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.": {
-      "comment": "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
+    "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo also shows that it was taken with nope. and which version. Off by default.": {
+      "comment": "Explains the signing switch (off by default). Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Damit kann jeder prüfen, dass das Foto seit dem Sichern durch nope. nicht verändert wurde. Wenn aus, lässt sich nicht prüfen, ob das Foto verändert wurde."
+            "value": "Damit kann jeder prüfen, dass sich das Foto nicht geändert hat, seit nope. es gespeichert hat. Ein signiertes Foto zeigt außerdem, dass es mit nope. aufgenommen wurde, und mit welcher Version. Standardmäßig aus."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Permite a cualquiera comprobar que la foto no ha cambiado desde que nope. la guardó. Si se desactiva, no se puede comprobar si la foto ha cambiado."
+            "value": "Permite a cualquiera comprobar que la foto no ha cambiado desde que nope. la guardó. Una foto firmada también muestra que se tomó con nope. y con qué versión. Desactivado de forma predeterminada."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Permet à chacun de vérifier que la photo n’a pas changé depuis que nope. l’a enregistrée. Désactivé, on ne peut pas vérifier si la photo a changé."
+            "value": "Permet à chacun de vérifier que la photo n’a pas changé depuis que nope. l’a enregistrée. Une photo signée indique aussi qu’elle a été prise avec nope. et avec quelle version. Désactivé par défaut."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Consente a chiunque di verificare che la foto non sia cambiata da quando nope. l’ha salvata. Se disattivato, non è possibile verificare se la foto è cambiata."
+            "value": "Consente a chiunque di verificare che la foto non sia cambiata da quando nope. l'ha salvata. Una foto firmata mostra anche che è stata scattata con nope. e con quale versione. Disattivato per impostazione predefinita."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "nope. が保存してから写真が変更されていないことを、誰でも確認できます。オフにすると、変更の有無を確認できません。"
+            "value": "nope. が保存してから写真が変更されていないことを、誰でも確認できます。署名された写真からは、nope. で撮影されたことと、そのバージョンもわかります。デフォルトでオフです。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "nope.가 저장한 이후 사진이 변경되지 않았는지 누구나 확인할 수 있습니다. 끄면 사진의 변경 여부를 확인할 수 없습니다."
+            "value": "nope.이 저장한 이후 사진이 바뀌지 않았는지 누구나 확인할 수 있습니다. 서명된 사진에는 nope.으로 촬영했다는 사실과 버전도 표시됩니다. 기본적으로 꺼져 있습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Iedereen kan controleren dat de foto niet is veranderd sinds nope. hem bewaarde. Als dit uit staat, kan niet worden gecontroleerd of de foto is veranderd."
+            "value": "Iedereen kan controleren dat de foto niet is veranderd sinds nope. hem bewaarde. Een ondertekende foto laat ook zien dat hij met nope. is gemaakt, en met welke versie. Standaard uit."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Permite que qualquer pessoa verifique se a foto não mudou desde que o nope. a salvou. Se desativado, não é possível verificar se a foto mudou."
+            "value": "Permite que qualquer pessoa verifique se a foto não mudou desde que o nope. a salvou. Uma foto assinada também mostra que foi tirada com o nope. e com qual versão. Desativado por padrão."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "让任何人都能确认照片自 nope. 存储后未被更改。关闭后，就无法检查照片是否被更改。"
+            "value": "让任何人都能检查照片自 nope. 保存后是否未被更改。已签名的照片还会显示它是用 nope. 拍摄的，以及所用的版本。默认关闭。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "讓任何人都能確認照片自 nope. 儲存後未經更改。關閉後，就無法檢查照片是否經過更改。"
+            "value": "讓任何人都能檢查照片自 nope. 儲存後是否未曾更改。已簽署的照片也會顯示它是用 nope. 拍攝的，以及所用的版本。預設關閉。"
           }
         }
       }
@@ -4419,72 +4551,6 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "無 RAW"
-          }
-        }
-      }
-    },
-    "No RAW on This Lens": {
-      "comment": "Badge: the selected lens can't save RAW, so photos get device processing. RAW is a file format name.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Kein RAW mit diesem Objektiv"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Sin RAW en esta lente"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Pas de RAW avec cet objectif"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Nessun RAW con questo obiettivo"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "このレンズは RAW 非対応"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "이 렌즈는 RAW 미지원"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Geen RAW met deze lens"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Sem RAW nesta lente"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "此镜头不支持 RAW"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "此鏡頭不支援 RAW"
           }
         }
       }
@@ -5875,6 +5941,72 @@
         }
       }
     },
+    "On a lens that can't save RAW, the phone's camera processes the photo. nope. marks the camera \"Processed\" before you take it, unless you turn off Processed Marker in Settings, and the photo's details always say so. Tap the marker to see what processing that lens's photos get.": {
+      "comment": "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker's first word and Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bei einem Objektiv, das kein RAW speichern kann, verarbeitet die Kamera des Telefons das Foto. nope. zeigt vor der Aufnahme „Verarbeitet“ in der Kamera an, außer du schaltest Hinweis „Verarbeitet“ in den Einstellungen aus, und die Details des Fotos sagen es immer. Tippe auf den Hinweis, um zu sehen, welche Verarbeitung die Fotos dieses Objektivs erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En una lente que no puede guardar RAW, la cámara del teléfono procesa la foto. nope. muestra «Procesada» en la cámara antes de que la tomes, salvo que desactives Marca «Procesada» en Ajustes, y los detalles de la foto siempre lo indican. Toca la marca para ver qué procesamiento reciben las fotos de esa lente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Avec un objectif qui ne peut pas enregistrer en RAW, l’appareil photo du téléphone traite la photo. nope. affiche « Traitée » sur l’appareil avant la prise de vue, sauf si vous désactivez Repère « Traitée » dans les Réglages, et les détails de la photo l’indiquent toujours. Touchez le repère pour voir quel traitement reçoivent les photos de cet objectif."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Con un obiettivo che non può salvare in RAW, la fotocamera del telefono elabora la foto. nope. mostra «Elaborata» sulla fotocamera prima dello scatto, a meno che tu non disattivi Indicatore «Elaborata» nelle Impostazioni, e i dettagli della foto lo indicano sempre. Tocca l'indicatore per vedere quale elaborazione ricevono le foto di quell'obiettivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW を保存できないレンズでは、スマートフォンのカメラが写真を処理します。設定で「処理済み」の表示をオフにしない限り、nope. は撮影前にカメラに「処理済み」と表示し、写真の詳細にも必ずそのことが示されます。表示をタップすると、そのレンズの写真にどんな処理がかかるかを確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW를 저장할 수 없는 렌즈에서는 휴대폰 카메라가 사진을 처리합니다. 설정에서 '처리됨' 표시를 끄지 않는 한 nope.은 촬영 전에 카메라에 '처리됨'을 표시하며, 사진 정보에는 항상 그 사실이 나옵니다. 표시를 탭하면 그 렌즈의 사진에 어떤 처리가 적용되는지 볼 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bij een lens die geen RAW kan bewaren, bewerkt de camera van de telefoon de foto. nope. toont ‘Bewerkt’ in de camera voordat je de foto maakt, tenzij je Markering ‘Bewerkt’ uitzet in Instellingen, en de details van de foto vermelden het altijd. Tik op de markering om te zien welke bewerking de foto's van die lens krijgen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Em uma lente que não pode salvar RAW, a câmera do telefone processa a foto. O nope. mostra “Processada” na câmera antes de você tirá-la, a menos que você desative Indicador “Processada” nos Ajustes, e os detalhes da foto sempre informam isso. Toque no indicador para ver que processamento as fotos dessa lente recebem."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在无法保存 RAW 的镜头上，照片由手机相机处理。除非你在设置中关闭“已处理”标示，nope. 会在你拍照前在相机上显示“已处理”，而照片的详细信息始终会注明。轻点标示即可查看该镜头的照片会经过哪些处理。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在無法儲存 RAW 的鏡頭上，照片由手機相機處理。除非你在設定中關閉「已處理」標示，nope. 會在你拍照前於相機上顯示「已處理」，而照片的詳細資訊一律會註明。點一下標示即可查看該鏡頭的照片會經過哪些處理。"
+          }
+        }
+      }
+    },
     "On, but there was nothing to write": {
       "comment": "In the photo details, why a metadata item isn't in the files although its switch is on: the camera gave no value for it, such as no location or no lens corrections.",
       "extractionState": "manual",
@@ -6403,68 +6535,68 @@
         }
       }
     },
-    "Photos aren't signed: signing is off in Settings.": {
-      "comment": "Warning on the camera while the person has turned signing off in the app's settings: new photos get no Content Credentials signature. Honesty wording: never imply photos are signed. Honesty wording: a fluent human must review every translation before release.",
+    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device.": {
+      "comment": "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Fotos werden nicht signiert: Signieren ist in den Einstellungen ausgeschaltet."
+            "value": "Fotos werden nur signiert, wenn du „Jedes Foto signieren“ in den Einstellungen von nope. einschaltest. Mit einem signierten Foto kann jeder prüfen, dass es sich nicht geändert hat, seit nope. es gespeichert hat, und es zeigt, dass es mit nope. aufgenommen wurde, und mit welcher Version. Es identifiziert weder dich noch dein Gerät."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Las fotos no se firman: la firma está desactivada en Ajustes."
+            "value": "Las fotos no se firman a menos que actives «Firmar cada foto» en los ajustes de nope. Una foto firmada permite a cualquiera comprobar que no ha cambiado desde que nope. la guardó, y muestra que se tomó con nope. y con qué versión. No te identifica a ti ni a tu dispositivo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Les photos ne sont pas signées : la signature est désactivée dans Réglages."
+            "value": "Les photos ne sont pas signées sauf si vous activez « Signer chaque photo » dans les réglages de nope. Une photo signée permet à chacun de vérifier qu’elle n’a pas changé depuis que nope. l’a enregistrée, et indique qu’elle a été prise avec nope. et avec quelle version. Elle ne vous identifie pas, ni votre appareil."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Le foto non sono firmate: la firma è disattivata in Impostazioni."
+            "value": "Le foto non vengono firmate a meno che tu non attivi «Firma ogni foto» nelle impostazioni di nope. Una foto firmata consente a chiunque di verificare che non sia cambiata da quando nope. l'ha salvata, e mostra che è stata scattata con nope. e con quale versione. Non identifica te né il tuo dispositivo."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "写真は署名されません：設定で署名がオフになっています。"
+            "value": "nope. の設定で「各写真に署名」をオンにしない限り、写真には署名されません。署名された写真は、nope. が保存してから変更されていないことを誰でも確認でき、nope. で撮影されたこととそのバージョンもわかります。あなたやデバイスを特定するものではありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "사진에 서명되지 않습니다: 설정에서 서명이 꺼져 있습니다."
+            "value": "nope. 설정에서 '각 사진에 서명'을 켜지 않으면 사진에 서명하지 않습니다. 서명된 사진은 nope.이 저장한 이후 바뀌지 않았는지 누구나 확인할 수 있게 하고, nope.으로 촬영했다는 사실과 버전을 보여 줍니다. 사용자나 기기를 식별하지는 않습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Foto’s worden niet ondertekend: ondertekenen staat uit in Instellingen."
+            "value": "Foto's worden niet ondertekend tenzij je ‘Elke foto ondertekenen’ aanzet in de instellingen van nope. Met een ondertekende foto kan iedereen controleren dat hij niet is veranderd sinds nope. hem bewaarde, en hij laat zien dat hij met nope. is gemaakt, en met welke versie. Hij identificeert jou of je apparaat niet."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "As fotos não são assinadas: a assinatura está desativada em Ajustes."
+            "value": "As fotos não são assinadas a menos que você ative “Assinar cada foto” nos ajustes do nope. Uma foto assinada permite que qualquer pessoa verifique se ela não mudou desde que o nope. a salvou, e mostra que foi tirada com o nope. e com qual versão. Ela não identifica você nem seu dispositivo."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "照片不会签名：已在设置中关闭签名。"
+            "value": "除非你在 nope. 的设置中开启“签名每张照片”，否则照片不会签名。已签名的照片让任何人都能检查它自 nope. 保存后是否未被更改，并显示它是用 nope. 拍摄的以及所用的版本。它不会识别你或你的设备。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "照片不會簽署：已在設定中關閉簽署。"
+            "value": "除非你在 nope. 的設定中開啟「簽署每張照片」，否則照片不會簽署。已簽署的照片讓任何人都能檢查它自 nope. 儲存後是否未曾更改，並顯示它是用 nope. 拍攝的以及所用的版本。它不會識別你或你的裝置。"
           }
         }
       }
@@ -6733,6 +6865,72 @@
         }
       }
     },
+    "Processed Photos Are Labeled": {
+      "comment": "Honesty heading: photos from a lens that can't save RAW are labeled as processed. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verarbeitete Fotos werden gekennzeichnet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Las fotos procesadas se indican"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les photos traitées sont signalées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le foto elaborate sono indicate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "処理済みの写真には表示が付きます"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "처리된 사진은 표시됩니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewerkte foto's worden aangeduid"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fotos processadas são indicadas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已处理的照片会加上标示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已處理的照片會加上標示"
+          }
+        }
+      }
+    },
     "Processed by the phone's camera: this lens can't save RAW": {
       "comment": "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.",
       "extractionState": "manual",
@@ -6795,6 +6993,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "由手機相機處理：此鏡頭無法儲存 RAW"
+          }
+        }
+      }
+    },
+    "Processed: No RAW on This Lens": {
+      "comment": "Marker on the camera before the photo is taken: the selected lens can't save RAW, so its photos are processed by the phone. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verarbeitet: kein RAW mit diesem Objektiv"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Procesada: sin RAW en esta lente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Traitée : pas de RAW avec cet objectif"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elaborata: nessun RAW con questo obiettivo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "処理済み：このレンズは RAW 非対応"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "처리됨: 이 렌즈는 RAW 미지원"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bewerkt: geen RAW met deze lens"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Processada: sem RAW nesta lente"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已处理：此镜头不支持 RAW"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已處理：此鏡頭不支援 RAW"
           }
         }
       }
@@ -7723,6 +7987,72 @@
         }
       }
     },
+    "Shows \"Processed\" on the camera before you take a photo with a lens that can't save RAW. Tap it to see what processing that lens's photos get. On by default.": {
+      "comment": "Explains the Processed Marker switch. \"Processed\" is the start of the marker's text, \"Processed: No RAW on This Lens\"; use the same word as its translation. RAW is a file format name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zeigt „Verarbeitet“ in der Kamera an, bevor du mit einem Objektiv fotografierst, das kein RAW speichern kann. Tippe darauf, um zu sehen, welche Verarbeitung die Fotos dieses Objektivs erhalten. Standardmäßig an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Muestra «Procesada» en la cámara antes de tomar una foto con una lente que no puede guardar RAW. Tócalo para ver qué procesamiento reciben las fotos de esa lente. Activado de forma predeterminada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Affiche « Traitée » sur l’appareil avant de prendre une photo avec un objectif qui ne peut pas enregistrer en RAW. Touchez-le pour voir quel traitement reçoivent les photos de cet objectif. Activé par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra «Elaborata» sulla fotocamera prima di scattare con un obiettivo che non può salvare in RAW. Toccalo per vedere quale elaborazione ricevono le foto di quell'obiettivo. Attivo per impostazione predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW を保存できないレンズで撮影する前に、カメラに「処理済み」と表示します。タップすると、そのレンズの写真にどんな処理がかかるかを確認できます。デフォルトでオンです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW를 저장할 수 없는 렌즈로 사진을 찍기 전에 카메라에 '처리됨'을 표시합니다. 탭하면 그 렌즈의 사진에 어떤 처리가 적용되는지 볼 수 있습니다. 기본적으로 켜져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toont ‘Bewerkt’ in de camera voordat je een foto maakt met een lens die geen RAW kan bewaren. Tik erop om te zien welke bewerking de foto's van die lens krijgen. Standaard aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra “Processada” na câmera antes de você tirar uma foto com uma lente que não pode salvar RAW. Toque nele para ver que processamento as fotos dessa lente recebem. Ativado por padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "使用无法保存 RAW 的镜头拍照前，在相机上显示“已处理”。轻点即可查看该镜头的照片会经过哪些处理。默认开启。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "使用無法儲存 RAW 的鏡頭拍照前，在相機上顯示「已處理」。點一下即可查看該鏡頭的照片會經過哪些處理。預設開啟。"
+          }
+        }
+      }
+    },
     "Shutter speed, ISO, aperture and focal length. Off: you can't see later how the photo was taken.": {
       "comment": "What the exposure settings are, and what turning them off costs. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -7917,6 +8247,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "簽章"
+          }
+        }
+      }
+    },
+    "Signed Only If You Turn It On": {
+      "comment": "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Signiert nur, wenn du es einschaltest"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Firma solo si la activas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Signature uniquement si vous l’activez"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Firma solo se la attivi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "オンにしたときだけ署名"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "켤 때만 서명"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alleen ondertekend als je het aanzet"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Assinada só se você ativar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "仅在你开启时签名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "僅在你開啟時簽署"
+          }
+        }
+      }
+    },
+    "Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed.": {
+      "comment": "First-run statement 2 of 3: Content Credentials signing is off by default and can be turned on in Settings. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Signatur, aus, bis du sie in den Einstellungen einschaltest, lässt jeden prüfen, ob ein Foto geändert wurde."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La firma, desactivada hasta que la actives en Ajustes, permite a cualquiera comprobar si una foto ha cambiado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La signature, désactivée tant que vous ne l’activez pas dans les Réglages, permet à chacun de vérifier si une photo a changé."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La firma, disattivata finché non la attivi nelle Impostazioni, consente a chiunque di verificare se una foto è cambiata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "署名（設定でオンにするまではオフ）を使うと、写真が変更されたかどうかを誰でも確認できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "서명은 설정에서 켜기 전까지 꺼져 있으며, 켜면 누구나 사진이 바뀌었는지 확인할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ondertekenen, uit totdat je het aanzet in Instellingen, laat iedereen controleren of een foto is veranderd."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A assinatura, desativada até você ativá-la nos Ajustes, permite que qualquer pessoa verifique se uma foto mudou."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "签名功能在你于设置中开启前保持关闭，开启后任何人都能检查照片是否被更改。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "簽署功能在你於設定中開啟前保持關閉，開啟後任何人都能檢查照片是否被更改。"
           }
         }
       }
@@ -8511,6 +8973,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "檔案中未記錄曝光資訊。"
+          }
+        }
+      }
+    },
+    "The phone's camera makes this photo: it turns the sensor data into a finished image, choosing its colors and tone and any noise reduction and sharpening, and compresses it as %@. Apps can't turn these steps off.": {
+      "comment": "Processing note of a lens without RAW. The placeholder is a file format name, HEIF or JPEG. Must not claim more than the English: it says what the phone may apply, not that it applies each step. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Kamera des Telefons erstellt dieses Foto: Sie macht aus den Sensordaten ein fertiges Bild, wählt Farben und Tonwerte sowie eine etwaige Rauschreduzierung und Schärfung und komprimiert es als %@. Apps können diese Schritte nicht ausschalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La cámara del teléfono crea esta foto: convierte los datos del sensor en una imagen terminada, decide sus colores y su tono y cualquier reducción de ruido o enfoque, y la comprime como %@. Las apps no pueden desactivar estos pasos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’appareil photo du téléphone crée cette photo : il transforme les données du capteur en image finie, en choisit les couleurs et les tons ainsi que toute réduction du bruit et accentuation, puis la compresse en %@. Les apps ne peuvent pas désactiver ces étapes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Questa foto la crea la fotocamera del telefono: trasforma i dati del sensore in un'immagine finita, ne sceglie colori e tono ed eventuali riduzione del rumore e nitidezza, e la comprime in %@. Le app non possono disattivare questi passaggi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "この写真はスマートフォンのカメラが作成します。センサーのデータを完成した画像に変換し、色とトーン、ノイズ除去やシャープ化の有無を決め、%@ として圧縮します。これらの処理はアプリからはオフにできません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이 사진은 휴대폰 카메라가 만듭니다. 센서 데이터를 완성된 이미지로 바꾸면서 색상과 톤, 노이즈 감소와 선명화 여부를 정하고 %@(으)로 압축합니다. 앱은 이 단계를 끌 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De camera van de telefoon maakt deze foto: hij zet de sensorgegevens om in een afgewerkt beeld, kiest de kleuren en tinten en eventuele ruisonderdrukking en verscherping, en comprimeert het als %@. Apps kunnen deze stappen niet uitschakelen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A câmera do telefone cria esta foto: transforma os dados do sensor em uma imagem pronta, escolhe as cores e o tom e qualquer redução de ruído e nitidez, e a comprime como %@. Os apps não podem desativar essas etapas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "这张照片由手机相机生成：相机将传感器数据转换为成品图像，决定其色彩和色调以及任何降噪和锐化，并压缩为 %@。App 无法关闭这些步骤。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "這張照片由手機相機產生：相機將感光元件資料轉為完成的影像，決定其色彩與色調以及任何降噪和銳化，並壓縮為 %@。App 無法關閉這些步驟。"
           }
         }
       }
@@ -10165,68 +10693,68 @@
         }
       }
     },
-    "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.": {
-      "comment": "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus, on by default). Keep \"nope.\" unchanged. Must not claim more than the English.",
+    "nope. asks the camera to put speed before quality, and turns off what apps can: Apple ProRAW, zero shutter lag, responsive capture, deferred processing, constant color, content-aware distortion correction and digital zoom.": {
+      "comment": "Processing note of a lens without RAW: the camera features the app turns off. Apple ProRAW is Apple's name. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS erkennt im Sucher möglicherweise Gesichter, um zu entscheiden, worauf scharfgestellt wird. nope. liest oder speichert nicht, welche Gesichter erkannt wurden."
+            "value": "nope. bittet die Kamera, Geschwindigkeit vor Qualität zu stellen, und schaltet aus, was Apps ausschalten können: Apple ProRAW, Auslösen ohne Verzögerung, reaktionsschnelle Aufnahme, verzögerte Verarbeitung, konstante Farbe, inhaltsabhängige Verzeichnungskorrektur und Digitalzoom."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Es posible que iOS detecte caras en el visor para decidir dónde enfocar. nope. no lee ni guarda qué caras ha encontrado."
+            "value": "nope. pide a la cámara que priorice la velocidad sobre la calidad y desactiva lo que las apps pueden desactivar: Apple ProRAW, retardo cero del obturador, captura con respuesta rápida, procesamiento diferido, color constante, corrección de distorsión según el contenido y zoom digital."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS peut détecter des visages dans le viseur pour choisir où faire la mise au point. nope. ne lit ni n’enregistre les visages trouvés."
+            "value": "nope. demande à l’appareil de privilégier la vitesse sur la qualité et désactive ce que les apps peuvent désactiver : Apple ProRAW, le déclenchement sans délai, la capture réactive, le traitement différé, la couleur constante, la correction de distorsion selon le contenu et le zoom numérique."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS può rilevare i volti nel mirino per decidere dove mettere a fuoco. nope. non legge né salva quali volti ha trovato."
+            "value": "nope. chiede alla fotocamera di anteporre la velocità alla qualità e disattiva ciò che le app possono disattivare: Apple ProRAW, ritardo zero dell'otturatore, acquisizione reattiva, elaborazione differita, colore costante, correzione della distorsione in base al contenuto e zoom digitale."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOSはピントを合わせる位置を決めるために、ビューファインダー内の顔を検出することがあります。nope.は検出された顔の情報を読み取ったり保存したりしません。"
+            "value": "nope. はカメラに画質より速度を優先するよう求め、アプリがオフにできるものをオフにします：Apple ProRAW、ゼロシャッターラグ、レスポンシブキャプチャ、遅延処理、一定の色、コンテンツに応じた歪み補正、デジタルズーム。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS는 초점을 맞출 위치를 정하기 위해 뷰파인더에서 얼굴을 감지할 수 있습니다. nope.은 감지된 얼굴 정보를 읽거나 저장하지 않습니다."
+            "value": "nope.은 카메라에 화질보다 속도를 우선하도록 요청하고, 앱이 끌 수 있는 기능을 끕니다: Apple ProRAW, 셔터 지연 없음, 반응형 캡처, 지연 처리, 일정한 색상, 콘텐츠 인식 왜곡 보정, 디지털 줌."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS kan gezichten in de zoeker herkennen om te bepalen waarop wordt scherpgesteld. nope. leest of bewaart niet welke gezichten zijn gevonden."
+            "value": "nope. vraagt de camera om snelheid boven kwaliteit te stellen en schakelt uit wat apps kunnen uitschakelen: Apple ProRAW, sluiter zonder vertraging, responsieve opname, uitgestelde verwerking, constante kleur, inhoudsafhankelijke vervormingscorrectie en digitale zoom."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "O iOS pode detectar rostos no visor para decidir onde focar. O nope. não lê nem salva quais rostos foram encontrados."
+            "value": "O nope. pede à câmera que priorize a velocidade em vez da qualidade e desativa o que os apps podem desativar: Apple ProRAW, atraso zero do obturador, captura responsiva, processamento adiado, cor constante, correção de distorção baseada no conteúdo e zoom digital."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS 可能会在取景器中检测人脸，以决定对焦位置。nope. 不会读取或保存检测到的人脸。"
+            "value": "nope. 会要求相机以速度优先于画质，并关闭 App 能关闭的功能：Apple ProRAW、零快门延迟、响应式拍摄、延后处理、恒定色彩、基于内容的畸变校正和数码变焦。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS 可能會在觀景窗中偵測人臉，以決定對焦位置。nope. 不會讀取或儲存偵測到的人臉。"
+            "value": "nope. 會要求相機以速度優先於畫質，並關閉 App 能關閉的功能：Apple ProRAW、零快門延遲、回應式拍攝、延後處理、恆定色彩、依內容進行的變形校正和數位變焦。"
           }
         }
       }
@@ -10557,6 +11085,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Apple Watch 上的 nope. 只會把你的指令（例如快門和延遲）傳送到 iPhone 上的 nope.，並只收回簡短的狀態，例如「已儲存並簽署」。不會有任何照片或照片詳細資訊傳送到手錶。這些訊息由 watchOS 和 iOS 透過你已配對裝置之間的自有連線傳送；nope. 不會開啟任何網路連線。"
+          }
+        }
+      }
+    },
+    "nope. saves the camera's file without changing its pixels. On a lens with RAW, nope. develops its own HEIF and JPEG copies from the RAW, with one overall tone curve (Standard) or none (Flat), and no noise reduction, sharpening or local tone mapping.": {
+      "comment": "Processing note of a lens without RAW: what the app itself does. RAW, HEIF and JPEG are file format names; Standard and Flat are the names of the two looks in Settings. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. speichert die Datei der Kamera, ohne ihre Pixel zu ändern. Bei einem Objektiv mit RAW entwickelt nope. eigene HEIF- und JPEG-Kopien aus dem RAW, mit einer einzigen globalen Tonkurve (Standard) oder keiner (Flach) und ohne Rauschreduzierung, Schärfung oder lokales Tone Mapping."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. guarda el archivo de la cámara sin cambiar sus píxeles. En una lente con RAW, nope. revela sus propias copias HEIF y JPEG a partir del RAW, con una curva tonal global (Estándar) o ninguna (Plano), y sin reducción de ruido, enfoque ni mapeo de tonos local."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. enregistre le fichier de l’appareil sans en modifier les pixels. Avec un objectif RAW, nope. développe lui-même ses copies HEIF et JPEG à partir du RAW, avec une seule courbe de tons globale (Standard) ou aucune (Plat), sans réduction du bruit, accentuation ni mappage local des tons."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. salva il file della fotocamera senza modificarne i pixel. Con un obiettivo RAW, nope. sviluppa le proprie copie HEIF e JPEG dal RAW, con un'unica curva tonale globale (Standard) o nessuna (Piatto), senza riduzione del rumore, nitidezza o mappatura tonale locale."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. はカメラのファイルをピクセルを変えずに保存します。RAW に対応したレンズでは、nope. が RAW から独自に HEIF と JPEG のコピーを現像します。全体に 1 本のトーンカーブ（標準）またはなし（フラット）で、ノイズ除去、シャープ化、ローカルトーンマッピングは行いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.은 카메라의 파일을 픽셀을 바꾸지 않고 저장합니다. RAW를 지원하는 렌즈에서는 nope.이 RAW에서 직접 HEIF와 JPEG 사본을 현상하며, 전체에 하나의 톤 커브를 적용하거나(표준) 적용하지 않고(플랫), 노이즈 감소, 선명화, 로컬 톤 매핑은 하지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. bewaart het bestand van de camera zonder de pixels te wijzigen. Bij een lens met RAW ontwikkelt nope. zelf HEIF- en JPEG-kopieën uit de RAW, met één algehele tooncurve (Standaard) of geen (Vlak), en zonder ruisonderdrukking, verscherping of lokale tonemapping."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. salva o arquivo da câmera sem alterar seus pixels. Em uma lente com RAW, o nope. revela suas próprias cópias HEIF e JPEG a partir do RAW, com uma única curva de tons global (Padrão) ou nenhuma (Plano), e sem redução de ruído, nitidez ou mapeamento de tons local."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 会保存相机的文件，不更改其像素。在支持 RAW 的镜头上，nope. 会从 RAW 自行冲印 HEIF 和 JPEG 副本，应用一条整体色调曲线（标准）或不应用（平淡），不进行降噪、锐化或局部色调映射。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. 會儲存相機的檔案，不更改其像素。在支援 RAW 的鏡頭上，nope. 會從 RAW 自行沖洗 HEIF 和 JPEG 副本，套用一條整體色調曲線（標準）或不套用（平淡），不進行降噪、銳化或局部色調映射。"
           }
         }
       }

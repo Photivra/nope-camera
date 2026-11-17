@@ -11,7 +11,8 @@ extension EnvironmentValues {
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
 /// (issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options, photo size),
 /// Privacy (the master switch, signing, the details), Camera (manual controls, clean view, face
-/// detection, night mode, front camera mirroring) and More (Accessibility, Honesty, About).
+/// detection, the "Processed" marker, night mode, front camera mirroring) and More
+/// (Accessibility, Honesty, About).
 ///
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
@@ -38,7 +39,8 @@ public struct SettingsScreen: View {
     /// Location tagging, or `nil` to hide the Location switch.
     private let location: LocationTagging?
 
-    /// The device's lenses, for the Photo Size row (shown only when a lens offers a choice).
+    /// The device's lenses, for the Photo Size row (shown only when a lens offers a choice) and
+    /// the "Processed" marker switch (shown only when a lens has no Bayer RAW).
     private let lenses: [Lens]
 
     /// The saved settings presets, or `nil` to hide the Presets row.
@@ -65,7 +67,8 @@ public struct SettingsScreen: View {
     ///   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     ///     location service, which hides the Location switch.
     ///   - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
-    ///     row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
+    ///     row when one offers a choice (`Lens/photoSizeChoices`), and the "Processed" marker
+    ///     switch when one has no Bayer RAW. Defaults to none.
     ///   - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
     ///   - camera: The camera, whose lens and exposure presets save and set, or `nil`.
     public init(
@@ -150,18 +153,24 @@ public struct SettingsScreen: View {
                 }
             }
             // The explanation is under the switch's name, as on the detail screens: as a section
-            // footer the accessibility audit reported it as not following Dynamic Type.
-            Toggle(isOn: Binding(get: { settings.signsPhotos }, set: { settings.setSignsPhotos($0) })) {
-                SettingLabel(
-                    title: Text("Sign Each Photo", tableName: "Honesty", bundle: .module, comment: "Switch that adds a Content Credentials signature to each photo."),
-                    explanation: Text(
-                        "Lets anyone check that the photo hasn't changed since nope. saved it. If off, the photo can't be checked for changes.",
-                        tableName: "Honesty", bundle: .module,
-                        comment: "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo."))
-            }
+            // footer the accessibility audit reported it as not following Dynamic Type. It is
+            // long, so it goes below the switch at the accessibility sizes.
+            ExplainedToggle(
+                isOn: Binding(get: { settings.signsPhotos }, set: { settings.setSignsPhotos($0) }),
+                title: Text("Sign Each Photo", tableName: "Honesty", bundle: .module, comment: "Switch that adds a Content Credentials signature to each photo."),
+                explanation: Text(
+                    "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo also shows that it was taken with nope. and which version. Off by default.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Explains the signing switch (off by default). Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version."))
         } header: {
             Text("Privacy", bundle: .module, comment: "Settings row and screen title: which details are saved in each photo, and signing.")
         }
+    }
+
+    /// Whether a lens of the device has no Bayer RAW, so the "Processed" marker can appear and
+    /// its switch applies.
+    private var offersProcessedMarker: Bool {
+        !deviceSupportsBayerRAW || lenses.contains { !$0.supportsBayerRAW }
     }
 
     /// Manual controls, clean view and night mode, each with its explanation under its name.
@@ -190,8 +199,17 @@ public struct SettingsScreen: View {
                 SettingLabel(
                     title: Text("Face Detection", bundle: .module, comment: "Switch: faces the camera detects steer autofocus and auto exposure."),
                     explanation: Text(
-                        "Autofocus and auto exposure follow faces the camera finds. On by default.",
-                        bundle: .module, comment: "Explains the Face Detection switch."))
+                        "Autofocus and auto exposure follow faces the camera finds. Off by default.",
+                        bundle: .module, comment: "Explains the Face Detection switch, which is off by default."))
+            }
+            if offersProcessedMarker {
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.showsProcessedMarker }, set: { settings.setShowsProcessedMarker($0) }),
+                    title: Text("Processed Marker", bundle: .module, comment: "Switch and its Voice Control name: shows a marker on the camera before taking a photo with a lens that can't save RAW."),
+                    explanation: Text(
+                        "Shows \"Processed\" on the camera before you take a photo with a lens that can't save RAW. Tap it to see what processing that lens's photos get. On by default.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the Processed Marker switch. \"Processed\" is the start of the marker's text, \"Processed: No RAW on This Lens\"; use the same word as its translation. RAW is a file format name. Must not claim more than the English."))
             }
             OverlaySettingsView.link(settings: settings)
             Toggle(isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) })) {

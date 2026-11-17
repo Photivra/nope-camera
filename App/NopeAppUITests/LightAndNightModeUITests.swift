@@ -104,7 +104,7 @@ extension NopeAppUITests {
 
     @MainActor
     func testNightModeCameraWithPhotoWarningAndLight() throws {
-        let app = launch("signingFails", extraArguments: Self.nightModeOn)
+        let app = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(app.buttons["Not Signed"].waitForExistence(timeout: 10))
@@ -114,7 +114,7 @@ extension NopeAppUITests {
         try audit(app)
         app.terminate()
 
-        let large = launch("signingFails", extraArguments: Self.nightModeOn + Self.largestTextSize)
+        let large = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn + Self.largestTextSize)
         XCTAssertTrue(large.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditScrollingScreen(large)
     }

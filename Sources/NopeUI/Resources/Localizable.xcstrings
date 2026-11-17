@@ -2311,68 +2311,68 @@
         }
       }
     },
-    "Autofocus and auto exposure follow faces the camera finds. On by default.": {
-      "comment": "Explains the Face Detection switch.",
+    "Autofocus and auto exposure follow faces the camera finds. Off by default.": {
+      "comment": "Explains the Face Detection switch, which is off by default.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Autofokus und automatische Belichtung folgen Gesichtern, die die Kamera findet. Standardmäßig an."
+            "value": "Autofokus und automatische Belichtung folgen Gesichtern, die die Kamera findet. Standardmäßig aus."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "El enfoque y la exposición automáticos siguen las caras que detecta la cámara. Activado de forma predeterminada."
+            "value": "El enfoque y la exposición automáticos siguen las caras que detecta la cámara. Desactivado de forma predeterminada."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "La mise au point et l'exposition automatiques suivent les visages détectés par l'appareil. Activé par défaut."
+            "value": "La mise au point et l’exposition automatiques suivent les visages détectés par l’appareil. Désactivé par défaut."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Messa a fuoco ed esposizione automatiche seguono i volti trovati dalla fotocamera. Attivo per impostazione predefinita."
+            "value": "Messa a fuoco ed esposizione automatiche seguono i volti trovati dalla fotocamera. Disattivato per impostazione predefinita."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "オートフォーカスと自動露出が、カメラが見つけた顔に合わせます。デフォルトでオンです。"
+            "value": "オートフォーカスと自動露出が、カメラが見つけた顔に合わせます。デフォルトでオフです。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "자동 초점과 자동 노출이 카메라가 찾은 얼굴을 따라갑니다. 기본적으로 켜져 있습니다."
+            "value": "자동 초점과 자동 노출이 카메라가 찾은 얼굴을 따라갑니다. 기본적으로 꺼져 있습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Autofocus en automatische belichting volgen gezichten die de camera vindt. Standaard aan."
+            "value": "Autofocus en automatische belichting volgen gezichten die de camera vindt. Standaard uit."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "O foco e a exposição automáticos seguem os rostos que a câmera encontra. Ativado por padrão."
+            "value": "O foco e a exposição automáticos seguem os rostos que a câmera encontra. Desativado por padrão."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "自动对焦和自动曝光会跟随相机发现的面孔。默认开启。"
+            "value": "自动对焦和自动曝光会跟随相机发现的面孔。默认关闭。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "自動對焦和自動曝光會跟隨相機找到的臉孔。預設開啟。"
+            "value": "自動對焦和自動曝光會跟隨相機找到的臉孔。預設關閉。"
           }
         }
       }
@@ -17924,6 +17924,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "專業工具"
+          }
+        }
+      }
+    },
+    "Processed Marker": {
+      "comment": "Switch and its Voice Control name: shows a marker on the camera before taking a photo with a lens that can't save RAW.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Hinweis „Verarbeitet“"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Marca «Procesada»"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Repère « Traitée »"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Indicatore «Elaborata»"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「処理済み」の表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "'처리됨' 표시"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Markering ‘Bewerkt’"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Indicador “Processada”"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“已处理”标示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「已處理」標示"
           }
         }
       }
