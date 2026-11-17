@@ -1,9 +1,9 @@
 # AGENTS.md
 
 Photivra Nope Camera™ is a free, open-source (GPLv3) camera app for iPhone and iPad, with
-Android planned. It captures a photo with as little processing as the device allows, signs it
-with C2PA Content Credentials, and saves it to Photos. Neither the app nor its files track the
-user. The full design is in issue #1.
+Android planned. It captures a photo with as little processing as the device allows, can sign it
+with C2PA Content Credentials (off by default), and saves it to Photos. Neither the app nor its
+files track the user. The full design is in issue #1.
 
 ## Rules that always apply
 
@@ -26,7 +26,8 @@ user. The full design is in issue #1.
 3. **Honesty.** These rules are not traded away for convenience:
    - As little processing as the device allows: single-frame Bayer RAW, never ProRAW or
      multi-frame capture.
-   - Every photo is signed, with a fresh key per photo.
+   - Signing is the person's choice and off by default. When it is on, every photo is signed,
+     with a fresh key per photo, and a photo that could not be signed says so.
    - Nothing in the app or its files can track the user.
    - User-facing wording never claims more than is true. Say "as little processing as your phone
      allows", never "zero processing".
@@ -131,7 +132,8 @@ Without Color Alone, Sufficient Contrast and Reduced Motion.
     logically.
   - The viewfinder announces the lens, the format (RAW or the HEIF fallback), and exposure
     warnings.
-  - Capture results are announced: "Photo saved and signed", or what went wrong.
+  - Capture results are announced: "Photo saved" and whether it was signed, or what went
+    wrong.
   - Manual controls are adjustable elements (swipe up or down to change them).
   - The Honesty screen and settings read in a sensible order.
 - **Taking photos without seeing the screen.**
