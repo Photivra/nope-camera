@@ -213,7 +213,7 @@ struct QuickButton: View {
 
     /// "Quick Menu".
     static var name: Text {
-        Text("Quick Menu", bundle: .module, comment: "VoiceOver and Voice Control name of the Q button beside the shutter, which opens a panel of camera settings such as Flash, Grid and Night Mode, and the title of that panel as a list at large text sizes.")
+        QuickControlsText.title
     }
 
     /// The button.
@@ -226,6 +226,7 @@ struct QuickButton: View {
         }
         .buttonStyle(NopeIconButtonStyle(size: size, isSelected: isOpen))
         .accessibilityLabel(Self.name)
+        .accessibilityIdentifier("quickMenuButton")
         .accessibilityAddTraits(isOpen ? .isSelected : [])
         .accessibilityShowsLargeContentViewer {
             Label { Self.name } icon: { Image(systemName: "square.grid.3x3") }

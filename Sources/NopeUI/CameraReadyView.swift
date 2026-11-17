@@ -91,12 +91,8 @@ struct CameraReadyView: View {
     /// Whether the quick menu (Q) is open.
     @State private var showsQuickMenu = false
 
-    /// Whether the quick menu is open as a sheet (the scrolling layout). It is its own state, so a
-    /// change of layout while the panel is open never presents the sheet by itself.
-    @State private var showsQuickMenuSheet = false
-
-    /// Whether Settings should open once the quick menu's sheet has closed (scrolling layout).
-    @State private var opensSettingsAfterQuickMenu = false
+    /// Whether VoiceOver focus is on Q, to return it there when the quick menu closes.
+    @AccessibilityFocusState private var isQuickButtonFocused: Bool
 
     /// Whether the last photo's details are shown (issue #53).
     @State private var showsPhotoDetails = false
@@ -274,20 +270,7 @@ struct CameraReadyView: View {
                     .presentationSizing(.page)
             }
         }
-        // The scrolling layout's quick menu: a full-height list (BUILD-SPEC.md, 3.6). Settings
-        // opens once it has closed, because a sheet can't present over this one from the screen.
-        .sheet(isPresented: $showsQuickMenuSheet, onDismiss: openSettingsAfterQuickMenu) {
-            QuickMenuSheet(items: QuickControls.current(context), openSettings: {
-                opensSettingsAfterQuickMenu = true
-                showsQuickMenuSheet = false
-            }) {
-                showsQuickMenuSheet = false
-            }
-            .nightModeStyle(isNightMode)
-            .presentationBackground(.background)
-            .presentationDetents([.large])
-        }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented || showsQuickMenuSheet) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
         .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -298,9 +281,12 @@ struct CameraReadyView: View {
             openControl = nil
             showsExposureDial = false
         }
+        // VoiceOver focus goes back to Q when the quick menu closes (BUILD-SPEC.md, 3.6).
+        .onChange(of: showsQuickMenu) { _, isOpen in
+            if !isOpen, showsControls { isQuickButtonFocused = true }
+        }
         .onChange(of: model.isCleanView) {
             showsQuickMenu = false
-            showsQuickMenuSheet = false
             showsExposureDial = false
         }
         // A delay chosen elsewhere (Siri, a preset) becomes the one Timer chooses next.
@@ -333,14 +319,17 @@ struct CameraReadyView: View {
                 dial: {
                     // Sideways, the bottom stack sits on the picture's lower edge as seen
                     // sideways instead (pictureArea).
-                    if !rotation.isSideways { pictureBottomStack }
+                    if !rotation.isSideways, !isQuickMenuOpen { pictureBottomStack }
                 },
                 bands: {
-                    rows
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
-                        // Covered by Q's panel while it is open, so assistive technologies skip
-                        // them too.
-                        .accessibilityHidden(showsQuickMenu && !rotation.isSideways)
+                    if isQuickMenuOpen {
+                        // Covered by Q's panel: their space is kept, and they leave the
+                        // accessibility tree, which hiding them alone didn't do for the audit.
+                        Color.clear.frame(height: bandsHeight)
+                    } else {
+                        rows
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandsHeight = $0 }
+                    }
                 })
                 // Q's panel covers the lens row and the drive strip, never the shutter row.
                 .overlay(alignment: .bottom) { quickMenu(rotation.isSideways ? .sideways : .stacked) }
@@ -354,7 +343,12 @@ struct CameraReadyView: View {
     private var scrolling: some View {
         // The shutter row stays pinned below the scroll view, so the shutter is always in reach.
         VStack(spacing: 0) {
-            scrollingContent
+            // Q's list takes the scrolling content's place while it is open (BUILD-SPEC.md, 3.6).
+            if showsControls, showsQuickMenu {
+                QuickMenuList(context: context, isPresented: $showsQuickMenu, openSettings: openSettings)
+            } else {
+                scrollingContent
+            }
             shutterRow(quickSize: NopeSize.scrollingRowButton)
                 .padding(.horizontal, NopeSpace.m)
                 .padding(.vertical, NopeSpace.xs)
@@ -418,19 +412,21 @@ struct CameraReadyView: View {
                     .aspectRatio(CameraLayout.pictureAspectRatio(in: size), contentMode: .fit)
                     .overlay(alignment: .bottom) {
                         VStack(spacing: NopeSpace.xs) {
-                            pictureBottomStack
-                            if showsControls {
-                                driveStrip(.backedWords)
+                            // Q's panel may cover them; they return when it closes.
+                            if !isQuickMenuOpen {
+                                pictureBottomStack
+                                if showsControls {
+                                    driveStrip(.backedWords)
+                                }
                             }
                         }
                         .frame(maxWidth: NopeSize.pictureStackMaxWidth)
                         .padding(NopeSpace.xs)
                     }
-                    // Q's panel opens on the picture beside the column, near Q, clear of the
-                    // drive strip.
-                    .overlay(alignment: .bottomTrailing) { quickMenu(.column) }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Q's panel opens beside the column, its bottom level with Q's.
+            .overlay(alignment: .bottomTrailing) { quickMenu(.column) }
             controlColumn
         }
     }
@@ -596,15 +592,15 @@ struct CameraReadyView: View {
     ///
     /// - Parameter size: Its diameter.
     private func quickButton(size: CGFloat) -> some View {
-        QuickButton(isOpen: layout == .scrolling ? showsQuickMenuSheet : showsQuickMenu, size: size) {
-            if layout == .scrolling {
-                showsQuickMenuSheet = true
-            } else {
-                showsQuickMenu.toggle()
-            }
-        }
+        QuickButton(isOpen: showsQuickMenu, size: size) { showsQuickMenu.toggle() }
             // Escape (or Command-Period) on a hardware keyboard closes the open menu.
-            .keyboardShortcut(showsQuickMenu && layout != .scrolling ? .cancelAction : nil)
+            .keyboardShortcut(showsQuickMenu ? .cancelAction : nil)
+            .accessibilityFocused($isQuickButtonFocused)
+    }
+
+    /// Whether Q's panel is open over the camera (not the scrolling layout's list).
+    private var isQuickMenuOpen: Bool {
+        showsControls && showsQuickMenu && layout != .scrolling
     }
 
     /// The shutter. Pressing it closes the quick menu and takes a photo (or stops a series).
@@ -660,22 +656,13 @@ struct CameraReadyView: View {
 
     /// Q's panel in its place, while it is open.
     ///
-    /// Until the quick panel of the 1.0.0 design lands (BUILD-SPEC.md, 3.6, chunk B), this shows
-    /// the quick-controls items wrapped in rows with a Settings button, in the panel's place and
-    /// size (``QuickMenuPanel``); the panel replaces ``QuickMenuPanel`` here.
+    /// The panel (``QuickPanel``) closes itself through the binding; what it covers is taken out
+    /// of the layout while it is open.
     ///
     /// - Parameter placement: Where it opens.
     @ViewBuilder private func quickMenu(_ placement: QuickMenuPlacement) -> some View {
-        if showsControls, showsQuickMenu, layout != .scrolling {
-            let panel = QuickMenuPanel(
-                items: QuickControls.current(context),
-                openSettings: {
-                    showsQuickMenu = false
-                    openSettings()
-                }
-            ) {
-                showsQuickMenu = false
-            }
+        if isQuickMenuOpen {
+            let panel = QuickPanel(context: context, isPresented: $showsQuickMenu, openSettings: openSettings)
             switch placement {
             case .stacked:
                 panel
@@ -692,20 +679,13 @@ struct CameraReadyView: View {
                 panel
                     .frame(maxWidth: NopeSize.panelMaxWidth)
                     .padding(.trailing, NopeSpace.xs)
-                    // Clear of the drive strip on the picture's lower edge.
-                    .padding(.bottom, NopeSize.driveRow + 2 * NopeSpace.xs)
                     .padding(.top, NopeSpace.xs)
+                    // The shutter is centered in the column with Q just above it, so Q's bottom
+                    // is half the height less half the shutter and the gap above it.
+                    .padding(.bottom, max(size.height / 2 + NopeSize.shutter / 2 + NopeSpace.xs, NopeSpace.xs))
                     .transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
             }
         }
-    }
-
-    /// Opens Settings after the scrolling layout's quick menu closed, when its Settings button
-    /// closed it.
-    private func openSettingsAfterQuickMenu() {
-        guard opensSettingsAfterQuickMenu else { return }
-        opensSettingsAfterQuickMenu = false
-        openSettings()
     }
 
     // MARK: - Picture
@@ -1029,104 +1009,6 @@ struct CameraReadyView: View {
         } else if let error = CaptureMessages.error(in: status) {
             bannerError = error
             failureCount += 1
-        }
-    }
-}
-
-/// Q's panel until the quick panel of the 1.0.0 design lands (docs/design/BUILD-SPEC.md, 3.6,
-/// chunk B): the quick-controls items wrapped in rows, then Settings, in the panel's backing and
-/// shape. It scrolls when it is taller than its space. It closes when an item's action runs.
-struct QuickMenuPanel: View {
-    /// The items, in display order.
-    let items: [QuickControlItem]
-
-    /// Closes the panel and opens Settings.
-    let openSettings: () -> Void
-
-    /// Closes the panel.
-    let close: () -> Void
-
-    /// Creates the panel.
-    ///
-    /// - Parameters:
-    ///   - items: The items, in display order.
-    ///   - openSettings: Closes the panel and opens Settings.
-    ///   - close: Closes the panel.
-    init(items: [QuickControlItem], openSettings: @escaping () -> Void, close: @escaping () -> Void) {
-        self.items = items
-        self.openSettings = openSettings
-        self.close = close
-    }
-
-    /// The panel.
-    var body: some View {
-        ViewThatFits(in: .vertical) {
-            content
-            ScrollView { content }
-        }
-        .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.large))
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel(QuickButton.name)
-    }
-
-    /// The items and the foot.
-    private var content: some View {
-        VStack(spacing: NopeSpace.s) {
-            QuickControlsTray(items: items, wraps: true, close: close)
-            Button(action: openSettings) {
-                Label {
-                    Text("Settings", bundle: .module, comment: "Title of the settings screen, and the camera button that opens it.")
-                } icon: {
-                    Image(systemName: "gearshape")
-                }
-                .labelStyle(NopePillLabelStyle())
-            }
-            .buttonStyle(NopeCapsuleStyle(size: NopeSize.capsuleLarge, idleFill: .tile))
-        }
-        .padding(NopeSpace.m)
-    }
-}
-
-/// Q as a full-height sheet in the scrolling layout, until the quick menu's list of the 1.0.0
-/// design lands (BUILD-SPEC.md, 3.6, chunk B): the same items and Settings, with Done.
-struct QuickMenuSheet: View {
-    /// The items, in display order.
-    let items: [QuickControlItem]
-
-    /// Closes the sheet and opens Settings.
-    let openSettings: () -> Void
-
-    /// Closes the sheet.
-    let close: () -> Void
-
-    /// Creates the sheet.
-    ///
-    /// - Parameters:
-    ///   - items: The items, in display order.
-    ///   - openSettings: Closes the sheet and opens Settings.
-    ///   - close: Closes the sheet.
-    init(items: [QuickControlItem], openSettings: @escaping () -> Void, close: @escaping () -> Void) {
-        self.items = items
-        self.openSettings = openSettings
-        self.close = close
-    }
-
-    /// The sheet.
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                QuickMenuPanel(items: items, openSettings: openSettings, close: close)
-                    .padding(NopeSpace.m)
-            }
-            .navigationTitle(QuickButton.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(action: close) {
-                        Text("Done", bundle: .module, comment: "Button that closes a sheet, such as Settings or Pro Tools.")
-                    }
-                }
-            }
         }
     }
 }

@@ -3,19 +3,19 @@ import SwiftUI
 
 /// One word of the drive strip: what the shutter does (docs/design/BUILD-SPEC.md, 3.5).
 ///
-/// Four words are drive modes of `NopeCore` (``DriveMode``); Astro is the astro helper, which has
+/// Four words are drive modes of `NopeCore` (`DriveMode`); Astro is the astro helper, which has
 /// its own shutter. The words are an interface's names for existing intents; they hold no rules.
 enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
-    /// One photo per press: ``DriveMode/single``.
+    /// One photo per press: `DriveMode/single`.
     case single
 
-    /// The self-timer: ``DriveMode/timer(_:)`` with the last delay chosen.
+    /// The self-timer: `DriveMode/timer(_:)` with the last delay chosen.
     case timer
 
-    /// A rapid run of separate photos: ``DriveMode/burst``.
+    /// A rapid run of separate photos: `DriveMode/burst`.
     case burst
 
-    /// An interval series: ``DriveMode/interval``.
+    /// An interval series: `DriveMode/interval`.
     case interval
 
     /// The astro helper (issue #60).

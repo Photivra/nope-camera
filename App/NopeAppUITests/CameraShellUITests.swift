@@ -334,10 +334,13 @@ extension NopeAppUITests {
         XCTAssertTrue(app.buttons["Quick Menu"].isHittable)
         XCTAssertTrue(app.buttons["Take Photo"].isHittable)
         try auditScrollingCamera(app)
+        // Q's list takes the scrolling content's place, and Done brings the rows back.
         app.buttons["Quick Menu"].tap()
-        XCTAssertTrue(app.buttons["Hide Controls"].waitForExistence(timeout: 5))
-        app.buttons["Done"].tap()
-        XCTAssertTrue(waitForDisappearance(app.buttons["Hide Controls"]))
+        let done = app.buttons["quick.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5))
+        XCTAssertFalse(manual.exists)
+        done.tap()
+        XCTAssertTrue(manual.waitForExistence(timeout: 5))
     }
 
     /// Right to left, the rows mirror: Q is on the left of the shutter, Switch Camera before
@@ -405,6 +408,11 @@ extension NopeAppUITests {
             app.buttons["Timer"].tap()
             XCTAssertTrue(waitForSelection(app.buttons["Timer"], true))
             app.buttons["Single"].tap()
+            // Q opens upright over the picture and closes again.
+            app.buttons["Quick Menu"].tap()
+            XCTAssertTrue(app.buttons["Hide Controls"].waitForExistence(timeout: 5))
+            app.buttons["Quick Menu"].tap()
+            XCTAssertTrue(waitForDisappearance(app.buttons["Hide Controls"]))
             // Text drawn a quarter turn is measured unturned by the audit (see
             // isTurnedTextFinding in NopeAppUITests.swift); those findings are skipped here.
             try app.performCompleteAccessibilityAudit { issue in
