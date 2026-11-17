@@ -40,6 +40,22 @@ extension NopeAppUITests {
         settle()
     }
 
+    /// RAW only, the default (issue #80): the compare view shows the DNG next to the phone's
+    /// version, and its details compare the DNG's metadata.
+    @MainActor
+    func testComparisonOfARAWOnlyPhotoPassesTheAudit() throws {
+        let app = launch("allow")
+        allowCamera(app)
+        takeComparisonShot(app)
+        _ = waitForPictures(app)
+        try audit(app)
+        app.buttons["Details"].tap()
+        XCTAssertTrue(app.staticTexts["Only in Phone Version"].waitForExistence(timeout: 5))
+        try audit(app)
+        closeComparison(app)
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
+    }
+
     @MainActor
     func testComparisonShotShowsBothPicturesAndTheirDetails() throws {
         let app = launch("allow")

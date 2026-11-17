@@ -52,7 +52,7 @@ extension NopeAppUITests {
 
     @MainActor
     func testAstroHelperIsRedOnBlackAndSetsUpTheFrames() throws {
-        let app = launch("manual", extraArguments: ["-NopeSimulatedViewfinder", "white"])
+        let app = launch("manual", extraArguments: Self.signingOn + ["-NopeSimulatedViewfinder", "white"])
         quickControl(app, "Astro")
         let selected = app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", "Astro")).firstMatch
         XCTAssertTrue(selected.waitForExistence(timeout: 5))
