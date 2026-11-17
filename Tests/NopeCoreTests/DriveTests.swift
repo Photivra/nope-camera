@@ -570,7 +570,7 @@ struct DriveTests {
 
     @Test func photoSizeEstimates() {
         let pixels = 4032.0 * 3024
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         let rawAndHEIF = Int64(pixels * 2 + 1_000_000 + pixels * 1 + 1_000_000)
         #expect(PhotoSizeEstimate.bytes(for: Self.wide, settings: settings) == rawAndHEIF)
         _ = settings.setFormat(.jpeg, isSelected: true)

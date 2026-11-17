@@ -53,7 +53,8 @@ enum LensCatalog {
             equivalentFocalLength: equivalentFocalLength(
                 fieldOfView: device.fieldOfViewDegrees, photoSize: device.photoDimensions.max { $0.pixelCount < $1.pixelCount }),
             flashModes: kind == .front ? [] : device.flashModes,
-            hasTorch: device.hasTorch
+            hasTorch: device.hasTorch,
+            distortionCorrection: device.canTurnOffDistortionCorrection ? .turnedOff : .notSwitchable
         )
     }
 

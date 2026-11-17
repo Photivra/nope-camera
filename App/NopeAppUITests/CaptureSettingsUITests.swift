@@ -42,6 +42,12 @@ extension NopeAppUITests {
     func testCopySizeInFileOptions() throws {
         let app = launch("denied")
         openSettings(app)
+        // File Options shows while HEIF or JPEG is selected; RAW only is the default (issue #80).
+        openSettingsRow(app, "Formats")
+        let heif = app.buttons["HEIF"]
+        XCTAssertTrue(heif.waitForExistence(timeout: 5))
+        heif.tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         openSettingsRow(app, "File Options")
         XCTAssertTrue(app.navigationBars["File Options"].waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "Copy Size").exists)
@@ -57,7 +63,7 @@ extension NopeAppUITests {
     }
 
     @MainActor
-    func testFaceDetectionIsOnByDefaultAndCanBeTurnedOff() throws {
+    func testFaceDetectionIsOffByDefaultAndCanBeTurnedOn() throws {
         let app = launch("denied")
         openSettings(app)
         let faces = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Face Detection")).firstMatch
@@ -68,10 +74,10 @@ extension NopeAppUITests {
             swipes += 1
         }
         XCTAssertTrue(faces.exists)
-        XCTAssertEqual(faces.value as? String, "1")
-        XCTAssertTrue(faces.label.contains("follow faces the camera finds"))
-        faces.switches.firstMatch.tap()
         XCTAssertEqual(faces.value as? String, "0")
+        XCTAssertTrue(faces.label.contains("follow faces the camera finds. Off by default."))
+        faces.switches.firstMatch.tap()
+        XCTAssertEqual(faces.value as? String, "1")
         try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
     }
 

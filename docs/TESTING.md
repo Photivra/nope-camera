@@ -1044,9 +1044,11 @@ Simulator (`FileOptionsEncodingTests`). On a device:
 - **Copy Size** (issue #57): with Half Size and Quarter Size, the HEIF and JPEG open in Photos at
   half (2016 × 1512 from a 12 MP RAW) and a quarter of the RAW's width and height, the RAW is
   unchanged, and exiftool's `ExifImageWidth` and `ExifImageHeight` match the copy;
-- **Face Detection** (issue #57): with it on (the default), autofocus and exposure follow a face
-  in the frame in full auto, as before; with it off, they stay on the center (or the tapped
-  point) with a face in the frame, on the wide and the front camera; nothing in the files changes;
+- **Face Detection** (issues #57 and #80): on a fresh install it is off; with it off, autofocus
+  and exposure stay on the center (or the tapped point) with a face in the frame, on the wide
+  and the front camera; turned on, they follow a face in the frame in full auto, as before;
+  nothing in the files changes either way. Installing over a build that stored Face Detection
+  on keeps it on;
 - **Far Focus** (issue #57): with manual controls on, Far Focus in the tray, on each rear lens:
   autofocus ignores a near subject (a hand or a branch close to the lens) and keeps the far scene
   sharp; Close-Up then replaces it and back; the live readout's focus range shows the limit;
@@ -1066,6 +1068,38 @@ Simulator (`FileOptionsEncodingTests`). On a device:
   the camera is interrupted, the app goes to the background or Location is turned off; with
   Precise Location off, the approximate location is written; Instruments shows no location
   activity with Location off.
+
+### Processing disclosure and new defaults on a device (issue #80)
+
+The defaults, Factory Defaults and preset decoding are unit-tested (`NopeSettingsTests`,
+`SettingsPresetsTests`); the marker, its note and the switch are UI-tested with the simulated
+cameras (`ProcessedMarkerUITests.swift`). What the camera reports about distortion correction
+can only be checked on hardware. On each device available (record the model and iOS version):
+
+- **Fresh install:** Settings shows Formats "RAW (DNG)", Sign Each Photo off and Face Detection
+  off; the first photo says "Saved. Not signed: signing is off in Settings." and Photos gets one
+  DNG; Factory Defaults returns to the same values. Installing over an earlier build keeps the
+  formats, signing and Face Detection the person had stored.
+- **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheck`, "Tag check"
+  below) and record, for each physical camera, whether it gives Bayer RAW.
+- **Marker and note:** on each lens without Bayer RAW (for example an iPad's cameras, or a
+  front camera without RAW), "Processed: No RAW on This Lens" shows before the first photo and
+  in clean view; tapping it shows the note. Record its distortion line for each such lens: "lets
+  apps turn it off" is `isGeometricDistortionCorrectionSupported` true, "doesn't let apps turn
+  it off" false. Settings › Camera › Processed Marker appears only on such a device; turning it
+  off hides the marker and nothing else.
+- **Distortion correction actually applied:** for each lens without Bayer RAW, take the same
+  scene with straight lines near the frame's edges (a door frame or a grid) with the app and
+  with the system Camera app. With the Live Camera Readout on (Settings › Camera › Viewfinder
+  Overlays), check whether its "Processing Off" line includes "Lens distortion fix" while that
+  lens is in use (it reads `isGeometricDistortionCorrectionEnabled` after the app turned it
+  off: "All" includes it). A lens that reports the switch but whose line leaves the fix out, or
+  whose photos are visibly corrected (curved lines
+  straightened, a narrower field of view than its RAW on the same device, where it has one),
+  keeps correction on even when the app turns it off: record it, so the note's wording for that
+  lens can be changed by a reviewed pull request.
+- **What's in This Photo:** for a processed fallback photo, the Processing section shows the
+  same distortion line as the note; a RAW photo shows none.
 
 ### Viewfinder overlays on a device
 

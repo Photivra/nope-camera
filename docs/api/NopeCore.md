@@ -1986,6 +1986,20 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The device's free storage and battery, for warnings and to stop a burst in time.
 
+## `CameraModel/distortionCorrection(of:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func distortionCorrection(of photo: CapturedPhoto) -> DistortionCorrection?
+```
+
+The distortion correction of the lens a photo was taken with, for its details (issue #80),
+or `nil` when the lens isn't known.
+
+- Parameter photo: A captured photo.
+- Returns: The lens's ``Lens/distortionCorrection``.
+
 ## `CameraModel/drive`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -6307,6 +6321,52 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 
 The battery's state, or `nil` on a device without a battery.
 
+## `DistortionCorrection`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+enum DistortionCorrection
+```
+
+Whether a lens lets the app turn off the camera's geometric distortion correction, as the
+camera reports it (issue #80).
+
+Geometric distortion correction reshapes the picture to lessen a wide lens's fisheye effect,
+so it changes pixels. The app turns it off wherever the camera allows (`docs/PRIVACY.md`,
+"Processing"). Apple's documentation says "RAW photo captures never have GDC applied,
+regardless of the value of AVCaptureDevice.geometricDistortionCorrectionEnabled"
+(`AVCaptureDevice.h`, `geometricDistortionCorrectionSupported`), so this matters only for a
+lens's processed fallback. An interface discloses it in the lens's processing note and in
+the photo's details.
+
+The value is what the camera reports, not a measurement: whether a lens that offers no
+switch corrects its photos anyway is checked on real devices (`docs/TESTING.md`).
+
+## `DistortionCorrection/notSwitchable`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+case notSwitchable
+```
+
+The camera offers apps no switch for the correction
+(`AVCaptureDevice.isGeometricDistortionCorrectionSupported` is `false`) and doesn't report
+whether its processed photos are corrected, so they may be.
+
+## `DistortionCorrection/turnedOff`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+case turnedOff
+```
+
+The camera lets apps turn the correction off
+(`AVCaptureDevice.isGeometricDistortionCorrectionSupported` is `true`), and the app turns
+it off.
+
 ## `Double/limited(to:)`
 
 internal, declared in `Sources/NopeCore/WhiteBalance.swift`
@@ -8850,6 +8910,18 @@ The 24 MP size AVFoundation delivers only through deferred photo delivery, which
 turns off: "The maxPhotoDimensions setting for 24MP (5712, 4284), when supported, is only
 serviced as 24MP via deferred photo delivery" (`AVCapturePhotoOutput.h`).
 
+## `Lens/distortionCorrection`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let distortionCorrection: DistortionCorrection
+```
+
+Whether the app can turn off the camera's geometric distortion correction on this lens,
+as the camera reports it (issue #80). It affects only the processed fallback: RAW never
+has the correction applied (``DistortionCorrection``).
+
 ## `Lens/equivalentFocalLength`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -8907,12 +8979,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false, distortionCorrection: DistortionCorrection = .notSwitchable)
 ```
 
 Creates a lens description.
@@ -8933,6 +9005,8 @@ Creates a lens description.
   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
   - flashModes: The flash modes the lens supports. Defaults to none.
   - hasTorch: Whether the lens has a torch. Defaults to `false`.
+  - distortionCorrection: Whether the app can turn off the camera's geometric distortion
+    correction. Defaults to ``DistortionCorrection/notSwitchable``, which claims least.
 
 ## `Lens/isoRange`
 
@@ -15068,7 +15142,7 @@ metadata allowlist takes (``MetadataPlan``). It holds the rules of `docs/PRIVACY
 - Turning the master back on turns every item off again.
 - Turning the master off sets every item to its documented default
   (``MetadataItem/isOnWhenCustomizing``).
-- Signing (``signsPhotos``) is outside the master switch and on by default.
+- Signing (``signsPhotos``) is outside the master switch and off by default (issue #80).
 
 ```swift
 var settings = MetadataSettings()          // master on, every item off
@@ -15107,8 +15181,8 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 init()
 ```
 
-The settings on first launch: every optional detail removed, photos signed, and no name
-or copyright entered.
+The settings on first launch: every optional detail removed, photos not signed, and no
+name or copyright entered.
 
 ## `MetadataSettings/isCustom`
 
@@ -15189,8 +15263,10 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 var signsPhotos: Bool
 ```
 
-Whether each photo is signed with Content Credentials. Outside the master switch; on by
-default.
+Whether each photo is signed with Content Credentials. Outside the master switch; off by
+default (owner decision, issue #80): a signed photo shows that it was taken with the app
+and which version (the manifest's claim generator, `docs/PRIVACY.md`, "Content
+Credentials"), so signing is the person's choice. A stored value is kept as saved.
 
 ## `MetadataSettings/writesStandardFileTags`
 
@@ -15544,6 +15620,16 @@ static let showsManualControls: String
 
 Whether the manual controls are shown, a Boolean.
 
+## `NopeSettings/Key/showsProcessedMarker`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let showsProcessedMarker: String
+```
+
+Whether the "Processed" marker is shown, a Boolean.
+
 ## `NopeSettings/Key/startsInCleanView`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15672,8 +15758,8 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 ```
 
 Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
-#57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
-with ``AutoControlIntent/setFollowsFaces(_:)``.
+#57). Off by default (owner decision, issue #80); on gives the system's own behavior. The
+app passes it to ``CameraModel/manual`` with ``AutoControlIntent/setFollowsFaces(_:)``.
 
 ## `NopeSettings/formats`
 
@@ -15683,7 +15769,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var formats: Set<PhotoFormat> { get }
 ```
 
-The formats each photo is saved in. Never empty; RAW and HEIF by default.
+The formats each photo is saved in. Never empty; RAW only by default.
 
 ## `NopeSettings/init(defaults:)`
 
@@ -15696,7 +15782,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Loads the settings, using the default for any value not stored yet or not readable.
 
 Unreadable save settings fall back to ``SaveSettings/init()``, which removes every
-optional detail and signs: the most private choice (AGENTS.md, "Fail closed").
+optional detail and doesn't sign: the most private choice (AGENTS.md, "Fail closed").
 
 - Parameter defaults: The store to read and write, normally `UserDefaults.standard`.
   Tests pass a store of their own.
@@ -15887,8 +15973,13 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 The selected formats the device can save, in display order.
 
+On a device without Bayer RAW, a selection of RAW alone (the default) leaves nothing the
+device can save; HEIF then stands in, the processed fallback a lens gives by default
+(``Lens/processedFallback``), so the list is never empty.
+
 - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-- Returns: ``orderedFormats`` without RAW on a device that has none.
+- Returns: ``orderedFormats`` without RAW on a device that has none, or HEIF when nothing
+  else is left.
 
 ## `NopeSettings/setDevelopedLook(_:)`
 
@@ -16164,6 +16255,19 @@ Shows or hides the manual controls on the camera screen, and saves the change.
 
 - Parameter isOn: Whether the manual controls are shown.
 
+## `NopeSettings/setShowsProcessedMarker(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setShowsProcessedMarker(_ isOn: Bool)
+```
+
+Shows or hides the "Processed" marker, and saves the change.
+
+- Parameter isOn: Whether the camera shows the marker before a photo is taken with a lens
+  without Bayer RAW.
+
 ## `NopeSettings/setSignsPhotos(_:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16246,6 +16350,19 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Whether the camera screen shows the manual controls. Off by default, so the camera stays
 simple unless the person asks (AGENTS.md, "Cognitive").
 
+## `NopeSettings/showsProcessedMarker`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var showsProcessedMarker: Bool { get set }
+```
+
+Whether the camera shows the "Processed" marker before a photo is taken with a lens
+without Bayer RAW (issue #80). On by default. Off hides the marker only: the photo is
+still the labeled processed fallback, VoiceOver still names its format, and the photo's
+details still say the phone processed it.
+
 ## `NopeSettings/signsPhotos`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16254,7 +16371,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var signsPhotos: Bool { get }
 ```
 
-Whether each photo is signed with Content Credentials. On by default, and separate from
+Whether each photo is signed with Content Credentials. Off by default, and separate from
 the metadata master switch (`docs/PRIVACY.md`, "Metadata plan").
 
 ## `NopeSettings/startsInCleanView`
@@ -17757,12 +17874,12 @@ case manual
 
 1: manual white balance.
 
-## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:)`
+## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:distortionCorrection:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil) -> PhotoDetails
+static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil) -> PhotoDetails
 ```
 
 Builds the details of one saved photo.
@@ -17774,6 +17891,8 @@ Builds the details of one saved photo.
   - signature: The photo's signature status.
   - timings: The measured timings.
   - rawClipping: The clipping counted at capture time, or `nil`.
+  - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    `nil`.
 - Returns: The details.
 
 ## `PhotoDetails/colorFilterLetters`
@@ -17814,6 +17933,18 @@ container block and XMP property.
 
 - Parameter inventory: The read-back.
 - Returns: The names, in file order.
+
+## `PhotoDetails/distortionCorrection`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let distortionCorrection: DistortionCorrection?
+```
+
+For a lens's processed fallback, whether the app could turn off the camera's geometric
+distortion correction on that lens, as the camera reported it (issue #80); `nil` for a
+photo with RAW, whose files never have the correction (``DistortionCorrection``).
 
 ## `PhotoDetails/exposure`
 
@@ -17879,12 +18010,12 @@ Whether a tag carries an item.
   - tag: A tag with a value.
 - Returns: `true` if the tag is one of the item's.
 
-## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:)`
+## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil)
+init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil)
 ```
 
 Creates details.
@@ -17897,6 +18028,8 @@ Creates details.
   - signature: The signature status.
   - timings: The timings.
   - rawClipping: The RAW clipping, or `nil`.
+  - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    `nil`.
 
 ## `PhotoDetails/integer(_:in:directory:)`
 
@@ -18252,7 +18385,7 @@ A file format the app can save.
 
 The raw values are stable, so settings that store a format can be saved and read back.
 
-The defaults follow issue #1, "Formats": RAW plus HEIF.
+The default is RAW only (owner decision, issue #80): HEIF and JPEG copies are optional.
 
 ## `PhotoFormat/defaultSelection`
 
@@ -18262,7 +18395,8 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 static let defaultSelection: Set<PhotoFormat>
 ```
 
-The formats selected when the app is first installed: RAW and HEIF.
+The formats selected when the app is first installed, and by Factory Defaults: RAW only
+(issue #80). Settings a person has saved keep their own selection.
 
 ## `PhotoFormat/heif`
 
@@ -18626,12 +18760,12 @@ The metadata plan for a set of choices, with this app's version.
 - Parameter settings: The person's metadata choices.
 - Returns: The plan.
 
-## `PhotoSaver/save(_:settings:captureDuration:)`
+## `PhotoSaver/save(_:settings:captureDuration:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil) async throws(CaptureError) -> SavedPhoto
+func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> SavedPhoto
 ```
 
 Saves one photo.
@@ -18643,21 +18777,24 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - settings: The formats and metadata choices.
   - captureDuration: How long the camera took to return the photo, for the details, or
     `nil` when unknown.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction as
+    the camera reported it (``Lens/distortionCorrection``), for the details; ignored for
+    a RAW photo.
 - Returns: What was saved, with its thumbnail and details.
 - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
   ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
   saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
-## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:)`
+## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:distortionCorrection:)`
 
 internal, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
+func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
 ```
 
-Saves one photo, as ``save(_:settings:captureDuration:)`` does, and also returns the
+Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and also returns the
 files exactly as they were added to Photos, for the compare view of the comparison shot
 (issue #55). The files stay in memory; the caller drops them.
 
@@ -18667,8 +18804,10 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - photo: The captured photo, with its metadata already built for the plan.
   - settings: The formats and metadata choices.
   - captureDuration: How long the camera took to return the photo, or `nil`.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    `nil`.
 - Returns: What was saved, and the saved files in the order they were built.
-- Throws: The same errors as ``save(_:settings:captureDuration:)``.
+- Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
 
 ## `PhotoShortcut`
 
@@ -19871,7 +20010,7 @@ What the app saves for each photo: the file formats, the developed look and the 
 choices.
 
 ``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,
-"Formats", lives here: RAW plus HEIF by default, any combination of RAW, HEIF and JPEG, and
+"Formats", lives here: RAW only by default (issue #80), any combination of RAW, HEIF and JPEG, and
 never none. A lens without Bayer RAW always saves its labeled processed fallback instead.
 
 ## `SaveSettings/developedLook`
@@ -19914,8 +20053,9 @@ public, declared in `Sources/NopeCore/SaveSettings.swift`
 init()
 ```
 
-The settings on first launch: RAW plus HEIF, ``MetadataSettings/init()``, and the
-standard look.
+The settings on first launch and for Factory Defaults: RAW only, ``MetadataSettings/init()``
+(signing off), and the standard look. Stored settings are decoded as saved, so a person's
+own choices are kept.
 
 ## `SaveSettings/metadata`
 

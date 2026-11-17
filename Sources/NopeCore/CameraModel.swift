@@ -131,6 +131,15 @@ public final class CameraModel {
         return capabilities
     }
 
+    /// The distortion correction of the lens a photo was taken with, for its details (issue #80),
+    /// or `nil` when the lens isn't known.
+    ///
+    /// - Parameter photo: A captured photo.
+    /// - Returns: The lens's ``Lens/distortionCorrection``.
+    func distortionCorrection(of photo: CapturedPhoto) -> DistortionCorrection? {
+        capabilities?.lens(withID: photo.lensID)?.distortionCorrection
+    }
+
     /// The lens in use, or `nil` before the camera is ready.
     public var selectedLens: Lens? {
         guard let selectedLensID else { return nil }
@@ -422,7 +431,10 @@ public final class CameraModel {
         }
         captureStatus = .saving
         do {
-            captureStatus = .saved(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
+            captureStatus = .saved(
+                try await saver.save(
+                    photo, settings: settings, captureDuration: captureDuration,
+                    distortionCorrection: distortionCorrection(of: photo)))
         } catch {
             captureStatus = .failed(error)
         }
@@ -484,7 +496,7 @@ public final class CameraModel {
             captureStatus = .saving
             var saved: [SavedPhoto] = []
             for photo in photos {
-                saved.append(try await saver.save(photo, settings: settings))
+                saved.append(try await saver.save(photo, settings: settings, distortionCorrection: distortionCorrection(of: photo)))
             }
             captureStatus = .savedBracket(saved)
         } catch {

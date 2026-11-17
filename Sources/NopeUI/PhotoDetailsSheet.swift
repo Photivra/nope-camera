@@ -112,6 +112,11 @@ struct PhotoDetailsSections: View {
             ForEach(Array(details.files.enumerated()), id: \.offset) { _, file in
                 DetailRow(title: Text(verbatim: FormatsSettingsView.name(of: file.format)), value: Self.processing(file.processing))
             }
+            // A processed fallback: whether the lens let the app turn off distortion correction
+            // (issue #80). RAW never has it, so a RAW photo has no line.
+            if let correction = details.distortionCorrection {
+                ProcessingNote.distortion(correction)
+            }
         } header: {
             Text("Processing", bundle: .module, comment: "Heading in the photo details: what processing each file went through.")
         }

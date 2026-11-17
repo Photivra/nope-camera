@@ -124,8 +124,10 @@ enum SimulatedCameraLaunch {
     ]
 
     /// Two lenses like an iPad's without RAW: a wide and a front camera, neither with Bayer RAW.
+    /// The wide lens lets the app turn off distortion correction and the front camera doesn't,
+    /// so the UI tests see both processing notes (issue #80).
     static let lensesWithoutRAW: [Lens] = [
-        Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1),
+        Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1, distortionCorrection: .turnedOff),
         // Two photo sizes, so Settings offers the Photo Size choice (issue #57).
         Lens(
             id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil,
@@ -134,13 +136,19 @@ enum SimulatedCameraLaunch {
     /// The `UserDefaults` suite that holds settings during UI tests.
     static let settingsSuiteName = "NopeUITestSettings"
 
+    /// The launch argument that turns signing on in the emptied settings store:
+    /// `-NopeSimulatedSigning`. Signing is off by default (issue #80); the UI tests of the
+    /// signing messages pass it.
+    static let signingArgument = "-NopeSimulatedSigning"
+
     /// An emptied settings store for a UI test launch, or `nil` without a scenario, so UI tests
-    /// always start from the default settings and never change the real ones.
-    static func settingsStore() -> UserDefaults? {
-        guard ProcessInfo.processInfo.arguments.contains(argument),
-            let store = UserDefaults(suiteName: settingsSuiteName)
-        else { return nil }
+    /// always start from the default settings and never change the real ones. With
+    /// ``signingArgument``, signing is turned on in it.
+    @MainActor static func settingsStore() -> UserDefaults? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard arguments.contains(argument), let store = UserDefaults(suiteName: settingsSuiteName) else { return nil }
         store.removePersistentDomain(forName: settingsSuiteName)
+        if arguments.contains(signingArgument) { NopeSettings(defaults: store).setSignsPhotos(true) }
         return store
     }
 

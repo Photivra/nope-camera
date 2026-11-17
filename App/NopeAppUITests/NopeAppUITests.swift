@@ -60,6 +60,10 @@ final class NopeAppUITests: XCTestCase {
     /// The launch arguments for right-to-left layout.
     static let rightToLeft = ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
 
+    /// The launch arguments that turn signing on, which is off by default (issue #80), for the
+    /// tests of the signing messages.
+    static let signingOn = ["-NopeSimulatedSigning"]
+
     /// Whether the tests run on an iPad, where the interface rotates and the controls are in a
     /// trailing column.
     @MainActor
@@ -238,7 +242,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testPermissionCaptureAndFallbackPassAccessibilityAudits() throws {
-        let app = launch("allow")
+        let app = launch("allow", extraArguments: Self.signingOn)
         let allow = app.buttons["Continue"]
         XCTAssertTrue(allow.waitForExistence(timeout: 10))
         try audit(app)
@@ -318,7 +322,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSignedFileThatFailsTheCheckSavesUnsignedAndSaysSo() throws {
-        let app = launch("signedFileRejected")
+        let app = launch("signedFileRejected", extraArguments: Self.signingOn)
         let shutter = app.buttons["Take Photo"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
         shutter.tap()
@@ -333,7 +337,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSigningFailureSavesUnsignedAndSaysSo() throws {
-        let app = launch("signingFails")
+        let app = launch("signingFails", extraArguments: Self.signingOn)
         let shutter = app.buttons["Take Photo"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
         shutter.tap()
@@ -431,6 +435,8 @@ final class NopeAppUITests: XCTestCase {
         open(app, row: "Formats")
         XCTAssertTrue(app.navigationBars["Formats"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
+        // RAW only by default (issue #80); HEIF shows the Look and File Options rows.
+        app.buttons["HEIF"].tap()
         goBack(app)
 
         open(app, row: "Look")
@@ -719,29 +725,27 @@ final class NopeAppUITests: XCTestCase {
         let settingsButton = app.buttons["Settings"]
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
         settingsButton.tap()
-        XCTAssertTrue(element(app, containing: "RAW (DNG) and HEIF").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "RAW (DNG)").waitForExistence(timeout: 5))
+        XCTAssertFalse(element(app, containing: "HEIF").exists)
         XCTAssertTrue(element(app, containing: "All Optional Removed").exists)
 
-        // At least one format: with only RAW left, RAW can't be turned off. The Look row shows
-        // only while a developed format is selected.
+        // RAW only by default (issue #80), and at least one format: with only RAW, RAW can't be
+        // turned off. The Look row shows only while a developed format is selected.
         let lookRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Look")).firstMatch
-        XCTAssertTrue(lookRow.exists)
+        XCTAssertFalse(lookRow.exists)
         open(app, row: "Formats")
         let raw = app.buttons["RAW (DNG)"]
         let heif = app.buttons["HEIF"]
         XCTAssertTrue(raw.waitForExistence(timeout: 5))
         XCTAssertTrue(raw.isSelected)
-        XCTAssertTrue(heif.isSelected)
-        XCTAssertFalse(app.buttons["JPEG"].isSelected)
-        heif.tap()
         XCTAssertFalse(heif.isSelected)
+        XCTAssertFalse(app.buttons["JPEG"].isSelected)
         XCTAssertFalse(raw.isEnabled)
-        goBack(app)
-        XCTAssertFalse(lookRow.waitForExistence(timeout: 2))
-        open(app, row: "Formats")
         heif.tap()
+        XCTAssertTrue(heif.isSelected)
         XCTAssertTrue(raw.isEnabled)
         goBack(app)
+        XCTAssertTrue(lookRow.waitForExistence(timeout: 5))
 
         open(app, row: "Look")
         let flat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Flat")).firstMatch
@@ -751,13 +755,14 @@ final class NopeAppUITests: XCTestCase {
         goBack(app)
         XCTAssertTrue(element(app, containing: "Flat").waitForExistence(timeout: 5))
 
-        // The master switch and signing are on by default; turning on one detail makes it
-        // "Custom".
+        // The master switch is on and signing off by default (issue #80); turning on one detail
+        // makes it "Custom".
         let master = app.switches["Remove All Optional Details"]
         XCTAssertTrue(master.waitForExistence(timeout: 5))
         XCTAssertEqual(master.value as? String, "1")
         let sign = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Sign Each Photo")).firstMatch
-        XCTAssertEqual(sign.value as? String, "1")
+        XCTAssertEqual(sign.value as? String, "0")
+        XCTAssertTrue(sign.label.contains("taken with nope. and which version"))
         open(app, row: "Choose Details")
         let detailMaster = app.switches["Remove All Optional Details"]
         XCTAssertTrue(detailMaster.waitForExistence(timeout: 5))
@@ -905,7 +910,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testProToolsBracketing() throws {
-        let app = launch("manual", extraArguments: Self.manualOn)
+        let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
         manualMenu(app, "Pro Tools")
         let bracketing = app.switches["Bracketing"]
         XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
@@ -923,7 +928,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testIntervalShootingShowsProgressAndStops() throws {
-        let app = launch("manual", extraArguments: Self.manualOn)
+        let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
         manualMenu(app, "Pro Tools")
         let start = app.buttons["Start"]
         XCTAssertTrue(start.waitForExistence(timeout: 20))
@@ -1082,7 +1087,8 @@ final class NopeAppUITests: XCTestCase {
     func testFirstRunStatementsThenTheCameraPrompt() throws {
         let app = launch("allow")
         XCTAssertTrue(app.staticTexts["Photos with as little processing as this phone allows."].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["Each photo is signed, so changes can be detected."].exists)
+        XCTAssertTrue(
+            app.staticTexts["Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed."].exists)
         XCTAssertTrue(app.staticTexts["nope. never connects to the internet and keeps nothing about you."].exists)
         XCTAssertTrue(element(app, containing: "Photos access is asked the first time you save").exists)
         try audit(app)
@@ -1139,7 +1145,8 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("allow")
         continuePastFirstRun(app)
         let chip = app.buttons["Photo Format"]
-        XCTAssertTrue(formatChip(app, says: "RAW + HEIF"))
+        XCTAssertTrue(formatChip(app, says: "single-frame RAW, RAW"))
+        XCTAssertEqual(chip.label, "Photo Format")
         chip.tap()
         XCTAssertTrue(element(app, containing: "one frame from the sensor").waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["RAW (DNG)"].exists)
@@ -1199,23 +1206,26 @@ final class NopeAppUITests: XCTestCase {
     }
 
     @MainActor
-    func testSigningOffShowsAPersistentWarning() throws {
+    func testSigningOffIsStatedAfterEachPhotoWithoutAWarning() throws {
+        // Signing is off by default (issue #80): no warning on the camera, and the message after
+        // each photo says it isn't signed.
         let app = launch("allow")
         continuePastFirstRun(app)
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(lastPhoto(app, says: "Saved. Not signed: signing is off in Settings."))
+        XCTAssertFalse(app.buttons["Not Signed"].exists)
+        try audit(app)
+        // Turned on in Settings, the next photo is signed.
         app.buttons["Settings"].tap()
         let sign = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Sign Each Photo")).firstMatch
         XCTAssertTrue(sign.waitForExistence(timeout: 5))
+        XCTAssertEqual(sign.value as? String, "0")
         sign.switches.firstMatch.tap()
+        XCTAssertEqual(sign.value as? String, "1")
         app.buttons["Done"].tap()
-        let warning = app.buttons["Not Signed"]
-        XCTAssertTrue(warning.waitForExistence(timeout: 5))
-        XCTAssertEqual(warning.value as? String, "Photos aren't signed: signing is off in Settings.")
-        try audit(app)
-        // Warnings stay in clean view.
-        quickControl(app, "Hide Controls")
-        XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 5))
-        XCTAssertTrue(warning.exists)
-        try audit(app)
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))
+        XCTAssertFalse(app.buttons["Not Signed"].exists)
     }
 
     @MainActor
@@ -1246,7 +1256,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testControlsOverWhiteAndYellowFrames() throws {
         for color in ["white", "yellow"] {
-            let app = launch("manual", extraArguments: Self.manualOn + ["-NopeSimulatedViewfinder", color])
+            let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn + ["-NopeSimulatedViewfinder", color])
             let iso = app.buttons["ISO"]
             XCTAssertTrue(iso.waitForExistence(timeout: 20), color)
             app.buttons["Take Photo"].tap()
@@ -1261,7 +1271,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testLandscapeKeepsTheLayoutAndTurnsTheIcons() throws {
-        let app = launch("allow")
+        let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         for orientation in [UIDeviceOrientation.landscapeLeft, .landscapeRight] {
             rotate(app, to: orientation)
@@ -1379,7 +1389,7 @@ final class NopeAppUITests: XCTestCase {
         // Open finding (docs/TESTING.md): on the iPad Simulator the Space bar reaches the
         // focused button instead of the Camera menu's command, so no photo is taken.
         try XCTSkipIf(isPad, "Space bar shutter on iPad: open finding")
-        let app = launch("noRAW")
+        let app = launch("noRAW", extraArguments: Self.signingOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         app.typeKey(" ", modifierFlags: [])
         XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))
@@ -1387,7 +1397,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testCameraRightToLeftWithAPhotoAndWarnings() throws {
-        let app = launch("signingFails", extraArguments: Self.rightToLeft)
+        let app = launch("signingFails", extraArguments: Self.signingOn + Self.rightToLeft)
         let shutter = app.buttons["Take Photo"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
         shutter.tap()
@@ -1434,7 +1444,10 @@ final class NopeAppUITests: XCTestCase {
         open(app, row: "Formats")
         let jpeg = app.buttons["JPEG"]
         XCTAssertTrue(jpeg.waitForExistence(timeout: 5))
+        // RAW only by default (issue #80).
+        app.buttons["HEIF"].tap()
         jpeg.tap()
+        XCTAssertTrue(app.buttons["HEIF"].isSelected)
         XCTAssertTrue(jpeg.isSelected)
     }
 
@@ -1446,6 +1459,9 @@ final class NopeAppUITests: XCTestCase {
         settingsButton.tap()
         open(app, row: "Formats")
         XCTAssertTrue(app.buttons["JPEG"].waitForExistence(timeout: 5))
+        XCTAssertFalse(element(app, containing: "Paired with RAW").exists)
+        // RAW only by default (issue #80): HEIF first, then JPEG makes three.
+        app.buttons["HEIF"].tap()
         XCTAssertFalse(element(app, containing: "Paired with RAW").exists)
         app.buttons["JPEG"].tap()
         XCTAssertTrue(element(app, containing: "Paired with RAW").waitForExistence(timeout: 5))
@@ -1529,7 +1545,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testLocationAsksThenShowsAPersistentWarning() throws {
-        let app = launch("allow")
+        let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         XCTAssertFalse(app.buttons["Location On"].exists)
         app.buttons["Settings"].tap()
@@ -1827,7 +1843,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSelfTimerCountsDownAndCanBeCancelled() throws {
-        let app = launch("noRAW")
+        let app = launch("noRAW", extraArguments: Self.signingOn)
         // Ten seconds, so the countdown is still running after the audit.
         chooseDrive(app, "Timer: 10s")
         let pill = app.buttons["Self-Timer"]
@@ -1878,7 +1894,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testBurstRunsUntilStoppedAndSavesEachFrame() throws {
-        let app = launch("slowSaving")
+        let app = launch("slowSaving", extraArguments: Self.signingOn)
         chooseDrive(app, "Burst")
         XCTAssertTrue(app.buttons["Burst"].waitForExistence(timeout: 5))
         let shutter = app.buttons["Take Photo"]
@@ -1959,7 +1975,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testLastPhotoDetailsListWhatWasSaved() throws {
-        let app = launch("allow")
+        let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         openPhotoDetails(app)
         XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
@@ -1981,7 +1997,7 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testLastPhotoDetailsAtTheLargestTextSize() throws {
-        let app = launch("signingFails", extraArguments: Self.largestTextSize)
+        let app = launch("signingFails", extraArguments: Self.signingOn + Self.largestTextSize)
         openPhotoDetails(app)
         try audit(app)
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Not signed")))
@@ -2000,7 +2016,7 @@ final class NopeAppUITests: XCTestCase {
     /// A bracket's details show one frame at a time, chosen with the Photo picker.
     @MainActor
     func testBracketDetailsChooseEachFrame() throws {
-        let app = launch("manual", extraArguments: Self.manualOn)
+        let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
         manualMenu(app, "Pro Tools")
         let bracketing = app.switches["Bracketing"]
         XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
@@ -2028,7 +2044,7 @@ final class NopeAppUITests: XCTestCase {
     /// Tapping the thumbnail opens the Photos app (issue #36).
     @MainActor
     func testTappingTheLastPhotoOpensPhotos() throws {
-        let app = launch("allow")
+        let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))

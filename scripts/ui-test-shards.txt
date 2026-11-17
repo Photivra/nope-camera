@@ -34,6 +34,7 @@
 2 NopeAppUITests/testViewfinderFillsThePictureRightToLeft 30 est
 2 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 35
 2 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 50
+2 NopeAppUITests/testProcessedMarkerSwitchHidesOnlyTheMarker 86 est
 3 NopeAppUITests/testAstroFramesShowProgressAndStop 121
 3 NopeAppUITests/testAstroHelperIsRedOnBlackAndSetsUpTheFrames 101
 3 NopeAppUITests/testBurstRunsUntilStoppedAndSavesEachFrame 72
@@ -57,7 +58,7 @@
 4 NopeAppUITests/testDeclinedLocationStaysOffAndSaysHowToAllowIt 32
 4 NopeAppUITests/testDeniedAndNoCameraStates 51
 4 NopeAppUITests/testDeviceWithoutRAWShowsTheFallbackChip 38
-4 NopeAppUITests/testFaceDetectionIsOnByDefaultAndCanBeTurnedOff 66 est
+4 NopeAppUITests/testFaceDetectionIsOffByDefaultAndCanBeTurnedOn 66 est
 4 NopeAppUITests/testLocationAsksThenShowsAPersistentWarning 73
 4 NopeAppUITests/testMagnifierEnlargesTheNaturalAndTheRedNightViewfinder 56
 4 NopeAppUITests/testMultitaskingPauseIsExplained 24
@@ -69,6 +70,7 @@
 4 OverlayUITests/testHistogramIsNeverShownInFullAuto 35
 4 OverlayUITests/testOverlaySettingsAndProTools 102
 4 ShortcutUITests/testACountTakesABurstThenSaysThePhotosWereSaved 14 est
+4 NopeAppUITests/testProcessedMarkerAndNoteRightToLeft 74 est
 5 NopeAppUITests/testBracketDetailsChooseEachFrame 126
 5 NopeAppUITests/testCameraRightToLeftWithAPhotoAndWarnings 45
 5 NopeAppUITests/testExposureCompensationInFullAuto 34
@@ -87,6 +89,7 @@
 5 NopeAppUITests/testTooCloseSuggestionCanBeDismissed 29
 5 OverlayUITests/testFlatLevelSaysItPointsDown 18
 5 ShortcutUITests/testSwitchingLensesSaysWhichCamera 12 est
+5 NopeAppUITests/testProcessedMarkerOpensTheLensProcessingNote 50 est
 6 NopeAppUITests/testDimLightSaysHoldItSteady 24
 6 NopeAppUITests/testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize 40 est
 6 NopeAppUITests/testFarFocusNeedsManualControlsAndShowsAPill 68 est
@@ -104,6 +107,7 @@
 6 NopeAppUITests/testTappingTheLastPhotoOpensPhotos 60
 6 OverlayUITests/testOverlaySettingsAtTheLargestTextSize 80
 6 ShortcutUITests/testACancelledCountdownSaysNoPhotoWasTaken 20
+6 NopeAppUITests/testProcessedMarkerAndNoteInTheDarkSettingAndNightMode 157 est
 7 NopeAppUITests/testAstroAtTheLargestTextSizeAndRightToLeft 91
 7 NopeAppUITests/testCleanViewKeepsTheNoRAWWarning 24
 7 NopeAppUITests/testCopySizeInFileOptions 76 est
@@ -114,13 +118,14 @@
 7 NopeAppUITests/testRefusedLightIsExplainedAndCanBeCleared 62
 7 NopeAppUITests/testSettingsInRightToLeftLayout 204
 7 NopeAppUITests/testSettingsScreensPassAccessibilityAuditsInTheLightSetting 360 est
-7 NopeAppUITests/testSigningOffShowsAPersistentWarning 41
+7 NopeAppUITests/testSigningOffIsStatedAfterEachPhotoWithoutAWarning 41
 7 NopeAppUITests/testStandardFileTagsAreOnByDefaultAndCanBeTurnedOff 52 est
 7 NopeAppUITests/testStartInCleanViewSetting 44
 7 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 33
 7 OverlayUITests/testPinnedReadoutStaysInCleanView 115 est
 7 ShortcutUITests/testARequestWithADelayCountsDownThenSaysThePhotoWasSaved 22
 7 ShortcutUITests/testApplyPresetSaysWhatChangedAndCanBeUndone 50 est
+7 NopeAppUITests/testComparisonOfARAWOnlyPhotoPassesTheAudit 64 est
 8 NopeAppUITests/testCleanViewHidesControlsButKeepsTheShutter 37
 8 NopeAppUITests/testCompareViewAtTheLargestTextSizeAndRightToLeft 82
 8 NopeAppUITests/testComparisonShotShowsBothPicturesAndTheirDetails 166
@@ -139,3 +144,4 @@
 8 NopeAppUITests/testSpaceTakesAPhoto 24
 8 NopeAppUITests/testStatePillsChangeOrReset 53
 8 ShortcutUITests/testABracketIsTakenOnceInFullAuto 14 est
+8 NopeAppUITests/testProcessedMarkerAndNoteAtTheLargestTextSize 113 est

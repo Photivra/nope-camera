@@ -18,7 +18,8 @@ final class ShortcutUITests: XCTestCase {
     @MainActor
     func launch(_ scenario: String, request: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request]
+        // Signing on (off by default, issue #80), so Siri's answers about signed photos show.
+        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request, "-NopeSimulatedSigning"]
         app.launchAfterThePreviousRunExits()
         return app
     }

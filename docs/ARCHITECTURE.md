@@ -144,8 +144,8 @@ when the camera opens and when the option changes.
   With manual controls on nothing is limited; the hint shows when the shutter is slower than the
   handheld rule.
 - **Close-Up** sets `autoFocusRangeRestriction = .near`; **Far Focus** (manual controls on, issue
-  #57) sets `.far`, and the two replace each other. **Face Detection** (Settings, on by default)
-  leaves face-driven autofocus and auto exposure to the system, or turns both off
+  #57) sets `.far`, and the two replace each other. **Face Detection** (Settings, off by default, issue
+  #80) leaves face-driven autofocus and auto exposure to the system, or turns both off
   (`DeviceControls.followsFaces`). The **photo size** of a lens without Bayer RAW
   (`CameraIntent.setPhotoSizes`, `Lens.photoSizeChoices`) is configured when the session starts.
 - The **close-up hint** suggests the ultra
@@ -783,11 +783,13 @@ Lock Screen capture extension sets no renderer, so it isn't offered on a locked 
 ## Settings
 
 `NopeSettings` (in `NopeCore`, main actor, Observation) holds the person's choices:
-`SaveSettings` (the formats, at least one, RAW and HEIF by default; `MetadataSettings`, with the
+`SaveSettings` (the formats, at least one, RAW only by default, issue #80; `MetadataSettings`, with the
 master switch "Remove all optional details", on by default, one switch per optional item, as in
-[`PRIVACY.md`](PRIVACY.md), "Metadata plan", and signing, on by default; and the HEIF and JPEG
+[`PRIVACY.md`](PRIVACY.md), "Metadata plan", and signing, off by default; and the HEIF and JPEG
 look, `DevelopedLook`, standard by default, or flat, which never changes the RAW), manual
-controls (off) and clean view (off). Interfaces change it only through its methods, which hold the rules (the
+controls (off), clean view (off) and the "Processed" marker of a lens without Bayer RAW (on,
+`showsProcessedMarker`). Values the person stored are read back as stored, so a change of
+default applies only to a fresh install and Factory Defaults. Interfaces change it only through its methods, which hold the rules (the
 last format can't be turned off; turning on one item turns the master switch off). Each change
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
 network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose

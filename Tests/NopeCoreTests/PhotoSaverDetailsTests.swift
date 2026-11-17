@@ -50,7 +50,7 @@ struct PhotoSaverDetailsTests {
     @Test func theThumbnailComesFromTheDevelopedFile() async throws {
         let thumbnailer = RecordingThumbnailer()
         let saved = try await Self.saver(thumbnailer: thumbnailer).save(
-            PhotoSaverTests.rawPhoto(), settings: SaveSettings(), captureDuration: .milliseconds(42))
+            PhotoSaverTests.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned, captureDuration: .milliseconds(42))
         #expect(thumbnailer.requested == [.heif])
         #expect(saved.thumbnail == PhotoThumbnail(width: 1, height: 1, rgba: Data([1, 2, 3, 255])))
         #expect(saved.details?.timings.capture == .milliseconds(42))
@@ -58,7 +58,7 @@ struct PhotoSaverDetailsTests {
 
     @Test func rawOnlyMakesTheThumbnailFromTheDNG() async throws {
         let thumbnailer = RecordingThumbnailer(fails: true)
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.heif, isSelected: false)
         let saved = try await Self.saver(thumbnailer: thumbnailer).save(PhotoSaverTests.rawPhoto(), settings: settings)
         #expect(thumbnailer.requested == [.raw])
@@ -68,7 +68,7 @@ struct PhotoSaverDetailsTests {
     }
 
     @Test func noThumbnailerMeansNoThumbnail() async throws {
-        let saved = try await Self.saver(thumbnailer: nil).save(PhotoSaverTests.rawPhoto(), settings: SaveSettings())
+        let saved = try await Self.saver(thumbnailer: nil).save(PhotoSaverTests.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.thumbnail == nil)
         #expect(saved.details?.files.map(\.format) == [.raw, .heif])
     }
@@ -77,7 +77,7 @@ struct PhotoSaverDetailsTests {
     /// development, two signings, four read-backs (unsigned and signed) and one save.
     @Test func eachStepIsTimed() async throws {
         let saved = try await Self.saver(signer: FakeSigner(), thumbnailer: nil).save(
-            PhotoSaverTests.rawPhoto(), settings: SaveSettings())
+            PhotoSaverTests.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         let timings = try #require(saved.details?.timings)
         #expect(timings.capture == nil)
         #expect(timings.develop == .milliseconds(10))
@@ -88,7 +88,7 @@ struct PhotoSaverDetailsTests {
     }
 
     @Test func signingOffIsNotTimed() async throws {
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.metadata.signsPhotos = false
         let saved = try await Self.saver(signer: FakeSigner(), thumbnailer: nil).save(PhotoSaverTests.rawPhoto(), settings: settings)
         #expect(saved.details?.timings.sign == nil)
@@ -100,7 +100,7 @@ struct PhotoSaverDetailsTests {
             generatorName: "Photivra Nope Camera", generatorVersion: "0.2.0", actionDescription: "Captured.",
             manifestSHA256: "ab")
         let saved = try await Self.saver(signer: FakeSigner(summary: summary), thumbnailer: nil).save(
-            PhotoSaverTests.rawPhoto(), settings: SaveSettings())
+            PhotoSaverTests.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.details?.files.map(\.contentCredentials) == [summary, summary])
     }
 }

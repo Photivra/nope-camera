@@ -77,6 +77,11 @@ public struct Lens: Identifiable, Equatable, Sendable {
     /// Whether the lens has a torch: a light that can stay on while framing and taking photos.
     public let hasTorch: Bool
 
+    /// Whether the app can turn off the camera's geometric distortion correction on this lens,
+    /// as the camera reports it (issue #80). It affects only the processed fallback: RAW never
+    /// has the correction applied (``DistortionCorrection``).
+    public let distortionCorrection: DistortionCorrection
+
     /// Creates a lens description.
     ///
     /// - Parameters:
@@ -95,6 +100,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
     ///   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
     ///   - flashModes: The flash modes the lens supports. Defaults to none.
     ///   - hasTorch: Whether the lens has a torch. Defaults to `false`.
+    ///   - distortionCorrection: Whether the app can turn off the camera's geometric distortion
+    ///     correction. Defaults to ``DistortionCorrection/notSwitchable``, which claims least.
     public init(
         id: String,
         kind: Kind,
@@ -109,7 +116,8 @@ public struct Lens: Identifiable, Equatable, Sendable {
         manualControls: ManualCapabilities = .none,
         equivalentFocalLength: Double? = nil,
         flashModes: [FlashMode] = [],
-        hasTorch: Bool = false
+        hasTorch: Bool = false,
+        distortionCorrection: DistortionCorrection = .notSwitchable
     ) {
         self.id = id
         self.kind = kind
@@ -125,6 +133,7 @@ public struct Lens: Identifiable, Equatable, Sendable {
         self.equivalentFocalLength = equivalentFocalLength
         self.flashModes = flashModes
         self.hasTorch = hasTorch
+        self.distortionCorrection = distortionCorrection
     }
 
     /// Whether this lens delivers single-frame Bayer RAW.

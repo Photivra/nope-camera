@@ -181,7 +181,8 @@ struct CameraReadyView: View {
             if let format = model.captureFormat {
                 FormatDetailsSheet(
                     settings: settings, format: format,
-                    deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true)
+                    deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
+                    distortionCorrection: model.selectedLens?.distortionCorrection ?? .notSwitchable)
                     .nightModeStyle(isNightMode)
                     .frame(idealWidth: 420, idealHeight: 560)
                     // Opaque: a translucent sheet or popover lets the live picture through and
@@ -449,9 +450,11 @@ struct CameraReadyView: View {
         }
     }
 
-    /// The format chip; in clean view only its warning stays.
+    /// The format chip; in clean view only its warning, the "Processed" marker, stays. The
+    /// marker is hidden when the person turns it off in Settings (issue #80); VoiceOver still
+    /// names the format in the viewfinder's description.
     @ViewBuilder private var formatChip: some View {
-        if let format = model.captureFormat, showsControls || !format.isBayerRAW {
+        if let format = model.captureFormat, format.isBayerRAW ? showsControls : settings.showsProcessedMarker {
             FormatChip(format: format, savedFormats: settings.selectedFormats(deviceSupportsBayerRAW: format.isBayerRAW)) {
                 showsFormats = true
             }

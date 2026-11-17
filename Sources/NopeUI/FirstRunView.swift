@@ -39,8 +39,9 @@ struct FirstRunView: View {
                         statement(
                             systemImage: "checkmark.seal",
                             Text(
-                                "Each photo is signed, so changes can be detected.", tableName: "Honesty", bundle: .module,
-                                comment: "First-run statement 2 of 3: photos get a Content Credentials signature (on by default). Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo."))
+                                "Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed.",
+                                tableName: "Honesty", bundle: .module,
+                                comment: "First-run statement 2 of 3: Content Credentials signing is off by default and can be turned on in Settings. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo."))
                         statement(
                             systemImage: "wifi.slash",
                             Text(

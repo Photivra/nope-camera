@@ -77,18 +77,24 @@ public struct PhotoSaver: Sendable {
     ///   - settings: The formats and metadata choices.
     ///   - captureDuration: How long the camera took to return the photo, for the details, or
     ///     `nil` when unknown.
+    ///   - distortionCorrection: For a processed fallback, the lens's distortion correction as
+    ///     the camera reported it (``Lens/distortionCorrection``), for the details; ignored for
+    ///     a RAW photo.
     /// - Returns: What was saved, with its thumbnail and details.
     /// - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
     ///   ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
     ///   saved),
     ///   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
     public func save(
-        _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil
+        _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil,
+        distortionCorrection: DistortionCorrection? = nil
     ) async throws(CaptureError) -> SavedPhoto {
-        try await saveReturningFiles(photo, settings: settings, captureDuration: captureDuration).saved
+        try await saveReturningFiles(
+            photo, settings: settings, captureDuration: captureDuration, distortionCorrection: distortionCorrection
+        ).saved
     }
 
-    /// Saves one photo, as ``save(_:settings:captureDuration:)`` does, and also returns the
+    /// Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and also returns the
     /// files exactly as they were added to Photos, for the compare view of the comparison shot
     /// (issue #55). The files stay in memory; the caller drops them.
     ///
@@ -98,10 +104,13 @@ public struct PhotoSaver: Sendable {
     ///   - photo: The captured photo, with its metadata already built for the plan.
     ///   - settings: The formats and metadata choices.
     ///   - captureDuration: How long the camera took to return the photo, or `nil`.
+    ///   - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    ///     `nil`.
     /// - Returns: What was saved, and the saved files in the order they were built.
-    /// - Throws: The same errors as ``save(_:settings:captureDuration:)``.
+    /// - Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
     func saveReturningFiles(
-        _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?
+        _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?,
+        distortionCorrection: DistortionCorrection? = nil
     ) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile]) {
         let plan = plan(for: settings.metadata)
         var timings = SaveTimings(capture: captureDuration)
@@ -137,7 +146,9 @@ public struct PhotoSaver: Sendable {
             metadata: metadata, thumbnail: thumbnail(of: finished.map(\.file)),
             details: PhotoDetails.build(
                 files: finished, plan: plan, look: settings.developedLook, signature: status, timings: timings,
-                rawClipping: photo.rawClipping))
+                rawClipping: photo.rawClipping,
+                // RAW never has the camera's distortion correction (`AVCaptureDevice.h`).
+                distortionCorrection: photo.format.isBayerRAW ? nil : distortionCorrection))
         return (saved, finished.map(\.file))
     }
 

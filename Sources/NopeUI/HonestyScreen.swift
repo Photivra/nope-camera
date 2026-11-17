@@ -61,6 +61,18 @@ struct HonestyScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
             HonestyStatement(
+                title: Text("Signed Only If You Turn It On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos are signed with Content Credentials only when the person turns signing on."),
+                text: Text(
+                    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Processed Photos Are Labeled", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos from a lens that can't save RAW are labeled as processed."),
+                text: Text(
+                    "On a lens that can't save RAW, the phone's camera processes the photo. nope. marks the camera \"Processed\" before you take it, unless you turn off Processed Marker in Settings, and the photo's details always say so. Tap the marker to see what processing that lens's photos get.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker's first word and Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
                 title: Text("The Comparison Photo Is Never Saved", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the phone-processed photo of the comparison shot is never saved."),
                 text: Text(
                     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos.",
@@ -118,9 +130,9 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Faces and Autofocus", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may detect faces to choose where to focus."),
                 text: Text(
-                    "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.",
+                    "Face Detection is off unless you turn it on in nope.'s settings. With it on, iOS may detect faces in the viewfinder to decide where to focus and how to expose. nope. doesn't read or save which faces it found.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus, on by default). Keep \"nope.\" unchanged. Must not claim more than the English."))
+                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Face Detection is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What iOS May Still Do", tableName: "Honesty", bundle: .module, comment: "Honesty section header: things iOS does that the app can't change. iOS is a product name.")
         }

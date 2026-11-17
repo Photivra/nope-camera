@@ -1,4 +1,4 @@
-nope. toma fotos con el mínimo procesamiento que permite tu teléfono, firma cada una y no guarda nada que te rastree. Ábrela y dispara: no hay nada que configurar.
+nope. toma fotos con el mínimo procesamiento que permite tu teléfono, puede firmar cada una y no guarda nada que te rastree. Ábrela y dispara: no hay nada que configurar.
 
 EL MÍNIMO PROCESAMIENTO QUE PERMITE TU TELÉFONO
 • Cada foto es un RAW Bayer de un solo fotograma (DNG). nope. nunca usa ProRAW ni combina fotogramas.
@@ -9,12 +9,12 @@ NADA TE RASTREA
 • nope. no contiene código de red y no establece conexiones de red. Sin analíticas, sin anuncios, sin cuentas.
 • Compruébalo tú mismo con el Informe de privacidad de las apps en Ajustes: nope. no debería mostrar ningún dominio.
 • Los datos opcionales, como la zona horaria, la versión de iOS y las notas del fabricante, se eliminan por defecto. Tú eliges qué conserva cada foto.
-• La ubicación está desactivada por defecto.
+• La ubicación y la detección de caras están desactivadas por defecto.
 • nope. solo puede añadir fotos a tu fototeca. iOS no le permite ver tus fotos existentes.
 
-FIRMADAS
-• Cada foto lleva Content Credentials, firmadas con una clave nueva cada vez, para que las firmas no puedan vincular tus fotos entre sí.
-• La firma muestra si el archivo ha cambiado desde que nope. lo guardó. No demuestra quién tomó la foto.
+FIRMADAS, SI QUIERES
+• Activa la firma y cada foto llevará Content Credentials, firmadas con una clave nueva cada vez, para que las firmas no puedan vincular tus fotos entre sí. La firma está desactivada por defecto.
+• La firma muestra si el archivo ha cambiado desde que nope. lo guardó, y que la foto se tomó con nope. y con qué versión. No demuestra quién tomó la foto.
 
 HONESTA SOBRE SUS LÍMITES
 • La pantalla de transparencia (ⓘ) muestra cada dato de tu última foto, lo que tu teléfono aún puede hacer fuera del control de nope. y lo que ninguna app puede eliminar, como el tenue patrón de ruido del sensor.

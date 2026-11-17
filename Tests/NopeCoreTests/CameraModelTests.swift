@@ -105,6 +105,28 @@ struct CameraModelTests {
         #expect(await backend.startRequests.last == CaptureRequest(lens: Self.teleHEIF))
     }
 
+    @Test func aFallbackPhotosDetailsSayWhetherItsLensCorrectsDistortion() async throws {
+        // Issue #80: the lens's distortion correction, as the camera reported it, reaches the
+        // details of its processed fallback; a RAW photo never has the correction.
+        let tele = Lens(id: "tele", kind: .telephoto, bayerRAWFormat: nil, magnification: 5, distortionCorrection: .turnedOff)
+        let backend = ScriptedBackend(capabilities: DeviceCapabilities(lenses: [Self.wideRAW, tele]))
+        let model = await Self.runningModel(backend)
+        await model.send(.capture)
+        guard case .saved(let raw) = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
+            return
+        }
+        #expect(raw.details?.distortionCorrection == nil)
+        await model.send(.selectLens("tele"))
+        await model.send(.capture)
+        guard case .saved(let fallback) = model.captureStatus else {
+            Issue.record("expected a saved photo, got \(model.captureStatus)")
+            return
+        }
+        #expect(fallback.isProcessedFallback)
+        #expect(fallback.details?.distortionCorrection == .turnedOff)
+    }
+
     @Test func selectingALensBeforeReadyIsIgnored() async {
         let backend = ScriptedBackend(capabilities: Self.twoLenses)
         let model = CameraModel(backend: backend)
@@ -121,8 +143,9 @@ struct CameraModelTests {
             Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
-        #expect(photo.formats == [.raw, .heif])
-        #expect(photo.signature == .unsigned(.unavailable))
+        // The defaults (issue #80): RAW only, and signing off.
+        #expect(photo.formats == [.raw])
+        #expect(photo.signature == .unsigned(.turnedOff))
         #expect(model.canCapture)
         #expect(await library.added.count == 1)
     }
@@ -181,7 +204,7 @@ struct CameraModelTests {
             Issue.record("expected a saved photo, got \(model.captureStatus)")
             return
         }
-        #expect(photo.formats == [.raw, .heif])
+        #expect(photo.formats == [.raw])
         #expect(model.sessionStatus == .running)
         #expect(await backend.stopCount == 1)
         #expect(await backend.startRequests.count == 2)
