@@ -511,7 +511,8 @@ scrolling. The test now waits for the final state ("isn't sending a picture"), s
 top, and audits only once the layout has stopped moving: the shutter's frame must read the same
 twice in a row, half a second apart (`waitUntilStill`), instead of a fixed pause. Issues are
 judged after the audit rather than inside its handler (querying the app from the handler can
-make the audit time out), and a failing audit is repeated once after the layout settles again.
+make the audit time out), and an issue fails the test when two more audits of the same screen
+report it again (see "Dynamic Type findings on the iPad runner" below).
 It could not be made to fail locally before or after the change (10 runs, 4 of them with every
 CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
 
@@ -735,7 +736,7 @@ test that failed with a result still fails the shard, and without that crash rep
 is run again. The first run's result bundle is kept and uploaded as
 `ui-tests[-ipad]-interrupted.xcresult`.
 
-#### Dynamic Type findings on the iPad runner (open)
+#### Dynamic Type findings on the iPad runner
 
 In build 44124454610 two iPad tests failed with "Dynamic Type font sizes are partially
 unsupported" on text that the failing runs' screen recordings show whole, wrapped and not cut,
@@ -743,15 +744,25 @@ at the largest size, and smaller at the smaller sizes the audit switches through
 `testSettingsAtTheLargestTextSize` on the Choose Details footer "On: each photo keeps only what
 it needs to open. Off: choose each item below." (frame 30, 428.5, 440 × 267, inside the Settings
 popover), and `testLastPhotoDetailsAtTheLargestTextSize` on the Files row title "HEIF" (frame
-40, 355.5, 111.5 × 63.5). Both tests have passed on iPad in earlier builds with the same screens (44075379089, 44098207588).
-The runner's audit reports findings on these rows in passing runs too (the log of a passing run
-shows it reading the same two Choose Details elements), and in the failed details test the
-second of two audits of the unchanged screen, three seconds apart, reported a row the first
-hadn't. On a Mac the audit reports no Dynamic Type finding on either screen, also with every
-core busy. The cause isn't known. `audit(_:)` now writes each Dynamic Type issue, and each issue no rule ignores, to the test log
+40, 355.5, 111.5 × 63.5). On a Mac the audit reports no Dynamic Type finding on either screen,
+also with every core busy.
+
+`audit(_:)` writes each Dynamic Type issue, and each issue no rule ignores, to the test log
 ("Audit round n: …", with the type, the element's label and frame, the window's frame and
-whether a rule ignored it), so the next runs show what the runner's audit reports and which
-rule decides; no rule changed.
+whether a rule ignored it). In build 44149517211 those lines show what the iPad runner's audit
+does: its first pass over a screen at the largest text size reported findings no rule ignores
+in five tests (ten findings, nine of them Dynamic Type: the same Choose Details footer in both
+Settings tests, five Files rows of the last photo's details, two texts of the compare view),
+and the second audit of the same screen three seconds later reported none of them, so all five
+tests passed. No iPhone shard had such a finding. The two failures of build 44124454610 were
+runs where the second audit still reported one row; in the details test it was a row the first
+audit hadn't reported.
+
+The audit's findings on these screens therefore change from one audit to the next while the
+screen doesn't. An issue now fails the test when the audit reports it three times in a row: in
+the first audit and again in each of two more audits of the same screen (the same type on an
+element with the same label). A finding that is real is reported every time and still fails.
+Why the runner's first audit reports them isn't known.
 
 #### Continue on the first-run screen (open)
 

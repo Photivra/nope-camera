@@ -492,8 +492,7 @@ final class NopeAppUITests: XCTestCase {
         checksContrast: Bool = true, file: StaticString = #filePath, line: UInt = #line
     ) throws {
         settle()
-        // One retry: on a slow runner a navigation transition can still be finishing. Issues are
-        // collected during the audit and judged after it, because querying the app from inside
+        // Issues are collected during the audit and judged after it, because querying the app from inside
         // the audit's handler can make the audit time out.
         let sideways = iPhoneSideways
         let ignored = { (issue: XCUIAccessibilityAuditIssue) in
@@ -508,14 +507,35 @@ final class NopeAppUITests: XCTestCase {
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
         var remaining = try judged(reportedIssues(app), in: app, round: 1, ignored: ignored)
-        if !remaining.isEmpty {
+        // An issue fails the test when the audit reports it again in each of two more audits of
+        // the same screen. On the iPad CI runner the audit's first pass over a screen reported
+        // findings that a second audit three seconds later didn't (build 44149517211: ten
+        // findings in five tests, nine of them Dynamic Type, none reported again), on text the
+        // screen recordings of build 44124454610 show whole at every size. A real finding is
+        // reported every time (docs/TESTING.md).
+        var round = 2
+        while !remaining.isEmpty && round <= 3 {
             settle()
-            remaining = try judged(reportedIssues(app), in: app, round: 2, ignored: ignored)
+            let again = try judged(reportedIssues(app), in: app, round: round, ignored: ignored)
+            remaining = remaining.filter { issue in again.contains { Self.isSameFinding($0, issue) } }
+            round += 1
         }
         for issue in remaining {
             XCTFail(
                 "\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
         }
+    }
+
+    /// Whether two audits reported the same finding: the same type on an element with the same
+    /// label, or the same type and description when the audit named no element.
+    @MainActor
+    private static func isSameFinding(_ first: XCUIAccessibilityAuditIssue, _ second: XCUIAccessibilityAuditIssue) -> Bool {
+        guard first.auditType == second.auditType else { return false }
+        guard let firstElement = first.element, let secondElement = second.element else {
+            return first.element == nil && second.element == nil && first.compactDescription == second.compactDescription
+        }
+        guard firstElement.exists, secondElement.exists else { return false }
+        return firstElement.label == secondElement.label
     }
 
     /// Returns the issues that aren't ignored, and writes one line to the test log for each
