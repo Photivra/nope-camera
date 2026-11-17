@@ -1,6 +1,6 @@
 # Photivra Nope Camera
 
-> A free, open-source (GPL-3.0-only) camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, signs it with C2PA Content Credentials, and saves it to Photos. It makes no network calls, has no analytics, and removes private metadata by default. Status: in development (0.x). The app is a buildable, tested scaffold with no camera features yet.
+> A free, open-source (GPL-3.0-only) camera app for iPhone and iPad, with Android planned. It captures a photo with as little processing as the device allows, can sign it with C2PA Content Credentials (off by default), and saves it to Photos. It makes no network calls, has no analytics, and removes private metadata by default. Status: in development (0.x). The app is a buildable, tested scaffold with no camera features yet.
 
 The rules for contributors and coding agents are in AGENTS.md. Read it before changing anything.
 
