@@ -202,8 +202,9 @@ enum QuickControls {
             id: "light",
             title: Text("Light", bundle: .module, comment: "Camera switch and its Voice Control name: turns on the phone's light (torch) and keeps it on while taking photos."),
             systemImage: light.isTorchOn ? "flashlight.on.fill" : "flashlight.off.fill",
-            // On while the light is on or was refused, so a refused light (with its warning) is
-            // cleared by turning the switch off, and tried again by turning it on.
+            // On while the light is on, waiting for the camera to start (issue #75), or refused,
+            // so a refused light (with its warning) is cleared by turning the switch off, and
+            // tried again by turning it on.
             kind: .toggle(isOn: light.torch != .off) { context.send(.light(.setTorch($0))) })
     }
 

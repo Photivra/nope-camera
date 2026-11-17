@@ -9270,6 +9270,11 @@ The system may refuse a level while the device is hot; the backend then reports
 ``TorchStatus/unavailable`` and leaves the light off. Stopping the camera or switching
 lenses turns the light off, so ``LightModel`` asks again after each start.
 
+A request to turn the light on while no camera is attached (before the start, or while
+the camera is reconfigured) is answered ``TorchStatus/pending``, never
+``TorchStatus/off``: the light can't be switched yet, and ``LightModel`` applies it after
+the start (issue #75).
+
 - Parameter level: The brightness, from just above 0 to 1, or `nil` to turn the light
   off.
 - Returns: The light's state afterwards.
@@ -9336,6 +9341,9 @@ intents. The rules:
   lens without a torch (AGENTS.md, "Battery"). The brightness level is kept.
 - After a restart of the same lens, such as a recovery from an error, a torch that was on
   comes back on.
+- A request made before the camera is ready is kept as ``TorchStatus/pending`` and applied
+  once the camera has started; the light then comes on or is reported unavailable, never
+  silently turned off (issue #75).
 
 Isolated to the main actor, like ``CameraModel``.
 
@@ -9349,6 +9357,14 @@ internal, declared in `Sources/NopeCore/Light.swift`
 
 Asks the hardware for the torch at ``torchLevel``, and records the answer. Does nothing
 without a backend.
+
+The answer is never recorded as a silent "off" (issue #75):
+- ``TorchStatus/pending`` (the camera is being reconfigured) keeps the request, which the
+  next ``sessionDidStart()`` applies;
+- ``TorchStatus/off`` in answer to "on" is recorded as ``TorchStatus/unavailable``, so an
+  interface says the light didn't come on;
+- if the person turned the light off, or the camera paused, while the hardware answered,
+  a light that came on is turned off again.
 
 ## `LightModel/cameraDidPause()`
 
@@ -9453,7 +9469,8 @@ internal, declared in `Sources/NopeCore/Light.swift`
 ```
 
 Records the lens the camera is about to start with. Called by ``CameraModel`` before
-each start; the light is off until ``sessionDidStart()``.
+each start; the light is off until ``sessionDidStart()``, and shows
+``TorchStatus/pending`` meanwhile when the person wants it.
 
 - Parameter lens: The lens.
 
@@ -22975,6 +22992,20 @@ case on(level: Double)
 ```
 
 The light is on at a brightness level from just above 0 to 1 (full).
+
+## `TorchStatus/pending`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case pending
+```
+
+The person asked for the light while the camera isn't ready for it: it is starting,
+or switching lenses or settings, so no camera is attached to switch (issue #75). The
+light is off for now. It is applied as soon as the camera has started, and then becomes
+``on(level:)``, or ``unavailable`` if the system refuses it. An interface shows the
+person's choice (the switch stays on), not "off".
 
 ## `TorchStatus/unavailable`
 
