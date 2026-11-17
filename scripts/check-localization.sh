@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Localization checks for every String Catalog (AGENTS.md, "Localization").
 # Each string must have a translator comment and a non-empty value in all eleven launch
-# languages, marked "translated" or "needs_review"; a string containing the name "nope." keeps
-# it unchanged in every language.
+# languages (in every plural case, where it has plural variations), marked "translated" or
+# "needs_review"; a string containing the name "nope." keeps it unchanged in every language.
 # Optional first argument: a directory to check instead of the repository root.
 set -euo pipefail
 

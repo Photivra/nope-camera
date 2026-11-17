@@ -331,6 +331,234 @@
         }
       }
     },
+    "%lld On": {
+      "comment": "Value of the Viewfinder Overlays row in Settings when three or more overlays are on: how many. The number is at least 3.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld an"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld activadas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld activées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld attive"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld個オン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld개 켬"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld aan"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%lld ativadas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已开启 %lld 个"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已開啟 %lld 個"
+          }
+        }
+      }
+    },
+    "%lld Saved": {
+      "comment": "Value of the Presets tile in the Quick Menu and of the Presets row in Settings: how many presets the person has saved, at least 1. Keep it short: it sits in a small tile under the name Presets, so a counter word alone is enough where that reads naturally.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld gesichert"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld gesichert"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld guardado"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld guardados"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld enregistré"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld enregistrés"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld salvato"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld salvati"
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld件"
+                }
+              }
+            }
+          }
+        },
+        "ko": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld개"
+                }
+              }
+            }
+          }
+        },
+        "nl": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld bewaard"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld bewaard"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld salvo"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld salvos"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld 个"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant": {
+          "variations": {
+            "plural": {
+              "other": {
+                "stringUnit": {
+                  "state": "needs_review",
+                  "value": "%lld 個"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld of %lld": {
       "comment": "Which of the golden spiral's eight placements is in use, such as 3 of 8.",
       "extractionState": "manual",
@@ -1123,6 +1351,72 @@
         }
       }
     },
+    "After %@ · %@ in all · at most %@": {
+      "comment": "Astro card on the camera, before the frames start: the start delay (a duration such as \"10 seconds\"), the total time of all frames (such as \"20 s\"), and the most storage they can use (such as \"486 MB\"). All three values are formatted by the system.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nach %@ · %@ insgesamt · höchstens %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tras %@ · %@ en total · como máximo %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Après %@ · %@ au total · %@ au maximum"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dopo %@ · %@ in tutto · al massimo %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@後に開始・合計%@・最大%@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ 후 · 총 %@ · 최대 %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Na %@ · %@ in totaal · hoogstens %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Após %@ · %@ no total · no máximo %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@后开始 · 共 %@ · 最多 %@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@後開始 · 共 %@ · 最多 %@"
+          }
+        }
+      }
+    },
     "All": {
       "comment": "Live readout value: every listed processing feature is off.",
       "extractionState": "manual",
@@ -1251,6 +1545,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "全部自動"
+          }
+        }
+      }
+    },
+    "All Photo Settings": {
+      "comment": "Button on the Photo Format sheet: closes the sheet and opens Settings at the Photos group (formats, HEIF and JPEG copies, photo size).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alle Fotoeinstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Todos los ajustes de foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tous les réglages des photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tutte le impostazioni foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "すべての写真設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "모든 사진 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alle foto-instellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Todos os ajustes de foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "所有照片设置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "所有照片設定"
           }
         }
       }
@@ -1911,6 +2271,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "星空影格數：%lld"
+          }
+        }
+      }
+    },
+    "Astro on. Manual controls and night mode are on.": {
+      "comment": "Announced to VoiceOver when Astro is chosen on the drive strip: Astro also turns on the manual controls and night mode.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro an. Manuelle Steuerung und Nachtmodus sind an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro activado. Los controles manuales y el modo nocturno están activados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro activé. Les commandes manuelles et le mode nuit sont activés."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro attivo. I controlli manuali e la modalità notte sono attivi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "星空をオンにしました。マニュアル操作とナイトモードがオンです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "별 사진이 켜졌습니다. 수동 조작과 야간 모드가 켜져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro aan. Handmatige bediening en nachtmodus staan aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Astro ativado. Os controles manuais e o modo noturno estão ativados."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已开启星空。手动控制和夜间模式已开启。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已開啟星空。手動控制和夜間模式已開啟。"
           }
         }
       }
@@ -5083,6 +5509,78 @@
         }
       }
     },
+    "Copies section: Files": {
+      "comment": "Section header on the HEIF and JPEG Copies page: compression, bit depth, color space and size of the copies (not the Files heading of the photo details).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dateien"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Archivos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fichiers"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "File"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ファイル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "파일"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bestanden"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Arquivos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "檔案"
+          }
+        }
+      }
+    },
     "Copy Size": {
       "comment": "Picker: the width and height of the HEIF and JPEG copies, compared with the RAW.",
       "extractionState": "manual",
@@ -5677,6 +6175,72 @@
         }
       }
     },
+    "Delete": {
+      "comment": "Menu item, swipe action and VoiceOver action on a saved preset: asks first, then deletes it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Löschen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Eliminar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Supprimer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elimina"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "削除"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "삭제"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verwijder"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apagar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "删除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "刪除"
+          }
+        }
+      }
+    },
     "Delete Preset": {
       "comment": "Button that deletes a saved settings preset. The current settings don't change.",
       "extractionState": "manual",
@@ -5739,6 +6303,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "刪除預設"
+          }
+        }
+      }
+    },
+    "Delete “%@”?": {
+      "comment": "Title of the confirmation before deleting a saved preset. The placeholder is the preset's name; use your language's quotation marks.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„%@“ löschen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "¿Eliminar «%@»?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Supprimer « %@ » ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Eliminare «%@»?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「%@」を削除しますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’을(를) 삭제하시겠습니까?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "‘%@’ verwijderen?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apagar “%@”?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "要删除“%@”吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "要刪除「%@」嗎？"
           }
         }
       }
@@ -6271,6 +6901,72 @@
         }
       }
     },
+    "Double tap for options": {
+      "comment": "VoiceOver hint of the selected drive-strip word when it has options (the self-timer delay, interval or Astro settings).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Doppeltippen für Optionen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toca dos veces para ver las opciones"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Touchez deux fois pour afficher les options"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tocca due volte per le opzioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ダブルタップでオプションを表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이중 탭하여 옵션 보기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tik dubbel voor opties"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toque duas vezes para ver as opções"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "连按两次以显示选项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "點兩下以顯示選項"
+          }
+        }
+      }
+    },
     "Drive": {
       "comment": "Quick control on the camera: a menu that chooses what the shutter does: one photo, a self-timer, or a burst.",
       "extractionState": "manual",
@@ -6333,6 +7029,222 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "驅動"
+          }
+        }
+      }
+    },
+    "Drive mode: Interval": {
+      "comment": "Drive-strip word on the camera: interval shooting, a series of photos at a fixed interval. Not the picker for the time between photos, which has its own key. One of the five drive-strip words (Single, Timer, Burst, Interval, Astro), shown side by side on one line above the shutter: keep it as short as the others. Measured to fit in every launch language at the default text size (docs/design/screens/drive-strip-languages.html).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervall"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interval"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalle"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervallo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "インターバル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "인터벌"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Interval"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Intervalo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "间隔"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "間隔"
+          }
+        }
+      }
+    },
+    "Drive mode: Single": {
+      "comment": "Drive-strip word on the camera: each press of the shutter takes one photo. One of the five drive-strip words (Single, Timer, Burst, Interval, Astro), shown side by side on one line above the shutter: keep it as short as the others. Measured to fit in every launch language at the default text size (docs/design/screens/drive-strip-languages.html).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Einzeln"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Único"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Unique"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Singolo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "1枚"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "단일"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enkel"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Único"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "单张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "單張"
+          }
+        }
+      }
+    },
+    "Drive mode: Timer": {
+      "comment": "Drive-strip word on the camera: the self-timer (3 or 10 seconds), then one photo. One of the five drive-strip words (Single, Timer, Burst, Interval, Astro), shown side by side on one line above the shutter: keep it as short as the others. Measured to fit in every launch language at the default text size (docs/design/screens/drive-strip-languages.html).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Retardateur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autoscatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "タイマー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "타이머"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "定时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "定時"
           }
         }
       }
@@ -6663,6 +7575,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "輸入名稱。"
+          }
+        }
+      }
+    },
+    "Every %@, %lld photos": {
+      "comment": "Interval card on the camera, before a series starts: the time between photos, then how many photos the series takes. The first placeholder is a duration formatted by the system, such as \"10 seconds\"; the number is at least 2.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Alle %@, %lld Fotos"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cada %@, %lld fotos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toutes les %@, %lld photos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ogni %@, %lld foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ごとに%lld枚"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@마다 %lld장"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Elke %@, %lld foto’s"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A cada %@, %lld fotos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每 %@，%lld 张"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "每 %@，%lld 張"
           }
         }
       }
@@ -9336,6 +10314,72 @@
         }
       }
     },
+    "Focus on Faces": {
+      "comment": "Settings switch and its Voice Control name: whether faces the camera finds steer nope.'s autofocus and auto exposure. Replaces Face Detection. The same name as the Shortcuts action Set Focus on Faces; use the same translation. Keep \"nope.\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auf Gesichter fokussieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfocar caras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mise au point sur les visages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Messa a fuoco sui volti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔にピントを合わせる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴에 초점"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherpstellen op gezichten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focar rostos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "对焦人脸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "對焦臉部"
+          }
+        }
+      }
+    },
     "For example, Astro": {
       "comment": "Placeholder of the preset name field.",
       "extractionState": "manual",
@@ -10656,6 +11700,72 @@
         }
       }
     },
+    "HEIF and JPEG Copies": {
+      "comment": "Settings row and page title: the look and file options of the HEIF and JPEG copies the app develops from each RAW. HEIF, JPEG and RAW are file format names. Replaces the Look and File Options rows.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF- und JPEG-Kopien"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Copias HEIF y JPEG"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Copies HEIF et JPEG"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Copie HEIF e JPEG"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIFとJPEGのコピー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 및 JPEG 사본"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF- en JPEG-kopieën"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cópias HEIF e JPEG"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 和 JPEG 副本"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "HEIF 與 JPEG 副本"
+          }
+        }
+      }
+    },
     "HEIF and JPEG Look": {
       "comment": "Picker label: how the HEIF and JPEG copies are developed from the RAW. HEIF and JPEG are file format names.",
       "extractionState": "manual",
@@ -11510,6 +12620,138 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "ISO 優先"
+          }
+        }
+      }
+    },
+    "In Q": {
+      "comment": "Settings search: where a camera control is, for a control that is a tile in the Quick Menu, for example Flash. Q is the letter on the Quick Menu button beside the shutter: keep \"Q\" unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In Q"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En Q"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dans Q"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In Q"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Q内"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Q에서"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In Q"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Em Q"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在 Q 中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在 Q 中"
+          }
+        }
+      }
+    },
+    "In Settings": {
+      "comment": "Settings search: header above results that are settings, each of which opens its page.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In den Einstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En Ajustes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dans les Réglages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nelle Impostazioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定内"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "설정에서"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In Instellingen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nos Ajustes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在设置中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在設定中"
           }
         }
       }
@@ -13560,6 +14802,150 @@
         }
       }
     },
+    "Manual Controls button: Auto": {
+      "comment": "Word on the Manual Controls button in the lens row while the camera is in full auto; one tap turns manual controls on. Keep it short: the button sits beside the lenses. Not the Auto state of a single control, which has its own key.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "オート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "자동"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自動"
+          }
+        }
+      }
+    },
+    "Manual Controls button: Manual": {
+      "comment": "Word on the Manual Controls button in the lens row while manual controls are on; one tap returns to full auto. Keep it short: the button sits beside the lenses. Not the Manual state of a single control, which has its own key.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manuell"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manual"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manuel"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manuale"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "マニュアル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "수동"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Handmatig"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Manual"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "手动"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "手動"
+          }
+        }
+      }
+    },
     "Maximum Quality": {
       "comment": "Compression choice: the highest quality and largest files.",
       "extractionState": "manual",
@@ -14088,6 +15474,72 @@
         }
       }
     },
+    "More for %@": {
+      "comment": "VoiceOver and Voice Control name of the More menu on a saved preset's row (Rename, Delete). The placeholder is the preset's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Weitere Optionen für %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Más opciones de %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Plus d’options pour %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Altre opzioni per %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@のその他の操作"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ 더 보기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Meer voor %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mais opções de %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ 的更多选项"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ 的更多選項"
+          }
+        }
+      }
+    },
     "Moving": {
       "comment": "Live readout value: the lens is moving to focus.",
       "extractionState": "manual",
@@ -14550,6 +16002,72 @@
         }
       }
     },
+    "No HEIF or JPEG copy is saved now. Turn one on in Formats.": {
+      "comment": "First row of the HEIF and JPEG Copies page while only the RAW is saved. Formats is the name of the Settings row and the Photo Format sheet where formats are chosen; use its translation.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zurzeit wird keine HEIF- oder JPEG-Kopie gesichert. Schalte eine unter „Formate“ ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ahora no se guarda ninguna copia HEIF ni JPEG. Activa una en Formatos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucune copie HEIF ou JPEG n’est enregistrée pour le moment. Activez-en une dans Formats."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Al momento non viene salvata nessuna copia HEIF o JPEG. Attivane una in Formati."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "現在、HEIFやJPEGのコピーは保存されません。「フォーマット」でオンにできます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "지금은 HEIF 또는 JPEG 사본을 저장하지 않습니다. 포맷에서 켜세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Er wordt nu geen HEIF- of JPEG-kopie bewaard. Zet er een aan bij Formaten."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nenhuma cópia HEIF ou JPEG é salva agora. Ative uma em Formatos."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "目前不会存储 HEIF 或 JPEG 副本。可在“格式”中打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "目前不會儲存 HEIF 或 JPEG 副本。可在「格式」中開啟。"
+          }
+        }
+      }
+    },
     "No clipping": {
       "comment": "VoiceOver value of the live histogram when no part of the preview is pure white or pure black.",
       "extractionState": "manual",
@@ -14946,6 +16464,72 @@
         }
       }
     },
+    "None Saved": {
+      "comment": "Value of the Presets tile in the Quick Menu and of the Presets row in Settings: the person has saved no presets (Factory Defaults is still there). Keep it short: it sits in a small tile under the name Presets, so \"None\" alone is enough where that reads naturally.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Keine"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ninguno"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucun"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuno"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "なし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nenhum"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "无"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "無"
+          }
+        }
+      }
+    },
     "Not Ready": {
       "comment": "Live readout value: the camera can't take a photo yet.",
       "extractionState": "manual",
@@ -15008,6 +16592,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "未就緒"
+          }
+        }
+      }
+    },
+    "Not Saved": {
+      "comment": "Value of the HEIF and JPEG Copies row in Settings: only the RAW is saved, so no HEIF or JPEG copy is made.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gesichert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se guardan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non enregistrées"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non salvate"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "保存しない"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "저장 안 함"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet bewaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não salvas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不存储"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "不儲存"
           }
         }
       }
@@ -15932,6 +17582,204 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "在 iPhone 上，每次按下快門和每張照片儲存後都會有可感覺到的輕觸回饋。"
+          }
+        }
+      }
+    },
+    "On the Camera": {
+      "comment": "Settings search: header above results for camera controls that are not in Settings; each says where the control is.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In der Kamera"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En la cámara"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sur l’appareil photo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sulla fotocamera"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラ上"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라에서"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Op de camera"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Na câmera"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相机上"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相機上"
+          }
+        }
+      }
+    },
+    "On the camera, above the shutter": {
+      "comment": "Settings search: where a camera control is, for the drive modes (self-timer, burst, interval shooting, Astro) on the strip above the shutter. A whole phrase, shown under the control's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In der Kamera, über dem Auslöser"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En la cámara, encima del obturador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sur l’appareil photo, au-dessus du déclencheur"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sulla fotocamera, sopra il pulsante di scatto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラ画面、シャッターの上"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라 화면, 셔터 위"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Op de camera, boven de sluiterknop"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Na câmera, acima do obturador"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相机上，快门上方"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相機上，快門上方"
+          }
+        }
+      }
+    },
+    "On the camera, beside the lenses": {
+      "comment": "Settings search: where a camera control is, for the Manual Controls button in the lens row. A whole phrase, shown under the control's name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In der Kamera, neben den Objektiven"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "En la cámara, junto a los objetivos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sur l’appareil photo, à côté des objectifs"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sulla fotocamera, accanto agli obiettivi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "カメラ画面、レンズの横"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "카메라 화면, 렌즈 옆"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Op de camera, naast de lenzen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Na câmera, ao lado das lentes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相机上，镜头旁边"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在相機上，鏡頭旁邊"
           }
         }
       }
@@ -17400,6 +19248,72 @@
         }
       }
     },
+    "Pinned": {
+      "comment": "Value of the Readout tile in the Quick Menu: the live camera readout is on and stays on screen in clean view. Short: it sits in a small tile.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fixiert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fijado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Épinglé"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fissato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "固定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "고정됨"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vast"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Fixado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已固定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已固定"
+          }
+        }
+      }
+    },
     "Pointing down, not level": {
       "comment": "VoiceOver value of the top-down level when the device points down but is tilted.",
       "extractionState": "manual",
@@ -18456,6 +20370,72 @@
         }
       }
     },
+    "Quick Menu": {
+      "comment": "VoiceOver and Voice Control name of the Q button beside the shutter, which opens a panel of camera tiles; also the title of that panel when it is a list at the largest text sizes. Replaces Quick Controls.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schnellmenü"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Menú rápido"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Menu rapide"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Menu rapido"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "クイックメニュー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빠른 메뉴"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Snelmenu"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Menu rápido"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快捷菜单"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快速選單"
+          }
+        }
+      }
+    },
     "Reading Back": {
       "comment": "Timing in the photo details: reading every file back and checking its metadata.",
       "extractionState": "manual",
@@ -18848,6 +20828,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "黑底紅字，讓眼睛保持適應黑暗。nope. 不會更改螢幕亮度：請在控制中心或輔助使用設定中的「降低白點值」調暗螢幕。"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "comment": "Menu item and VoiceOver action on a saved preset: opens the page to rename it.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Umbenennen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renombrar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renommer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rinomina"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "名前を変更"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "이름 변경"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wijzig naam"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Renomear"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重命名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重新命名"
           }
         }
       }
@@ -19842,6 +21888,1446 @@
         }
       }
     },
+    "Search keywords: About and Licenses": {
+      "comment": "Settings search keywords for the About and Licenses setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Version, Lizenz, Open Source"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "version, license, open source"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "versión, licencia, código abierto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "version, licence, open source"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "versione, licenza, open source"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "バージョン, ライセンス, オープンソース"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "버전, 라이선스, 오픈 소스"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "versie, licentie, open source"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "versão, licença, código aberto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "版本, 许可证, 开源"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "版本, 授權, 開放原始碼"
+          }
+        }
+      }
+    },
+    "Search keywords: Accessibility": {
+      "comment": "Settings search keywords for the Accessibility setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, größerer Text"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VoiceOver, larger text"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, texto grande"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, texte plus grand"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, testo più grande"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, 大きな文字, 音声"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, 큰 텍스트"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, grotere tekst"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, texto maior"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, 大字体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "VoiceOver, 放大文字"
+          }
+        }
+      }
+    },
+    "Search keywords: Details in Each Photo": {
+      "comment": "Settings search keywords for the Details in Each Photo setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Metadaten, EXIF, GPS, Datenschutz"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "metadata, EXIF, GPS, privacy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "metadatos, EXIF, GPS, privacidad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "métadonnées, EXIF, GPS, confidentialité"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "metadati, EXIF, GPS, privacy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "メタデータ, EXIF, GPS, プライバシー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "메타데이터, EXIF, GPS, 개인정보"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "metadata, EXIF, GPS, privacy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "metadados, EXIF, GPS, privacidade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "元数据, EXIF, GPS, 隐私"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "後設資料, 中繼資料, EXIF, GPS, 隱私"
+          }
+        }
+      }
+    },
+    "Search keywords: Fast Shutter": {
+      "comment": "Settings search keywords for the Fast Shutter setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Verwacklung, Bewegungsunschärfe, Belichtungszeit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "motion blur, speed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "desenfoque, movimiento, velocidad"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "flou, bougé, vitesse"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "mosso, sfocatura, tempo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ブレ, 手ブレ, シャッタースピード"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "흔들림, 블러, 셔터 속도"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "bewegingsonscherpte, sluitertijd"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "desfoque, tremido, velocidade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "模糊, 抖动, 快门速度"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "模糊, 手震, 快門速度"
+          }
+        }
+      }
+    },
+    "Search keywords: Focus on Faces": {
+      "comment": "Settings search keywords for the Focus on Faces setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gesichtserkennung, Personen, Porträt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "face detection, people, portrait"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "detección de caras, personas, retrato"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "détection des visages, personnes, portrait"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rilevamento volti, persone, ritratto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔検出, 人物, ポートレート"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴 인식, 인물, 초상"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "gezichtsherkenning, mensen, portret"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "detecção de rostos, pessoas, retrato"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "人脸检测, 人物, 人像"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "臉部偵測, 人物, 人像"
+          }
+        }
+      }
+    },
+    "Search keywords: Formats": {
+      "comment": "Settings search keywords for the Formats setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, Dateityp"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAW, DNG, HEIF, JPEG, file type"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, tipo de archivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, type de fichier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, tipo di file"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, ファイル形式"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, 파일 형식"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, bestandstype"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, tipo de arquivo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, 文件类型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "RAW, DNG, HEIF, JPEG, 檔案類型"
+          }
+        }
+      }
+    },
+    "Search keywords: HEIF and JPEG Copies": {
+      "comment": "Settings search keywords for the HEIF and JPEG Copies setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qualität, Komprimierung, Größe ändern, Look"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "quality, compression, resize, look"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "calidad, compresión, redimensionar, aspecto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "qualité, compression, redimensionner, rendu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "qualità, compressione, ridimensiona, resa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "画質, 圧縮, サイズ変更, 仕上がり"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "화질, 압축, 크기 조절, 룩"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "kwaliteit, compressie, formaat, look"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "qualidade, compressão, redimensionar, aparência"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "画质, 压缩, 调整大小, 风格"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "畫質, 壓縮, 調整大小, 風格"
+          }
+        }
+      }
+    },
+    "Search keywords: Honesty": {
+      "comment": "Settings search keywords for the Honesty setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Datenschutz, Netzwerk, Tracking"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "privacy, network, tracking"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "privacidad, red, rastreo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "confidentialité, réseau, suivi"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "privacy, rete, tracciamento"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プライバシー, ネットワーク, トラッキング"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "개인정보, 네트워크, 추적"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "privacy, netwerk, tracking"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "privacidade, rede, rastreamento"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "隐私, 网络, 跟踪"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "隱私, 網路, 追蹤"
+          }
+        }
+      }
+    },
+    "Search keywords: Live Activity": {
+      "comment": "Settings search keywords for the Live Activity setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sperrbildschirm, Dynamic Island"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Screen, Dynamic Island"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "pantalla bloqueada, Dynamic Island"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "écran verrouillé, Dynamic Island"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "schermata di blocco, Dynamic Island"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ロック画面, Dynamic Island"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "잠금 화면, Dynamic Island"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "toegangsscherm, Dynamic Island"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tela Bloqueada, Dynamic Island"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "锁定屏幕, 灵动岛"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "鎖定畫面, 動態島"
+          }
+        }
+      }
+    },
+    "Search keywords: Location": {
+      "comment": "Settings search keywords for the Location setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, Ort, Geotag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GPS, place, geotag"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, lugar, geoetiqueta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, lieu, géolocalisation"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, luogo, geotag"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, 場所, ジオタグ, 位置"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, 장소, 지오태그"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, plaats, geotag"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, lugar, geotag"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, 地点, 地理标记"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "GPS, 地點, 地理標記"
+          }
+        }
+      }
+    },
+    "Search keywords: Mirror Front Camera": {
+      "comment": "Settings search keywords for the Mirror Front Camera setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Selfie, umdrehen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "selfie, flip"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "selfie, voltear"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "selfie, inverser"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "selfie, capovolgi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自撮り, セルフィー, 左右反転"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "셀피, 셀카, 좌우 반전"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "selfie, omdraaien"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "selfie, inverter"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍, 翻转"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "自拍, 翻轉"
+          }
+        }
+      }
+    },
+    "Search keywords: Night Mode": {
+      "comment": "Settings search keywords for the Night Mode setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rot, dunkel, Nacht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "red, dark, night"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rojo, oscuro, noche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rouge, sombre, nuit"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rosso, buio, notte"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "赤, 暗い, 夜"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빨간색, 어두운, 밤"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rood, donker, nacht"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "vermelho, escuro, noite"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "红色, 黑暗, 夜晚"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "紅色, 黑暗, 夜晚"
+          }
+        }
+      }
+    },
+    "Search keywords: Photo Size": {
+      "comment": "Settings search keywords for the Photo Size setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auflösung, Megapixel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "resolution, megapixels"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "resolución, megapíxeles"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "résolution, mégapixels"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "risoluzione, megapixel"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "解像度, メガピクセル, 画素数"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "해상도, 메가픽셀, 화소"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "resolutie, megapixels"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "resolução, megapixels"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "分辨率, 百万像素, 像素"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "解析度, 百萬像素, 畫素"
+          }
+        }
+      }
+    },
+    "Search keywords: Presets": {
+      "comment": "Settings search keywords for the Presets setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "zurücksetzen, wiederherstellen, Standard, Werkseinstellungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reset, restore, defaults, factory"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "restablecer, restaurar, predeterminados, fábrica"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "réinitialiser, restaurer, défaut, usine"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ripristina, reimposta, predefiniti, fabbrica"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "リセット, 初期化, デフォルト, 工場出荷時, 復元"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "재설정, 초기화, 복원, 기본값"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "reset, herstellen, standaard, fabriek"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "redefinir, restaurar, padrão, fábrica"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重置, 恢复, 默认, 出厂"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重置, 還原, 預設, 原廠"
+          }
+        }
+      }
+    },
+    "Search keywords: Red Viewfinder": {
+      "comment": "Settings search keywords for the Red Viewfinder setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rot, dunkel, Nacht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "red, dark, night"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rojo, oscuro, noche"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rouge, sombre, nuit"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rosso, buio, notte"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "赤, 暗い, 夜"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "빨간색, 어두운, 밤"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "rood, donker, nacht"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "vermelho, escuro, noite"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "红色, 黑暗, 夜晚"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "紅色, 黑暗, 夜晚"
+          }
+        }
+      }
+    },
+    "Search keywords: Restore Defaults": {
+      "comment": "Settings search keywords for the Restore Defaults setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "zurücksetzen, wiederherstellen, Standard"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "reset, restore, defaults"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "restablecer, restaurar, predeterminados"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "réinitialiser, restaurer, défaut"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ripristina, reimposta, predefiniti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "リセット, 初期化, デフォルト, 復元"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "재설정, 초기화, 복원, 기본값"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "reset, herstellen, standaard"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "redefinir, restaurar, padrão"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重置, 恢复, 默认"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "重置, 還原, 預設"
+          }
+        }
+      }
+    },
+    "Search keywords: Show Processed Marker": {
+      "comment": "Settings search keywords for the Show Processed Marker setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "verarbeitet, kein RAW"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "processed, no RAW"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "procesada, sin RAW"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "traitée, sans RAW"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "elaborata, senza RAW"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "処理済み, RAWなし"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "처리됨, RAW 없음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "bewerkt, geen RAW"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "processada, sem RAW"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已处理, 无 RAW"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "已處理, 無 RAW"
+          }
+        }
+      }
+    },
+    "Search keywords: Sign Each Photo": {
+      "comment": "Settings search keywords for the Sign Each Photo setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Content Credentials, C2PA, Signatur"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Content Credentials, C2PA, signature"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Credenciales de contenido, C2PA, firma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Content Credentials, C2PA, signature"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Content Credentials, C2PA, firma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "コンテンツクレデンシャル, C2PA, 署名"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "콘텐츠 자격 증명, C2PA, 서명"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Content Credentials, C2PA, handtekening"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Credenciais de Conteúdo, C2PA, assinatura"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "内容凭证, C2PA, 签名"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "內容憑證, C2PA, 簽署"
+          }
+        }
+      }
+    },
+    "Search keywords: Start in Clean View": {
+      "comment": "Settings search keywords for the Start in Clean View setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "minimal, Steuerelemente ausblenden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "minimal, hide controls"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "mínimo, ocultar controles"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "minimal, masquer les commandes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "minimale, nascondi controlli"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ミニマル, コントロールを隠す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "미니멀, 컨트롤 숨기기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "minimaal, bediening verbergen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "mínimo, ocultar controles"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "极简, 隐藏控件"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "極簡, 隱藏控制項"
+          }
+        }
+      }
+    },
+    "Search keywords: Viewfinder Overlays": {
+      "comment": "Settings search keywords for the Viewfinder Overlays setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Raster, Wasserwaage, Histogramm, Peaking"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "grid, level, histogram, peaking"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "cuadrícula, nivel, histograma, peaking"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "grille, niveau, histogramme, peaking"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "griglia, livella, istogramma, peaking"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "グリッド, 水平器, ヒストグラム, ピーキング"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "격자, 수평계, 히스토그램, 피킹"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "raster, waterpas, histogram, peaking"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "grade, nível, histograma, peaking"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "网格, 水平仪, 直方图, 峰值对焦"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "格線, 水平儀, 直方圖, 峰值對焦"
+          }
+        }
+      }
+    },
     "Self-Timer": {
       "comment": "VoiceOver and Voice Control name of the pill on the camera that shows the self-timer is on.",
       "extractionState": "manual",
@@ -20376,6 +23862,222 @@
         }
       }
     },
+    "Settings search: page path": {
+      "comment": "Settings search: where a setting is, as whole page names joined by an arrow, for example Privacy › Details in Each Photo. Both placeholders are names of Settings groups or pages. Keep the separator unless another is usual in your language.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@ › %2$@"
+          }
+        }
+      }
+    },
+    "Settings search: spoken page path": {
+      "comment": "VoiceOver form of a Settings page path: whole group and page names, for example \"Privacy, Details in Each Photo\". Both placeholders are names of Settings groups or pages.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@、%2$@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@，%2$@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@，%2$@"
+          }
+        }
+      }
+    },
+    "Settings search: spoken result": {
+      "comment": "VoiceOver label of a Settings search result: the setting, then where it is, for example \"Location, in Privacy, Details in Each Photo\". The first placeholder is the setting's name, the second the spoken page path.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, in %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, in %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, en %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, dans %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, in %2$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@、%2$@内"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@에 있음"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, in %2$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, em %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@，位于%2$@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@，位於%2$@"
+          }
+        }
+      }
+    },
     "Settings section: Photos": {
       "comment": "Settings section header for the formats and look each photo is saved with (a heading, not a count).",
       "extractionState": "manual",
@@ -20444,6 +24146,78 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "照片"
+          }
+        }
+      }
+    },
+    "Settings section: Screen": {
+      "comment": "Settings section header for what the camera screen shows: clean view, viewfinder overlays, the Processed marker, night mode, the red viewfinder and the Live Activity (a heading, not a verb).",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Bildschirm"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pantalla"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Écran"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Schermo"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "画面"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "화면"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherm"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tela"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "屏幕"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "螢幕"
           }
         }
       }
@@ -20642,6 +24416,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "顯示控制項"
+          }
+        }
+      }
+    },
+    "Show Processed Marker": {
+      "comment": "Switch in Settings and on the processing note: whether the camera shows \"Processed\" before a photo on a lens that can't save RAW. \"Processed\" is the marker's word; use the same translation. RAW is a file format name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Markierung „Verarbeitet“ anzeigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostrar marca «Procesada»"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Afficher le repère « Traitée »"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostra indicatore «Elaborata»"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「処理済み」を表示"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "'처리됨' 표시 보기"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toon markering ‘Bewerkt’"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mostrar indicador “Processada”"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "显示“已处理”标示"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顯示「已處理」標示"
           }
         }
       }
@@ -24414,6 +28254,72 @@
         }
       }
     },
+    "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Q to try again, or choose a lower brightness.": {
+      "comment": "Explains the Light Unavailable warning. Light is the name of a camera control; Q is the letter on the Quick Menu button beside the shutter: keep \"Q\" unchanged. Replaces the sentence that named Quick Controls.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Licht ist aus: Das System hat es nicht zugelassen, zum Beispiel weil das Gerät zu warm ist. Schalte Licht in Q aus und wieder ein, um es erneut zu versuchen, oder wähle eine geringere Helligkeit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luz está apagada: el sistema no la ha permitido, por ejemplo porque el dispositivo está demasiado caliente. Desactiva y vuelve a activar Luz en Q para intentarlo de nuevo, o elige un brillo menor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La lumière est éteinte : le système ne l'a pas autorisée, par exemple parce que l'appareil est trop chaud. Désactivez puis réactivez Lumière dans Q pour réessayer, ou choisissez une luminosité plus faible."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La luce è spenta: il sistema non l'ha consentita, ad esempio perché il dispositivo è troppo caldo. Disattiva e riattiva Luce in Q per riprovare, oppure scegli una luminosità più bassa."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ライトはオフです。デバイスが熱くなりすぎているなどの理由で、システムが許可しませんでした。もう一度試すにはQでライトをオフにしてから再びオンにするか、明るさを下げてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "조명이 꺼져 있습니다. 기기가 너무 뜨거운 등의 이유로 시스템이 허용하지 않았습니다. 다시 시도하려면 Q에서 조명을 껐다가 다시 켜거나, 더 낮은 밝기를 선택하세요."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De lamp is uit: het systeem stond het niet toe, bijvoorbeeld omdat het apparaat te warm is. Zet Lamp uit en weer aan in Q om het opnieuw te proberen, of kies een lagere helderheid."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "A luz está desligada: o sistema não a permitiu, por exemplo porque o dispositivo está quente demais. Desative e ative Luz novamente em Q para tentar de novo, ou escolha um brilho menor."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "灯光已关闭：系统不允许使用，例如设备过热。要重试，请在 Q 中关闭再打开灯光，或选择较低的亮度。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "燈光已關閉：系統不允許使用，例如裝置過熱。若要重試，請在 Q 中關閉再開啟燈光，或選擇較低的亮度。"
+          }
+        }
+      }
+    },
     "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Quick Controls to try again, or choose a lower brightness.": {
       "comment": "Explains the Light Unavailable warning. Light and Quick Controls are the names of camera controls.",
       "extractionState": "manual",
@@ -25400,6 +29306,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "逆時針傾斜 %@"
+          }
+        }
+      }
+    },
+    "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it. VoiceOver says each second of the countdown.": {
+      "comment": "Accessibility page, Self-Timer and Burst: where the self-timer and burst are on the camera. Timer and Burst are words on the drive strip above the shutter; use their translations. VoiceOver is Apple's screen reader; keep the name unchanged. Replaces the sentence that named Quick Controls.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„Timer“ über dem Auslöser stellt einen Selbstauslöser von 3 oder 10 Sekunden ein. „Serie“ ist daneben. VoiceOver sagt jede Sekunde des Countdowns an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Temporizador, encima del obturador, ajusta un temporizador de 3 o 10 segundos. Ráfaga está al lado. VoiceOver dice cada segundo de la cuenta atrás."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Retardateur, au-dessus du déclencheur, règle un retardateur de 3 ou 10 secondes. Rafale est juste à côté. VoiceOver annonce chaque seconde du compte à rebours."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autoscatto, sopra il pulsante di scatto, imposta un autoscatto di 3 o 10 secondi. Raffica è accanto. VoiceOver pronuncia ogni secondo del conto alla rovescia."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "シャッターの上の「タイマー」で、3秒または10秒のセルフタイマーを設定できます。「バースト」はその隣にあります。VoiceOverがカウントダウンを1秒ずつ読み上げます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "셔터 위의 타이머에서 3초 또는 10초 셀프 타이머를 설정할 수 있습니다. 연속 촬영은 그 옆에 있습니다. VoiceOver가 카운트다운을 1초마다 읽어 줍니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer, boven de sluiterknop, stelt een zelfontspanner van 3 of 10 seconden in. Burst staat ernaast. VoiceOver zegt elke seconde van het aftellen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Timer, acima do obturador, define um temporizador de 3 ou 10 segundos. Sequência fica ao lado. O VoiceOver fala cada segundo da contagem regressiva."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快门上方的“定时”可设置 3 秒或 10 秒的自拍定时。“连拍”就在旁边。VoiceOver 会读出倒计时的每一秒。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "快門上方的「定時」可設定 3 秒或 10 秒的自拍定時。「連拍」就在旁邊。VoiceOver 會讀出倒數的每一秒。"
           }
         }
       }
@@ -27182,6 +31154,78 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "觀景窗疊加資訊"
+          }
+        }
+      }
+    },
+    "Viewfinder overlays: two on": {
+      "comment": "Value of the Viewfinder Overlays row in Settings when two overlays are on: their two names, for example Grid, Level. Both placeholders are overlay names.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@、%2$@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@, %2$@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@、%2$@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%1$@、%2$@"
           }
         }
       }

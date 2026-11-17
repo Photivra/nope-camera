@@ -6,6 +6,18 @@ LOCALES = ["en", "ja", "es", "fr", "de", "ko", "zh-Hant", "zh-Hans", "pt-BR", "i
 STATES = {"translated", "needs_review"}
 NAME = "nope."
 
+
+def variation_units(localization):
+    """Every string unit under a localization's variations (plural or device), at any depth."""
+    units = []
+    for cases in localization.get("variations", {}).values():
+        for case in cases.values():
+            if "stringUnit" in case:
+                units.append(case["stringUnit"])
+            units.extend(variation_units(case))
+    return units
+
+
 failures = []
 for path in sys.argv[1:]:
     with open(path, encoding="utf-8") as handle:
@@ -23,6 +35,16 @@ for path in sys.argv[1:]:
             # App Shortcuts phrases (AppShortcuts.xcstrings) are string sets: one or more
             # phrases per language, all with the same state.
             string_set = localization.get("stringSet")
+            if "variations" in localization:
+                # Plural (or device) variations: every case needs a value and a reviewed state.
+                units = variation_units(localization)
+                if not units or not all(u.get("value", "").strip() for u in units):
+                    failures.append(f"{path}: '{key}' has no {locale} translation")
+                elif not all(u.get("state") in STATES for u in units):
+                    failures.append(f"{path}: '{key}' in {locale} has a variation that is not translated or needs_review")
+                elif NAME in english and not all(NAME in u["value"] for u in units):
+                    failures.append(f"{path}: '{key}' in {locale} must keep the name '{NAME}' unchanged")
+                continue
             if locale == "en" and unit is None and string_set is None:
                 continue  # The key itself is the English text.
             values = [unit.get("value", "")] if unit is not None else (string_set or {}).get("values", [])

@@ -7,6 +7,7 @@ failures=0
 
 # catalog "<comment>" "<english value>" "<translation>" "<state>" [skip-locale]
 # A translation starting with "set:" is an App Shortcuts string set, its phrases separated by "|".
+# A translation starting with "plural:" is a set of plural cases, "one=...|other=...".
 catalog() {
   python3 -I -c '
 import json, sys
@@ -17,6 +18,10 @@ for l in locales:
     if l != skip:
         if value.startswith("set:"):  # an App Shortcuts string set: phrases separated by "|"
             loc[l] = {"stringSet": {"state": state, "values": [v for v in value[4:].split("|")]}}
+        elif value.startswith("plural:"):  # plural cases: "one=...|other=..."
+            cases = dict(case.split("=", 1) for case in value[7:].split("|"))
+            loc[l] = {"variations": {"plural": {form: {"stringUnit": {"state": state, "value": text}}
+                                                for form, text in cases.items()}}}
         else:
             loc[l] = {"stringUnit": {"state": state, "value": value}}
 print(json.dumps({"sourceLanguage": "en", "version": "1.0",
@@ -44,6 +49,10 @@ expect fail "phrase set with an empty phrase" "Siri phrase." "Take a photo" "set
 expect fail "phrase set with no phrases" "Siri phrase." "Take a photo" "set:" needs_review
 expect fail "phrase set, new state" "Siri phrase." "Take a photo" "set:Mach ein Foto" new
 expect fail "phrase set changes the name" "Siri phrase." "Open nope." "set:nope. öffnen|Nope öffnen" needs_review
+expect pass "plural cases needing review" "Count." "%lld Saved" "plural:one=%lld guardado|other=%lld guardados" needs_review
+expect fail "plural case with an empty value" "Count." "%lld Saved" "plural:one=%lld guardado|other=" needs_review
+expect fail "plural cases, new state" "Count." "%lld Saved" "plural:one=%lld guardado|other=%lld guardados" new
+expect fail "plural case changes the name" "Count." "%lld in nope." "plural:one=%lld in nope.|other=%lld in Nope" needs_review
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all localization check tests passed"
