@@ -609,6 +609,7 @@
 		A10000000000000000000D03 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
 				INFOPLIST_FILE = "NopeApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
@@ -632,6 +633,7 @@
 		A10000000000000000000D04 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = NopeApp.entitlements;
 				INFOPLIST_FILE = "NopeApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
@@ -751,6 +753,7 @@
 		B70000000000000000000D01 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "$(NOPE_BUNDLE_IDENTIFIER)";
@@ -772,6 +775,7 @@
 		B70000000000000000000D02 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "$(NOPE_BUNDLE_IDENTIFIER)";

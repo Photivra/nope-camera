@@ -23,7 +23,7 @@ The design of nope. for release 1.0.0, in direction B (Reach), chosen from the o
 | [navigation.html](navigation.html), [navigation.md](navigation.md) | Every option, where it lives, the path to it from the camera, and tap counts in 0.3.0 and in this design. |
 | [ACCESSIBILITY.md](ACCESSIBILITY.md) | VoiceOver labels, values and order; Voice Control; Switch Control and the keyboard; text size; motion, transparency and contrast; Siri and Shortcuts. |
 | [BUILD-SPEC.md](BUILD-SPEC.md) | The build specification: each screen's component tree mapped to the Swift files, what changes and what stays, acceptance criteria, new strings, work beyond the interface, and the order of work in parallel chunks. |
-| [icon.html](icon.html) | The "n." app icon and the options for the color of its period. The final icon is a brand asset; see [TRADEMARKS.md](../../TRADEMARKS.md). |
+| [icon.html](icon.html) | The "n." app icon, the options for the color of its period and the choice (teal). The built icon is `App/NopeApp/AppIcon.icon` and `App/NopeWatch/AppIcon.icon`. The final icon is a brand asset; see [TRADEMARKS.md](../../TRADEMARKS.md). |
 | `screens/` | One self-contained HTML mockup and one PNG for each screen. Key screens are rendered at 2x, the rest at 1x. |
 
 ## Rules for this folder

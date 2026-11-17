@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- nope. app icon, "n" layer. Drawn from docs/design/icon.html (stem M48 76V40, arch M48 57A17 17 0 0 1 82 57V76, 8-unit square-cap stroke) scaled by 8 and outlined as one filled path. No font. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<path fill="#EDEDEE" d="M352 288H416V324.0608A168 168 0 0 1 688 456V640H624V456A104 104 0 0 0 416 456V640H352Z"/>
+</svg>
