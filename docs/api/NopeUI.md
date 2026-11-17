@@ -1319,6 +1319,12 @@ There is no yellow. Every state also has a symbol or words, so nothing depends o
 alone (AGENTS.md, "Vision settings"). In night mode both teal and amber become the night
 red (``NightStyle``); the symbols and words still tell them apart.
 
+The values come from the design tokens (`DesignTokens.swift`, docs/design/tokens.md). The
+sizes here are deprecated in release 1.0.0 and are kept only until every view uses the tokens
+(docs/design/BUILD-SPEC.md, section 8): use ``NopeRadius``, ``NopeSize`` and ``NopeSpace``
+in new code. They aren't marked `@available(*, deprecated)`, because the package treats
+warnings as errors and the views that still use them would stop compiling.
+
 ## `CameraStyle/cornerRadius`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -1327,7 +1333,10 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var cornerRadius: CGFloat { get }
 ```
 
-The corner radius of chips, pills and banners, in points.
+The corner radius of chips, pills and banners, in points: ``NopeRadius/small`` (12; it
+was 10 before release 1.0.0, which tokens.md maps to 12).
+
+Deprecated: use ``NopeRadius/small`` or ``NopeRadius/large``.
 
 ## `CameraStyle/fact`
 
@@ -1337,7 +1346,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var fact: CameraColor { get }
 ```
 
-A verified fact, such as the seal on a single-frame RAW.
+A verified fact, such as the seal on a single-frame RAW: ``NopeColor/fact``, shown as the
+night red in night mode.
 
 ## `CameraStyle/minimumTarget`
 
@@ -1348,6 +1358,8 @@ static var minimumTarget: CGFloat { get }
 ```
 
 The minimum size of every touch target, in points (AGENTS.md, "Touch targets").
+
+Deprecated: use ``NopeSize/minTarget``.
 
 ## `CameraStyle/secondaryText`
 
@@ -1370,6 +1382,8 @@ static var targetSpacing: CGFloat { get }
 
 The space between neighboring touch targets, in points (issue #68, "Point budget").
 
+Deprecated: use ``NopeSize/targetGap`` between targets, or ``NopeSpace/xs`` for spacing.
+
 ## `CameraStyle/warning`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -1378,7 +1392,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var warning: CameraColor { get }
 ```
 
-A warning: something that changes what the photo is, or a failure.
+A warning: something that changes what the photo is, or a failure. ``NopeColor/warning``,
+shown as the night red in night mode.
 
 ## `CameraWarning`
 
@@ -2791,7 +2806,9 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 A dark backing for anything drawn over the picture: a system material darkened so text and
 icons keep their contrast over a white or yellow scene, and solid black with Reduce
-Transparency or Increase Contrast (issue #68, "Contrast").
+Transparency or Increase Contrast (issue #68, "Contrast"). It draws ``NopeMaterial/backing``.
+
+Deprecated: use `nopeBackground(.backing, in:)`.
 
 ## `DarkBacking/body(content:)`
 
@@ -2802,7 +2819,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```
 
-Puts the backing behind the content.
+Puts the backing behind the content. The camera screen is audited over a black viewfinder
+in the Simulator; the white and yellow frames are a device check (docs/TESTING.md).
 
 - Parameter content: The content.
 
@@ -3209,6 +3227,20 @@ var isPresentedInPopover: Bool { get set }
 
 Whether the view is presented in a popover (Settings and the format details on iPad), set
 by ``AdaptivePresentation``.
+
+## `EnvironmentValues/nopeSecondaryLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+var nopeSecondaryLabel: Color { get set }
+```
+
+The color of secondary text inside a custom button, such as a tile's name or a readout's
+mode letter, for the button's state: set by the button styles from
+``NopeControlAppearance/secondaryLabel``. A view inside the button's label reads it; the
+hierarchical `.secondary` style would instead fade the primary color, which the
+accessibility audit reported as low contrast on a selected tile.
 
 ## `EnvironmentValues/offersLiveActivity`
 
@@ -4481,6 +4513,60 @@ using the system list format for the current language.
   - settings: The settings.
   - deviceSupportsBayerRAW: Whether RAW can be chosen on this device.
 - Returns: The available selected formats, in display order.
+
+## `GalleryReadoutLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct GalleryReadoutLabel
+```
+
+A sample manual readout's content in the gallery: the mode letter over the value.
+
+## `GalleryReadoutLabel/body`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The mode letter over the value.
+
+## `GalleryReadoutLabel/init(mode:value:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(mode: String, value: String)
+```
+
+Creates the readout's content.
+
+- Parameters:
+  - mode: "A" or "M".
+  - value: The value.
+
+## `GalleryReadoutLabel/mode`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let mode: String
+```
+
+"A" or "M".
+
+## `GalleryReadoutLabel/value`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let value: String
+```
+
+The value.
 
 ## `GridOverlay`
 
@@ -6359,6 +6445,2091 @@ The tint of a switch's track and a slider's filled track in night mode, before t
 multiply: a dark gray, shown as a dark red, so the knob or thumb (white, shown as the full
 red) stands out from the track by at least 3:1 (WCAG 2.2, 1.4.11). Applied by
 ``NightModeSwitchStyle`` and `nightModeTrackTint()`.
+
+## `NopeButtonGallery`
+
+public, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeButtonGallery
+```
+
+Debug builds only: every custom button type in each of its states, on the camera's black, for
+review and for the UI tests' accessibility audits (docs/design/BUILD-SPEC.md, section 8,
+chunk 0). The app shows it instead of the camera when launched with `-NopeButtonGallery`;
+`-NopeButtonGallery.night YES` draws it in night mode. Its words are fixed English sample
+labels, not interface text.
+
+## `NopeButtonGallery/body`
+
+public, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The button types, one section each.
+
+## `NopeButtonGallery/init(isNightMode:)`
+
+public, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isNightMode: Bool = false)
+```
+
+Creates the gallery.
+
+- Parameter isNightMode: Whether to draw it in night mode.
+
+## `NopeButtonGallery/isNightMode`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether the gallery is in night mode.
+
+## `NopeCapsuleStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeCapsuleStyle
+```
+
+A capsule button with a symbol and words (docs/design/tokens.md, "Capsule", "Toggle" and
+"Destructive"). It replaces `SelectableCapsuleStyle`.
+
+- Secondary: Manual Controls, card buttons, Auto on a dial, Try Again.
+- Selectable (`isSelected`): filled white with a black label when on; Manual Controls,
+  lenses, drive words, the Compare view buttons.
+- Destructive (`role: .destructive`, or a `Button(role: .destructive)`): the red label of Stop,
+  Stop Burst and Stop Frames.
+
+It is ``NopeSize/capsule`` (36 points) high with a 44-point target; ``NopeSize/capsuleLarge``
+in the Q panel's foot. The label is ``NopeFont/status``, or ``NopeFont/pill`` when compact; a
+font set on the label itself wins, as for the lens labels (``NopeFont/lens``).
+
+```swift
+Button(action: stop) { Label(stopTitle, systemImage: "stop.fill") }
+    .buttonStyle(NopeCapsuleStyle(role: .destructive))
+```
+
+## `NopeCapsuleStyle/horizontalPadding`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var horizontalPadding: CGFloat { get }
+```
+
+The space on each side of the label, in points.
+
+## `NopeCapsuleStyle/idleFill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let idleFill: NopeIdleFill
+```
+
+What the button is filled with when it isn't selected.
+
+## `NopeCapsuleStyle/init(isSelected:role:size:isCompact:idleFill:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isSelected: Bool = false, role: ButtonRole? = nil, size: CGFloat = NopeSize.capsule, isCompact: Bool = false, idleFill: NopeIdleFill = .control)
+```
+
+Creates the style.
+
+- Parameters:
+  - isSelected: Whether the button is selected or on.
+  - role: The button's role; `.destructive` gives the red label. A `Button(role:)` role
+    does the same.
+  - size: The visible height in points: ``NopeSize/capsule`` (36) by default,
+    ``NopeSize/capsuleLarge`` (44) in the Q panel's foot, ``NopeSize/driveWord`` (32) for
+    drive words, ``NopeSize/lensItem`` (36) for a lens. The hit target is at least 44.
+  - isCompact: Whether the button is a small capsule, with the pill font and less padding.
+  - idleFill: What the button is filled with when not selected: ``NopeIdleFill/control`` on
+    the black rows, ``NopeIdleFill/tile`` in panels and dials, ``NopeIdleFill/none`` for
+    drive words.
+
+## `NopeCapsuleStyle/isCompact`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isCompact: Bool
+```
+
+Whether the button is a small capsule: ``NopeFont/pill`` and ``NopeSpace/s`` padding.
+
+## `NopeCapsuleStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the button is selected or on.
+
+## `NopeCapsuleStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled button.
+
+- Parameter configuration: The button's label and press state.
+
+## `NopeCapsuleStyle/role`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let role: ButtonRole?
+```
+
+The button's role; `.destructive` gives the red label.
+
+## `NopeCapsuleStyle/size`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let size: CGFloat
+```
+
+The visible height, in points.
+
+## `NopeColor`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeColor
+```
+
+The colors of the camera, one meaning each (docs/design/tokens.md, "Color").
+
+The camera is always dark. Teal is for verified facts only, amber for warnings only, and a
+white fill for the selected item; there is no yellow, and no state is shown by color alone
+(AGENTS.md, "Vision settings"). Brand color reaches system controls only through `tint`.
+
+Night mode keeps `NightModeStyle`, which multiplies everything by pure red: a view under it
+draws white for the night red and uses ``nightOutlineUnderMultiply`` for an outline. ``night``
+and ``nightOutline`` are the final colors, for parts drawn outside that multiply.
+
+## `NopeColor/additional`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var additional: [(name: String, color: Color)] { get }
+```
+
+The color tokens that aren't in docs/design/tokens.md.
+
+## `NopeColor/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, color: Color)] { get }
+```
+
+Every color token whose name is a row of docs/design/tokens.md, for the tests and the
+gallery. The colors this file adds are in ``additional``.
+
+## `NopeColor/controlFill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var controlFill: Color { get }
+```
+
+A 20% gray (`#333333`): the fill of buttons on the camera's black rows.
+
+## `NopeColor/controlFillNight`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var controlFillNight: Color { get }
+```
+
+An 8% gray, shown as `#140000` under the night multiply: the fill of an off control in
+night mode. The night red is 5.1:1 on it; on ``controlFill`` it would be 4.6:1, which the
+0.3.0 audit reported for small text. Not in tokens.md (design-system.html, `--fill`).
+
+## `NopeColor/destructive`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var destructive: Color { get }
+```
+
+A light red (`#FF7169`, 4.7:1 on ``controlFill``): the labels of Stop buttons.
+
+tokens.md defines it as `Color.red` with the mockup value `#FF6961`. The system red in the
+dark appearance is `#FF453A`, 3.7:1 on ``controlFill``, and `#FF6961` is 4.48:1; both fall
+below the 4.5:1 WCAG 2.2 asks for text (1.4.3) at 15 points semibold, so this is the
+nearest red that passes.
+
+## `NopeColor/fact`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var fact: Color { get }
+```
+
+System teal (`#40C8E0` in the dark appearance, 10.6:1 on black): verified facts only, such
+as the RAW seal and the signed seal.
+
+## `NopeColor/label`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var label: Color { get }
+```
+
+White (21:1 on black): text and symbols on the camera.
+
+## `NopeColor/labelSecondary`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var labelSecondary: Color { get }
+```
+
+A 69% gray (`#B0B0B0`, 9.7:1 on black, 5.8:1 on ``controlFill``): secondary text on the
+camera. The mockups draw it as `#AEAEB2`.
+
+## `NopeColor/night`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var night: Color { get }
+```
+
+Pure sRGB red (`#FF0000`, 5.25:1 on black): night mode's one color.
+
+## `NopeColor/nightOutline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var nightOutline: Color { get }
+```
+
+A dark red (`#B3201A`, 3.1:1 on black): the outline of an off control in night mode, for
+parts drawn outside `NightModeStyle`'s multiply. tokens.md writes it as red 0.70, green
+0.125, blue 0.10; this is the same color as the exact bytes of its mockup value.
+
+## `NopeColor/nightOutlineUnderMultiply`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var nightOutlineUnderMultiply: Color { get }
+```
+
+An 80% gray that becomes the night-mode outline under `NightModeStyle`'s multiply by pure
+red: `#CC0000`, 3.6:1 on black and 3.5:1 on ``controlFillNight`` (WCAG 2.2, 1.4.11, asks
+3:1). ``nightOutline`` would lose its green and blue there and fall to 2.9:1. Not in
+tokens.md.
+
+## `NopeColor/peaking`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var peaking: Color { get }
+```
+
+A bright magenta (`#FF33D9`, 6.7:1 on black): focus peaking only.
+
+## `NopeColor/selectedFill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var selectedFill: Color { get }
+```
+
+White: the fill of a selected or on control. Its label is ``selectedLabel``.
+
+## `NopeColor/selectedLabel`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var selectedLabel: Color { get }
+```
+
+Black: the label on ``selectedFill``.
+
+## `NopeColor/selectedLabelSecondary`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var selectedLabelSecondary: Color { get }
+```
+
+A dark gray (`#3A3A3C`, 11.4:1 on white): a tile's name on a selected tile. Not in
+tokens.md (design-system.html, `.tile.sel small`).
+
+## `NopeColor/stripIdle`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var stripIdle: Color { get }
+```
+
+An 83% gray (`#D4D4D4`, 14.1:1 on black): unselected drive words and tile names. The
+mockups draw it as `#D1D1D6`.
+
+## `NopeColor/warning`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var warning: Color { get }
+```
+
+System orange (`#FF9F0A`, 10.2:1 on black): warnings only, always with a triangle and words.
+
+## `NopeControlAppearance`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+struct NopeControlAppearance
+```
+
+The colors of a custom control in one state, resolved from the tokens. It is plain data, so
+the rules are tested without drawing.
+
+Night mode is drawn by `NightModeStyle`, which multiplies everything by pure red: white here is
+shown as the night red, black stays black, and ``NopeColor/nightOutlineUnderMultiply`` is
+shown as the night outline.
+
+## `NopeControlAppearance/Fill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+enum Fill
+```
+
+How a control is filled.
+
+## `NopeControlAppearance/Fill/color(_:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case color(Color)
+```
+
+A solid color.
+
+## `NopeControlAppearance/Fill/material(_:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case material(NopeMaterial)
+```
+
+A material over the picture.
+
+## `NopeControlAppearance/Fill/none`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case none
+```
+
+No fill.
+
+## `NopeControlAppearance/fill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let fill: Fill
+```
+
+The fill.
+
+## `NopeControlAppearance/init(fill:label:secondaryLabel:outline:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+init(fill: Fill, label: Color, secondaryLabel: Color, outline: Color?)
+```
+
+Creates an appearance. Use ``resolve(isSelected:idleFill:isDestructive:isNightMode:increaseContrast:)``
+to get the one the design gives a state.
+
+- Parameters:
+  - fill: The fill.
+  - label: The label's primary color.
+  - secondaryLabel: The label's secondary color.
+  - outline: The outline, or `nil` for none.
+
+## `NopeControlAppearance/label`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let label: Color
+```
+
+The label's primary color: its symbol and main text.
+
+## `NopeControlAppearance/outline`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let outline: Color?
+```
+
+The outline, or `nil` for none. Its width is ``NopeSize/outline``.
+
+## `NopeControlAppearance/resolve(isSelected:idleFill:isDestructive:isNightMode:increaseContrast:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+static func resolve(isSelected: Bool, idleFill: NopeIdleFill, isDestructive: Bool = false, isNightMode: Bool, increaseContrast: Bool) -> NopeControlAppearance
+```
+
+The appearance of a control.
+
+- Parameters:
+  - isSelected: Whether the control is selected or on.
+  - idleFill: What the control is filled with when it isn't selected.
+  - isDestructive: Whether the label is a destructive action, such as Stop.
+  - isNightMode: Whether night mode is on.
+  - increaseContrast: Whether Increase Contrast is on.
+- Returns: The fill, label colors and outline.
+
+## `NopeControlAppearance/secondaryLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let secondaryLabel: Color
+```
+
+The label's secondary color, for a tile's name or a readout's mode letter.
+
+## `NopeControlBackground`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeControlBackground<S> where S : InsettableShape
+```
+
+Draws a ``NopeControlAppearance``'s fill and outline behind content, in a shape.
+
+## `NopeControlBackground/appearance`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let appearance: NopeControlAppearance
+```
+
+The appearance.
+
+## `NopeControlBackground/body(content:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the fill behind it and the outline over its edge.
+
+- Parameter content: The content.
+
+## `NopeControlBackground/init(appearance:shape:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(appearance: NopeControlAppearance, shape: S)
+```
+
+Creates the background.
+
+- Parameters:
+  - appearance: The appearance.
+  - shape: The shape.
+
+## `NopeControlBackground/shape`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let shape: S
+```
+
+The shape.
+
+## `NopeCountdownFont`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor struct NopeCountdownFont
+```
+
+Scales the countdown font with Dynamic Type (docs/design/tokens.md, "Type", `countdown`).
+
+## `NopeCountdownFont/body(content:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, in the scaled countdown font.
+
+- Parameter content: The countdown text.
+
+## `NopeCountdownFont/init()`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state of its own.
+
+## `NopeFont`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeFont
+```
+
+The type ramp: the system font through Dynamic Type text styles, so every token scales with
+the person's text size, up to the largest accessibility sizes (docs/design/tokens.md, "Type").
+
+Forms, sheets, menus and alerts use the system styles unchanged. A font set on a button's own
+label wins over the one a button style sets, so a lens label can use ``lens`` inside a
+``NopeCapsuleStyle``.
+
+## `NopeFont/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, font: Font)] { get }
+```
+
+Every type token with its name in docs/design/tokens.md, for the tests and the gallery.
+
+## `NopeFont/countdown`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var countdown: Font { get }
+```
+
+The countdown number at its default size, 96 points, bold, without scaling. Use
+`nopeCountdownFont()`, which scales it with Dynamic Type; this value is the
+font at the default text size, for comparison and previews.
+
+## `NopeFont/countdown(size:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func countdown(size: CGFloat) -> Font
+```
+
+The countdown font at a size, bold.
+
+- Parameter size: The size in points, usually scaled with `@ScaledMetric`.
+- Returns: The system font at that size, bold.
+
+## `NopeFont/countdownSize`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let countdownSize: CGFloat
+```
+
+96 points: the countdown number's size at the default text size.
+
+## `NopeFont/countdownTextStyle`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let countdownTextStyle: Font.TextStyle
+```
+
+The text style the countdown scales with: Large Title, the largest system style.
+
+## `NopeFont/dialValue`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var dialValue: Font { get }
+```
+
+Body, semibold, monospaced digits (17 points): dial values.
+
+## `NopeFont/lens`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var lens: Font { get }
+```
+
+Footnote, semibold, monospaced digits (13 points): lens labels.
+
+## `NopeFont/pill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var pill: Font { get }
+```
+
+Footnote, semibold (13 points): pills, chips, small capsules and card details.
+
+## `NopeFont/q`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var q: Font { get }
+```
+
+Title 3, bold (20 points): the letter Q.
+
+## `NopeFont/readoutMode`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var readoutMode: Font { get }
+```
+
+Caption 2, bold (11 points): the A or M on a readout.
+
+## `NopeFont/status`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var status: Font { get }
+```
+
+Subheadline, semibold (15 points at the default size): format status, drive words,
+capsule labels and card titles.
+
+## `NopeFont/tileName`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var tileName: Font { get }
+```
+
+Caption, medium (12 points): tile names and readout values.
+
+## `NopeFont/tileValue`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var tileValue: Font { get }
+```
+
+Subheadline, semibold (15 points): tile values.
+
+## `NopeHaptic`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeHaptic
+```
+
+The haptics, all played through `sensoryFeedback`, each paired with something seen and a
+VoiceOver announcement (docs/design/tokens.md, "Haptics").
+
+```swift
+.sensoryFeedback(NopeHaptic.driveModeChanged, trigger: driveMode)
+```
+
+## `NopeHaptic/allAuto`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var allAuto: SensoryFeedback { get }
+```
+
+All Auto returned every manual control to auto.
+
+## `NopeHaptic/countdownSecond`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var countdownSecond: SensoryFeedback { get }
+```
+
+One second of a countdown passed.
+
+## `NopeHaptic/driveModeChanged`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var driveModeChanged: SensoryFeedback { get }
+```
+
+The drive mode changed (new in 1.0.0, extending the lens rule).
+
+## `NopeHaptic/lensChanged`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var lensChanged: SensoryFeedback { get }
+```
+
+The lens changed.
+
+## `NopeHaptic/levelFlat`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var levelFlat: SensoryFeedback { get }
+```
+
+The level reached flat.
+
+## `NopeHaptic/manualControlsChanged`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var manualControlsChanged: SensoryFeedback { get }
+```
+
+Manual Controls turned on or off (new in 1.0.0, extending the lens rule).
+
+## `NopeHaptic/notSaved`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var notSaved: SensoryFeedback { get }
+```
+
+A photo wasn't saved.
+
+## `NopeHaptic/saved`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var saved: SensoryFeedback { get }
+```
+
+A photo was saved.
+
+## `NopeHaptic/shutter`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var shutter: SensoryFeedback { get }
+```
+
+The shutter is pressed.
+
+## `NopeIconButtonStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeIconButtonStyle
+```
+
+A round symbol button: 44 points across by default, 52 for Q (docs/design/tokens.md, "Icon").
+
+Use it for Switch Camera, Q, minus and plus, close, Show Controls and More. Selected (Q while
+its panel is open) is filled white with a black symbol. The button can't grow with the text
+size, so its label is shown in the Large Content Viewer; give the button an accessibility
+label.
+
+```swift
+Button(action: toggleQuickMenu) {
+    Text(verbatim: "Q").font(NopeFont.q)
+}
+.buttonStyle(NopeIconButtonStyle(size: NopeSize.quick, isSelected: isOpen))
+```
+
+## `NopeIconButtonStyle/init(size:isSelected:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(size: CGFloat = NopeSize.iconButton, isSelected: Bool = false)
+```
+
+Creates the style.
+
+- Parameters:
+  - size: The diameter, in points: ``NopeSize/iconButton`` (44) by default, ``NopeSize/quick``
+    (52) for Q. The hit target is never smaller than ``NopeSize/minTarget``.
+  - isSelected: Whether the button is selected, as Q is while its panel is open.
+
+## `NopeIconButtonStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the button is selected.
+
+## `NopeIconButtonStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled button.
+
+- Parameter configuration: The button's label and press state.
+
+## `NopeIconButtonStyle/size`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let size: CGFloat
+```
+
+The diameter, in points.
+
+## `NopeIdleFill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+enum NopeIdleFill
+```
+
+What a custom control is filled with when it isn't selected.
+
+## `NopeIdleFill/backing`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case backing
+```
+
+``NopeMaterial/backing``: a pill or chip drawn over the picture.
+
+## `NopeIdleFill/control`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case control
+```
+
+``NopeColor/controlFill``, or ``NopeColor/controlFillNight`` in night mode: buttons on the
+camera's black rows.
+
+## `NopeIdleFill/none`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case none
+```
+
+No fill: the unselected drive words, which sit on the black strip.
+
+## `NopeIdleFill/tile`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case tile
+```
+
+``NopeMaterial/tile``, or ``NopeColor/controlFillNight`` in night mode: tiles and buttons
+in panels and dials.
+
+## `NopeMaterial`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeMaterial
+```
+
+The backgrounds of things drawn over the picture (docs/design/tokens.md, "Materials").
+
+Apply one with `nopeBackground(_:in:)`:
+
+```swift
+card.nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.large))
+```
+
+## `NopeMaterial/backing`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case backing
+```
+
+The system's ultra-thin material under black at ``backingDimming``; solid black with
+Reduce Transparency or Increase Contrast. Everything on the picture: cards, the readout
+row, dials, hints, the Q panel and the status on iPad.
+
+## `NopeMaterial/backingDimming`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let backingDimming: Double
+```
+
+The opacity of the black over the material in ``backing``: 90%.
+
+tokens.md says 86%. The 0.3.0 iPad accessibility audit reported text on a 75% backing as
+low contrast, and 0.3.0 ships 90%, which passed; this keeps the value that passed
+(docs/design/BUILD-SPEC.md, section 1: existing behavior wins and is flagged). Over a pure
+white frame the backing is at most a 10% gray, which white text passes with a wide margin
+(WCAG 2.2, 1.4.3).
+
+## `NopeMaterial/isSolid(reduceTransparency:increaseContrast:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+func isSolid(reduceTransparency: Bool, increaseContrast: Bool) -> Bool
+```
+
+Whether the material is drawn as solid black instead of a translucent material: with
+Reduce Transparency or Increase Contrast, for ``backing`` and the backing under ``tile``;
+always for ``solid``; never for ``rowOverlay``, which is a fixed 72% black.
+
+- Parameters:
+  - reduceTransparency: Whether Reduce Transparency is on.
+  - increaseContrast: Whether Increase Contrast is on.
+- Returns: `true` when the material is solid black.
+
+## `NopeMaterial/name`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+var name: String { get }
+```
+
+The material's name in docs/design/tokens.md.
+
+## `NopeMaterial/rowOverlay`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case rowOverlay
+```
+
+Black at ``rowOverlayOpacity``: the lens row and drive strip where they overlay the
+picture on the smallest iPhones.
+
+## `NopeMaterial/rowOverlayOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let rowOverlayOpacity: Double
+```
+
+The opacity of the black in ``rowOverlay``: 72%.
+
+## `NopeMaterial/solid`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case solid
+```
+
+Solid black: the failure banner and pause messages, which must be readable over any scene.
+
+## `NopeMaterial/tile`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case tile
+```
+
+A 30% system gray over ``backing``: tiles and buttons inside the Q panel and dials.
+
+## `NopeMaterial/tileFillOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let tileFillOpacity: Double
+```
+
+The opacity of the system gray in ``tile``: 30%.
+
+## `NopeMaterial/tileGray`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var tileGray: Color { get }
+```
+
+The system gray of ``tile``. On watchOS, which has no `UIColor.systemGray`, SwiftUI's gray.
+
+## `NopeMaterialBackground`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor struct NopeMaterialBackground<S> where S : Shape
+```
+
+Draws a ``NopeMaterial`` behind content, in a shape, following Reduce Transparency and
+Increase Contrast.
+
+## `NopeMaterialBackground/body(content:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+Puts the material behind the content.
+
+- Parameter content: The content.
+
+## `NopeMaterialBackground/init(material:shape:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor init(material: NopeMaterial, shape: S)
+```
+
+Creates the background.
+
+- Parameters:
+  - material: The material.
+  - shape: The background's shape.
+
+## `NopeMaterialBackground/material`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor let material: NopeMaterial
+```
+
+The material.
+
+## `NopeMaterialBackground/shape`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor let shape: S
+```
+
+The background's shape.
+
+## `NopeMotion`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeMotion
+```
+
+Animations and their Reduce Motion forms (docs/design/tokens.md, "Motion").
+
+Nothing moves by itself, pulses or blinks. Ask for the form that fits the person's setting:
+
+```swift
+@Environment(\.accessibilityReduceMotion) private var reduceMotion
+…
+.animation(NopeMotion.panel(reduceMotion: reduceMotion), value: isOpen)
+.transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
+```
+
+## `NopeMotion/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, animation: Animation)] { get }
+```
+
+Every animation token with its name in docs/design/tokens.md, for the tests.
+
+## `NopeMotion/disabledOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let disabledOpacity: Double
+```
+
+The opacity of a disabled custom button, and of the other drive words while the drive is
+busy: 40%.
+
+## `NopeMotion/fade`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var fade: Animation { get }
+```
+
+Ease in and out, 0.2 seconds: pills, chips, hints and clean view. The same with Reduce
+Motion, since a fade doesn't move.
+
+## `NopeMotion/opacity(isPressed:isEnabled:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func opacity(isPressed: Bool, isEnabled: Bool) -> Double
+```
+
+A button's opacity for its press and enabled states.
+
+- Parameters:
+  - isPressed: Whether the button is pressed.
+  - isEnabled: Whether the button is enabled.
+- Returns: ``disabledOpacity`` when disabled, ``pressedOpacity`` while pressed, otherwise 1.
+
+## `NopeMotion/panel`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var panel: Animation { get }
+```
+
+Snappy, 0.3 seconds: the Q panel, cards and dials appearing.
+
+## `NopeMotion/panel(reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func panel(reduceMotion: Bool) -> Animation
+```
+
+The panel's animation for the person's setting: ``panel``, or with Reduce Motion a 0.2-second
+crossfade (``fade``); pair it with ``panelTransition(reduceMotion:)``.
+
+- Parameter reduceMotion: Whether Reduce Motion is on.
+- Returns: The animation.
+
+## `NopeMotion/panelTransition(reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func panelTransition(reduceMotion: Bool) -> AnyTransition
+```
+
+How a panel, card or dial enters and leaves: rising from the bottom edge with a fade, or with
+Reduce Motion only a fade.
+
+- Parameter reduceMotion: Whether Reduce Motion is on.
+- Returns: The transition.
+
+## `NopeMotion/pressedOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pressedOpacity: Double
+```
+
+The opacity of a custom button while it is pressed: 70%.
+
+## `NopeMotion/pressedScale`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pressedScale: CGFloat
+```
+
+The scale of a custom button while it is pressed: 97%; none with Reduce Motion.
+
+## `NopeMotion/scale(isPressed:reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func scale(isPressed: Bool, reduceMotion: Bool) -> CGFloat
+```
+
+A button's scale for its press state.
+
+- Parameters:
+  - isPressed: Whether the button is pressed.
+  - reduceMotion: Whether Reduce Motion is on.
+- Returns: ``pressedScale`` while pressed without Reduce Motion, otherwise 1.
+
+## `NopeMotion/select`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var select: Animation { get }
+```
+
+Snappy, 0.2 seconds: the selection fill moving between lenses or drive words.
+
+## `NopeMotion/select(reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func select(reduceMotion: Bool) -> Animation?
+```
+
+The selection's animation for the person's setting: ``select``, or with Reduce Motion none,
+so the fill switches without sliding.
+
+- Parameter reduceMotion: Whether Reduce Motion is on.
+- Returns: The animation, or `nil` for none.
+
+## `NopePillLabelStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopePillLabelStyle
+```
+
+A pill's label: the symbol and the title, ``NopeSpace/xxs`` apart.
+
+## `NopePillLabelStyle/init()`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NopePillLabelStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The symbol, then the title.
+
+- Parameter configuration: The label's icon and title.
+
+## `NopePillStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopePillStyle
+```
+
+A pill: a small capsule for a changed setting (docs/design/tokens.md, "Pill"). It replaces
+`pillShape()`.
+
+It is ``NopeSize/pill`` (28 points) high with a 44-point target, in ``NopeFont/pill``, with
+``NopeSpace/xxs`` between symbol and text. Over the picture (the column layout, a sideways
+iPhone) it has the backing, so its contrast doesn't depend on the scene.
+
+## `NopePillStyle/init(isSelected:isOnPicture:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isSelected: Bool = false, isOnPicture: Bool = false)
+```
+
+Creates the style.
+
+- Parameters:
+  - isSelected: Whether the pill is selected.
+  - isOnPicture: Whether the pill is drawn over the picture, where it gets the backing
+    (``NopeMaterial/backing``) instead of ``NopeColor/controlFill``.
+
+## `NopePillStyle/isOnPicture`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isOnPicture: Bool
+```
+
+Whether the pill is drawn over the picture.
+
+## `NopePillStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the pill is selected.
+
+## `NopePillStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled pill.
+
+- Parameter configuration: The pill's label and press state.
+
+## `NopePressEffect`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopePressEffect
+```
+
+The press and enabled states every custom button shares: 70% opacity and 97% scale while
+pressed (opacity only with Reduce Motion), and 40% opacity when disabled.
+
+## `NopePressEffect/body(content:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, faded and scaled for its state.
+
+- Parameter content: The styled button.
+
+## `NopePressEffect/init(isPressed:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isPressed: Bool)
+```
+
+Creates the effect.
+
+- Parameter isPressed: Whether the button is pressed.
+
+## `NopePressEffect/isPressed`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isPressed: Bool
+```
+
+Whether the button is pressed.
+
+## `NopeRadius`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeRadius
+```
+
+The corner radii, in points: two radii and the capsule (docs/design/tokens.md, "Radii").
+
+Buttons, pills, chips, the lens group and drive words use `Capsule()` and need no value.
+System sheets, forms, menus and alerts keep the system's radii. The 0.3.0 radii map as
+8, 10 and 12 → 12, and 20 → 24.
+
+## `NopeRadius/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, value: CGFloat)] { get }
+```
+
+Every radius token with its name in docs/design/tokens.md, for the tests and the gallery.
+
+## `NopeRadius/large`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let large: CGFloat
+```
+
+24 points: the Q panel, mode cards, dials, the failure banner and pause messages.
+
+## `NopeRadius/small`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let small: CGFloat
+```
+
+12 points: tiles, readouts, the thumbnail, hints and the magnifier.
+
+## `NopeSize`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeSize
+```
+
+Sizes and hit targets, in points (docs/design/tokens.md, "Sizes").
+
+Every control's hit target is at least ``minTarget`` (44 × 44 points, AGENTS.md "Touch
+targets"), with ``targetGap`` between targets. A control drawn smaller (a 28-point pill, a
+36-point capsule, a 32-point drive word) extends its target with `nopeHitTarget()`.
+
+## `NopeSize/additional`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var additional: [(name: String, value: CGFloat)] { get }
+```
+
+The size tokens that aren't a row of their own in docs/design/tokens.md: those named in a
+row's notes, and those this file adds for values the build specification names.
+
+## `NopeSize/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, value: CGFloat)] { get }
+```
+
+Every size token whose name is a row of docs/design/tokens.md, with its value, in the order
+of the table, for the tests and the gallery. The values named only in the table's notes
+(``shutterRing``, ``shutterDisc``, ``capsuleLarge``, ``lensItemMinWidth``) and those not in
+tokens.md are listed in ``additional``.
+
+## `NopeSize/capsule`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let capsule: CGFloat
+```
+
+36 points: the visible height of capsule buttons (``NopeCapsuleStyle``); their target is
+still 44.
+
+## `NopeSize/capsuleLarge`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let capsuleLarge: CGFloat
+```
+
+44 points: the large capsule buttons in the Q panel's foot.
+
+## `NopeSize/column`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let column: CGFloat
+```
+
+104 points: the width of the trailing column in the column layout.
+
+## `NopeSize/driveRow`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let driveRow: CGFloat
+```
+
+44 points: the drive strip of the stacked layout.
+
+## `NopeSize/driveWord`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let driveWord: CGFloat
+```
+
+32 points: the visible height of a drive word; its target is 44.
+
+## `NopeSize/focusSquare`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let focusSquare: CGFloat
+```
+
+60 points: the focus square (unchanged from 0.3.0).
+
+## `NopeSize/iconButton`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let iconButton: CGFloat
+```
+
+44 points: round symbol buttons (``NopeIconButtonStyle``).
+
+## `NopeSize/lensItem`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let lensItem: CGFloat
+```
+
+36 points: the height of one lens inside the 44-point lens group.
+
+## `NopeSize/lensItemMinWidth`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let lensItemMinWidth: CGFloat
+```
+
+40 points: the smallest width of one lens inside the lens group.
+
+## `NopeSize/lensRow`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let lensRow: CGFloat
+```
+
+56 points: the lens row of the stacked layout.
+
+## `NopeSize/minTarget`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let minTarget: CGFloat
+```
+
+44 points: the smallest hit target of any control (Apple Human Interface Guidelines,
+"Accessibility"; WCAG 2.2, 2.5.8).
+
+## `NopeSize/outline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let outline: CGFloat
+```
+
+1 point: the outline of an unselected control with Increase Contrast, of an off control in
+night mode, and of cards and dials (docs/design/design-system.html). Not in tokens.md.
+
+## `NopeSize/panelMaxWidth`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let panelMaxWidth: CGFloat
+```
+
+372 points: the Q panel's width in the column layout and on a sideways iPhone.
+
+## `NopeSize/pictureStackMaxWidth`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pictureStackMaxWidth: CGFloat
+```
+
+480 points: the widest the bottom stack on the picture gets in the column layout
+(docs/design/BUILD-SPEC.md, 3.11). Not in tokens.md.
+
+## `NopeSize/pill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pill: CGFloat
+```
+
+28 points: the visible height of pills and warning chips; their target is 44.
+
+## `NopeSize/quick`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let quick: CGFloat
+```
+
+52 points: the Q button.
+
+## `NopeSize/readout`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let readout: CGFloat
+```
+
+48 points: the height of a manual readout.
+
+## `NopeSize/scrollingPicture`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let scrollingPicture: CGFloat
+```
+
+280 points: the picture's height in the scrolling layout (unchanged from 0.3.0).
+
+## `NopeSize/scrollingRowButton`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let scrollingRowButton: CGFloat
+```
+
+64 points: Q and Last Photo in the scrolling layout's pinned shutter row
+(docs/design/BUILD-SPEC.md, 3.12). Not in tokens.md; named here so the layout needs no
+literal.
+
+## `NopeSize/shutter`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutter: CGFloat
+```
+
+76 points: the diameter of Take Photo.
+
+## `NopeSize/shutterDisc`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterDisc: CGFloat
+```
+
+60 points: the diameter of the shutter's disc, inside the ring.
+
+## `NopeSize/shutterRing`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterRing: CGFloat
+```
+
+4 points: the width of the shutter's ring.
+
+## `NopeSize/shutterRowMin`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterRowMin: CGFloat
+```
+
+88 points: the smallest height of the shutter row; it takes the remaining height
+(101 points on a 402 × 874-point screen).
+
+## `NopeSize/statusRow`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let statusRow: CGFloat
+```
+
+44 points: the status line of the stacked layout.
+
+## `NopeSize/targetGap`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let targetGap: CGFloat
+```
+
+8 points: the smallest gap between two targets; 4 points (``NopeSpace/xxs``) inside the
+lens group.
+
+## `NopeSize/thumbnail`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let thumbnail: CGFloat
+```
+
+52 points: Last Photo.
+
+## `NopeSize/tileMin`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let tileMin: CGFloat
+```
+
+56 points: the smallest height of a tile; it grows when the name wraps.
+
+## `NopeSize/warningOutline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let warningOutline: CGFloat
+```
+
+1.5 points: the amber outline of a warning chip and the failure banner
+(docs/design/design-system.html). Not in tokens.md.
+
+## `NopeSpace`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeSpace
+```
+
+The spacing scale, in points: one scale on a 4-point grid (docs/design/tokens.md, "Spacing").
+
+Use it for padding and stack spacing. The 0.3.0 values map to it as 2 → 4, 6 → 8, 9 → 8,
+10 → 12 and 20 → 24.
+
+```swift
+HStack(spacing: NopeSpace.xs) { … }
+    .padding(.horizontal, NopeSpace.m)
+```
+
+## `NopeSpace/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, value: CGFloat)] { get }
+```
+
+Every spacing token with its name in docs/design/tokens.md, smallest first, for the tests
+and the button gallery.
+
+## `NopeSpace/l`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let l: CGFloat
+```
+
+24 points: the spacing between sections, and the gaps of the column layout.
+
+## `NopeSpace/m`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let m: CGFloat
+```
+
+16 points: the screen margin, panel padding and capsule padding.
+
+## `NopeSpace/s`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let s: CGFloat
+```
+
+12 points: the inner padding of pills and small capsules, and of dials.
+
+## `NopeSpace/xl`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xl: CGFloat
+```
+
+32 points: the side margin of the shutter row.
+
+## `NopeSpace/xs`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xs: CGFloat
+```
+
+8 points: the gap between controls and between tiles, the inset of items from the
+picture's edge, and the gap between pills and capsules.
+
+## `NopeSpace/xxl`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xxl: CGFloat
+```
+
+48 points: large separations on the first-run and message screens.
+
+## `NopeSpace/xxs`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xxs: CGFloat
+```
+
+4 points: the gap between a symbol and its text in a pill, inside the lens group, and
+between manual readouts.
+
+## `NopeTileLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeTileLabel
+```
+
+A tile's content: the name on top (``NopeFont/tileName``, up to two lines, in the secondary
+style), then the symbol and the value (``NopeFont/tileValue``). Inside a button, VoiceOver
+reads the name, then the value ("Grid, Thirds").
+
+## `NopeTileLabel/body`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The name over the symbol and value.
+
+## `NopeTileLabel/init(name:value:systemImage:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(name: Text, value: Text, systemImage: String? = nil)
+```
+
+Creates a tile's content.
+
+- Parameters:
+  - name: The tile's name.
+  - value: The tile's value.
+  - systemImage: The SF Symbol before the value, or `nil` for none.
+
+## `NopeTileLabel/name`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let name: Text
+```
+
+The tile's name, such as "Grid".
+
+## `NopeTileLabel/systemImage`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let systemImage: String?
+```
+
+The SF Symbol before the value, or `nil` for none.
+
+## `NopeTileLabel/value`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let value: Text
+```
+
+The tile's value, such as "Thirds" or "Off".
+
+## `NopeTileStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeTileStyle
+```
+
+A tile: a name over a symbol and value, in a rounded rectangle (docs/design/tokens.md, "Tile").
+Use it for the Q tiles and the manual readouts; ``NopeTileLabel`` lays out a tile's content.
+
+Off, it is a 30% gray over the backing (``NopeMaterial/tile``); on, filled white with a black
+label. The label's foreground style is the value's color; the name's color is in the
+environment, as `nopeSecondaryLabel`.
+
+```swift
+Button(action: toggleGrid) {
+    NopeTileLabel(name: gridTitle, value: gridValue, systemImage: "grid")
+}
+.buttonStyle(NopeTileStyle(isOn: isGridOn))
+```
+
+## `NopeTileStyle/alignment`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let alignment: Alignment
+```
+
+Where the content sits inside the tile.
+
+## `NopeTileStyle/init(isOn:minHeight:alignment:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isOn: Bool, minHeight: CGFloat = NopeSize.tileMin, alignment: Alignment = .leading)
+```
+
+Creates the style.
+
+- Parameters:
+  - isOn: Whether the tile is on.
+  - minHeight: The smallest height in points: ``NopeSize/tileMin`` (56) for a Q tile,
+    ``NopeSize/readout`` (48) for a manual readout. The tile grows when its name wraps.
+  - alignment: Where the content sits: leading for a Q tile, centered for a readout.
+
+## `NopeTileStyle/isOn`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isOn: Bool
+```
+
+Whether the tile is on.
+
+## `NopeTileStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled tile.
+
+- Parameter configuration: The tile's label and press state.
+
+## `NopeTileStyle/minHeight`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let minHeight: CGFloat
+```
+
+The smallest height, in points.
 
 ## `OverlaySettingsView`
 
@@ -8356,6 +10527,11 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 A capsule button that is filled white with bold black text when selected, and plain white on
 a dark fill otherwise, as the camera's lens and readout buttons are (issue #68, "Colors").
 
+Deprecated: use ``NopeCapsuleStyle``. Until each view moves to it, this style keeps its 0.3.0
+look (44 points high, the inherited font, 10 points of padding, 50% opacity when disabled),
+with its colors and pressed state taken from the tokens, so the layouts that use it don't change before their chunk rebuilds
+them (docs/design/BUILD-SPEC.md, section 8).
+
 ## `SelectableCapsuleStyle/horizontalPadding`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -8371,7 +10547,7 @@ The space on each side of the label, in points.
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@MainActor init(isSelected: Bool, horizontalPadding: CGFloat = 10)
+@MainActor init(isSelected: Bool, horizontalPadding: CGFloat = legacyHorizontalPadding)
 ```
 
 Creates the style.
@@ -8390,6 +10566,30 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 ```
 
 Whether the button shows the selected item.
+
+## `SelectableCapsuleStyle/legacyDisabledOpacity`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor static let legacyDisabledOpacity: Double
+```
+
+The 0.3.0 opacity of a disabled button, 50%, kept until the views move to
+``NopeCapsuleStyle``: at the token's 40% (``NopeMotion/disabledOpacity``) the accessibility
+audit reports disabled capsule text as "Contrast nearly passed", which the audits of the
+screens that use this style don't expect yet.
+
+## `SelectableCapsuleStyle/legacyHorizontalPadding`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor static let legacyHorizontalPadding: CGFloat
+```
+
+The 0.3.0 padding on each side of the label, in points, kept so the rows that use this
+style keep their width until they move to ``NopeCapsuleStyle``.
 
 ## `SelectableCapsuleStyle/makeBody(configuration:)`
 
@@ -9868,6 +12068,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Puts a rounded dark backing behind a control drawn over the picture.
 
+Deprecated: use `nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))`.
+
 ## `View/darkBacking(_:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -9878,6 +12080,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 ```
 
 Puts a dark backing behind a control drawn over the picture.
+
+Deprecated: use `nopeBackground(.backing, in: shape)`.
 
 - Parameter shape: The backing's shape; a rounded rectangle by default.
 
@@ -9946,6 +12150,45 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Draws a switch's or slider's filled track in night mode's dark red
 (``NightStyle/trackTint``), so its knob or thumb stays visible on it.
+
+## `View/nopeBackground(_:in:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func nopeBackground<S>(_ material: NopeMaterial, in shape: S) -> some View where S : Shape
+
+```
+
+Puts a ``NopeMaterial`` behind the view, in a shape.
+
+- Parameters:
+  - material: The material.
+  - shape: The background's shape, for example `Capsule()` or a rounded rectangle with
+    ``NopeRadius/large``.
+
+## `View/nopeCountdownFont()`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func nopeCountdownFont() -> some View
+
+```
+
+Sets the countdown font, 96 points bold at the default text size, scaled with Dynamic Type.
+
+## `View/nopeHitTarget()`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func nopeHitTarget() -> some View
+
+```
+
+Makes the view's hit target at least ``NopeSize/minTarget`` (44 points) in each direction,
+with the whole frame tappable, without changing how large it is drawn.
 
 ## `View/pillShape()`
 
