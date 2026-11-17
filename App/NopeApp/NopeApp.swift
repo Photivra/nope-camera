@@ -105,6 +105,9 @@ struct NopeApp: App {
             case .none where LiveActivityGallery.isRequested:
                 // UI tests only: the Live Activity layouts (`-NopeLiveActivityGallery`).
                 LiveActivityGallery()
+            case .none where ProcessInfo.processInfo.arguments.contains("-NopeButtonGallery"):
+                // UI tests only: every custom button type and state (`-NopeButtonGallery`).
+                NopeButtonGallery(isNightMode: UserDefaults.standard.bool(forKey: "NopeButtonGallery.night"))
             case .none:
                 cameraScreen
             }
