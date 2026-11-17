@@ -567,12 +567,20 @@ shard with the least time, marked `est` with twice its local time.
 Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
 has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
 changes of the light or dark setting apply, see "UI tests and accessibility audits"), installs the
-app and launches it once, then runs the shard. The watch job does the same with `scripts/prepare-simulator.sh` before
+app and launches it once, then runs the shard. Both scripts stop the Simulator's push service
+first (`scripts/stop-simulator-push.sh`, see "The Simulator's push service on the runner"
+below). The watch job does the same with `scripts/prepare-simulator.sh` before
 `test-without-building`, and names the watch Simulator by the identifier the script prints: on
 the runner its name also matches the iPhone it is paired with, and `build-for-testing` stopped
 with "multiple devices matched" (`xcodebuild test` had accepted the name). in the 0.3.0 run its first test failed to launch the watch app within
 XCTest's limit (301 s) and the next failed to terminate that launch; the watch app hadn't
-changed since its last passing run.
+changed since its last passing run. In build 44075379089 the first watch test again failed to
+launch the app ("Timed out while launching application via Xcode", 170 s) and the other seven
+passed: the watch's system app answered the test runner at once, but `xcodebuild` started the
+launch two minutes later, while it was booting the iPhone Simulator paired with the watch (it
+boots that iPhone for a watch test run). `scripts/prepare-simulator.sh` now boots the paired
+iPhone too, beside the watch and before the build, and waits for both, and it fails the step if
+the app can't be launched once (it ignored a failed launch before).
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
@@ -592,6 +600,34 @@ checks again as one smaller audit per type, so every check still runs. In the se
 the app showed no crash report, and the spindump XCTest took at a failed launch shows the app's
 main thread idle in its run loop with 0.014 s of CPU in 75 s while its threads waited to run: the
 runner, not the app, was stalled.
+
+#### The Simulator's push service on the runner
+
+In build 44075379089 UI tests failed on six jobs with a different timeout each ("Failed to
+terminate", "Timed out while evaluating UI query", "Audit failed to complete in time", "Timed out
+while launching application via Xcode"), as in the builds before it. The Simulator system logs in
+the failed jobs' result bundles (`xcrun xcresulttool export diagnostics`, then `log show
+--archive …/system.logarchive`) show the same thing on every one, iPhone, iPad and watch: the
+Simulator's push service (`apsd`) connects to Apple's push server, can't get its device
+certificate ("Could not get certificate from simulator with error … Client is not supported"),
+closes the connection and connects again at once, without a pause, from boot to the end of the
+job: about 500 connections a minute, each with a TLS handshake and a certificate check in
+`trustd`, and 1,200 to 1,800 log lines a second (1.77 million lines from `apsd` in the 25 minutes
+of one iPhone shard; 312,000 of the 408,000 lines the watch Simulator logged during its failed
+launch). On a developer's Mac the same Simulator's `apsd` logged 97 lines in two minutes and
+no such error. How much of the runner's three cores this takes wasn't measured.
+
+The timeouts themselves were the whole Simulator standing still, not the app: in the iPhone
+shard whose `testPresetsInRightToLeftLayout` timed out on a query, the app answered the test
+runner's accessibility requests the whole time, about 17 log lines a second instead of the
+usual 230, and in the same two minutes the push service's own reconnects fell from about 700 a
+minute to 50. The app showed no crash report or hang in any failed job.
+
+The app has no push notifications and makes no network request, so `scripts/stop-simulator-push.sh`
+removes the service from the Simulator's launchd (`launchctl bootout`) after boot; it comes back
+when the Simulator boots again. The script first prints how often the service gave up its
+connection in the last minute, so each job's log shows whether its runner was affected. No test,
+audit or limit changed.
 
 To run one shard locally, with a Simulator named as in CI:
 

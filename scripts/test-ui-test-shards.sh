@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Tests for scripts/ui-test-shards.sh: each case builds a small tree and checks pass or fail.
+# Tests for scripts/ui-test-shards.sh, the retry rule of scripts/run-ui-test-shard.sh and
+# scripts/stop-simulator-push.sh: each case builds a small tree and checks pass or fail.
 set -euo pipefail
 
 script="$(cd "$(dirname "$0")" && pwd)/ui-test-shards.sh"
@@ -121,6 +122,35 @@ Test Case '-[NopeAppUITests.NopeAppUITests testOne]' failed (3.0 seconds)."
 case_log no-retry "a crash after a test started" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
 NopeAppUITests-Runner (1) encountered an error (The test runner crashed while preparing to run tests: x)"
 case_log no-retry "a build error" "xcodebuild: error: Unknown build action ''."
+
+# The push service is stopped when launchd has it, and a service that stays is reported without
+# failing the run. A stand-in for xcrun plays the Simulator's launchctl: the service is loaded
+# while the state file exists, and bootout removes the file unless told to refuse.
+push="$(cd "$(dirname "$0")" && pwd)/stop-simulator-push.sh"
+case_push() { # case_push "name" "loaded|absent" "works|refuses" "expected text"
+  local name=$1 d got
+  d=$(mktemp -d)
+  [[ $2 == loaded ]] && touch "$d/loaded"
+  cat >"$d/xcrun" <<STUB
+#!/usr/bin/env bash
+case "\$*" in
+  *"launchctl print system/com.apple.apsd") [[ -e "$d/loaded" ]] ;;
+  *"launchctl print "*) exit 1 ;;
+  *"launchctl bootout system/com.apple.apsd") [[ $3 == refuses ]] || rm -f "$d/loaded" ;;
+  *"log show"*) echo "apsd Could not get certificate from simulator" ;;
+esac
+STUB
+  chmod +x "$d/xcrun"
+  if got=$(PATH="$d:$PATH" "$push" TEST-DEVICE 2>&1) && grep -q "gave up its connection 1 time" <<<"$got" && grep -q "$4" <<<"$got"; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name: $got"; failures=$((failures + 1))
+  fi
+  rm -rf "$d"
+}
+case_push "push service stopped" loaded works "Push service on TEST-DEVICE stopped"
+case_push "push service already gone" absent works "Push service on TEST-DEVICE stopped"
+case_push "push service that stays is a warning" loaded refuses "::warning::The push service of Simulator TEST-DEVICE is still loaded"
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"

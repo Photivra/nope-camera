@@ -301,7 +301,9 @@ jobs:
         run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
       # The watch Simulator is named by its identifier: on the runner the name also matches the
       # iPhone paired with it, and build-for-testing stopped with "multiple devices matched".
-      - name: Find and boot the watch Simulator
+      # The paired iPhone Simulator is booted here too, so it boots during the build and not
+      # during the first test, whose launch then timed out (docs/TESTING.md).
+      - name: Find and boot the watch Simulator and its paired iPhone
         id: watch
         run: scripts/prepare-simulator.sh "$WATCH_SIMULATOR"
       - name: Build the watch app and its UI tests
