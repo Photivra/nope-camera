@@ -2537,6 +2537,32 @@ astro helper (``CameraIntent/setInForeground(_:)``).
 
 - Parameter isInForeground: Whether the app is in the foreground now.
 
+## `CameraModel/setManualControls(_:settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func setManualControls(_ isOn: Bool, settings: NopeSettings) async
+```
+
+Turns manual controls on or off and stores the choice as the "Manual controls" option
+(``NopeSettings/showsManualControls``). Use it for every control that turns manual
+controls on or off, such as a Manual Controls button.
+
+Storing the option alone isn't enough: the astro helper turns manual controls on without
+changing the option, so storing "off" while the helper had turned them on changes no
+stored value, and an interface that follows the option (a SwiftUI `.task(id:)`) sends
+nothing. This call stores the option and sends ``ManualControlIntent/setEnabled(_:)``
+itself, so turning manual controls off always turns them and the helper off. An interface
+that also follows the option may send the same intent again; it changes nothing then.
+
+Side effects: as ``ManualControlIntent/setEnabled(_:)``; off returns every control to
+automatic and turns the astro helper off.
+
+- Parameters:
+  - isOn: Whether manual controls are on.
+  - settings: The person's settings, where the option is stored.
+
 ## `CameraModel/startTimer(seconds:shot:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -7509,81 +7535,6 @@ internal, declared in `Sources/NopeCore/AstroHelper.swift`
 
 Counts a frame taken.
 
-## `GoldenSpiral`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-enum GoldenSpiral
-```
-
-The golden (Fibonacci) spiral: quarter circles in the squares that a golden rectangle divides
-into, stretched to fill the picture (issue #40).
-
-It is built in a landscape golden rectangle (phi wide, 1 high): a square is cut from the left,
-then from the top, the right and the bottom of what is left, again and again, and each square
-holds a quarter circle that continues the last one. The points are then scaled to the unit
-square and moved to the ``SpiralPlacement``.
-
-## `GoldenSpiral/place(_:_:)`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func place(_ point: GuidePoint, _ placement: SpiralPlacement) -> GuidePoint
-```
-
-Moves a point of the standard spiral to a placement: mirrored left to right first if the
-placement is flipped, then turned clockwise a quarter turn at a time.
-
-- Parameters:
-  - point: A point of the standard spiral.
-  - placement: The placement.
-
-## `GoldenSpiral/points(placement:)`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func points(placement: SpiralPlacement) -> [GuidePoint]
-```
-
-The spiral as a polyline from its outer end to its center, in unit coordinates.
-
-- Parameter placement: Where the spiral sits.
-- Returns: ``squareCount`` × ``pointsPerQuarter`` + 1 points.
-
-## `GoldenSpiral/pointsPerQuarter`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let pointsPerQuarter: Int
-```
-
-The points drawn along each quarter circle; enough for a smooth curve at full screen.
-
-## `GoldenSpiral/squareCount`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let squareCount: Int
-```
-
-How many squares the spiral passes through. After ten the squares are smaller than a
-hundredth of the picture, too small to see.
-
-## `GoldenSpiral/unplacedPoints()`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func unplacedPoints() -> [GuidePoint]
-```
-
-The spiral in the standard placement, in unit coordinates.
-
 ## `GravitySource`
 
 public, declared in `Sources/NopeCore/Level.swift`
@@ -7681,16 +7632,6 @@ enum GridGeometry
 Where each grid style's lines go, in unit coordinates, so every interface draws the same
 guides (issue #40). Guides are on screen only.
 
-## `GridGeometry/goldenRatio`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let goldenRatio: Double
-```
-
-The golden ratio, phi: (1 + √5) / 2.
-
 ## `GridGeometry/lines(for:aspectRatio:)`
 
 public, declared in `Sources/NopeCore/GridGeometry.swift`
@@ -7702,8 +7643,7 @@ static func lines(for style: GridStyle, aspectRatio: Double) -> [GuideLine]
 The straight lines of a grid style.
 
 - Parameters:
-  - style: The style. ``GridStyle/goldenSpiral`` has no straight lines; draw
-    ``GoldenSpiral/points(placement:)`` instead.
+  - style: The style.
   - aspectRatio: The picture's width divided by its height, such as 0.75 for a 4:3
     picture held upright. Only ``GridStyle/square`` uses it.
 - Returns: The lines, vertical ones first.
@@ -7728,26 +7668,6 @@ case fourByFour
 ```
 
 Three lines each way, at quarters.
-
-## `GridStyle/goldenRatio`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-case goldenRatio
-```
-
-Two lines each way at the golden ratio (phi): about 38% and 62%.
-
-## `GridStyle/goldenSpiral`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-case goldenSpiral
-```
-
-A golden (Fibonacci) spiral, in one of eight placements (``SpiralPlacement``).
 
 ## `GridStyle/square`
 
@@ -16408,16 +16328,6 @@ The torch's brightness, remembered between launches (the torch itself always sta
 ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
 with ``LightIntent/setTorchLevel(_:)``.
 
-## `NopeSettings/turnSpiral()`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-@MainActor func turnSpiral()
-```
-
-Moves the golden spiral to its next placement, and saves the change.
-
 ## `NopeSettingsSnapshot`
 
 public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
@@ -16634,6 +16544,17 @@ static let pinsLiveReadout: String
 
 Whether the live camera readout stays in clean view, a Boolean.
 
+## `OverlayOptions/Key/removedSpiralPlacement`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let removedSpiralPlacement: String
+```
+
+The golden spiral's placement, stored before issue #76 removed the golden grids; no
+longer read, and removed when the options are stored.
+
 ## `OverlayOptions/Key/showsFocusPeaking`
 
 internal, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16684,16 +16605,6 @@ static let showsLiveReadout: String
 
 Whether the live camera readout is shown, a Boolean.
 
-## `OverlayOptions/Key/spiralPlacement`
-
-internal, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let spiralPlacement: String
-```
-
-The spiral placement, a ``SpiralPlacement/index``.
-
 ## `OverlayOptions/gridStyle`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16712,8 +16623,7 @@ public, declared in `Sources/NopeCore/OverlayOptions.swift`
 init()
 ```
 
-Creates the defaults: every overlay off, the rule-of-thirds grid style and the standard
-spiral placement.
+Creates the defaults: every overlay off and the rule-of-thirds grid style.
 
 ## `OverlayOptions/init(defaults:)`
 
@@ -16816,16 +16726,6 @@ view only when it is pinned (issue #52).
 
 - Parameter isCleanView: Whether clean view is on.
 - Returns: `true` if the readout is shown.
-
-## `OverlayOptions/spiralPlacement`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var spiralPlacement: SpiralPlacement
-```
-
-Where the golden spiral sits, when ``gridStyle`` is ``GridStyle/goldenSpiral``.
 
 ## `OverlayOptions/store(in:)`
 
@@ -17042,12 +16942,12 @@ request when there is one.
 Every reply to a ``WatchCommand`` is one, and the phone also sends one whenever the status
 changes or a photo ends while the watch app is reachable.
 
-## `PhoneUpdate/init(status:result:)`
+## `PhoneUpdate/init(status:result:unsignedReason:)`
 
 public, declared in `Sources/NopeCore/WatchMessages.swift`
 
 ```swift
-init(status: WatchStatus, result: WatchResult? = nil)
+init(status: WatchStatus, result: WatchResult? = nil, unsignedReason: SignatureStatus.UnsignedReason? = nil)
 ```
 
 Creates an update.
@@ -17055,6 +16955,8 @@ Creates an update.
 - Parameters:
   - status: The camera's status.
   - result: A new result, or `nil`.
+  - unsignedReason: Why the result's photos aren't all signed, or `nil` when they are or
+    there is no result.
 
 ## `PhoneUpdate/result`
 
@@ -17075,6 +16977,25 @@ let status: WatchStatus
 ```
 
 The camera's status.
+
+## `PhoneUpdate/unsignedReason`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+let unsignedReason: SignatureStatus.UnsignedReason?
+```
+
+Why the result's photos aren't all signed, when ``result`` is
+``WatchResult/saved(isSigned:)`` with `false` or ``WatchResult/savedSeveral(allSigned:)``
+with `false`; otherwise `nil`. It is also `nil` from a phone app that doesn't send it.
+
+Signing is the person's choice and off by default (issue #80), so an interface shows
+``SignatureStatus/UnsignedReason/turnedOff`` as plain status, and any other reason as a
+photo that couldn't be signed.
+
+Optional, so the message stays readable both ways between apps of this protocol version
+with and without it (``WatchMessageCoding/version`` is unchanged).
 
 ## `PhotoComparison`
 
@@ -21957,7 +21878,8 @@ public, declared in `Sources/NopeCore/SavedPhoto.swift`
 enum UnsignedReason
 ```
 
-Why a photo isn't signed.
+Why a photo isn't signed. It is also sent to the Apple Watch app (``PhoneUpdate``), so
+its raw values are part of the watch message format.
 
 ## `SignatureStatus/UnsignedReason/failed`
 
@@ -21968,6 +21890,22 @@ case failed
 ```
 
 The signer failed for at least one file.
+
+## `SignatureStatus/UnsignedReason/init(photosOf:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+init?(photosOf status: CaptureStatus)
+```
+
+Why the photos a capture saved aren't all signed, for the watch (``PhoneUpdate``).
+
+When the photos are unsigned for different reasons, a reason other than
+``turnedOff`` wins: a photo that couldn't be signed must not read as the person's choice.
+
+- Parameter status: The camera's capture status after the photos were saved.
+- Returns: `nil` when every photo is signed or the status holds no saved photo.
 
 ## `SignatureStatus/UnsignedReason/signedFileFailedCheck`
 
@@ -22577,120 +22515,6 @@ init()
 ```
 
 Creates a simulated preview source.
-
-## `SpiralPlacement`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-struct SpiralPlacement
-```
-
-Where the golden spiral sits: one of its eight placements, four quarter turns each drawn
-plain or flipped (issue #40, "The spiral can be flipped and rotated to any of its 8
-placements").
-
-## `SpiralPlacement/count`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let count: Int
-```
-
-The number of placements: four turns, each plain or flipped.
-
-## `SpiralPlacement/index`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var index: Int { get }
-```
-
-The placement's number, 0 to 7, as stored in the settings.
-
-## `SpiralPlacement/init(index:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-init(index: Int)
-```
-
-The placement with a number.
-
-- Parameter index: Any whole number; it is reduced to 0 through 7.
-
-## `SpiralPlacement/init(quarterTurns:isFlipped:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-init(quarterTurns: Int, isFlipped: Bool)
-```
-
-Creates a placement.
-
-- Parameters:
-  - quarterTurns: Clockwise quarter turns; any whole number, reduced to 0 through 3.
-  - isFlipped: Whether the spiral is mirrored left to right before it is turned.
-
-## `SpiralPlacement/isFlipped`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-let isFlipped: Bool
-```
-
-Whether the spiral is mirrored left to right before it is turned.
-
-## `SpiralPlacement/next`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var next: SpiralPlacement { get }
-```
-
-The next of the eight placements, wrapping back to the first: the "Turn Spiral" button
-and accessibility action step through them.
-
-## `SpiralPlacement/quarterTurns`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-let quarterTurns: Int
-```
-
-Clockwise quarter turns, 0 to 3.
-
-## `SpiralPlacement/standard`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let standard: SpiralPlacement
-```
-
-The placement the app starts with: no turn, not flipped. The spiral then winds in toward the
-right third of a landscape frame.
-
-## `SpiralPlacement/turned(by:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-func turned(by turns: Int) -> SpiralPlacement
-```
-
-The placement turned by more quarter turns, so the spiral keeps its place relative to the
-horizon while the device is turned and the camera layout stays put.
-
-- Parameter turns: Clockwise quarter turns to add; negative turns counterclockwise.
-- Returns: The turned placement, flipped the same way.
 
 ## `StorageWarning`
 
@@ -23406,6 +23230,16 @@ internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
 A result that couldn't be delivered because the watch app wasn't reachable. It goes with
 the next reply, then is cleared.
 
+## `WatchCommandServer/undeliveredUnsignedReason`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor var undeliveredUnsignedReason: SignatureStatus.UnsignedReason? { get }
+```
+
+Why the undelivered result's photos aren't all signed (``PhoneUpdate/unsignedReason``).
+
 ## `WatchDelay`
 
 public, declared in `Sources/NopeCore/WatchMessages.swift`
@@ -23784,6 +23618,18 @@ public, declared in `Sources/NopeCore/WatchRemote.swift`
 How the last photo the watch asked for ended, or `nil` before one ends. Cleared when the
 next photo is asked for.
 
+## `WatchRemote/lastUnsignedReason`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var lastUnsignedReason: SignatureStatus.UnsignedReason? { get set }
+```
+
+Why the photos of ``lastResult`` aren't all signed (``PhoneUpdate/unsignedReason``), or
+`nil` when they are, there is no result, or the phone didn't say. Show
+``SignatureStatus/UnsignedReason/turnedOff`` as plain status: signing is off by choice.
+
 ## `WatchRemote/link`
 
 internal, declared in `Sources/NopeCore/WatchRemote.swift`
@@ -23882,6 +23728,17 @@ case cancelled
 ```
 
 The countdown was cancelled, on the watch or on the phone. Say no photo was taken.
+
+## `WatchResult/includesUnsignedPhotos`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+var includesUnsignedPhotos: Bool { get }
+```
+
+Whether the result reports saved photos that aren't all signed, so a ``PhoneUpdate``
+carries the reason.
 
 ## `WatchResult/init(_:)`
 
