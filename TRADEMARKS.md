@@ -19,6 +19,8 @@ The GNU General Public License covers this repository's source code. It does not
 
 The following files are not covered by the GNU General Public License. All rights are reserved:
 
-- *(none yet; the app icon, logo and wordmark will be listed here when they're added)*
+- `App/NopeApp/AppIcon.icon/` and `App/NopeWatch/AppIcon.icon/`: the app icon (the "n." in the photo frame), including its layer files (`Assets/frame.svg`, `Assets/n.svg`, `Assets/period.svg`) and `icon.json`.
+- The icon drawings in `docs/design/icon.html`.
+- *(the logo and wordmark will be listed here when they're added)*
 
 To ask about other uses, open an issue.
