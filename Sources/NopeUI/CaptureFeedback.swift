@@ -277,9 +277,11 @@ struct ThumbnailSlot: View {
                     .accessibilityValue(Text(verbatim: CaptureMessages.message(forSaved: photos)))
                     .accessibilityAddTraits([.isButton, .isImage])
                     .accessibilityActions { menuItems }
-                    .accessibilityShowsLargeContentViewer {
-                        Label { Self.label } icon: { Image(systemName: "photo") }
-                    }
+                    // No Large Content Viewer here: at the accessibility text sizes it took the
+                    // press and hold that opens this menu, and lifting the finger then counted
+                    // as a tap, which opened Photos, so Photo Details couldn't be reached by
+                    // touch. The thumbnail is the photo itself, not a label or symbol the viewer
+                    // would enlarge; its menu items are also accessibility actions.
             } else {
                 thumbnail
                     .accessibilityElement(children: .ignore)

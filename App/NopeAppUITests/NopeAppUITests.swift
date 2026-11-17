@@ -16,9 +16,20 @@ final class NopeAppUITests: XCTestCase {
     /// setting doesn't make the system redraw a running app between tests. The setting is
     /// changed only by the tests that need it (``useAppearance(_:)``) and restored only if it
     /// changed.
+    ///
+    /// Before closing it, it waits (up to 30 seconds) until no photo is being saved, so the app
+    /// isn't closed in the middle of adding photos to the library: on the iPad runner the app,
+    /// closed right after an astro run stopped, left the screen but its process didn't exit
+    /// within XCTest's limit ("Failed to terminate"), twice.
     override func tearDown() {
         MainActor.assumeIsolated {
             let app = XCUIApplication()
+            if app.state == .runningForeground {
+                let saving = app.descendants(matching: .any)["Saving…"]
+                _ = XCTWaiter().wait(
+                    for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: saving)],
+                    timeout: 30)
+            }
             if app.state != .notRunning {
                 app.terminate()
                 _ = app.wait(for: .notRunning, timeout: 30)

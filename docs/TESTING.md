@@ -355,8 +355,8 @@ picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator cov
 4.7-inch layout, where the lens row overlays the bottom of the picture.
 
 Every test runs in the system's light setting, the Simulator's default, unless it sets dark
-with `useAppearance(_:)`; `tearDown` closes the app first, then restores portrait and, only if
-it changed, light. Settings, Presets, first run and the camera access screens
+with `useAppearance(_:)`; `tearDown` waits (up to 30 seconds) until no photo is being saved,
+closes the app, then restores portrait and, only if it changed, light. Settings, Presets, first run and the camera access screens
 follow that setting, so their audits run in light; `testSettingsScreensPassAccessibilityAudits`, `testSettingsAtTheLargestTextSize`
 and `testSettingsInRightToLeftLayout` set the dark setting, and
 `testSettingsScreensPassAccessibilityAuditsInTheLightSetting` and
