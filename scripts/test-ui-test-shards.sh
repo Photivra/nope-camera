@@ -123,6 +123,43 @@ case_log no-retry "a crash after a test started" "Test Case '-[NopeAppUITests.No
 NopeAppUITests-Runner (1) encountered an error (The test runner crashed while preparing to run tests: x)"
 case_log no-retry "a build error" "xcodebuild: error: Unknown build action ''."
 
+# After a Simulator's host process crashed, only the tests that started and have no result are
+# run again; a crash report of that process newer than the run's marker is the sign of it.
+case_interrupted() { # case_interrupted "name" "log text" "expected arguments, space separated"
+  local name=$1 log got
+  log=$(mktemp); printf '%s\n' "$2" >"$log"
+  got=$("$runner" --interrupted-tests "$log" | tr '\n' ' ')
+  if [[ $got == "$3" ]]; then echo "ok   $name"; else echo "FAIL $name: $got"; failures=$((failures + 1)); fi
+  rm -f "$log"
+}
+case_interrupted "a test cut short is run again" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
+Restarting after unexpected exit, crash, or test timeout; summary will include totals from previous launches.
+Test Case '-[NopeAppUITests.NopeAppUITests testTwo]' started.
+Test Case '-[NopeAppUITests.NopeAppUITests testTwo]' passed (3.0 seconds).
+Test Case '-[NopeAppUITests.OverlayUITests testThree]' started.
+Test Case '-[NopeAppUITests.OverlayUITests testThree]' failed (4.0 seconds)." "-only-testing:NopeAppUITests/NopeAppUITests/testOne "
+case_interrupted "tests with a result are not run again" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
+Test Case '-[NopeAppUITests.NopeAppUITests testOne]' failed (3.0 seconds)." ""
+case_interrupted "the last test cut short is run again" "Test Case '-[NopeAppUITests.NopeAppUITests testOne]' started.
+Test Case '-[NopeAppUITests.NopeAppUITests testOne]' passed (3.0 seconds).
+Test Case '-[NopeAppUITests.ShortcutUITests testFour]' started." "-only-testing:NopeAppUITests/ShortcutUITests/testFour "
+
+case_host() { # case_host "want" "name" "report file name, or none" "older|newer"
+  local want=$1 name=$2 d got
+  d=$(mktemp -d); mkdir "$d/reports"
+  if [[ $4 == older && $3 != none ]]; then touch "$d/reports/$3"; fi
+  touch -t 202601010000 "$d/marker"
+  if [[ $4 == older ]]; then touch "$d/marker"; touch -t 202501010000 "$d/reports/"* 2>/dev/null || true; fi
+  if [[ $4 == newer && $3 != none ]]; then touch "$d/reports/$3"; fi
+  if "$runner" --simulator-host-crashed "$d/reports" "$d/marker"; then got=crashed; else got=no-crash; fi
+  if [[ $got == "$want" ]]; then echo "ok   $name"; else echo "FAIL $name (expected $want, got $got)"; failures=$((failures + 1)); fi
+  rm -rf "$d"
+}
+case_host crashed "a new crash report of the Simulator's host" "SimLaunchHost.arm64-2026-11-17-174107.000.ips" newer
+case_host no-crash "a crash report from before the run" "SimLaunchHost.arm64-2026-11-17-174107.000.ips" older
+case_host no-crash "another process's crash report" "intelligencetasksd-2026-11-17-175520.ips" newer
+case_host no-crash "no crash reports" none newer
+
 # The push service is stopped when launchd has it, and a service that stays is reported without
 # failing the run. A stand-in for xcrun plays the Simulator's launchctl: the service is loaded
 # while the state file exists, and bootout removes the file unless told to refuse.

@@ -594,7 +594,8 @@ runner had to boot itself. The script retries a shard once, after rebooting the 
 when the test runner failed before any test started (any "… while preparing to run tests" error,
 including "Test crashed with signal term while preparing to run tests", which ended an iPad shard
 of build 43786103024 after its Simulator took five minutes to boot); a run in which a test started
-is never retried. `scripts/test-ui-test-shards.sh` tests both scripts.
+is never retried, except for the tests a crash of the Simulator's host process cut short (see "A
+Simulator that dies on the runner" below). `scripts/test-ui-test-shards.sh` tests both scripts.
 
 On the runner the tests wait for state rather than assume speed: a new launch waits until the
 previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
@@ -670,6 +671,32 @@ Simulator boots again. Checked on two new iPad Simulators on a Mac: the one left
 prewarm (14 seconds there) and about 100 tasks in its first seven minutes, the one with the
 scheduler stopped ran none, and services that asked for a task were refused without retrying
 in a loop (about 240 log lines in six minutes). No test, audit or limit changed.
+
+#### A Simulator that dies on the runner
+
+In build 44124454610 two iPad shards lost their Simulator. In shard 1 the first test stopped at
+"Setting up automation session", the test runner was ended ("Test crashed with signal term"),
+`xcodebuild` started it again and the other 12 tests passed, but the shard failed on the test
+that was cut short. In shard 8 `simctl install` ended with "Mach error -308 (ipc/mig) server
+died" before any test ran. Shard 1's result bundle shows the cause: the runner image mounts
+some Simulator runtime disk images twice, and a few minutes into the job the Simulator's disk
+image service (`simdiskimaged.log`) unmounted the duplicates (tvOS 27.0 at 17:39:46, watchOS
+27.0 at 17:39:58; "Image is a duplicate of existing image … preferring cryptex variant").
+A minute later the Simulator's host process, under which every booted Simulator runs, crashed
+while unloading a library from an unmounted image (`SimLaunchHost.arm64`, 17:41:07,
+`EXC_BAD_ACCESS`, `KERN_MEMORY_ERROR` in `dlclose`), and the Simulator's own processes ended
+with it (17:41:07 to 17:41:15). The same unmounts are in the disk image logs of the other
+shards we looked at, where they needed a forced third attempt and the host process kept
+running. Shard 8 uploaded no result bundle, so its cause is assumed, not shown, to be the same.
+
+This is outside the app and the tests, so `scripts/run-ui-test-shard.sh` runs again only what
+the Simulator's end cut short: it prepares the Simulator once more when booting it or
+installing the app fails, and when the run failed and the host process left a new crash report
+(`SimLaunchHost*.ips` in `~/Library/Logs/DiagnosticReports`), it reboots the Simulator and runs
+the tests that had started and have no result, once. Tests that passed aren't run again, a
+test that failed with a result still fails the shard, and without that crash report nothing
+is run again. The first run's result bundle is kept and uploaded as
+`ui-tests[-ipad]-interrupted.xcresult`.
 
 To run one shard locally, with a Simulator named as in CI:
 
