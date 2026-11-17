@@ -698,6 +698,24 @@ test that failed with a result still fails the shard, and without that crash rep
 is run again. The first run's result bundle is kept and uploaded as
 `ui-tests[-ipad]-interrupted.xcresult`.
 
+#### Dynamic Type findings on the iPad runner (open)
+
+In build 44124454610 two iPad tests failed with "Dynamic Type font sizes are partially
+unsupported" on text that the failing runs' screen recordings show whole, wrapped and not cut,
+at the largest size, and smaller at the smaller sizes the audit switches through:
+`testSettingsAtTheLargestTextSize` on the Choose Details footer "On: each photo keeps only what
+it needs to open. Off: choose each item below." (frame 30, 428.5, 440 × 267, inside the Settings
+popover), and `testLastPhotoDetailsAtTheLargestTextSize` on the Files row title "HEIF" (frame
+40, 355.5, 111.5 × 63.5). Both tests have passed on iPad in earlier builds with the same screens (44075379089, 44098207588).
+The runner's audit reports findings on these rows in passing runs too (the log of a passing run
+shows it reading the same two Choose Details elements), and in the failed details test the
+second of two audits of the unchanged screen, three seconds apart, reported a row the first
+hadn't. On a Mac the audit reports no Dynamic Type finding on either screen, also with every
+core busy. The cause isn't known. `audit(_:)` now writes each Dynamic Type issue, and each issue no rule ignores, to the test log
+("Audit round n: …", with the type, the element's label and frame, the window's frame and
+whether a rule ignored it), so the next runs show what the runner's audit reports and which
+rule decides; no rule changed.
+
 To run one shard locally, with a Simulator named as in CI:
 
 ```sh

@@ -507,15 +507,42 @@ final class NopeAppUITests: XCTestCase {
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
-        var remaining = try reportedIssues(app).filter { !ignored($0) }
+        var remaining = try judged(reportedIssues(app), in: app, round: 1, ignored: ignored)
         if !remaining.isEmpty {
             settle()
-            remaining = try reportedIssues(app).filter { !ignored($0) }
+            remaining = try judged(reportedIssues(app), in: app, round: 2, ignored: ignored)
         }
         for issue in remaining {
             XCTFail(
                 "\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
         }
+    }
+
+    /// Returns the issues that aren't ignored, and writes one line to the test log for each
+    /// Dynamic Type issue and each issue that isn't ignored: its type, the element's label and
+    /// frame, the window's frame, and whether it was ignored. On the CI runner the audit reported Dynamic Type findings on the same rows in
+    /// runs that passed and runs that failed (build 44124454610), and which rule ignored them
+    /// couldn't be told from the log; these lines record it (docs/TESTING.md).
+    @MainActor
+    private func judged(
+        _ issues: [XCUIAccessibilityAuditIssue], in app: XCUIApplication, round: Int,
+        ignored: (XCUIAccessibilityAuditIssue) -> Bool
+    ) throws -> [XCUIAccessibilityAuditIssue] {
+        var remaining: [XCUIAccessibilityAuditIssue] = []
+        for issue in issues {
+            let isIgnored = ignored(issue)
+            if !isIgnored { remaining.append(issue) }
+            guard issue.auditType == .dynamicType || !isIgnored else { continue }
+            // A decision by type alone needs no element; the others are the frame rules'.
+            guard let element = issue.element, element.exists else {
+                NSLog("Audit round %d: %@, no element, ignored: %d", round, issue.compactDescription, isIgnored ? 1 : 0)
+                continue
+            }
+            NSLog(
+                "Audit round %d: %@, \"%@\" at %@ in window %@, ignored: %d", round, issue.compactDescription,
+                element.label, "\(element.frame)", "\(app.windows.firstMatch.frame)", isIgnored ? 1 : 0)
+        }
+        return remaining
     }
 
     /// Runs the accessibility audit and returns every issue it found, without failing the test.
