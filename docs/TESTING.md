@@ -572,9 +572,10 @@ shard with the least time, marked `est` with twice its local time.
 Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
 has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
 changes of the light or dark setting apply, see "UI tests and accessibility audits"), installs the
-app and launches it once, then runs the shard. Both scripts stop the Simulator's push service
-first (`scripts/stop-simulator-push.sh`, see "The Simulator's push service on the runner"
-below). The watch job does the same with `scripts/prepare-simulator.sh` before
+app and launches it once, then runs the shard. Both scripts first stop the Simulator's
+background task scheduler (`scripts/stop-simulator-background-tasks.sh`, see "The Simulator's
+background tasks on the runner" below) and its push service (`scripts/stop-simulator-push.sh`,
+see "The Simulator's push service on the runner" below). The watch job does the same with `scripts/prepare-simulator.sh` before
 `test-without-building`, and names the watch Simulator by the identifier the script prints: on
 the runner its name also matches the iPhone it is paired with, and `build-for-testing` stopped
 with "multiple devices matched" (`xcodebuild test` had accepted the name). in the 0.3.0 run its first test failed to launch the watch app within
@@ -633,6 +634,42 @@ removes the service from the Simulator's launchd (`launchctl bootout`) after boo
 when the Simulator boots again. The script first prints how often the service gave up its
 connection in the last minute, so each job's log shows whether its runner was affected. No test,
 audit or limit changed.
+
+#### The Simulator's background tasks on the runner
+
+In build 44098207588, with the push service stopped, one test timed out in each of six shards
+(iPad 1, 3, 5 and 7, iPhone 4 and 5): "Failed to terminate", "does not have a process ID"
+after a launch, and a query that took 283 seconds. Two of them ran on Simulators whose push
+service had reported no dropped connection. Each failed test ran within ten minutes of its
+Simulator's boot, and the Simulator system logs show what ran then: the Simulator's background
+task scheduler (`dasd`) started `com.apple.springboard.posterboardupdate.prewarm`, PosterBoard's
+prewarm of the wallpaper gallery, which took 127 to 158 seconds, and then the other first-boot
+tasks (Spotlight indexing, Health, Siri, Mail and Maps migrations, about 100 in all). Prewarm
+and failed test, by the logs' times (UTC):
+
+| Shard | Prewarm | Failed test |
+|---|---|---|
+| iPad 1 | 14:51:26 to 14:53:48 | 14:50:27 to 14:53:53, terminate failed at 14:53:51 |
+| iPad 3 | 14:17:10 to 14:19:48 | 14:16:38 to 14:22:22, stalled from 14:17:29 |
+| iPad 5 | 15:15:46 to 15:17:53 | 15:15:59 to 15:19:49 |
+| iPad 7 | 14:24:38 to 14:26:55 | 14:24:44 to 14:26:59 |
+| iPhone 4 | 15:39:01 to 15:41:16 | 15:39:05 to 15:41:17 |
+| iPhone 5 | 14:27:31 to 14:29:39 | 14:27:57 to 14:32:40 |
+
+The spindump XCTest took during the failed launch on iPhone shard 5 (14:29:15) shows the runner
+(3 cores, 7 GB) with all three cores busy and short of memory: 25 wallpaper extension processes
+and 23 Metal compiler processes of the prewarm, 958 processes in all, and 3.1 of the 7.1 CPU
+seconds sampled spent in the kernel, 1.4 of them in its memory compressor and 1.4 reading the
+Simulator's disk image. The app had launched (the Simulator reported its process ID six seconds
+after the request), and the test runner didn't learn of it for four minutes.
+
+The app has no background modes and schedules no background task, so
+`scripts/stop-simulator-background-tasks.sh` removes the scheduler from the Simulator's launchd
+(`launchctl bootout`) right after boot, before it starts the tasks; it comes back when the
+Simulator boots again. Checked on two new iPad Simulators on a Mac: the one left alone ran the
+prewarm (14 seconds there) and about 100 tasks in its first seven minutes, the one with the
+scheduler stopped ran none, and services that asked for a task were refused without retrying
+in a loop (about 240 log lines in six minutes). No test, audit or limit changed.
 
 To run one shard locally, with a Simulator named as in CI:
 

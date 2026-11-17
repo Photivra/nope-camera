@@ -6,8 +6,9 @@
 #
 # 1. Finds the Simulator by name and iOS version (SIMULATOR_OS, default 27.2), boots it and waits
 #    until it has finished booting (simctl bootstatus -b), so the test runner doesn't start on a
-#    Simulator that is still booting, stops its push service (scripts/stop-simulator-push.sh),
-#    then switches it to dark and back with simctl: when a Simulator's first change of the light
+#    Simulator that is still booting, stops its background task scheduler
+#    (scripts/stop-simulator-background-tasks.sh) and its push service
+#    (scripts/stop-simulator-push.sh), then switches it to dark and back with simctl: when a Simulator's first change of the light
 #    or dark setting came from a test, it didn't apply.
 # 2. Installs the app and launches it once, so the first test's launch isn't the Simulator's
 #    first launch of the app.
@@ -67,6 +68,9 @@ prepare() {
   echo "Booting $device ($udid)"
   xcrun simctl boot "$udid" 2>/dev/null || true
   xcrun simctl bootstatus "$udid" -b
+  # The Simulator's scheduler starts first-boot background tasks a few minutes after boot, and
+  # the runner stalls while they run; no test needs it. It is stopped first, before they start.
+  "$(dirname "$0")/stop-simulator-background-tasks.sh" "$udid"
   # The Simulator's push service reconnects without a pause on the runner; no test needs it.
   "$(dirname "$0")/stop-simulator-push.sh" "$udid"
   # The first change of a Simulator's light or dark setting must come from simctl: when the

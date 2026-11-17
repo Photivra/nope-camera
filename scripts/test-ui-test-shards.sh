@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tests for scripts/ui-test-shards.sh, the retry rule of scripts/run-ui-test-shard.sh and
-# scripts/stop-simulator-push.sh: each case builds a small tree and checks pass or fail.
+# scripts/stop-simulator-push.sh and scripts/stop-simulator-background-tasks.sh: each case builds a small tree and checks pass or fail.
 set -euo pipefail
 
 script="$(cd "$(dirname "$0")" && pwd)/ui-test-shards.sh"
@@ -151,6 +151,32 @@ STUB
 case_push "push service stopped" loaded works "Push service on TEST-DEVICE stopped"
 case_push "push service already gone" absent works "Push service on TEST-DEVICE stopped"
 case_push "push service that stays is a warning" loaded refuses "::warning::The push service of Simulator TEST-DEVICE is still loaded"
+
+# The background task scheduler is stopped the same way, with the same stand-in.
+tasks="$(cd "$(dirname "$0")" && pwd)/stop-simulator-background-tasks.sh"
+case_tasks() { # case_tasks "name" "loaded|absent" "works|refuses" "expected text"
+  local name=$1 d got
+  d=$(mktemp -d)
+  [[ $2 == loaded ]] && touch "$d/loaded"
+  cat >"$d/xcrun" <<STUB
+#!/usr/bin/env bash
+case "\$*" in
+  *"launchctl print system/com.apple.dasd") [[ -e "$d/loaded" ]] ;;
+  *"launchctl print "*) exit 1 ;;
+  *"launchctl bootout system/com.apple.dasd") [[ $3 == refuses ]] || rm -f "$d/loaded" ;;
+esac
+STUB
+  chmod +x "$d/xcrun"
+  if got=$(PATH="$d:$PATH" "$tasks" TEST-DEVICE 2>&1) && grep -q "$4" <<<"$got"; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name: $got"; failures=$((failures + 1))
+  fi
+  rm -rf "$d"
+}
+case_tasks "scheduler stopped" loaded works "Background task scheduler on TEST-DEVICE stopped"
+case_tasks "scheduler already gone" absent works "Background task scheduler on TEST-DEVICE stopped"
+case_tasks "scheduler that stays is a warning" loaded refuses "::warning::The background task scheduler of Simulator TEST-DEVICE is still loaded"
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"

@@ -19,7 +19,8 @@
 # first watch test waited for its launch, which xcodebuild started two minutes later, past
 # XCTest's limit ("Timed out while launching application via Xcode").
 #
-# The push service of each Simulator it boots is stopped (scripts/stop-simulator-push.sh).
+# The background task scheduler and the push service of each Simulator it boots are stopped
+# (scripts/stop-simulator-background-tasks.sh, scripts/stop-simulator-push.sh).
 set -euo pipefail
 
 [[ $# -ge 1 ]] || { echo "usage: $0 <destination> [<app> [launch arguments…]]" >&2; exit 2; }
@@ -66,6 +67,7 @@ fi
 scripts=$(cd "$(dirname "$0")" && pwd)
 for device in "$udid" $phone; do
   xcrun simctl bootstatus "$device" -b
+  "$scripts/stop-simulator-background-tasks.sh" "$device"
   "$scripts/stop-simulator-push.sh" "$device"
 done
 [[ -n $app ]] || exit 0
