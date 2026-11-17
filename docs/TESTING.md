@@ -400,6 +400,11 @@ other finding fails the test:
 
 - an element cut by the window's edge (a form row below the fold), and a contrast finding with
   no element, which comes from such a row: the audit measures the clipped edge;
+- the same for a row cut by the upper or lower edge of a popover (Settings on iPad). In build
+  44098207588 `testSettingsAtTheLargestTextSize` failed on iPad with "Dynamic Type font sizes
+  are partially unsupported" on the Choose Details header "In Each Photo", whose frame (695.5
+  to 779 points down) ran 27 points past the popover's lower edge (752); the build before it
+  passed with the same code in Settings. It wasn't reproduced locally;
 - in `OverlayUITests`, a finding on text that was below the fold before the audit: the audit
   scrolls such text into view itself and measures it while the scroll view moves (on iPad at the
   largest text size it reported a manual control row 1,324 points down as low contrast at the

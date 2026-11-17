@@ -575,6 +575,16 @@ final class NopeAppUITests: XCTestCase {
         // audited whole after scrolling. Every element fully in the window is checked.
         let window = app.windows.firstMatch.frame
         if let element = issue.element, !window.contains(element.frame) { return true }
+        // The same for a row cut by the lower or upper edge of a popover (Settings on iPad): in
+        // build 44098207588 the Choose Details header "In Each Photo", 27 points past the
+        // popover's lower edge, was reported as "Dynamic Type font sizes are partially
+        // unsupported" (docs/TESTING.md). Only an element within the popover's sides counts.
+        let popover = app.popovers.firstMatch
+        if let element = issue.element, popover.exists {
+            let frame = element.frame, edges = popover.frame
+            let withinSides = frame.minX >= edges.minX && frame.maxX <= edges.maxX
+            if withinSides && edges.intersects(frame) && !edges.contains(frame) { return true }
+        }
         // A Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges
         // the text, pushes it past the edge and can't measure it. The same text styles are
         // measured higher up on other screens (Formats, Choose Details).
