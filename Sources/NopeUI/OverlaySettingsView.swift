@@ -206,6 +206,19 @@ extension QuickControls {
                 }))
     }
 
+    /// Focus Peaking: a switch for the same setting as in Settings and Pro Tools (docs/design/
+    /// BUILD-SPEC.md, 3.6), shown in full auto and with manual controls on.
+    ///
+    /// - Parameter context: The model and settings.
+    static func focusPeaking(_ context: CameraControlContext) -> QuickControlItem? {
+        let settings = context.settings
+        return QuickControlItem(
+            id: "focusPeaking",
+            title: Text("Focus Peaking", bundle: .module, comment: "Name of the switch that highlights in-focus edges over the viewfinder."),
+            systemImage: "scope",
+            kind: .toggle(isOn: settings.overlays.showsFocusPeaking) { settings.setShowsFocusPeaking($0) })
+    }
+
     /// Level: a switch.
     ///
     /// - Parameter context: The model and settings.
