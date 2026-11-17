@@ -543,8 +543,8 @@ the local toolchain). Jobs:
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/8` … `8/8` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests 1/3` … `3/3` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/2`, `2/2` | The same tests in two shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
@@ -554,21 +554,38 @@ the local toolchain). Jobs:
 
 ### UI test shards
 
-The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
-as on a recent Mac, so CI limits are sized from runner times, never from local ones). CI runs it
-in eight shards per device, about 18.5 minutes of tests each by the times of build 43786103024
-plus about 5 minutes of setup (up to 10 when the Simulator is slow to boot), with a 50-minute
-limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
-its time in seconds on the runner (the longer of the iPhone and iPad runs), or, marked `est`,
-twice its local time until the runner has measured it; the shards are balanced by those times
-(longest test first, into the shard with the least time so far). To rebalance, take the times
-from the `Test Case … passed (n seconds)` lines of the shard jobs' logs.
+The UI suite takes about 131 minutes of test time on the iPhone Simulator and 138 on the iPad
+Simulator on the GitHub macOS runner (about twice as long as on a recent Mac, so CI limits are
+sized from runner times, never from local ones). CI runs it in three iPhone shards and two iPad
+shards, each its own job:
 
-`scripts/ui-test-shards.sh args <n>` prints the `-only-testing` arguments of shard n.
+| Job | Tests (listed times) | With about 7 minutes of setup | Limit |
+|---|---|---|---|
+| `ui-tests 1/3`, `2/3`, `3/3` | 44 minutes each | 51 minutes | 100 minutes |
+| `ui-tests-ipad 1/2`, `2/2` | 69 minutes each | 76 minutes | 130 minutes |
+| `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
+
+The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
+runtime disk images on the runner") and for one second run of unfinished tests after an
+infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
+larger jobs, 6 jobs per build boot a Simulator instead of 17, and the runner's Simulator
+failures start in the minutes after a job's first use of the Simulator.
+
+`scripts/ui-test-shards.txt` lists every UI test with its iPhone shard, its iPad shard and its
+time in seconds on the runner on each device, or, with an `e`, an earlier or estimated time
+(twice the local time for a new test) until the runner has measured it. Each device's shards
+are balanced by its own times (longest test first, into the shard with the least time so
+far). To rebalance, take the times from the per-test result files (see "Flaky tests") or from
+the `Test Case … passed (n seconds)` lines of the shard jobs' logs; `scripts/ui-test-shards.sh
+times` prints each shard's total.
+
+`scripts/ui-test-shards.sh args <iphone|ipad> <n>` prints the `-only-testing` arguments of that
+device's shard n, and `count <iphone|ipad>` the number of its shards.
 `scripts/ui-test-shards.sh check`, in `repo-checks`, fails when a test in `App/NopeAppUITests` is
-in no shard or in two, when a listed test doesn't exist, or when the shard matrices or job names
-in `build.yml` don't match the list, so a new test can't be skipped silently: add it to the
-shard with the least time, marked `est` with twice its local time.
+listed for no shard or twice, when a listed test doesn't exist, or when the shard matrices or
+job names in `build.yml` don't match either device's shards, so a new test can't be skipped
+silently: add it to the shard with the least time on each device, with twice its local time
+and an `e`.
 
 Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
 has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
@@ -591,12 +608,11 @@ the app can't be launched once (it ignored a failed launch before).
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
-runner had to boot itself. The script retries a shard once, after rebooting the Simulator, only
-when the test runner failed before any test started (any "… while preparing to run tests" error,
-including "Test crashed with signal term while preparing to run tests", which ended an iPad shard
-of build 43786103024 after its Simulator took five minutes to boot); a run in which a test started
-is never retried, except for the tests a crash of the Simulator's host process cut short (see "A
-Simulator that dies on the runner" below). `scripts/test-ui-test-shards.sh` tests both scripts.
+runner had to boot itself. Such a run, in which the test runner failed before any test started (any "… while preparing to
+run tests" error, including "Test crashed with signal term while preparing to run tests", which
+ended an iPad shard of build 43786103024 after its Simulator took five minutes to boot), is an
+infrastructure failure and is run again once; a test that failed is never run again (see
+"Infrastructure and test failures" below). `scripts/test-ui-test-shards.sh` tests the scripts.
 
 On the runner the tests wait for state rather than assume speed: a new launch waits until the
 previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
@@ -705,8 +721,8 @@ reads `xcrun simctl runtime list -j`. When a runtime other than the two usual on
 `/Library/Developer/CoreSimulator/Volumes`, it waits until 750 seconds have passed, with nothing
 booted, so the remounting is over before a Simulator runs: in the bundles the last unmount came
 716 seconds after the service started, with nothing later in logs that run to 1,772 seconds.
-On other runners it returns at once. The job limits are 50 minutes for a shard and 45 for the
-watch job, so the wait fits; no test's time limit changed. That the wait is enough rests on
+On other runners it returns at once. The job limits leave room for the wait; no test's time
+limit changed. That the wait is enough rests on
 those logs: a runner whose runtime under test never mounts the usual way hasn't been seen
 through a whole job.
 
@@ -727,14 +743,36 @@ with it (17:41:07 to 17:41:15). "Simulator runtime disk images on
 the runner" above has what the two crashes share. Shard 8 uploaded no result bundle, so its
 cause is assumed, not shown, to be the same.
 
-This is outside the app and the tests, so `scripts/run-ui-test-shard.sh` runs again only what
-the Simulator's end cut short: it prepares the Simulator once more when booting it or
-installing the app fails, and when the run failed and the host process left a new crash report
-(`SimLaunchHost*.ips` in `~/Library/Logs/DiagnosticReports`), it reboots the Simulator and runs
-the tests that had started and have no result, once. Tests that passed aren't run again, a
-test that failed with a result still fails the shard, and without that crash report nothing
-is run again. The first run's result bundle is kept and uploaded as
-`ui-tests[-ipad]-interrupted.xcresult`.
+This is outside the app and the tests, so such a run is an infrastructure failure and its
+unfinished tests are run again once (next section). The first version of that second run,
+used in build 44149517211, ran only the tests that had started and had no result: in iPhone
+shard 4 the host process crashed in the first test, `xcodebuild` ended the whole run, the one
+test cut short ran again and passed, and the job passed although 17 of its 18 tests had never
+run. The second run now takes every test without a result, and
+`scripts/test-ui-test-shards.sh` has that case.
+
+#### Infrastructure and test failures
+
+`scripts/ui-test-run-lib.sh`, used by the shard jobs and the watch job, classifies a failed
+run from its `xcodebuild` log:
+
+- **Test failure:** a test failed with a result (`Test Case '…' failed`). It is never run
+  again, whatever else happened in the run. A test that was cut short with no sign that the
+  Simulator died (the test runner crashed or was ended) counts as a test failure too.
+- **Infrastructure failure:** no test failed with a result, and no test started, or the
+  Simulator's host process left a new crash report (`SimLaunchHost*.ips` in
+  `~/Library/Logs/DiagnosticReports`), or the log has "simulator runtime is not available" or
+  "(ipc/mig) server died". Failing to boot the Simulator or install the app counts as one.
+
+After an infrastructure failure the job reboots the Simulator and runs once more, in the same
+job, the tests that have no result yet (the finished ones are passed to `xcodebuild` as
+`-skip-testing`); a second infrastructure failure fails the job as one. There is one second
+run per job at most, and no workflow-level rerun, so no passed job or test is repeated. The
+first run's result bundle is kept and uploaded as `…-interrupted.xcresult`.
+
+The job summary on GitHub names the classification ("ui-tests 2/3: Passed", "Test failure" or
+"Infrastructure failure"), says whether a second run happened, and lists the tests that failed
+or were cut short.
 
 #### Dynamic Type findings on the iPad runner
 

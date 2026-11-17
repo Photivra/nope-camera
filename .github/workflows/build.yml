@@ -158,10 +158,12 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  # The UI tests are built once, then run in shards: eight on the iPhone Simulator and eight on
+  # The UI tests are built once, then run in shards: three on the iPhone Simulator and two on
   # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
-  # shard, balanced by test time measured on the runner; repo checks fail when a test is in no
-  # shard or in two (docs/TESTING.md, "UI test shards"). The iPhone and iPad Simulators run in
+  # shard per device, balanced by test time measured on the runner; repo checks fail when a
+  # test is in no shard or in two (docs/TESTING.md, "UI test shards"). A shard job says in its
+  # summary whether a failure is a test failure or an infrastructure failure, runs an
+  # infrastructure failure's unfinished tests once more, and uploads its per-test results. The iPhone and iPad Simulators run in
   # separate jobs: running both in one job stalled the test runner before the second
   # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
   # required status checks keep their names.
@@ -202,16 +204,19 @@ jobs:
           retention-days: 1
 
   ui-tests-shard:
-    name: ui-tests ${{ matrix.shard }}/8
+    name: ui-tests ${{ matrix.shard }}/3
     needs: ui-build
     runs-on: xcode-27
-    # About 20 minutes of tests on the runner and 7 of setup; on a runner that has to remount a
-    # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more.
-    timeout-minutes: 50
+    # About 44 minutes of tests on the runner and 7 of setup; on a runner that has to remount a
+    # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The
+    # rest is room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3]
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -222,10 +227,19 @@ jobs:
           name: ui-tests-build
       - name: Unpack the build
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
-      # Boots the Simulator and waits for it, launches the app once, then runs the shard; it
-      # retries once only when the test runner fails before any test starts.
+      # Boots the Simulator and waits for it, launches the app once, then runs the shard. A test
+      # failure is never run again; an infrastructure failure is, once, without the tests that
+      # passed (scripts/ui-test-run-lib.sh).
       - name: Run the UI tests of this shard with accessibility audits
         run: scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPhone 18 Pro" products ui-tests.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-${{ matrix.shard }}
+          path: ui-tests-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -249,14 +263,18 @@ jobs:
   # The source link test is skipped on iPad: there the link isn't found in the Settings popover
   # (docs/TESTING.md).
   ui-tests-ipad-shard:
-    name: ui-tests-ipad ${{ matrix.shard }}/8
+    name: ui-tests-ipad ${{ matrix.shard }}/2
     needs: ui-build
     runs-on: xcode-27
-    timeout-minutes: 50
+    # About 69 minutes of tests on the runner and 7 of setup, up to 12.5 more for a runtime
+    # remount, and room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 130
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2]
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -271,6 +289,14 @@ jobs:
         run: >
           scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
           -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-ipad-${{ matrix.shard }}
+          path: ui-tests-ipad-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -297,6 +323,8 @@ jobs:
     needs: c2pa-lib
     runs-on: xcode-27
     timeout-minutes: 45
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -322,26 +350,28 @@ jobs:
           -destination "id=${{ steps.watch.outputs.udid }}"
           -derivedDataPath DerivedData
           CODE_SIGNING_ALLOWED=NO
-      # As for the iPhone and iPad shards (scripts/run-ui-test-shard.sh): the first launch of the
-      # app on a Simulator that has just booted took longer than XCTest waits, so the first test
-      # failed to launch the app and the next one failed to terminate it. Launch the app once.
-      - name: Launch the watch app once
-        run: scripts/prepare-simulator.sh "$WATCH_SIMULATOR" DerivedData/Build/Products/Debug-watchsimulator/NopeWatch.app -NopeSimulatedPhone ready
+      # As for the iPhone and iPad shards: the app is launched once before the tests (its first
+      # launch on a Simulator that has just booted took longer than XCTest waits), a test
+      # failure is never run again, and an infrastructure failure is, once, without the tests
+      # that passed (scripts/run-watch-ui-tests.sh).
       - name: Run the watch UI tests with accessibility audits
-        run: >
-          xcodebuild test-without-building
-          -project App/NopeCamera.xcodeproj
-          -scheme NopeWatch
-          -destination "id=${{ steps.watch.outputs.udid }}"
-          -derivedDataPath DerivedData
-          -resultBundlePath ui-tests-watch.xcresult
-          CODE_SIGNING_ALLOWED=NO
+        run: scripts/run-watch-ui-tests.sh "$WATCH_SIMULATOR" DerivedData ui-tests-watch.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-watch
+          path: ui-tests-watch-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-watch-xcresult
-          path: ui-tests-watch.xcresult
+          path: |
+            ui-tests-watch.xcresult
+            ui-tests-watch-interrupted.xcresult
           retention-days: 7
 
   # External validators on the pipeline-generated fixtures (issue #58): c2patool and exiftool
