@@ -4503,19 +4503,17 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 The lines: a dark outline under a white line, drawn as shapes (not a canvas), so they
 add nothing to the accessibility tree.
 
-## `GridOverlay/init(style:placement:)`
+## `GridOverlay/init(style:)`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-@MainActor init(style: GridStyle, placement: SpiralPlacement)
+@MainActor init(style: GridStyle)
 ```
 
 Creates the grid.
 
-- Parameters:
-  - style: The style.
-  - placement: Where the spiral sits.
+- Parameter style: The style.
 
 ## `GridOverlay/lineWidth`
 
@@ -4537,30 +4535,19 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 The width of the dark outline under it, in points.
 
-## `GridOverlay/path(style:placement:in:)`
+## `GridOverlay/path(style:in:)`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-nonisolated static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path
+nonisolated static func path(style: GridStyle, in size: CGSize) -> Path
 ```
 
-The grid's lines, or the spiral, at a size.
+The grid's lines at a size.
 
 - Parameters:
   - style: The style.
-  - placement: The spiral's placement.
   - size: The picture's size.
-
-## `GridOverlay/placement`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let placement: SpiralPlacement
-```
-
-Where the spiral sits, for `GridStyle/goldenSpiral`.
 
 ## `GridOverlay/style`
 
@@ -4582,19 +4569,17 @@ struct GridShape
 
 The grid's lines as a shape.
 
-## `GridShape/init(style:placement:)`
+## `GridShape/init(style:)`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-init(style: GridStyle, placement: SpiralPlacement)
+init(style: GridStyle)
 ```
 
 Creates the shape.
 
-- Parameters:
-  - style: The style.
-  - placement: Where the spiral sits.
+- Parameter style: The style.
 
 ## `GridShape/path(in:)`
 
@@ -4607,16 +4592,6 @@ func path(in rect: CGRect) -> Path
 The lines in a rectangle.
 
 - Parameter rect: The picture's rectangle.
-
-## `GridShape/placement`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-let placement: SpiralPlacement
-```
-
-Where the spiral sits.
 
 ## `GridShape/style`
 
@@ -6485,16 +6460,6 @@ internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 ```
 
 The settings to show and change.
-
-## `OverlaySettingsView/turnSpiralTitle`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor static var turnSpiralTitle: Text { get }
-```
-
-"Turn Spiral".
 
 ## `PeakingShape`
 

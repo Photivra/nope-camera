@@ -246,25 +246,32 @@ enum FastShutterOption: String, AppEnum {
     }
 }
 
-/// "Set Face Detection" for the Shortcuts app (issue #62): whether faces the camera detects steer
-/// autofocus and auto exposure, with ``NopeSettings/setFollowsFaces(_:)``, as the Face Detection
-/// switch does. It changes only the stored setting, so it runs without opening the app.
+/// "Set Focus on Faces" for the Shortcuts app (issue #62; named Set Face Detection before
+/// 1.0.0): whether faces the camera detects steer autofocus and auto exposure, with
+/// ``NopeSettings/setFollowsFaces(_:)``, as the Focus on Faces switch does. It changes only the
+/// stored setting, so it runs without opening the app.
+///
+/// The type keeps its earlier name, so shortcuts people saved with Set Face Detection keep
+/// working: App Intents identifies an action by its `persistentIdentifier`
+/// (`PersistentlyIdentifiable`), which by default is derived from the type name. That a saved
+/// shortcut survives the new title is an assumption to verify on a device.
 struct SetFaceDetectionIntent: AppIntent {
     /// The action's name in the Shortcuts app.
     static let title = LocalizedStringResource(
-        "Set Face Detection", comment: "The name of nope.'s action that turns Face Detection on or off, in the Shortcuts app.")
+        "Set Focus on Faces", comment: "The name of nope.'s action that turns Focus on Faces on or off, in the Shortcuts app.")
 
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
             "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure.",
-            comment: "Describes nope.'s Set Face Detection action in the Shortcuts app. Keep \"nope.\" unchanged."))
+            comment: "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
-    /// Whether faces steer autofocus and auto exposure.
+    /// Whether faces steer autofocus and auto exposure. Off by default, as the setting is
+    /// (issue #80).
     @Parameter(
         title: LocalizedStringResource(
-            "Face Detection", comment: "Switch: faces the camera detects steer autofocus and auto exposure."),
-        default: true,
+            "Focus on Faces", comment: "Switch: faces the camera detects steer autofocus and auto exposure."),
+        default: false,
         displayName: Bool.IntentDisplayName(
             true: LocalizedStringResource("On", comment: "Night mode turned on, in nope.'s Set Night Mode action."),
             false: LocalizedStringResource("Off", comment: "Night mode turned off, in nope.'s Set Night Mode action.")))
@@ -275,7 +282,7 @@ struct SetFaceDetectionIntent: AppIntent {
 
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
-        Summary("Set face detection to \(\.$isOn)")
+        Summary("Set focus on faces to \(\.$isOn)")
     }
 
     /// Changes the setting and says the new state.
@@ -286,8 +293,8 @@ struct SetFaceDetectionIntent: AppIntent {
         settings.setFollowsFaces(isOn)
         let message =
             isOn
-            ? LocalizedStringResource("Face Detection is on.", comment: "Siri's answer after nope.'s Face Detection was turned on.")
-            : LocalizedStringResource("Face Detection is off.", comment: "Siri's answer after nope.'s Face Detection was turned off.")
+            ? LocalizedStringResource("Focus on Faces is on.", comment: "Siri's answer after nope.'s Focus on Faces was turned on.")
+            : LocalizedStringResource("Focus on Faces is off.", comment: "Siri's answer after nope.'s Focus on Faces was turned off.")
         return .result(dialog: IntentDialog(message))
     }
 }

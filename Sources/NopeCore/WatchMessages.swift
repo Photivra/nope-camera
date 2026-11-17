@@ -112,14 +112,29 @@ public struct PhoneUpdate: Equatable, Codable, Sendable {
     /// The result of the last photo the watch asked for, or `nil` when there is no new result.
     public let result: WatchResult?
 
+    /// Why the result's photos aren't all signed, when ``result`` is
+    /// ``WatchResult/saved(isSigned:)`` with `false` or ``WatchResult/savedSeveral(allSigned:)``
+    /// with `false`; otherwise `nil`. It is also `nil` from a phone app that doesn't send it.
+    ///
+    /// Signing is the person's choice and off by default (issue #80), so an interface shows
+    /// ``SignatureStatus/UnsignedReason/turnedOff`` as plain status, and any other reason as a
+    /// photo that couldn't be signed.
+    ///
+    /// Optional, so the message stays readable both ways between apps of this protocol version
+    /// with and without it (``WatchMessageCoding/version`` is unchanged).
+    public let unsignedReason: SignatureStatus.UnsignedReason?
+
     /// Creates an update.
     ///
     /// - Parameters:
     ///   - status: The camera's status.
     ///   - result: A new result, or `nil`.
-    public init(status: WatchStatus, result: WatchResult? = nil) {
+    ///   - unsignedReason: Why the result's photos aren't all signed, or `nil` when they are or
+    ///     there is no result.
+    public init(status: WatchStatus, result: WatchResult? = nil, unsignedReason: SignatureStatus.UnsignedReason? = nil) {
         self.status = status
         self.result = result
+        self.unsignedReason = unsignedReason
     }
 }
 

@@ -55,9 +55,7 @@ struct OverlaySettingsView: View {
         .navigationTitle(Self.rowTitle)
     }
 
-    /// The grid style, as an inline list that grows with the text size, and Turn Spiral while
-    /// the spiral is chosen (a button, so it is also a VoiceOver, Voice Control and Switch
-    /// Control action).
+    /// The grid style, as an inline list that grows with the text size.
     private var gridStyleSection: some View {
         Section {
             Picker(selection: Binding(get: { options.gridStyle }, set: { settings.setGridStyle($0) })) {
@@ -68,20 +66,6 @@ struct OverlaySettingsView: View {
                 Text("Grid Style", bundle: .module, comment: "Picker for which guide lines the grid draws.")
             }
             .pickerStyle(.inline)
-            if options.gridStyle == .goldenSpiral {
-                Button {
-                    settings.turnSpiral()
-                } label: {
-                    LabeledContent {
-                        Text("\(options.spiralPlacement.index + 1) of \(SpiralPlacement.count)", bundle: .module, comment: "Which of the golden spiral's eight placements is in use, such as 3 of 8.")
-                    } label: {
-                        Self.turnSpiralTitle
-                    }
-                }
-                // Primary text, not the tint: the tinted label measured just under 4.5:1 in the
-                // accessibility audit.
-                .tint(.primary)
-            }
         }
     }
 
@@ -100,11 +84,6 @@ struct OverlaySettingsView: View {
         Text("Level", bundle: .module, comment: "Name of the horizon level shown over the viewfinder, and of its switch.")
     }
 
-    /// "Turn Spiral".
-    static var turnSpiralTitle: Text {
-        Text("Turn Spiral", bundle: .module, comment: "Button that moves the golden spiral grid to its next placement (turned or flipped).")
-    }
-
     /// The name of a grid style.
     ///
     /// - Parameter style: The style.
@@ -113,8 +92,6 @@ struct OverlaySettingsView: View {
         case .thirds: Text("Thirds", bundle: .module, comment: "Grid style: two lines each way, at thirds (rule of thirds).")
         case .fourByFour: Text("4 × 4", bundle: .module, comment: "Grid style: three lines each way, dividing the picture into 4 by 4.")
         case .square: Text("Square", bundle: .module, comment: "Grid style: a centered square frame, for photos cropped square later.")
-        case .goldenRatio: Text("Golden Ratio", bundle: .module, comment: "Grid style: lines at the golden ratio (phi).")
-        case .goldenSpiral: Text("Golden Spiral", bundle: .module, comment: "Grid style: a golden (Fibonacci) spiral.")
         }
     }
 

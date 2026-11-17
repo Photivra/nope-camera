@@ -5,8 +5,9 @@ import Foundation
 /// An unsigned photo is never presented as signed: the interface shows the reason (issue #1,
 /// "never hidden: not signed").
 public enum SignatureStatus: Equatable, Sendable {
-    /// Why a photo isn't signed.
-    public enum UnsignedReason: Equatable, Sendable, CaseIterable {
+    /// Why a photo isn't signed. It is also sent to the Apple Watch app (``PhoneUpdate``), so
+    /// its raw values are part of the watch message format.
+    public enum UnsignedReason: String, Equatable, Codable, Sendable, CaseIterable {
         /// The person turned signing off (``MetadataSettings/signsPhotos``).
         case turnedOff
         /// This build has no signer (no ``PhotoSigning`` was supplied).

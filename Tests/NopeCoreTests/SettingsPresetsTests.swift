@@ -122,6 +122,24 @@ struct SettingsPresetsTests {
         #expect(!settings.isNightModeOn)
     }
 
+    @Test func aPresetWithARemovedGoldenGridAppliesThirds() throws {
+        // Saved before issue #76 removed the golden ratio and golden spiral grids.
+        for removed in ["goldenRatio", "goldenSpiral"] {
+            let values: [String: Any] = [
+                OverlayOptions.Key.showsGrid: true, OverlayOptions.Key.gridStyle: removed,
+                OverlayOptions.Key.removedSpiralPlacement: 3,
+            ]
+            let plist = try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0)
+            let preset = SettingsPreset(name: "Golden", settings: NopeSettingsSnapshot(values: plist), camera: .factory)
+            let decoded = try JSONDecoder().decode(SettingsPreset.self, from: JSONEncoder().encode(preset))
+            let settings = NopeSettings(defaults: ScratchDefaults().defaults)
+            settings.setGridStyle(.square)
+            #expect(settings.apply(decoded.settings))
+            #expect(settings.overlays.showsGrid)
+            #expect(settings.overlays.gridStyle == .thirds)
+        }
+    }
+
     @Test func factoryDefaultsGiveTheIssue80Defaults() async {
         // RAW only, signing off, Face Detection off and the Processed marker on (issue #80).
         let scratch = ScratchDefaults()

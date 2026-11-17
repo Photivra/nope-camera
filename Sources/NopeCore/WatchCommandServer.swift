@@ -55,6 +55,9 @@ public final class WatchCommandServer {
     /// the next reply, then is cleared.
     private(set) var undeliveredResult: WatchResult?
 
+    /// Why the undelivered result's photos aren't all signed (``PhoneUpdate/unsignedReason``).
+    private(set) var undeliveredUnsignedReason: SignatureStatus.UnsignedReason?
+
     /// Creates a server.
     ///
     /// - Parameters:
@@ -87,7 +90,12 @@ public final class WatchCommandServer {
         } catch {
             result = .notUnderstood
         }
-        let update = PhoneUpdate(status: model.watchStatus, result: result ?? takeUndeliveredResult())
+        let update =
+            if let result {
+                PhoneUpdate(status: model.watchStatus, result: result)
+            } else {
+                takeUndeliveredUpdate()
+            }
         lastSentStatus = update.status
         return WatchMessageCoding.encode(update)
     }
@@ -135,10 +143,16 @@ public final class WatchCommandServer {
         case .takePhoto(let delay):
             if let refusal = WatchResult(refusing: model.watchStatus) { return refusal }
             undeliveredResult = nil
+            undeliveredUnsignedReason = nil
             let photo = PhotoShortcut(delaySeconds: delay.seconds)
             Task {
-                let outcome = await inbox.submit(.takePhoto(photo))
-                await deliver(WatchResult(outcome))
+                let result = WatchResult(await inbox.submit(.takePhoto(photo)))
+                // Read from the capture status the request ended with. Should another photo
+                // start before this line runs, the status no longer holds saved photos and the
+                // reason is left out.
+                let reason = result.includesUnsignedPhotos
+                    ? SignatureStatus.UnsignedReason(photosOf: model.captureStatus) : nil
+                await deliver(result, unsignedReason: reason)
             }
             return nil
         }
@@ -147,22 +161,28 @@ public final class WatchCommandServer {
     /// Sends a photo's result to the watch, or keeps it for the next reply when the watch app
     /// isn't reachable.
     ///
-    /// - Parameter result: How the photo ended.
-    private func deliver(_ result: WatchResult) async {
+    /// - Parameters:
+    ///   - result: How the photo ended.
+    ///   - unsignedReason: Why its photos aren't all signed, or `nil`.
+    private func deliver(_ result: WatchResult, unsignedReason: SignatureStatus.UnsignedReason?) async {
         let status = model.watchStatus
-        let message = WatchMessageCoding.encode(PhoneUpdate(status: status, result: result))
+        let message = WatchMessageCoding.encode(PhoneUpdate(status: status, result: result, unsignedReason: unsignedReason))
         if link.isWatchReachable, await link.send(message) {
             lastSentStatus = status
         } else {
             undeliveredResult = result
+            undeliveredUnsignedReason = unsignedReason
         }
     }
 
-    /// The undelivered result, cleared once taken.
+    /// The camera's status with the undelivered result, if any, which is cleared once taken.
     ///
-    /// - Returns: The result, or `nil`.
-    private func takeUndeliveredResult() -> WatchResult? {
-        defer { undeliveredResult = nil }
-        return undeliveredResult
+    /// - Returns: The update to reply with.
+    private func takeUndeliveredUpdate() -> PhoneUpdate {
+        defer {
+            undeliveredResult = nil
+            undeliveredUnsignedReason = nil
+        }
+        return PhoneUpdate(status: model.watchStatus, result: undeliveredResult, unsignedReason: undeliveredUnsignedReason)
     }
 }
