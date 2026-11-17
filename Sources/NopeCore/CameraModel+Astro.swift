@@ -103,6 +103,28 @@ extension CameraModel {
         if !isOn { await turnOffAstro() }
     }
 
+    /// Turns manual controls on or off and stores the choice as the "Manual controls" option
+    /// (``NopeSettings/showsManualControls``). Use it for every control that turns manual
+    /// controls on or off, such as a Manual Controls button.
+    ///
+    /// Storing the option alone isn't enough: the astro helper turns manual controls on without
+    /// changing the option, so storing "off" while the helper had turned them on changes no
+    /// stored value, and an interface that follows the option (a SwiftUI `.task(id:)`) sends
+    /// nothing. This call stores the option and sends ``ManualControlIntent/setEnabled(_:)``
+    /// itself, so turning manual controls off always turns them and the helper off. An interface
+    /// that also follows the option may send the same intent again; it changes nothing then.
+    ///
+    /// Side effects: as ``ManualControlIntent/setEnabled(_:)``; off returns every control to
+    /// automatic and turns the astro helper off.
+    ///
+    /// - Parameters:
+    ///   - isOn: Whether manual controls are on.
+    ///   - settings: The person's settings, where the option is stored.
+    public func setManualControls(_ isOn: Bool, settings: NopeSettings) async {
+        settings.setShowsManualControls(isOn)
+        await send(.manual(.setEnabled(isOn)))
+    }
+
     /// Applies the helper to a newly selected lens: its starting values for that lens, or the
     /// helper turns off on a lens it can't use.
     func astroLensDidChange() async {

@@ -60,9 +60,12 @@ Enable the shutter only when ``CameraModel/canCapture`` is `true`.
 
 ### Offer manual controls
 
-Manual controls are off by default and stay hidden until the person turns on the "Manual
-controls" option (``NopeSettings/showsManualControls``; send
-``ManualControlIntent/setEnabled(_:)`` when it changes). While ``ManualControlsModel/isEnabled``
+Manual controls are off by default and stay hidden until the person turns them on. A control
+that turns them on or off, such as a Manual Controls button, calls
+``CameraModel/setManualControls(_:settings:)``, which stores the "Manual controls" option
+(``NopeSettings/showsManualControls``) and turns them on or off at once, including after the
+astro helper turned them on. An interface that also lets the option change elsewhere sends
+``ManualControlIntent/setEnabled(_:)`` when it changes. While ``ManualControlsModel/isEnabled``
 is `true`, read ``CameraModel/manual``:
 
 - show every ``ManualControl`` in the same order, with ``ManualControlsModel/availability(of:)``
