@@ -246,6 +246,32 @@ extension NopeAppUITests {
         XCTAssertEqual(yellowPixels(app, outside: scrollView.frame), 0, "the scrolled viewfinder shows outside the scroll view")
     }
 
+    /// In right-to-left layout the viewfinder, drawn behind the interface, fills the picture's
+    /// frame and nothing else. Beside the control column (iPad) it was drawn a column's width
+    /// to the left, under the column, which left the picture's right edge black; the warning
+    /// chips then crossed the picture's edge, and their contrast audit failed on some runs.
+    @MainActor
+    func testViewfinderFillsThePictureRightToLeft() throws {
+        let app = launch("manual", extraArguments: Self.rightToLeft + ["-NopeSimulatedViewfinder", "yellow"])
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        let viewfinder = app.otherElements["Viewfinder"]
+        XCTAssertTrue(viewfinder.waitForExistence(timeout: 5))
+        let frame = viewfinder.frame
+        XCTAssertEqual(yellowPixels(app, outside: frame), 0, "the viewfinder shows outside the picture's frame")
+        // Halfway down, just inside each side edge, where no control is drawn over the picture.
+        XCTAssertTrue(isYellow(app, at: CGPoint(x: frame.minX + 8, y: frame.midY)), "the picture's left edge isn't the viewfinder")
+        XCTAssertTrue(isYellow(app, at: CGPoint(x: frame.maxX - 8, y: frame.midY)), "the picture's right edge isn't the viewfinder")
+    }
+
+    /// Whether the screen is pure yellow (the simulated yellow viewfinder) at a point.
+    @MainActor
+    private func isYellow(_ app: XCUIApplication, at point: CGPoint) -> Bool {
+        let image = XCUIScreen.main.screenshot().image
+        guard let pixels = Pixels(image) else { return false }
+        let (red, green, blue) = pixels.color(x: Int(point.x * image.scale), y: Int(point.y * image.scale))
+        return red > 200 && green > 200 && blue < 60
+    }
+
     /// Counts sampled pure yellow pixels (the simulated yellow viewfinder) outside a frame, or
     /// -1 when the screenshot can't be read.
     @MainActor

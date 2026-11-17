@@ -31,6 +31,7 @@
 2 NopeAppUITests/testStorageAndBatteryWarnings 85
 2 NopeAppUITests/testViewfinderFollowsThePictureInTheScrollingLayout 60
 2 NopeAppUITests/testViewfinderStaysInsideTheScrollingLayout 38 est
+2 NopeAppUITests/testViewfinderFillsThePictureRightToLeft 30 est
 2 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 35
 2 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 50
 3 NopeAppUITests/testAstroFramesShowProgressAndStop 121

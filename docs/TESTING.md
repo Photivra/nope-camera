@@ -477,6 +477,26 @@ settings are never touched.
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
 | `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from the tray and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
+In right-to-left layout the viewfinder, which `CameraScreen` draws behind the interface, was
+placed from the wrong edge: beside the control column (iPad) it sat a column's width to the left
+of the picture's frame, under the column, and left a black strip at the picture's right edge.
+The warning chips ("Location On", "Not Signed") then crossed the picture's edge, and in build
+44075379089 their contrast audit failed on iPad in `testLocationWarningInRightToLeftLayout` and
+`testCameraRightToLeftWithAPhotoAndWarnings` (the failing run's screen recording shows the
+strip). `testViewfinderFillsThePictureRightToLeft` checks, with a yellow viewfinder, that it
+covers the picture's frame to both side edges and nothing outside it.
+
+`testPhotosAccessDeniedIsExplained` failed once on the iPad runner (build 44075379089): the
+shutter was pressed and no failure banner came. The app's output in the result bundle has, at
+that moment, "onChange(of: CaptureStatus) action tried to update multiple times per frame": the
+simulated save fails at once, so the capture status changed several times within one frame, and
+SwiftUI ran the camera view's `onChange` action once and dropped the rest, the failure with
+them. A small SwiftUI program that changes an observed value three times in one frame shows the
+same message, and `onChange(of:)` and `task(id:)` both missed the last value in 12 of 180
+rounds, while a loop that waits for the change with `withObservationTracking` and then reads
+the value missed none. The camera view now records capture results with such a loop
+(`recordCaptureResults()`), so a failure or a save is shown however fast it comes.
+
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
 `testBlankPictureAtTheLargestTextSize` failed intermittently on CI with "Contrast failed" on

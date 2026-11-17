@@ -109,7 +109,6 @@ public struct CameraScreen<Viewfinder: View>: View {
                     viewfinder(source)
                         .frame(width: frame.width, height: frame.height)
                         .focusMagnified(model)
-                        .environment(\.layoutDirection, .leftToRight)
                         .clipped()
                         .colorMultiply(tintsViewfinder ? NightStyle.red : .white)
                         .offset(x: frame.minX, y: frame.minY)
@@ -120,6 +119,12 @@ public struct CameraScreen<Viewfinder: View>: View {
                                 .offset(x: visible.minX, y: visible.minY)
                         }
                 }
+                // Left to right in every language, placement included: the picture is laid out
+                // left to right (CameraReadyView), and its frame is read here from the left
+                // edge. With only the viewfinder left to right, a right-to-left layout offset it
+                // from the right edge instead, so beside a control column (iPad, wide windows)
+                // it was drawn a column's width from the picture's frame, under the column.
+                .environment(\.layoutDirection, .leftToRight)
                 .accessibilityIgnoresInvertColors()
                 .accessibilityHidden(true)
             }

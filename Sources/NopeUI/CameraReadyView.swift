@@ -241,7 +241,7 @@ struct CameraReadyView: View {
             }
         }
         .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
-        .onChange(of: model.captureStatus) { _, status in record(status) }
+        .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
             showsExposureDial = false
@@ -769,6 +769,32 @@ struct CameraReadyView: View {
     }
 
     // MARK: - Feedback
+
+    /// Records each new capture status for as long as the view is shown (``record(_:)``).
+    ///
+    /// It waits for the model's status to change and then reads it, instead of using
+    /// `onChange(of:)` or `task(id:)`: when a photo is taken and fails (or is saved) within one
+    /// frame, the status changes several times in that frame, and SwiftUI then runs those
+    /// actions once and drops the rest ("onChange(of: CaptureStatus) action tried to update
+    /// multiple times per frame"), so the failure banner never came, although the view was
+    /// drawn again. Read after each change, the last status of a burst of changes is never
+    /// missed; statuses in between may be, as before.
+    private func recordCaptureResults() async {
+        var last = model.captureStatus
+        while !Task.isCancelled {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                withObservationTracking {
+                    _ = model.captureStatus
+                } onChange: {
+                    continuation.resume()
+                }
+            }
+            let status = model.captureStatus
+            guard !Task.isCancelled, status != last else { continue }
+            last = status
+            record(status)
+        }
+    }
 
     /// Records a capture result: a good save updates the thumbnail quietly, with a light haptic
     /// and a low-priority VoiceOver announcement, and clears the banner; a failure shows the
