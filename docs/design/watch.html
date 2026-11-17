@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: Apple Watch</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+</style>
+</head>
+<body>
+<main>
+<h1>Apple Watch</h1>
+<p class="muted">Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it.</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html">Design system</a><a href="camera.html">Camera</a><a href="drive.html">Drive modes</a><a href="quick-menu.html">Q</a><a href="manual-controls.html">Manual Controls</a><a href="sheets.html">Sheets</a><a href="settings.html">Settings</a><a href="layouts.html">Layouts</a><a href="system.html">System</a><a href="watch.html" class=here>Apple Watch</a><a href="navigation.html">Navigation map</a><a href="icon.html">Icon</a></nav>
+
+<p>The watch app is one screen: the status, the last result, the shutter and the delay. It takes single photos and the self-timer only. Drawn at 208 × 248 pt.</p><div class="figs small"><figure id="watch-ready"><a href="screens/watch-ready.html"><img src="screens/watch-ready.png" width="180" alt="Apple Watch: Ready" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Ready</b>Status, the shutter and Delay. The button is at least 56 pt tall and full width.</figcaption></figure><figure id="watch-countdown"><a href="screens/watch-countdown.html"><img src="screens/watch-countdown.png" width="180" alt="Apple Watch: Counting down" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Counting down</b>The button becomes Cancel Timer; each second is a tap on the wrist.</figcaption></figure><figure id="watch-taking"><a href="screens/watch-taking.html"><img src="screens/watch-taking.png" width="180" alt="Apple Watch: Taking the photo" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Taking the photo</b>The shutter is disabled while the phone works.</figcaption></figure><figure id="watch-saved"><a href="screens/watch-saved.html"><img src="screens/watch-saved.png" width="180" alt="Apple Watch: Saved, not signed" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Saved, not signed</b>With signing off this is plain status, not a warning.</figcaption></figure><figure id="watch-signed"><a href="screens/watch-signed.html"><img src="screens/watch-signed.png" width="180" alt="Apple Watch: Saved and signed" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Saved and signed</b>Teal marks the verified result, with a seal and words.</figcaption></figure><figure id="watch-failed"><a href="screens/watch-failed.html"><img src="screens/watch-failed.png" width="180" alt="Apple Watch: Not saved" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Not saved</b>The watch points to the phone, which shows the reason.</figcaption></figure><figure id="watch-unreachable"><a href="screens/watch-unreachable.html"><img src="screens/watch-unreachable.png" width="180" alt="Apple Watch: Phone not reachable" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Phone not reachable</b>Amber, with a symbol and words; the shutter is disabled.</figcaption></figure><figure id="watch-no-access"><a href="screens/watch-no-access.html"><img src="screens/watch-no-access.png" width="180" alt="Apple Watch: Camera access needed" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Camera access needed</b>One of four camera-unavailable messages.</figcaption></figure><figure id="watch-delay"><a href="screens/watch-delay.html"><img src="screens/watch-delay.png" width="180" alt="Apple Watch: Delay" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Delay</b>A pushed list: Off, 3 seconds, 10 seconds.</figcaption></figure><figure id="watch-largest"><a href="screens/watch-largest.html"><img src="screens/watch-largest.png" width="180" alt="Apple Watch: Largest text size" loading="lazy" style="border-radius:12px"></a><figcaption><b>Apple Watch: Largest text size</b>The view scrolls; the status wraps and nothing is cut.</figcaption></figure></div>
+</main>
+</body>
+</html>

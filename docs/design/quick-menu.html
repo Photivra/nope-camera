@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: Q, the quick menu</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+</style>
+</head>
+<body>
+<main>
+<h1>Q, the quick menu</h1>
+<p class="muted">Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it.</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html">Design system</a><a href="camera.html">Camera</a><a href="drive.html">Drive modes</a><a href="quick-menu.html" class=here>Q</a><a href="manual-controls.html">Manual Controls</a><a href="sheets.html">Sheets</a><a href="settings.html">Settings</a><a href="layouts.html">Layouts</a><a href="system.html">System</a><a href="watch.html">Apple Watch</a><a href="navigation.html">Navigation map</a><a href="icon.html">Icon</a></nav>
+
+<p>Q opens one panel of tiles above the shutter row. Every tile is an existing setting: its name, a symbol and its value. A tile that is on is filled white and says so in words. All tiles are in the one panel; there is no second page and no editing of the tiles. Tiles a lens or device cannot offer are left out.</p>
+<ul><li>A two-state tile switches on a tap and the panel stays open, so several can be changed. A tile with more values opens a system menu.</li><li>Exposure, Presets, Hide Controls and Settings close the panel, as do the shutter, a lens, a tap on the picture, or Q again.</li><li>The panel covers the lens row, the drive strip and up to about 45% of the picture while it is open.</li></ul><div class="figs "><figure id="q-auto"><a href="screens/q-auto.html"><img src="screens/q-auto.png" width="260" alt="Q, full auto" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q, full auto</b>Twelve tiles in one panel, nothing on a second page. Each tile is a symbol, its name and its value. The panel covers the lens row, the drive strip and the lower part of the picture; the shutter row stays in reach. Hide Controls and Settings are in the foot.</figcaption></figure><figure id="q-manual"><a href="screens/q-manual.html"><img src="screens/q-manual.png" width="260" alt="Q, Manual Controls on" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q, Manual Controls on</b>With manual on, Exposure and Fast Shutter leave (the manual controls replace them) and Far Focus joins: eleven tiles.</figcaption></figure><figure id="q-states"><a href="screens/q-states.html"><img src="screens/q-states.png" width="260" alt="Q, tiles that are on" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q, tiles that are on</b>On is filled white and written in words. A menu tile that is not on its first option is filled too.</figcaption></figure><figure id="q-menu"><a href="screens/q-menu.html"><img src="screens/q-menu.png" width="260" alt="Q, a tile menu" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q, a tile menu</b>Tiles with more than two values open a system menu: Flash, Fast Shutter, Grid and Readout. Grid lists Off, Thirds, 4 × 4 and Square (issue 76).</figcaption></figure><figure id="q-fewer"><a href="screens/q-fewer.html"><img src="screens/q-fewer.png" width="260" alt="Q on a lens with fewer options" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q on a lens with fewer options</b>Tiles the lens or device cannot offer are left out, never shown disabled. Here the front camera: no Flash, Light, Close-Up or Compare.</figcaption></figure><figure id="q-night"><a href="screens/q-night.html"><img src="screens/q-night.png" width="260" alt="Q in night mode" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q in night mode</b>Red on black; on is filled, off is outlined.</figcaption></figure><figure id="q-long-language"><a href="screens/q-long-language.html"><img src="screens/q-long-language.png" width="260" alt="Q in a long language (German)" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>Q in a long language (German)</b>Tile height is a minimum. A long name wraps to a second line and its row grows; the two foot buttons stack when they do not fit side by side. Nothing is truncated.</figcaption></figure></div>
+</main>
+</body>
+</html>
