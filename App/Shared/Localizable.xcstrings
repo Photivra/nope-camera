@@ -2542,6 +2542,201 @@
         }
       }
     },
+    "Focus on Faces": {
+      "comment": "Switch: faces the camera detects steer autofocus and auto exposure. The parameter of nope.'s Set Focus on Faces action; the same name as the switch in nope.'s settings, use the same translation. Replaces Face Detection.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auf Gesichter fokussieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfocar caras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mise au point sur les visages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Messa a fuoco sui volti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "顔にピントを合わせる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴에 초점"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherpstellen op gezichten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focar rostos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "对焦人脸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "對焦臉部"
+          }
+        }
+      }
+    },
+    "Focus on Faces is off.": {
+      "comment": "Siri's answer after nope.'s Focus on Faces was turned off.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„Auf Gesichter fokussieren“ ist ausgeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfocar caras está desactivado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La mise au point sur les visages est désactivée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La messa a fuoco sui volti è disattivata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「顔にピントを合わせる」をオフにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴에 초점이 꺼졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherpstellen op gezichten staat uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focar rostos está desativado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "对焦人脸已关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "對焦臉部已關閉。"
+          }
+        }
+      }
+    },
+    "Focus on Faces is on.": {
+      "comment": "Siri's answer after nope.'s Focus on Faces was turned on.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„Auf Gesichter fokussieren“ ist eingeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Enfocar caras está activado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La mise au point sur les visages est activée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La messa a fuoco sui volti è attiva."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「顔にピントを合わせる」をオンにしました。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴에 초점이 켜졌습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherpstellen op gezichten staat aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Focar rostos está ativado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "对焦人脸已打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "對焦臉部已開啟。"
+          }
+        }
+      }
+    },
     "Frame %lld of %lld": {
       "comment": "Live Activity: which frame of the night sky helper's series is being taken, of how many.",
       "localizations": {
@@ -6247,6 +6442,71 @@
         }
       }
     },
+    "Set Focus on Faces": {
+      "comment": "The name of nope.'s action that turns Focus on Faces on or off, in the Shortcuts app. Focus on Faces is the name of nope.'s own switch; use its translation. Replaces Set Face Detection.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auf Gesichter fokussieren festlegen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar Enfocar caras"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la mise au point sur les visages"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta messa a fuoco sui volti"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「顔にピントを合わせる」を設定"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴에 초점 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherpstellen op gezichten instellen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar Focar rostos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "设置对焦人脸"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "設定對焦臉部"
+          }
+        }
+      }
+    },
     "Set Night Mode": {
       "comment": "The name of nope.'s action that turns night mode on or off, in the Shortcuts app.",
       "localizations": {
@@ -6503,6 +6763,71 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "將快速快門設為${choice}"
+          }
+        }
+      }
+    },
+    "Set focus on faces to ${isOn}": {
+      "comment": "How nope.'s Set Focus on Faces action reads in the Shortcuts editor. ${isOn} is \"On\" or \"Off\". Keep ${isOn} unchanged.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Auf Gesichter fokussieren auf ${isOn} setzen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Poner Enfocar caras en ${isOn}"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Régler la mise au point sur les visages sur ${isOn}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Imposta la messa a fuoco sui volti su ${isOn}"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「顔にピントを合わせる」を${isOn}にする"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "얼굴에 초점을 ${isOn}(으)로 설정"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Scherpstellen op gezichten op ${isOn} zetten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajustar Focar rostos para ${isOn}"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "将对焦人脸设为${isOn}"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "將對焦臉部設為${isOn}"
           }
         }
       }
@@ -9175,7 +9500,7 @@
       }
     },
     "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure.": {
-      "comment": "Describes nope.'s Set Face Detection action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "comment": "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged.",
       "localizations": {
         "de": {
           "stringUnit": {
