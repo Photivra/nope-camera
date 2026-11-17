@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests for scripts/ui-test-shards.sh, the retry rule of scripts/run-ui-test-shard.sh and
-# scripts/stop-simulator-push.sh and scripts/stop-simulator-background-tasks.sh: each case builds a small tree and checks pass or fail.
+# scripts/stop-simulator-push.sh, scripts/stop-simulator-background-tasks.sh and
+# scripts/wait-for-simulator-runtimes.sh: each case builds a small tree and checks pass or fail.
 set -euo pipefail
 
 script="$(cd "$(dirname "$0")" && pwd)/ui-test-shards.sh"
@@ -214,6 +215,39 @@ STUB
 case_tasks "scheduler stopped" loaded works "Background task scheduler on TEST-DEVICE stopped"
 case_tasks "scheduler already gone" absent works "Background task scheduler on TEST-DEVICE stopped"
 case_tasks "scheduler that stays is a warning" loaded refuses "::warning::The background task scheduler of Simulator TEST-DEVICE is still loaded"
+
+# Before a Simulator is booted: no wait when every runtime is mounted as expected, and a wait
+# when one is mounted from a plain disk image that isn't named as always mounted that way. A
+# stand-in for xcrun lists the runtimes.
+runtimes="$(cd "$(dirname "$0")" && pwd)/wait-for-simulator-runtimes.sh"
+case_runtimes() { # case_runtimes "name" "mount path of iOS 27.2" "expected text"
+  local name=$1 d got
+  d=$(mktemp -d)
+  cat >"$d/xcrun" <<STUB
+#!/usr/bin/env bash
+cat <<JSON
+{"A": {"runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.iOS-27-2", "build": "24B8117", "mountPath": "$2"},
+ "B": {"runtimeIdentifier": "com.apple.CoreSimulator.SimRuntime.watchOS-27-0", "build": "24R362",
+       "mountPath": "/Library/Developer/CoreSimulator/Volumes/watchOS_24R362"}}
+JSON
+STUB
+  chmod +x "$d/xcrun"
+  if got=$(PATH="$d:$PATH" SIMULATOR_RUNTIMES_ON_DISK_IMAGES="com.apple.CoreSimulator.SimRuntime.watchOS-27-0" \
+      SIMULATOR_RUNTIME_SETTLE_SECONDS=2 SIMULATOR_RUNTIME_POLL_SECONDS=1 SIMULATOR_RUNTIME_FIRST_LOOK_SECONDS=0 \
+      "$runtimes" 2>&1) && grep -q "$3" <<<"$got"; then
+    echo "ok   $name"
+  else
+    echo "FAIL $name: $got"; failures=$((failures + 1))
+  fi
+  rm -rf "$d"
+}
+case_runtimes "runtimes mounted as expected: no wait" \
+  "/private/var/run/com.apple.security.cryptexd/mnt/com.apple.iPhoneOS.SimulatorRuntime-v24.2.8117.0.abc" \
+  "Simulator runtimes: mounted as expected"
+case_runtimes "the runtime under test on a plain disk image: wait" \
+  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "Simulator runtimes: waited"
+case_runtimes "the wait names the runtime" \
+  "/Library/Developer/CoreSimulator/Volumes/iOS_24B8117" "iOS-27-2 (24B8117) at /Library/Developer/CoreSimulator/Volumes/iOS_24B8117"
 
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all UI test shard tests passed"

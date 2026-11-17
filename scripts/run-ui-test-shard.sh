@@ -4,6 +4,8 @@
 #
 #   scripts/run-ui-test-shard.sh <shard> <device name> <products dir> <result bundle> [xcodebuild args…]
 #
+# 0. On a runner that mounted a Simulator runtime from a plain disk image, waits until the
+#    runner has remounted it (scripts/wait-for-simulator-runtimes.sh).
 # 1. Finds the Simulator by name and iOS version (SIMULATOR_OS, default 27.2), boots it and waits
 #    until it has finished booting (simctl bootstatus -b), so the test runner doesn't start on a
 #    Simulator that is still booting, stops its background task scheduler
@@ -98,6 +100,10 @@ app=$(find "$products" -maxdepth 2 -path '*-iphonesimulator/*.app' ! -name '*-Ru
 [[ -n $xctestrun && -n $app ]] || { echo "error: no .xctestrun or app in $products" >&2; exit 1; }
 bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
 
+# Before anything is booted: on a runner that mounted a runtime from a plain disk image, wait
+# until it has remounted it (scripts/wait-for-simulator-runtimes.sh).
+"$(dirname "$0")/wait-for-simulator-runtimes.sh"
+
 runtime_prefix="com.apple.CoreSimulator.SimRuntime.iOS-${os//./-}"
 udid=$(xcrun simctl list devices available -j | python3 -c '
 import json, sys
@@ -149,6 +155,18 @@ run() {
   return "$status"
 }
 
+# Waits, up to five minutes, until simctl lists the Simulator as available again: while the
+# runner remounts the runtime's disk image, booting fails at once with "The iOS 27.2 simulator
+# runtime is not available" (iPhone shard 8 of build 44149517211, twice within a second).
+wait_until_available() {
+  local waited=0
+  until xcrun simctl list devices available 2>/dev/null | grep -q "$udid"; do
+    (( waited >= 300 )) && return 0
+    sleep 10
+    waited=$(( waited + 10 ))
+  done
+}
+
 # Prepares the Simulator, once more after rebooting it when booting or installing failed: in
 # build 44124454610 the install on one iPad shard ended with "Mach error -308 (ipc/mig) server
 # died" before any test ran.
@@ -156,6 +174,7 @@ prepare_with_retry() {
   if ! prepare; then
     echo "::warning::Preparing the Simulator failed; rebooting it and preparing once more."
     xcrun simctl shutdown "$udid" 2>/dev/null || true
+    wait_until_available
     prepare || { echo "error: the Simulator couldn't be prepared" >&2; exit 1; }
   fi
 }

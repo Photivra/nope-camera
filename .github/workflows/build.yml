@@ -26,6 +26,9 @@ env:
   # Every job builds against the C2PA library built from source in the c2pa-lib job, whose
   # checksum must equal the one Package.swift pins for the published asset (c2pa-lib/README.md).
   NOPE_C2PA_LIB_FROM_SOURCE: "1"
+  # The runtimes the runner image mounts from plain disk images in every job; any other one
+  # mounted that way makes scripts/wait-for-simulator-runtimes.sh wait (docs/TESTING.md).
+  SIMULATOR_RUNTIMES_ON_DISK_IMAGES: com.apple.CoreSimulator.SimRuntime.watchOS-27-0 com.apple.CoreSimulator.SimRuntime.tvOS-27-0
 
 jobs:
   c2pa-lib:
@@ -202,8 +205,9 @@ jobs:
     name: ui-tests ${{ matrix.shard }}/8
     needs: ui-build
     runs-on: xcode-27
-    # About 10.5 minutes of tests on the runner and 5 of setup, so a setup retry still fits.
-    timeout-minutes: 35
+    # About 20 minutes of tests on the runner and 7 of setup; on a runner that has to remount a
+    # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more.
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
@@ -248,7 +252,7 @@ jobs:
     name: ui-tests-ipad ${{ matrix.shard }}/8
     needs: ui-build
     runs-on: xcode-27
-    timeout-minutes: 35
+    timeout-minutes: 50
     strategy:
       fail-fast: false
       matrix:
@@ -292,7 +296,7 @@ jobs:
     name: ui-tests-watch
     needs: c2pa-lib
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

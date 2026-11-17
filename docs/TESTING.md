@@ -556,7 +556,7 @@ the local toolchain). Jobs:
 The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
 as on a recent Mac, so CI limits are sized from runner times, never from local ones). CI runs it
 in eight shards per device, about 18.5 minutes of tests each by the times of build 43786103024
-plus about 5 minutes of setup (up to 10 when the Simulator is slow to boot), with a 35-minute
+plus about 5 minutes of setup (up to 10 when the Simulator is slow to boot), with a 50-minute
 limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
 its time in seconds on the runner (the longer of the iPhone and iPad runs), or, marked `est`,
 twice its local time until the runner has measured it; the shards are balanced by those times
@@ -672,6 +672,43 @@ prewarm (14 seconds there) and about 100 tasks in its first seven minutes, the o
 scheduler stopped ran none, and services that asked for a task were refused without retrying
 in a loop (about 240 log lines in six minutes). No test, audit or limit changed.
 
+#### Simulator runtime disk images on the runner
+
+The failures that ended a Simulator in builds 44124454610 and 44149517211 have one cause, shown
+by the disk image service's log (`simdiskimaged.log`) in the 14 result bundles we have from
+builds 44098207588, 44124454610 and 44149517211, all on runner image `xcode-27-arm64`
+20261104.0337.1. When a job first uses the Simulator, the
+service mounts each runtime's disk image. On every runner two of them (watchOS 27.0 and tvOS
+27.0) fail to mount the usual way ("Cryptex mount failed … Code=2") and are mounted from a plain
+disk image under `/Library/Developer/CoreSimulator/Volumes`; from 147 to 716 seconds after its
+start the service tries to mount them again and unmount the first mount, which mostly fails and
+leaves things as they were. On two of the 14 runners another runtime failed too at the start
+("Disk image operation failed with error code 153"), and those are the two jobs whose Simulator
+host process (`SimLaunchHost`) crashed:
+
+| Job | Mount that failed at the start | What followed |
+|---|---|---|
+| 44124454610, iPad shard 1 | xrOS 27.0 | remounted at +427 s; host process crashed at about +432 s; the first test was cut short |
+| 44149517211, iPhone shard 8 | xrOS 27.0 and iOS 27.2, the runtime under test | iOS 27.2 unmounted and remounted at +535 to +550 s; host process crashed three times from +543 s; then "The iOS 27.2 simulator runtime is not available" |
+
+In the 12 other bundles only the two usual runtimes were on plain disk images and the host
+process didn't crash. Two more jobs without a result bundle fit the times: iPad shard 8 of
+44124454610 ("server died" at about +320 s) and iPad shard 4 of 44149517211, where stopping the
+background task scheduler took 9.6 minutes and the install ended with "server died" at about
++707 s; its retry ran into a second loss of the Simulator in the first test and the job's
+35-minute limit. Their cause is assumed, not shown.
+
+`scripts/wait-for-simulator-runtimes.sh`, the first use of simctl in the shard and watch jobs,
+reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
+(`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` in `build.yml`) is mounted under
+`/Library/Developer/CoreSimulator/Volumes`, it waits until 750 seconds have passed, with nothing
+booted, so the remounting is over before a Simulator runs: in the bundles the last unmount came
+716 seconds after the service started, with nothing later in logs that run to 1,772 seconds.
+On other runners it returns at once. The job limits are 50 minutes for a shard and 45 for the
+watch job, so the wait fits; no test's time limit changed. That the wait is enough rests on
+those logs: a runner whose runtime under test never mounts the usual way hasn't been seen
+through a whole job.
+
 #### A Simulator that dies on the runner
 
 In build 44124454610 two iPad shards lost their Simulator. In shard 1 the first test stopped at
@@ -685,9 +722,9 @@ image service (`simdiskimaged.log`) unmounted the duplicates (tvOS 27.0 at 17:39
 A minute later the Simulator's host process, under which every booted Simulator runs, crashed
 while unloading a library from an unmounted image (`SimLaunchHost.arm64`, 17:41:07,
 `EXC_BAD_ACCESS`, `KERN_MEMORY_ERROR` in `dlclose`), and the Simulator's own processes ended
-with it (17:41:07 to 17:41:15). The same unmounts are in the disk image logs of the other
-shards we looked at, where they needed a forced third attempt and the host process kept
-running. Shard 8 uploaded no result bundle, so its cause is assumed, not shown, to be the same.
+with it (17:41:07 to 17:41:15). "Simulator runtime disk images on
+the runner" above has what the two crashes share. Shard 8 uploaded no result bundle, so its
+cause is assumed, not shown, to be the same.
 
 This is outside the app and the tests, so `scripts/run-ui-test-shard.sh` runs again only what
 the Simulator's end cut short: it prepares the Simulator once more when booting it or
@@ -715,6 +752,19 @@ core busy. The cause isn't known. `audit(_:)` now writes each Dynamic Type issue
 ("Audit round n: …", with the type, the element's label and frame, the window's frame and
 whether a rule ignored it), so the next runs show what the runner's audit reports and which
 rule decides; no rule changed.
+
+#### Continue on the first-run screen (open)
+
+In build 44149517211 two tests at the largest text size failed the same way, once each:
+`testPresetsAtTheLargestTextSize` (iPhone shard 5) and `testLandscapeAtTheLargestTextSize` (iPad
+shard 3). The test tapped Continue on the first-run screen and the camera didn't come within
+ten seconds; the hierarchy and the screen recording at the failure still show the first-run
+screen. The Simulator's log shows the touch reaching the app (touch down and up 71 ms apart,
+then the app's own event dispatch lines), and the steps before the tap took as long as in runs
+that passed. Neither ran during a remount of the runtime disk images (19 and 13 minutes into
+their jobs). Both tests passed in the two builds before with the same app code, and in 25 local
+runs of each on an iPhone Simulator the step worked every time; the camera model received one start request
+per launch in a local check. The cause isn't known, and nothing was changed for it.
 
 To run one shard locally, with a Simulator named as in CI:
 

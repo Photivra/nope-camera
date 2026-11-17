@@ -35,6 +35,10 @@ platform=$(field platform | sed -E 's/ Simulator$//')
 [[ -n $name && -n $os && -n $platform ]] || { echo "error: the destination needs platform, name and OS" >&2; exit 2; }
 runtime_prefix="com.apple.CoreSimulator.SimRuntime.${platform}-${os//./-}"
 
+# Before anything is booted (scripts/wait-for-simulator-runtimes.sh). Not again for a call that
+# only launches the app on a Simulator this script booted earlier.
+[[ -n $app ]] || "$(cd "$(dirname "$0")" && pwd)/wait-for-simulator-runtimes.sh"
+
 udid=$(xcrun simctl list devices available -j | python3 -c '
 import json, sys
 name, prefix = sys.argv[1], sys.argv[2]
