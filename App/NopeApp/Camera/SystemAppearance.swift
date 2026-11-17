@@ -124,23 +124,35 @@ private struct WindowAppearanceBridge: UIViewRepresentable {
 
 /// Sets its window's and window scene's interface styles, and follows the scene's style while
 /// the scene isn't overridden.
+///
+/// Nothing here changes SwiftUI state or UIKit traits while SwiftUI updates its views: the new
+/// styles are applied, and the scene's style reported, on the next turn of the main actor
+/// (`scheduleApply()`, `report(_:)`). Applying them inside `updateUIView` set a trait override
+/// whose change was reported at once into SwiftUI state, and SwiftUI warned "Modifying state
+/// during view update" on every Settings screen in the UI tests.
 final class WindowAppearanceView: UIView {
-    /// Called with the scene's appearance.
+    /// Called with the scene's appearance when it changes.
     var onSystemChange: @MainActor (ColorScheme) -> Void
 
     /// The style for the window: dark for the camera, unspecified to follow the system.
     var windowStyle = UIUserInterfaceStyle.unspecified {
-        didSet { applyWindowStyle() }
+        didSet { if windowStyle != oldValue { scheduleApply() } }
     }
 
     /// The style for the window scene: dark while only the camera is shown, unspecified to show
     /// the system's.
     var sceneStyle = UIUserInterfaceStyle.unspecified {
-        didSet { applySceneStyle() }
+        didSet { if sceneStyle != oldValue { scheduleApply() } }
     }
 
     /// The scene whose changes are followed, and the registration that follows them.
     private var observed: (scene: UIWindowScene, registration: any UITraitChangeRegistration)?
+
+    /// Whether the styles are to be applied on the next turn of the main actor.
+    private var isApplyScheduled = false
+
+    /// The appearance last reported, so an unchanged one isn't reported again.
+    private var reported: ColorScheme?
 
     /// Creates the view.
     ///
@@ -158,47 +170,58 @@ final class WindowAppearanceView: UIView {
         nil
     }
 
-    /// Sets the new window's style, and follows its scene instead of the old one.
+    /// Follows the new window's scene instead of the old one, and sets its styles.
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        applyWindowStyle()
         let scene = window?.windowScene
-        guard scene !== observed?.scene else {
-            applySceneStyle()
-            return
+        if scene !== observed?.scene {
+            if let observed { observed.scene.unregisterForTraitChanges(observed.registration) }
+            observed = nil
+            if let scene {
+                report(scene.traitCollection)
+                let registration = scene.registerForTraitChanges([UITraitUserInterfaceStyle.self]) {
+                    [weak self] (scene: UIWindowScene, _: UITraitCollection) in
+                    self?.report(scene.traitCollection)
+                }
+                observed = (scene, registration)
+            }
         }
-        if let observed { observed.scene.unregisterForTraitChanges(observed.registration) }
-        observed = nil
-        guard let scene else { return }
-        report(scene.traitCollection)
-        let registration = scene.registerForTraitChanges([UITraitUserInterfaceStyle.self]) {
-            [weak self] (scene: UIWindowScene, _: UITraitCollection) in
-            self?.report(scene.traitCollection)
-        }
-        observed = (scene, registration)
-        applySceneStyle()
-    }
-
-    /// Sets the window's interface style, if it differs.
-    private func applyWindowStyle() {
-        guard let window, window.overrideUserInterfaceStyle != windowStyle else { return }
-        window.overrideUserInterfaceStyle = windowStyle
+        scheduleApply()
     }
 
     /// Shows the system's setting in the window scene at once, and returns it: the scene's
-    /// override is removed now rather than on the next update, so a screen that follows the
-    /// system opens with the current setting.
+    /// override is removed now rather than on the next turn, so a screen that follows the
+    /// system opens with the current setting. Called from the camera screen's request, not
+    /// while SwiftUI updates its views.
     ///
     /// - Returns: The system's setting, or `nil` outside a window scene.
     func readSystemScheme() -> ColorScheme? {
         sceneStyle = .unspecified
+        applyStyles()
         guard let scene = window?.windowScene else { return nil }
-        return scene.traitCollection.userInterfaceStyle == .dark ? .dark : .light
+        let scheme: ColorScheme = scene.traitCollection.userInterfaceStyle == .dark ? .dark : .light
+        reported = scheme
+        return scheme
     }
 
-    /// Overrides the scene's interface style, or removes the override, if it changed.
-    private func applySceneStyle() {
-        guard let scene = window?.windowScene else { return }
+    /// Applies the styles on the next turn of the main actor, once however often it is asked.
+    private func scheduleApply() {
+        guard !isApplyScheduled else { return }
+        isApplyScheduled = true
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            isApplyScheduled = false
+            applyStyles()
+        }
+    }
+
+    /// Sets the window's interface style and the scene's override, where they differ.
+    private func applyStyles() {
+        guard let window else { return }
+        if window.overrideUserInterfaceStyle != windowStyle {
+            window.overrideUserInterfaceStyle = windowStyle
+        }
+        guard let scene = window.windowScene else { return }
         let isOverridden = scene.traitOverrides.contains(UITraitUserInterfaceStyle.self)
         if sceneStyle == .unspecified {
             if isOverridden { scene.traitOverrides.remove(UITraitUserInterfaceStyle.self) }
@@ -207,12 +230,16 @@ final class WindowAppearanceView: UIView {
         }
     }
 
-    /// Reports the appearance in the scene's traits while they show the system's setting: not
-    /// while the scene's style is overridden.
+    /// Reports the appearance in the scene's traits while they show the system's setting (not
+    /// while the scene's style is overridden), on the next turn of the main actor and only when
+    /// it changed.
     ///
     /// - Parameter traits: The scene's traits.
     private func report(_ traits: UITraitCollection) {
         guard window?.windowScene?.traitOverrides.contains(UITraitUserInterfaceStyle.self) != true else { return }
-        onSystemChange(traits.userInterfaceStyle == .dark ? .dark : .light)
+        let scheme: ColorScheme = traits.userInterfaceStyle == .dark ? .dark : .light
+        guard scheme != reported else { return }
+        reported = scheme
+        Task { @MainActor [weak self] in self?.onSystemChange(scheme) }
     }
 }

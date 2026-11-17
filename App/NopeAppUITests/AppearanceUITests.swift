@@ -76,7 +76,7 @@ extension NopeAppUITests {
     /// changes while it is open, and back (the iPad popover keeps its setting while open).
     @MainActor
     func testSettingsAndPresetsFollowTheLightSetting() throws {
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         let app = launch("allow")
         XCTAssertTrue(app.buttons["Continue"].waitForExistence(timeout: 10))
         assertAppearance(app, isLight: true, "first run")
@@ -93,11 +93,11 @@ extension NopeAppUITests {
 
         // The system setting changes while Settings is open: the iPhone sheet follows; the iPad
         // popover keeps the setting it opened with until it closes.
-        XCUIDevice.shared.appearance = .dark
+        useAppearance(.dark)
         assertAppearance(
             app, isLight: isPad, in: presentedSample(app, navigationBar: "Formats"),
             isPad ? "the open Formats popover" : "Formats in dark")
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         assertAppearance(app, isLight: true, in: presentedSample(app, navigationBar: "Formats"), "Formats back in light")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons["Done"].tap()
@@ -114,17 +114,17 @@ extension NopeAppUITests {
     /// window scene then shows the camera's dark, not the system's setting).
     @MainActor
     func testSettingsOpenInTheSettingChangedUnderTheCamera() throws {
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         let app = launch("allow")
         continuePastFirstRun(app)
         let settingsButton = app.buttons["Settings"]
-        XCUIDevice.shared.appearance = .dark
+        useAppearance(.dark)
         settingsButton.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         assertAppearance(app, isLight: false, in: presentedSample(app, navigationBar: "Settings"), "Settings in dark")
         app.buttons["Done"].tap()
         XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         settingsButton.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
         assertAppearance(app, isLight: true, in: presentedSample(app, navigationBar: "Settings"), "Settings in light")
@@ -133,7 +133,7 @@ extension NopeAppUITests {
     /// In the dark setting, first run and Settings are dark.
     @MainActor
     func testSettingsFollowTheDarkSetting() throws {
-        XCUIDevice.shared.appearance = .dark
+        useAppearance(.dark)
         let app = launch("allow")
         XCTAssertTrue(app.buttons["Continue"].waitForExistence(timeout: 10))
         assertAppearance(app, isLight: false, "first run")
@@ -146,7 +146,7 @@ extension NopeAppUITests {
     /// details, the interval settings and Pro Tools.
     @MainActor
     func testCameraSheetsStayDarkInTheLightSetting() throws {
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         let app = launch("allow")
         continuePastFirstRun(app)
 
@@ -178,7 +178,7 @@ extension NopeAppUITests {
     /// for the dark setting in ``testSettingsScreensPassAccessibilityAudits()``).
     @MainActor
     func testSettingsScreensPassAccessibilityAuditsInTheLightSetting() throws {
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         let app = launch("allow")
         continuePastFirstRun(app)
         try auditSettingsScreens(app, checksDynamicType: false, checksContrast: !isPad)
@@ -188,7 +188,7 @@ extension NopeAppUITests {
     /// light setting.
     @MainActor
     func testSettingsAtTheLargestTextSizeInTheLightSetting() throws {
-        XCUIDevice.shared.appearance = .light
+        useAppearance(.light)
         let app = launch("denied", extraArguments: Self.largestTextSize)
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
         try audit(app)

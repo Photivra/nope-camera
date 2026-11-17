@@ -18,12 +18,37 @@ enum SimulatedCameraLaunch {
     /// interruption when it returns, as AVFoundation does for a real camera
     /// (`videoDeviceNotAvailableInBackground`), so the UI tests can leave and return during a run.
     ///
+    /// Only an interruption this started is ended: every change of the scene's phase used to end
+    /// any interruption, so the launch's own move to active ended the `interrupted` and
+    /// `multitasking` scenarios' interruption, and their message never showed.
+    ///
     /// - Parameters:
     ///   - isInBackground: Whether the app is in the background now.
     ///   - backend: The launch's backend; anything but the simulated one is left alone.
-    static func followScenePhase(_ isInBackground: Bool, backend: any CaptureBackend) {
-        guard let simulated = backend as? SimulatedCaptureBackend else { return }
-        simulated.emit(isInBackground ? .interrupted(.backgrounded) : .interruptionEnded)
+    @MainActor static func followScenePhase(_ isInBackground: Bool, backend: any CaptureBackend) {
+        guard let simulated = backend as? SimulatedCaptureBackend,
+            let event = backgroundEvent(isInBackground: isInBackground, interruptedForBackground: &interruptedForBackground)
+        else { return }
+        simulated.emit(event)
+    }
+
+    /// Whether ``followScenePhase(_:backend:)`` interrupted the camera for the background and
+    /// hasn't ended it yet.
+    @MainActor static var interruptedForBackground = false
+
+    /// The event for a change of the scene's phase: an interruption on entering the background,
+    /// its end on leaving it, and nothing otherwise (another phase change, or a return the
+    /// background interruption wasn't sent for).
+    ///
+    /// - Parameters:
+    ///   - isInBackground: Whether the app is in the background now.
+    ///   - interruptedForBackground: Whether the camera is interrupted for the background;
+    ///     updated.
+    /// - Returns: The event to send, or `nil`.
+    static func backgroundEvent(isInBackground: Bool, interruptedForBackground: inout Bool) -> CaptureEvent? {
+        guard isInBackground != interruptedForBackground else { return nil }
+        interruptedForBackground = isInBackground
+        return isInBackground ? .interrupted(.backgrounded) : .interruptionEnded
     }
 
     /// A simulated camera state.

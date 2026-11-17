@@ -350,9 +350,12 @@ struct NightModeStyle: ViewModifier {
     /// - Parameter content: The view.
     func body(content: Content) -> some View {
         content
+            // The secondary level, used by section headers among others, is the darker gray of
+            // ``SecondaryText`` in the light appearance: the system's lighter gray failed the
+            // contrast audit there (the Live Aids header at the largest text size).
             .foregroundStyle(
                 isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.primary),
-                isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary),
+                isOn ? AnyShapeStyle(.white) : AnyShapeStyle(SecondaryText()),
                 isOn ? AnyShapeStyle(.white) : AnyShapeStyle(.tertiary))
             .tint(isOn ? NightStyle.controlTint : nil)
             .toggleStyle(NightModeSwitchStyle())

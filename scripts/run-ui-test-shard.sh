@@ -6,7 +6,8 @@
 #
 # 1. Finds the Simulator by name and iOS version (SIMULATOR_OS, default 27.2), boots it and waits
 #    until it has finished booting (simctl bootstatus -b), so the test runner doesn't start on a
-#    Simulator that is still booting.
+#    Simulator that is still booting, then switches it to dark and back with simctl: when a
+#    Simulator's first change of the light or dark setting came from a test, it didn't apply.
 # 2. Installs the app and launches it once, so the first test's launch isn't the Simulator's
 #    first launch of the app.
 # 3. Runs the shard's tests (scripts/ui-test-shards.sh args <shard>) with test-without-building.
@@ -65,6 +66,19 @@ prepare() {
   echo "Booting $device ($udid)"
   xcrun simctl boot "$udid" 2>/dev/null || true
   xcrun simctl bootstatus "$udid" -b
+  # The first change of a Simulator's light or dark setting must come from simctl: when the
+  # first one came from a test (XCUIDevice.appearance), the setting stayed light for every app,
+  # the system's Settings included, until the Simulator booted again, and the appearance tests
+  # failed. Switching to dark and back here makes the tests' changes apply.
+  echo "Switching $device to dark and back, so the tests' light and dark changes apply"
+  local style
+  for style in dark light; do
+    xcrun simctl ui "$udid" appearance "$style"
+    if [[ $(xcrun simctl ui "$udid" appearance) != "$style" ]]; then
+      echo "error: $device didn't switch to $style" >&2
+      exit 1
+    fi
+  done
   echo "Installing and launching $bundle_id once"
   xcrun simctl install "$udid" "$app"
   xcrun simctl launch "$udid" "$bundle_id" -NopeSimulatedCamera allow >/dev/null || true

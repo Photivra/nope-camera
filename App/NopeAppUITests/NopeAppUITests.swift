@@ -6,21 +6,41 @@ import XCTest
 final class NopeAppUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
-        // Every test starts in portrait and in the system's light setting, which Settings and the
-        // screens that aren't the camera follow (AppearanceUITests); a test that needs the dark
-        // setting sets it.
-        MainActor.assumeIsolated {
-            XCUIDevice.shared.orientation = .portrait
-            XCUIDevice.shared.appearance = .light
-        }
+        MainActor.assumeIsolated { XCUIDevice.shared.orientation = .portrait }
         iPhoneSideways = false
     }
 
+    /// Every test ends with the app closed, in portrait and in the system's light setting, the
+    /// Simulator's default, which Settings and the screens that aren't the camera follow
+    /// (AppearanceUITests). The app is closed first, so turning the device or changing the
+    /// setting doesn't make the system redraw a running app between tests. The setting is
+    /// changed only by the tests that need it (``useAppearance(_:)``) and restored only if it
+    /// changed.
     override func tearDown() {
         MainActor.assumeIsolated {
+            let app = XCUIApplication()
+            if app.state != .notRunning {
+                app.terminate()
+                _ = app.wait(for: .notRunning, timeout: 30)
+            }
             XCUIDevice.shared.orientation = .portrait
-            XCUIDevice.shared.appearance = .light
+            if XCUIDevice.shared.appearance == .dark { XCUIDevice.shared.appearance = .light }
         }
+    }
+
+    /// Sets the system's light or dark setting, if it differs, and waits up to five seconds until
+    /// the device reports it; tearDown restores light.
+    ///
+    /// - Parameter appearance: The setting.
+    @MainActor
+    func useAppearance(_ appearance: XCUIDevice.Appearance, file: StaticString = #filePath, line: UInt = #line) {
+        guard XCUIDevice.shared.appearance != appearance else { return }
+        XCUIDevice.shared.appearance = appearance
+        let deadline = Date().addingTimeInterval(5)
+        while XCUIDevice.shared.appearance != appearance && Date() < deadline {
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Appearance")], timeout: 0.2)
+        }
+        XCTAssertEqual(XCUIDevice.shared.appearance, appearance, "the device's light or dark setting didn't change", file: file, line: line)
     }
 
     /// The launch arguments for the largest accessibility text size.
@@ -560,26 +580,49 @@ final class NopeAppUITests: XCTestCase {
 
     /// Scrolls to a navigation row whose label contains the text, and opens it.
     ///
-    /// It drags by three tenths of the window, inside the middle of the screen (where the iPad's
-    /// Settings sheet is), without a fling, first down the list and
-    /// then, if the row isn't found, back up, so it can't skip past a row or miss one that is
-    /// above. At the largest text size Settings is far longer than the screen (in 0.3.0 the
-    /// Mirror Front Camera row alone is about 530 points tall in the iPad sheet), and 8 swipes
-    /// stopped short of More's Accessibility row on iPhone; on iPad full swipes flung the sheet
-    /// past Choose Details.
+    /// It drags by three tenths of the Settings list's height, inside the list, without a fling,
+    /// first down the list and then, if the row isn't found, back up, so it can't skip past a row
+    /// or miss one that is above. At the largest text size Settings is far longer than the screen
+    /// (in 0.3.0 the Mirror Front Camera row alone is about 530 points tall in the iPad sheet),
+    /// and 8 swipes stopped short of More's Accessibility row on iPhone; on iPad full swipes flung
+    /// the sheet past Choose Details. The drags are placed in the list's own frame: on iPad
+    /// Settings is a popover at the window's top leading corner, and drags placed by the window's
+    /// height landed below it and didn't scroll (File Options and Accessibility weren't found).
     @MainActor
-    private func open(_ app: XCUIApplication, row text: String) {
+    func open(_ app: XCUIApplication, row text: String) {
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+        let frame = settingsListFrame(app)
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        func point(_ fraction: CGFloat) -> XCUICoordinate {
+            origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * fraction))
+        }
         for towardEnd in [true, false] {
             var steps = 0
             while !row.isHittable && steps < 30 {
-                let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardEnd ? 0.7 : 0.4))
-                let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardEnd ? 0.4 : 0.7))
-                from.press(forDuration: 0.05, thenDragTo: to)
+                point(towardEnd ? 0.7 : 0.4).press(forDuration: 0.05, thenDragTo: point(towardEnd ? 0.4 : 0.7))
                 steps += 1
             }
         }
         row.tap()
+    }
+
+    /// The frame of the list under the open screen's navigation bar (Settings and its pages): the
+    /// collection view as wide as the bar and below it, so another list on screen (the camera's
+    /// controls list at the largest text size) isn't taken for it. The window's frame when there
+    /// is none.
+    @MainActor
+    func settingsListFrame(_ app: XCUIApplication) -> CGRect {
+        let window = app.windows.firstMatch.frame
+        let bar = app.navigationBars.firstMatch
+        guard bar.exists else { return window }
+        let barFrame = bar.frame
+        let lists = app.collectionViews.allElementsBoundByIndex
+        let list = lists.first { list in
+            let frame = list.frame
+            return abs(frame.minX - barFrame.minX) < 2 && abs(frame.width - barFrame.width) < 2
+                && frame.maxY > barFrame.maxY
+        }
+        return list?.frame ?? window
     }
 
     /// Goes back one screen in the navigation stack.
@@ -591,7 +634,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testSettingsScreensPassAccessibilityAudits() throws {
         // The dark setting; the light one is audited in AppearanceUITests.
-        XCUIDevice.shared.appearance = .dark
+        useAppearance(.dark)
         let app = launch("allow")
         let allow = app.buttons["Continue"]
         XCTAssertTrue(allow.waitForExistence(timeout: 10))
@@ -608,7 +651,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testSettingsAtTheLargestTextSize() throws {
         // The dark setting; the light one is audited in AppearanceUITests.
-        XCUIDevice.shared.appearance = .dark
+        useAppearance(.dark)
         let app = launch("denied", extraArguments: Self.largestTextSize)
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
         try auditSettingsScreens(app, checksContrast: !isPad)
@@ -617,7 +660,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testSettingsInRightToLeftLayout() throws {
         // The dark setting; the light one is audited in AppearanceUITests.
-        XCUIDevice.shared.appearance = .dark
+        useAppearance(.dark)
         let app = launch(
             "denied", extraArguments: ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))

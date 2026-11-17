@@ -217,12 +217,16 @@ struct CameraReadyView: View {
                 .presentationSizing(.page)
         }
         .onChange(of: model.astro.isOn) { _, isOn in if !isOn { showsAstroSettings = false } }
-        // A sheet with an opaque background on iPad too, as the astro settings above.
+        // A sheet with an opaque background on iPad too, as the astro settings above, and page
+        // sized there for the same reason as What's in This Photo: in the shorter form sheet the
+        // explanation under Start ("Each photo is separate…") ran to the sheet's lower edge, where
+        // the audit measured it against the dimmed camera.
         .sheet(isPresented: $showsIntervalSettings) {
             IntervalSheet(model: model)
                 .nightModeStyle(isNightMode)
                 .presentationBackground(.background)
                 .presentationDetents([.large])
+                .presentationSizing(.page)
         }
         // The same presets list as in Settings (issue #72), a sheet for the reasons above.
         .sheet(isPresented: $showsPresets) {

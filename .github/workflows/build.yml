@@ -299,9 +299,23 @@ jobs:
           name: C2PAC.xcframework
       - name: Unpack the C2PA library
         run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      - name: Build the watch app and its UI tests
+        run: >
+          xcodebuild build-for-testing
+          -project App/NopeCamera.xcodeproj
+          -scheme NopeWatch
+          -destination "$WATCH_SIMULATOR"
+          -derivedDataPath DerivedData
+          CODE_SIGNING_ALLOWED=NO
+      # As for the iPhone and iPad shards (scripts/run-ui-test-shard.sh): the first launch of the
+      # app on a Simulator that has just booted took longer than XCTest waits, so the first test
+      # failed to launch the app and the next one failed to terminate it. Boot first, then launch
+      # the app once.
+      - name: Boot the watch Simulator and launch the app once
+        run: scripts/prepare-simulator.sh "$WATCH_SIMULATOR" DerivedData/Build/Products/Debug-watchsimulator/NopeWatch.app -NopeSimulatedPhone ready
       - name: Run the watch UI tests with accessibility audits
         run: >
-          xcodebuild test
+          xcodebuild test-without-building
           -project App/NopeCamera.xcodeproj
           -scheme NopeWatch
           -destination "$WATCH_SIMULATOR"

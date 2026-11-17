@@ -155,6 +155,13 @@ public struct SheetPresentationAction: Sendable {
 ///
 /// It measures the content's natural size, turns it a quarter turn, and swaps the frame's width
 /// and height. With `sidewaysWidth`, text wraps at that width before turning, for banners.
+///
+/// The measured size settles (``settledSize(_:measured:)``): it is rounded up to whole points,
+/// and within a point of the size in use it only grows. The turned frame can sit at a
+/// fractional position, where the content measured a third of a point larger or smaller; taking
+/// every such measurement made the frame move, the content measure again, and so on without end,
+/// which kept the main thread busy (a sideways iPhone at the largest text size with manual controls on; UI test
+/// testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize).
 struct UprightUnit: ViewModifier {
     /// The width the content wraps at while sideways, or `nil` for its natural width.
     let sidewaysWidth: CGFloat?
@@ -179,12 +186,28 @@ struct UprightUnit: ViewModifier {
     func body(content: Content) -> some View {
         if rotation.isSideways {
             sized(content)
-                .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size = Self.settledSize(size, measured: $0) }
                 .rotationEffect(rotation.angle)
                 .frame(width: size.height, height: size.width)
         } else {
             content
         }
+    }
+
+    /// The size to lay out with, given the size in use and a new measurement: the measurement
+    /// rounded up to whole points, so the frame is never smaller than the content. Within a point
+    /// of the size in use, in both dimensions, the size only grows, so sub-point changes can't
+    /// make it go back and forth; a larger change is taken as it is.
+    ///
+    /// - Parameters:
+    ///   - current: The size in use.
+    ///   - measured: The content's new measured size.
+    /// - Returns: The size to lay out with.
+    static func settledSize(_ current: CGSize, measured: CGSize) -> CGSize {
+        let rounded = CGSize(width: measured.width.rounded(.up), height: measured.height.rounded(.up))
+        let isSmallChange = abs(rounded.width - current.width) <= 1 && abs(rounded.height - current.height) <= 1
+        guard isSmallChange else { return rounded }
+        return CGSize(width: max(current.width, rounded.width), height: max(current.height, rounded.height))
     }
 
     /// The content at its natural size, or wrapped at the sideways width.

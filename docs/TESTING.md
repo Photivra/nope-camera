@@ -354,9 +354,10 @@ and Settings rotates. On iPad the window rotates and the shutter is in the colum
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
 
-Every test starts in the system's light setting (`XCUIDevice.appearance`, set in `setUp`).
-Settings, Presets, first run and the camera access screens follow that setting, so their audits
-run in light; `testSettingsScreensPassAccessibilityAudits`, `testSettingsAtTheLargestTextSize`
+Every test runs in the system's light setting, the Simulator's default, unless it sets dark
+with `useAppearance(_:)`; `tearDown` closes the app first, then restores portrait and, only if
+it changed, light. Settings, Presets, first run and the camera access screens
+follow that setting, so their audits run in light; `testSettingsScreensPassAccessibilityAudits`, `testSettingsAtTheLargestTextSize`
 and `testSettingsInRightToLeftLayout` set the dark setting, and
 `testSettingsScreensPassAccessibilityAuditsInTheLightSetting` and
 `testSettingsAtTheLargestTextSizeInTheLightSetting` audit every Settings screen in light,
@@ -365,6 +366,19 @@ light share to check which screens are light and which dark, including a change 
 while Settings is open (the iPhone sheet follows it, the iPad popover keeps its setting until
 it closes) and while only the camera shows, and that the camera's own sheets stay dark in the
 light setting.
+
+What we observed on the iOS 27.2 Simulator (Xcode 27.2), locally and on the runner: on a new
+Simulator whose first change of the light or dark setting came from a test
+(`XCUIDevice.appearance`), that change didn't apply, nor did any later one, from a test or from
+`xcrun simctl ui <device> appearance`, until the Simulator booted again; the system's own
+Settings app stayed light too, and the appearance tests failed on every CI shard (0.97 light
+where dark was expected). On new Simulators whose first change came from simctl, every later
+change applied, in each of our tries. The cause isn't known. `scripts/run-ui-test-shard.sh`
+therefore switches the Simulator to dark and back with simctl before the tests, reads each
+setting back and stops the shard if it didn't take, and `useAppearance(_:)` waits up to five
+seconds for the device to report the new setting. On a new local Simulator, run
+`xcrun simctl ui <device> appearance dark` and then `light` once before these tests (or boot it
+again if a test changed the setting first).
 
 The Apple Watch app (issue #63) has its own UI tests on the watch Simulator, with a simulated
 phone (`-NopeSimulatedPhone ready|notSigned|notRunning|permissionDenied|unreachable|countdown`,
@@ -531,7 +545,12 @@ in `build.yml` don't match the list, so a new test can't be skipped silently: ad
 shard with the least time, marked `est` with twice its local time.
 
 Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
-has booted (`simctl bootstatus -b`), installs the app and launches it once, then runs the shard.
+has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
+changes of the light or dark setting apply, see "UI tests and accessibility audits"), installs the
+app and launches it once, then runs the shard. The watch job does the same with `scripts/prepare-simulator.sh` before
+`test-without-building`: in the 0.3.0 run its first test failed to launch the watch app within
+XCTest's limit (301 s) and the next failed to terminate that launch; the watch app hadn't
+changed since its last passing run.
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test

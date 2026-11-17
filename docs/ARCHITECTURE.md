@@ -852,6 +852,10 @@ also in the Lock Screen camera), on requests from `CameraScreen` through
   while the scene shows the camera's dark), so on `.showsSystemScreen(true)` the app removes the
   scene's override at once, reads the scene's style and returns it; the screen opens with it.
 
+The bridge applies the styles and reports the system's setting on the next turn of the main
+actor, never while SwiftUI updates its views (which SwiftUI warned about as "Modifying state
+during view update"), and doesn't report an unchanged setting again.
+
 Without the app's action (tests, previews) `CameraScreen` falls back to
 `preferredColorScheme(_:)` and Settings stays dark. The status bar, system menus and alerts over
 the camera follow the window and stay dark.

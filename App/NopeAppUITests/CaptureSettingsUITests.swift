@@ -12,17 +12,14 @@ extension NopeAppUITests {
         settingsButton.tap()
     }
 
-    /// Scrolls to a navigation row whose label contains the text, and opens it.
+    /// Scrolls to a navigation row whose label contains the text, and opens it, once Settings is
+    /// open. The list creates rows only as they scroll into view, so the row is scrolled to
+    /// rather than waited for: at the largest text size Photo Size is below the fold and didn't
+    /// exist until then.
     @MainActor
     private func openSettingsRow(_ app: XCUIApplication, _ text: String) {
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10), text)
-        var swipes = 0
-        while !row.isHittable && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
-        }
-        row.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), text)
+        open(app, row: text)
     }
 
     /// Opens a pushed-list picker by its label and chooses an option in it.
