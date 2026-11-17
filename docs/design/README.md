@@ -2,7 +2,7 @@
 
 The design of nope. for release 1.0.0, in direction B (Reach), chosen from the options of issue 74. Static HTML mockups with a PNG of each screen, plus the specifications the app is built from. Open [overview.html](overview.html) in a browser to start; nothing here is part of the app build.
 
-**Design version: 1.0.0 (2026-11-17), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 122 screens are drawn; the PNG files total 4.3 MB.
+**Design version: 1.0.0 (2026-11-17), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 257 screens are drawn (118 for iPhone, 77 for iPad, 31 for the iPhone Duo, 31 for Apple Watch); the PNG files total 10.3 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
 
 | File | What it covers |
 | --- | --- |
@@ -10,14 +10,16 @@ The design of nope. for release 1.0.0, in direction B (Reach), chosen from the o
 | [design-system.html](design-system.html), [tokens.md](tokens.md) | Spacing, radii, sizes and hit targets, type, color, materials over the picture, button types, motion and haptics. Token names map one to one to Swift constants. |
 | [camera.html](camera.html) | The camera screen in full auto and every state: pills, warnings, capture feedback, failures, close-up, the Processed marker, the front camera, clean view, night mode, the smallest iPhone, first run and the permission states. |
 | [drive.html](drive.html) | The drive strip: Single, Timer, Burst, Interval and Astro, idle and running, and the five words in the eleven launch languages. |
-| [quick-menu.html](quick-menu.html) | Q, the quick menu: its tiles, states, a menu, night mode and a long language. |
-| [manual-controls.html](manual-controls.html) | The Manual Controls button, the readout row, each dial and Pro Tools. |
+| [quick-menu.html](quick-menu.html) | Q, the quick menu: its tiles (with Focus Peaking), states, a menu, night mode and a long language. |
+| [manual-controls.html](manual-controls.html) | The Manual Controls button, the readout row, each dial and Pro Tools (without Interval). |
 | [sheets.html](sheets.html) | Formats and the processing note, What's in This Photo, Interval and Astro settings, Presets, Compare and the one confirmation. |
-| [settings.html](settings.html) | Settings, its search and every page: Formats, Look, File Options, Photo Size, Choose Details, Fast Shutter, Viewfinder Overlays, Accessibility, Honesty, About and Licenses; light, night mode, the largest text size and right to left. |
-| [SETTINGS-PLAN.md](SETTINGS-PLAN.md), [settings-tree.html](settings-tree.html) | A proposal for review, not yet decided or drawn: the Settings inventory, the problems found, a proposed tree, device coverage gaps, and the decisions it needs. |
-| [layouts.html](layouts.html) | iPhone held sideways, iPad (with the Settings popover), the iPhone Duo inner display, the largest text size and right to left. |
+| [settings.html](settings.html) | Settings as accepted on 2026-11-17: the list in five groups, search with keywords and pointers to the camera, and every page: Formats, HEIF and JPEG Copies, Photo Size, Details in Each Photo, Fast Shutter, Viewfinder Overlays, Accessibility, Honesty, About and Licenses; light, night mode, the largest text size, right to left and German. |
+| [SETTINGS-PLAN.md](SETTINGS-PLAN.md), [settings-tree.html](settings-tree.html) | The record of the Settings review, accepted 2026-11-17: the inventory, the problems found, the tree, the device coverage gaps, and the twelve decisions with their outcomes. |
+| [layouts.html](layouts.html) | The rule that gives each window its layout, which screens are drawn for each device and what applies to the rest; iPhone held sideways (with a sheet open), the largest text size, right to left, and the Lock Screen camera. |
+| [ipad.html](ipad.html) | iPad: both orientations, camera states, first run and permissions, drive modes, Q, dials, popovers and sheets, Settings, the largest text size, right to left, Split View, Slide Over and Stage Manager. |
+| [duo.html](duo.html) | iPhone Duo: the outer and inner displays at their measured sizes, before and after pairs for folding and unfolding, half-open, and the Live Activity with the phone closed. |
 | [system.html](system.html) | The Live Activity and Dynamic Island, the Control Center controls, and Siri and Shortcuts results. |
-| [watch.html](watch.html) | The Apple Watch remote shutter and its states. |
+| [watch.html](watch.html) | The Apple Watch remote shutter: every status and result, the smallest and largest case, the largest text size, right to left, German, Always On, and what the watch app does not have. |
 | [navigation.html](navigation.html), [navigation.md](navigation.md) | Every option, where it lives, the path to it from the camera, and tap counts in 0.3.0 and in this design. |
 | [ACCESSIBILITY.md](ACCESSIBILITY.md) | VoiceOver labels, values and order; Voice Control; Switch Control and the keyboard; text size; motion, transparency and contrast; Siri and Shortcuts. |
 | [BUILD-SPEC.md](BUILD-SPEC.md) | The build specification: each screen's component tree mapped to the Swift files, what changes and what stays, acceptance criteria, new strings, work beyond the interface, and the order of work in parallel chunks. |

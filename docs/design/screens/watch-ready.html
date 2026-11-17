@@ -160,23 +160,32 @@ html{background:#101012}body{margin:0;color:#f2f2f7;font:15px/1.45 -apple-system
 .alertbg{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:40;display:grid;place-items:center}
 .alert{width:300px;border-radius:24px;background:rgba(44,44,46,.98);color:#fff;padding:20px 16px 16px;font:400 15px/1.35 -apple-system,system-ui,sans-serif}
 .alert b{display:block;font-size:17px;font-weight:600;margin-bottom:4px}
-.alert .bt{display:flex;gap:8px;margin-top:16px}.alert .bt.v{flex-direction:column}
+.alert .bt{display:flex;gap:8px;margin-top:16px}.alert .bt.v{flex-direction:column}.alert .bt.v span{flex:none}
 .alert .bt span{flex:1;height:44px;border-radius:22px;background:rgba(120,120,128,.36);display:grid;place-items:center;font-weight:500;font-size:17px}
 .alert .bt .p{background:#fff;color:#000;font-weight:600}.alert .bt .d{color:#ff453a}
 .alert .field{height:36px;border-radius:10px;background:#1c1c1e;margin-top:12px;padding:0 12px;display:flex;align-items:center;font-size:17px}
+/* device frames, popovers and sheets on regular-size windows */
+.popv{position:absolute;z-index:20;border-radius:24px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.7)}
+.shade{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:18}
+.pairs{display:flex;align-items:center;gap:16px;padding:16px;background:#101012;font:500 13px/1.3 -apple-system,system-ui,sans-serif;color:#aeaeb2}
+.pairs figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center}
+.strip84{position:absolute;top:0;bottom:0;inset-inline-end:0;width:84px;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:20px;font:600 13px -apple-system,system-ui,sans-serif;color:#fff}
+.hinge{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:2px dashed rgba(255,255,255,.55);z-index:40}
+.watch.aod{filter:brightness(.45) saturate(.6)}
+.watch[dir=rtl] .time{right:auto;left:22px}
 /* watch */
-.watch{position:relative;width:208px;height:248px;border-radius:44px;background:#000;color:#fff;overflow:hidden;font:400 16px/1.25 -apple-system,system-ui,sans-serif;padding:34px 10px 10px;--fact:#40c8e0;--warn:#ff9f0a}
+.watch{box-sizing:border-box;position:relative;width:208px;height:248px;border-radius:44px;background:#000;color:#fff;overflow:hidden;font:400 16px/1.25 -apple-system,system-ui,sans-serif;padding:34px 10px 10px;--fact:#40c8e0;--warn:#ff9f0a}
 .watch *{box-sizing:border-box}
 .watch .time{position:absolute;top:10px;right:22px;font-size:15px;font-weight:500}
 .watch .st{display:flex;gap:6px;align-items:flex-start;margin-bottom:8px}.watch .st .ic{margin-top:1px}
 .watch .wb{min-height:56px;border-radius:28px;background:#2a2a2c;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:500;margin-bottom:8px;padding:8px 12px}
-.watch .wb.dis{opacity:.4}.watch .wb.row{justify-content:space-between;min-height:48px;border-radius:14px}
+.watch .wb.dis{opacity:.4}.watch .wb.row{position:static;justify-content:space-between;min-height:48px;border-radius:14px}
 .watch .t{color:var(--fact)}.watch .w{color:var(--warn)}
 
 </style>
 </head>
 <body>
-<div class="stage"><div style="padding:8px;background:#1c1c1e;border-radius:52px;width:224px"><div class="watch" style=""><div class="time">10:09</div><div class="st "><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg><span>Camera ready</span></div><div class="wb"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg>Take Photo</div><div class="wb row"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M10 3.5h4"/></svg><span style="flex:1">Delay</span><span style="opacity:.6">Off</span></div></div></div></div>
+<div class="stage"><div style="box-sizing:border-box;padding:8px;background:#1c1c1e;border-radius:52px;width:224px"><div class="watch" style="width:208px;height:248px;border-radius:44px"><div class="time">10:09</div><div class="st "><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg><span>Camera ready</span></div><div class="wb"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3.5l1.5-2.5h6L16.5 8H20v11H4z"/><circle cx="12" cy="13" r="3.4"/></svg><span>Take Photo</span></div><div class="wb row"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M10 3.5h4"/></svg><span style="flex:1">Delay</span><span style="opacity:.6">Off</span></div></div></div></div>
 <div class="note"><b>Apple Watch: Ready</b>Status, the shutter and Delay. The button is at least 56 pt tall and full width. Drawn at 224 × 264 pt. <a href="watch-ready.png">PNG</a> · <a href="../watch.html">Back to the set</a> · <a href="../overview.html">Overview</a></div>
 </body>
 </html>

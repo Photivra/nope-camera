@@ -1,6 +1,6 @@
 # Navigation map
 
-Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it.
+Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md).
 
 Every option, where it lives, the path to it from the camera, and the number of taps in 0.3.0 and in this design. A dash means the option did not exist in 0.3.0.
 
@@ -17,11 +17,12 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Self-timer, 10 seconds | Drive strip | Timer › Timer › 10 seconds | 3 | 3 | The delay is remembered while the app is open. |
 | Burst | Drive strip | Burst | 3 | 1 |  |
 | Interval Shooting | Drive strip | Interval | 3 | 1 | The shutter starts the series. |
-| Interval and number of photos | Interval card | Interval › Interval Settings | 3 | 2 | Also in Pro Tools. |
+| Interval and number of photos | Interval card | Interval › Interval Settings | 3 | 2 | Its one home: the Interval section of Pro Tools is removed. |
 | Astro | Drive strip | Astro | 2 | 1 | Was a Quick Controls item, often after scrolling the tray. |
 | Astro frames and start delay | Astro card | Astro › Astro Settings | 3 | 2 |  |
 | Photo format, what the next photo will be | Status line | Format status | 1 | 1 | Opens the Formats sheet. |
 | Save HEIF or JPEG copies | Formats sheet | Format status › HEIF | 2 | 2 | Also Settings › Formats. |
+| Look, from the camera | Formats sheet | Format status › Look › value | 3 | 3 | Shown on the sheet while a copy is on. Opens HEIF and JPEG Copies. |
 | Processing note for a lens without RAW | Formats sheet | Processed marker | – | 1 | New disclosure (issue 80). |
 | Last Photo in Photos | Shutter row | Last Photo | 1 | 1 |  |
 | What’s in This Photo | Shutter row | Last Photo (touch and hold) › Photo Details | 2 | 2 | Also a VoiceOver action on Last Photo. |
@@ -39,8 +40,9 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Exposure compensation | Q tile | Q › Exposure | 2 | 2 | Full auto only; in manual it is the EV readout, 1 tap. |
 | Close-Up | Q tile | Q › Close-Up | 2 | 2 | Kept as its own tile, so it stays at two taps. |
 | Far Focus | Q tile | Q › Far Focus | 2 | 2 | With Manual Controls on, as today. |
-| Fast Shutter | Q tile | Q › Fast Shutter › value | 3 | 3 | Its page is Settings › Fast Shutter. |
+| Fast Shutter | Q tile | Q › Fast Shutter › value | 3 | 3 | Its home. Settings › Fast Shutter is the second way in. |
 | Magnify | Q tile | Q › Magnify | 2 | 2 |  |
+| Focus Peaking | Q tile | Q › Focus Peaking | 3 | 2 | New tile for the existing switch, in full auto and manual. Was Pro Tools or Settings only. |
 | Grid and its style | Q tile | Q › Grid › style | 3 | 3 | Thirds, 4 × 4, Square (issue 76). |
 | Level | Q tile | Q › Level | 2 | 2 |  |
 | Live Camera Readout | Q tile | Q › Readout › value | 3 | 3 | Off, On, Keep Readout in Clean View. |
@@ -62,28 +64,34 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Exposure Mode, Metering | Pro Tools | More › Pro Tools › row › value | 4 | 4 |  |
 | Exposure Lock (AE-L), Focus Lock (AF-L) | Pro Tools | More › Pro Tools › switch | 3 | 3 |  |
 | Bracketing, Frames, Step | Pro Tools | More › Pro Tools › Bracketing | 3 | 3 |  |
-| Focus Peaking, Histogram | Pro Tools | More › Pro Tools › switch | 3 | 3 | Also Settings › Viewfinder Overlays. |
+| Histogram, Focus Peaking, Live Camera Readout | Pro Tools | More › Pro Tools › switch | 3 | 3 | Also Settings › Viewfinder Overlays; Focus Peaking and the readout are also Q tiles. |
 
 ## In Settings (set once)
 
 | Option | Lives in | Path from the camera | Taps, 0.3.0 | Taps, this design | Notes |
 | --- | --- | --- | --- | --- | --- |
-| Sign Each Photo | Settings › Privacy | Q › Settings › switch | 2 | 3 | Set once. Off by default (issue 80). |
-| Remove All Optional Details | Settings › Privacy | Q › Settings › switch | 2 | 3 | Set once. |
-| Location and the other details in each photo | Settings › Choose Details | Q › Settings › Choose Details › switch | 3 | 4 | Set once. Search finds each by name. |
-| Standard File Tags | Settings › Choose Details | Q › Settings › Choose Details › switch | 3 | 4 | Set once. |
-| Look | Settings › Photos | Format status › Look › value | 3 | 3 | Shown once a copy is on. |
-| File Options (compression, bit depth, color space, copy size) | Settings › File Options | Q › Settings › File Options › row › value | 4 | 5 | Set once. Also Format status › All Photo Settings. |
+| Presets, Factory Defaults | Settings | Q › Settings › Presets › preset | 3 | 4 | Always shown, with its count. Home: Q › Presets, 3. Search: reset, restore, defaults. |
+| Formats | Settings › Photos | Q › Settings › Formats › format | 3 | 4 | Home for the shortcut: the Format status sheet, 2. |
+| Paired with RAW | Settings › Formats | Q › Settings › Formats › Paired with RAW › value | 4 | 5 | Shown when all three formats are saved. |
+| Look | Settings › HEIF and JPEG Copies | Q › Settings › HEIF and JPEG Copies › value | 3 | 4 | Also Format status › Look › value, 3. The row is always shown; its value is the look, or Not Saved. |
+| HEIF Compression, HEIF Bit Depth, JPEG Compression, Color Space, Copy Size | Settings › HEIF and JPEG Copies | Q › Settings › HEIF and JPEG Copies › row › value | 4 | 5 | Set once. Was File Options. Always shown, so it can be set before a copy is on. |
 | Photo Size | Settings › Photo Size | Q › Settings › Photo Size › lens › value | 4 | 5 | Set once. Also the Set Photo Size shortcut. |
-| Start in Clean View | Settings › Camera | Q › Settings › switch | 2 | 3 | Set once. |
-| Face Detection | Settings › Camera | Q › Settings › switch | 2 | 3 | Set once. Off by default (issue 80). Also a shortcut. |
-| Show Processed Marker | Settings › Camera | Q › Settings › switch | – | 3 | New switch (issue 80). Also at the foot of the processing note: 2. |
-| Viewfinder Overlays (all in one place) | Settings › Viewfinder Overlays | Q › Settings › Viewfinder Overlays › switch | 3 | 4 | Each is also a Q tile or in Pro Tools. |
-| Mirror Front Camera | Settings › Camera | Q › Settings › switch | 2 | 3 | Set once. |
-| Red Viewfinder | Settings › Screen | Q › Settings › switch | 2 | 3 | Shown while Night Mode is on. |
-| Live Activity | Settings › Screen | Q › Settings › switch | 2 | 3 | Set once. |
+| Mirror Front Camera | Settings › Photos | Q › Settings › switch | 2 | 3 | Set once. Moved from Camera: it changes the saved photo. |
+| Remove All Optional Details | Settings › Details in Each Photo | Q › Settings › Details in Each Photo › switch | 2 | 4 | One home, at the top of the page. Its state shows on the Settings list as the row’s value. |
+| Location and the other details in each photo | Settings › Details in Each Photo | Q › Settings › Details in Each Photo › switch | 3 | 4 | Set once. Was Choose Details. Search finds each by name, and Location by GPS. |
+| Standard File Tags | Settings › Details in Each Photo | Q › Settings › Details in Each Photo › switch | 3 | 4 | Set once. |
+| Sign Each Photo | Settings › Privacy | Q › Settings › switch | 2 | 3 | Set once. Off by default (issue 80). |
+| Fast Shutter, in Settings | Settings › Camera | Q › Settings › Fast Shutter › value | 3 | 4 | The second way in; the Q tile is the home. |
+| Focus on Faces | Settings › Camera | Q › Settings › switch | 2 | 3 | Set once. Was Face Detection. Off by default (issue 80). Also the Set Focus on Faces shortcut. |
+| Start in Clean View | Settings › Screen | Q › Settings › switch | 2 | 3 | Set once. Moved from Camera. |
+| Viewfinder Overlays (all in one place) | Settings › Screen | Q › Settings › Viewfinder Overlays › switch | 3 | 4 | Each is also a Q tile or in Pro Tools. The row names the overlays that are on. |
+| Show Processed Marker | Settings › Screen | Q › Settings › switch | – | 3 | New switch (issue 80). Also at the foot of the processing note: 2. |
+| Night Mode, in Settings | Settings › Screen | Q › Settings › switch | 2 | 3 | Home: Q › Night Mode, 2. |
+| Red Viewfinder | Settings › Screen | Q › Settings › switch | 2 | 3 | Always shown, so it can be set before dark. Was shown only while Night Mode was on. |
+| Live Activity | Settings › Screen | Q › Settings › switch | 2 | 3 | Set once. Where the device offers it. |
 | Accessibility, Honesty, About and Licenses | Settings › More | Q › Settings › row | 2 | 3 | Reference pages. |
 | License text, Notices and Trademarks | About and Licenses | Q › Settings › About and Licenses › row | 3 | 4 | Deepest page: two levels below Settings. |
+| Any setting, by name or keyword | Settings search | Q › Settings › Search | – | 3 | Then typing. A search for a camera control answers with where it is. |
 
 ## Outside the app
 
@@ -106,14 +114,24 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Switch to night mode | 2 | 2 |
 | Turn on Close-Up | 2 | 2 |
 | Turn on the Thirds grid | 3 | 3 |
-| Find where location is written | 3 | 4 |
+| Turn on Focus Peaking in full auto | 3 | 2 |
+| Find where location is written | 3 | 4, or search; 3 on iPad |
+| Turn on Location | 3 | 4 |
+| Remove every optional detail again | 2 | 4 |
+| Change the look | 3 | 3 |
+| Change JPEG compression | 4 | 5 |
+| Turn on signing | 2 | 3 |
+| Set Red Viewfinder before dark | 4 | 3 |
+| Restore every setting | 3 | 4, or search |
 | Open Settings | 1 | 2 |
 | Change the interval of a series | 3 | 2 |
 
 ## Rules
 
-- Used while shooting: on the camera screen or in Q, never only in Settings.
-- Set once: in Settings, at most two levels below it, and found by search.
-- Each option has one home. A second way in (a pill, a card button, a Q tile) changes the same value and behaves the same.
+- Used while shooting: on the camera screen or in Q, never only in Settings. Focus Peaking has a Q tile for this reason.
+- Set once: in Settings, at most two levels below it, and found by search, by name or by keyword.
+- Each option has one home. A second way in (a pill, a card button, a Q tile, a Settings page) changes the same value and behaves the same. Fast Shutter’s home is its Q tile; Interval’s is the drive strip; Night Mode’s is its Q tile.
+- No Settings row appears or disappears when a switch is changed. A row is shown or not by the device only.
+- On iPad and the iPhone Duo inner display Settings has its own button, so every Settings path there is one tap shorter than the iPhone figure.
 - Settings is two taps on iPhone (Q, Settings). That is one more than before; it buys a status line with no button on it and a Q that is always under the thumb.
-- Options reachable only through Settings are the set-once ones: privacy and signing, file options and photo size, Start in Clean View, Face Detection, the Processed marker switch, Mirror Front Camera, Red Viewfinder, Live Activity, and the reference pages.
+- Options reachable only through Settings are the set-once ones: the details in each photo and signing, the file settings of the HEIF and JPEG copies and photo size, Mirror Front Camera, Focus on Faces, Start in Clean View, the Processed marker switch, Red Viewfinder, Live Activity, and the reference pages.

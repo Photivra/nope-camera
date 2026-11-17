@@ -49,9 +49,9 @@ Unchanged sentences, spoken at these moments: the lens on change; the drive mode
 ### Q
 
 - Opening Q moves VoiceOver focus to the first tile; closing returns it to Q. The panel is a modal container: focus stays inside it, plus the shutter row, until it closes. Escape (two-finger scrub, or the Escape key) closes it.
-- Each tile reads its name, then its value: "Grid, Thirds". A two-state tile is a button with the selected trait and the value On or Off. A menu tile is a menu button.
+- Each tile reads its name, then its value: "Grid, Thirds"; "Focus Peaking, Off". A two-state tile is a button with the selected trait and the value On or Off. A menu tile is a menu button.
 - Order: tiles row by row from the leading edge, then Hide Controls, then Settings.
-- At accessibility text sizes Q is a full-height list with one row per tile.
+- At accessibility text sizes Q is a full-height list with one row per tile, ending with Hide Controls and Settings. In this layout Settings has no other button, on any device.
 
 ### Text size
 
@@ -82,22 +82,29 @@ Labels and values are the same. The Manual Controls button shows A or M and the 
 ## Sheets and Settings
 
 - System forms: titles read first, then values, then the explanation as the hint. Switches are system switches. At accessibility sizes a switch moves below its text (`ExplainedToggle`, used for every explained switch).
+- Settings list: no row is added or removed while a switch is changed, so focus never moves by itself (VoiceOver, Switch Control, Full Keyboard Access). Red Viewfinder is always in the list. Every row that opens a page reads its value: "Details in Each Photo, All Optional Removed, button"; "HEIF and JPEG Copies, Not Saved, button"; "Viewfinder Overlays, Grid, Level, button".
+- A value that does not fit beside its title wraps under it at every text size; nothing is truncated in any launch language (figures `settings-long-language`, `settings-largest`, `settings-details-largest`).
+- Details in Each Photo: the section headers Location, Other Details and Always Saved are headings. Turning Remove All Optional Details on or off announces nothing extra: the switches below keep their places.
+- HEIF and JPEG Copies: with no copy saved the opening line is read first, and every control stays enabled.
+- Voice Control names are the row titles. "Focus on Faces" is the name of the switch and of the Shortcuts action.
 - Sheets open with focus on the title. Done is the first toolbar item for the keyboard and closes with Escape.
 - Formats and the processing note: the opening statement is read first. The processing note sentences are plain static text in reading order.
 - What's in This Photo: each section is a heading. Locked items read "Always kept". The signature row reads its sentence; with signing off by choice it has no warning symbol.
 - Presets: each preset is a button ("Astro, preset. Double tap to apply."). The More menu has the label "More for Astro" and the actions Rename and Delete; both are also VoiceOver custom actions on the row. Delete asks for confirmation; Cancel is the default.
-- Settings search: the system search field. Each result reads the setting and its page: "Location, in Privacy, Choose Details".
+- Settings search: the system search field. Each result reads the setting and its page, in whole localized names: "Location, in Privacy, Details in Each Photo"; in right-to-left languages the order follows the language. A pointer to a camera control reads its name and the place in words, "Manual Controls. On the camera, beside the lenses.", and has no button trait, because it does not navigate; the camera symbol is decorative. Result headers (On the Camera, In Settings) are headings. No result: the system's "No Results" text is read.
 - Honesty and Accessibility: headings and paragraphs in order.
 
 ## System surfaces
 
 - Live Activity: reads the title, the status, the signing line, then Stop ("Stop. Every photo already taken is saved.").
 - Controls: "Open nope."; "Night Mode, On" or "Night Mode, Off".
-- Apple Watch: status, result, Take Photo or Cancel Timer, Delay with its value. Haptics on each countdown second and on the result. The view scrolls at large text sizes.
+- Apple Watch: status, result, Take Photo or Cancel Timer, Delay with its value. Haptics on each countdown second and on the result. The view scrolls at large text sizes and on the 40 mm case; nothing is cut. Every status has a symbol and words. In Always On the system dims the app and VoiceOver is unchanged.
+- Popovers and centered sheets on iPad and the iPhone Duo inner display: focus moves into them on opening and returns to the control that opened them; Escape closes them. A page pushed inside the Settings popover has Settings as its back button.
+- Folding or unfolding the iPhone Duo: what is open stays open, so VoiceOver focus stays on the same element where the system keeps it; nothing is announced by the app.
 
 ## Siri and Shortcuts
 
-The set of actions is unchanged in 1.0.0: no action is added or removed. All ten App Shortcut places are in use today and stay as they are.
+The set of actions is unchanged in 1.0.0: no action is added or removed. One is renamed, Set Focus on Faces. All ten App Shortcut places are in use today and stay as they are.
 
 | App Shortcut | Phrase (English) | Matches in the interface |
 | --- | --- | --- |
@@ -112,17 +119,17 @@ The set of actions is unchanged in 1.0.0: no action is added or removed. All ten
 | Night Mode On | "Turn on night mode in nope." | Q › Night Mode |
 | Night Mode Off | "Turn off night mode in nope." | Q › Night Mode |
 
-Actions in Shortcuts without a phrase, also unchanged: Apply Preset, Set Focus Range, Set Photo Size, Set Fast Shutter, Set Face Detection.
+Actions in Shortcuts without a phrase: Apply Preset, Set Focus Range, Set Photo Size, Set Fast Shutter, and Set Focus on Faces. The last is Set Face Detection under a new name (decided 2026-11-17), with its parameter, its summary ("Set focus on faces to On") and its answers ("Focus on Faces is on.") renamed to match. It is the same action: shortcuts already saved keep working. The rename is listed in BUILD-SPEC.md, section 6, item 9.
 
 Checks against the redesign:
 
-- Names. The interface uses the same names as the actions: Light, Night Mode, Interval Shooting, Fast Shutter, Face Detection, Close-Up, Far Focus, Presets. The drive strip shows short words (Timer, Interval); their accessibility labels are the full names the actions use (Self-Timer, Interval Shooting).
+- Names. The interface uses the same names as the actions: Light, Night Mode, Interval Shooting, Fast Shutter, Focus on Faces, Close-Up, Far Focus, Presets. The drive strip shows short words (Timer, Interval); their accessibility labels are the full names the actions use (Self-Timer, Interval Shooting).
 - Set Focus Range keeps its three values (No Limit, Close-Up, Far Focus). In the interface these are the Close-Up and Far Focus tiles; both off is No Limit.
 - Results. What Siri says is what the screen shows for the same action: "Photo saved and signed." matches the thumbnail's "Saved and signed."; "The photo wasn't saved. nope. shows why." matches the failure banner.
 - Two results change with the defaults of issue 80, not with the layout: with signing off, Take Photo answers "Photo saved. It isn't signed." by default. No wording change is needed.
 - "Astro is on. Turn it off to start interval shooting." stays true: Astro and Interval are separate words on the strip.
-- Face Detection default (the parameter default is On) should be reviewed when its setting default changes to off; this is an intent change, not an interface change, and is listed in BUILD-SPEC.md.
+- Focus on Faces default (the action's parameter default is On) should be reviewed when its setting default changes to off; this is an intent change, not an interface change, and is listed in BUILD-SPEC.md.
 
 ## Manual pass before release
 
-VoiceOver, Voice Control, Switch Control, Full Keyboard Access and the largest text size, on the flows: first run; a RAW photo; Manual Controls and a dial; Q and a menu tile; Timer; Interval; Astro in night mode; the Processed marker and its note; Settings with search; Presets with rename and delete.
+VoiceOver, Voice Control, Switch Control, Full Keyboard Access and the largest text size, on the flows: first run; a RAW photo; Manual Controls and a dial; Q and a menu tile; Timer; Interval; Astro in night mode; the Processed marker and its note; Settings with search by keyword and a pointer result; Details in Each Photo and HEIF and JPEG Copies at the largest text size; the Settings popover on iPad, in both orientations and in Split View; folding and unfolding an iPhone Duo with Settings open; the watch at 40 mm; Presets with rename and delete.

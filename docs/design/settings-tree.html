@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>nope. design: Settings tree (proposal)</title>
+<title>nope. design: Settings tree</title>
 <style>
 :root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--line:#8e8e93;--new:#1c1c1e;--newink:#fff}
 @media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--line:#636366;--new:#f2f2f7;--newink:#000}}
@@ -38,17 +38,17 @@ tr:last-child td{border-bottom:0}
 </head>
 <body>
 <main>
-<h1>Settings tree (proposal)</h1>
-<p class="muted">Proposal for review, 2026-11-17. Not decided, and not yet drawn as screens. The reasons, the inventory and the decisions are in <a href="SETTINGS-PLAN.md">SETTINGS-PLAN.md</a>. The current design is in <a href="settings.html">settings.html</a>.</p>
+<h1>Settings tree</h1>
+<p class="muted">Accepted 2026-11-17. The reasons, the inventory and the decisions are in <a href="SETTINGS-PLAN.md">SETTINGS-PLAN.md</a>. The screens are drawn in <a href="settings.html">settings.html</a>.</p>
 <p>Settings opens from Q on iPhone (two taps from the camera) and from its own button on iPad and the iPhone Duo inner display (one tap). A search field heads the list. Each indent is one level; nothing is more than two levels below Settings.</p>
 <div class="legend">
   <span><span class="kind">switch</span> changed on the list</span>
   <span><span class="kind">page</span> opens one level down</span>
-  <span><span class="tag">changed</span> differs from direction B as drawn</span>
+  <span><span class="tag">changed</span> differs from the first direction B set</span>
   <span class="later">italic: planned for 1.1.0, shown only to leave room</span>
 </div>
 
-<h2>Proposed</h2>
+<h2>Accepted</h2>
 <div class="cols">
 
 <div class="panel">
@@ -103,7 +103,7 @@ tr:last-child td{border-bottom:0}
       <li><div class="row">Fast Shutter<span class="kind">page</span><span class="val">Standard</span></div>
         <ul><li>Standard, Freeze Motion, Freeze Fast Motion</li></ul>
       </li>
-      <li><div class="row">Face Detection<span class="kind">switch</span><span class="tag">name under review</span></div></li>
+      <li><div class="row">Focus on Faces<span class="kind">switch</span><span class="tag">renamed from Face Detection</span></div></li>
     </ul>
   </li>
 </ul>
@@ -138,7 +138,7 @@ tr:last-child td{border-bottom:0}
 
 </div>
 
-<h2>Direction B as drawn, for comparison</h2>
+<h2>The first direction B set, for comparison</h2>
 <div class="cols">
 <div class="panel">
 <h3>Settings</h3>
@@ -175,11 +175,12 @@ tr:last-child td{border-bottom:0}
 <tr><td>Formats, Look</td><td>Format status on the camera</td><td>Settings › Photos</td></tr>
 <tr><td>Fast Shutter</td><td>Q tile</td><td>Settings › Camera; Shortcuts</td></tr>
 <tr><td>Grid, Level, Live Camera Readout</td><td>Q tiles</td><td>Settings › Viewfinder Overlays; the Readout also in Pro Tools</td></tr>
-<tr><td>Focus Peaking, Histogram</td><td>Settings › Viewfinder Overlays</td><td>Pro Tools; a Q tile for Focus Peaking if agreed</td></tr>
+<tr><td>Focus Peaking</td><td>Q tile</td><td>Settings › Viewfinder Overlays; Pro Tools</td></tr>
+<tr><td>Histogram</td><td>Settings › Viewfinder Overlays</td><td>Pro Tools</td></tr>
 <tr><td>Night Mode</td><td>Q tile</td><td>Settings › Screen; Control Center; Siri</td></tr>
 <tr><td>Show Processed Marker</td><td>Settings › Screen</td><td>The foot of the processing note</td></tr>
 <tr><td>Presets</td><td>Q tile</td><td>Settings; Shortcuts</td></tr>
-<tr><td>Face Detection, Photo Size</td><td>Settings</td><td>Shortcuts</td></tr>
+<tr><td>Focus on Faces, Photo Size</td><td>Settings</td><td>Shortcuts</td></tr>
 <tr><td>Manual Controls, Self-Timer, Flash, Light</td><td>The camera screen and Q</td><td>Not in Settings; search points to them</td></tr>
 </table>
 

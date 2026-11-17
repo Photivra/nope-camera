@@ -1,8 +1,10 @@
 # Settings plan
 
-Status: proposal for review (2026-11-17). Nothing here is decided. It reviews the Settings menus of the direction B design set (issue 74) against the app as of 0.3.0, and proposes changes. No screen is redrawn until the decisions in section 7 are made.
+Status: accepted 2026-11-17. The owner accepted all twelve recommendations in section 7. The design set in this folder has been redrawn to match: Settings in [settings.html](settings.html), the device coverage in [layouts.html](layouts.html), [ipad.html](ipad.html), [duo.html](duo.html) and [watch.html](watch.html), and the build steps in [BUILD-SPEC.md](BUILD-SPEC.md).
 
-A diagram of the proposed tree is in [settings-tree.html](settings-tree.html).
+This file is kept as the record of the review and of the decisions. Sections 1 to 6 are the review as written on 2026-11-17, before the decisions: they describe the set as it was then ("direction B as drawn", 122 screens) and use the names of that time, such as Choose Details and Face Detection. Where they say "proposed", read "accepted". Section 7 records each decision and its outcome.
+
+A diagram of the tree is in [settings-tree.html](settings-tree.html).
 
 Sources: issue 74 and its comments (menus and paths, no burying in Settings, two levels at most, accessibility, Siri names, Q), issues 75 to 81 (release 1.0.0), issues 82 and 83 (release 1.1.0, read only to leave room), the direction B set in this folder, and the code (`Sources/NopeUI/SettingsScreen.swift` and the pages it opens, `Sources/NopeCore/NopeSettings.swift`, `SaveSettings`, `MetadataSettings`, `OverlayOptions`, `DevelopedFileOptions`, `SettingsPresets`, the App Intents, the watch app, and the string catalogs).
 
@@ -439,19 +441,27 @@ Not every iPhone screen needs three more versions. A screen needs its own drawin
 - The Lock Screen camera (4.5) has no drawing on any device.
 - Control Center controls, the Live Activity and Siri results are drawn for iPhone only; iPad needs the Live Activity on its Lock Screen, since it has no Dynamic Island.
 
-## 7. Decisions for the owner
+## 7. Decisions
 
-Each with a recommendation. The redraw waits for these.
+All twelve recommendations were accepted by the owner on 2026-11-17. Each is listed as it was put, with its outcome.
 
-1. **One row for the details.** Merge Remove All Optional Details and Choose Details into one row whose page starts with the master switch. Recommended: yes. Cost: turning the master switch back on is 4 taps, not 3; its state is visible on the list. Alternative: keep the switch on the list and remove it from the page.
-2. **Its name.** "Details in Each Photo" in place of "Choose Details". Recommended: yes. Alternative: "Photo Metadata" (exact, but a technical word).
-3. **One page for the copies.** Merge Look and File Options into "HEIF and JPEG Copies", always shown, with "Not Saved" when no copy is on. Recommended: yes.
-4. **Regrouping.** Mirror Front Camera to Photos; Start in Clean View, Viewfinder Overlays and Show Processed Marker to Screen; Camera keeps Fast Shutter and Face Detection. Recommended: yes.
-5. **Face Detection's name.** Rename to "Focus on Faces" (the switch and the Shortcuts action), or keep the name after a device check confirms what Off turns off. Recommended: rename; it describes exactly what the switch controls.
-6. **Explanations.** Accept the rule in 3.7 (one sentence on the list, no "by default" notes, Red Viewfinder always shown) and send the drafts, including the Standard File Tags sentence, to the Honesty review. Recommended: yes.
-7. **Focus Peaking in Q.** Add a tile for the existing switch. Recommended: yes; it is used while shooting and is otherwise four taps away in full auto.
-8. **Interval in Pro Tools.** Remove the section, leaving the drive strip as the one home. Recommended: yes.
-9. **Settings on iPad.** Keep the single-column popover in both orientations (a sheet in Night Mode), with no split view. Recommended: keep.
-10. **Settings from the Lock Screen camera.** Confirm on a device what is offered while locked, draw it, and leave any restriction to issue 83. Recommended: yes; do not change behavior in 1.0.0.
-11. **Search.** Keep it, with keywords and pointers to the camera (3.6). Recommended: keep. If dropped, add the footer in 3.6.
-12. **Device coverage.** Draw the screens in section 6, or accept a written rule in layouts.html for the ones that only repeat the iPhone drawing. Recommended: draw sections 6.1 to 6.3 for every screen where the presentation differs (popover or sheet, column, fold), and state the rule for the rest.
+| # | Decision | Outcome (accepted 2026-11-17) |
+| --- | --- | --- |
+| 1 | One row for the details: merge Remove All Optional Details and Choose Details into one row whose page starts with the master switch | Accepted. Turning the master switch back on is 4 taps; its state shows on the Settings list |
+| 2 | Its name | "Details in Each Photo" |
+| 3 | One page for the copies: merge Look and File Options | "HEIF and JPEG Copies", always shown, with "Not Saved" when no copy is on |
+| 4 | Regrouping | Mirror Front Camera to Photos; Start in Clean View, Viewfinder Overlays and Show Processed Marker to Screen; Camera keeps Fast Shutter and the faces switch |
+| 5 | Face Detection's name | Renamed "Focus on Faces", the switch and the Shortcuts action. The action rename is outside the interface (BUILD-SPEC.md, section 6) |
+| 6 | Explanations | One sentence on the list, two where issue 80 or honesty needs it; no "by default" notes; Red Viewfinder always shown. The drafts in 3.7, with the Standard File Tags sentence, go to the Honesty review |
+| 7 | Focus Peaking in Q | A tile for the existing switch, in full auto and manual. With all thirteen tiles the panel has five rows |
+| 8 | Interval in Pro Tools | Section removed; the drive strip is the one home |
+| 9 | Settings on iPad | The single-column popover in both orientations, a sheet in Night Mode, no split view |
+| 10 | Settings from the Lock Screen camera | Drawn as it is (layouts.html). No behavior change in 1.0.0; what is offered while locked is confirmed on a device, and any restriction is left to issue 83 |
+| 11 | Search | Kept, with keywords and pointers to the camera (3.6) |
+| 12 | Device coverage | Every screen whose presentation differs is drawn for iPad, the iPhone Duo (both displays, with fold and unfold pairs) and Apple Watch; layouts.html states the rule for the rest |
+
+### What followed in the set
+
+- Section 5: every screen listed in 5.1 was redrawn; `settings-look`, `settings-file-options` and `settings-choose-details` were replaced by `settings-copies` and `settings-details`; the new screens of 5.2 were added.
+- Section 6: the gaps were closed by drawing, or by a written rule in layouts.html where the presentation does not differ. One item is left open and stated there: the iPhone held sideways at the largest text size.
+- Still to do before release, outside the drawings: the Honesty review of every draft sentence; the device checks named in BUILD-SPEC.md, section 6.

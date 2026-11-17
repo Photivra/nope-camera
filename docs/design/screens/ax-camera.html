@@ -160,55 +160,64 @@ html{background:#101012}body{margin:0;color:#f2f2f7;font:15px/1.45 -apple-system
 .alertbg{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:40;display:grid;place-items:center}
 .alert{width:300px;border-radius:24px;background:rgba(44,44,46,.98);color:#fff;padding:20px 16px 16px;font:400 15px/1.35 -apple-system,system-ui,sans-serif}
 .alert b{display:block;font-size:17px;font-weight:600;margin-bottom:4px}
-.alert .bt{display:flex;gap:8px;margin-top:16px}.alert .bt.v{flex-direction:column}
+.alert .bt{display:flex;gap:8px;margin-top:16px}.alert .bt.v{flex-direction:column}.alert .bt.v span{flex:none}
 .alert .bt span{flex:1;height:44px;border-radius:22px;background:rgba(120,120,128,.36);display:grid;place-items:center;font-weight:500;font-size:17px}
 .alert .bt .p{background:#fff;color:#000;font-weight:600}.alert .bt .d{color:#ff453a}
 .alert .field{height:36px;border-radius:10px;background:#1c1c1e;margin-top:12px;padding:0 12px;display:flex;align-items:center;font-size:17px}
+/* device frames, popovers and sheets on regular-size windows */
+.popv{position:absolute;z-index:20;border-radius:24px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.7)}
+.shade{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:18}
+.pairs{display:flex;align-items:center;gap:16px;padding:16px;background:#101012;font:500 13px/1.3 -apple-system,system-ui,sans-serif;color:#aeaeb2}
+.pairs figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center}
+.strip84{position:absolute;top:0;bottom:0;inset-inline-end:0;width:84px;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:20px;font:600 13px -apple-system,system-ui,sans-serif;color:#fff}
+.hinge{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:2px dashed rgba(255,255,255,.55);z-index:40}
+.watch.aod{filter:brightness(.45) saturate(.6)}
+.watch[dir=rtl] .time{right:auto;left:22px}
 /* watch */
-.watch{position:relative;width:208px;height:248px;border-radius:44px;background:#000;color:#fff;overflow:hidden;font:400 16px/1.25 -apple-system,system-ui,sans-serif;padding:34px 10px 10px;--fact:#40c8e0;--warn:#ff9f0a}
+.watch{box-sizing:border-box;position:relative;width:208px;height:248px;border-radius:44px;background:#000;color:#fff;overflow:hidden;font:400 16px/1.25 -apple-system,system-ui,sans-serif;padding:34px 10px 10px;--fact:#40c8e0;--warn:#ff9f0a}
 .watch *{box-sizing:border-box}
 .watch .time{position:absolute;top:10px;right:22px;font-size:15px;font-weight:500}
 .watch .st{display:flex;gap:6px;align-items:flex-start;margin-bottom:8px}.watch .st .ic{margin-top:1px}
 .watch .wb{min-height:56px;border-radius:28px;background:#2a2a2c;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:500;margin-bottom:8px;padding:8px 12px}
-.watch .wb.dis{opacity:.4}.watch .wb.row{justify-content:space-between;min-height:48px;border-radius:14px}
+.watch .wb.dis{opacity:.4}.watch .wb.row{position:static;justify-content:space-between;min-height:48px;border-radius:14px}
 .watch .t{color:var(--fact)}.watch .w{color:var(--warn)}
 
 </style>
 </head>
 <body>
-<div class="stage"><div class="dev" style="width:402px;height:874px;border-radius:56px"><div class="island"></div><div class="abs" style="top:59px;left:16px;right:16px;bottom:135px;overflow:hidden;display:flex;flex-direction:column;gap:12px"><div style="display:flex;gap:12px;align-items:center;font-size:34px;font-weight:600;line-height:1.15;padding:4px"><svg class="ic " width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.6 2.6 5-5.6"/></svg><span>RAW</span></div><div class="vf" style="position:relative;height:280px;border-radius:0;margin:0 -16px"><svg class="scene" viewBox="0 120 402 280" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
-<defs><linearGradient id="sku131" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
-<linearGradient id="lku131" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
-<radialGradient id="snu131" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
-<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku131)"/>
-<circle cx="292" cy="150" r="120" fill="url(#snu131)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
+<div class="stage"><div class="dev" style="width:402px;height:874px;border-radius:56px"><div class=island></div><div class="abs" style="top:59px;left:16px;right:16px;bottom:135px;overflow:hidden;display:flex;flex-direction:column;gap:12px"><div style="display:flex;gap:12px;align-items:center;font-size:34px;font-weight:600;line-height:1.15;padding:4px"><svg class="ic " width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.6 2.6 5-5.6"/></svg><span>RAW</span></div><div class="vf" style="position:relative;height:280px;flex:none;border-radius:0;margin:0 -16px"><svg class="scene" viewBox="0 120 402 280" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
+<defs><linearGradient id="sku129" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
+<linearGradient id="lku129" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
+<radialGradient id="snu129" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
+<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku129)"/>
+<circle cx="292" cy="150" r="120" fill="url(#snu129)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
 <g fill="#fff" opacity=".45"><ellipse cx="90" cy="92" rx="80" ry="9"/><ellipse cx="150" cy="112" rx="60" ry="6"/><ellipse cx="350" cy="62" rx="70" ry="7"/></g>
 <path d="M-300 268H0L60 214l34 26 52-70 44 52 30-24 58 62 46-44 78 60h300v90H-300z" fill="#8296b4"/>
 <path d="M146 170l-16 24 14-6 8 12 10-10 12 10z" fill="#eef3f8" opacity=".9"/>
 <path d="M-300 300H0L44 262l50 30 62-52 70 58 54-36 60 44 62-30h300v110H-300z" fill="#566b86"/>
 <path d="M-300 322H0l70-20 60 14 90-22 80 20 102-16h300v40H-300z" fill="#2f4553"/>
-<rect x="-300" y="330" width="1002" height="506" fill="url(#lku131)"/>
+<rect x="-300" y="330" width="1002" height="506" fill="url(#lku129)"/>
 <g stroke="#fff" stroke-opacity=".35" stroke-width="1.2" stroke-linecap="round"><path d="M250 352h74M262 366h52M240 384h96M270 404h40M226 428h60"/></g>
 <path d="M-300 470H0c50-22 96-26 150-14 50 11 96 4 140-10 40-12 80-10 112 2h300v388H-300z" fill="#1d2b22"/>
 <g fill="#16221a"><path d="m40 470 14-64 14 64zM30 474l24-40 24 40z"/><path d="m86 478 11-50 11 50zM78 482l19-32 19 32z"/><path d="m346 462 13-58 13 58zM337 466l22-36 22 36z"/></g>
 <g fill="#5d6a66"><ellipse cx="206" cy="492" rx="34" ry="12"/><ellipse cx="250" cy="504" rx="22" ry="8"/></g>
 </svg></div><div style="border-radius:24px;background:var(--fill);padding:16px 20px;font-size:34px;font-weight:600;line-height:1.15;">Manual Controls<div style=font-weight:500;opacity:.75>Off</div></div><div style="border-radius:24px;background:var(--fill);padding:16px 20px;font-size:34px;font-weight:600;line-height:1.15;background:var(--sel);color:var(--onsel);">Wide<div style=font-weight:500;opacity:.75>1×</div></div><div style="border-radius:24px;background:var(--fill);padding:16px 20px;font-size:34px;font-weight:600;line-height:1.15;">Ultra Wide<div style=font-weight:500;opacity:.75>0.6×</div></div><div style="border-radius:24px;background:var(--fill);padding:16px 20px;font-size:34px;font-weight:600;line-height:1.15;background:var(--sel);color:var(--onsel);">Single</div><div style="border-radius:24px;background:var(--fill);padding:16px 20px;font-size:34px;font-weight:600;line-height:1.15;">Timer</div></div><div class="abs" style="left:0;right:0;bottom:135px;height:40px;background:linear-gradient(transparent,#000)"></div><div class="row shot" style="top:739px;height:101px;background:#000"><div class="thumb u"><svg class="scene" viewBox="0 0 402 536" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
-<defs><linearGradient id="sku132" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
-<linearGradient id="lku132" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
-<radialGradient id="snu132" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
-<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku132)"/>
-<circle cx="292" cy="150" r="120" fill="url(#snu132)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
+<defs><linearGradient id="sku130" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
+<linearGradient id="lku130" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
+<radialGradient id="snu130" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
+<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku130)"/>
+<circle cx="292" cy="150" r="120" fill="url(#snu130)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
 <g fill="#fff" opacity=".45"><ellipse cx="90" cy="92" rx="80" ry="9"/><ellipse cx="150" cy="112" rx="60" ry="6"/><ellipse cx="350" cy="62" rx="70" ry="7"/></g>
 <path d="M-300 268H0L60 214l34 26 52-70 44 52 30-24 58 62 46-44 78 60h300v90H-300z" fill="#8296b4"/>
 <path d="M146 170l-16 24 14-6 8 12 10-10 12 10z" fill="#eef3f8" opacity=".9"/>
 <path d="M-300 300H0L44 262l50 30 62-52 70 58 54-36 60 44 62-30h300v110H-300z" fill="#566b86"/>
 <path d="M-300 322H0l70-20 60 14 90-22 80 20 102-16h300v40H-300z" fill="#2f4553"/>
-<rect x="-300" y="330" width="1002" height="506" fill="url(#lku132)"/>
+<rect x="-300" y="330" width="1002" height="506" fill="url(#lku130)"/>
 <g stroke="#fff" stroke-opacity=".35" stroke-width="1.2" stroke-linecap="round"><path d="M250 352h74M262 366h52M240 384h96M270 404h40M226 428h60"/></g>
 <path d="M-300 470H0c50-22 96-26 150-14 50 11 96 4 140-10 40-12 80-10 112 2h300v388H-300z" fill="#1d2b22"/>
 <g fill="#16221a"><path d="m40 470 14-64 14 64zM30 474l24-40 24 40z"/><path d="m86 478 11-50 11 50zM78 482l19-32 19 32z"/><path d="m346 462 13-58 13 58zM337 466l22-36 22 36z"/></g>
 <g fill="#5d6a66"><ellipse cx="206" cy="492" rx="34" ry="12"/><ellipse cx="250" cy="504" rx="22" ry="8"/></g>
-</svg></div><div class="shutter"></div><div class="qb" style="width:64px;height:64px;font-size:30px">Q</div></div><div class="home"></div></div></div>
+</svg></div><div class="shutter"></div><div class="qb" style="width:64px;height:64px;font-size:30px">Q</div></div><div class=home></div></div></div>
 <div class="note"><b>Camera at the largest text size</b>At accessibility sizes the camera uses the scrolling layout: the status, a shorter picture, then every control as a full-width row with its name and value. The shutter row stays pinned. Drawn at 402 × 874 pt. <a href="ax-camera.png">PNG</a> · <a href="../layouts.html">Back to the set</a> · <a href="../overview.html">Overview</a></div>
 </body>
 </html>
