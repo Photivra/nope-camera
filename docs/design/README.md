@@ -14,6 +14,7 @@ The design of nope. for release 1.0.0, in direction B (Reach), chosen from the o
 | [manual-controls.html](manual-controls.html) | The Manual Controls button, the readout row, each dial and Pro Tools. |
 | [sheets.html](sheets.html) | Formats and the processing note, What's in This Photo, Interval and Astro settings, Presets, Compare and the one confirmation. |
 | [settings.html](settings.html) | Settings, its search and every page: Formats, Look, File Options, Photo Size, Choose Details, Fast Shutter, Viewfinder Overlays, Accessibility, Honesty, About and Licenses; light, night mode, the largest text size and right to left. |
+| [SETTINGS-PLAN.md](SETTINGS-PLAN.md), [settings-tree.html](settings-tree.html) | A proposal for review, not yet decided or drawn: the Settings inventory, the problems found, a proposed tree, device coverage gaps, and the decisions it needs. |
 | [layouts.html](layouts.html) | iPhone held sideways, iPad (with the Settings popover), the iPhone Duo inner display, the largest text size and right to left. |
 | [system.html](system.html) | The Live Activity and Dynamic Island, the Control Center controls, and Siri and Shortcuts results. |
 | [watch.html](watch.html) | The Apple Watch remote shutter and its states. |
