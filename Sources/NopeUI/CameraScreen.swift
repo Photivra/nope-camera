@@ -14,8 +14,10 @@ import SwiftUI
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
 /// backed by `AVCaptureVideoPreviewLayer`).
 ///
-/// A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
-/// state, so settings and the Honesty screen are reachable before the camera is allowed. Before
+/// Settings (``SettingsScreen``, a popover in a regular-width window, a sheet otherwise) is
+/// reachable in every state, so settings and the Honesty screen are reachable before the camera
+/// is allowed: from a Settings button above the screens shown before the camera is ready, from
+/// the column layout's Settings button, and from Q in the stacked and scrolling layouts. Before
 /// camera access is asked, ``FirstRunView`` says what the app does, then asks.
 ///
 /// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
@@ -51,7 +53,7 @@ public struct CameraScreen<Viewfinder: View>: View {
     ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     ///     and runs `CameraModel.observeEvents()` while it is visible.
     ///   - settings: The person's settings, opened from the Settings button.
-    ///   - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    ///   - presets: The saved settings presets, shown in Settings and the quick menu, or
     ///     `nil` to offer none (the Lock Screen camera, which can't read them).
     ///   - viewfinder: Makes the live viewfinder from the model's preview source.
     public init(
@@ -76,15 +78,15 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// The screen's content for the current state.
     public var body: some View {
         // Outside the ready camera, the Settings button sits above the content, not over it, so
-        // scrolling content at large text sizes never passes under it. The ready camera has it
-        // in its own top bar or control column.
+        // scrolling content at large text sizes never passes under it. The ready camera opens
+        // Settings from Q, or from its control column.
         VStack(spacing: 0) {
             if !isReady {
                 HStack {
                     Spacer()
                     SettingsButton { showsSettings = true }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, NopeSpace.m)
             }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -175,7 +177,7 @@ public struct CameraScreen<Viewfinder: View>: View {
         settings.isNightModeOn && settings.tintsViewfinderInNightMode
     }
 
-    /// Whether the camera is ready, so the Settings button is in the camera layout.
+    /// Whether the camera is ready, so Settings opens from the camera layout.
     private var isReady: Bool {
         if case .ready = model.state { true } else { false }
     }
