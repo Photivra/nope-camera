@@ -774,6 +774,26 @@ The job summary on GitHub names the classification ("ui-tests 2/3: Passed", "Tes
 "Infrastructure failure"), says whether a second run happened, and lists the tests that failed
 or were cut short.
 
+#### Flaky tests
+
+Each shard job and the watch job uploads its per-test results as an artifact
+(`test-results-ui-tests-<n>`, `test-results-ui-tests-ipad-<n>`, `test-results-ui-tests-watch`,
+kept 30 days): a JSON Lines file with one line per test and run of it, holding `test`
+(Class/test), `result` (`passed`, `failed`, `skipped`, or `interrupted` for a test that
+started and has no result), `seconds`, `attempt` (2 for the second run after an infrastructure
+failure), `job`, `device`, `shard`, `runner_image`, `run_id`, `run_attempt` and `sha` (the
+pull request's head commit).
+
+```sh
+scripts/flaky-tests.sh                 # the last 20 runs of the build workflow, with gh
+scripts/flaky-tests.sh -n 50 -b main   # more runs, one branch
+scripts/flaky-tests.sh --from results  # result files already downloaded
+```
+
+It lists, with counts, the tests that passed and failed on the same commit, the tests that
+passed and failed across the commits looked at, and the tests that passed only in the second
+run after an infrastructure failure.
+
 #### Dynamic Type findings on the iPad runner
 
 In build 44124454610 two iPad tests failed with "Dynamic Type font sizes are partially

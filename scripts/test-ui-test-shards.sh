@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tests for scripts/ui-test-shards.sh, the classification and second-run rules of
-# scripts/ui-test-run-lib.sh, scripts/stop-simulator-push.sh,
+# scripts/ui-test-run-lib.sh, scripts/flaky-tests.sh, scripts/stop-simulator-push.sh,
 # scripts/stop-simulator-background-tasks.sh and scripts/wait-for-simulator-runtimes.sh: each
 # case builds a small tree or log and checks the result.
 set -euo pipefail
@@ -271,6 +271,33 @@ case_job "a test cut short without a sign of the Simulator dying is not run agai
 Test Case '-[T.C testTwo]' started.
 Restarting after unexpected exit, crash, or test timeout; summary will include totals from previous launches.
 $three"
+
+# The flaky test report: a test that passed and failed on one commit, tests that did across
+# commits, and a test that passed only in the second run after an infrastructure failure.
+d=$(mktemp -d); mkdir -p "$d/1/a" "$d/2/a"
+row() { # row <test> <result> <attempt> <job> <sha> <run>
+  printf '{"test": "%s", "result": "%s", "seconds": 3, "attempt": %s, "job": "%s", "sha": "%s", "run_id": "%s", "run_attempt": "1"}\n' "$@"
+}
+{ row C/testOne passed 1 "ui-tests 1/3" aaaaaaa1 1; row C/testTwo failed 1 "ui-tests 1/3" aaaaaaa1 1
+  row C/testThree interrupted 1 "ui-tests-ipad 1/2" aaaaaaa1 1; row C/testThree passed 2 "ui-tests-ipad 1/2" aaaaaaa1 1
+} >"$d/1/a/results.jsonl"
+{ row C/testTwo passed 1 "ui-tests 1/3" aaaaaaa1 2; row C/testOne failed 1 "ui-tests 1/3" bbbbbbb2 3; } >"$d/2/a/results.jsonl"
+got=$("$here/flaky-tests.sh" --from "$d")
+want="5 results of 3 tests from 3 run(s) on 2 commit(s)
+
+Passed and failed on the same commit:
+  C/testTwo (iPhone) at aaaaaaa: 1 passed, 1 failed
+
+Passed and failed across these commits:
+  C/testTwo (iPhone): 1 passed, 1 failed
+  C/testOne (iPhone): 1 passed, 1 failed
+
+Passed only in the second run after an infrastructure failure:
+  C/testThree (iPad): 1 time(s)"
+if [[ $got == "$want" ]]; then echo "ok   flaky test report"; else echo "FAIL flaky test report: $got"; failures=$((failures + 1)); fi
+rm -rf "$d"
+got=$("$here/flaky-tests.sh" --from "$(mktemp -d)")
+if [[ $got == "No per-test results found." ]]; then echo "ok   flaky test report without results"; else echo "FAIL flaky test report without results: $got"; failures=$((failures + 1)); fi
 
 # The push service is stopped when launchd has it, and a service that stays is reported without
 # failing the run. A stand-in for xcrun plays the Simulator's launchctl: the service is loaded
