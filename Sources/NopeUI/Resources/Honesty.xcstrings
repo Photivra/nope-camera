@@ -12619,68 +12619,68 @@
         }
       }
     },
-    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them.": {
+    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found.": {
       "comment": "Honesty statement under Faces and Autofocus. Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Must not say that the switch turns face detection off. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS erkennt im Sucher möglicherweise Gesichter, um die Schärfe festzulegen. „Auf Gesichter fokussieren“ in den Einstellungen von nope. legt nur fest, ob Autofokus und automatische Belichtung von nope. ihnen folgen."
+            "value": "iOS erkennt im Sucher möglicherweise Gesichter, um die Schärfe festzulegen. „Auf Gesichter fokussieren“ in den Einstellungen von nope. legt nur fest, ob Autofokus und automatische Belichtung von nope. ihnen folgen. nope. liest oder speichert nicht, welche Gesichter erkannt wurden."
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Es posible que iOS detecte caras en el visor para decidir dónde enfocar. «Enfocar caras», en los ajustes de nope., solo decide si el enfoque y la exposición automáticos de nope. las siguen."
+            "value": "Es posible que iOS detecte caras en el visor para decidir dónde enfocar. «Enfocar caras», en los ajustes de nope., solo decide si el enfoque y la exposición automáticos de nope. las siguen. nope. no lee ni guarda qué caras ha encontrado."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS peut détecter des visages dans le viseur pour choisir où faire la mise au point. « Mise au point sur les visages », dans les réglages de nope., décide seulement si la mise au point et l’exposition automatiques de nope. les suivent."
+            "value": "iOS peut détecter des visages dans le viseur pour choisir où faire la mise au point. « Mise au point sur les visages », dans les réglages de nope., décide seulement si la mise au point et l’exposition automatiques de nope. les suivent. nope. ne lit ni n’enregistre les visages trouvés."
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS può rilevare i volti nel mirino per decidere dove mettere a fuoco. «Messa a fuoco sui volti», nelle impostazioni di nope., decide solo se l’autofocus e l’esposizione automatica di nope. li seguono."
+            "value": "iOS può rilevare i volti nel mirino per decidere dove mettere a fuoco. «Messa a fuoco sui volti», nelle impostazioni di nope., decide solo se l’autofocus e l’esposizione automatica di nope. li seguono. nope. non legge né salva quali volti ha trovato."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS は、ピントを合わせる位置を決めるために、ビューファインダー内の顔を検出することがあります。nope. の設定の「顔にピントを合わせる」で決まるのは、nope. のオートフォーカスと自動露出がその顔に合わせるかどうかだけです。"
+            "value": "iOS は、ピントを合わせる位置を決めるために、ビューファインダー内の顔を検出することがあります。nope. の設定の「顔にピントを合わせる」で決まるのは、nope. のオートフォーカスと自動露出がその顔に合わせるかどうかだけです。nope. は検出された顔の情報を読み取ったり保存したりしません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS가 초점을 맞출 위치를 정하기 위해 뷰파인더에서 얼굴을 감지할 수 있습니다. nope. 설정의 '얼굴에 초점'은 nope.의 자동 초점과 자동 노출이 얼굴을 따라갈지만 정합니다."
+            "value": "iOS가 초점을 맞출 위치를 정하기 위해 뷰파인더에서 얼굴을 감지할 수 있습니다. nope. 설정의 '얼굴에 초점'은 nope.의 자동 초점과 자동 노출이 얼굴을 따라갈지만 정합니다. nope.은 감지된 얼굴 정보를 읽거나 저장하지 않습니다."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS kan gezichten in de zoeker herkennen om te bepalen waar wordt scherpgesteld. ‘Scherpstellen op gezichten’ in de instellingen van nope. bepaalt alleen of de autofocus en automatische belichting van nope. ze volgen."
+            "value": "iOS kan gezichten in de zoeker herkennen om te bepalen waar wordt scherpgesteld. ‘Scherpstellen op gezichten’ in de instellingen van nope. bepaalt alleen of de autofocus en automatische belichting van nope. ze volgen. nope. leest of bewaart niet welke gezichten zijn gevonden."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "O iOS pode detectar rostos no visor para decidir onde focar. “Focar rostos”, nos ajustes do nope., decide apenas se o foco e a exposição automáticos do nope. os seguem."
+            "value": "O iOS pode detectar rostos no visor para decidir onde focar. “Focar rostos”, nos ajustes do nope., decide apenas se o foco e a exposição automáticos do nope. os seguem. O nope. não lê nem salva quais rostos foram encontrados."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS 可能会在取景器中检测人脸，以决定对焦位置。nope. 设置中的“对焦人脸”只决定 nope. 的自动对焦和自动曝光是否跟随人脸。"
+            "value": "iOS 可能会在取景器中检测人脸，以决定对焦位置。nope. 设置中的“对焦人脸”只决定 nope. 的自动对焦和自动曝光是否跟随人脸。nope. 不会读取或保存检测到的人脸。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "iOS 可能會在觀景窗中偵測人臉，以決定對焦位置。nope. 設定中的「對焦臉部」只決定 nope. 的自動對焦和自動曝光是否跟隨人臉。"
+            "value": "iOS 可能會在觀景窗中偵測人臉，以決定對焦位置。nope. 設定中的「對焦臉部」只決定 nope. 的自動對焦和自動曝光是否跟隨人臉。nope. 不會讀取或儲存偵測到的人臉。"
           }
         }
       }
