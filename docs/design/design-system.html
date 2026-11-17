@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: Design system</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+.dev{position:relative;overflow:hidden;background:#000;color:#fff;font:600 15px/1.2 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+--fact:#40c8e0;--warn:#ff9f0a;--fill:#333;--fill2:#3a3a3c;--sec:#aeaeb2;--line:rgba(255,255,255,.16);--back:rgba(12,12,13,.86);--sel:#fff;--onsel:#000;--stop:#ff6961}
+.dev *{box-sizing:border-box}
+.ic{display:block;flex:none}
+.island{position:absolute;top:11px;left:50%;margin-left:-63px;width:126px;height:37px;border-radius:20px;background:#000;z-index:30;box-shadow:0 0 0 1px #141414}
+.home{position:absolute;bottom:8px;left:50%;margin-left:-70px;width:140px;height:5px;border-radius:3px;background:#fff;opacity:.85;z-index:30}
+.abs{position:absolute}
+.row{position:absolute;left:0;right:0;display:flex;align-items:center}
+.vf{position:absolute;overflow:hidden;background:#111}
+.vf>svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.thirds,.g44,.gsq{position:absolute;inset:0;pointer-events:none}
+.thirds i,.g44 i,.gsq i{position:absolute;background:rgba(255,255,255,.8);box-shadow:0 0 0 .5px rgba(0,0,0,.45)}
+.sec{color:var(--sec)}.num{font-variant-numeric:tabular-nums}
+/* status line */
+.top{padding:0 16px;justify-content:space-between;gap:8px}
+.stat{display:flex;align-items:center;gap:8px;height:44px;font-size:15px;font-weight:600;white-space:nowrap}
+.stat .ic{color:var(--fact)}.stat.w .ic{color:var(--warn)}
+.pills{display:flex;align-items:center;gap:8px;min-width:0}
+.pill{display:flex;align-items:center;gap:4px;height:28px;padding:0 12px;border-radius:14px;background:var(--fill);font-weight:600;font-size:13px;white-space:nowrap}
+.pill .ic{margin-inline-start:-4px}
+.warnchip{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 8px;border-radius:14px;background:var(--back);border:1.5px solid var(--warn);font-weight:600;font-size:13px;white-space:nowrap}
+.warnchip .ic{color:var(--warn)}
+/* controls */
+.ib{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff;background:var(--fill)}
+.ib.bare{background:none}
+.qb{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--fill);font-weight:700;font-size:21px}
+.sel{background:var(--sel)!important;color:var(--onsel)!important}
+.cap{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border-radius:18px;background:var(--fill);font-weight:600;font-size:15px;white-space:nowrap}
+.cap.sm{font-size:13px;padding:0 12px}
+.cap.stop{color:var(--stop)}
+.lenses{display:flex;align-items:center;gap:4px;height:44px;padding:4px;border-radius:22px;background:var(--fill)}
+.lenses span{min-width:40px;height:36px;padding:0 4px;border-radius:18px;display:grid;place-items:center;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums;position:relative}
+.lenses small{position:absolute;top:36px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:600;white-space:nowrap;color:var(--warn)}
+.lensrow{padding:0 16px;display:grid;grid-template-columns:1fr auto 1fr}
+.lensrow>:first-child{justify-self:start}.lensrow>:last-child{justify-self:end}
+.strip{justify-content:center;padding:0 8px}
+.strip span{height:32px;padding:0 12px;border-radius:16px;display:flex;align-items:center;gap:4px;font-size:15px;font-weight:600;color:#d1d1d6;white-space:nowrap}
+.strip.dis span:not(.sel){opacity:.4}
+.strip.tight span{padding:0 8px}
+.shot{padding:0 32px;justify-content:space-between}
+.shutter{width:76px;height:76px;border-radius:50%;border:4px solid #fff;display:grid;place-items:center;flex:none}
+.shutter::after{content:"";width:60px;height:60px;border-radius:50%;background:#fff}
+.shutter.stopsq::after{width:28px;height:28px;border-radius:6px}
+.shutter.busy{opacity:.45}
+.shutter[data-t]::after{content:attr(data-t);display:grid;place-items:center;color:#000;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.side .shutter[data-t]::after{transform:rotate(90deg)}
+.thumb{width:52px;height:52px;flex:none;overflow:hidden;position:relative;border-radius:12px;box-shadow:0 0 0 1.5px rgba(255,255,255,.85);background:#404040;display:grid;place-items:center}
+.thumb svg.scene{position:absolute;inset:0;width:100%;height:100%}
+.thumb .badge{position:absolute;right:2px;bottom:2px;width:18px;height:18px;border-radius:9px;background:#000;display:grid;place-items:center}
+.thumbw{position:relative;width:52px;height:52px;flex:none}
+.spin{width:22px;height:22px;border-radius:50%;border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff}
+/* stacks over the picture */
+.vtop{position:absolute;top:8px;left:8px;right:8px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;z-index:4}
+.vbot{position:absolute;bottom:8px;left:8px;right:8px;display:flex;flex-direction:column;gap:8px;z-index:5}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.card{border-radius:24px;background:var(--back);border:1px solid var(--line);padding:8px 8px 8px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px}
+.card.col{flex-direction:column;align-items:stretch;padding:12px 16px;gap:8px}
+.card b{display:block;font-size:15px;font-weight:600}
+.card small{display:block;font-size:13px;font-weight:500;color:var(--sec);margin-top:2px}
+.bar{height:4px;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}.bar i{display:block;height:4px;background:#fff}
+.hint{align-self:center;border-radius:12px;background:var(--back);padding:8px 12px;font-size:13px;font-weight:500;max-width:340px;text-align:center}
+.banner{border-radius:24px;background:#000;border:1.5px solid var(--warn);padding:12px 12px 12px 16px;display:flex;gap:12px;align-items:center;align-self:stretch;font-size:15px;font-weight:500;line-height:1.3}
+.banner .ic.t{color:var(--warn)}
+.banner .acts{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.center{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none}
+.count{font-size:96px;font-weight:700;font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(0,0,0,.7)}
+.sessmsg{max-width:280px;border-radius:24px;background:#000;padding:16px 24px;text-align:center;font-size:15px;font-weight:500;line-height:1.35}
+/* manual readouts */
+.readouts{display:flex;gap:4px}
+.rd{flex:1;height:48px;border-radius:12px;background:var(--back);border:1px solid var(--line);padding:6px 2px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;min-width:0}
+.rd small{font-size:11px;font-weight:700;color:var(--sec);white-space:nowrap;min-width:16px;height:14px;line-height:14px;text-align:center;border-radius:4px}.rd small.m{background:#fff;color:#000}.night .rd small.m{background:#f00}.rd.sel small.m{background:#000;color:#fff}.rd b{font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rd.sel small{color:#3a3a3c}
+.dial{border-radius:24px;background:var(--back);border:1px solid var(--line);padding:12px 16px;display:flex;flex-direction:column;gap:8px}
+.dial .r{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.dial .t{font-size:15px;font-weight:600}.dial .v{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+.track{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.25);position:relative;margin:0 8px}
+.track i{position:absolute;left:0;top:0;height:4px;background:#fff;border-radius:2px}
+.track u{position:absolute;top:-12px;margin-left:-14px;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.dial .n{font-size:12px;font-weight:500;color:var(--sec)}
+.seg{display:flex;height:36px;border-radius:12px;background:rgba(120,120,128,.3);padding:2px;gap:2px}
+.seg span{flex:1;min-width:44px;border-radius:10px;display:grid;place-items:center;font-size:13px;font-weight:600;padding:0 8px;white-space:nowrap}
+/* Q panel */
+.panel{position:absolute;border-radius:24px;background:var(--back);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);padding:16px;border:.5px solid var(--line);z-index:8}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{min-height:56px;border-radius:12px;background:rgba(120,120,128,.3);padding:8px 8px 8px 12px;display:flex;flex-direction:column;justify-content:space-between;gap:2px;min-width:0}
+.tile small{display:block;font-size:12px;font-weight:500;color:#d1d1d6;line-height:1.15}
+.tile b{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:600;white-space:nowrap}
+.tile.sel small{color:#3a3a3c}
+.foot{display:flex;gap:8px;margin-top:8px}
+.foot .cap{flex:1 0 44px;height:44px;border-radius:22px;background:rgba(120,120,128,.3)}
+.menu{position:absolute;z-index:12;min-width:220px;border-radius:14px;background:rgba(44,44,46,.98);box-shadow:0 12px 40px rgba(0,0,0,.6);font-size:17px;font-weight:400;overflow:hidden}
+.menu div{display:flex;align-items:center;gap:12px;padding:0 16px;height:44px;border-bottom:.5px solid rgba(255,255,255,.14)}
+.menu div:last-child{border-bottom:0}.menu .ck{width:16px;flex:none}.menu .d{color:#ff453a}.menu .h{height:30px;font-size:13px;color:var(--sec)}
+.pop{position:absolute;z-index:12;border-radius:14px;background:rgba(44,44,46,.98);box-shadow:0 12px 40px rgba(0,0,0,.6);padding:12px 16px;font-size:15px;font-weight:400;line-height:1.35}
+/* overlays */
+.fsq{position:absolute;width:60px;height:60px;border:1.5px solid #fff;box-shadow:0 0 0 .5px rgba(0,0,0,.5)}
+.level{position:absolute;left:50%;top:50%;width:200px;margin-left:-100px;height:2px;background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.5)}
+.aids{position:absolute;top:8px;inset-inline-end:8px;width:128px;border-radius:12px;background:var(--back);padding:8px;font-size:11px;font-weight:500;z-index:4}
+.aids svg{display:block;width:112px;height:44px}
+.aids p{margin:4px 0 0;line-height:1.35;font-variant-numeric:tabular-nums}
+.mag{position:absolute;width:132px;height:132px;border-radius:12px;border:1.5px solid #fff;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+/* night mode: pure red on black; on = filled, off = outlined */
+.night{color:#f00;--sec:#f00;--fill:#140000;--fill2:#200000;--back:rgba(8,0,0,.92);--line:#b3201a;--sel:#f00;--fact:#f00;--warn:#f00;--stop:#f00}
+.night .ib,.night .qb,.night .cap,.night .pill,.night .lenses,.night .tile,.night .rd,.night .foot .cap{border:1px solid #b3201a;color:#f00}
+.night .tile,.night .foot .cap{background:#140000}
+.night .tile small,.night .strip span{color:#f00}
+.night .sel{border-color:#f00!important}.night .tile.sel small,.night .rd.sel small{color:#000}
+.night .shutter{border-color:#f00}.night .shutter::after{background:#f00}
+.night .home{background:#f00;opacity:.35}
+.night .thumb{box-shadow:0 0 0 1.5px #f00}.night .thumb svg.scene{filter:brightness(.8)}
+.night .bar{background:#4a0d0a}.night .bar i,.night .track i,.night .track u{background:#f00}.night .track{background:#4a0d0a}
+.night .warnchip{border-style:dashed}
+.night .seg{background:#140000;border:1px solid #b3201a}
+.night .count,.night .sessmsg{color:#f00}
+.night .menu,.night .pop{background:#100;border:1px solid #b3201a;color:#f00}.night .menu div{border-color:#b3201a}.night .menu .d{color:#f00}
+.night.redvf .vf>svg.scene{filter:grayscale(1) brightness(.9) sepia(1) saturate(30) hue-rotate(-50deg)}
+.night .fsq,.night .level{border-color:#f00}
+/* right-to-left: rows mirror, the picture does not */
+[dir=rtl] .ic.dirx{transform:scaleX(-1)}
+[dir=rtl] .lenses i,[dir=rtl] .rd b{direction:ltr;unicode-bidi:isolate}
+/* forms (system grouped list look) */
+.form{background:#000;color:#fff;font:400 17px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;--fbg:#000;--cell:#1c1c1e;--fsec:#98989f;--sep:rgba(84,84,88,.6);--tint:#fff;--on:#34c759;--fact:#40c8e0;--warn:#ff9f0a;--stop:#ff453a}
+.form *{box-sizing:border-box}
+.form.light{background:#f2f2f7;color:#000;--fbg:#f2f2f7;--cell:#fff;--fsec:#6d6d72;--sep:rgba(60,60,67,.3);--tint:#000;--fact:#007d8f;--warn:#a85400;--stop:#d70015}
+.form.nightf{background:#000;color:#f00;--cell:#0c0000;--fsec:#f00;--sep:#b3201a;--tint:#f00;--on:#f00;--fact:#f00;--warn:#f00;--stop:#f00}
+.form .nav{display:flex;align-items:center;justify-content:space-between;height:56px;padding:0 16px;font-weight:600}
+.form .nav .back{display:flex;align-items:center;gap:4px;font-weight:400;min-width:80px;color:var(--tint)}
+.form .nav .done{min-width:80px;display:flex;justify-content:flex-end;color:var(--tint)}
+.form .nav .done span{width:36px;height:36px;border-radius:18px;background:var(--cell);display:grid;place-items:center}
+.form .grab{width:36px;height:5px;border-radius:3px;background:var(--fsec);opacity:.5;margin:6px auto 0}
+.form h5{margin:24px 32px 8px;font-size:13px;font-weight:400;text-transform:uppercase;color:var(--fsec);letter-spacing:.02em}
+.form .grp{margin:0 16px;border-radius:12px;background:var(--cell);overflow:hidden}
+.form .nightgrp{border:1px solid #b3201a}
+.form .cell{display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 16px;border-bottom:.5px solid var(--sep)}
+.form .cell:last-child{border-bottom:0}
+.form .cell .l{flex:1;min-width:0}
+.form .cell .l small{display:block;font-size:13px;color:var(--fsec);margin-top:2px;line-height:1.35}
+.form .cell .v{color:var(--fsec);text-align:end;max-width:55%}
+.form .cell .chev{color:var(--fsec);opacity:.7}
+.form .cell.btn .l{color:var(--tint);font-weight:500}.form .cell.des .l{color:var(--stop)}
+.form .foot2{margin:8px 32px 0;font-size:13px;color:var(--fsec);line-height:1.35}
+.form .tog{width:51px;height:31px;border-radius:16px;background:rgba(120,120,128,.32);position:relative;flex:none}
+.form .tog::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.form .tog.on{background:var(--on)}.form .tog.on::after{inset-inline-start:22px}
+.form.nightf .tog{background:#000;border:1.5px solid #b3201a}.form.nightf .tog::after{background:#b3201a;top:.5px}
+.form.nightf .tog.on{background:#f00;border-color:#f00}.form.nightf .tog.on::after{background:#000}
+.form .search{margin:0 16px 0;height:36px;border-radius:10px;background:var(--cell);display:flex;align-items:center;gap:8px;padding:0 8px;color:var(--fsec)}
+.form .mono{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--fsec)}
+.form .prose{padding:0 24px}.form .prose h6{font-size:20px;margin:24px 0 8px}.form .prose b{display:block;margin:16px 0 2px;font-weight:600}.form .prose p{margin:0;color:var(--fsec);font-size:15px;line-height:1.4}
+.sheetwrap{background:#000;padding-top:12px}
+.alertbg{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:40;display:grid;place-items:center}
+.alert{width:300px;border-radius:24px;background:rgba(44,44,46,.98);color:#fff;padding:20px 16px 16px;font:400 15px/1.35 -apple-system,system-ui,sans-serif}
+.alert b{display:block;font-size:17px;font-weight:600;margin-bottom:4px}
+.alert .bt{display:flex;gap:8px;margin-top:16px}.alert .bt.v{flex-direction:column}.alert .bt.v span{flex:none}
+.alert .bt span{flex:1;height:44px;border-radius:22px;background:rgba(120,120,128,.36);display:grid;place-items:center;font-weight:500;font-size:17px}
+.alert .bt .p{background:#fff;color:#000;font-weight:600}.alert .bt .d{color:#ff453a}
+.alert .field{height:36px;border-radius:10px;background:#1c1c1e;margin-top:12px;padding:0 12px;display:flex;align-items:center;font-size:17px}
+/* device frames, popovers and sheets on regular-size windows */
+.popv{position:absolute;z-index:20;border-radius:24px;overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,.7)}
+.shade{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:18}
+.pairs{display:flex;align-items:center;gap:16px;padding:16px;background:#101012;font:500 13px/1.3 -apple-system,system-ui,sans-serif;color:#aeaeb2}
+.pairs figure{margin:0;display:flex;flex-direction:column;gap:8px;align-items:center}
+.strip84{position:absolute;top:0;bottom:0;inset-inline-end:0;width:84px;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:20px;font:600 13px -apple-system,system-ui,sans-serif;color:#fff}
+.hinge{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:2px dashed rgba(255,255,255,.55);z-index:40}
+.watch.aod{filter:brightness(.45) saturate(.6)}
+.watch[dir=rtl] .time{right:auto;left:22px}
+/* watch */
+.watch{box-sizing:border-box;position:relative;width:208px;height:248px;border-radius:44px;background:#000;color:#fff;overflow:hidden;font:400 16px/1.25 -apple-system,system-ui,sans-serif;padding:34px 10px 10px;--fact:#40c8e0;--warn:#ff9f0a}
+.watch *{box-sizing:border-box}
+.watch .time{position:absolute;top:10px;right:22px;font-size:15px;font-weight:500}
+.watch .st{display:flex;gap:6px;align-items:flex-start;margin-bottom:8px}.watch .st .ic{margin-top:1px}
+.watch .wb{min-height:56px;border-radius:28px;background:#2a2a2c;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:500;margin-bottom:8px;padding:8px 12px}
+.watch .wb.dis{opacity:.4}.watch .wb.row{position:static;justify-content:space-between;min-height:48px;border-radius:14px}
+.watch .t{color:var(--fact)}.watch .w{color:var(--warn)}
+
+</style>
+</head>
+<body>
+<main>
+<h1>Design system</h1>
+<p class="muted">Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md).</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html" class=here>Design system</a><a href="camera.html">Camera</a><a href="drive.html">Drive modes</a><a href="quick-menu.html">Q</a><a href="manual-controls.html">Manual Controls</a><a href="sheets.html">Sheets</a><a href="settings.html">Settings</a><a href="layouts.html">Layouts</a><a href="ipad.html">iPad</a><a href="duo.html">iPhone Duo</a><a href="system.html">System</a><a href="watch.html">Apple Watch</a><a href="navigation.html">Navigation map</a><a href="icon.html">Icon</a></nav>
+
+<p>The tokens of direction B. Each name maps one to one to a Swift constant in a new file, <code>Sources/NopeUI/DesignTokens.swift</code>; the same list, in a form for the build, is in <a href="tokens.md">tokens.md</a>. Every literal spacing, radius, size and color in the app, the widgets, the Live Activity and the watch app is replaced by one of these.</p>
+<h2>Spacing</h2><p>One scale on a 4 pt grid. The 0.3.0 literals 2, 6, 9 and 10 pt are retired: 2 becomes 4, 6 and 9 become 8, 10 becomes 12, 20 becomes 24.</p>
+<div class="scale"><div><i style="width:4px"></i><code>NopeSpace.xxs</code><br>4 pt</div><div><i style="width:8px"></i><code>NopeSpace.xs</code><br>8 pt</div><div><i style="width:12px"></i><code>NopeSpace.s</code><br>12 pt</div><div><i style="width:16px"></i><code>NopeSpace.m</code><br>16 pt</div><div><i style="width:24px"></i><code>NopeSpace.l</code><br>24 pt</div><div><i style="width:32px"></i><code>NopeSpace.xl</code><br>32 pt</div><div><i style="width:48px"></i><code>NopeSpace.xxl</code><br>48 pt</div></div>
+<h2>Corner radii</h2><p>Two radii and the capsule. The 0.3.0 radii 8 and 10 become 12; 20 becomes 24. System sheets, forms and alerts keep the system’s own radii.</p>
+<div class="radii"><div><i style="border-top-left-radius:12px"></i><code>NopeRadius.small</code><br>12 pt<br>tiles, readouts, thumbnail, hints</div><div><i style="border-top-left-radius:24px"></i><code>NopeRadius.large</code><br>24 pt<br>the Q panel, cards, dials, banners</div><div><i style="border-top-left-radius:32px"></i><code>Capsule()</code><br>buttons, pills, chips, the lens group</div></div>
+<h2>Sizes and hit targets</h2>
+<div class="tw"><table><thead><tr><th>Token</th><th>Value</th><th>Used for</th></tr></thead><tbody>
+<tr><td><code>NopeSize.minTarget</code></td><td class="n">44 pt</td><td>The smallest hit target of any control. Smaller-looking items (28 pt pills, 36 pt capsules, 32 pt drive words) extend their touch area to 44 pt with <code>contentShape</code>.</td></tr>
+<tr><td><code>NopeSize.shutter</code></td><td class="n">76 pt</td><td>Take Photo: 4 pt ring, 60 pt disc.</td></tr>
+<tr><td><code>NopeSize.quick</code>, <code>NopeSize.thumbnail</code></td><td class="n">52 pt</td><td>Q and Last Photo, either side of the shutter.</td></tr>
+<tr><td><code>NopeSize.iconButton</code></td><td class="n">44 pt</td><td>Round symbol buttons.</td></tr>
+<tr><td><code>NopeSize.capsule</code></td><td class="n">36 pt</td><td>Capsule buttons (44 pt in the Q foot).</td></tr>
+<tr><td><code>NopeSize.pill</code></td><td class="n">28 pt</td><td>Pills and warning chips.</td></tr>
+<tr><td><code>NopeSize.tileMin</code></td><td class="n">56 pt</td><td>Minimum tile height; grows when a name wraps.</td></tr>
+<tr><td><code>NopeSize.readout</code></td><td class="n">48 pt</td><td>Manual readouts.</td></tr>
+<tr><td><code>NopeSize.statusRow</code>, <code>lensRow</code>, <code>driveRow</code>, <code>shutterRowMin</code></td><td class="n">44, 56, 44, 88 pt</td><td>Row heights of the stacked layout.</td></tr>
+<tr><td><code>NopeSize.targetGap</code></td><td class="n">8 pt</td><td>Smallest gap between two targets (4 pt inside the lens group, whose items are 40 pt wide inside one 44 pt group).</td></tr>
+</tbody></table></div>
+<h2>Type</h2><p>System font only, through Dynamic Type text styles. Sizes shown are at the default (Large) setting. At accessibility sizes the camera switches to the scrolling layout; controls that cannot grow have a Large Content Viewer label.</p>
+<div class="tw"><table><thead><tr><th>Token</th><th>Text style</th><th>Default size</th><th>Used for</th></tr></thead><tbody><tr><td><code>NopeFont.status</code></td><td>.subheadline, semibold</td><td class="n">15 pt</td><td>Format status, drive words, capsule labels, card titles</td></tr><tr><td><code>NopeFont.pill</code></td><td>.footnote, semibold</td><td class="n">13 pt</td><td>Pills, warning chips, small capsules, card detail</td></tr><tr><td><code>NopeFont.tileName</code></td><td>.caption, medium</td><td class="n">12 pt</td><td>Tile names, readout values</td></tr><tr><td><code>NopeFont.tileValue</code></td><td>.subheadline, semibold</td><td class="n">15 pt</td><td>Tile values</td></tr><tr><td><code>NopeFont.readoutMode</code></td><td>.caption2, bold</td><td class="n">11 pt</td><td>A or M on a readout</td></tr><tr><td><code>NopeFont.dialValue</code></td><td>.body, semibold, monospaced digits</td><td class="n">17 pt</td><td>Dial value</td></tr><tr><td><code>NopeFont.lens</code></td><td>.footnote, semibold, monospaced digits</td><td class="n">13 pt</td><td>Lens labels</td></tr><tr><td><code>NopeFont.q</code></td><td>.title3, bold</td><td class="n">20 pt</td><td>The letter Q</td></tr><tr><td><code>NopeFont.countdown</code></td><td>.system(size: 96, weight: .bold), scaled</td><td class="n">96 pt</td><td>Countdown number</td></tr><tr><td><code>Forms and sheets</code></td><td>System styles, unchanged</td><td class="n">17 / 13 pt</td><td>Settings, sheets, alerts</td></tr></tbody></table></div>
+<h2>Color</h2><p>The camera is always dark. One meaning for each color: teal for verified facts, amber for warnings, white fill for the selected item. No yellow. Teal and amber are the system colors, so iOS adapts them for Increase Contrast; the hex values here are their standard dark values, for the mockups. Brand color reaches system controls only through <code>tint</code>.</p>
+<div class="tw"><table><thead><tr><th>Token</th><th>Value</th><th>Contrast</th><th>Meaning</th></tr></thead><tbody><tr><td><span class="chip2" style="background:#40c8e0"></span><code>NopeColor.fact</code></td><td><code>#40c8e0</code></td><td class="n">10.6:1 on #000000</td><td>System teal. Verified facts only: the RAW seal, the signed seal.</td></tr><tr><td><span class="chip2" style="background:#ff9f0a"></span><code>NopeColor.warning</code></td><td><code>#ff9f0a</code></td><td class="n">10.2:1 on #000000</td><td>System orange. Warnings only, always with a triangle and words.</td></tr><tr><td><span class="chip2" style="background:#333333"></span><code>NopeColor.controlFill</code></td><td><code>#333333</code></td><td class="n">12.6:1 on #ffffff</td><td>Fill of buttons on the black rows. Color(white: 0.2), as today.</td></tr><tr><td><span class="chip2" style="background:#ffffff"></span><code>NopeColor.selectedFill</code></td><td><code>#ffffff</code></td><td class="n">21.0:1 on #000000</td><td>The selected or on state. Label turns black.</td></tr><tr><td><span class="chip2" style="background:#ffffff"></span><code>NopeColor.label</code></td><td><code>#ffffff</code></td><td class="n">21.0:1 on #000000</td><td>Text and symbols on the camera.</td></tr><tr><td><span class="chip2" style="background:#aeaeb2"></span><code>NopeColor.labelSecondary</code></td><td><code>#aeaeb2</code></td><td class="n">9.5:1 on #000000</td><td>Secondary text on the camera.</td></tr><tr><td><span class="chip2" style="background:#d1d1d6"></span><code>NopeColor.stripIdle</code></td><td><code>#d1d1d6</code></td><td class="n">13.8:1 on #000000</td><td>Unselected drive words.</td></tr><tr><td><span class="chip2" style="background:#ff6961"></span><code>NopeColor.destructive</code></td><td><code>#ff6961</code></td><td class="n">4.5:1 on #333333</td><td>Stop buttons (system red, on controlFill).</td></tr><tr><td><span class="chip2" style="background:#ff0000"></span><code>NopeColor.night</code></td><td><code>#ff0000</code></td><td class="n">5.3:1 on #000000</td><td>Night mode: every foreground is pure red on black.</td></tr><tr><td><span class="chip2" style="background:#b3201a"></span><code>NopeColor.nightOutline</code></td><td><code>#b3201a</code></td><td class="n">3.1:1 on #000000</td><td>Night mode outline of an off control.</td></tr><tr><td><span class="chip2" style="background:#ff33d9"></span><code>NopeColor.peaking</code></td><td><code>#ff33d9</code></td><td class="n">6.7:1 on #000000</td><td>Focus peaking only.</td></tr></tbody></table></div>
+<p>Text needs 4.5:1 and symbols and control outlines 3:1 (WCAG 2.2 AA). Pure red on black is 5.3:1, and black on pure red is 5.3:1. Settings, Presets, first run and the permission states follow the system appearance, where secondary text is <code>#6D6D72</code> in light (4.9:1 on the grouped background).</p>
+<h2>Materials over the picture</h2>
+<div class="tw"><table><thead><tr><th>Token</th><th>Definition</th><th>Used for</th></tr></thead><tbody>
+<tr><td><code>NopeMaterial.backing</code></td><td><code>.ultraThinMaterial</code> under 86% black. Solid black with Reduce Transparency or Increase Contrast.</td><td>Everything that sits on the picture: cards, the readout row, dials, hints, the Q panel, the status on iPad.</td></tr>
+<tr><td><code>NopeMaterial.solid</code></td><td>Black.</td><td>The failure banner and pause messages, which must be readable over any scene.</td></tr>
+<tr><td><code>NopeMaterial.tile</code></td><td>30% system gray fill over the backing.</td><td>Tiles and buttons inside the Q panel and dials.</td></tr>
+<tr><td><code>NopeMaterial.rowOverlay</code></td><td>72% black.</td><td>The lens row and drive strip where they overlay the picture on the smallest iPhone.</td></tr>
+</tbody></table></div>
+<h2>Button types</h2><p>Seven types cover every button in the app. Each is a <code>ButtonStyle</code>; each has normal, pressed (0.7 opacity, 0.97 scale; opacity only with Reduce Motion), selected, disabled (0.4 opacity) and night-mode states, and a 44 pt target.</p>
+<div class="tw"><table><thead><tr><th>Type</th><th>Swift</th><th>Looks like</th><th>Used for</th></tr></thead><tbody>
+<tr><td>Primary</td><td><code>ShutterButton</code> (kept)</td><td>76 pt ring and disc; a stop square while a series runs; the timer delay as a number</td><td>Take Photo</td></tr>
+<tr><td>Icon</td><td><code>NopeIconButtonStyle</code></td><td>44 pt circle, controlFill (52 pt for Q)</td><td>Switch Camera, Q, minus and plus, close, Show Controls, More</td></tr>
+<tr><td>Capsule (secondary)</td><td><code>NopeCapsuleStyle</code></td><td>36 pt capsule, symbol and words</td><td>Manual Controls, card buttons, Auto on a dial, Try Again</td></tr>
+<tr><td>Toggle (selectable)</td><td><code>NopeCapsuleStyle(isSelected:)</code>, replaces <code>SelectableCapsuleStyle</code></td><td>The same, filled white when on</td><td>Manual Controls, lenses, drive words, Compare view buttons</td></tr>
+<tr><td>Tile</td><td><code>NopeTileStyle(isOn:)</code></td><td>Name over symbol and value, 12 pt radius</td><td>Q tiles, manual readouts</td></tr>
+<tr><td>Pill and chip</td><td><code>NopePillStyle</code>, <code>WarningChip</code> (kept)</td><td>28 pt capsule; the chip has an amber outline and triangle</td><td>State pills, warnings</td></tr>
+<tr><td>Destructive</td><td><code>NopeCapsuleStyle(role: .destructive)</code></td><td>Capsule with a red label</td><td>Stop, Stop Burst, Stop Frames; Delete Preset uses the system destructive role</td></tr>
+</tbody></table></div>
+<p>In forms and sheets, buttons are the system’s: <code>.borderedProminent</code> for the one primary action (Continue, Open Settings), plain rows otherwise.</p>
+<div class="swl">Normal and selected, with a disabled icon button</div><div class="dev sw" style="background:#000"><div class="shutter"></div><div class="shutter stopsq"></div><div class="shutter busy"></div><div class="qb">Q</div><div class="qb sel">Q</div><div class="ib"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 0 1 13.6-3.6M19.5 13a7.6 7.6 0 0 1-13.6 3.6M18.6 3.4v4.2h-4.2M5.4 20.6v-4.2h4.2"/></svg></div><div class="ib" style="opacity:.4"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 0 1 13.6-3.6M19.5 13a7.6 7.6 0 0 1-13.6 3.6M18.6 3.4v4.2h-4.2M5.4 20.6v-4.2h4.2"/></svg></div><div class="cap "><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h8M17 7.5h3M4 16.5h3M12 16.5h8"/><circle cx="14.5" cy="7.5" r="2.4"/><circle cx="9.5" cy="16.5" r="2.4"/></svg>Auto</div><div class="cap sel"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h8M17 7.5h3M4 16.5h3M12 16.5h8"/><circle cx="14.5" cy="7.5" r="2.4"/><circle cx="9.5" cy="16.5" r="2.4"/></svg>Manual</div><div class="cap sm">Interval Settings</div><div class="cap sm stop">Stop</div><div style="display:flex"><div class="strip" style="display:flex;align-items:center"><span class="">Single</span><span class="sel">Timer</span><span class="">Burst</span><span class="">Interval</span><span class="">Astro</span></div></div><div class="pill u"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="2.2"/><path d="M12 6.8V4.2M14 8l2.2-1.4M14 10l2.2 1.4M10 8 7.8 6.6M10 10l-2.2 1.4M12 11.2V20M12 16c-2.5 0-4-1.2-4.5-3M12 18c2.5 0 4-1.2 4.5-3"/></svg>Close-Up</div><div class="pill u sel"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8v3l-2 3V20h-4V9.5l-2-3zM8 6.5h8"/></svg>25%</div><div class="warnchip"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 21 19.5H3z"/><path d="M12 10v4.5M12 17v.2"/></svg>Storage Low</div><div style="width:112px"><div class="tile"><small>Grid</small><b><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg>Off</b></div></div><div style="width:112px"><div class="tile sel"><small>Grid</small><b><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg>Thirds</b></div></div><div class="lenses"><span class=""><i class="u" style="font-style:normal">0.6×</i></span><span class="sel"><i class="u" style="font-style:normal">1×</i></span><span class=""><i class="u" style="font-style:normal">5×</i></span></div></div><div class="swl">Night mode: on is filled, off is outlined</div><div class="dev sw night" style="background:#000"><div class="shutter"></div><div class="shutter stopsq"></div><div class="shutter busy"></div><div class="qb">Q</div><div class="qb sel">Q</div><div class="ib"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 0 1 13.6-3.6M19.5 13a7.6 7.6 0 0 1-13.6 3.6M18.6 3.4v4.2h-4.2M5.4 20.6v-4.2h4.2"/></svg></div><div class="ib" style="opacity:.4"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 0 1 13.6-3.6M19.5 13a7.6 7.6 0 0 1-13.6 3.6M18.6 3.4v4.2h-4.2M5.4 20.6v-4.2h4.2"/></svg></div><div class="cap "><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h8M17 7.5h3M4 16.5h3M12 16.5h8"/><circle cx="14.5" cy="7.5" r="2.4"/><circle cx="9.5" cy="16.5" r="2.4"/></svg>Auto</div><div class="cap sel"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h8M17 7.5h3M4 16.5h3M12 16.5h8"/><circle cx="14.5" cy="7.5" r="2.4"/><circle cx="9.5" cy="16.5" r="2.4"/></svg>Manual</div><div class="cap sm">Interval Settings</div><div class="cap sm stop">Stop</div><div style="display:flex"><div class="strip" style="display:flex;align-items:center"><span class="">Single</span><span class="sel">Timer</span><span class="">Burst</span><span class="">Interval</span><span class="">Astro</span></div></div><div class="pill u"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="9" r="2.2"/><path d="M12 6.8V4.2M14 8l2.2-1.4M14 10l2.2 1.4M10 8 7.8 6.6M10 10l-2.2 1.4M12 11.2V20M12 16c-2.5 0-4-1.2-4.5-3M12 18c2.5 0 4-1.2 4.5-3"/></svg>Close-Up</div><div class="pill u sel"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3.5h8v3l-2 3V20h-4V9.5l-2-3zM8 6.5h8"/></svg>25%</div><div class="warnchip"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 21 19.5H3z"/><path d="M12 10v4.5M12 17v.2"/></svg>Storage Low</div><div style="width:112px"><div class="tile"><small>Grid</small><b><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg>Off</b></div></div><div style="width:112px"><div class="tile sel"><small>Grid</small><b><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9.3 4v16M14.7 4v16M4 9.3h16M4 14.7h16"/></svg>Thirds</b></div></div><div class="lenses"><span class=""><i class="u" style="font-style:normal">0.6×</i></span><span class="sel"><i class="u" style="font-style:normal">1×</i></span><span class=""><i class="u" style="font-style:normal">5×</i></span></div></div>
+<h2>Motion</h2>
+<div class="tw"><table><thead><tr><th>Token</th><th>Animation</th><th>Used for</th><th>With Reduce Motion</th></tr></thead><tbody>
+<tr><td><code>NopeMotion.panel</code></td><td><code>.snappy(duration: 0.3)</code>, rises from the Q button</td><td>Q panel, cards, dials</td><td>0.2 s crossfade</td></tr>
+<tr><td><code>NopeMotion.select</code></td><td><code>.snappy(duration: 0.2)</code></td><td>The white fill moving between lenses or drive words</td><td>No movement; the fill switches</td></tr>
+<tr><td><code>NopeMotion.fade</code></td><td><code>.easeInOut(duration: 0.2)</code></td><td>Pills, chips, hints, clean view</td><td>The same</td></tr>
+</tbody></table></div>
+<p>Nothing moves by itself, pulses or blinks. Nothing important leaves on a timer: a failure stays until dismissed.</p>
+<h2>Haptics</h2><p>Through <code>sensoryFeedback</code>, each paired with something seen and a VoiceOver announcement. All but the last exist today.</p>
+<div class="tw"><table><thead><tr><th>Event</th><th>Feedback</th></tr></thead><tbody>
+<tr><td>Shutter pressed</td><td><code>.impact</code></td></tr><tr><td>Photo saved</td><td><code>.impact(weight: .light)</code></td></tr><tr><td>Photo not saved</td><td><code>.error</code></td></tr>
+<tr><td>Lens changed</td><td><code>.selection</code></td></tr><tr><td>Countdown second</td><td><code>.impact(weight: .light)</code></td></tr><tr><td>Level reaches flat</td><td><code>.alignment</code></td></tr><tr><td>All Auto</td><td><code>.success</code></td></tr>
+<tr><td>Drive mode or Manual Controls changed</td><td><code>.selection</code> (extends the lens rule to the two new controls)</td></tr>
+</tbody></table></div>
+<h2>App icon: the color of the period</h2><p>The icon keeps the “n.” in the photo frame. The decision is the color of the period. See <a href="icon.html">icon.html</a>: the recommendation is to keep it teal, the one accent the app uses for verified facts.</p>
+</main>
+</body>
+</html>
