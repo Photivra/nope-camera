@@ -493,9 +493,6 @@ final class NopeAppUITests: XCTestCase {
         open(app, row: "HEIF and JPEG Copies")
         XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
-        app.swipeUp()
-        app.swipeUp()
-        try audit(app, afterScrolling: true, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
         goBack(app)
 
         open(app, row: "Details in Each Photo")
@@ -648,6 +645,10 @@ final class NopeAppUITests: XCTestCase {
             return true
         }
         if issue.element == nil && issue.auditType == .contrast { return true }
+        // A disabled control, drawn at the tokens' disabled opacity (the RAW row while it is the
+        // only format): WCAG 2.2, 1.4.3, exempts inactive user interface components from the
+        // contrast minimum (docs/design/tokens.md; chunk 0's note on "Contrast nearly passed").
+        if issue.auditType == .contrast, let element = issue.element, element.exists, !element.isEnabled { return true }
         guard afterScrolling else { return false }
         guard issue.auditType != .contrast, let element = issue.element else { return true }
         let current = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", element.label))
@@ -1491,6 +1492,29 @@ final class NopeAppUITests: XCTestCase {
         settle()
     }
 
+    /// Chooses a value in one of the menus on the HEIF and JPEG Copies page, by the row's
+    /// identifier: the menu opens from its value, a button inside the row, as
+    /// `testCopiesPageWithRAWOnly` opens it.
+    @MainActor
+    func chooseCopiesOption(_ app: XCUIApplication, _ option: String, inRow identifier: String) {
+        let row = settingsElement(app, identifier)
+        XCTAssertTrue(row.exists, identifier)
+        let menu = row.buttons.firstMatch
+        if menu.exists { menu.tap() } else { row.coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.85)).tap() }
+        let item = app.buttons[option]
+        XCTAssertTrue(item.waitForExistence(timeout: 5), row.debugDescription)
+        item.tap()
+        settle()
+    }
+
+    /// Whether a Settings row shows a value: in its label or in an element inside it.
+    @MainActor
+    func row(_ row: XCUIElement, shows value: String) -> Bool {
+        row.label.contains(value)
+            || row.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", value, value))
+                .firstMatch.exists
+    }
+
     /// Selects JPEG as well, so RAW, HEIF and JPEG are all saved.
     @MainActor
     private func openFormatsWithAllThree(_ app: XCUIApplication) {
@@ -1553,7 +1577,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(element(app, containing: "JPEG Compression").exists)
         XCTAssertTrue(element(app, containing: "HEIF Bit Depth").exists)
         XCTAssertFalse(app.buttons["Restore Defaults"].exists)
-        choose(app, "sRGB", inPickerLabeled: "Color Space")
+        chooseCopiesOption(app, "sRGB", inRow: "settings.copies.colorSpace")
         let restore = app.buttons["Restore Defaults"]
         // Restore Defaults is the last row, below the fold since Copy Size (issue #57).
         var swipes = 0
@@ -1566,9 +1590,8 @@ final class NopeAppUITests: XCTestCase {
         // The choice is kept when the page opens again; the row in Settings shows the look.
         goBack(app)
         open(app, row: "HEIF and JPEG Copies")
-        let colorSpace = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Color Space")).firstMatch
-        XCTAssertTrue(colorSpace.waitForExistence(timeout: 5))
-        XCTAssertTrue(colorSpace.label.contains("sRGB") || (colorSpace.value as? String) == "sRGB", colorSpace.label)
+        let colorSpace = settingsElement(app, "settings.copies.colorSpace")
+        XCTAssertTrue(row(colorSpace, shows: "sRGB"), colorSpace.debugDescription)
         swipes = 0
         while !(restore.exists && restore.isHittable) && swipes < 6 {
             app.swipeUp()

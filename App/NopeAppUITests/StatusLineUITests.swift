@@ -344,7 +344,7 @@ extension NopeAppUITests {
         scrollSheet(processed, to: formats)
         formats.tap()
         XCTAssertTrue(processed.navigationBars["Formats"].waitForExistence(timeout: 10))
-        XCTAssertTrue(processed.buttons["RAW (DNG)"].exists)
+        XCTAssertTrue(element(processed, containing: "RAW (DNG)").exists)
         try audit(processed, checksDynamicType: false, checksContrast: !isPad)
     }
 

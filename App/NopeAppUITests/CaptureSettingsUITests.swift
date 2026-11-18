@@ -44,7 +44,7 @@ extension NopeAppUITests {
         openSettingsRow(app, "HEIF and JPEG Copies")
         XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         XCTAssertTrue(settingsElement(app, "settings.copies.copySize").exists)
-        pick(app, "Half Size", inPickerLabeled: "Copy Size")
+        chooseCopiesOption(app, "Half Size", inRow: "settings.copies.copySize")
         let restore = app.buttons["Restore Defaults"]
         var swipes = 0
         while !(restore.exists && restore.isHittable) && swipes < 6 {

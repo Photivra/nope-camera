@@ -160,7 +160,10 @@ extension NopeAppUITests {
         // The white viewfinder keeps its natural colors behind the sheet; it shows at the sheet's
         // rounded top corners, so its frame is left out of the check.
         XCTAssertEqual(nonRedPixels(app, outside: viewfinder), 0, "the presets sheet is red on black")
-        try audit(app)
+        // Dynamic Type is audited at the largest size (testPresetsAtTheLargestTextSize): at the
+        // default size the Simulator reports list rows as "partially unsupported", as for the
+        // Settings screens (testSettingsScreensPassAccessibilityAudits).
+        try audit(app, checksDynamicType: false)
 
         // Applying from Q works as in Settings: Factory Defaults turns night mode off.
         factoryDefaults(app).tap()

@@ -20,13 +20,17 @@ extension NopeAppUITests {
     /// The note's line for a lens that offers no switch (the simulated front camera without RAW).
     private static let noteDistortionMay = "doesn't let apps turn it off or report whether it's used"
 
-    /// Opens the processing note from the marker and waits for its first sentence.
+    /// Opens the processing note from the marker and waits for its first sentence, scrolled into
+    /// view at the largest text sizes (the list creates rows only as they scroll in).
     @MainActor
     private func openProcessingNote(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let chip = app.buttons["Photo Format"]
         XCTAssertTrue(chip.waitForExistence(timeout: 15), file: file, line: line)
         chip.tap()
-        XCTAssertTrue(element(app, containing: Self.notePhone).waitForExistence(timeout: 5), file: file, line: line)
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5), file: file, line: line)
+        let note = element(app, containing: Self.notePhone)
+        swipeUntilHittable(app, note)
+        XCTAssertTrue(note.exists, file: file, line: line)
     }
 
     /// Swipes up in the open list until the element is on screen, at most eight times.

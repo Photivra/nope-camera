@@ -93,7 +93,14 @@ final class OverlayUITests: XCTestCase {
         let settings = app.buttons["Settings"]
         if !settings.exists {
             openTray(app)
-            XCTAssertTrue(settings.waitForExistence(timeout: 5))
+            // At the largest text sizes Settings is the last row of Q's list, created only as
+            // it scrolls into view.
+            var swipes = 0
+            while !(settings.exists && settings.isHittable) && swipes < 8 {
+                app.swipeUp()
+                swipes += 1
+            }
+            XCTAssertTrue(settings.exists)
         }
         settings.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
