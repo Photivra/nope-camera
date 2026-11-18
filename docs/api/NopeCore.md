@@ -1865,7 +1865,9 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 ```
 
 Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
-interval series or astro run runs, which pressing the shutter stops.
+interval series or astro run runs, which pressing the shutter stops. In the Interval
+drive mode, not while the interval is as long as the series' time or longer
+(``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
 
 ## `CameraModel/canUseAstro`
 
@@ -2063,12 +2065,12 @@ Camera Control): while the camera runs. At other times they keep their system be
 as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
 "isEnabled"). Not while the compare view is open (issue #55).
 
-## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
+## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:currentDate:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
 ```swift
-@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, deviceStatusReader: (any DeviceStatusReading)? = nil)
+@MainActor init(backend: any CaptureBackend, saver: PhotoSaver? = nil, sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) }, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }, deviceStatusReader: (any DeviceStatusReading)? = nil, currentDate: @escaping @Sendable () -> Date = { Date() })
 ```
 
 Creates a model in the ``CameraState/starting`` state.
@@ -2081,6 +2083,8 @@ Creates a model in the ``CameraState/starting`` state.
     pass a faster one.
   - now: Reads the clock that times each capture. Tests pass a scripted one.
   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+  - currentDate: Reads the clock on the wall, for an interval series that stops after a
+    time. Tests pass a scripted one.
 
 A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
 ``LightCaptureBackend`` a torch (``light``).
@@ -2097,6 +2101,18 @@ Why an interval series can't start now, or `nil` when it can as far as these rul
 (the camera must also be able to take a photo, ``canCapture``). An interface disables
 Start and says why; ``CameraIntent/manual(_:)`` with
 ``ManualControlIntent/startInterval`` is ignored while it isn't `nil`.
+
+## `CameraModel/intervalEndSleep`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var intervalEndSleep: @Sendable (Double) async throws -> Void
+```
+
+Waits until the time of an interval series that stops after a time is up, while the
+series waits for the camera (`waitForIntervalPhoto()`); the time is in seconds. Tests
+replace it.
 
 ## `CameraModel/isBusyForPresets`
 
@@ -2940,6 +2956,16 @@ case intervalCount
 
 ``CameraSetup/intervalCount``.
 
+## `CameraSetup/CodingKeys/intervalDuration`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case intervalDuration
+```
+
+``CameraSetup/intervalDuration``.
+
 ## `CameraSetup/CodingKeys/intervalSeconds`
 
 internal, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2949,6 +2975,16 @@ case intervalSeconds
 ```
 
 ``CameraSetup/intervalSeconds``.
+
+## `CameraSetup/CodingKeys/intervalStopAfter`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case intervalStopAfter
+```
+
+``CameraSetup/intervalStopAfter``.
 
 ## `CameraSetup/CodingKeys/iso`
 
@@ -3268,7 +3304,17 @@ public, declared in `Sources/NopeCore/CameraSetup.swift`
 var intervalCount: Int
 ```
 
-How many photos an interval series takes.
+How many photos an interval series takes when it stops after a number of photos.
+
+## `CameraSetup/intervalDuration`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var intervalDuration: Double
+```
+
+How long an interval series runs when it stops after a time, in seconds.
 
 ## `CameraSetup/intervalSeconds`
 
@@ -3279,6 +3325,29 @@ var intervalSeconds: Double
 ```
 
 The time between interval photos, in seconds.
+
+## `CameraSetup/intervalSettings`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var intervalSettings: IntervalSettings { get }
+```
+
+The interval series this setup holds. A stored end this version doesn't know reads as
+``IntervalSettings/StopAfter/numberOfPhotos``.
+
+## `CameraSetup/intervalStopAfter`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var intervalStopAfter: String
+```
+
+What ends an interval series, as an ``IntervalSettings/StopAfter`` raw value:
+`numberOfPhotos` or `time`. A preset saved before the choice existed reads as
+`numberOfPhotos`, the series it ran then.
 
 ## `CameraSetup/iso`
 
@@ -8353,6 +8422,49 @@ case driveIsBusy
 
 The self-timer counts down or a burst runs. Wait until it ends.
 
+## `IntervalBlocker/intervalNotShorterThanTime`
+
+public, declared in `Sources/NopeCore/CameraModel+Interval.swift`
+
+```swift
+case intervalNotShorterThanTime
+```
+
+The series stops after a time, and the interval is as long as the time or longer, so it
+would take only one photo. Choose a shorter interval or a longer time
+(``IntervalSettings/isIntervalShorterThanTime``).
+
+## `IntervalEnd`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum IntervalEnd
+```
+
+How the last interval series ended (``ManualControlsModel/lastIntervalEnd``).
+
+## `IntervalEnd/finished`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case finished
+```
+
+It took its number of photos, or its time was up.
+
+## `IntervalEnd/stopped`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case stopped
+```
+
+It ended early: it was stopped, the camera stopped for good, or a photo couldn't be taken
+or saved (the camera says why).
+
 ## `IntervalProgress`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8363,20 +8475,35 @@ struct IntervalProgress
 
 How far a running interval series has got.
 
-## `IntervalProgress/init(taken:total:isPaused:)`
+## `IntervalProgress/fractionDone(at:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(taken: Int, total: Int, isPaused: Bool = false)
+func fractionDone(at now: Date) -> Double
+```
+
+How much of the series is done, from 0 to 1: by time for a series that stops after a
+time, otherwise by the photos taken.
+
+- Parameter now: The current time.
+- Returns: The share done.
+
+## `IntervalProgress/init(taken:total:isPaused:timeSpan:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(taken: Int, total: Int?, isPaused: Bool = false, timeSpan: ClosedRange<Date>? = nil)
 ```
 
 Creates a progress value.
 
 - Parameters:
   - taken: The photos taken so far.
-  - total: The photos in the series.
+  - total: The photos in the series, or `nil` for a series that stops after a time.
   - isPaused: Whether the series is paused.
+  - timeSpan: When a series that stops after a time started and ends, or `nil`.
 
 ## `IntervalProgress/isPaused`
 
@@ -8389,6 +8516,20 @@ let isPaused: Bool
 Whether the series is paused: the app is out of the foreground or the camera is paused
 (an interruption, heat, or starting again). It continues when both are back.
 
+## `IntervalProgress/secondsLeft(at:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func secondsLeft(at now: Date) -> Double?
+```
+
+The time left of a series that stops after a time, in seconds, never less than 0, or
+`nil` for a series that stops after a number of photos.
+
+- Parameter now: The current time.
+- Returns: The seconds until the end, or `nil`.
+
 ## `IntervalProgress/taken`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8400,15 +8541,53 @@ let taken: Int
 The photos taken so far. A photo is counted only once it is taken and saved; while the
 series is paused, nothing is taken or counted.
 
+## `IntervalProgress/timeSpan`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let timeSpan: ClosedRange<Date>?
+```
+
+When a series that stops after a time started and when it ends, or `nil` for a series
+that stops after a number of photos. The end is fixed when the series starts: the time
+keeps running while the series is paused (``IntervalSettings/StopAfter/time``).
+
 ## `IntervalProgress/total`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-let total: Int
+let total: Int?
 ```
 
-The photos in the series.
+The photos in the series, or `nil` for a series that stops after a time.
+
+## `IntervalProgress/with(isPaused:)`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(isPaused: Bool) -> IntervalProgress
+```
+
+This progress, marked as paused or running.
+
+- Parameter isPaused: Whether the series is paused.
+- Returns: The progress.
+
+## `IntervalProgress/with(taken:)`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(taken: Int) -> IntervalProgress
+```
+
+This progress with another count of photos taken, running.
+
+- Parameter taken: The photos taken so far.
+- Returns: The progress.
 
 ## `IntervalSettings`
 
@@ -8418,10 +8597,43 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 struct IntervalSettings
 ```
 
-Interval shooting: a series of separate photos at a fixed interval.
+Interval shooting: a series of separate photos at a fixed interval, until a number of photos
+is taken or a time is up (``StopAfter``).
 
 Each photo is an ordinary single capture; nothing is combined into a video or merged. The
 timer runs only while a series is running and the app is open (AGENTS.md, "Battery").
+
+## `IntervalSettings/StopAfter`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum StopAfter
+```
+
+What ends a series: a number of photos, or a time.
+
+## `IntervalSettings/StopAfter/numberOfPhotos`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case numberOfPhotos
+```
+
+The series ends once ``IntervalSettings/count`` photos are taken. The default.
+
+## `IntervalSettings/StopAfter/time`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case time
+```
+
+The series ends once ``IntervalSettings/duration`` has passed since it started, by the
+clock on the wall: the time keeps running while the series is paused, so a series of
+one hour started at 8:41 PM ends at 9:41 PM (``IntervalProgress/timeSpan``).
 
 ## `IntervalSettings/count`
 
@@ -8431,7 +8643,7 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 let count: Int
 ```
 
-How many photos the series takes.
+How many photos the series takes when it stops after a number of photos.
 
 ## `IntervalSettings/countChoices`
 
@@ -8454,19 +8666,63 @@ static let countRange: ClosedRange<Int>
 
 The photo counts the app offers: 2 to 999.
 
-## `IntervalSettings/init(interval:count:)`
+## `IntervalSettings/duration`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(interval: Double, count: Int)
+let duration: Double
+```
+
+How long the series runs when it stops after a time, in seconds.
+
+## `IntervalSettings/durationHours`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var durationHours: Int { get }
+```
+
+The whole hours of ``duration``, for the time's Hours picker.
+
+## `IntervalSettings/durationMinutes`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var durationMinutes: Int { get }
+```
+
+The minutes of ``duration`` past its whole hours, for the time's Minutes picker. Seconds
+left over (from a preset of another version) are dropped.
+
+## `IntervalSettings/durationRange`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let durationRange: ClosedRange<Double>
+```
+
+The times a series can run for, in seconds: 1 minute to 24 hours.
+
+## `IntervalSettings/init(interval:count:stopAfter:duration:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(interval: Double, count: Int, stopAfter: StopAfter = .numberOfPhotos, duration: Double = standardDuration)
 ```
 
 Creates interval settings, moving each value into its allowed range.
 
 - Parameters:
   - interval: The time between photos, in seconds.
-  - count: The number of photos.
+  - count: The number of photos, used when the series stops after a number of photos.
+  - stopAfter: What ends the series. ``StopAfter/numberOfPhotos`` by default.
+  - duration: How long the series runs, in seconds, used when it stops after a time.
+    ``standardDuration`` by default.
 
 ## `IntervalSettings/interval`
 
@@ -8500,6 +8756,19 @@ static let intervalRange: ClosedRange<Double>
 
 The intervals the app offers, in seconds: 1 second to 1 hour.
 
+## `IntervalSettings/isIntervalShorterThanTime`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isIntervalShorterThanTime: Bool { get }
+```
+
+Whether the interval is shorter than the time, so a series that stops after a time takes
+at least two photos. Always `true` for a series that stops after a number of photos.
+``CameraModel/intervalBlocker`` is ``IntervalBlocker/intervalNotShorterThanTime`` while
+it is `false`.
+
 ## `IntervalSettings/listedCounts`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8509,6 +8778,16 @@ static let listedCounts: [Int]
 ```
 
 The photo counts an interface lists, from 2 to the 999 the app allows.
+
+## `IntervalSettings/listedHours`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let listedHours: [Int]
+```
+
+The whole hours an interface lists for the time: 0 to 24.
 
 ## `IntervalSettings/listedIntervals`
 
@@ -8520,6 +8799,30 @@ static let listedIntervals: [Double]
 
 The intervals an interface lists, in seconds: 1 second to 1 hour.
 
+## `IntervalSettings/listedMinutes`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let listedMinutes: [Int]
+```
+
+The minutes an interface lists for the time: 0 to 59.
+
+## `IntervalSettings/maximumPhotoCount`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var maximumPhotoCount: Int { get }
+```
+
+The most photos the series can take: ``count``, or for a series that stops after a time,
+one photo at the start and one after each whole interval that starts before the time is
+up. Each photo also takes time to be taken and saved before the next interval starts
+(`ManualControlsModel`), so a timed series usually takes fewer; an interface says "at
+most".
+
 ## `IntervalSettings/standard`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -8530,6 +8833,95 @@ static let standard: IntervalSettings
 
 The default series: 10 photos, 10 seconds apart.
 
+## `IntervalSettings/standardDuration`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let standardDuration: Double
+```
+
+The time a series runs for until another is chosen, in seconds: 1 hour.
+
+## `IntervalSettings/stopAfter`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let stopAfter: StopAfter
+```
+
+What ends the series.
+
+## `IntervalSettings/with(count:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(count: Int) -> IntervalSettings
+```
+
+These settings with another number of photos.
+
+- Parameter count: The number of photos.
+- Returns: The settings, each value inside its allowed range.
+
+## `IntervalSettings/with(duration:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(duration: Double) -> IntervalSettings
+```
+
+These settings with another time.
+
+- Parameter duration: How long the series runs, in seconds.
+- Returns: The settings, each value inside its allowed range.
+
+## `IntervalSettings/with(hours:minutes:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(hours: Int, minutes: Int) -> IntervalSettings
+```
+
+These settings with a time of whole hours and minutes, moved into ``durationRange``: no
+time becomes 1 minute, and more than 24 hours becomes 24 hours.
+
+- Parameters:
+  - hours: The whole hours.
+  - minutes: The minutes.
+- Returns: The settings.
+
+## `IntervalSettings/with(interval:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(interval: Double) -> IntervalSettings
+```
+
+These settings with another interval.
+
+- Parameter interval: The time between photos, in seconds.
+- Returns: The settings, each value inside its allowed range.
+
+## `IntervalSettings/with(stopAfter:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(stopAfter: StopAfter) -> IntervalSettings
+```
+
+These settings with another end: a number of photos or a time. The count and the time
+are both kept, so switching back finds them as they were.
+
+- Parameter stopAfter: What ends the series.
+- Returns: The settings.
+
 ## `IntervalShortcut`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -8538,10 +8930,13 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 struct IntervalShortcut
 ```
 
-The parameters of a "Start Interval Shooting" request: the time between photos and how many,
-each `nil` to keep the value chosen in Pro Tools (``ManualControlsModel/interval``).
+The parameters of a "Start Interval Shooting" request: the time between photos, and how many
+photos or for how long, each `nil` to keep the value chosen in Interval Settings
+(``ManualControlsModel/interval``).
 
-Values are moved into the ranges ``IntervalSettings`` allows.
+Values are moved into the ranges ``IntervalSettings`` allows. A time makes the series stop
+after that time, and a count without a time makes it stop after that number of photos; when
+a request has both, the time decides and the count is kept as the chosen number.
 
 ## `IntervalShortcut/count`
 
@@ -8553,12 +8948,22 @@ let count: Int?
 
 How many photos the series takes, or `nil` to keep the chosen number.
 
-## `IntervalShortcut/init(intervalSeconds:count:)`
+## `IntervalShortcut/durationSeconds`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(intervalSeconds: Double? = nil, count: Int? = nil)
+let durationSeconds: Double?
+```
+
+How long the series runs in seconds, or `nil` to keep the chosen end.
+
+## `IntervalShortcut/init(intervalSeconds:count:durationSeconds:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(intervalSeconds: Double? = nil, count: Int? = nil, durationSeconds: Double? = nil)
 ```
 
 Creates a request.
@@ -8566,6 +8971,7 @@ Creates a request.
 - Parameters:
   - intervalSeconds: The time between photos in seconds, or `nil` to keep the chosen one.
   - count: The number of photos, or `nil` to keep the chosen number.
+  - durationSeconds: How long the series runs in seconds, or `nil` to keep the chosen end.
 
 ## `IntervalShortcut/intervalSeconds`
 
@@ -8587,7 +8993,7 @@ func settings(over chosen: IntervalSettings) -> IntervalSettings
 
 The series to run: this request's values over the chosen ones.
 
-- Parameter chosen: The interval and count chosen in Pro Tools.
+- Parameter chosen: The series chosen in Interval Settings.
 - Returns: The settings, each value inside its allowed range.
 
 ## `JPEGReader`
@@ -9815,12 +10221,12 @@ var hasEnded: Bool { get }
 
 Whether the run has ended, so the activity shows its final state.
 
-## `LiveActivityContent/init(kind:phase:taken:total:saved:countdownEnd:signing:isNightMode:)`
+## `LiveActivityContent/init(kind:phase:taken:total:saved:countdownEnd:signing:isNightMode:seriesTime:)`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
 
 ```swift
-init(kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil, signing: Signing? = nil, isNightMode: Bool = false)
+init(kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil, signing: Signing? = nil, isNightMode: Bool = false, seriesTime: ClosedRange<Date>? = nil)
 ```
 
 Creates content.
@@ -9834,6 +10240,8 @@ Creates content.
   - countdownEnd: When the countdown ends, or `nil`.
   - signing: Whether the saved photos are signed, or `nil`.
   - isNightMode: Whether night mode is on.
+  - seriesTime: When an interval series that stops after a time started and ends, or
+    `nil`.
 
 ## `LiveActivityContent/isNightMode`
 
@@ -9885,6 +10293,30 @@ var saved: Int
 ```
 
 The photos saved so far.
+
+## `LiveActivityContent/seriesTime`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var seriesTime: ClosedRange<Date>?
+```
+
+When an interval series that stops after a time started and when it ends, or `nil`. The
+system counts down to the end and fills the progress bar by time on screen, so the content
+isn't updated for it. The time keeps running while the series is paused
+(``IntervalProgress/timeSpan``).
+
+## `LiveActivityContent/showsTimeLeft`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+var showsTimeLeft: Bool { get }
+```
+
+Whether the activity shows the time left of an interval series that stops after a time,
+with a progress bar by time (``seriesTime``): while the series runs or is paused.
 
 ## `LiveActivityContent/signing`
 
@@ -9949,7 +10381,8 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 var total: Int?
 ```
 
-The photos the run takes, or `nil` when it has no set number (a burst or the self-timer).
+The photos the run takes, or `nil` when it has no set number (a burst, the self-timer, or
+an interval series that stops after a time).
 
 ## `LiveActivityCoordinator`
 
@@ -10346,6 +10779,17 @@ case paused(taken: Int, total: Int)
 
 "Paused: 42 of 120 photos taken. Open nope. to continue."
 
+## `LiveActivityStatusLine/pausedTimeLeft(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case pausedTimeLeft(Int)
+```
+
+"Paused: 12 photos taken · 1:12:00 left. Open nope. to continue.": an interval series that
+stops after a time is paused, and its time keeps running.
+
 ## `LiveActivityStatusLine/photoIn`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -10375,6 +10819,17 @@ case photosTaken(taken: Int, total: Int)
 ```
 
 "12 of 120 photos taken": an interval series runs.
+
+## `LiveActivityStatusLine/photosTakenTimeLeft(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case photosTakenTimeLeft(Int)
+```
+
+"12 photos taken · 1:12:00 left", the time counted down by the system to the end of
+``LiveActivityContent/seriesTime``: an interval series that stops after a time runs.
 
 ## `LiveActivityStatusLine/saving(saved:taken:)`
 
@@ -10416,6 +10871,16 @@ case seriesDone(taken: Int, total: Int)
 
 "Done: 120 of 120 photos taken."
 
+## `LiveActivityStatusLine/seriesDoneAfterTime(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case seriesDoneAfterTime(Int)
+```
+
+"Done: 120 photos taken.": an interval series that stops after a time reached its time.
+
 ## `LiveActivityStatusLine/seriesStopped(taken:total:)`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -10425,6 +10890,16 @@ case seriesStopped(taken: Int, total: Int)
 ```
 
 "Stopped: 42 of 120 photos taken."
+
+## `LiveActivityStatusLine/seriesStoppedBeforeTime(_:)`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case seriesStoppedBeforeTime(Int)
+```
+
+"Stopped: 42 photos taken.": an interval series that stops after a time ended before it.
 
 ## `LiveActivityStatusLine/stoppedPhotosSaved(_:)`
 
@@ -12019,6 +12494,16 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether the person dismissed the close-up suggestion on this lens.
 
+## `ManualControlsModel/currentDate`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor let currentDate: @Sendable () -> Date
+```
+
+Reads the clock on the wall, for the end of a series that stops after a time.
+
 ## `ManualControlsModel/dismissCloseUpSuggestion()`
 
 internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
@@ -12150,12 +12635,12 @@ stopping a series always applies.
   - capture: Takes one photo of an interval series the way the shutter does, waiting
     while the series is paused, and returns whether the photo was taken and saved.
 
-## `ManualControlsModel/init(backend:sleep:)`
+## `ManualControlsModel/init(backend:sleep:currentDate:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 ```swift
-@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void)
+@MainActor init(backend: (any ManualCaptureBackend)?, sleep: @escaping @Sendable (Double) async throws -> Void, currentDate: @escaping @Sendable () -> Date = { Date() })
 ```
 
 Creates the model.
@@ -12163,6 +12648,8 @@ Creates the model.
 - Parameters:
   - backend: The hardware, or `nil` when it has no manual controls.
   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
+  - currentDate: Reads the clock on the wall, for a series that stops after a time. Tests
+    pass a scripted one.
 
 ## `ManualControlsModel/interval`
 
@@ -12172,7 +12659,7 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var interval: IntervalSettings { get set }
 ```
 
-The interval and photo count of the next interval series.
+The interval, and the number of photos or the time, of the next interval series.
 
 ## `ManualControlsModel/intervalProgress`
 
@@ -12194,6 +12681,16 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether manual controls are on (the "Manual controls" option). Off by default.
 
+## `ManualControlsModel/isIntervalTimeUp`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var isIntervalTimeUp: Bool { get }
+```
+
+Whether the running series stops after a time and that time is up.
+
 ## `ManualControlsModel/isSupported`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -12204,6 +12701,17 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether the backend offers manual controls at all. When it's `false`, an interface
 shouldn't offer the "Manual controls" option.
+
+## `ManualControlsModel/lastIntervalEnd`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lastIntervalEnd: IntervalEnd? { get set }
+```
+
+How the last interval series ended, or `nil` before the first one ends. Cleared when the
+next starts.
 
 ## `ManualControlsModel/lastReading`
 
@@ -21574,6 +22082,18 @@ case intervalBlockedByAstro
 
 The astro helper is on, so no interval series was started. Say so, and that turning Astro
 off allows one.
+
+## `ShortcutOutcome/intervalNotShorterThanTime`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case intervalNotShorterThanTime
+```
+
+The series would stop after a time no longer than its interval, so no interval series was
+started (``IntervalBlocker/intervalNotShorterThanTime``). Say so, and that the interval
+must be shorter than the time.
 
 ## `ShortcutOutcome/intervalStarted`
 

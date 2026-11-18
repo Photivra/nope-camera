@@ -219,10 +219,13 @@ public struct PhotoSizeShortcut: Equatable, Sendable {
     }
 }
 
-/// The parameters of a "Start Interval Shooting" request: the time between photos and how many,
-/// each `nil` to keep the value chosen in Pro Tools (``ManualControlsModel/interval``).
+/// The parameters of a "Start Interval Shooting" request: the time between photos, and how many
+/// photos or for how long, each `nil` to keep the value chosen in Interval Settings
+/// (``ManualControlsModel/interval``).
 ///
-/// Values are moved into the ranges ``IntervalSettings`` allows.
+/// Values are moved into the ranges ``IntervalSettings`` allows. A time makes the series stop
+/// after that time, and a count without a time makes it stop after that number of photos; when
+/// a request has both, the time decides and the count is kept as the chosen number.
 public struct IntervalShortcut: Equatable, Sendable {
     /// The time from one photo to the next in seconds, or `nil` to keep the chosen one.
     public let intervalSeconds: Double?
@@ -230,22 +233,31 @@ public struct IntervalShortcut: Equatable, Sendable {
     /// How many photos the series takes, or `nil` to keep the chosen number.
     public let count: Int?
 
+    /// How long the series runs in seconds, or `nil` to keep the chosen end.
+    public let durationSeconds: Double?
+
     /// Creates a request.
     ///
     /// - Parameters:
     ///   - intervalSeconds: The time between photos in seconds, or `nil` to keep the chosen one.
     ///   - count: The number of photos, or `nil` to keep the chosen number.
-    public init(intervalSeconds: Double? = nil, count: Int? = nil) {
+    ///   - durationSeconds: How long the series runs in seconds, or `nil` to keep the chosen end.
+    public init(intervalSeconds: Double? = nil, count: Int? = nil, durationSeconds: Double? = nil) {
         self.intervalSeconds = intervalSeconds
         self.count = count
+        self.durationSeconds = durationSeconds
     }
 
     /// The series to run: this request's values over the chosen ones.
     ///
-    /// - Parameter chosen: The interval and count chosen in Pro Tools.
+    /// - Parameter chosen: The series chosen in Interval Settings.
     /// - Returns: The settings, each value inside its allowed range.
     public func settings(over chosen: IntervalSettings) -> IntervalSettings {
-        IntervalSettings(interval: intervalSeconds ?? chosen.interval, count: count ?? chosen.count)
+        let stopAfter: IntervalSettings.StopAfter =
+            if durationSeconds != nil { .time } else if count != nil { .numberOfPhotos } else { chosen.stopAfter }
+        return IntervalSettings(
+            interval: intervalSeconds ?? chosen.interval, count: count ?? chosen.count, stopAfter: stopAfter,
+            duration: durationSeconds ?? chosen.duration)
     }
 }
 
@@ -304,6 +316,11 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// The astro helper is on, so no interval series was started. Say so, and that turning Astro
     /// off allows one.
     case intervalBlockedByAstro
+
+    /// The series would stop after a time no longer than its interval, so no interval series was
+    /// started (``IntervalBlocker/intervalNotShorterThanTime``). Say so, and that the interval
+    /// must be shorter than the time.
+    case intervalNotShorterThanTime
 
     /// The interval series was stopped. Say so; every photo already taken is saved.
     case intervalStopped

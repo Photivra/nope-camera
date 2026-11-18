@@ -1004,8 +1004,14 @@ the request through the same `ShortcutInbox` the intents use and shows what Siri
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
 of three, a bracket in full auto and a lens switch). The Interval drive mode is covered by
 `testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
-and right-to-left. The request logic (counts, lenses, the light, interval shooting,
-requests without a camera screen) is unit tested in `ShortcutTests`.
+and right-to-left; a series that stops after a time by `IntervalTimeUITests.swift` (the Stop
+After picker, the hours and minutes, "At most", the check that the interval is shorter than the
+time, the idle and running cards, audited at the default and largest text sizes, right to left
+and in night mode). The request logic (counts, lenses, the light, interval shooting,
+requests without a camera screen) is unit tested in `ShortcutTests`; a timed series (its end on
+the wall clock, pausing, ending early, presets and the duration of Start Interval Shooting) in
+`IntervalTimeTests`, with a scripted wall clock (`CameraModel(currentDate:)`) and wait for the
+end (`intervalEndSleep`).
 
 ## On-device checks
 
@@ -1087,6 +1093,13 @@ and one on 27, the oldest and newest supported versions (issue #78):
 - interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
   a tap brightens it while the series continues; the brightness and auto-lock come back when the
   series ends, is stopped, or the app goes to the background, and after the camera screen closes.
+- interval shooting that stops after a time: Stop After Time, 0 hours 5 minutes, 30 s apart:
+  the card shows "n photos taken · 5 min left" counting down by minutes and the series ends by
+  itself after about 5 minutes; start again and leave the app for 2 minutes: back in the app,
+  the series continues with about 2 minutes less left (the time keeps running while paused);
+  start again, leave for longer than the time: back in the app the series ends at once without
+  another photo, and the Live Activity said "Paused: n photos taken · m:ss left" and counted down
+  while away.
 
 ### Lock Screen, Control Center, Siri and Shortcuts on a device
 
@@ -1117,7 +1130,9 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   afterwards; on the front camera Siri says the lens can't take it).
 - Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
   Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
-  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
+  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, and
+  with Duration in Minutes (the series stops after that time; with an interval as long as the
+  duration or longer, the action says the time between photos must be shorter), Stop
   Interval Shooting, Take Bracket with 5 and 7 Photos and each Step (7 on a lens that takes fewer
   says so), and Set Night Mode on and off, with the app closed and with it open (the
   screen turns red at once).

@@ -25,11 +25,15 @@ struct LiveActivityGallery: View {
     /// One example of each phase and kind people can see.
     private var examples: [LiveActivityContent] {
         let end = Date.now.addingTimeInterval(8)
+        // A series that stops after an hour and a half, started 18 minutes ago.
+        let seriesTime = Date.now.addingTimeInterval(-18 * 60)...Date.now.addingTimeInterval(72 * 60)
         return [
             LiveActivityContent(kind: .timer, phase: .countingDown, countdownEnd: end),
             LiveActivityContent(kind: .astro, phase: .countingDown, total: 20, countdownEnd: end),
             LiveActivityContent(kind: .interval, phase: .running, taken: 12, total: 120),
             LiveActivityContent(kind: .interval, phase: .paused, taken: 42, total: 120),
+            LiveActivityContent(kind: .interval, phase: .running, taken: 1, seriesTime: seriesTime),
+            LiveActivityContent(kind: .interval, phase: .paused, taken: 108, seriesTime: seriesTime),
             LiveActivityContent(kind: .astro, phase: .running, taken: 4, total: 20, saved: 3),
             LiveActivityContent(kind: .astro, phase: .paused, taken: 6, total: 20, saved: 6),
             LiveActivityContent(kind: .burst, phase: .saving, taken: 12, saved: 7),
@@ -40,6 +44,7 @@ struct LiveActivityGallery: View {
             LiveActivityContent(kind: .timer, phase: .finished, taken: 1, saved: 1, signing: .notAllSigned),
             LiveActivityContent(kind: .burst, phase: .finished, taken: 5, saved: 5, signing: .off),
             LiveActivityContent(kind: .interval, phase: .stopped, taken: 42, total: 120),
+            LiveActivityContent(kind: .interval, phase: .finished, taken: 540, seriesTime: seriesTime),
             LiveActivityContent(kind: .timer, phase: .stopped),
             LiveActivityContent(kind: .burst, phase: .failed, taken: 3, saved: 2),
         ].map { content in

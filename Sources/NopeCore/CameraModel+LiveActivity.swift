@@ -30,7 +30,7 @@ extension CameraModel {
         if let progress = manual.intervalProgress {
             return LiveActivityContent(
                 kind: .interval, phase: isInForeground && !progress.isPaused ? .running : .paused, taken: progress.taken,
-                total: progress.total)
+                total: progress.total, seriesTime: progress.timeSpan)
         }
         if let progress = astro.progress {
             return LiveActivityContent(
@@ -71,6 +71,9 @@ extension CameraModel {
             return outcome
         }
         switch last.kind {
+        case .interval where last.seriesTime != nil:
+            // A series that stops after a time ends when its time is up, however many photos it took.
+            outcome.phase = manual.lastIntervalEnd == .finished ? .finished : .stopped
         case .interval:
             outcome.phase = last.taken >= (last.total ?? 0) ? .finished : .stopped
         case .astro:

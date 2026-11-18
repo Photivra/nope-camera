@@ -84,6 +84,9 @@
 3 1 NopeAppUITests/testIntervalShootingFromTheDriveMenuInFullAuto 50 49
 3 1 NopeAppUITests/testIntervalShootingShowsProgressAndStops 58 60
 1 3 NopeAppUITests/testIntervalStartIsDisabledWhileAstroIsOn 34 42
+3 1 NopeAppUITests/testIntervalStopAfterTimeSettings 180e 237e
+4 2 NopeAppUITests/testIntervalTimeAtTheLargestTextSizeRightToLeftAndNightMode 274e 256e
+1 3 NopeAppUITests/testIntervalTimeCardRunsAndStops 74e 77e
 4 3 NopeAppUITests/testIntervalWordOpensSettings 21e 21e
 4 2 NopeAppUITests/testLandscapeAtTheLargestTextSize 20 25
 4 3 NopeAppUITests/testLandscapeKeepsTheLayoutAndTurnsTheIcons 48 59

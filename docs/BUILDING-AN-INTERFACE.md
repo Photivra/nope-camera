@@ -55,8 +55,11 @@ and sends `.manual(.setEnabled(_:))` at once. Everything about them is in
 `CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
 exposure modes, bracketing and interval shooting (which, unlike the other manual intents, works
-in full auto too; the `.interval` drive mode starts it from the shutter). Send `.manual(...)`
-intents to change them; the
+in full auto too; the `.interval` drive mode starts it from the shutter). A series stops after a
+number of photos or a time (`IntervalSettings.stopAfter`); for a timed one show the time left
+from `intervalProgress.secondsLeft(at:)` (its end is fixed on the wall clock and keeps running
+while the series is paused), and while `intervalBlocker` is set, disable Start and say why.
+Send `.manual(...)` intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
 compensation, Close-Up, Far Focus, Focus on Faces, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`

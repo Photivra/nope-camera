@@ -2,7 +2,7 @@
 
 The design of nope. for release 1.0.0, in direction B (Reach), chosen from the options of issue 74. Static HTML mockups with a PNG of each screen, plus the specifications the app is built from. Open [overview.html](overview.html) in a browser to start; nothing here is part of the app build.
 
-**Design version: 1.0.0 (2026-11-17), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 257 screens are drawn (118 for iPhone, 77 for iPad, 31 for the iPhone Duo, 31 for Apple Watch); the PNG files total 10.3 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
+**Design version: 1.0.0 (2026-11-17), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 259 screens are drawn (120 for iPhone, 77 for iPad, 31 for the iPhone Duo, 31 for Apple Watch); the PNG files total 10.3 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
 
 | File | What it covers |
 | --- | --- |

@@ -512,6 +512,8 @@ struct CameraSetupTests {
         "bracket": { $0.bracket = CameraSetup.BracketValue(BracketSettings(frameCount: 3, step: 1)) },
         "intervalSeconds": { $0.intervalSeconds = 30 },
         "intervalCount": { $0.intervalCount = 50 },
+        "intervalStopAfter": { $0.intervalStopAfter = IntervalSettings.StopAfter.time.rawValue },
+        "intervalDuration": { $0.intervalDuration = 5400 },
         "astroIsOn": { $0.astroIsOn = true },
         "astroFrameCount": { $0.astroFrameCount = 50 },
         "astroStartDelay": { $0.astroStartDelay = 3 },

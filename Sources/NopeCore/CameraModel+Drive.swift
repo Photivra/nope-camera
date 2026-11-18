@@ -3,9 +3,13 @@ import Foundation
 /// The shutter's drive modes: single, the self-timer and bursts (issues #37, #39 and #46).
 extension CameraModel {
     /// Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
-    /// interval series or astro run runs, which pressing the shutter stops.
+    /// interval series or astro run runs, which pressing the shutter stops. In the Interval
+    /// drive mode, not while the interval is as long as the series' time or longer
+    /// (``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
     public var canPressShutter: Bool {
-        canCapture || drive.isBusy || astro.isRunning || manual.intervalProgress != nil
+        if drive.isBusy || astro.isRunning || manual.intervalProgress != nil { return true }
+        let startsNoSeries = drive.mode == .interval && intervalBlocker == .intervalNotShorterThanTime
+        return canCapture && !startsNoSeries
     }
 
     /// Whether the app should take the hardware shutter buttons (the volume buttons and the

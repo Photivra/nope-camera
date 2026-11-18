@@ -29,7 +29,7 @@ Top to bottom, leading to trailing, in every layout. Containers are named so the
 | 4 | Failure banner | The failure sentence | none | Static text, then its buttons: Try Again or Open Settings, Dismiss. Announced when it appears, with high priority |
 | 5 | Viewfinder | Viewfinder | Lens, format, exposure warnings ("Wide, single-frame RAW") | Actions: Lock Focus and Exposure; Hide Controls or Show Controls. Tap is focus and expose |
 | 6 | Live aids | Histogram; Live Camera Readout; Level | Their readings | Static |
-| 7 | Mode card | Idle: Interval Settings or Astro Settings | The card's sentence | Button. Running: static progress ("Frame 7 of 20"), updated politely, then Stop, Stop Burst, Stop Frames or Cancel Timer |
+| 7 | Mode card | Idle: Interval Settings or Astro Settings | The card's sentence | Button. Running: static progress ("Frame 7 of 20"; an interval series that stops after a time, "12 photos taken · 1 hour, 12 minutes left", the units in words though the card shows "1 hr, 12 min"), updated politely, then Stop, Stop Burst, Stop Frames or Cancel Timer |
 | 8 | Manual readouts (container "Manual Controls") | Exposure Compensation, ISO, Shutter, Aperture, Focus, White Balance | "Auto, 200" or "Manual, 400" | Adjustable: swipe up or down changes the value without opening the dial. Double tap opens the dial. More Manual Controls is a menu |
 | 9 | Dial | The control's name | Its value | Slider (adjustable), Decrease, Increase, Auto (selected when automatic). White balance adds Tint and Presets |
 | 10 | Manual Controls button | Manual Controls | On or Off | Button, selected trait when on. Voice Control: "Manual Controls", "Auto", "Manual". Large Content Viewer |

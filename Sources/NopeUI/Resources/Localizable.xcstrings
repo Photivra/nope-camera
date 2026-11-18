@@ -2219,6 +2219,114 @@
     "Zoom Out" : {
       "comment" : "Button in the compare view: shows more of both photos.",
       "extractionState" : "manual"
+    },
+    "Stop After" : {
+      "comment" : "Picker for what ends an interval series: a number of photos, or a time.",
+      "extractionState" : "manual"
+    },
+    "Number of Photos" : {
+      "comment" : "Choice of the Stop After picker of interval shooting: the series stops once it has taken the chosen number of photos.",
+      "extractionState" : "manual"
+    },
+    "Time" : {
+      "comment" : "Choice of the Stop After picker of interval shooting: the series stops once the chosen hours and minutes have passed.",
+      "extractionState" : "manual"
+    },
+    "Hours" : {
+      "comment" : "Picker for the whole hours of the time an interval series runs before it stops.",
+      "extractionState" : "manual"
+    },
+    "Minutes" : {
+      "comment" : "Picker for the minutes, past the whole hours, of the time an interval series runs before it stops.",
+      "extractionState" : "manual"
+    },
+    "At most %lld" : {
+      "comment" : "The most photos an interval series that stops after a time can take: one at the start and one after each interval that starts before the time is up. Saving each photo adds time, so it usually takes fewer. The number is a count of photos, at least 2.",
+      "extractionState" : "manual"
+    },
+    "The time keeps running while the series is paused, so the series ends on time." : {
+      "comment" : "Explains interval shooting that stops after a time: if nope. leaves the screen or the camera is interrupted, the time still counts, and the series ends at the time it would have ended. Keep \"nope.\" unchanged if used.",
+      "extractionState" : "manual"
+    },
+    "Choose an interval shorter than the time." : {
+      "comment" : "Shown on the interval card and under the disabled Start button when the series stops after a time that is no longer than the time between photos, so it would take only one photo.",
+      "extractionState" : "manual"
+    },
+    "Every %@, for %@" : {
+      "comment" : "Interval card on the camera, before a series that stops after a time starts: the time between photos, then how long the series runs. Both placeholders are durations formatted by the system, such as \"10 seconds\" and \"1 hour, 30 minutes\".",
+      "extractionState" : "manual"
+    },
+    "Ends at %@" : {
+      "comment" : "Interval card on the camera while a series that stops after a time is paused: the time on the clock when it ends, such as 9:41 PM, with the day of the week when it is not today. Formatted by the system.",
+      "extractionState" : "manual"
+    },
+    "%lld photos taken · %@ left" : {
+      "comment" : "Interval shooting progress for a series that stops after a time: how many photos are taken so far, and the time left. The number is a count of photos; the placeholder is the time left, such as \"1 hr, 12 min\", formatted by the system.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@photos@ · %2$@ left"
+          },
+          "substitutions" : {
+            "photos" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photo taken"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photos taken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Paused: %lld photos taken · %@ left" : {
+      "comment" : "Interval shooting that stops after a time, paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back, and its time keeps running meanwhile. The number is a count of photos; the placeholder is the time left, such as \"1 hr, 12 min\", formatted by the system. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused: %#@photos@ · %2$@ left"
+          },
+          "substitutions" : {
+            "photos" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photo taken"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photos taken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
