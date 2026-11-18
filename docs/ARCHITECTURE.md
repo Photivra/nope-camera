@@ -91,6 +91,24 @@ The capture backend checks too: each `PhotoSettingsPlan` names the camera it was
 (`CapturePolicy.camera(_:matches:)`), failing with `.notRunning` otherwise. The backend is an
 actor, and a session reconfiguration could otherwise run while a photo waits for the output.
 
+### Pinch to switch lenses (issue #95)
+
+A pinch on the viewfinder chooses between the rear cameras, in the lens row's order; it never
+scales or crops the picture (the app has no digital zoom). `NopeCore` holds the rules:
+`LensPinch` is the step logic (a first step at scale 1.25 spreading or 0.80 pinching, a further
+factor of 1.35 for each further lens, a 10% return margin, no wrap, never the front camera;
+starting values for tuning on devices), `CameraModel.pinchSwitchesLenses(setting:)` says whether
+a pinch is used now (the Pinch setting, `canChangeLens`, Astro off, the camera running or
+restarting for a lens change, a rear lens and two or more of them), and `LensPinchSwitcher`
+sends the settled target through `.selectLens`, one switch at a time, only the latest target
+and only when it isn't the lens in use. The setting is `NopeSettings.pinch` (`PinchAction`,
+Switch Lenses by default), in presets and Factory Defaults through its `NopeSettings.` key.
+`NopeUI` adds the gesture beside tap, hold and swipe (`ViewfinderTouches`), masked out while a
+pinch can't switch lenses, the dial, Q or a sheet is open, or the lens can't be changed
+(`\.lensBusy`), and off in the scrolling layout; `ViewfinderPinch` follows the fingers, sends a
+target after 0.25 s without change or when the fingers lift, and keeps the lens label
+(`LensPinchLabel`) for 0.8 s; the lens row shows the target while the label does.
+
 ### The AVFoundation backend
 
 ```
@@ -936,7 +954,7 @@ page or row through `openSettingsAt` (`SettingsID`, `SettingsNavigation`). Setti
 grouped list with a search field (`SettingsSearch.swift`): Presets (see "Settings presets"),
 Photos (Formats with the RAW pairing, HEIF and JPEG Copies with the look and the file options,
 Photo Size, Mirror Front Camera), Privacy (Details in Each Photo, with the master switch, and
-Sign Each Photo), Camera (Fast Shutter, Focus on Faces), Screen (Start in Clean View, Viewfinder
+Sign Each Photo), Camera (Fast Shutter, Focus on Faces, and Pinch with two or more rear lenses), Screen (Start in Clean View, Viewfinder
 Overlays, Show Processed Marker, Night Mode, Keep Night Mode After Astro where the device offers
 Astro, Red Viewfinder, Live Activity) and More
 (Accessibility, Honesty, About). Manual controls are turned on and off on the camera, with the

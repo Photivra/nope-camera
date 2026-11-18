@@ -173,10 +173,12 @@ enum FocusText {
     }
 }
 
-/// The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
-/// vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
-/// swipe. Every one of them also has a button: the lock button, Hide Controls in the quick menu and
-/// Show Controls (issue #68, "Gestures always have a button").
+/// The touches on the viewfinder: tap to focus and expose, press and hold to lock, a long
+/// vertical swipe for clean view, and a pinch to switch lenses (issue #95). One gesture tells the
+/// first three apart, so a tap never also counts as a swipe; the pinch runs beside it, and a touch
+/// that pinched is never also a tap, a lock or a swipe. Every one of them also has a button: the
+/// lock button, Hide Controls in the quick menu and Show Controls, and the lens buttons (issue
+/// #68, "Gestures always have a button").
 struct ViewfinderTouches: ViewModifier {
     /// How long a press must last to lock, in seconds: the system's usual long press.
     static var holdDuration: Double { 0.5 }
@@ -200,11 +202,37 @@ struct ViewfinderTouches: ViewModifier {
     /// Called with the swipe's vertical distance: positive downward.
     let swipe: (CGFloat) -> Void
 
+    /// Whether a pinch switches lenses now (`CameraModel.pinchSwitchesLenses(setting:)` and
+    /// nothing open over the picture). Off, a pinch is ignored completely: it reports nothing,
+    /// and is still no tap, hold or swipe.
+    let allowsPinch: Bool
+
+    /// Called with a pinch's scale as the fingers move: 1 when they landed.
+    let pinchChanged: (Double) -> Void
+
+    /// Called when the fingers of a pinch lift.
+    let pinchEnded: () -> Void
+
     /// The pending hold, cancelled when the finger moves or lifts.
     @State private var holdTask: Task<Void, Never>?
 
     /// Whether the current touch already locked.
     @State private var didHold = false
+
+    /// Whether the current touch pinched, so it starts no hold and its end is no tap and no
+    /// swipe. Cleared once both the touch and the pinch are over, however each of them ended
+    /// (the touch gesture may fail when the second finger lands, and then reports no end).
+    @State private var didPinch = false
+
+    /// Whether the touch gesture is under way; reset by SwiftUI when it ends, fails or is
+    /// cancelled.
+    @GestureState private var isTouching = false
+
+    /// Whether the pinch gesture is under way; reset by SwiftUI as ``isTouching`` is.
+    @GestureState private var isPinching = false
+
+    /// The lens controls' busy state (issue #96): no pinch while the lens can't be changed.
+    @Environment(\.lensBusy) private var lensBusy
 
     /// Creates the touch handling.
     ///
@@ -213,14 +241,21 @@ struct ViewfinderTouches: ViewModifier {
     ///   - tap: Called with the tapped location.
     ///   - hold: Called with the held location.
     ///   - swipe: Called with the swipe's vertical distance.
+    ///   - allowsPinch: Whether a pinch switches lenses now. Only with `allowsDrags`.
+    ///   - pinchChanged: Called with a pinch's scale as the fingers move.
+    ///   - pinchEnded: Called when a pinch's fingers lift.
     init(
         allowsDrags: Bool, tap: @escaping (CGPoint) -> Void, hold: @escaping (CGPoint) -> Void,
-        swipe: @escaping (CGFloat) -> Void
+        swipe: @escaping (CGFloat) -> Void, allowsPinch: Bool = false, pinchChanged: @escaping (Double) -> Void = { _ in },
+        pinchEnded: @escaping () -> Void = {}
     ) {
         self.allowsDrags = allowsDrags
         self.tap = tap
         self.hold = hold
         self.swipe = swipe
+        self.allowsPinch = allowsPinch
+        self.pinchChanged = pinchChanged
+        self.pinchEnded = pinchEnded
     }
 
     /// The content with its gestures.
@@ -228,7 +263,15 @@ struct ViewfinderTouches: ViewModifier {
     /// - Parameter content: The viewfinder.
     func body(content: Content) -> some View {
         if allowsDrags {
-            content.gesture(touch)
+            content
+                .gesture(touch)
+                // Beside the touch gesture, so a pinch doesn't replace tap, hold and swipe. It is
+                // there even while a pinch can't switch lenses, so two moving fingers are never
+                // taken for a clean-view swipe (docs/design/pinch-lens.md, 6.1).
+                .simultaneousGesture(pinch)
+                .onChange(of: isTouching || isPinching) { _, isActive in
+                    if !isActive { didPinch = false }
+                }
         } else {
             content.gesture(SpatialTapGesture().onEnded { tap($0.location) })
         }
@@ -237,8 +280,9 @@ struct ViewfinderTouches: ViewModifier {
     /// The one gesture for tap, hold and swipe.
     private var touch: some Gesture {
         DragGesture(minimumDistance: 0)
+            .updating($isTouching) { _, isTouching, _ in isTouching = true }
             .onChanged { value in
-                if distance(value.translation) > Self.tapSlop {
+                if didPinch || distance(value.translation) > Self.tapSlop {
                     holdTask?.cancel()
                     holdTask = nil
                 } else if holdTask == nil, !didHold {
@@ -255,13 +299,34 @@ struct ViewfinderTouches: ViewModifier {
                 holdTask?.cancel()
                 holdTask = nil
                 defer { didHold = false }
-                guard !didHold else { return }
+                guard !didHold, !didPinch else { return }
                 let translation = value.translation
                 if abs(translation.height) >= Self.swipeDistance, abs(translation.height) > abs(translation.width) {
                     swipe(translation.height)
                 } else if distance(translation) <= Self.tapSlop {
                     tap(value.location)
                 }
+            }
+    }
+
+    /// The pinch: its scale as the fingers move apart or together. It reports from the first
+    /// movement (no minimum), so the pending hold is cancelled as soon as two fingers move. It
+    /// never scales the picture.
+    private var pinch: some Gesture {
+        MagnifyGesture(minimumScaleDelta: 0)
+            .updating($isPinching) { _, isPinching, _ in isPinching = true }
+            .onChanged { value in
+                if !didPinch {
+                    didPinch = true
+                    holdTask?.cancel()
+                    holdTask = nil
+                }
+                // While the lens can't be changed (issue #96) or a pinch isn't used, nothing.
+                guard allowsPinch, !lensBusy.isDisabled else { return }
+                pinchChanged(value.magnification)
+            }
+            .onEnded { _ in
+                pinchEnded()
             }
     }
 

@@ -28,6 +28,7 @@ struct SettingsPresetsTests {
         "keepsScreenOn": { $0.setKeepsScreenOn(true) },
         "keepsNightModeAfterAstro": { $0.setKeepsNightModeAfterAstro(true) },
         "followsFaces": { $0.setFollowsFaces(true) },
+        "pinch": { $0.setPinch(.off) },
         "showsProcessedMarker": { $0.setShowsProcessedMarker(false) },
         "showsLiveActivity": { $0.setShowsLiveActivity(true) },
         "photoSizes": {

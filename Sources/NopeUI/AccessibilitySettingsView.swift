@@ -8,8 +8,16 @@ import SwiftUI
 /// entries say how to dim the screen, which Night Mode never does itself, and that the system
 /// keyboard and menus aren't red.
 struct AccessibilitySettingsView: View {
+    /// Whether the device has two or more rear lenses, so the screen says that pinching to
+    /// switch lenses is optional (docs/design/pinch-lens.md, 7.2).
+    let offersPinch: Bool
+
     /// Creates the screen.
-    init() {}
+    ///
+    /// - Parameter offersPinch: Whether a pinch can switch lenses on this device.
+    init(offersPinch: Bool = false) {
+        self.offersPinch = offersPinch
+    }
 
     /// The list.
     var body: some View {
@@ -25,6 +33,13 @@ struct AccessibilitySettingsView: View {
                     Text(
                         "With a hardware keyboard, the Space bar takes a photo.", bundle: .module,
                         comment: "Accessibility screen: a connected keyboard's Space bar works as the shutter."))
+                if offersPinch {
+                    row(
+                        systemImage: "hand.pinch",
+                        Text(
+                            "Pinching to switch lenses is optional. The lens buttons do the same.", bundle: .module,
+                            comment: "Accessibility screen: the pinch on the camera picture that switches rear lenses is never the only way; the lens buttons do the same."))
+                }
             } header: {
                 Text("Taking Photos", bundle: .module, comment: "Accessibility screen section header: the ways to take a photo besides the on-screen shutter.")
             }

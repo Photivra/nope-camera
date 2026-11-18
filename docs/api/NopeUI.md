@@ -110,15 +110,28 @@ internal, declared in `Sources/NopeUI/AccessibilitySettingsView.swift`
 
 The list.
 
-## `AccessibilitySettingsView/init()`
+## `AccessibilitySettingsView/init(offersPinch:)`
 
 internal, declared in `Sources/NopeUI/AccessibilitySettingsView.swift`
 
 ```swift
-@MainActor init()
+@MainActor init(offersPinch: Bool = false)
 ```
 
 Creates the screen.
+
+- Parameter offersPinch: Whether a pinch can switch lenses on this device.
+
+## `AccessibilitySettingsView/offersPinch`
+
+internal, declared in `Sources/NopeUI/AccessibilitySettingsView.swift`
+
+```swift
+@MainActor let offersPinch: Bool
+```
+
+Whether the device has two or more rear lenses, so the screen says that pinching to
+switch lenses is optional (docs/design/pinch-lens.md, 7.2).
 
 ## `AccessibilitySettingsView/title`
 
@@ -5165,6 +5178,18 @@ var lensBusy: LensBusyState { get set }
 The lens controls' busy state, set once for the camera screen by
 ``SwiftUICore/View/tracksLensBusy(_:)`` and read by each lens control.
 
+## `EnvironmentValues/lensPinchLabelSeconds`
+
+public, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+var lensPinchLabelSeconds: Double { get set }
+```
+
+How long, in seconds, the lens label of a pinch stays on the picture after the fingers
+lift: `LensPinchSwitcher.labelSeconds` (0.8 s). The app's UI tests lengthen it, so the
+accessibility audit can run with the label showing.
+
 ## `EnvironmentValues/nopeSecondaryLabel`
 
 internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
@@ -8131,6 +8156,66 @@ The name of a kind of lens, such as "Wide".
 
 - Parameter kind: The kind of lens.
 - Returns: The localized name.
+
+## `LensPinchLabel`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor struct LensPinchLabel
+```
+
+The lens a pinch has reached, in the middle of the picture (docs/design/pinch-lens.md,
+section 4): the lens button's own text ("0.5×", "1×", "5×") with the lens's name under it, and
+"No RAW" where the lens button says so. White on the dark backing with the large radius,
+upright when the iPhone is held sideways, red on black in night mode through the camera's
+night mode filter. It fades in at the first step and out after the fingers lift; nothing else
+moves.
+
+## `LensPinchLabel/body`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The label, or nothing.
+
+## `LensPinchLabel/init(lens:)`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor init(lens: Lens?)
+```
+
+Creates the label.
+
+- Parameter lens: The lens a pinch has reached, or `nil`.
+
+## `LensPinchLabel/lens`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor let lens: Lens?
+```
+
+The lens to show, or `nil` for none.
+
+## `LensPinchLabel/magnification(of:)`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor static func magnification(of lens: Lens) -> String?
+```
+
+"0.5×", "1×", "5×", as the lens button shows it, or `nil` for a lens without a
+magnification, whose name is enough.
+
+- Parameter lens: The lens.
 
 ## `LensRows`
 
@@ -15390,6 +15475,93 @@ kept inside the picture's edges.
   - maximum: The zoom limit.
 - Returns: The new zoom.
 
+## `PinchSettingRow`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor struct PinchSettingRow
+```
+
+The Pinch row of Settings › Camera: a menu on its row with Switch Lenses and Off, its
+explanation and its scope note under its name (docs/design/pinch-lens.md, 7.1). Shown only on a
+device with two or more rear lenses.
+
+## `PinchSettingRow/body`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The menu with its label.
+
+## `PinchSettingRow/init(settings:)`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor init(settings: NopeSettings)
+```
+
+Creates the row.
+
+- Parameter settings: The settings.
+
+## `PinchSettingRow/settings`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings.
+
+## `PinchText`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+enum PinchText
+```
+
+The words of the Pinch setting (docs/design/pinch-lens.md, 7.2). Visible text never says
+"zoom": the app has no digital zoom, and a pinch only chooses between the cameras.
+
+## `PinchText/explanation`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+static var explanation: Text { get }
+```
+
+What the setting does.
+
+## `PinchText/name(_:)`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+static func name(_ action: PinchAction) -> Text
+```
+
+A value's name: "Switch Lenses" or "Off".
+
+- Parameter action: The value.
+
+## `PinchText/scopeNote`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+static var scopeNote: Text { get }
+```
+
+Where the setting is used, a line of its own under the explanation.
+
 ## `PresetNameScreen`
 
 internal, declared in `Sources/NopeUI/PresetsScreen.swift`
@@ -19347,6 +19519,16 @@ case photos
 
 The Photos group: what each photo is saved as.
 
+## `SettingsID/pinch`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case pinch
+```
+
+The Pinch menu (issue #95), on devices with two or more rear lenses.
+
 ## `SettingsID/presets`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -19653,7 +19835,7 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 - Presets, always shown where the app has presets, with Factory Defaults inside;
 - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
 - Privacy: Details in Each Photo, Sign Each Photo;
-- Camera: Fast Shutter, Focus on Faces;
+- Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
 - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
   in the Lock Screen camera), Live Activity;
@@ -19922,6 +20104,17 @@ var offersPhotoSize: Bool
 ```
 
 Whether a lens offers a choice of photo size.
+
+## `SettingsSearch/Availability/offersPinch`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersPinch: Bool
+```
+
+Whether the device has two or more rear lenses (`LensPinch/isOffered(on:)`), so the
+Pinch setting applies.
 
 ## `SettingsSearch/Availability/offersProcessedMarker`
 
@@ -20593,6 +20786,16 @@ static let photos: LocalizedStringResource
 ```
 
 "Photos", the group header (its own key: "Photos" alone is a count).
+
+## `SettingsText/pinch`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let pinch: LocalizedStringResource
+```
+
+"Pinch".
 
 ## `SettingsText/presets`
 
@@ -23324,6 +23527,90 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 The person's settings.
 
+## `ViewfinderPinch`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor final class ViewfinderPinch
+```
+
+A pinch on the viewfinder that switches lenses (issue #95; docs/design/pinch-lens.md): what the
+camera screen keeps while the fingers move, and the lens it shows.
+
+Each step sets the target lens at once: the label on the picture, the lens row and the tick
+follow the fingers. The camera is asked to switch when the fingers lift, or when the target
+hasn't changed for `LensPinchSwitcher.settleSeconds`, through `LensPinchSwitcher`, so only
+the latest target is sent and the camera's own rule for a lens change applies (issue #96).
+The picture itself is never scaled, cropped or animated: the app has no digital zoom.
+
+## `ViewfinderPinch/cancel()`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor func cancel()
+```
+
+Stops a pinch at once without sending anything more, and removes the label: the camera
+became busy, or something opened over the picture.
+
+## `ViewfinderPinch/change(scale:model:isAvailable:)`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor func change(scale: Double, model: CameraModel, isAvailable: Bool)
+```
+
+Follows the fingers.
+
+The first change of a touch starts the pinch on the lens in use, if a pinch switches
+lenses now (`isAvailable`); otherwise the whole touch is ignored. A pinch that becomes
+unavailable while the fingers move, such as when a photo starts, is cancelled.
+
+- Parameters:
+  - scale: The pinch's scale, 1 when the fingers landed.
+  - model: The camera.
+  - isAvailable: Whether a pinch switches lenses now: the camera's rule
+    (`CameraModel.pinchSwitchesLenses(setting:)`) and nothing open over the picture.
+
+## `ViewfinderPinch/end(model:labelSeconds:)`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor func end(model: CameraModel, labelSeconds: Double = LensPinchSwitcher.labelSeconds)
+```
+
+Ends the pinch when the fingers lift: the lens shown is sent at once, and the label goes
+after `labelSeconds`.
+
+- Parameters:
+  - model: The camera.
+  - labelSeconds: How long the label stays, `LensPinchSwitcher.labelSeconds` in the app.
+
+## `ViewfinderPinch/init()`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates an idle pinch.
+
+## `ViewfinderPinch/shownLens`
+
+internal, declared in `Sources/NopeUI/LensPinchViews.swift`
+
+```swift
+@MainActor var shownLens: Lens? { get set }
+```
+
+The lens the pinch shows: on the label and in the lens row. `nil` before the first step
+and once the label has gone.
+
 ## `ViewfinderTouches`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -23332,10 +23619,12 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 @MainActor struct ViewfinderTouches
 ```
 
-The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
-vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
-swipe. Every one of them also has a button: the lock button, Hide Controls in the quick menu and
-Show Controls (issue #68, "Gestures always have a button").
+The touches on the viewfinder: tap to focus and expose, press and hold to lock, a long
+vertical swipe for clean view, and a pinch to switch lenses (issue #95). One gesture tells the
+first three apart, so a tap never also counts as a swipe; the pinch runs beside it, and a touch
+that pinched is never also a tap, a lock or a swipe. Every one of them also has a button: the
+lock button, Hide Controls in the quick menu and Show Controls, and the lens buttons (issue
+#68, "Gestures always have a button").
 
 ## `ViewfinderTouches/allowsDrags`
 
@@ -23347,6 +23636,18 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 Whether the swipe and hold are on. In the scrolling layout they would block scrolling,
 so only the tap remains there.
+
+## `ViewfinderTouches/allowsPinch`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let allowsPinch: Bool
+```
+
+Whether a pinch switches lenses now (`CameraModel.pinchSwitchesLenses(setting:)` and
+nothing open over the picture). Off, a pinch is ignored completely: it reports nothing,
+and is still no tap, hold or swipe.
 
 ## `ViewfinderTouches/body(content:)`
 
@@ -23381,12 +23682,12 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 How long a press must last to lock, in seconds: the system's usual long press.
 
-## `ViewfinderTouches/init(allowsDrags:tap:hold:swipe:)`
+## `ViewfinderTouches/init(allowsDrags:tap:hold:swipe:allowsPinch:pinchChanged:pinchEnded:)`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 ```swift
-@MainActor init(allowsDrags: Bool, tap: @escaping (CGPoint) -> Void, hold: @escaping (CGPoint) -> Void, swipe: @escaping (CGFloat) -> Void)
+@MainActor init(allowsDrags: Bool, tap: @escaping (CGPoint) -> Void, hold: @escaping (CGPoint) -> Void, swipe: @escaping (CGFloat) -> Void, allowsPinch: Bool = false, pinchChanged: @escaping (Double) -> Void = { _ in }, pinchEnded: @escaping () -> Void = {})
 ```
 
 Creates the touch handling.
@@ -23396,6 +23697,29 @@ Creates the touch handling.
   - tap: Called with the tapped location.
   - hold: Called with the held location.
   - swipe: Called with the swipe's vertical distance.
+  - allowsPinch: Whether a pinch switches lenses now. Only with `allowsDrags`.
+  - pinchChanged: Called with a pinch's scale as the fingers move.
+  - pinchEnded: Called when a pinch's fingers lift.
+
+## `ViewfinderTouches/pinchChanged`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let pinchChanged: (Double) -> Void
+```
+
+Called with a pinch's scale as the fingers move: 1 when they landed.
+
+## `ViewfinderTouches/pinchEnded`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let pinchEnded: () -> Void
+```
+
+Called when the fingers of a pinch lift.
 
 ## `ViewfinderTouches/swipe`
 

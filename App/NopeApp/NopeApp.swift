@@ -209,6 +209,8 @@ struct NopeApp: App {
         // the screens, as Siri or Control Center do.
         .task { await SimulatedNightModeSwitch.run(settings: settings) }
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
+        // UI tests only: `-NopeSimulatedPinchLabelSeconds <seconds>` keeps a pinch's lens label up.
+        .environment(\.lensPinchLabelSeconds, SimulatedPinch.labelSeconds)
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
         // nothing polls (AGENTS.md, "Battery").
