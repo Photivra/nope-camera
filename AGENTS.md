@@ -240,7 +240,7 @@ files, data, specifications, documentation and tools.
 ## Localization
 
 Version 1.0.0 ships in English (`en`, the development language) only (issue #86). Spanish (`es`,
-with `es-419` overrides) is planned for 1.1.0 (#87). The app stays ready for other languages:
+with `es-419` overrides) is in the backlog (#87). The app stays ready for other languages:
 - **Every user-facing string** goes in a String Catalog (`Localizable.xcstrings`), with a comment
   that gives translators context. This includes accessibility labels, alerts, permission prompts
   (`InfoPlist.xcstrings`) and the lock-screen and Control Center controls. No hard-coded

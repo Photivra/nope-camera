@@ -6,7 +6,7 @@ fastlane `deliver` reads. The files hold only the field text, so this page recor
 status.
 
 Version 1.0.0 is listed in English (U.S.) only (issue #86). The Spanish listings, `es-ES` and
-`es-MX` (from the app's `es` and `es-419` strings), are planned for 1.1.0 with the Spanish
+`es-MX` (from the app's `es` and `es-419` strings), are in the backlog with the Spanish
 strings (issue #87); they are drafts on branch `spanish-1.1.0`, not on this branch. Other
 languages come in later releases; their earlier draft translations are in the git history.
 
@@ -21,8 +21,8 @@ Before a release, the maintainer removes any sentence whose feature isn't in the
 | Locale | Language | Source | Status |
 |---|---|---|---|
 | `en-US` | English (U.S.) | Written by the project | Draft, needs human review |
-| `es-ES` | Spanish (Spain) | Translation of `en-US` (issue #87) | Planned for 1.1.0 (branch `spanish-1.1.0`); needs native-speaker review |
-| `es-MX` | Spanish (Mexico) | `es-ES` with the app's `es-419` wording (issue #87) | Planned for 1.1.0 (branch `spanish-1.1.0`); needs native-speaker review |
+| `es-ES` | Spanish (Spain) | Translation of `en-US` (issue #87) | In the backlog (drafts on branch `spanish-1.1.0`); needs native-speaker review |
+| `es-MX` | Spanish (Mexico) | `es-ES` with the app's `es-419` wording (issue #87) | In the backlog (drafts on branch `spanish-1.1.0`); needs native-speaker review |
 
 ## Notes for reviewers
 

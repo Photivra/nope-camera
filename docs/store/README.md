@@ -2,9 +2,9 @@
 
 Status: **draft, needs human review.** Nothing here is approved for submission. The English text
 is a draft for the maintainer. Version 1.0.0 is listed in English (U.S.) only, `en-US` (issue
-#86). The Spanish listings, `es-ES` and `es-MX` from the app's `es` and `es-419` strings, move to
-1.1.0 with the Spanish strings (issue #87); they stay drafts on branch `spanish-1.1.0`, and every
-Spanish file needs a native-speaker review before that release (AGENTS.md, "Localization").
+#86). The Spanish listings, `es-ES` and `es-MX` from the app's `es` and `es-419` strings, are in
+the backlog with the Spanish strings (issue #87); they stay drafts on branch `spanish-1.1.0`, and
+every Spanish file needs a native-speaker review before it ships (AGENTS.md, "Localization").
 
 The listing text itself lives in [`store/metadata/<locale>/`](../../store/metadata/README.md)
 (AGENTS.md, "Localization"), one file per App Store Connect field, with its review status in
@@ -13,7 +13,7 @@ the other submission answers:
 
 | File | What it holds |
 |---|---|
-| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords: English (`en-US`) for 1.0.0; Spanish (`es-ES`, `es-MX`) in 1.1.0 (issue #87) |
+| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords: English (`en-US`) for 1.0.0; Spanish (`es-ES`, `es-MX`) in the backlog (issue #87) |
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
@@ -76,7 +76,7 @@ controls, which are merged but not yet device-checked. Add a sentence for each o
 
 ### Added to 1.0.0 on 2026-11-18: pending, no claim yet
 
-These issues joined milestone 1.0.0 on 2026-11-18; #87 has since moved to 1.1.0. The others are
+These issues joined milestone 1.0.0 on 2026-11-18; #87 has since moved to the backlog. The others are
 built, none is checked on a device yet, so the listing (every language, the promotional text and
 the keywords) says nothing about them. A sentence is added only after the feature is merged and
 passes the checks in the last column; until then each row stays **pending**.
@@ -84,7 +84,7 @@ passes the checks in the last column; until then each row stays **pending**.
 | Issue | Feature | State | Before any listing sentence |
 |---|---|---|---|
 | #82 | Siri, Shortcuts and assistant actions through App Intents, with Settings › Privacy › Assistant Access (off by default; Ask First: Every Action by default) | Pending: built, device checks not done | Unit tests of each Ask First level against each intent; the entry-point test; the device checks listed in the issue (locked phone, iPhone Mirroring, camera stops off screen); App Shortcuts phrases in English and Spanish; Honesty screen and `docs/PRIVACY.md` describe the setting. Any wording follows "what the app protects" and "what the system controls" in the issue, and never says assistants can't reach the camera |
-| #87 | Spanish (`es`, with `es-419` overrides) in the app and the listing | Moved to 1.1.0: drafts on branch `spanish-1.1.0`, not in 1.0.0; strings added since need translating | `scripts/check-localization.sh` with English and Spanish; native-speaker review of `Honesty.xcstrings` and the `es-ES` and `es-MX` listings. Until then the listing doesn't mention languages |
+| #87 | Spanish (`es`, with `es-419` overrides) in the app and the listing | Moved to the backlog: drafts on branch `spanish-1.1.0`, not in 1.0.0; strings added since need translating | `scripts/check-localization.sh` with English and Spanish; native-speaker review of `Honesty.xcstrings` and the `es-ES` and `es-MX` listings. Until then the listing doesn't mention languages |
 | #88 | Settings search drawn in red in Night Mode | Pending: built, device checks not done | The all-red pixel check on Settings with search shown; audits in Night Mode |
 | #90 | Focus bracketing, each frame a separate signed RAW, never merged | Pending: built (`docs/design/BRACKETING.md`, sections 5 and 8), device checks not done | Unit and UI tests; the per-lens device checks in the design. A sentence may say "never merged" only after the tag check and signature check on bracket frames |
 | #95 | Pinch on the viewfinder to switch lenses, with no digital zoom | Pending: built (`docs/design/pinch-lens.md`), device tuning not done | Device tuning of the thresholds; any sentence says "switch lenses", never "zoom" (C1 and "no digital zoom" stay true) |
@@ -93,7 +93,7 @@ passes the checks in the last column; until then each row stays **pending**.
 Claims C1 to C12 don't change with these issues, with two notes: C4 and C5 must be rechecked
 on the build that includes #82 (App Intents run on the device; Siri itself is Apple's, as the
 Honesty screen and the privacy policy already say). C11 is rechecked in Spanish at the largest
-text sizes for 1.1.0, with #87.
+text sizes when #87 ships.
 
 ## Other App Store Connect fields (maintainer)
 

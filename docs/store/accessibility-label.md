@@ -5,7 +5,7 @@ permission and camera screens, saving, manual controls, settings, the Honesty sc
 Last Photo viewer and What's in This Photo are merged and audited in UI tests (settings, the
 viewer and the details also at the largest text size, and settings right to left), but no manual
 assistive-technology pass has been done, and the five items added to 1.0.0 on 2026-11-18 are built but
-not device-checked; the Spanish translation (#87) moved to 1.1.0 (see "Items added to 1.0.0"). This page lists the answer the project aims for at 1.0 and the evidence each
+not device-checked; the Spanish translation (#87) moved to the backlog (see "Items added to 1.0.0"). This page lists the answer the project aims for at 1.0 and the evidence each
 answer needs. Declare a feature in App Store Connect only when every item in its evidence column
 is done for that device.
 
@@ -51,7 +51,7 @@ None is built yet. Each adds evidence to the table above before any feature is d
 | Issue | Effect on the answers | Evidence to add |
 |---|---|---|
 | #82 Assistant Access | No change to the common tasks; Siri and Shortcuts are an extra route, not a replacement for any control. The new Settings › Privacy › Assistant Access page is part of task 4. Confirmations are the system's `requestConfirmation` sheet; the line under it ("You can change this in nope › Settings › Privacy.") must be read by VoiceOver | UI tests with audits for the page at the largest text size, in dark mode and right to left (as the issue lists); VoiceOver and Voice Control on the page in the manual pass; a confirmation read by VoiceOver on a device |
-| #87 Spanish (moved to 1.1.0) | Every answer holds in each language that ships. Longer Spanish text is the main risk for Larger Text | UI tests in Spanish at the largest accessibility size for the camera and every settings screen; the manual pass repeated for tasks 1 to 5 in Spanish on one device |
+| #87 Spanish (in the backlog) | Every answer holds in each language that ships. Longer Spanish text is the main risk for Larger Text | UI tests in Spanish at the largest accessibility size for the camera and every settings screen; the manual pass repeated for tasks 1 to 5 in Spanish on one device |
 | #88 Red search field in Night Mode | Sufficient Contrast and VoiceOver: the field is drawn by the app, so it must keep the search field trait, the "Search Settings" label, Dynamic Type and right to left | Audits in Night Mode with search shown; the all-red pixel check; Increase Contrast with Night Mode on |
 | #90 Focus bracketing | Part of task 2 when used. Its card and Bracket Settings follow `docs/design/BRACKETING.md`, section 6 | UI tests with audits (largest text, right to left, Night Mode); VoiceOver announces each frame and the end of the series |
 | #95 Pinch to switch lenses | No change: a gesture only, with no VoiceOver action, and the lens buttons stay the accessible route for task 3. Pinch is off at the largest text sizes | A UI test that task 3 is done with the lens buttons with Pinch set to Off; Voice Control names the lens buttons |
