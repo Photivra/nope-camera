@@ -77,19 +77,19 @@ controls, which are merged but not yet device-checked. Add a sentence for each o
 
 ### Added to 1.0.0 on 2026-11-18: pending, no claim yet
 
-These issues joined milestone 1.0.0 on 2026-11-18. None is built on this branch, so the listing
+These issues joined milestone 1.0.0 on 2026-11-18. All but #87 are built, none is checked on a device yet, so the listing
 (every language, the promotional text and the keywords) says nothing about them. A sentence is
 added only after the feature is merged and passes the checks in the last column; until then
 each row stays **pending**.
 
 | Issue | Feature | State | Before any listing sentence |
 |---|---|---|---|
-| #82 | Siri, Shortcuts and assistant actions through App Intents, with Settings › Privacy › Assistant Access (on; Ask First: Every Action by default) | Pending: not built | Unit tests of each Ask First level against each intent; the entry-point test; the device checks listed in the issue (locked phone, iPhone Mirroring, camera stops off screen); App Shortcuts phrases in English and Spanish; Honesty screen and `docs/PRIVACY.md` describe the setting. Any wording follows "what the app protects" and "what the system controls" in the issue, and never says assistants can't reach the camera |
+| #82 | Siri, Shortcuts and assistant actions through App Intents, with Settings › Privacy › Assistant Access (off by default; Ask First: Every Action by default) | Pending: built, device checks not done | Unit tests of each Ask First level against each intent; the entry-point test; the device checks listed in the issue (locked phone, iPhone Mirroring, camera stops off screen); App Shortcuts phrases in English and Spanish; Honesty screen and `docs/PRIVACY.md` describe the setting. Any wording follows "what the app protects" and "what the system controls" in the issue, and never says assistants can't reach the camera |
 | #87 | Spanish (`es`, with `es-419` overrides) in the app and the listing | Pending: drafts on branch `spanish-1.1.0`, not integrated; strings added since need translating | `scripts/check-localization.sh` with English and Spanish; native-speaker review of `Honesty.xcstrings` and the `es-ES` and `es-MX` listings. Until then the listing doesn't mention languages |
-| #88 | Settings search drawn in red in Night Mode | Pending: not built (today search is hidden in Night Mode) | The all-red pixel check on Settings with search shown; audits in Night Mode |
-| #90 | Focus bracketing, each frame a separate signed RAW, never merged | Pending: designed (`docs/design/BRACKETING.md`, sections 5 and 8), not built | Unit and UI tests; the per-lens device checks in the design. A sentence may say "never merged" only after the tag check and signature check on bracket frames |
-| #95 | Pinch on the viewfinder to switch lenses, with no digital zoom | Pending: designed (`docs/design/pinch-lens.md` on branch `design-pinch-lens`), not built | Device tuning of the thresholds; any sentence says "switch lenses", never "zoom" (C1 and "no digital zoom" stay true) |
-| #97 | Keep the screen on while the camera is open, off by default | Pending: not built | UI tests; an energy profile with it on (`docs/TESTING.md`); any sentence says it is off by default |
+| #88 | Settings search drawn in red in Night Mode | Pending: built, device checks not done | The all-red pixel check on Settings with search shown; audits in Night Mode |
+| #90 | Focus bracketing, each frame a separate signed RAW, never merged | Pending: built (`docs/design/BRACKETING.md`, sections 5 and 8), device checks not done | Unit and UI tests; the per-lens device checks in the design. A sentence may say "never merged" only after the tag check and signature check on bracket frames |
+| #95 | Pinch on the viewfinder to switch lenses, with no digital zoom | Pending: built (`docs/design/pinch-lens.md`), device tuning not done | Device tuning of the thresholds; any sentence says "switch lenses", never "zoom" (C1 and "no digital zoom" stay true) |
+| #97 | Keep the screen on while the camera is open, off by default | Pending: built, device checks not done | UI tests; an energy profile with it on (`docs/TESTING.md`); any sentence says it is off by default |
 
 Claims C1 to C12 don't change with these issues, with two notes: C4 and C5 must be rechecked
 on the build that includes #82 (App Intents run on the device; Siri itself is Apple's, as the

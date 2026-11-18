@@ -216,8 +216,8 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
 
-Items added to 1.0.0 on 2026-11-18 (none built yet): #82 (App Intents, the Assistant Access
-setting and its TipKit tip) is expected to use `UserDefaults` only, already declared with
+Items added to 1.0.0 on 2026-11-18 (all built except #87, the Spanish translation): #82 (App
+Intents, the Assistant Access setting and its tip) is expected to use `UserDefaults` only, already declared with
 `CA92.1` and `1C8F.1` if the setting is shared with the controls extension; #97 (keep the
 screen on) uses the idle timer, which isn't a required-reason API; #87, #88, #90 and #95 add no
 listed API. Rerun the search below on the build that includes them, in the app and each
@@ -387,8 +387,8 @@ MASVS-STORAGE-2, MASVS-PRIVACY-2.
   other key is `NopePresets.saved` (issue #72): JSON of the saved presets, each with the name the
   person typed, a random identifier, the same setting values and the camera values listed in
   `docs/PRIVACY.md`, "Settings presets"; nothing else.
-  Issue #82 (not built yet) adds the Assistant Access and Ask First settings and a count of
-  confirmed assistant requests for its one-time tip (in TipKit's store or `UserDefaults`). That
+  Issue #82 adds the Assistant Access and Ask First settings and a count of
+  confirmed assistant requests for its one-time tip (`NopeAssistant.confirmedCount` in `UserDefaults`). That
   count is the one allowed counter: a number only, kept on the device, removed by Factory
   Defaults, with no dates or request contents. Issue #97 adds one Boolean.
 

@@ -4,8 +4,8 @@ Status: **draft, needs human review.** No feature may be declared yet. As of 202
 permission and camera screens, saving, manual controls, settings, the Honesty screen, About, the
 Last Photo viewer and What's in This Photo are merged and audited in UI tests (settings, the
 viewer and the details also at the largest text size, and settings right to left), but no manual
-assistive-technology pass has been done, and six items added to 1.0.0 on 2026-11-18 are not built
-(see "Items added to 1.0.0"). This page lists the answer the project aims for at 1.0 and the evidence each
+assistive-technology pass has been done, and of the six items added to 1.0.0 on 2026-11-18, five are built
+but not device-checked and the Spanish translation (#87) is not integrated yet (see "Items added to 1.0.0"). This page lists the answer the project aims for at 1.0 and the evidence each
 answer needs. Declare a feature in App Store Connect only when every item in its evidence column
 is done for that device.
 

@@ -16,13 +16,13 @@ Thank you for your interest in Photivra Nope Camera. The design is in issue #1, 
 
 ## Translations
 
-Contributions to internationalization and translation are welcome. Version 1.0.0 ships in English only; translations, new languages and native-speaker reviews come in a later version.
+Contributions to internationalization and translation are welcome. Version 1.0.0 ships in English and Spanish (`es`, with `es-419` where Latin American wording differs); the Spanish is a draft that needs a native speaker's review. Other languages are welcome for later releases (issue #93).
 
 - **Where the text lives:** every user-facing string is in a String Catalog (`.xcstrings`), each with a comment that explains where it appears. Honesty and privacy wording is in `Honesty.xcstrings`; it must say exactly what the English says, never more.
 - **How to work:** in Xcode, Product › Export Localizations gives a standard XLIFF (`.xcloc`) file for one language; edit it in any translation tool and send it back, or edit the catalogs directly in a pull request.
 - **Terms:** use Apple's own names for system features in your language (Settings, Photos, Lock Screen and so on, as iOS shows them) and the words photographers in your region use.
 - **Checks:** `scripts/check-localization.sh` checks every catalog; the UI tests run with long-text and right-to-left pseudo-languages.
-- **Status:** 1.0.0 ships in English, and its catalogs hold English only. Translations come in a later version; earlier draft translations are in the git history. Open an issue to say which language you'd like to work on.
+- **Status:** 1.0.0 ships in English and Spanish. The Spanish needs a native speaker's review; earlier drafts of other languages are in the git history. Open an issue to say which language you'd like to work on.
 
 ## Licensing of contributions
 
