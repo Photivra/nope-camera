@@ -1,12 +1,12 @@
 # Build specification: direction B · Reach
 
-Design version: 1.0.0 (2026-11-17). For the implementer of release 1.0.0 (issue 74, with issues 76, 77 and 80). Includes the Settings structure and the device coverage accepted on 2026-11-17; the decisions are recorded in [SETTINGS-PLAN.md](SETTINGS-PLAN.md).
+Design version: 1.0.0 (2026-11-17; section 3.14 added 2026-11-18). For the implementer of release 1.0.0 (issue 74, with issues 76, 77 and 80). Includes the Settings structure and the device coverage accepted on 2026-11-17; the decisions are recorded in [SETTINGS-PLAN.md](SETTINGS-PLAN.md).
 
 This document says what to build, in which files, and how to tell it is done. The drawings are the mockups in this folder ([overview.html](overview.html)); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md), accessibility in [ACCESSIBILITY.md](ACCESSIBILITY.md), paths in [navigation.md](navigation.md).
 
 ## 1. Ground rules
 
-- **Scope.** 1.0.0 changes the interface of features that exist. Add no capability. If a step seems to need one, stop and flag it.
+- **Scope.** 1.0.0 changes the interface of features that exist. Add no capability. If a step seems to need one, stop and flag it. One exception, by the owner's decision of 2026-11-18: the Last Photo viewer (3.14).
 - **Architecture.** `NopeUI` reads state from `NopeCore` and sends intents. It holds no business rules. Everything here except section 6 is inside `NopeUI`, the app targets' views, and the string catalogs.
 - **Native first.** `Menu`, `Toggle`, `Picker`, `Form`, sheets, popovers, `confirmationDialog`, `searchable`, `sensoryFeedback`. Custom drawing only for the shutter, viewfinder overlays, tiles, readouts and the drive strip.
 - **Tokens only.** No literal spacing, radius, size, color or duration outside `DesignTokens.swift`.
@@ -33,6 +33,7 @@ This document says what to build, in which files, and how to tell it is done. Th
 | Focus Peaking | Pro Tools and Settings | Also a Q tile |
 | Interval in Pro Tools | A section with its own Start | Removed; the drive strip is the one home |
 | Presets | Rename or Delete page (three levels) | More menu on each preset (two levels); delete asks first |
+| Last Photo | A tap opens the Photos app; touch and hold opens a menu | A tap opens the Last Photo viewer inside the app, with Photo Details and Open in Photos (3.14); the menu is removed |
 
 ## 3. Screens
 
@@ -191,7 +192,7 @@ UI tests: replace the tray tests with `testQuickMenuTiles`, `testQuickMenuToggle
 
 ### 3.7 Capture feedback, hints and pause messages
 
-Figures: `camera-capturing`, `camera-saved-signed`, `camera-saved-unsigned`, `camera-failure`, `camera-failure-photos`, `camera-paused`, `camera-first-photo`, `camera-closeup`, `camera-too-close`, `camera-focus-lock`, `camera-overlays`, `sheet-thumbnail-menu`.
+Figures: `camera-capturing`, `camera-saved-signed`, `camera-saved-unsigned`, `camera-failure`, `camera-failure-photos`, `camera-paused`, `camera-first-photo`, `camera-closeup`, `camera-too-close`, `camera-focus-lock`, `camera-overlays`. The Last Photo button opens the viewer of 3.14.
 
 Files: `CaptureFeedback.swift`, `SessionStatusView.swift`, `FocusAids.swift`, `LiveAidsPanel.swift`, `ViewfinderOverlays.swift`.
 
@@ -327,6 +328,78 @@ Change: spacing, radius and type tokens only. The watch figures cover every stat
 
 AC: `LiveActivityUITests` and `NopeWatchUITests` pass their audits, the watch ones at 40 mm and at the largest text size; the largest Live Activity row is no taller than today. To check by hand: the watch countdown in Always On.
 
+### 3.14 Last Photo viewer (owner decision, 2026-11-18)
+
+Figures: every `viewer-*` figure ([viewer.html](viewer.html)); `ipad-viewer`, `ipad-viewer-portrait`, `ipad-viewer-fallback`, `duo-inner-viewer`, `duo-fold-viewer`. The Last Photo menu figures are removed.
+
+A tap on Last Photo opens the viewer in place of the Photos app. This is the one capability added in 1.0.0. The data it shows is specified separately (the session's photos and their previews); this section assumes, for each photo saved since the app opened, its `SavedPhoto`, the lens, the time taken, and a screen-size preview that is either held in memory or already released. Names below that belong to that data are placeholders until its specification lands.
+
+Rules that come from `AGENTS.md` (Photos never linger): the viewer shows only what is in memory; it writes nothing to disk, logs nothing, and caches no decoded picture beyond the page shown and its two neighbors. Its contents are hidden while the scene is not active, as in `ComparisonScreen`, so the app switcher's snapshot holds no photo. It closes when the app goes to the background.
+
+Component tree, new file `Sources/NopeUI/PhotoViewer.swift`:
+
+| Component | Maps to | Notes |
+| --- | --- | --- |
+| `PhotoViewerCover` (modifier) | Modeled on `ComparisonCover` in `ComparisonScreen.swift` | `fullScreenCover` in every window, with `.nightModeStyle(isNightMode)`. Opens from the thumbnail with the system zoom transition (`matchedTransitionSource` on `ThumbnailSlot`, `navigationTransition(.zoom)` on the cover), which also gives the swipe down to close and the Reduce Motion crossfade. If the system transition cannot be used on a cover, use `NopeMotion.panel` for the frame and `NopeMotion.fade` for the rows, opacity only with Reduce Motion. Posts `ScreenChanged` on dismissal and returns focus to Last Photo |
+| `PhotoViewerScreen` | New | Chooses the arrangement with the existing rule (`CameraLayout.arrangement`): stacked, column, or scrolling at accessibility text sizes. Holds the page shown, whether the controls are hidden, and whether a newer photo is waiting |
+| `PhotoViewerPager` | New; a paging `ScrollView` (`scrollTargetBehavior(.paging)`) | One page for each saved photo, oldest first; opens on the newest. `NopeSpace.m` between pages. Follows the layout direction |
+| `PhotoViewerPage` | New | The preview, aspect fit, with pinch, double tap and drag. Zoom from fit up to the preview's own pixels, and at least 2 × fit. Not mirrored right to left. `accessibilityIgnoresInvertColors()` |
+| `PhotoViewerFallback` | New | When the preview is released: the thumbnail no larger than `NopeSize.viewerFallback` and never above twice its pixel size, `NopeRadius.small`, the thumbnail's ring; then the title and sentence of section 4. No zoom |
+| `PhotoViewerStatus` | Reuses the look of `FormatStatus` (`FormatChip.swift`) and the rules of `ThumbnailSlot.badge(for:)` | Formats from `SavedPhoto.formats`; the Processed marker from `isProcessedFallback`; Signed, Not signed (warning) or Not signed (plain) from `signature`. `NopeFont.status`; `CameraStyle.fact` and `CameraStyle.warning`, each with its symbol and words |
+| `PhotoViewerCaption` | New | Position (only with more than one photo), lens label as in `LensRow`, time taken with the system's short time style. `NopeFont.pill`, `NopeColor.labelSecondary`, monospaced digits |
+| `PhotoViewerActions` | `NopeIconButtonStyle(size: NopeSize.thumbnail)` for Close; `NopeCapsuleStyle(isCompact: true)` for the two actions | Stacked: Close leading in the shutter row's place (`NopeSpace.xl` side margin), the actions trailing; they stack when they do not fit. Column: 44 pt icon buttons with their names below (`NopeFont.tileName`), then Close, centered in the `NopeSize.column` column. Scrolling: three full-width rows. Open in Photos is left out when `openPhotosApp` is `nil` (the Lock Screen camera) |
+| Hint, New Photo, Photo Not Saved | `CameraHints` look; `NopeCapsuleStyle(isCompact: true)` on `NopeMaterial.backing`; `WarningChip` | On the photo's lower edge (hint, New Photo) and top edge (chip), only while they apply |
+
+Changes to existing files:
+
+- `CaptureFeedback.swift` (`ThumbnailSlot`): the tap opens the viewer. Remove the `contextMenu`; keep Open in Photos and Photo Details as accessibility actions. The comment about the Large Content Viewer and the long press no longer applies.
+- `CameraReadyView.swift`: present the cover; pass the session's photos; the Photo Details sheet is presented from the viewer for the photo shown (it is still presented from the camera for the accessibility action).
+- `PhotoDetailsSheet.swift`: take the photo to show first, so the sheet opens on the viewer's photo. No other change.
+- `CameraEnvironment.swift`, `docs/BUILDING-AN-INTERFACE.md`, `docs/PRIVACY.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`: the text that says a tap opens Photos.
+
+Behavior:
+
+- The camera keeps running under the viewer, as under a sheet: a running series continues, and Apple Watch and Siri can take photos. `canCapture` is not changed.
+- A new photo while the viewer is open is added as the last page. The page shown does not change. New Photo appears until the newest page is shown. The save sentence is announced as today.
+- A failure while the viewer is open shows the Photo Not Saved chip and is announced as today. The chip closes the viewer; the failure banner is on the camera.
+- Hardware shutter (volume buttons, Camera Control) and Take Photo (Space with nothing focused): recommended to close the viewer and take no photo (section 7). This needs the camera model to know the viewer is open, as it knows the compare view is; that is core work and belongs to the data specification.
+- Fold, unfold, rotate, resize: the viewer stays open on the same photo, zoom returns to fit, and the arrangement follows the window.
+- Night mode: everything is red on black, the photo included, so the all-red check of the night-mode tests holds on this screen with no exception.
+
+Tokens: `NopeSpace.m`, `xl`, `xs`; `NopeRadius.small`; `NopeSize.thumbnail`, `iconButton`, `capsule`, `column`, `statusRow`, `driveRow`, `shutterRowMin`, `scrollingPicture`, and the new `viewerFallback` (160); `NopeFont.status`, `pill`, `tileName`; `NopeColor.fact`, `warning`, `label`, `labelSecondary`; `NopeMaterial.backing`; `NopeMotion.panel`, `fade`. No literal values.
+
+AC:
+
+- A tap on Last Photo opens the viewer on the newest photo; it never opens another app. Close, a swipe down, Escape and the two-finger scrub close it, and focus returns to Last Photo.
+- The status line shows only facts from the saved photo. Teal appears only with Signed; amber only with Processed or a failed signature, each with its symbol and words.
+- Each saved photo of the session is one page, a bracket's frames included. The position is correct after a photo arrives while the viewer is open, and the page shown does not change.
+- A zoomed photo shows the preview hint whenever the preview has fewer pixels than the saved photo. No picture is drawn above the zoom limit.
+- A photo whose preview is released shows the fallback, never an enlarged thumbnail filling the screen.
+- Nothing is written to disk; the snapshot taken when the app leaves the screen shows no photo; after the app returns from the background the viewer is closed.
+- Every gesture has the other way listed in ACCESSIBILITY.md. Every target is at least 44 pt.
+- In night mode no pixel on the screen is non-red. With Reduce Motion nothing moves or scales.
+- The Lock Screen camera's viewer has no Open in Photos.
+
+UI tests, in a new `PhotoViewerUITests.swift` (an extension of `NopeAppUITests`), each with `performAccessibilityAudit()` through the existing helpers:
+
+| Test | Covers |
+| --- | --- |
+| `testViewerOpensFromLastPhoto` | One photo; the status and caption; Close returns focus to Last Photo; Photos is not brought to the front |
+| `testViewerPagesThroughSessionPhotos` | Three photos; swipe, the adjustable action and the arrow keys; the position text |
+| `testViewerStatusForProcessedAndUnsigned` | `noRAW`, `signingFails` and signing off: the three status variants |
+| `testViewerZoomShowsPreviewHint` | Double tap, pinch, Zoom In and Zoom Out; the hint; swipe down does not close while zoomed |
+| `testViewerHidesAndShowsControls` | Tap, and the Hide Controls and Show Controls actions |
+| `testViewerActions` | Photo Details opens What's in This Photo on the photo shown; Open in Photos brings Photos to the front |
+| `testViewerNewPhotoWhileOpen` | A photo taken through the Siri or watch test hook: the page stays, New Photo goes to the newest |
+| `testViewerFailureWhileOpen` | The chip, and the banner after closing |
+| `testViewerFallbackWhenPreviewReleased` | A launch argument that releases previews; also after a background and return, the viewer is closed |
+| `testViewerLargestText`, `testViewerRightToLeft`, `testViewerNightModeIsAllRed`, `testViewerSideways` | The audits at the largest size (with `auditScrollingScreen`), right to left, night mode (with `nonRedPixels` equal to 0 over the whole screen) and sideways |
+| `testViewerEscapeAndHardwareShutterClose` | Escape; the hardware shutter rule of section 7, as far as the Simulator can press it |
+| `testViewerOnIPad` (iPad shard) | The column arrangement in both orientations, and the fallback |
+| `testLockScreenViewerHasNoOpenInPhotos` | The capture extension |
+
+Update the tests that expect a tap to open Photos or that use the long-press menu (`docs/TESTING.md`, the Last Photo rows), and add the new tests to `scripts/ui-test-shards.txt`. By hand: the fold pair `duo-fold-viewer`; the hardware buttons on a device; VoiceOver, Voice Control and Switch Control on the flows in ACCESSIBILITY.md.
+
 ## 4. New and changed strings
 
 Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. All need a translator comment; 1.0.0 ships in English only (issue #86).
@@ -377,6 +450,16 @@ Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. A
 | A signed photo shows that it was taken with nope., and which version. | Sign Each Photo explanation (Honesty) | Draft |
 | Signing Is Your Choice; Lenses Without RAW (with their sentences) | Honesty screen (Honesty) | Draft |
 | Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it. … | Accessibility page | Replaces the Quick Controls wording |
+| Close | Last Photo viewer | Button that closes the viewer and returns to the camera |
+| Signed; Not signed | Viewer status line (Honesty) | Draft. Short forms of the save sentences; the full sentence stays the VoiceOver value |
+| %lld of %lld | Viewer caption | Position of the photo among this session's photos |
+| Photo; Photo %lld of %lld | Viewer, VoiceOver label | |
+| A screen-size preview, not the full photo. | Viewer, while zoomed in (Honesty) | Draft |
+| Preview Not Kept; nope. keeps previews in memory only and has released this one. The photo is saved in Photos. | Viewer fallback (Honesty) | Draft |
+| New Photo | Viewer | Button that goes to a photo taken while the viewer was open |
+| Photo Not Saved | Viewer | Warning chip; closes the viewer to show the failure |
+| Shows the photo. | Last Photo, VoiceOver hint | |
+| Zoomed in. | Viewer, VoiceOver value | Zoom In, Zoom Out, Hide Controls and Show Controls exist |
 
 Remove: "Choose Details"; "In Each Photo" (the header); "File Options"; "Face Detection" and the action strings that use it; every "On by default." and "Off by default." sentence in Settings; the 0.3.0 explanations replaced above; the Interval Shooting section strings of Pro Tools once nothing uses them; "Golden Ratio", "Golden Spiral", "Turn Spiral" and its value (issue 76); "Quick Controls"; "No RAW on This Lens" once nothing uses it; "Rename or Delete"; "Turn Off Manual Controls", "Back to Single Photo", "Turn Off Astro" when their pills go.
 
@@ -386,6 +469,7 @@ These are drafts. None ships until reviewed in every language (`AGENTS.md`, Loca
 
 - the first-run signing statement; the Sign Each Photo explanation; the three processing-note sentences; the Honesty entries Signing Is Your Choice and Lenses Without RAW;
 - from the Settings decisions of 2026-11-17: the explanations of Mirror Front Camera, Focus on Faces, Show Processed Marker, Night Mode, Red Viewfinder and Live Activity; the Standard File Tags sentence; the Night Mode entry on the Accessibility page; the Honesty entries Faces and Autofocus and Location Only If You Turn It On; the names Details in Each Photo, HEIF and JPEG Copies and Focus on Faces;
+- from the Last Photo viewer (3.14): Signed and Not signed on its status line, the preview hint, and the Preview Not Kept title and sentence. The hint must stay true for the preview size the data specification chooses, and is shown only when the preview has fewer pixels than the saved photo;
 - to check against the real-device tag dump (issue 79) before it is kept as written: the Always Saved footer, "None of them identify you or link your photos."
 
 The processing note must not name specific processing steps the phone applies unless they are verified; the draft says only that the phone processes the file and that the app cannot turn it off. Focus on Faces must not be described as turning face detection off: the switch decides only whether the app's autofocus and auto exposure follow faces.
@@ -405,6 +489,7 @@ The processing note must not name specific processing steps the phone applies un
 | 9 | Focus on Faces in Shortcuts: rename the action Set Face Detection to Set Focus on Faces (title, description, parameter title, summary, and the two spoken answers) in `App/NopeApp/Intents/FocusAndSizeIntents.swift`, with its strings in `App/Shared/Localizable.xcstrings`. Keep the type name `SetFaceDetectionIntent`, so shortcuts people have saved keep working. The parameter default follows the new setting default (off) | App Intents and the app's catalog, not `NopeUI` | 3.10; ACCESSIBILITY.md. Chunks C (code) and S (strings) |
 | 13 | Device checks with no code change planned: what the Lock Screen camera offers while locked; each `duo-fold-*` pair and the half-open posture; the watch countdown in Always On; iPhone sideways at the largest text size. Record the results in docs/TESTING.md; a difference from the drawings is a finding for the owner, not a reason to add layout code in 1.0.0 | Needs devices | 3.10 to 3.13 |
 | 14 | Night Mode turned on while the Settings popover is open on iPad: the popover keeps the system material, not black, until it is closed (today's behavior, drawn in `ipad-settings-night-on`). Closing and reopening Settings by itself would be a behavior change | `CameraStyle.swift` (`AdaptivePresentation`) | Owner decision if the red-on-material state is not acceptable |
+| 15 | The Last Photo viewer's data (owner decision, 2026-11-18): the list of this session's photos with the lens and time of each; a screen-size preview for each, in memory only, released in the background and under memory pressure; how many are kept; whether the viewer is open, so the hardware shutter can close it | `NopeCore`, `NopeDevelop` (`ImageIOThumbnailer`), the app target's capture events. Specified separately | 3.14 |
 | 10 | Deployment targets (issue 78) | Project settings | none; do first if `#available` fallbacks in `CameraStyle.swift` are to be removed with the token work |
 | 11 | App icon assets and the `TRADEMARKS.md` entry | Brand asset; owner decision on the period color | icon.html |
 | 12 | A check that fails on literal spacing or radius values (issue 74) | Script or test under `scripts/` | tokens.md |
@@ -438,6 +523,26 @@ Still needing the owner:
 6. Q with thirteen tiles has five rows and covers about 57% of the picture while it is open on a 402 × 874 pt screen (45% with four rows). Accept, or say which tile should give way.
 7. Section 6, item 14: the Settings popover when Night Mode is turned on inside it.
 
+Made on 2026-11-18: a tap on Last Photo shows the photo full screen inside the app, with Open in Photos and Photo Details, for this session's photos (3.14).
+
+Last Photo viewer, still needing the owner. Each has a recommendation, and the drawings show it:
+
+| # | Point | Recommendation | Other choice |
+| --- | --- | --- | --- |
+| V1 | A volume button or the Camera Control pressed while the viewer is open | Close the viewer and take no photo; the next press takes one. A photo is never taken while its framing is hidden | Take the photo at once and close the viewer, as a camera with a shutter button does during review; or leave the buttons to the system |
+| V2 | A photo taken while the viewer is open (Apple Watch, Siri, a series) | Stay on the photo shown and offer New Photo | Jump to the new photo |
+| V3 | The touch and hold menu on Last Photo | Remove it. The viewer holds both actions, and both stay as VoiceOver actions on Last Photo. Open in Photos becomes two taps | Keep it as a shortcut |
+| V4 | The photo in night mode | Red, like everything outside the live viewfinder; the all-red check stays without an exception | Natural colors, as the viewfinder has without Red Viewfinder |
+| V5 | Zoom | From fit to the preview's own pixels and at least 2 × fit, with the hint that it is a preview | No zoom at all; or a larger preview, which costs memory |
+| V6 | How many previews are held | The newest 20, as compressed data decoded for the page shown and its neighbors; older photos show the fallback. To be set by the data specification | Every photo of the session, or only the last |
+| V7 | Leaving the app with the viewer open | The viewer closes and the previews are released; the camera is what returns | Reopen the viewer on the fallback |
+| V8 | A tap on the photo hides the controls | In | Out: the rows always show |
+| V9 | iPad and the iPhone Duo inner display | The full window, as Compare | A centered sheet |
+| V10 | Closing | Close, an X where Last Photo is | Done, the checkmark the sheets use, in the same place |
+| V11 | Signing off by choice | The words Not signed in secondary text, no symbol | Nothing, as the thumbnail shows no badge |
+| V12 | A bracket or a burst | Every saved photo is its own page | One page for each press of the shutter |
+| V13 | The draft wording (section 5) | After the Honesty review | |
+
 ## 8. Implementation order
 
 Chunks are sized to be built in parallel after chunk 0. No two parallel chunks edit the same file. Three kinds of file are shared by nature and each has one owner: the string catalogs (chunk S), the UI test shard list `scripts/ui-test-shards.txt` and `docs/api` (chunk Z), and `CameraReadyView.swift` (chunk A).
@@ -454,6 +559,7 @@ Chunks are sized to be built in parallel after chunk 0. No two parallel chunks e
 | F · Manual | 0 | `ManualControlsView.swift`, `ManualControlsList.swift`, `ControlDial.swift`, `ControlText.swift`, `ProToolsSheet.swift`, `FocusAids.swift`, `LiveAidsPanel.swift`, `ViewfinderOverlays.swift` | The rest of 3.4, including the removal of the Interval Shooting section from `ProToolsSheet`; hint placement of 3.7 |
 | G · Settings and sheets | 0, C | `SettingsScreen.swift`, new `SettingsSearch.swift` (the index, keywords, camera pointers and the page and row identifiers), `PresetsScreen.swift`, `PrivacySettingsView.swift` (Details in Each Photo), `OverlaySettingsView.swift` (with the new Focus Peaking Q item builder), new `CopiesSettingsView.swift` (merges and deletes `LookSettingsView.swift` and `FileOptionsSettingsView.swift`), `PhotoSizeSettingsView.swift`, `AccessibilitySettingsView.swift`, `HonestyScreen.swift`, `AboutScreen.swift`, `ExplainedToggle.swift`, `PhotoDetailsSheet.swift`, `ComparisonScreen.swift` | 3.9, 3.10 |
 | H · System and watch | 0 | `App/Shared/SeriesActivity.swift`, `App/NopeControls/*.swift`, `App/NopeWatch/*.swift` (not catalogs) | 3.13. These targets need the token values: add `DesignTokens.swift` to their target membership, or keep a copy checked by a test; choose one and say which |
+| V · Last Photo viewer | A, E, G, and section 6 item 15 | New `PhotoViewer.swift`, new `PhotoViewerUITests.swift`; small edits to `CaptureFeedback.swift`, `CameraReadyView.swift`, `PhotoDetailsSheet.swift` | 3.14 |
 | Z · Integration | A–H | `App/NopeAppUITests/*`, `App/NopeWatchUITests/*`, `scripts/ui-test-shards.txt`, `docs/api`, `docs/ARCHITECTURE.md`, `docs/BUILDING-AN-INTERFACE.md`, `CHANGELOG.md`, catalog removals, deletion of the deprecated wrappers | Each chunk writes its UI tests in a new file named after it (`QuickMenuUITests.swift`, `DriveStripUITests.swift`, …) as an extension of `NopeAppUITests`; Z updates the tests in existing files, assigns shards, regenerates the API docs and removes dead strings |
 
 Notes:

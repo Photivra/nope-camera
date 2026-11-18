@@ -2,7 +2,7 @@
 
 The design of nope. for release 1.0.0, in direction B (Reach), chosen from the options of issue 74. Static HTML mockups with a PNG of each screen, plus the specifications the app is built from. Open [overview.html](overview.html) in a browser to start; nothing here is part of the app build.
 
-**Design version: 1.0.0 (2026-11-17), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 257 screens are drawn (118 for iPhone, 77 for iPad, 31 for the iPhone Duo, 31 for Apple Watch); the PNG files total 10.3 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
+**Design version: 1.0.0 (2026-11-17; the Last Photo viewer added 2026-11-18), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 278 screens are drawn (135 for iPhone, 79 for iPad, 33 for the iPhone Duo, 31 for Apple Watch); the PNG files total 11.3 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
 
 | File | What it covers |
 | --- | --- |
@@ -13,6 +13,7 @@ The design of nope. for release 1.0.0, in direction B (Reach), chosen from the o
 | [quick-menu.html](quick-menu.html) | Q, the quick menu: its tiles (with Focus Peaking), states, a menu, night mode and a long language. |
 | [manual-controls.html](manual-controls.html) | The Manual Controls button, the readout row, each dial and Pro Tools (without Interval). |
 | [sheets.html](sheets.html) | Formats and the processing note, What's in This Photo, Interval and Astro settings, Presets, Compare and the one confirmation. |
+| [viewer.html](viewer.html) | The Last Photo viewer (2026-11-18): the photo just taken, full screen inside the app, for this session's photos: paging, zoom, Photo Details and Open in Photos, a new photo arriving, the fallback when only the thumbnail is left, night mode, the largest text size, right to left, sideways, and opening and closing. It replaces the Last Photo menu. |
 | [settings.html](settings.html) | Settings as accepted on 2026-11-17: the list in five groups, search with keywords and pointers to the camera, and every page: Formats, HEIF and JPEG Copies, Photo Size, Details in Each Photo, Fast Shutter, Viewfinder Overlays, Accessibility, Honesty, About and Licenses; light, night mode, the largest text size, right to left and German. |
 | [SETTINGS-PLAN.md](SETTINGS-PLAN.md), [settings-tree.html](settings-tree.html) | The record of the Settings review, accepted 2026-11-17: the inventory, the problems found, the tree, the device coverage gaps, and the twelve decisions with their outcomes. |
 | [layouts.html](layouts.html) | The rule that gives each window its layout, which screens are drawn for each device and what applies to the rest; iPhone held sideways (with a sheet open), the largest text size, right to left, and the Lock Screen camera. |
