@@ -44,6 +44,27 @@ Not part of App Privacy, but answered at the same time: **No** non-exempt encryp
 uses cryptography only to sign photos, and Info.plist should set `ITSAppUsesNonExemptEncryption`
 to `NO` (see [`README.md`](README.md), "Other App Store Connect fields").
 
+## Items added to 1.0.0 on 2026-11-18
+
+None of these is built yet. The expected answer stays **Data Not Collected**, to be confirmed on
+the build that includes them.
+
+- **#82, Assistant Access and App Intents.** Intents run in the app on the device and send
+  nothing. What Siri or another system assistant does with a spoken request or with the
+  on-screen description the app offers is Apple's processing, not the developer's collection, so
+  it isn't disclosed in App Privacy; the Honesty screen and the privacy policy already say that
+  Siri may send spoken requests to Apple. To confirm when it is built:
+  - intents return status only, never image data or metadata (audit check 17); the issue's
+    "structured results" (saved file, lens, settings) and the on-screen description must stay
+    within that, or check 17 and this page are revised first;
+  - the one-time tip after five confirmed requests keeps a count on the device (TipKit or
+    `UserDefaults`); audit check 12 lists it as an allowed key, and it never leaves the device;
+  - the optional system-search indexing of captures, if built, stays in the on-device index;
+    audit check 11 covers it.
+- **#97, Keep the screen on.** A switch stored with the other settings. No data, no change to
+  this page.
+- **#87, #88, #90, #95.** Strings, drawing, capture and gestures on the device only. No change.
+
 ## Recheck before every release
 
 Answer again from scratch if any release adds a dependency, a network feature (none is

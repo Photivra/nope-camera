@@ -1,9 +1,11 @@
 # App Store listing drafts
 
 Status: **draft, needs human review.** Nothing here is approved for submission. The English text
-is a draft for the maintainer. Version 1.0.0 is listed in English only (issue #86); a listing in
-another language is added with that language and needs a fluent human review before release
-(AGENTS.md, "Localization").
+is a draft for the maintainer. Version 1.0.0 is listed in English and Spanish (issues #86 and
+#87): `en-US`, and `es-ES` and `es-MX` from the app's `es` and `es-419` strings. As of
+2026-11-18 only the English listing is on this branch; the Spanish listings arrive with the
+Spanish strings (issue #87), and every Spanish file needs a native-speaker review before
+release (AGENTS.md, "Localization").
 
 The listing text itself lives in [`store/metadata/<locale>/`](../../store/metadata/README.md)
 (AGENTS.md, "Localization"), one file per App Store Connect field, with its review status in
@@ -12,7 +14,7 @@ the other submission answers:
 
 | File | What it holds |
 |---|---|
-| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords in English (`en-US`), the only language of version 1.0.0 |
+| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords: English (`en-US`) now; Spanish (`es-ES`, `es-MX`) with issue #87 |
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
@@ -45,14 +47,14 @@ and [platform version information](https://developer.apple.com/help/app-store-co
 
 ## Claims and what they depend on
 
-The description describes the planned 1.0 app. As of 2026-11-12, saving to Photos with the
+The description describes the planned 1.0 app. As of 2026-11-18, saving to Photos with the
 metadata allowlist and fail-closed read-back, HEIF and JPEG development, and Content
-Credentials signing, the settings screens (formats and Privacy) and the Honesty screen are
-merged and tested in the Simulator, **but not yet checked on a device**, and the Honesty and
-privacy wording still needs fluent human review. The last photo's details are on What's in This
-Photo, not on the Honesty screen. **Every claim below must be
-shipped and verified, on a device where the table says so, before the listing is submitted;
-remove any sentence whose feature isn't in the release.**
+Credentials signing, the settings screens (formats and Privacy), the Honesty screen, the Last
+Photo viewer and What's in This Photo are merged and tested in the Simulator, **but the release
+build is not yet checked on a device**, and the Honesty and privacy wording still needs fluent
+human review. The last photo's details are on What's in This Photo, not on the Honesty screen.
+**Every claim below must be shipped and verified, on a device where the table says so, before
+the listing is submitted; remove any sentence whose feature isn't in the release.**
 
 | # | Claim in the description | Depends on | Verified by |
 |---|---|---|---|
@@ -72,6 +74,27 @@ remove any sentence whose feature isn't in the release.**
 The description deliberately leaves out features planned for 1.0 that are harder to verify or
 not built yet (Siri and Shortcuts, lock-screen launch, self-timer, selfie framing), and manual
 controls, which are merged but not yet device-checked. Add a sentence for each only after it ships and is verified.
+
+### Added to 1.0.0 on 2026-11-18: pending, no claim yet
+
+These issues joined milestone 1.0.0 on 2026-11-18. None is built on this branch, so the listing
+(every language, the promotional text and the keywords) says nothing about them. A sentence is
+added only after the feature is merged and passes the checks in the last column; until then
+each row stays **pending**.
+
+| Issue | Feature | State | Before any listing sentence |
+|---|---|---|---|
+| #82 | Siri, Shortcuts and assistant actions through App Intents, with Settings › Privacy › Assistant Access (on; Ask First: Every Action by default) | Pending: not built | Unit tests of each Ask First level against each intent; the entry-point test; the device checks listed in the issue (locked phone, iPhone Mirroring, camera stops off screen); App Shortcuts phrases in English and Spanish; Honesty screen and `docs/PRIVACY.md` describe the setting. Any wording follows "what the app protects" and "what the system controls" in the issue, and never says assistants can't reach the camera |
+| #87 | Spanish (`es`, with `es-419` overrides) in the app and the listing | Pending: drafts on branch `spanish-1.1.0`, not integrated; strings added since need translating | `scripts/check-localization.sh` with English and Spanish; native-speaker review of `Honesty.xcstrings` and the `es-ES` and `es-MX` listings. Until then the listing doesn't mention languages |
+| #88 | Settings search drawn in red in Night Mode | Pending: not built (today search is hidden in Night Mode) | The all-red pixel check on Settings with search shown; audits in Night Mode |
+| #90 | Focus bracketing, each frame a separate signed RAW, never merged | Pending: designed (`docs/design/BRACKETING.md`, sections 5 and 8), not built | Unit and UI tests; the per-lens device checks in the design. A sentence may say "never merged" only after the tag check and signature check on bracket frames |
+| #95 | Pinch on the viewfinder to switch lenses, with no digital zoom | Pending: designed (`docs/design/pinch-lens.md` on branch `design-pinch-lens`), not built | Device tuning of the thresholds; any sentence says "switch lenses", never "zoom" (C1 and "no digital zoom" stay true) |
+| #97 | Keep the screen on while the camera is open, off by default | Pending: not built | UI tests; an energy profile with it on (`docs/TESTING.md`); any sentence says it is off by default |
+
+Claims C1 to C12 don't change with these issues, with two notes: C4 and C5 must be rechecked
+on the build that includes #82 (App Intents run on the device; Siri itself is Apple's, as the
+Honesty screen and the privacy policy already say), and C11 must be rechecked in Spanish at the
+largest text sizes once #87 is integrated.
 
 ## Other App Store Connect fields (maintainer)
 
