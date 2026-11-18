@@ -1778,6 +1778,39 @@ in flight (`LensWhileBusyTests`), and the disabled lens controls with UI tests
 - night mode in the dark: the dimmed outline is still visible and clearly weaker than the lens in
   use.
 
+### Pinch to switch lenses on a device (issue #95)
+
+The step logic, where a pinch is used, the settling and the setting are unit tested
+(`LensPinchTests`, `LensPinchSearchTests`), and the gesture with the simulated backend's one,
+two and three rear lenses in `LensPinchUITests` (`XCUIElement.pinch(withScale:velocity:)`). The
+values below are starting values from docs/design/pinch-lens.md, marked as device-tuning values
+in the code; tune them here and record what was tried:
+
+| Value | Start | Where |
+| --- | --- | --- |
+| First step | scale 1.25 spreading, 0.80 pinching | `LensPinch.firstSpreadStep`, `firstPinchStep` |
+| Each further step | factor 1.35 | `LensPinch.furtherStep` |
+| Return margin | 10% | `LensPinch.returnMargin` |
+| Settle time | 0.25 s | `LensPinchSwitcher.settleSeconds` |
+
+What only a device shows (docs/design/pinch-lens.md, section 11):
+
+- the thresholds with one hand and with two, on the smallest and the largest iPhone and on an
+  iPad: a short pinch moves one lens, a long one passes further lenses, a brush of a second
+  finger moves none, and a hand resting at a threshold doesn't flip between lenses;
+- the time a lens switch takes for each pair of lenses (record it here); the picture changes when
+  the next camera has started and is never drawn enlarged in between;
+- a long pinch across three lenses restarts the camera once, not for each lens passed;
+- one haptic tick for each step, also in clean view, and none at an end of the range;
+- a pinch that ends cancels a pending hold: no AE/AF lock, no tap focus and no clean-view swipe;
+- an inward pinch on an iPad held upright: on the iPad Simulator in portrait no simulated inward
+  pinch reached the picture, so the UI tests turn the iPad to landscape first;
+- a trackpad pinch on iPad, and AssistiveTouch's pinch;
+- the iPhone Duo on both displays; folding during a pinch keeps the lens the camera has;
+- the label with Increase Contrast and Reduce Transparency (solid black backing), in Night Mode
+  (red on black) and sideways (upright);
+- VoiceOver: a pinch isn't delivered while it is on; the lens buttons still change the lens.
+
 ### iPhone Duo (foldable) on a device
 
 The layout rule is unit-tested at the Duo's measured sizes (`CameraLayoutTests`), and the

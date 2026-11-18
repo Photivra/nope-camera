@@ -3439,6 +3439,36 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
 the camera starts with a lens. Empty by default: every lens at its default size.
 
+## `CameraModel/pinchSwitchesLenses(setting:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor func pinchSwitchesLenses(setting: PinchAction) -> Bool
+```
+
+Whether a pinch on the viewfinder switches lenses now (docs/design/pinch-lens.md,
+section 5), as far as the camera knows. An interface adds what only it knows: nothing is
+open over the picture (the quick menu, a dial, a sheet) and the layout isn't the
+scrolling one.
+
+It is `false`, and a pinch does nothing at all:
+- when the Pinch setting is ``PinchAction/off``;
+- while the lens can't be changed (``canChangeLens``, issue #96): a photo is taken or
+  saved, a countdown, burst, bracket, interval series or astro run is going, or the
+  compare view is open;
+- while the astro helper is on, even idle (decision 6);
+- while the camera isn't running: before it is ready, during its first start, and while it
+  is paused, interrupted, too hot, failed or sends no picture. A restart for a lens change
+  counts as running, so a pinch can go on while the camera switches;
+- on the front camera, and on a device with fewer than two rear lenses.
+
+Night Mode, Manual Controls, clean view, Magnify and a drive mode chosen but idle don't
+change it.
+
+- Parameter setting: The Pinch setting (``NopeSettings/pinch``).
+- Returns: `true` when a pinch may switch lenses.
+
 ## `CameraModel/pressAstroShutter()`
 
 internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -10969,6 +10999,301 @@ case takingPhoto
 
 One photo or one exposure bracket is being taken or saved.
 
+## `LensPinch`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+struct LensPinch
+```
+
+The step logic of a pinch that switches lenses (docs/design/pinch-lens.md, section 3): which
+lens a pinch has reached, given how far the fingers have moved apart or together.
+
+A lens is a separate camera, not a point on a scale, so the steps are equal and don't follow
+the lenses' magnifications. Spreading past ``firstSpreadStep`` moves one lens longer, and each
+further factor of ``furtherStep`` one more; pinching past ``firstPinchStep`` moves one lens
+wider, and each further factor of 1 / ``furtherStep`` one more. Going back over a threshold
+within the same pinch needs the scale to return ``returnMargin`` inside it, so a hand resting
+at a threshold doesn't flip between two lenses. The pinch stops at the first and the last rear
+lens; it never wraps and never reaches the front camera.
+
+The thresholds are starting values for tuning on devices (AGENTS.md, rule 1;
+docs/TESTING.md, "Pinch to switch lenses on a device").
+
+```swift
+var pinch = LensPinch(lenses: capabilities.lenses, startingAt: model.selectedLensID)
+let target = pinch?.update(scale: 1.3)  // the next longer lens
+```
+
+## `LensPinch/firstPinchStep`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let firstPinchStep: Double
+```
+
+The scale of the first step toward a wider lens: the fingers a fifth closer together.
+A device-tuning value (docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/firstSpreadStep`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let firstSpreadStep: Double
+```
+
+The scale of the first step toward a longer lens: the fingers a quarter further apart.
+A device-tuning value (docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/furtherStep`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let furtherStep: Double
+```
+
+The further factor for each further step in the same pinch: scale 1.69 is the second
+longer lens, 0.59 the second wider one. A device-tuning value
+(docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/init(lenses:startingAt:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+init?(lenses: [Lens], startingAt lensID: Lens.ID?)
+```
+
+Starts a pinch on a lens, or returns `nil` when a pinch can't switch lenses from it: the
+device has fewer than two rear lenses, the lens is the front camera, or no lens is known.
+
+- Parameters:
+  - lenses: The device's lenses in the lens row's order (``DeviceCapabilities/lenses``);
+    the front camera is left out.
+  - lensID: The lens in use when the fingers land.
+
+## `LensPinch/isOffered(on:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static func isOffered(on lenses: [Lens]) -> Bool
+```
+
+Whether a device offers the pinch at all: it has two or more rear lenses. The Pinch row in
+Settings is shown only then (decision 12).
+
+- Parameter lenses: The device's lenses.
+- Returns: `true` with two or more rear lenses.
+
+## `LensPinch/lenses`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+let lenses: [Lens]
+```
+
+The rear lenses in the lens row's order.
+
+## `LensPinch/rearLenses(_:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static func rearLenses(_ lenses: [Lens]) -> [Lens]
+```
+
+The rear lenses a pinch moves between, in the lens row's order: every lens but the front
+camera, lenses without Bayer RAW included (decision 4). A lens without a magnification
+keeps its place in the catalog's order.
+
+- Parameter lenses: The device's lenses in display order.
+- Returns: The rear lenses.
+
+## `LensPinch/returnMargin`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let returnMargin: Double
+```
+
+How far, as a fraction of the threshold, the scale must return inside a threshold just
+crossed to step back over it: 10%. A device-tuning value (docs/design/pinch-lens.md, 3.2).
+
+## `LensPinch/startIndex`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+let startIndex: Int
+```
+
+The index in ``lenses`` of the lens the pinch started on.
+
+## `LensPinch/step`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+var step: Int { get }
+```
+
+The steps reached from the starting lens: positive toward longer lenses, negative toward
+wider ones.
+
+## `LensPinch/target`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+var target: Lens { get }
+```
+
+The lens the pinch has reached.
+
+## `LensPinch/threshold(_:)`
+
+internal, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static func threshold(_ boundary: Int) -> Double
+```
+
+The scale at the boundary between step `boundary - 1` and step `boundary`: 1.25, 1.69,
+2.28… for the longer lenses (boundaries 1, 2, 3…) and 0.80, 0.59… for the wider ones
+(boundaries 0, −1…).
+
+- Parameter boundary: The boundary.
+- Returns: The scale.
+
+## `LensPinch/tolerance`
+
+internal, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+static let tolerance: Double
+```
+
+A tolerance for comparing scales, so a scale of exactly 0.80 reaches the first wider step
+whatever the rounding of the multiplications.
+
+## `LensPinch/update(scale:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@discardableResult mutating func update(scale: Double) -> Lens
+```
+
+Moves the pinch to the lens a scale reaches, and returns it.
+
+The scale is the distance between the fingers compared with when they landed, as
+`MagnifyGesture` reports it. Moving away from the starting lens crosses a threshold as soon
+as the scale reaches it; moving back toward it needs the scale ``returnMargin`` inside the
+threshold. At the first and the last lens a further scale changes nothing.
+
+- Parameter scale: The pinch's scale, 1 when the fingers haven't moved.
+- Returns: The lens the pinch has reached.
+
+## `LensPinchSwitcher`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor final class LensPinchSwitcher
+```
+
+Sends the lens a pinch settles on to the camera, one switch at a time
+(docs/design/pinch-lens.md, 3.3).
+
+Restarting the camera for a lens takes time, so a long pinch doesn't restart it for every lens
+it passes. The interface calls ``settle(on:)`` when the fingers lift, or when the target hasn't
+changed for ``settleSeconds``. Only the latest target is sent; a switch already running
+finishes first, and a target reached meanwhile is sent after it. A target that is already the
+lens in use is not sent, so a pinch that returns to the lens it started on sends nothing.
+
+Every switch goes through the camera's one rule for a lens change: the `switchLens` closure
+sends ``CameraIntent/selectLens(_:)``, which does nothing while ``CameraModel/canChangeLens``
+is false (issue #96).
+
+## `LensPinchSwitcher/init(lensInUse:switchLens:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor init(lensInUse: @escaping @MainActor () -> Lens.ID?, switchLens: @escaping @MainActor (Lens.ID) async -> Void)
+```
+
+Creates a switcher.
+
+- Parameters:
+  - lensInUse: The camera's lens in use (``CameraModel/selectedLensID``).
+  - switchLens: Sends ``CameraIntent/selectLens(_:)`` and returns when it has finished.
+
+## `LensPinchSwitcher/init(model:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor convenience init(model: CameraModel)
+```
+
+Creates a switcher for a camera.
+
+- Parameter model: The camera.
+
+## `LensPinchSwitcher/isSwitching`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor var isSwitching: Bool { get set }
+```
+
+Whether a switch is running.
+
+## `LensPinchSwitcher/labelSeconds`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+nonisolated static let labelSeconds: Double
+```
+
+How long, in seconds, the lens label stays on the picture after the fingers lift: 0.8 s
+(docs/design/pinch-lens.md, section 4).
+
+## `LensPinchSwitcher/settle(on:)`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+@MainActor func settle(on lensID: Lens.ID) async
+```
+
+Asks the camera to switch to the lens a pinch has settled on. If a switch is running, the
+lens is sent once it has finished, replacing any lens still waiting. Returns once no switch
+is left to send from this call.
+
+- Parameter lensID: The pinch's target.
+
+## `LensPinchSwitcher/settleSeconds`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+nonisolated static let settleSeconds: Double
+```
+
+How long, in seconds, a target must stay the same during a pinch before the camera is
+asked to switch to it: 0.25 s. A device-tuning value (docs/design/pinch-lens.md, 3.3).
+
 ## `LevelModel`
 
 public, declared in `Sources/NopeCore/Level.swift`
@@ -17735,6 +18060,16 @@ static let photoSizes: String
 
 The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
 
+## `NopeSettings/Key/pinch`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let pinch: String
+```
+
+What a pinch on the viewfinder does, a ``PinchAction`` raw value.
+
 ## `NopeSettings/Key/save`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -18109,6 +18444,17 @@ issue #57). Empty by default: every lens at its default size. The app passes it 
 camera with ``CameraIntent/setPhotoSizes(_:)``. Lens identifiers are the app's own and
 stay on the device.
 
+## `NopeSettings/pinch`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var pinch: PinchAction { get set }
+```
+
+What a pinch on the viewfinder does (issue #95): ``PinchAction/switchLenses`` by default.
+The camera screen reads it with ``CameraModel/pinchSwitchesLenses(setting:)``.
+
 ## `NopeSettings/rawPairing`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -18355,6 +18701,18 @@ the stored choice.
 - Parameters:
   - size: One of the lens's ``Lens/photoSizeChoices``; any other size does nothing.
   - lens: The lens.
+
+## `NopeSettings/setPinch(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setPinch(_ action: PinchAction)
+```
+
+Sets what a pinch on the viewfinder does, and saves the change.
+
+- Parameter action: Switch Lenses or Off.
 
 ## `NopeSettings/setPinsLiveReadout(_:)`
 
@@ -23465,6 +23823,41 @@ Makes a thumbnail.
 - Parameter file: A file that was just saved.
 - Returns: The thumbnail, upright, or `nil` if the file can't be read. A missing
   thumbnail never fails the save; the interface shows a photo symbol instead.
+
+## `PinchAction`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+enum PinchAction
+```
+
+What a pinch on the viewfinder does (issue #95; docs/design/pinch-lens.md, section 7): the
+Pinch setting in Settings › Camera, stored in ``NopeSettings/pinch`` and in presets.
+
+A pinch never enlarges or crops the picture: the app has no digital zoom (issue #1). It only
+chooses between the device's rear cameras, as the lens buttons do.
+
+## `PinchAction/off`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+case off
+```
+
+A pinch does nothing.
+
+## `PinchAction/switchLenses`
+
+public, declared in `Sources/NopeCore/LensPinch.swift`
+
+```swift
+case switchLenses
+```
+
+Spread two fingers for the next longer rear lens, pinch for the next wider one. The
+default.
 
 ## `PresetApplyResult`
 
