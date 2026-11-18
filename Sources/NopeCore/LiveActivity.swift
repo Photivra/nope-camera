@@ -52,8 +52,11 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     public enum Signing: String, Codable, Hashable, Sendable, CaseIterable {
         /// Every saved photo is signed.
         case allSigned
-        /// At least one saved photo isn't signed.
+        /// At least one saved photo isn't signed, although signing was on or couldn't be offered.
         case notAllSigned
+        /// No saved photo is signed, because the person has signing turned off
+        /// (``SignatureStatus/UnsignedReason/turnedOff``): the person's choice, not a problem.
+        case off
     }
 
     /// What runs.
@@ -192,6 +195,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         switch signing {
         case .allSigned: return .signed
         case .notAllSigned: return saved > 1 ? .notAllSigned : .notSigned
+        case .off: return .signingOff
         }
     }
 }
@@ -244,6 +248,9 @@ public enum LiveActivitySigningLine: Equatable, Sendable, CaseIterable {
     case notSigned
     /// "Not every photo is signed. Open nope. for details."
     case notAllSigned
+    /// "Not signed: signing is off in Settings.": signing is off by the person's choice, so the
+    /// line states it without pointing to a problem.
+    case signingOff
 }
 
 /// How long an ended Live Activity stays on the Lock Screen.

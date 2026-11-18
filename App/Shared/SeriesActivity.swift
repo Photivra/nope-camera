@@ -194,6 +194,8 @@ enum SeriesActivityText {
             Text("Signed.", tableName: "Honesty", comment: "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.")
         case .notSigned:
             Text("Not signed. Open nope. for details.", tableName: "Honesty", comment: "Live Activity, after one photo was saved without a Content Credentials signature; nope. says why. Honesty wording: never imply the photo is signed. Keep \"nope.\" unchanged.")
+        case .signingOff:
+            Text("Not signed: signing is off in Settings.", tableName: "Honesty", comment: "Live Activity, after photos were saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply a photo is signed.")
         case .notAllSigned:
             Text("Not every photo is signed. Open nope. for details.", tableName: "Honesty", comment: "Live Activity, after photos were saved and at least one has no Content Credentials signature; nope. says why. Honesty wording: never imply they are all signed. Keep \"nope.\" unchanged.")
         }

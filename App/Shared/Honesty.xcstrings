@@ -9,6 +9,10 @@
       "comment" : "Live Activity, after one photo was saved without a Content Credentials signature; nope. says why. Honesty wording: never imply the photo is signed. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },
+    "Not signed: signing is off in Settings." : {
+      "comment" : "Live Activity, after photos were saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply a photo is signed.",
+      "extractionState" : "manual"
+    },
     "Signed." : {
       "comment" : "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.",
       "extractionState" : "manual"

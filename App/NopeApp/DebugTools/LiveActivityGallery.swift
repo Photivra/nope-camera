@@ -38,6 +38,7 @@ struct LiveActivityGallery: View {
             LiveActivityContent(kind: .burst, phase: .finished, taken: 12, saved: 12, signing: .allSigned),
             LiveActivityContent(kind: .astro, phase: .stopped, taken: 9, total: 20, saved: 9, signing: .notAllSigned),
             LiveActivityContent(kind: .timer, phase: .finished, taken: 1, saved: 1, signing: .notAllSigned),
+            LiveActivityContent(kind: .burst, phase: .finished, taken: 5, saved: 5, signing: .off),
             LiveActivityContent(kind: .interval, phase: .stopped, taken: 42, total: 120),
             LiveActivityContent(kind: .timer, phase: .stopped),
             LiveActivityContent(kind: .burst, phase: .failed, taken: 3, saved: 2),

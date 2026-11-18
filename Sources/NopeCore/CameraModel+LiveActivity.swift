@@ -132,9 +132,12 @@ extension CameraModel {
     }
 
     /// Whether the photos the last capture saved are all signed, or `nil` when it saved none.
+    /// Signing turned off by the person is reported as such only when it is why every photo is
+    /// unsigned: a photo that couldn't be signed must not read as the person's choice.
     private var signingOfSavedPhotos: LiveActivityContent.Signing? {
         let photos = savedPhotos
         guard !photos.isEmpty else { return nil }
-        return photos.allSatisfy { $0.signature == .signed } ? .allSigned : .notAllSigned
+        if photos.allSatisfy({ $0.signature == .signed }) { return .allSigned }
+        return photos.allSatisfy { $0.signature == .unsigned(.turnedOff) } ? .off : .notAllSigned
     }
 }

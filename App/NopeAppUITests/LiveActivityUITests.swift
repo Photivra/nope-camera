@@ -29,6 +29,7 @@ extension NopeAppUITests {
         }
         XCTAssertTrue(last.exists)
         XCTAssertTrue(element(app, containing: "Not signed. Open nope. for details.").exists)
+        XCTAssertTrue(element(app, containing: "Not signed: signing is off in Settings.").exists)
         try audit(app, afterScrolling: true, checksDynamicType: checksDynamicType)
     }
 
