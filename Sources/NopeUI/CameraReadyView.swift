@@ -70,6 +70,12 @@ struct CameraReadyView: View {
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
 
+    /// Whether a sheet, popover or full-screen cover opened here is over the camera.
+    private var presentsOwnSheet: Bool {
+        showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets
+            || model.comparison.isPresented
+    }
+
     /// Whether night mode is on, so the sheets opened here are red too.
     private var isNightMode: Bool { settings.isNightModeOn }
 
@@ -272,7 +278,7 @@ struct CameraReadyView: View {
                     .presentationSizing(.page)
             }
         }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: presentsOwnSheet) { _, isPresenting in presentsSheet(isPresenting) }
         .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -848,6 +854,7 @@ struct CameraReadyView: View {
         ZStack {
             viewfinderLayer
             ViewfinderOverlays(model: model, settings: settings)
+                .transformEnvironment(\.cameraIsCovered) { $0 = $0 || presentsOwnSheet }
             if showsStatus {
                 SessionStatusView(status: model.sessionStatus)
                     .uprightUnit(sidewaysWidth: sidewaysBannerWidth)

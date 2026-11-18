@@ -386,6 +386,7 @@ These are drafts. None ships until reviewed in every language (`AGENTS.md`, Loca
 
 - the first-run signing statement; the Sign Each Photo explanation; the three processing-note sentences; the Honesty entries Signing Is Your Choice and Lenses Without RAW;
 - from the Settings decisions of 2026-11-17: the explanations of Mirror Front Camera, Focus on Faces, Show Processed Marker, Night Mode, Red Viewfinder and Live Activity; the Standard File Tags sentence; the Night Mode entry on the Accessibility page; the Honesty entries Faces and Autofocus and Location Only If You Turn It On; the names Details in Each Photo, HEIF and JPEG Copies and Focus on Faces;
+- from the level haptic design of 2026-11-18 ([level-haptic.md](level-haptic.md), section 5): the Level explanation's added sentence "On iPhone, you feel a tap when it's level." and the Accessibility page's Feedback row ending "…and marks the moment the level is level."; the Level search keywords gain "tap, haptic, vibration";
 - to check against the real-device tag dump (issue 79) before it is kept as written: the Always Saved footer, "None of them identify you or link your photos."
 
 The processing note must not name specific processing steps the phone applies unless they are verified; the draft says only that the phone processes the file and that the app cannot turn it off. Focus on Faces must not be described as turning face detection off: the switch decides only whether the app's autofocus and auto exposure follow faces.

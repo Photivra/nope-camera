@@ -4079,6 +4079,18 @@ var cameraGravitySource: (any GravitySource)? { get set }
 Where the level's gravity readings come from, or `nil` to hide the level. The app target
 sets it to a Core Motion source; `NopeUI` doesn't import Core Motion.
 
+## `EnvironmentValues/cameraIsCovered`
+
+internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
+
+```swift
+var cameraIsCovered: Bool { get set }
+```
+
+Whether a sheet, popover or full-screen cover is over the camera (Settings, Formats,
+What's in This Photo, Compare, Presets and the others), so the level's tap is held back.
+The camera screen sets it; `false` by default.
+
 ## `EnvironmentValues/cameraPresentsSheet`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -6522,10 +6534,13 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 The level (issue #40): a horizon bar that stays on the real horizon and turns solid and
 thicker when the device is level, or, when the device points straight down, a top-down level
-whose inner circle fills when level. A haptic marks the moment it becomes level.
+whose inner circle fills when level.
 
-VoiceOver reads the state on request, as the element's value; it isn't announced as it
-changes.
+A tap (``NopeHaptic/levelReached``) marks the moment it becomes level, and VoiceOver says
+"Level" (or "Pointing straight down, level") at the same moment, at low priority. When they
+play is decided by `LevelTapRule` in `NopeCore`; this view only plays them. VoiceOver also
+reads the state on request, as the element's value; the tilt isn't announced as it changes,
+and nothing is announced on leaving level.
 
 ## `LevelOverlay/barShare`
 
@@ -6547,17 +6562,29 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 The level.
 
-## `LevelOverlay/init(state:)`
+## `LevelOverlay/holdsBackTap`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-@MainActor init(state: LevelState?)
+@MainActor let holdsBackTap: Bool
+```
+
+Whether the tap and its announcement are held back now.
+
+## `LevelOverlay/init(state:holdsBackTap:)`
+
+internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
+
+```swift
+@MainActor init(state: LevelState?, holdsBackTap: Bool)
 ```
 
 Creates the level.
 
-- Parameter state: What the level shows, or `nil` before the first reading.
+- Parameters:
+  - state: What the level shows, or `nil` before the first reading.
+  - holdsBackTap: Whether the tap and its announcement are held back now.
 
 ## `LevelOverlay/maximumOffset`
 
@@ -6598,6 +6625,20 @@ enum LevelText
 ```
 
 The level's words for VoiceOver.
+
+## `LevelText/announceReached(_:)`
+
+internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
+
+```swift
+static func announceReached(_ state: LevelState)
+```
+
+Says "Level", or "Pointing straight down, level" for the top-down level, to VoiceOver as
+the level becomes level. Queued at low priority, so it never interrupts a capture result,
+a countdown second or a warning.
+
+- Parameter state: The level state that was just reached.
 
 ## `LevelText/degreesText(_:)`
 
@@ -9273,15 +9314,16 @@ static var lensChanged: SensoryFeedback { get }
 
 The lens changed.
 
-## `NopeHaptic/levelFlat`
+## `NopeHaptic/levelReached`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
 
 ```swift
-static var levelFlat: SensoryFeedback { get }
+static var levelReached: SensoryFeedback { get }
 ```
 
-The level reached flat.
+The level became level: the horizon level or the top-down level
+(docs/design/level-haptic.md).
 
 ## `NopeHaptic/manualControlsChanged`
 

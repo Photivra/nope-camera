@@ -2063,6 +2063,23 @@ Camera Control): while the camera runs. At other times they keep their system be
 as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
 "isEnabled"). Not while the compare view is open (issue #55).
 
+## `CameraModel/holdsBackLevelTap`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+@MainActor var holdsBackLevelTap: Bool { get }
+```
+
+Whether the level's tap is held back now (docs/design/level-haptic.md, section 4): while
+a photo is being taken (a bracket and a long exposure included), during a burst or a
+self-timer countdown, for the whole of an interval series (running or paused), while Astro
+runs, and whenever the camera isn't running.
+
+The Taptic Engine moves the device, so a tap is kept away from exposures and series; with
+the camera not running there is no live picture to level. An interface also holds the tap
+back while a sheet covers the camera or the app isn't active, which the model can't see.
+
 ## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -9148,6 +9165,76 @@ var isLevel: Bool { get }
 ```
 
 Whether the device is level.
+
+## `LevelTapRule`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+struct LevelTapRule
+```
+
+Decides when the level gives its tap: the moment it becomes level, as the person moves the
+device (docs/design/level-haptic.md, sections 2 and 4).
+
+The rule is kept here, out of the interface, so it is tested to full coverage; an interface
+only plays the tap (and says "Level" to VoiceOver) when ``update(_:at:isHeldBack:)`` answers
+`true`.
+
+- One tap each time the level goes from not level to level. None while it stays level, and
+  none on leaving it. Changing between the horizon and the top-down level while level
+  throughout is not a new entry.
+- No tap for the first reading after the level appears, even if it is already level: the tap
+  marks a change the person made, not the level being switched on.
+- At least ``minimumInterval`` between taps. An entry sooner than that is dropped, never
+  played late.
+- No tap while taps are held back (``CameraModel/holdsBackLevelTap``, or a sheet over the
+  camera). An entry while held back is dropped too, so when the cause ends with the device
+  still level, nothing plays.
+
+```swift
+if rule.update(level.state, at: .now, isHeldBack: model.holdsBackLevelTap) { taps += 1 }
+```
+
+## `LevelTapRule/init()`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+init()
+```
+
+Creates a rule with no reading yet.
+
+## `LevelTapRule/minimumInterval`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+static let minimumInterval: Duration
+```
+
+The shortest time between two taps: a steady hand near the edge of the tolerance can
+leave and re-enter level several times a second.
+
+## `LevelTapRule/update(_:at:isHeldBack:)`
+
+public, declared in `Sources/NopeCore/Level.swift`
+
+```swift
+mutating func update(_ state: LevelState?, at time: ContinuousClock.Instant, isHeldBack: Bool) -> Bool
+```
+
+Applies the level's state, and says whether to tap now.
+
+- Parameters:
+  - state: What the level shows, or `nil` when there are no readings (the level was
+    switched off or its readings ended). `nil` resets the rule, so the next reading counts
+    as the first.
+  - time: The time of the reading, from a monotonic clock.
+  - isHeldBack: Whether taps are held back now (a capture, a series, the camera not
+    running, a sheet over the camera, or the app not active).
+- Returns: `true` when the level has just become level and a tap is allowed.
 
 ## `LevelTracker`
 

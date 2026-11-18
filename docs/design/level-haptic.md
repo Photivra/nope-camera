@@ -1,6 +1,6 @@
 # Level haptic
 
-Status: proposed 2026-11-18. Not accepted yet; the decisions are in section 11. No drawing changes: a haptic has no picture, and the level is drawn as it is in [camera.html](camera.html).
+Status: accepted 2026-11-18, all ten decisions in section 11 as recommended; built for release 1.0.0. No drawing changes: a haptic has no picture, and the level is drawn as it is in [camera.html](camera.html).
 
 The request: a tap you can feel when the level becomes level.
 

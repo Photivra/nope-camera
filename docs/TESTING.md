@@ -1417,8 +1417,27 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   relative to the horizon when the phone turns; lines stay visible over white, yellow and dark
   scenes;
 - level: the bar matches a real horizon (or a spirit level) within about 1 degree in portrait
-  and both landscape orientations; the haptic fires once on becoming level; pointing straight
-  down shows the top-down level; Instruments shows no motion updates while the level is off;
+  and both landscape orientations; pointing straight down shows the top-down level;
+  Instruments shows no motion updates while the level is off, and none added by the tap;
+- level tap (`docs/design/level-haptic.md`, section 10; the rule is unit-tested in
+  `LevelTapTests`, the path and wording by the `testLevel…` UI tests with
+  `-NopeSimulatedGravity becomesLevel`):
+  1. iPhone: the tap can be felt in the hand, in portrait and on its side, with and without a
+     case, and can't be mistaken for the saved-photo tap. If it can't be felt, switch
+     `NopeHaptic.levelReached` to the fallback in the design (section 3) and repeat;
+  2. one tap per entry; none while held; none within 1 second of the last; none when Level is
+     switched on while level;
+  3. with System Haptics off in iOS Settings: no tap; with Low Power Mode on: record what the
+     system does;
+  4. no tap during a 1 second or longer exposure, a bracket, a burst, a countdown, an interval
+     series or Astro; a photo taken as the device comes level is as sharp as one taken with
+     Level off;
+  5. Lock Screen camera: record whether the tap plays;
+  6. iPhone Duo: outer display, inner display and half-open; record what the level reads
+     half-open;
+  7. iPad: no tap and no error; with VoiceOver on, "Level" is spoken;
+  8. VoiceOver on iPhone: "Level" is spoken once per entry and doesn't cut off "Saved." or a
+     countdown second;
 - focus peaking: on the rear and front cameras, in portrait and landscape (and every iPad
   orientation), the highlight sits on the in-focus edges, not mirrored or turned; a small
   subject 5 to 15 cm away in front of a busy background shows sharp when focused (issue #51),

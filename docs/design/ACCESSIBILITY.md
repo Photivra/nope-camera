@@ -44,7 +44,7 @@ In clean view the order is: format status (only as a warning), Light pill, warni
 
 ### Announcements
 
-Unchanged sentences, spoken at these moments: the lens on change; the drive mode on change ("Self-Timer, 3 seconds"); Manual Controls on or off; each second of a countdown; each capture result ("Saved and signed." and the others); each failure; each new warning; a series pausing, resuming and ending; Astro turning on, with what it changed ("Astro on. Manual controls and night mode are on."). The last sentence is new and is listed with the new strings in BUILD-SPEC.md.
+Unchanged sentences, spoken at these moments: the lens on change; the drive mode on change ("Self-Timer, 3 seconds"); Manual Controls on or off; each second of a countdown; each capture result ("Saved and signed." and the others); each failure; each new warning; a series pausing, resuming and ending; Astro turning on, with what it changed ("Astro on. Manual controls and night mode are on."); the level becoming level ("Level", or "Pointing straight down, level" for the top-down level), once with each tap, at low priority, and held back in the same situations as the tap ([level-haptic.md](level-haptic.md), section 7). The last sentence is new and is listed with the new strings in BUILD-SPEC.md.
 
 ### Q
 

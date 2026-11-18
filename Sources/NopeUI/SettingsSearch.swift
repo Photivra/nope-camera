@@ -770,7 +770,7 @@ struct CameraPointer: Identifiable, Equatable {
                 keywords: LocalizedStringResource("Search keywords: Magnify", defaultValue: "zoom, loupe, focus check", bundle: bundle, comment: "Settings search keywords for the camera's Magnify control, separated by commas. Not shown on screen."),
                 place: .inQ),
             CameraPointer(id: "grid", title: SettingsText.grid, keywords: nil, place: .inQ),
-            CameraPointer(id: "level", title: SettingsText.level, keywords: LocalizedStringResource("Search keywords: Level", defaultValue: "horizon, straight", bundle: bundle, comment: "Settings search keywords for the Level, separated by commas. Not shown on screen."), place: .inQ),
+            CameraPointer(id: "level", title: SettingsText.level, keywords: LocalizedStringResource("Search keywords: Level", defaultValue: "horizon, straight, tap, haptic, vibration", bundle: bundle, comment: "Settings search keywords for the Level, separated by commas. Not shown on screen."), place: .inQ),
             CameraPointer(
                 id: "compare",
                 title: LocalizedStringResource("Compare", bundle: bundle, comment: "Title of the compare view, and the camera switch and its Voice Control name that turns the comparison shot on: nope.'s photo next to the phone-processed version, which isn't saved."),

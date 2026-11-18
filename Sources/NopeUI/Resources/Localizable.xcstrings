@@ -111,7 +111,7 @@
       "comment" : "Explains the HEIF bit depth picker.",
       "extractionState" : "manual"
     },
-    "A horizon bar, or a top-down level when you point straight down. Uses the motion sensors only while it shows." : {
+    "A horizon bar, or a top-down level when you point straight down. On iPhone, you feel a tap when it's level. Uses the motion sensors only while it shows." : {
       "comment" : "Explains the Level switch.",
       "extractionState" : "manual"
     },
@@ -1139,7 +1139,7 @@
       "comment" : "Live readout value: a feature is on.",
       "extractionState" : "manual"
     },
-    "On iPhone, a tap you can feel confirms each press of the shutter and each saved photo." : {
+    "On iPhone, a tap you can feel confirms each press of the shutter and each saved photo, and marks the moment the level is level." : {
       "comment" : "Accessibility screen: haptic feedback. iPhone is a product name; keep it unchanged.",
       "extractionState" : "manual"
     },
@@ -1548,7 +1548,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "horizon, straight"
+            "value" : "horizon, straight, tap, haptic, vibration"
           }
         }
       }

@@ -110,7 +110,7 @@ Pressed state of every custom button: opacity 0.7 and scale 0.97; opacity only w
 
 ## Haptics
 
-All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level flat `.alignment`; All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes.
+All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level reached `.alignment` (`NopeHaptic.levelReached`, the horizon or the top-down level becoming level; [level-haptic.md](level-haptic.md)); All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes.
 
 ## Button types
 

@@ -166,7 +166,7 @@ struct DesignTokensTests {
         #expect(NopeHaptic.notSaved == .error)
         #expect(NopeHaptic.lensChanged == .selection)
         #expect(NopeHaptic.countdownSecond == .impact(weight: .light))
-        #expect(NopeHaptic.levelFlat == .alignment)
+        #expect(NopeHaptic.levelReached == .alignment)
         #expect(NopeHaptic.allAuto == .success)
         #expect(NopeHaptic.driveModeChanged == .selection)
         #expect(NopeHaptic.manualControlsChanged == .selection)
