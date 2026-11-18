@@ -17,6 +17,19 @@ extension ManualControlsModel {
             farFocusLimit: farFocusLimit, followsFaces: followsFaces)
     }
 
+    /// Whether the selected lens is autofocusing now: it can autofocus, and focus is neither set
+    /// by hand nor locked in Manual Controls. The same rule ``DeviceControls/init(settings:lens:assist:)``
+    /// follows, so it is `false` exactly when the camera gets no Close-Up or Far Focus limit.
+    ///
+    /// Close-Up and Far Focus (``nearFocusLimit``, ``farFocusLimit``) limit only autofocus
+    /// (`AVCaptureDevice.autoFocusRangeRestriction`), so an interface shows them only while this
+    /// is `true` (issue #91, docs/design/SETTING-SCOPE.md, 6). The person's choice is kept and is
+    /// used again when focus returns to Auto. `false` before the camera is ready.
+    public var autoFocusIsInUse: Bool {
+        guard let lens else { return false }
+        return capabilities.supportsAutoFocus && DeviceControls(settings: settings, lens: lens).focus == .automatic
+    }
+
     /// Whether the selected lens can set exposure compensation now.
     public var canAdjustExposureCompensation: Bool {
         availability(of: .exposureCompensation) == .adjustable

@@ -10,6 +10,26 @@ extension CameraModel {
         return canCapture || drive.isBusy || astro.isRunning || manual.intervalProgress != nil
     }
 
+    /// Whether the shutter's photos can fire the flash. Not in Burst (docs/design/BURST.md,
+    /// 3.1: "No flash in Burst, for one photo or many"), not with a bracket set in Pro Tools
+    /// (`AVCapturePhotoBracketSettings` takes no flash; ``CaptureRequest/flashMode``), and not
+    /// with the astro helper on, whose frames are taken without it as a burst's are
+    /// (`takeFrames`).
+    ///
+    /// An interface shows the flash control and its state only while this is `true` (issue #92,
+    /// docs/design/SETTING-SCOPE.md, 6). The person's choice (``LightModel/flashMode``) is kept
+    /// and is used again in the other modes.
+    public var shutterUsesFlash: Bool {
+        drive.mode != .burst && manual.bracket == nil && !astro.isOn
+    }
+
+    /// The flash mode the shutter's next photo uses: ``LightModel/flashModeForCapture`` while
+    /// the shutter can fire the flash (``shutterUsesFlash``), otherwise ``FlashMode/off``. What
+    /// an interface shows as the flash in use, such as the Flash pill.
+    public var flashModeForShutter: FlashMode {
+        shutterUsesFlash ? light.flashModeForCapture : .off
+    }
+
     /// The burst speeds offered on the selected lens: Fast, and Slow unless Fast measured under
     /// ``DriveModel/slowBurstMinimumFastRate`` on it in this session.
     public var burstSpeeds: [BurstSpeed] {

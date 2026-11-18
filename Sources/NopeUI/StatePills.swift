@@ -196,12 +196,13 @@ enum StatePills {
             value: percent)
     }
 
-    /// The flash mode while it is Auto or On and applies to the next photo; its action turns
-    /// the flash off.
+    /// The flash mode while it is Auto or On and applies to the next photo; not in Burst, with
+    /// a bracket or with Astro, which never fire it (`CameraModel.flashModeForShutter`, issue
+    /// #92). Its action turns the flash off.
     ///
     /// - Parameter context: The model and settings.
     static func flash(_ context: CameraControlContext) -> StatePill? {
-        let mode = context.model.light.flashModeForCapture
+        let mode = context.model.flashModeForShutter
         guard mode != .off else { return nil }
         let settings = context.settings
         return StatePill(
@@ -290,12 +291,14 @@ enum StatePills {
             ])
     }
 
-    /// "Close-Up" while autofocus is limited to near subjects (issue #51); its action turns
-    /// the limit off.
+    /// "Close-Up" while autofocus is limited to near subjects (issue #51); not while focus is
+    /// set by hand or locked, where the limit does nothing (issue #91). Its action turns the
+    /// limit off.
     ///
     /// - Parameter context: The model and settings.
     static func closeUp(_ context: CameraControlContext) -> StatePill? {
-        guard context.model.manual.nearFocusLimit else { return nil }
+        let manual = context.model.manual
+        guard manual.nearFocusLimit, manual.autoFocusIsInUse else { return nil }
         return StatePill(
             id: "closeUp", systemImage: "camera.macro", text: CloseUpText.title, label: CloseUpText.title,
             actions: [
@@ -307,12 +310,13 @@ enum StatePills {
             ])
     }
 
-    /// "Far Focus" while autofocus is limited to far subjects (issue #57); its action turns the
-    /// limit off.
+    /// "Far Focus" while autofocus is limited to far subjects (issue #57); not while focus is
+    /// set by hand or locked (issue #91). Its action turns the limit off.
     ///
     /// - Parameter context: The model and settings.
     static func farFocus(_ context: CameraControlContext) -> StatePill? {
-        guard context.model.manual.farFocusLimit else { return nil }
+        let manual = context.model.manual
+        guard manual.farFocusLimit, manual.autoFocusIsInUse else { return nil }
         return StatePill(
             id: "farFocus", systemImage: "mountain.2", text: FarFocusText.title, label: FarFocusText.title,
             actions: [
