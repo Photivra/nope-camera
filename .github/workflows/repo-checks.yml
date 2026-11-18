@@ -36,6 +36,10 @@ jobs:
         run: scripts/test-check-localization.sh
       - name: Localization checks
         run: scripts/check-localization.sh
+      - name: Test the launch screen checks
+        run: scripts/test-check-launch-screen.sh
+      - name: Launch screen checks
+        run: scripts/check-launch-screen.sh
       - name: Test the UI test shard check
         run: scripts/test-ui-test-shards.sh
       - name: Every UI test is in exactly one CI shard

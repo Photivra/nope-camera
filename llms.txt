@@ -29,6 +29,7 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 - [docs/design/tokens.md](docs/design/tokens.md): design tokens (spacing, radii, sizes, type, color, materials, motion, button types) named as Swift constants
 - [docs/design/ACCESSIBILITY.md](docs/design/ACCESSIBILITY.md): accessibility and Siri specification for each screen
 - [docs/design/navigation.md](docs/design/navigation.md): every option, the path to it and tap counts before and after
+- [docs/design/photo-details.html](docs/design/photo-details.html): the What's in This Photo sheet (Photo Details): its groups, what is behind disclosure rows, and where each value comes from
 - [docs/design/SETTINGS-PLAN.md](docs/design/SETTINGS-PLAN.md): the Settings review and its twelve decisions, accepted 2026-11-17; the record behind the Settings structure and the device coverage
 - [docs/design/layouts.html](docs/design/layouts.html): the rule that gives each window its layout, and which screens are drawn for iPhone, iPad, iPhone Duo and Apple Watch
 - [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md): threat model, every pre-release security check with how to run it and pass criteria, and the sign-off checklist

@@ -70,8 +70,13 @@
 2 2 NopeAppUITests/testFileOptionsChangeAndRestore 83e 93e
 2 1 NopeAppUITests/testFirstRunAtTheLargestTextSizeAndRightToLeft 39 42
 2 2 NopeAppUITests/testFirstRunDarkAndLight 42e 42e
+2 3 NopeAppUITests/testFirstRunEndsTheFirstStart 26e 30e
 1 3 NopeAppUITests/testFirstRunLargestTextAndRightToLeft 42e 43e
 3 3 NopeAppUITests/testFirstRunStatementsThenTheCameraPrompt 26 28
+4 2 NopeAppUITests/testFirstStartAtTheLargestTextSizeAndRightToLeft 68e 70e
+1 1 NopeAppUITests/testFirstStartIndicatorEndsAndStaysGone 40e 46e
+3 3 NopeAppUITests/testFirstStartIsBlackWithTheMarkInTheLightAppearance 48e 40e
+2 1 NopeAppUITests/testFirstStartIsRedInNightMode 36e 36e
 1 3 NopeAppUITests/testFlashMenuPillAndLensesWithoutALight 47 55
 2 3 NopeAppUITests/testFocusAidsAtTheLargestTextSize 29 24
 2 1 NopeAppUITests/testFocusAidsRightToLeft 42 31

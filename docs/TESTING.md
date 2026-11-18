@@ -14,6 +14,7 @@ scripts/test-check-localization.sh && scripts/check-localization.sh
 scripts/test-check-coverage.sh
 scripts/test-dump-tags.sh   # macOS only: the tag dumper's TIFF walker
 scripts/test-check-file-compat.sh
+scripts/test-check-launch-screen.sh && scripts/check-launch-screen.sh   # add a built .app to check its Info.plist
 ```
 
 `check-security.sh` reads tracked files only (`git ls-files`), so stage new files before running
@@ -1007,6 +1008,92 @@ of three, a bracket in full auto and a lens switch). The Interval drive mode is 
 `testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
 and right-to-left. The request logic (counts, lenses, the light, interval shooting,
 requests without a camera screen) is unit tested in `ShortcutTests`.
+
+## Launch screen
+
+The design and the reasons are in `docs/design/LAUNCH-SCREEN.md`; the build is described in
+`docs/ARCHITECTURE.md`, "Launch screen".
+
+Automated:
+- `scripts/check-launch-screen.sh [<built .app>]` checks that the `LaunchBackground` color set has
+  one color, opaque sRGB black, with no appearance variant; that `LaunchMark.svg` is byte for
+  byte `docs/design/launch-mark.svg`, rendered as the original, and that its three paths are the
+  icon's (`AppIcon.icon/Assets`) in the icon's colors; and, given a built app, that its Info.plist
+  has exactly `UIColorName`, `UIImageName` and `UIImageRespectsSafeAreaInsets` (false) in
+  `UILaunchScreen`, `UIStatusBarStyleLightContent`, and no launch storyboard, and (on macOS) that
+  the compiled asset catalog holds both assets. `scripts/test-check-launch-screen.sh` has a
+  passing and a failing case for each. The repository checks run both on every pull request; the
+  `ui-build` job checks the app it builds.
+- `LaunchHandOffUITests.swift` launches the `slowStart` scenario, whose camera stays starting
+  until the app first goes to the background, and checks the first start: one element
+  "Starting the camera…", no spinner, the mark's frame 78 × 54 points, centered across the window
+  and 3 points above its center (within a point, from the screenshot's pixels), the picture
+  black outside it, the screen black and the status bar's content white in the light
+  appearance, red only in night mode, the audit, the largest text size and right to left (in the
+  dark appearance); then that the indicator ends when the camera runs and stays gone after the
+  background and a lens change, and that first run ends it.
+- `FirstStartTests` (NopeCore) covers `CameraModel.isFirstStart`; `StartIndicatorTests` (NopeUI)
+  the mark's geometry and colors.
+
+A UI test can't capture the launch screen: iOS draws it before the app runs. On the Simulator
+it can be held for a screenshot:
+
+```sh
+xcrun simctl erase <device>          # or a new device: see "Kept launch screens" below
+xcrun simctl boot <device>
+xcrun simctl ui <device> appearance light
+xcrun simctl install <device> <path>/nope.app
+xcrun simctl launch --wait-for-debugger <device> com.photivra.nope.dev
+xcrun simctl io <device> screenshot launch.png
+xcrun simctl terminate <device> com.photivra.nope.dev
+```
+
+`--wait-for-debugger` holds the launch screen: the app's process is stopped (state `T` in `ps`)
+before its first line of code, and the launch screen stayed up for as long as it was held (23
+seconds, the longest tried, on an iPhone 17 Pro Simulator with iOS 27.2, 2026-11-18). Measured
+that day with this method, in the light and the dark appearance, on an iPhone 17 Pro, an iPhone
+SE (3rd generation) and an iPad Pro 13-inch (M5) in portrait, all iOS 27.2: every pixel outside
+the mark, the status bar and the home indicator band was `#000000`; the status bar's content was
+white; the mark's lit pixels were 78 × 54 points, centered across and 3 points above the
+screen's center, unscaled, in `#EDEDEE` and `#40C8E0`; and the app's first start
+(`-NopeSimulatedCamera slowStart`) drew the mark in the same pixels and colors. So the
+`UILaunchScreen` image is placed as the design asks and the launch storyboard of the design's
+section 6.2 isn't needed.
+
+Kept launch screens: on the Simulator `simctl uninstall` and a new install did not replace the
+launch screen iOS had kept from the previous build (the old period color still showed); erasing
+the device did. Erase the device, or use a new one, before checking a changed launch screen.
+
+Colors: Xcode's asset compiler reads an SVG's colors as Display P3 and stores the launch image in
+sRGB. With the icon's `#40C8E0` written in the SVG the launch screen's period was `#00CBE4`; the
+SVG therefore writes the period as `#6AC5DD`, the Display P3 value of sRGB `#40C8E0`, and the
+launch screen shows `#40C8E0` (measured as above). `#EDEDEE` is the same in both spaces.
+
+By hand, once for each release and again when a file of the design's section 6 changes (record
+the results here):
+1. Each Simulator check above also on the iPad in landscape and in Split View, and on the iPhone
+   Duo closed and open.
+2. A recording of a launch in the light appearance, stepped through frame by frame: no frame
+   between the launch screen and the camera is lighter than the launch screen, and the mark is in
+   the same pixels until it fades.
+3. On an iPhone, an iPad and an iPhone Duo: a cold start (restart, wait a minute, open) and a
+   start from the app switcher, in the light and the dark appearance, recorded, and filmed at
+   240 frames a second for a single bright frame. Note how long the launch screen and the first
+   start last.
+4. On an iPhone, starting the app held sideways, both ways round: the mark stays upright and in
+   place, with no turn that can be seen. If a turn shows, option A ships.
+5. Night Mode on, the app opened in a dark room: nothing white but the status bar and the mark
+   before the red camera; the mark turns red in one frame and doesn't move.
+6. The Lock Screen camera, with Night Mode off and on: what iOS shows before the extension's first
+   frame; nothing brighter than black, then red from the first frame in Night Mode, and the
+   indicator for its first start.
+7. Smart Invert and Classic Invert: the launch screen and the first frame agree. If iOS inverts
+   one and not the other, option A ships.
+8. First run on a fresh install, in each appearance: the mark, then the statements, nothing in
+   between (black to white once in the light appearance, as decided).
+9. After an update: install release 0.3.0, open it, install the new build over it, open it, and
+   record whether the old launch screen is shown once.
+10. The Home Screen icon is still the Icon Composer icon now that the app has an asset catalog.
 
 ## On-device checks
 

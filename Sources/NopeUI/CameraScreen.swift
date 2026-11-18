@@ -85,7 +85,7 @@ public struct CameraScreen<Viewfinder: View>: View {
         // scrolling content at large text sizes never passes under it. The ready camera opens
         // Settings from Q, or from its control column.
         VStack(spacing: 0) {
-            if !isReady {
+            if showsSettingsButton {
                 HStack {
                     Spacer()
                     SettingsButton { showsSettings = true }
@@ -95,6 +95,17 @@ public struct CameraScreen<Viewfinder: View>: View {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        // The camera's first start: the launch screen's mark at the same point until the picture
+        // arrives, then a fade (docs/design/LAUNCH-SCREEN.md, 6.3). Inside night mode's style, so
+        // it is red from the first frame.
+        .overlay {
+            if model.isFirstStart {
+                StartIndicator(showsWords: isReady)
+                    .transition(.opacity)
+            }
+        }
+        .animation(NopeMotion.fade, value: model.isFirstStart)
+        .environment(\.showsStartIndicator, model.isFirstStart)
         .nightModeStyle(settings.isNightModeOn)
         // Nothing turns upright in a window that rotates with the device (iPad, or the inner
         // display of a foldable iPhone).
@@ -135,7 +146,11 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .accessibilityHidden(true)
             }
         }
-        .background(.background)
+        // Black whenever the camera's appearance applies, without waiting for the window's dark
+        // style, so the first frame is the launch screen's black in the light appearance too
+        // (docs/design/LAUNCH-SCREEN.md, 6.1). The screens that follow the system keep its
+        // background.
+        .background(usesLaunchBackground ? AnyShapeStyle(NopeColor.launchBackground) : AnyShapeStyle(.background))
         // A popover on iPad (a sheet in night mode, see AdaptivePresentation); a sheet on iPhone.
         // Night mode turned on in the popover moves Settings to the sheet at once, on the same page.
         .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn, switchesToSheet: true) {
@@ -201,13 +216,32 @@ public struct CameraScreen<Viewfinder: View>: View {
         if case .ready = model.state { true } else { false }
     }
 
+    /// Whether the Settings button sits above the content: on first run, camera access declined
+    /// and no camera. Not while the camera state isn't known yet, a frame or two that is the
+    /// launch screen again (docs/design/LAUNCH-SCREEN.md, 6.1), nor on the ready camera, which
+    /// opens Settings from its own layout.
+    private var showsSettingsButton: Bool {
+        switch model.state {
+        case .starting, .ready: false
+        case .needsPermission, .permissionDenied, .unavailable: true
+        }
+    }
+
+    /// Whether the screen's background is the launch screen's black: whenever the camera's
+    /// appearance applies, or night mode is on.
+    private var usesLaunchBackground: Bool {
+        ScreenAppearance.of(model.state) == .camera || settings.isNightModeOn
+    }
+
     /// The view for the model's current state.
     @ViewBuilder private var content: some View {
         switch model.state {
         case .starting:
-            ProgressView {
-                Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
-            }
+            // Only the background: the state lasts as long as reading the camera permission, and
+            // a spinner would be drawn and gone within a frame or two. ``StartIndicator`` is shown
+            // over it, with the one VoiceOver element, "Starting the camera…".
+            Color.clear
+                .accessibilityHidden(true)
         case .needsPermission:
             FirstRunView { Task { await model.send(.requestPermission) } }
         case .permissionDenied:

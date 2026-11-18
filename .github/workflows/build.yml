@@ -190,6 +190,8 @@ jobs:
           -destination "$SIMULATOR"
           -derivedDataPath DerivedData
           CODE_SIGNING_ALLOWED=NO
+      - name: Launch screen checks of the built app
+        run: scripts/check-launch-screen.sh DerivedData/Build/Products/Debug-iphonesimulator/nope.app
       - name: Pack the test run and the apps
         run: |
           cd DerivedData/Build/Products

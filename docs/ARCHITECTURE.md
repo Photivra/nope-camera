@@ -57,7 +57,10 @@ signed with Content Credentials when signing is on.
    `.unavailable`; otherwise `.ready(capabilities)`, with the rear wide lens selected.
 4. The model chooses the `CaptureFormat` for the lens (Bayer RAW, or the processed fallback when
    the lens has none) and asks the backend to start with a `CaptureRequest`. `sessionStatus`
-   goes from `.starting` to `.running`.
+   goes from `.starting` to `.running`. `isFirstStart` is `true` from the model's creation until
+   the first start ends: the first time `state` becomes `.needsPermission`, `.permissionDenied`
+   or `.unavailable`, or `sessionStatus` becomes anything other than `.stopped` or `.starting`.
+   It never becomes `true` again (see "Launch screen" below).
 5. `.selectLens` reconfigures the backend for another lens. `.capture` builds a `MetadataPlan`
    from `saveSettings` and asks the backend for one photo, whose file is written with that
    plan's metadata. `PhotoSaver` then develops, reads back, signs (when a signer exists), reads
@@ -858,8 +861,9 @@ Q), Honesty, About and Licenses, first run and the camera access screens
 follow the system's light or dark setting, as a sheet on iPhone and a popover on iPad (owner
 decision for 0.3.0). A sheet changes with the setting while it is open; the iPad popover keeps
 the setting it opened with until it closes, because a popover whose scheme changed while open
-kept its glass half in the old appearance, a mid gray behind white text. The brief "Starting the camera…" message
-is dark, like the camera it leads to. Night mode is red on black everywhere: `NightModeStyle` on
+kept its glass half in the old appearance, a mid gray behind white text. The brief state before
+the camera state is known is black, like the camera it leads to and the launch screen before it
+(below). Night mode is red on black everywhere: `NightModeStyle` on
 the dark appearance.
 
 `ScreenAppearance` holds the rule: `.camera` is always dark, `.system` is the system's scheme,
@@ -895,6 +899,32 @@ the camera follow the window and stay dark.
 `AppearanceUITests` checks light and dark Settings, Presets and first run by sampling the
 screen, a change of the setting while Settings is open and while only the camera shows, and
 that the camera's sheets stay dark in the light setting; the Settings screens are audited in both settings (docs/TESTING.md).
+
+### Launch screen
+
+The design is `docs/design/LAUNCH-SCREEN.md` (option B, accepted 2026-11-18). The app's
+Info.plist (`App/NopeApp-Info.plist`) has a `UILaunchScreen` dictionary with `UIColorName`
+`LaunchBackground`, a black color set with no appearance variant, and `UIImageName`
+`LaunchMark`, the icon's frame, "n" and period without its ground (`LaunchMark.svg`, a copy of
+`docs/design/launch-mark.svg`), drawn at 96 × 96 points with `UIImageRespectsSafeAreaInsets` off,
+in `App/NopeApp/Assets.xcassets`. The generated empty dictionary
+(`INFOPLIST_KEY_UILaunchScreen_Generation`) is off, and `UIStatusBarStyleLightContent` keeps the
+status bar's content white on the black in the light appearance.
+
+The app's first frames match it. `CameraScreen`'s background is `NopeColor.launchBackground`
+(black) whenever the camera's appearance applies or night mode is on, so it doesn't depend on
+the window's dark style, which the app applies a turn of the main actor later. Before the
+camera state is known (`.starting`) it draws only that background: no spinner and no Settings
+button. While `CameraModel.isFirstStart` is `true` it shows `StartIndicator` over the whole
+screen: `StartMark`, the same three shapes in the icon's fixed colors (white in night mode, so
+night mode's multiply makes it red), with its center at the window's center, and, once the
+camera is ready and starting, "Starting the camera…" under it on a black plate; the session's
+spinner (`SessionStatusView`) isn't drawn meanwhile. The indicator fades (`NopeMotion.fade`)
+when the first start ends; later starts use the spinner. The Lock Screen camera has no launch
+screen of its own: it draws black until its settings arrive, then the same `CameraScreen`, so it
+shows the indicator for its first start too. `scripts/check-launch-screen.sh` checks the color
+set, the image and, given a built app, its Info.plist; `LaunchHandOffUITests` checks the first
+frames with the `slowStart` scenario (docs/TESTING.md, "Launch screen").
 
 ## Signing and secrets
 

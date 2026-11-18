@@ -14,14 +14,34 @@ import Observation
 @Observable
 public final class CameraModel {
     /// The current camera state. Interfaces render it; only the model changes it.
-    public private(set) var state: CameraState = .starting
+    public private(set) var state: CameraState = .starting {
+        didSet { endFirstStartIfSettled() }
+    }
 
     /// The identifier of the lens in use, once the camera is ready.
     public private(set) var selectedLensID: Lens.ID?
 
     /// Whether the camera is running, and if not, why. Meaningful while ``state`` is
     /// ``CameraState/ready(_:)``.
-    public private(set) var sessionStatus: SessionStatus = .stopped
+    public private(set) var sessionStatus: SessionStatus = .stopped {
+        didSet { endFirstStartIfSettled() }
+    }
+
+    /// Whether the camera is still on its first start since the model was created: `true` from
+    /// creation until the first time the state or the camera's status says how the start went,
+    /// then `false` for good.
+    ///
+    /// It ends when ``state`` becomes ``CameraState/needsPermission``,
+    /// ``CameraState/permissionDenied`` or ``CameraState/unavailable``, or when ``sessionStatus``
+    /// becomes anything other than ``SessionStatus/stopped`` or ``SessionStatus/starting``
+    /// (running, failed, interrupted, paused for heat, no picture). A later start (a return from
+    /// the background, a lens change, a restart of the camera) never makes it `true` again.
+    ///
+    /// An interface shows the launch screen's mark for as long as it is `true`, so the first
+    /// frames match the launch screen (docs/design/LAUNCH-SCREEN.md, 6.3); after it, the usual
+    /// starting indicator. It is in `NopeCore` so the app, the Lock Screen camera and any other
+    /// interface read the first start the same way.
+    public private(set) var isFirstStart = true
 
     /// The state of the most recent capture.
     public internal(set) var captureStatus: CaptureStatus = .idle
@@ -322,6 +342,19 @@ public final class CameraModel {
         } else if sessionStatus == .pausedForHeat {
             await startSession()
         }
+    }
+
+    /// Ends the first start (``isFirstStart``) once the state or the camera's status says how
+    /// it went. Called after every change of ``state`` and ``sessionStatus``.
+    private func endFirstStartIfSettled() {
+        guard isFirstStart else { return }
+        let stateSettled =
+            switch state {
+            case .needsPermission, .permissionDenied, .unavailable: true
+            case .starting, .ready: false
+            }
+        let sessionSettled = sessionStatus != .stopped && sessionStatus != .starting
+        if stateSettled || sessionSettled { isFirstStart = false }
     }
 
     /// Moves to the state that matches a permission, discovering capabilities and starting the
