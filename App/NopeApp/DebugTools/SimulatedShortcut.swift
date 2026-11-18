@@ -12,7 +12,8 @@ import SwiftUI
 ///
 /// Launch with `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in
 /// seconds (0 for none), `burst<count>` for Take Photo with a count, `bracket<count>` for Take
-/// Bracket with that many frames one stop apart, `lens-ultraWide` for Switch Lens, or
+/// Bracket with that many frames one stop apart, darkest first (`bracket<count>-metered` or
+/// `bracket<count>-brightest` for another order), `lens-ultraWide` for Switch Lens, or
 /// `preset-factory` for Apply Preset with Factory Defaults.
 @MainActor
 enum SimulatedShortcut {
@@ -29,8 +30,12 @@ enum SimulatedShortcut {
         if value.hasPrefix("burst"), let count = Int(value.dropFirst("burst".count)) {
             return .takePhoto(PhotoShortcut(count: count))
         }
-        if value.hasPrefix("bracket"), let count = Int(value.dropFirst("bracket".count)) {
-            return .takeBracket(BracketShortcut(frameCount: count, step: 1))
+        if value.hasPrefix("bracket") {
+            let parts = value.dropFirst("bracket".count).split(separator: "-")
+            let orders: [String: BracketOrder] = ["metered": .meteredFirst, "brightest": .brightestFirst]
+            guard let count = parts.first.flatMap({ Int($0) }) else { return nil }
+            let order = parts.dropFirst().first.flatMap { orders[String($0)] } ?? .darkestFirst
+            return .takeBracket(BracketShortcut(frameCount: count, step: 1, order: order))
         }
         if value == "preset-factory" { return .applyPreset(.factoryDefaults) }
         return value == "lens-ultraWide" ? .selectLens(.ultraWide) : nil

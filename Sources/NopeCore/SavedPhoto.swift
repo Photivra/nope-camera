@@ -42,6 +42,10 @@ public struct SavedPhoto: Equatable, Sendable {
     /// "What's in this photo": the facts read back from the saved files (issue #53), or `nil`
     /// for a record made outside ``PhotoSaver``. In memory only.
     public let details: PhotoDetails?
+    /// The photo's place in an exposure bracket, or `nil` for a photo taken on its own. In
+    /// memory only: the session's values, never written to the files
+    /// (docs/design/BRACKETING.md, section 4, "The result").
+    public let bracket: BracketPlace?
 
     /// Creates a saved-photo record.
     ///
@@ -52,9 +56,11 @@ public struct SavedPhoto: Equatable, Sendable {
     ///   - metadata: Each file's read-back inventory.
     ///   - thumbnail: The photo's thumbnail, or `nil`.
     ///   - details: The photo's details, or `nil`.
+    ///   - bracket: The photo's place in a bracket, or `nil`.
     public init(
         formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus,
-        metadata: [PhotoFormat: MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil
+        metadata: [PhotoFormat: MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil,
+        bracket: BracketPlace? = nil
     ) {
         self.formats = formats
         self.isProcessedFallback = isProcessedFallback
@@ -62,5 +68,16 @@ public struct SavedPhoto: Equatable, Sendable {
         self.metadata = metadata
         self.thumbnail = thumbnail
         self.details = details
+        self.bracket = bracket
+    }
+
+    /// The same record with its place in a bracket.
+    ///
+    /// - Parameter place: The photo's place in its bracket.
+    /// - Returns: The record with ``bracket`` set.
+    func placed(in place: BracketPlace) -> SavedPhoto {
+        SavedPhoto(
+            formats: formats, isProcessedFallback: isProcessedFallback, signature: signature, metadata: metadata,
+            thumbnail: thumbnail, details: details, bracket: place)
     }
 }

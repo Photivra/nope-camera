@@ -29,15 +29,15 @@ Top to bottom, leading to trailing, in every layout. Containers are named so the
 | 4 | Failure banner | The failure sentence | none | Static text, then its buttons: Try Again or Open Settings, Dismiss. Announced when it appears, with high priority |
 | 5 | Viewfinder | Viewfinder | Lens, format, exposure warnings ("Wide, single-frame RAW") | Actions: Lock Focus and Exposure; Hide Controls or Show Controls. Tap is focus and expose |
 | 6 | Live aids | Histogram; Live Camera Readout; Level | Their readings | Static |
-| 7 | Mode card | Idle: Interval Settings or Astro Settings; in Burst, the card's text, then Start Burst | The card's sentence | Button. Running: static progress ("Frame 7 of 20"; in Burst "Photos taken: 12. 2.6 a second."; an interval series that stops after a time, "12 photos taken · 1 hour, 12 minutes left", the units in words though the card shows "1 hr, 12 min"), updated politely, then Stop, Stop Burst, Stop Frames or Cancel Timer. Burst: [BURST.md](BURST.md) section 4.2 |
+| 7 | Mode card | Idle: Interval Settings, Astro Settings or Bracket Settings; in Burst, the card's text, then Start Burst | The card's sentence | Button. Running: static progress ("Frame 7 of 20"; in Burst "Photos taken: 12. 2.6 a second."; an interval series that stops after a time, "12 photos taken · 1 hour, 12 minutes left", the units in words though the card shows "1 hr, 12 min"), updated politely, then Stop, Stop Burst, Stop Frames or Cancel Timer. Burst: [BURST.md](BURST.md) section 4.2 |
 | 8 | Manual readouts (container "Manual Controls") | Exposure Compensation, ISO, Shutter, Aperture, Focus, White Balance | "Auto, 200" or "Manual, 400" | Adjustable: swipe up or down changes the value without opening the dial. Double tap opens the dial. More Manual Controls is a menu |
 | 9 | Dial | The control's name | Its value | Slider (adjustable), Decrease, Increase, Auto (selected when automatic). White balance adds Tint and Presets |
 | 10 | Manual Controls button | Manual Controls | On or Off | Button, selected trait when on. Voice Control: "Manual Controls", "Auto", "Manual". Large Content Viewer |
 | 11 | Lenses (container "Lens") | Ultra Wide, Wide, Telephoto, Front | "0.6×", plus "No RAW" where it applies | Button, selected trait |
 | 12 | Switch Camera | Switch Camera | none | Button |
-| 13 | Drive strip (container "Drive") | Single Photo, Self-Timer, Burst, Interval Shooting, Astro | Self-Timer: "3 seconds"; Burst: "Fast" or "Slow" | Button, selected trait. The selected one has the hint "Double tap for options" when it has options. Voice Control accepts the short word and the long name |
+| 13 | Drive strip (container "Drive") | Single Photo, Self-Timer, Burst, Bracket, Interval Shooting, Astro | Self-Timer: "3 seconds"; Burst: "Fast" or "Slow" | Button, selected trait. The selected one has the hint "Double tap for options" when it has options. Voice Control accepts the short word and the long name |
 | 14 | Last Photo | Last Photo | "Saved and signed.", or the other save sentences; "Saving…" while busy | Button. Opens the Last Photo viewer; hint "Shows the photo." Actions: Open in Photos, Photo Details |
-| 15 | Shutter | Take Photo | "Self-timer, 3 seconds", "Burst, fast." with the hint "Double tap for one photo. Double tap and hold for a burst." and the action Start Burst, "Start interval shooting", "Start Astro frames"; "Stop" while running | Button. The volume buttons, the Camera Control and Space do the same |
+| 15 | Shutter | Take Photo | "Self-timer, 3 seconds", "Burst, fast." with the hint "Double tap for one photo. Double tap and hold for a burst." and the action Start Burst, "Start interval shooting", "Start Astro frames", "Bracket, exposure, 3 frames"; "Stop" while running | Button. The volume buttons, the Camera Control and Space do the same |
 | 16 | Q | Quick Menu | Open or Closed | Button. Voice Control: "Quick Menu", "Q". Large Content Viewer |
 
 In clean view the order is: format status (only as a warning), Light pill, warnings, Viewfinder, progress, Show Controls, Take Photo.
@@ -217,6 +217,34 @@ Names are the visible words: "Done", "More Exposure Details", "More Sensor Detai
 - Night mode: red on black (`sheet-photo-details-night`); the three signature states differ by symbol and sentence.
 - The sheet's contents are covered while the app is not active, so a revealed location is not in the app switcher.
 
+## Bracketing
+
+From [BRACKETING.md](BRACKETING.md), section 6, for the 1.0.0 part (exposure bracketing). The focus forms are for 1.1.0.
+
+| Input | Result |
+| --- | --- |
+| Shutter, volume buttons, Camera Control, Space | Takes the bracket, after the start delay. During the delay: cancels. Holding adds nothing |
+| Escape | Closes Bracket Settings |
+| Apple Watch | Take Photo takes what the strip says, so the bracket; "Photos saved and signed" and "Photos saved, not all signed" exist. No watch screen changes |
+| Siri and Shortcuts | Take Bracket, once, without changing the bracket set in the app; it has Order |
+
+| Element | Label, value, hint |
+| --- | --- |
+| Strip word | "Bracket", selected. Hint when selected: "Opens Bracket Settings." |
+| Idle card | "Bracket Settings", button. Value: "Exposure bracket: 3 frames, 1 EV apart, −1, 0, +1 EV" |
+| Shutter | "Take Photo". Value: "Bracket, exposure, 3 frames" |
+| The Frames rows | "Frame 1, −1 EV, 1/250, ISO 200"; a limited frame adds its sentence ("This lens can't go brighter than frame 3.") |
+| Announcements | The countdown's seconds, as the self-timer's; "Taking 3 frames"; "3 photos saved and signed." (existing) |
+| Viewer chip | Part of the page's label: "Exposure bracket, frame 2 of 3, 0 EV." |
+
+- Voice Control and Switch Control: every control has a visible name that is its spoken name (Bracket, Bracket Settings, Frames, Step, Order, Start Delay, Cancel). Nothing needs a hold, a drag or timing.
+- Largest text sizes: the scrolling layout; Bracket is a full-width row, the card is full-width text, and each value in Bracket Settings wraps under its title.
+- Right to left: rows mirror; exposure values and shutter speeds keep their order.
+- Night mode: red on black; the limit warning keeps its triangle and words.
+- Differentiate Without Color, Increase Contrast: the amber triangle always has words.
+- Reduce Motion: the progress bar changes without animation.
+- Sideways, iPad, iPhone Duo: the card on the picture's lower edge; Bracket Settings is a sheet.
+
 ## System surfaces
 
 - Live Activity: reads the title, the status, the signing line, then Stop ("Stop. Every photo already taken is saved.").
@@ -232,7 +260,7 @@ The set of actions is unchanged in 1.0.0: no action is added or removed. One is 
 | App Shortcut | Phrase (English) | Matches in the interface |
 | --- | --- | --- |
 | Take Photo | "Take a photo with nope." / "Take a picture with nope." / "Take a photo in 3 seconds with nope." | Shutter; Timer |
-| Take Bracket | "Take a bracket with nope." | Pro Tools › Bracketing |
+| Take Bracket | "Take a bracket with nope." | Drive strip › Bracket |
 | Open the Camera | "Open the camera in nope." | The app; Open nope. control |
 | Switch Lens | "Switch to telephoto in nope." | Lenses |
 | Turn On the Light | "Turn on the light in nope." | Q › Light |

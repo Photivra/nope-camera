@@ -32,8 +32,15 @@ public final class ManualControlsModel {
     /// are off.
     public private(set) var reading: ExposureReading?
 
-    /// The exposure bracket for the next photo, or `nil` when bracketing is off.
+    /// The exposure bracket for the next press of the shutter, or `nil` when bracketing is off.
+    /// It works in full auto and with manual controls on (docs/design/BRACKETING.md, decision
+    /// 2). An interface shows it as the drive strip's Bracket word.
     public private(set) var bracket: BracketSettings?
+
+    /// The bracket chosen last in this session: the one an interface turns on again when the
+    /// person chooses Bracket. ``BracketSettings/standard`` at first. Not stored between launches,
+    /// as the drive mode isn't (AGENTS.md, "Cognitive": no surprise modes).
+    public private(set) var lastBracket = BracketSettings.standard
 
     /// The interval, and the number of photos or the time, of the next interval series.
     public private(set) var interval = IntervalSettings.standard
@@ -241,20 +248,18 @@ public final class ManualControlsModel {
         await apply(restoringOnFailure: settings)
     }
 
-    /// The frames of the next photo's exposure bracket, or `nil` for a single photo: bracketing
-    /// is off, the lens reports no ISO or shutter range, or there is no exposure to start from
-    /// yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't.
-    ///
-    /// The base exposure is the person's ISO and shutter where set, otherwise the camera's
-    /// reading, which already includes exposure compensation.
-    func bracketFrames() -> [BracketFrame]? {
-        guard isEnabled, let bracket else { return nil }
-        return plan(bracket, iso: value(of: .iso), duration: value(of: .shutter))
+    /// The frames the next press of the shutter takes, as an interface lists them in Bracket
+    /// Settings, or `nil` for a single photo: bracketing is off, the lens reports no ISO or
+    /// shutter range, or there is nothing to plan from yet (see ``bracketFrames(once:)``). The
+    /// bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't. It follows the camera's readings, so it changes as the light
+    /// does; the bracket is planned again from the reading when the shutter is pressed.
+    public var bracketPlan: [BracketFramePlan]? {
+        bracket.flatMap(bracketPlan(once:))
     }
 
     /// Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
     /// frame count is one ``bracketFrameCounts`` offers, and the step is one of
-    /// ``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+    /// ``BracketSettings/steps``. The same limits as the bracket the drive strip turns on.
     ///
     /// - Parameter bracket: The bracket.
     func canBracket(_ bracket: BracketSettings) -> Bool {
@@ -272,26 +277,32 @@ public final class ManualControlsModel {
     /// - Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
     ///   camera hasn't reported an exposure yet.
     func bracketFrames(once bracket: BracketSettings) -> [BracketFrame]? {
-        guard canBracket(bracket) else { return nil }
-        return plan(
-            bracket, iso: settings.iso ?? lastReading?.iso, duration: settings.shutter ?? lastReading?.exposureDuration)
+        bracketPlan(once: bracket)?.map(\.frame)
     }
 
-    /// Plans a bracket's frames around a base exposure, within the lens's ranges.
+    /// Plans a bracket's frames around the base exposure, within the lens's ranges: the
+    /// person's ISO and shutter where set (only while manual controls are on), otherwise the
+    /// camera's last reading, which already includes exposure compensation. The parameter the
+    /// person didn't set changes first, the shutter when neither is set.
     ///
-    /// - Parameters:
-    ///   - bracket: The bracket.
-    ///   - iso: The base ISO, or `nil` when there is none yet.
-    ///   - duration: The base exposure duration in seconds, or `nil` when there is none yet.
-    /// - Returns: The frames, or `nil` without a base exposure or the lens's ranges.
-    private func plan(_ bracket: BracketSettings, iso: Double?, duration: Double?) -> [BracketFrame]? {
-        guard let lens, let isoRange = lens.isoRange, let durationRange = lens.exposureDurationRange, let iso,
-            let duration
+    /// - Parameter bracket: The bracket.
+    /// - Returns: One plan per frame, in the order taken, or `nil` when the lens can't take the
+    ///   bracket or there is no base exposure yet.
+    func bracketPlan(once bracket: BracketSettings) -> [BracketFramePlan]? {
+        guard canBracket(bracket), let lens, let isoRange = lens.isoRange,
+            let durationRange = lens.exposureDurationRange, let iso = settings.iso ?? lastReading?.iso,
+            let duration = settings.shutter ?? lastReading?.exposureDuration
         else { return nil }
-        return BracketFrame.plan(
+        return BracketFramePlan.plan(
             offsets: bracket.offsets, base: BracketFrame(iso: iso, exposureDuration: duration),
             shutterFirst: settings.shutter == nil || settings.iso != nil, isoRange: isoRange,
             durationRange: durationRange)
+    }
+
+    /// Whether the person set the shutter but not ISO, so a bracket changes ISO first; an
+    /// interface says which value changes from frame to frame.
+    public var bracketChangesISOFirst: Bool {
+        settings.shutter != nil && settings.iso == nil
     }
 
     /// Applies the backend's readings until its stream ends. Interfaces
@@ -309,9 +320,9 @@ public final class ManualControlsModel {
 
     /// Handles one intent. ``CameraModel/send(_:)`` calls it.
     ///
-    /// Settings intents have no effect while manual controls are off. Interval shooting works
-    /// in full auto too (each photo is then a full-auto photo), so choosing, starting and
-    /// stopping a series always applies.
+    /// Settings intents have no effect while manual controls are off. Interval shooting and
+    /// bracketing work in full auto too (each photo is then a full-auto photo, and a bracket is
+    /// planned around the camera's reading), so they always apply.
     ///
     /// - Parameters:
     ///   - intent: The intent.
@@ -324,7 +335,7 @@ public final class ManualControlsModel {
             await setEnabled(enabled)
             return
         case .setBracket(let bracket):
-            if isEnabled { setBracket(bracket) }
+            setBracket(bracket)
             return
         case .setInterval(let interval):
             self.interval = interval
@@ -375,8 +386,9 @@ public final class ManualControlsModel {
     // MARK: - Rules
 
     /// Turns manual controls on or off. Off returns everything to automatic; a running interval
-    /// series continues, with full-auto photos from then on. Either way the fast shutter rule
-    /// and the steady hint start again from new readings (``resetReadingAids()``).
+    /// series continues, with full-auto photos from then on, and a bracket stays on, planned
+    /// around the camera's reading from then on. Either way the fast shutter rule and the
+    /// steady hint start again from new readings (``resetReadingAids()``).
     ///
     /// - Parameter enabled: Whether manual controls are on.
     private func setEnabled(_ enabled: Bool) async {
@@ -390,14 +402,14 @@ public final class ManualControlsModel {
             if wasLimited { await applyCurrentControls() }
             return
         }
-        bracket = nil
         reading = nil
         let previous = settings
         settings = .automatic
         if previous != settings || longestAutoShutter != nil { await apply(restoringOnFailure: previous) }
     }
 
-    /// Turns bracketing on with settings the lens supports, or off.
+    /// Turns bracketing on with settings the lens supports, or off. A bracket turned on becomes
+    /// the session's ``lastBracket``.
     ///
     /// - Parameter bracket: The bracket, or `nil` to turn it off.
     private func setBracket(_ bracket: BracketSettings?) {
@@ -407,6 +419,7 @@ public final class ManualControlsModel {
         }
         if bracketFrameCounts.contains(bracket.frameCount), BracketSettings.steps.contains(bracket.step) {
             self.bracket = bracket
+            lastBracket = bracket
         }
     }
 

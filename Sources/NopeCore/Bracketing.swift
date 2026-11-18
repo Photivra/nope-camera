@@ -14,27 +14,50 @@ public struct BracketSettings: Equatable, Hashable, Sendable {
     /// The steps between frames the app offers, in EV: 1/3, 2/3, 1 and 2 stops.
     public static let steps: [Double] = [1.0 / 3.0, 2.0 / 3.0, 1, 2]
 
+    /// The bracket an interface offers first: 3 frames, 1 EV apart, darkest first
+    /// (docs/design/BRACKETING.md, section 4).
+    public static let standard = BracketSettings(frameCount: 3, step: 1)
+
     /// The number of frames.
     public let frameCount: Int
 
     /// The exposure difference between neighboring frames, in EV.
     public let step: Double
 
+    /// The order the frames are taken and saved in. ``BracketOrder/darkestFirst`` by default,
+    /// the order of every earlier version.
+    public let order: BracketOrder
+
     /// Creates bracket settings.
     ///
     /// - Parameters:
     ///   - frameCount: The number of frames, one of ``frameCounts``.
     ///   - step: The difference between neighboring frames in EV, one of ``steps``.
-    public init(frameCount: Int, step: Double) {
+    ///   - order: The order of the frames.
+    public init(frameCount: Int, step: Double, order: BracketOrder = .darkestFirst) {
         self.frameCount = frameCount
         self.step = step
+        self.order = order
     }
 
-    /// Each frame's exposure relative to the metered one, in EV, darkest first and centered on
-    /// 0: for 3 frames 1 EV apart, −1, 0 and +1.
+    /// Each frame's exposure relative to the metered one, in EV, centered on 0, in the order the
+    /// frames are taken (``order``): for 3 frames 1 EV apart, −1, 0, +1 darkest first; 0, −1, +1
+    /// metered first; +1, 0, −1 brightest first.
     public var offsets: [Double] {
         let half = Double(frameCount - 1) / 2
-        return (0..<frameCount).map { (Double($0) - half) * step }
+        let darkestFirst = (0..<frameCount).map { (Double($0) - half) * step }
+        return order.arranged(darkestFirst)
+    }
+
+    /// A copy with another value.
+    ///
+    /// - Parameters:
+    ///   - frameCount: The number of frames, or `nil` to keep it.
+    ///   - step: The step in EV, or `nil` to keep it.
+    ///   - order: The order, or `nil` to keep it.
+    /// - Returns: The new settings.
+    public func with(frameCount: Int? = nil, step: Double? = nil, order: BracketOrder? = nil) -> BracketSettings {
+        BracketSettings(frameCount: frameCount ?? self.frameCount, step: step ?? self.step, order: order ?? self.order)
     }
 
     /// The frame counts a lens can take.
@@ -45,6 +68,46 @@ public struct BracketSettings: Equatable, Hashable, Sendable {
     public static func frameCounts(for lens: Lens) -> [Int] {
         frameCounts.filter { $0 <= lens.maxBracketedPhotoCount }
     }
+}
+
+/// The order in which a bracket's frames are taken and saved (docs/design/BRACKETING.md,
+/// section 4). The system takes the frames in the order of the request's array
+/// (`AVCapturePhotoBracketSettings`), so an order is only the order of the frames asked for.
+public enum BracketOrder: String, CaseIterable, Codable, Hashable, Sendable {
+    /// From the darkest frame to the brightest: −1, 0, +1. The order of every earlier version.
+    case darkestFirst
+
+    /// The metered frame first, then outward, darker before brighter: 0, −1, +1, −2, +2.
+    case meteredFirst
+
+    /// From the brightest frame to the darkest: +1, 0, −1.
+    case brightestFirst
+
+    /// Puts offsets listed darkest first into this order.
+    ///
+    /// - Parameter darkestFirst: The offsets in EV, from the darkest to the brightest.
+    /// - Returns: The same offsets in this order.
+    func arranged(_ darkestFirst: [Double]) -> [Double] {
+        switch self {
+        case .darkestFirst:
+            darkestFirst
+        case .brightestFirst:
+            darkestFirst.reversed()
+        case .meteredFirst:
+            // Stable: equally distant offsets keep their darkest-first order, darker first.
+            darkestFirst.enumerated()
+                .sorted { (abs($0.element), $0.offset) < (abs($1.element), $1.offset) }
+                .map(\.element)
+        }
+    }
+}
+
+/// The kind of a bracket. Release 1.0.0 takes exposure brackets only; the type is named on the
+/// card and in a photo's details so that nothing changes when another kind arrives
+/// (docs/design/BRACKETING.md, decision 5).
+public enum BracketType: String, Equatable, Hashable, Sendable {
+    /// Frames at different exposures.
+    case exposure
 }
 
 /// One frame of a bracket, with the exact exposure the camera is asked for.
@@ -95,6 +158,172 @@ public struct BracketFrame: Equatable, Sendable {
             return BracketFrame(
                 iso: iso, exposureDuration: (base.exposureDuration * remaining).limited(to: durationRange))
         }
+    }
+}
+
+/// One frame of a planned bracket as an interface lists it (docs/design/BRACKETING.md,
+/// section 4, "The Frames"): its number, the offset asked for, the offset the lens can really
+/// give, and the exposure the camera is asked for.
+///
+/// A frame beyond the lens's ISO and shutter ranges gets the nearest exposure the lens can give
+/// (``BracketFrame/plan(offsets:base:shutterFirst:isoRange:durationRange:)``); ``isLimited`` marks
+/// it so an interface can say so before the photo is taken.
+public struct BracketFramePlan: Equatable, Sendable {
+    /// Which way a limited frame falls short.
+    public enum Limit: Equatable, Sendable {
+        /// The lens can't make the frame as bright as asked.
+        case brightest
+
+        /// The lens can't make the frame as dark as asked.
+        case darkest
+    }
+
+    /// How far, in EV, the offset reached may differ from the one asked for and still count as
+    /// reached: the planning multiplies and clamps floating-point values, so a reached frame can
+    /// differ by a rounding error. A hundredth of a stop is far below any step the app offers
+    /// (the smallest is 1/3 EV).
+    static let tolerance = 0.01
+
+    /// The frame's place in the order it is taken, counted from 1.
+    public let number: Int
+
+    /// The offset asked for, in EV, relative to the base exposure.
+    public let requestedOffset: Double
+
+    /// The offset the frame really has, in EV, within the lens's ranges.
+    public let offset: Double
+
+    /// The ISO and exposure duration the camera is asked for.
+    public let frame: BracketFrame
+
+    /// For a limited frame, the number of the first frame (in the order taken) with the same
+    /// exposure: the lens can't go brighter (or darker) than that frame. `nil` when the frame is
+    /// not limited.
+    public let limitingFrameNumber: Int?
+
+    /// Creates a frame plan.
+    ///
+    /// - Parameters:
+    ///   - number: The frame's place in the order, from 1.
+    ///   - requestedOffset: The offset asked for, in EV.
+    ///   - offset: The offset reached, in EV.
+    ///   - frame: The exposure asked for.
+    ///   - limitingFrameNumber: The first frame with the same exposure, for a limited frame.
+    public init(number: Int, requestedOffset: Double, offset: Double, frame: BracketFrame, limitingFrameNumber: Int?) {
+        self.number = number
+        self.requestedOffset = requestedOffset
+        self.offset = offset
+        self.frame = frame
+        self.limitingFrameNumber = limitingFrameNumber
+    }
+
+    /// Whether the lens can't give the offset asked for.
+    public var isLimited: Bool {
+        abs(offset - requestedOffset) > Self.tolerance
+    }
+
+    /// Which way the frame falls short, or `nil` when it isn't limited.
+    public var limit: Limit? {
+        guard isLimited else { return nil }
+        return requestedOffset > offset ? .brightest : .darkest
+    }
+
+    /// Plans every frame of a bracket around a base exposure, within the lens's ranges, and
+    /// marks the frames the lens can't give.
+    ///
+    /// - Parameters:
+    ///   - offsets: Each frame's offset in EV, in the order taken (``BracketSettings/offsets``).
+    ///   - base: The base ISO and exposure duration.
+    ///   - shutterFirst: Whether to change the shutter before ISO.
+    ///   - isoRange: The lens's ISO range.
+    ///   - durationRange: The lens's exposure duration range, in seconds.
+    /// - Returns: One plan per offset, in the same order.
+    public static func plan(
+        offsets: [Double], base: BracketFrame, shutterFirst: Bool, isoRange: ClosedRange<Double>,
+        durationRange: ClosedRange<Double>
+    ) -> [BracketFramePlan] {
+        let frames = BracketFrame.plan(
+            offsets: offsets, base: base, shutterFirst: shutterFirst, isoRange: isoRange, durationRange: durationRange)
+        let baseExposure = base.iso * base.exposureDuration
+        let reached = frames.map { log2($0.iso * $0.exposureDuration / baseExposure) }
+        return zip(offsets, zip(frames, reached)).enumerated().map { index, values in
+            let (requested, (frame, offset)) = values
+            let isLimited = abs(offset - requested) > tolerance
+            // The first frame with this exposure; a frame that is the first one names itself.
+            let first = reached.prefix(index).firstIndex { abs($0 - offset) <= tolerance } ?? index
+            return BracketFramePlan(
+                number: index + 1, requestedOffset: requested, offset: offset, frame: frame,
+                limitingFrameNumber: isLimited ? first + 1 : nil)
+        }
+    }
+}
+
+/// How far an exposure bracket has got while it is taken and saved
+/// (``CameraModel/bracketProgress``).
+public struct BracketProgress: Equatable, Sendable {
+    /// The frames the camera has returned. The system takes all frames in one request, so this is
+    /// 0 while the request runs and ``total`` once it returns.
+    public let taken: Int
+
+    /// The frames saved to Photos so far.
+    public let saved: Int
+
+    /// The frames in the bracket.
+    public let total: Int
+
+    /// Creates a progress value.
+    ///
+    /// - Parameters:
+    ///   - taken: The frames taken.
+    ///   - saved: The frames saved.
+    ///   - total: The frames in the bracket.
+    public init(taken: Int, saved: Int, total: Int) {
+        self.taken = taken
+        self.saved = saved
+        self.total = total
+    }
+
+    /// Whether the frames are still being taken (the request hasn't returned).
+    public var isTaking: Bool {
+        taken < total
+    }
+}
+
+/// A saved photo's place in its bracket (``SavedPhoto/bracket``), for the Last Photo viewer and
+/// "What's in This Photo" (docs/design/BRACKETING.md, section 4, "The result").
+///
+/// Privacy: these are the session's values, held in memory with the saved photo until the app
+/// closes. They are never written to a file, so the metadata allowlist doesn't change.
+public struct BracketPlace: Equatable, Sendable {
+    /// The kind of bracket.
+    public let type: BracketType
+
+    /// This frame: its number, the offsets asked for and reached, and its planned exposure.
+    public let frame: BracketFramePlan
+
+    /// The frames in the bracket.
+    public let count: Int
+
+    /// Every frame's offset asked for, in EV, in the order taken.
+    public let offsets: [Double]
+
+    /// The order of the frames.
+    public let order: BracketOrder
+
+    /// Creates a place.
+    ///
+    /// - Parameters:
+    ///   - type: The kind of bracket.
+    ///   - frame: This frame's plan.
+    ///   - count: The frames in the bracket.
+    ///   - offsets: Every frame's offset asked for, in the order taken.
+    ///   - order: The order of the frames.
+    public init(type: BracketType, frame: BracketFramePlan, count: Int, offsets: [Double], order: BracketOrder) {
+        self.type = type
+        self.frame = frame
+        self.count = count
+        self.offsets = offsets
+        self.order = order
     }
 }
 

@@ -130,6 +130,9 @@ struct CameraReadyView: View {
     /// Whether the Interval sheet is shown (the selected Interval word, or the interval card).
     @State private var showsIntervalSettings = false
 
+    /// Whether Bracket Settings is shown (the selected Bracket word, or the bracket's card).
+    @State private var showsBracketSettings = false
+
     /// The self-timer delay the Timer word chooses: the last one chosen in this session, 3
     /// seconds at first (BUILD-SPEC.md, 3.5; not stored, section 6, item 8).
     @State private var timerDelay = SelfTimerDelay.threeSeconds
@@ -264,6 +267,16 @@ struct CameraReadyView: View {
                 .presentationDetents([.large])
                 .presentationSizing(.page)
         }
+        // Bracket Settings, as Interval Settings above: full height and page sized, so the audit
+        // measures every row against the sheet (docs/design/BRACKETING.md, section 7).
+        .sheet(isPresented: $showsBracketSettings) {
+            BracketSheet(model: model)
+                .nightModeStyle(isNightMode)
+                .presentationBackground(.background)
+                .presentationDetents([.large])
+                .presentationSizing(.page)
+        }
+        .onChange(of: model.isBracketOn) { _, isOn in if !isOn { showsBracketSettings = false } }
         // The same presets list as in Settings (issue #72), a sheet for the reasons above.
         .sheet(isPresented: $showsPresets) {
             if let presets {
@@ -276,7 +289,7 @@ struct CameraReadyView: View {
                     .presentationSizing(.page)
             }
         }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsBracketSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
         .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -295,9 +308,10 @@ struct CameraReadyView: View {
             showsQuickMenu = false
             showsExposureDial = false
         }
-        // A delay chosen elsewhere (Siri, a preset) becomes the one Timer chooses next.
+        // A delay chosen elsewhere (Siri, a preset) becomes the one Timer chooses next; a
+        // bracket's start delay is the bracket's own.
         .onChange(of: model.drive.mode, initial: true) { _, mode in
-            if case .timer(let delay) = mode { timerDelay = delay }
+            if !model.isBracketOn, case .timer(let delay) = mode { timerDelay = delay }
         }
         .onChange(of: model.manual.focusTarget?.isLocked) { wasLocked, isLocked in
             // Announced only when the lock itself changes, not on every tap.
@@ -614,7 +628,8 @@ struct CameraReadyView: View {
         DriveStrip(
             model: model, settings: settings, presentation: presentation, timerDelay: $timerDelay,
             openIntervalSettings: { showsIntervalSettings = true },
-            openAstroSettings: { showsAstroSettings = true })
+            openAstroSettings: { showsAstroSettings = true },
+            openBracketSettings: { showsBracketSettings = true })
     }
 
     /// The shutter row: the last photo (or Show Controls) on the leading side, the shutter in
@@ -815,7 +830,7 @@ struct CameraReadyView: View {
             Spacer(minLength: 0)
             StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
             if showsControls {
-                DriveModePill(word: DriveWord.selected(mode: model.drive.mode, isAstroOn: model.astro.isOn))
+                DriveModePill(word: DriveWord.selected(mode: model.drive.mode, isAstroOn: model.astro.isOn, isBracketOn: model.isBracketOn))
             }
         }
     }
@@ -826,7 +841,7 @@ struct CameraReadyView: View {
     private var pictureBottomStack: some View {
         VStack(spacing: NopeSpace.xs) {
             CameraHints(model: model)
-            if showsControls, !isSeriesRunning, !dynamicTypeSize.isAccessibilitySize {
+            if showsControls, !hidesReadouts, !dynamicTypeSize.isAccessibilitySize {
                 if let openControl, model.manual.isEnabled {
                     ControlDial(model: model, control: openControl)
                 } else if showsExposureDial {
@@ -834,7 +849,7 @@ struct CameraReadyView: View {
                 }
             }
             modeCards
-            if showsControls, model.manual.isEnabled, !isSeriesRunning {
+            if showsControls, model.manual.isEnabled, !hidesReadouts {
                 // Each readout is a tile with its own backing (docs/design/screens/camera-manual).
                 ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
             }
@@ -846,7 +861,13 @@ struct CameraReadyView: View {
     private var modeCards: some View {
         ModeCards(
             model: model, showsControls: showsControls, openIntervalSettings: { showsIntervalSettings = true },
-            openAstroSettings: { showsAstroSettings = true })
+            openAstroSettings: { showsAstroSettings = true }, openBracketSettings: { showsBracketSettings = true })
+    }
+
+    /// Whether the readouts and dials step back for a running mode's card: a series, or a
+    /// bracket being taken and saved (docs/design/BRACKETING.md, section 4).
+    private var hidesReadouts: Bool {
+        isSeriesRunning || model.bracketProgress != nil
     }
 
     /// The width text blocks wrap at while the iPhone is on its side: the picture's height,
@@ -899,7 +920,7 @@ struct CameraReadyView: View {
             FailureBanner(
                 error: bannerError, canCapture: model.canCapture,
                 tryAgain: { Task { await model.send(.capture) } },
-                dismiss: { self.bannerError = nil })
+                dismiss: { self.bannerError = nil }, failedBracket: model.failedBracket)
         }
     }
 

@@ -146,14 +146,15 @@ extension NopeAppUITests {
         XCTAssertTrue((iso.value as? String)?.hasPrefix("Auto") ?? false)
     }
 
-    /// Pro Tools keeps exposure mode, metering, the locks, bracketing and the live aids, and has
-    /// nothing that starts or sets up an interval series (docs/design/SETTINGS-PLAN.md, decision 8).
+    /// Pro Tools keeps exposure mode, metering, the locks and the live aids, and has nothing that
+    /// starts or sets up an interval series (docs/design/SETTINGS-PLAN.md, decision 8) or a
+    /// bracket (docs/design/BRACKETING.md, decision 1; `testProToolsHasNoBracketing`).
     @MainActor
     func testProToolsHasNoIntervalSection() throws {
         let app = launch("manual", extraArguments: Self.manualControlsOn)
         manualMenu(app, "Pro Tools")
-        XCTAssertTrue(app.switches["Bracketing"].waitForExistence(timeout: 20))
-        XCTAssertTrue(element(app, containing: "Exposure Mode").exists)
+        XCTAssertTrue(element(app, containing: "Exposure Mode").waitForExistence(timeout: 20))
+        XCTAssertFalse(app.switches["Bracketing"].exists)
         XCTAssertTrue(element(app, containing: "Metering").exists)
         keepScreenshot("manual-pro-tools")
         // A live aid's switch reads its name, then its explanation.

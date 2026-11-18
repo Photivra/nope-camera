@@ -101,6 +101,9 @@ enum SimulatedCameraLaunch {
         /// As `manual`, and each save takes half a second, so the astro helper's frames run long
         /// enough for the UI tests to see and stop them.
         case astro
+        /// As `manual`, in light so low (ISO 3200 at 1/4 s) that the brightest frames of a wide
+        /// bracket are beyond the wide lens's limits, so Bracket Settings marks them.
+        case dimManual
         /// Access already allowed; lenses with the full-auto aids (tap to focus, exposure
         /// compensation, Close-Up) and focal lengths, in bright light.
         case aids
@@ -287,6 +290,11 @@ enum SimulatedCameraLaunch {
         iso: 6400, exposureDuration: 1.0 / 48.0, exposureOffset: -2, lensPosition: 0.5, aperture: 1.8,
         whiteBalance: WhiteBalance(temperature: 3200))
 
+    /// A dim scene for the manual lenses: ISO 3200 at 1/4 s.
+    static let dimManualReading = ExposureReading(
+        iso: 3200, exposureDuration: 0.25, exposureOffset: 0, lensPosition: 0.5, aperture: 1.48,
+        whiteBalance: WhiteBalance(temperature: 3200))
+
     /// Autofocus searching at the lens's nearest position.
     static let tooCloseReading = ExposureReading(
         iso: 100, exposureDuration: 1.0 / 120.0, exposureOffset: 0, lensPosition: 0, aperture: 1.8,
@@ -327,6 +335,9 @@ enum SimulatedCameraLaunch {
         case .manual, .astro:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
+        case .dimManual:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses), reading: dimManualReading)
         case .aids:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses))
         case .dimLight:

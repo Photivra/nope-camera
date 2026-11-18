@@ -70,7 +70,8 @@ struct ManualControlsModelTests {
         let (model, backend) = await makeModel(enabled: false)
         await send(model, .setValue(.iso, 400), .setBracket(BracketSettings(frameCount: 3, step: 1)))
         #expect(model.manual.settings == .automatic)
-        #expect(model.manual.bracket == nil)
+        // A bracket works in full auto (docs/design/BRACKETING.md, decision 2).
+        #expect(model.manual.bracket == BracketSettings(frameCount: 3, step: 1))
         await send(model, .setInterval(IntervalSettings(interval: 5, count: 3)))
         #expect(model.manual.interval == IntervalSettings(interval: 5, count: 3))
         #expect(await backend.applied.isEmpty)
@@ -95,7 +96,8 @@ struct ManualControlsModelTests {
         await send(model, .setEnabled(false))
         #expect(!model.manual.isEnabled)
         #expect(model.manual.settings == .automatic)
-        #expect(model.manual.bracket == nil)
+        // The bracket stays on, planned around the camera's reading from now on.
+        #expect(model.manual.bracket == BracketSettings(frameCount: 3, step: 1))
         #expect(await backend.readingSwitches == [true])
         #expect(await backend.applied.last == .automatic)
         let count = await backend.applied.count
@@ -418,7 +420,7 @@ struct ManualControlsModelTests {
         #expect(frames.map(\.iso) == [100, 200, 400])
     }
 
-    @Test func bracketNeedsRangesAndManualControlsOn() async {
+    @Test func bracketNeedsRanges() async {
         let noRanges = Lens(id: "n", kind: .wide, bayerRAWFormat: nil, maxBracketedPhotoCount: 3)
         let (model, backend) = await makeModel(lenses: [noRanges])
         await send(model, .setBracket(BracketSettings(frameCount: 3, step: 1)))

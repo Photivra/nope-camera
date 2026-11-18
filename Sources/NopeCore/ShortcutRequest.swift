@@ -12,7 +12,7 @@ public enum ShortcutRequest: Equatable, Sendable {
     case takePhoto(PhotoShortcut)
 
     /// Take one exposure bracket, after an optional delay, with an optional lens, without
-    /// changing the bracket chosen in Pro Tools.
+    /// changing the bracket chosen on the drive strip.
     case takeBracket(BracketShortcut)
 
     /// Switch to a lens of this kind, as the lens buttons do.
@@ -114,15 +114,15 @@ public struct PhotoShortcut: Equatable, Sendable {
     }
 }
 
-/// The parameters of a "Take Bracket" request: the frames, the step between them, the delay and
-/// the lens.
+/// The parameters of a "Take Bracket" request: the frames, the step between them, their order,
+/// the delay and the lens.
 ///
-/// The bracket is taken once, through the same bracket path as the one in Pro Tools, whether or
-/// not manual controls are on; the person's own bracket setting doesn't change. Values are moved
+/// The bracket is taken once, through the same bracket path as the shutter's, whether or not
+/// manual controls are on; the person's own bracket setting doesn't change. Values are moved
 /// to the nearest the app offers (``BracketSettings/frameCounts`` and ``BracketSettings/steps``);
 /// whether the lens can take it is checked when it is taken.
 public struct BracketShortcut: Equatable, Sendable {
-    /// The frames and the step, each one the app offers.
+    /// The frames, the step and the order, each one the app offers.
     public let bracket: BracketSettings
 
     /// The delay before the bracket, in seconds, from 0 to ``PhotoShortcut/maximumDelaySeconds``.
@@ -137,12 +137,16 @@ public struct BracketShortcut: Equatable, Sendable {
     ///   - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
     ///   - step: The exposure difference between neighboring frames in EV (stops), moved to the
     ///     nearest of ``BracketSettings/steps``.
+    ///   - order: The order of the frames; ``BracketOrder/darkestFirst`` by default.
     ///   - delaySeconds: The delay in seconds, kept within 0 to ``PhotoShortcut/maximumDelaySeconds``.
     ///   - lensKind: The kind of lens, or `nil` for the lens already selected.
-    public init(frameCount: Int, step: Double, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil) {
+    public init(
+        frameCount: Int, step: Double, order: BracketOrder = .darkestFirst, delaySeconds: Int = 0,
+        lensKind: Lens.Kind? = nil
+    ) {
         bracket = BracketSettings(
             frameCount: Self.nearest(frameCount, in: BracketSettings.frameCounts),
-            step: Self.nearest(step, in: BracketSettings.steps))
+            step: Self.nearest(step, in: BracketSettings.steps), order: order)
         self.delaySeconds = PhotoShortcut(delaySeconds: delaySeconds).delaySeconds
         self.lensKind = lensKind
     }

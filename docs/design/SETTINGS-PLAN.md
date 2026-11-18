@@ -130,7 +130,7 @@ Unchanged in number: Set Night Mode (with phrases), Set Fast Shutter, Set Face D
 16. **Factory Defaults is inside Presets**, and the build spec shows the Presets row only when a preset is saved. In the code the row is always shown. If it were hidden, Factory Defaults would be unreachable from Settings on a fresh install. People look for "reset" at the end of a settings list, and search has no entry for that word.
 17. **Manual Controls leaves Settings** (issue 77) with nothing left behind. Someone who learned it in 0.3.0, or who looks in Settings first, finds no trace. The same applies to Self-Timer, Flash and Grid for people who look in Settings before the camera.
 18. **Focus Peaking in full auto is only in Settings** (four taps). In Pro Tools it needs Manual Controls on. Issue 74 lists focus peaking as "easy to reach" for close-up work, and the rule in navigation.md says nothing used while shooting is only in Settings.
-19. **Bracketing is only in Pro Tools**, so only with Manual Controls on, although "Take a bracket with nope." works by voice at any time. Noted; no change proposed for 1.0.0 (see 3.5).
+19. **Bracketing is only in Pro Tools**, so only with Manual Controls on, although "Take a bracket with nope." works by voice at any time. Noted; no change proposed for 1.0.0 (see 3.5). *Superseded on 2026-11-18: Bracket is a word on the drive strip in 1.0.0, in full auto too ([BRACKETING.md](BRACKETING.md), decisions 1 and 2).*
 
 ### 2.5 On the camera or in Q instead, or the reverse
 
@@ -285,10 +285,10 @@ One task gets longer than in direction B: turning Remove All Optional Details ba
 
 ### 3.5 Outside Settings, found by this review
 
-- **Pro Tools: remove the Interval Shooting section** (item 2). The drive strip and its card are the one home. Pro Tools then holds exposure mode, metering, the locks, bracketing and the live aids. Decision 7.8.
+- **Pro Tools: remove the Interval Shooting section** (item 2). The drive strip and its card are the one home. Pro Tools then holds exposure mode, metering, the locks, bracketing and the live aids. Decision 7.8. (Bracketing left Pro Tools too, on 2026-11-18: [BRACKETING.md](BRACKETING.md).)
 - **Q: a Focus Peaking tile** (item 18), shown in full auto and manual. It changes the existing switch. Decision 7.7.
 - **Q tile value for the readout**: "On" and "On, Kept" in place of "Pinned", or keep "Pinned" and add it to the page as the switch's value text. Minor; follows the wording review.
-- **Bracketing** stays in Pro Tools for 1.0.0. Moving it to the drive strip would change the strip that was just chosen; recorded for the 1.1.0 list.
+- **Bracketing** stays in Pro Tools for 1.0.0. Moving it to the drive strip would change the strip that was just chosen; recorded for the 1.1.0 list. *Superseded on 2026-11-18: the owner accepted Bracket on the drive strip for 1.0.0 ([BRACKETING.md](BRACKETING.md), decision 1).*
 
 ### 3.6 Search
 

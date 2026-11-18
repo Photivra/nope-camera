@@ -1178,6 +1178,376 @@ beyond both limits gets the nearest exposure the lens can give.
   - durationRange: The lens's exposure duration range, in seconds.
 - Returns: One frame per offset, in the same order.
 
+## `BracketFramePlan`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketFramePlan
+```
+
+One frame of a planned bracket as an interface lists it (docs/design/BRACKETING.md,
+section 4, "The Frames"): its number, the offset asked for, the offset the lens can really
+give, and the exposure the camera is asked for.
+
+A frame beyond the lens's ISO and shutter ranges gets the nearest exposure the lens can give
+(``BracketFrame/plan(offsets:base:shutterFirst:isoRange:durationRange:)``); ``isLimited`` marks
+it so an interface can say so before the photo is taken.
+
+## `BracketFramePlan/Limit`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum Limit
+```
+
+Which way a limited frame falls short.
+
+## `BracketFramePlan/Limit/brightest`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case brightest
+```
+
+The lens can't make the frame as bright as asked.
+
+## `BracketFramePlan/Limit/darkest`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case darkest
+```
+
+The lens can't make the frame as dark as asked.
+
+## `BracketFramePlan/frame`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let frame: BracketFrame
+```
+
+The ISO and exposure duration the camera is asked for.
+
+## `BracketFramePlan/init(number:requestedOffset:offset:frame:limitingFrameNumber:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(number: Int, requestedOffset: Double, offset: Double, frame: BracketFrame, limitingFrameNumber: Int?)
+```
+
+Creates a frame plan.
+
+- Parameters:
+  - number: The frame's place in the order, from 1.
+  - requestedOffset: The offset asked for, in EV.
+  - offset: The offset reached, in EV.
+  - frame: The exposure asked for.
+  - limitingFrameNumber: The first frame with the same exposure, for a limited frame.
+
+## `BracketFramePlan/isLimited`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isLimited: Bool { get }
+```
+
+Whether the lens can't give the offset asked for.
+
+## `BracketFramePlan/limit`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var limit: Limit? { get }
+```
+
+Which way the frame falls short, or `nil` when it isn't limited.
+
+## `BracketFramePlan/limitingFrameNumber`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let limitingFrameNumber: Int?
+```
+
+For a limited frame, the number of the first frame (in the order taken) with the same
+exposure: the lens can't go brighter (or darker) than that frame. `nil` when the frame is
+not limited.
+
+## `BracketFramePlan/number`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let number: Int
+```
+
+The frame's place in the order it is taken, counted from 1.
+
+## `BracketFramePlan/offset`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let offset: Double
+```
+
+The offset the frame really has, in EV, within the lens's ranges.
+
+## `BracketFramePlan/plan(offsets:base:shutterFirst:isoRange:durationRange:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static func plan(offsets: [Double], base: BracketFrame, shutterFirst: Bool, isoRange: ClosedRange<Double>, durationRange: ClosedRange<Double>) -> [BracketFramePlan]
+```
+
+Plans every frame of a bracket around a base exposure, within the lens's ranges, and
+marks the frames the lens can't give.
+
+- Parameters:
+  - offsets: Each frame's offset in EV, in the order taken (``BracketSettings/offsets``).
+  - base: The base ISO and exposure duration.
+  - shutterFirst: Whether to change the shutter before ISO.
+  - isoRange: The lens's ISO range.
+  - durationRange: The lens's exposure duration range, in seconds.
+- Returns: One plan per offset, in the same order.
+
+## `BracketFramePlan/requestedOffset`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let requestedOffset: Double
+```
+
+The offset asked for, in EV, relative to the base exposure.
+
+## `BracketFramePlan/tolerance`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let tolerance: Double
+```
+
+How far, in EV, the offset reached may differ from the one asked for and still count as
+reached: the planning multiplies and clamps floating-point values, so a reached frame can
+differ by a rounding error. A hundredth of a stop is far below any step the app offers
+(the smallest is 1/3 EV).
+
+## `BracketOrder`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum BracketOrder
+```
+
+The order in which a bracket's frames are taken and saved (docs/design/BRACKETING.md,
+section 4). The system takes the frames in the order of the request's array
+(`AVCapturePhotoBracketSettings`), so an order is only the order of the frames asked for.
+
+## `BracketOrder/arranged(_:)`
+
+internal, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func arranged(_ darkestFirst: [Double]) -> [Double]
+```
+
+Puts offsets listed darkest first into this order.
+
+- Parameter darkestFirst: The offsets in EV, from the darkest to the brightest.
+- Returns: The same offsets in this order.
+
+## `BracketOrder/brightestFirst`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case brightestFirst
+```
+
+From the brightest frame to the darkest: +1, 0, −1.
+
+## `BracketOrder/darkestFirst`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case darkestFirst
+```
+
+From the darkest frame to the brightest: −1, 0, +1. The order of every earlier version.
+
+## `BracketOrder/meteredFirst`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case meteredFirst
+```
+
+The metered frame first, then outward, darker before brighter: 0, −1, +1, −2, +2.
+
+## `BracketPlace`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketPlace
+```
+
+A saved photo's place in its bracket (``SavedPhoto/bracket``), for the Last Photo viewer and
+"What's in This Photo" (docs/design/BRACKETING.md, section 4, "The result").
+
+Privacy: these are the session's values, held in memory with the saved photo until the app
+closes. They are never written to a file, so the metadata allowlist doesn't change.
+
+## `BracketPlace/count`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let count: Int
+```
+
+The frames in the bracket.
+
+## `BracketPlace/frame`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let frame: BracketFramePlan
+```
+
+This frame: its number, the offsets asked for and reached, and its planned exposure.
+
+## `BracketPlace/init(type:frame:count:offsets:order:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(type: BracketType, frame: BracketFramePlan, count: Int, offsets: [Double], order: BracketOrder)
+```
+
+Creates a place.
+
+- Parameters:
+  - type: The kind of bracket.
+  - frame: This frame's plan.
+  - count: The frames in the bracket.
+  - offsets: Every frame's offset asked for, in the order taken.
+  - order: The order of the frames.
+
+## `BracketPlace/offsets`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let offsets: [Double]
+```
+
+Every frame's offset asked for, in EV, in the order taken.
+
+## `BracketPlace/order`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let order: BracketOrder
+```
+
+The order of the frames.
+
+## `BracketPlace/type`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let type: BracketType
+```
+
+The kind of bracket.
+
+## `BracketProgress`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+struct BracketProgress
+```
+
+How far an exposure bracket has got while it is taken and saved
+(``CameraModel/bracketProgress``).
+
+## `BracketProgress/init(taken:saved:total:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(taken: Int, saved: Int, total: Int)
+```
+
+Creates a progress value.
+
+- Parameters:
+  - taken: The frames taken.
+  - saved: The frames saved.
+  - total: The frames in the bracket.
+
+## `BracketProgress/isTaking`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+var isTaking: Bool { get }
+```
+
+Whether the frames are still being taken (the request hasn't returned).
+
+## `BracketProgress/saved`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let saved: Int
+```
+
+The frames saved to Photos so far.
+
+## `BracketProgress/taken`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let taken: Int
+```
+
+The frames the camera has returned. The system takes all frames in one request, so this is
+0 while the request runs and ``total`` once it returns.
+
+## `BracketProgress/total`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let total: Int
+```
+
+The frames in the bracket.
+
 ## `BracketSettings`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -1228,12 +1598,12 @@ The frame counts a lens can take.
 - Returns: The members of ``frameCounts`` up to the lens's limit; empty when it can't
   bracket.
 
-## `BracketSettings/init(frameCount:step:)`
+## `BracketSettings/init(frameCount:step:order:)`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-init(frameCount: Int, step: Double)
+init(frameCount: Int, step: Double, order: BracketOrder = .darkestFirst)
 ```
 
 Creates bracket settings.
@@ -1241,6 +1611,7 @@ Creates bracket settings.
 - Parameters:
   - frameCount: The number of frames, one of ``frameCounts``.
   - step: The difference between neighboring frames in EV, one of ``steps``.
+  - order: The order of the frames.
 
 ## `BracketSettings/offsets`
 
@@ -1250,8 +1621,31 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 var offsets: [Double] { get }
 ```
 
-Each frame's exposure relative to the metered one, in EV, darkest first and centered on
-0: for 3 frames 1 EV apart, −1, 0 and +1.
+Each frame's exposure relative to the metered one, in EV, centered on 0, in the order the
+frames are taken (``order``): for 3 frames 1 EV apart, −1, 0, +1 darkest first; 0, −1, +1
+metered first; +1, 0, −1 brightest first.
+
+## `BracketSettings/order`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let order: BracketOrder
+```
+
+The order the frames are taken and saved in. ``BracketOrder/darkestFirst`` by default,
+the order of every earlier version.
+
+## `BracketSettings/standard`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+static let standard: BracketSettings
+```
+
+The bracket an interface offers first: 3 frames, 1 EV apart, darkest first
+(docs/design/BRACKETING.md, section 4).
 
 ## `BracketSettings/step`
 
@@ -1273,6 +1667,22 @@ static let steps: [Double]
 
 The steps between frames the app offers, in EV: 1/3, 2/3, 1 and 2 stops.
 
+## `BracketSettings/with(frameCount:step:order:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+func with(frameCount: Int? = nil, step: Double? = nil, order: BracketOrder? = nil) -> BracketSettings
+```
+
+A copy with another value.
+
+- Parameters:
+  - frameCount: The number of frames, or `nil` to keep it.
+  - step: The step in EV, or `nil` to keep it.
+  - order: The order, or `nil` to keep it.
+- Returns: The new settings.
+
 ## `BracketShortcut`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -1281,11 +1691,11 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 struct BracketShortcut
 ```
 
-The parameters of a "Take Bracket" request: the frames, the step between them, the delay and
-the lens.
+The parameters of a "Take Bracket" request: the frames, the step between them, their order,
+the delay and the lens.
 
-The bracket is taken once, through the same bracket path as the one in Pro Tools, whether or
-not manual controls are on; the person's own bracket setting doesn't change. Values are moved
+The bracket is taken once, through the same bracket path as the shutter's, whether or not
+manual controls are on; the person's own bracket setting doesn't change. Values are moved
 to the nearest the app offers (``BracketSettings/frameCounts`` and ``BracketSettings/steps``);
 whether the lens can take it is checked when it is taken.
 
@@ -1297,7 +1707,7 @@ public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 let bracket: BracketSettings
 ```
 
-The frames and the step, each one the app offers.
+The frames, the step and the order, each one the app offers.
 
 ## `BracketShortcut/delaySeconds`
 
@@ -1309,12 +1719,12 @@ let delaySeconds: Int
 
 The delay before the bracket, in seconds, from 0 to ``PhotoShortcut/maximumDelaySeconds``.
 
-## `BracketShortcut/init(frameCount:step:delaySeconds:lensKind:)`
+## `BracketShortcut/init(frameCount:step:order:delaySeconds:lensKind:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(frameCount: Int, step: Double, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+init(frameCount: Int, step: Double, order: BracketOrder = .darkestFirst, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
 ```
 
 Creates a request.
@@ -1323,6 +1733,7 @@ Creates a request.
   - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
   - step: The exposure difference between neighboring frames in EV (stops), moved to the
     nearest of ``BracketSettings/steps``.
+  - order: The order of the frames; ``BracketOrder/darkestFirst`` by default.
   - delaySeconds: The delay in seconds, kept within 0 to ``PhotoShortcut/maximumDelaySeconds``.
   - lensKind: The kind of lens, or `nil` for the lens already selected.
 
@@ -1350,6 +1761,28 @@ The value in a list closest to a value: the first of two equally close ones.
   - value: The value.
   - values: The values offered; not empty.
 - Returns: The closest.
+
+## `BracketType`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+enum BracketType
+```
+
+The kind of a bracket. Release 1.0.0 takes exposure brackets only; the type is named on the
+card and in a photo's details so that nothing changes when another kind arrives
+(docs/design/BRACKETING.md, decision 5).
+
+## `BracketType/exposure`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case exposure
+```
+
+Frames at different exposures.
 
 ## `BurstEnd`
 
@@ -1859,6 +2292,43 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 
 The hardware the model asks for permission, capabilities and photos.
 
+## `CameraModel/bracketDidChange(after:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func bracketDidChange(after intent: ManualControlIntent)
+```
+
+Keeps the drive mode a bracket can use after a manual intent: turning a bracket on while
+Burst or Interval is chosen chooses Single, and the self-timer's delay, if chosen, becomes
+the bracket's start delay. An interface that turns Bracket on with the session's delay
+sends ``bracketDriveMode``, read before, as the drive mode next.
+
+- Parameter intent: The intent just handled.
+
+## `CameraModel/bracketDriveMode`
+
+public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor var bracketDriveMode: DriveMode { get }
+```
+
+The drive mode an interface chooses with the bracket: Single, or the self-timer with the
+bracket's start delay (``bracketStartDelay``).
+
+## `CameraModel/bracketProgress`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var bracketProgress: BracketProgress? { get set }
+```
+
+The exposure bracket being taken and saved, or `nil` when none is (docs/design/BRACKETING.md,
+section 4, "The card and the shutter").
+
 ## `CameraModel/bracketReadingTimeoutSeconds`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
@@ -1870,6 +2340,30 @@ internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
 How long a bracket request waits for the camera's first exposure reading, which the
 bracket's frames are planned around, in seconds. An assumption, to be confirmed on a
 device: the camera reports readings several times a second once it runs.
+
+## `CameraModel/bracketStartDelay`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var bracketStartDelay: SelfTimerDelay? { get set }
+```
+
+The start delay of the bracket, or `nil` for none: the self-timer's delay chosen while a
+bracket was on (``bracketDriveMode``). Kept for the session, so choosing Bracket again
+keeps it.
+
+## `CameraModel/bracketToTurnOn`
+
+public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor var bracketToTurnOn: BracketSettings? { get }
+```
+
+The bracket an interface turns on when the person chooses Bracket: the session's
+``ManualControlsModel/lastBracket``, with as many frames as the selected lens can take,
+or `nil` when the lens can't bracket.
 
 ## `CameraModel/cameraProblem(inbox:)`
 
@@ -1949,13 +2443,15 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 @MainActor func capture(onceBracket: BracketSettings? = nil) async
 ```
 
-Takes one photo with the selected lens, if the camera can capture now.
+Takes one photo with the selected lens, if the camera can capture now, or the exposure
+bracket (``ManualControlsModel/bracket``) when one is on. A photo of an interval series is
+always a single photo (docs/design/BRACKETING.md, decision 3).
 
 A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
 camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
 
 - Parameter onceBracket: A bracket to take this time only, through the same bracket path
-  as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
+  as the shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or
   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
   first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
 
@@ -2074,6 +2570,31 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 ```
 
 The drive mode, the self-timer and bursts. Their intents arrive as ``CameraIntent/drive(_:)``.
+
+## `CameraModel/driveModeDidChange()`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func driveModeDidChange() async
+```
+
+Keeps the bracket and the drive mode together after the drive mode changed: Burst and
+Interval turn the bracket off; with a bracket on, Single and the self-timer's delay become
+the bracket's start delay.
+
+## `CameraModel/failedBracket`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var failedBracket: BracketProgress? { get set }
+```
+
+How far the last bracket got when one of its frames couldn't be saved, or `nil`. It goes
+with ``captureStatus`` ``CaptureStatus/failed(_:)``: an interface says how many photos were
+saved before the error ("Bracket stopped: 2 of 3 photos saved."). Cleared when the next
+capture starts.
 
 ## `CameraModel/failureWasAPause()`
 
@@ -2196,6 +2717,17 @@ Waits until the time of an interval series that stops after a time is up, while 
 series waits for the camera (`waitForIntervalPhoto()`); the time is in seconds. Tests
 replace it.
 
+## `CameraModel/isBracketOn`
+
+public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor var isBracketOn: Bool { get }
+```
+
+Whether a press of the shutter takes the bracket: a bracket is on and the astro helper,
+which takes over the shutter, is off. An interface shows the Bracket word selected.
+
 ## `CameraModel/isBusyForPresets`
 
 public, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2275,6 +2807,19 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
 focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
+
+## `CameraModel/lensDidChange(hadBracket:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func lensDidChange(hadBracket: Bool)
+```
+
+Chooses Single when a lens change turned the bracket off, so the drive strip never shows
+a self-timer the person didn't choose.
+
+- Parameter hadBracket: Whether a bracket was on before the lens changed.
 
 ## `CameraModel/light`
 
@@ -2973,6 +3518,46 @@ struct BracketValue
 
 An exposure bracket, as stored in a preset.
 
+## `CameraSetup/BracketValue/CodingKeys`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+enum CodingKeys
+```
+
+The stored names of the values.
+
+## `CameraSetup/BracketValue/CodingKeys/frameCount`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case frameCount
+```
+
+``frameCount``.
+
+## `CameraSetup/BracketValue/CodingKeys/order`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case order
+```
+
+``order``.
+
+## `CameraSetup/BracketValue/CodingKeys/step`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case step
+```
+
+``step``.
+
 ## `CameraSetup/BracketValue/frameCount`
 
 public, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -2994,6 +3579,41 @@ init(_ bracket: BracketSettings)
 Copies a bracket.
 
 - Parameter bracket: The bracket.
+
+## `CameraSetup/BracketValue/init(from:)`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+init(from decoder: any Decoder) throws
+```
+
+Reads a bracket, with ``BracketOrder/darkestFirst`` when the order is missing or
+unknown.
+
+- Parameter decoder: The decoder.
+- Throws: A `DecodingError` when the frame count or the step is missing.
+
+## `CameraSetup/BracketValue/order`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var order: BracketOrder
+```
+
+The order of the frames. A preset saved before the order existed has none, and reads
+as ``BracketOrder/darkestFirst``, the order it was taken in then.
+
+## `CameraSetup/BracketValue/settings`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var settings: BracketSettings { get }
+```
+
+The bracket these values describe.
 
 ## `CameraSetup/BracketValue/step`
 
@@ -4514,7 +5134,8 @@ case savedBracket([SavedPhoto])
 ```
 
 An exposure bracket was taken and every frame was saved as its own photo: separate
-single-frame photos, nothing merged, darkest first.
+single-frame photos, nothing merged, in the bracket's order (``BracketOrder``). Each
+photo carries its place in the bracket (``SavedPhoto/bracket``).
 
 Say how many photos were saved, and whether all of them are signed; when one isn't,
 say why, as for ``saved(_:)``. Announce it to VoiceOver.
@@ -12525,7 +13146,20 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 @MainActor var bracket: BracketSettings? { get set }
 ```
 
-The exposure bracket for the next photo, or `nil` when bracketing is off.
+The exposure bracket for the next press of the shutter, or `nil` when bracketing is off.
+It works in full auto and with manual controls on (docs/design/BRACKETING.md, decision
+2). An interface shows it as the drive strip's Bracket word.
+
+## `ManualControlsModel/bracketChangesISOFirst`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var bracketChangesISOFirst: Bool { get }
+```
+
+Whether the person set the shutter but not ISO, so a bracket changes ISO first; an
+interface says which value changes from frame to frame.
 
 ## `ManualControlsModel/bracketFrameCounts`
 
@@ -12536,21 +13170,6 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 ```
 
 The bracket frame counts the selected lens offers; empty when it can't bracket.
-
-## `ManualControlsModel/bracketFrames()`
-
-internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
-
-```swift
-@MainActor func bracketFrames() -> [BracketFrame]?
-```
-
-The frames of the next photo's exposure bracket, or `nil` for a single photo: bracketing
-is off, the lens reports no ISO or shutter range, or there is no exposure to start from
-yet. The bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't.
-
-The base exposure is the person's ISO and shutter where set, otherwise the camera's
-reading, which already includes exposure compensation.
 
 ## `ManualControlsModel/bracketFrames(once:)`
 
@@ -12569,6 +13188,37 @@ are on; otherwise the settings are automatic), otherwise the camera's last readi
 - Parameter bracket: The bracket.
 - Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
   camera hasn't reported an exposure yet.
+
+## `ManualControlsModel/bracketPlan`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var bracketPlan: [BracketFramePlan]? { get }
+```
+
+The frames the next press of the shutter takes, as an interface lists them in Bracket
+Settings, or `nil` for a single photo: bracketing is off, the lens reports no ISO or
+shutter range, or there is nothing to plan from yet (see ``bracketFrames(once:)``). The
+bracket always fits the lens: ``lensWillStart(_:)`` drops one that doesn't. It follows the camera's readings, so it changes as the light
+does; the bracket is planned again from the reading when the shutter is pressed.
+
+## `ManualControlsModel/bracketPlan(once:)`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor func bracketPlan(once bracket: BracketSettings) -> [BracketFramePlan]?
+```
+
+Plans a bracket's frames around the base exposure, within the lens's ranges: the
+person's ISO and shutter where set (only while manual controls are on), otherwise the
+camera's last reading, which already includes exposure compensation. The parameter the
+person didn't set changes first, the shutter when neither is set.
+
+- Parameter bracket: The bracket.
+- Returns: One plan per frame, in the order taken, or `nil` when the lens can't take the
+  bracket or there is no base exposure yet.
 
 ## `ManualControlsModel/canAdjustExposureCompensation`
 
@@ -12590,7 +13240,7 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
 frame count is one ``bracketFrameCounts`` offers, and the step is one of
-``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+``BracketSettings/steps``. The same limits as the bracket the drive strip turns on.
 
 - Parameter bracket: The bracket.
 
@@ -12776,9 +13426,9 @@ internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Handles one intent. ``CameraModel/send(_:)`` calls it.
 
-Settings intents have no effect while manual controls are off. Interval shooting works
-in full auto too (each photo is then a full-auto photo), so choosing, starting and
-stopping a series always applies.
+Settings intents have no effect while manual controls are off. Interval shooting and
+bracketing work in full auto too (each photo is then a full-auto photo, and a bracket is
+planned around the camera's reading), so they always apply.
 
 - Parameters:
   - intent: The intent.
@@ -12862,6 +13512,18 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 How the last interval series ended, or `nil` before the first one ends. Cleared when the
 next starts.
+
+## `ManualControlsModel/lastBracket`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lastBracket: BracketSettings { get set }
+```
+
+The bracket chosen last in this session: the one an interface turns on again when the
+person chooses Bracket. ``BracketSettings/standard`` at first. Not stored between launches,
+as the drive mode isn't (AGENTS.md, "Cognitive": no surprise modes).
 
 ## `ManualControlsModel/lastReading`
 
@@ -20964,6 +21626,18 @@ struct SavedPhoto
 
 A photo that passed the read-back and was added to Photos.
 
+## `SavedPhoto/bracket`
+
+public, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+let bracket: BracketPlace?
+```
+
+The photo's place in an exposure bracket, or `nil` for a photo taken on its own. In
+memory only: the session's values, never written to the files
+(docs/design/BRACKETING.md, section 4, "The result").
+
 ## `SavedPhoto/details`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
@@ -20985,12 +21659,12 @@ let formats: [PhotoFormat]
 
 The formats saved, in the order they were built.
 
-## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:thumbnail:details:)`
+## `SavedPhoto/init(formats:isProcessedFallback:signature:metadata:thumbnail:details:bracket:)`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
 
 ```swift
-init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil)
+init(formats: [PhotoFormat], isProcessedFallback: Bool, signature: SignatureStatus, metadata: [PhotoFormat : MetadataInventory], thumbnail: PhotoThumbnail? = nil, details: PhotoDetails? = nil, bracket: BracketPlace? = nil)
 ```
 
 Creates a saved-photo record.
@@ -21002,6 +21676,7 @@ Creates a saved-photo record.
   - metadata: Each file's read-back inventory.
   - thumbnail: The photo's thumbnail, or `nil`.
   - details: The photo's details, or `nil`.
+  - bracket: The photo's place in a bracket, or `nil`.
 
 ## `SavedPhoto/isProcessedFallback`
 
@@ -21023,6 +21698,19 @@ let metadata: [PhotoFormat : MetadataInventory]
 
 Every tag, block and property of each saved file, for the "What's in your last photo"
 screen (issue #1). Kept in memory only, because add-only access can't read Photos.
+
+## `SavedPhoto/placed(in:)`
+
+internal, declared in `Sources/NopeCore/SavedPhoto.swift`
+
+```swift
+func placed(in place: BracketPlace) -> SavedPhoto
+```
+
+The same record with its place in a bracket.
+
+- Parameter place: The photo's place in its bracket.
+- Returns: The record with ``bracket`` set.
 
 ## `SavedPhoto/signature`
 
@@ -22665,7 +23353,7 @@ case takeBracket(BracketShortcut)
 ```
 
 Take one exposure bracket, after an optional delay, with an optional lens, without
-changing the bracket chosen in Pro Tools.
+changing the bracket chosen on the drive strip.
 
 ## `ShortcutRequest/takePhoto(_:)`
 
@@ -22844,8 +23532,9 @@ public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 func captureBracket(_ request: CaptureRequest, frames: [BracketFrame]) async throws(CaptureError) -> [CapturedPhoto]
 ```
 
-Returns one placeholder photo per frame, with the frame's ISO and duration, or throws
-``captureError``.
+Returns one placeholder photo per frame, in the order asked for, with the frame's ISO and
+duration, or throws ``captureError``. The order is the bracket's order
+(``BracketSettings/order``), so the UI tests can check it.
 
 - Parameters:
   - request: The lens and format of the photos.

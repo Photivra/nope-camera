@@ -163,7 +163,7 @@ extension NopeAppUITests {
 
         let manual = launch("manual", extraArguments: ["-NopeSettings.showsManualControls", "YES"])
         manualMenu(manual, "Pro Tools")
-        XCTAssertTrue(manual.switches["Bracketing"].waitForExistence(timeout: 20))
+        XCTAssertTrue(manual.staticTexts["Metering"].waitForExistence(timeout: 20))
         assertAppearance(manual, isLight: false, "Pro Tools")
     }
 

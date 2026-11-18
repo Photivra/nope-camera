@@ -134,12 +134,44 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         /// The step between frames, in EV.
         public var step: Double
 
+        /// The order of the frames. A preset saved before the order existed has none, and reads
+        /// as ``BracketOrder/darkestFirst``, the order it was taken in then.
+        public var order: BracketOrder
+
         /// Copies a bracket.
         ///
         /// - Parameter bracket: The bracket.
         public init(_ bracket: BracketSettings) {
             frameCount = bracket.frameCount
             step = bracket.step
+            order = bracket.order
+        }
+
+        /// Reads a bracket, with ``BracketOrder/darkestFirst`` when the order is missing or
+        /// unknown.
+        ///
+        /// - Parameter decoder: The decoder.
+        /// - Throws: A `DecodingError` when the frame count or the step is missing.
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            frameCount = try container.decode(Int.self, forKey: .frameCount)
+            step = try container.decode(Double.self, forKey: .step)
+            order = (try? container.decodeIfPresent(BracketOrder.self, forKey: .order)) ?? .darkestFirst
+        }
+
+        /// The bracket these values describe.
+        public var settings: BracketSettings {
+            BracketSettings(frameCount: frameCount, step: step, order: order)
+        }
+
+        /// The stored names of the values.
+        enum CodingKeys: String, CodingKey {
+            /// ``frameCount``.
+            case frameCount
+            /// ``step``.
+            case step
+            /// ``order``.
+            case order
         }
     }
 
@@ -387,6 +419,6 @@ extension CameraModel {
         }
         await send(.auto(.setExposureCompensation(values.exposureCompensation)))
         await send(.auto(.setNearFocusLimit(setup.nearFocusLimit)))
-        await send(.manual(.setBracket(setup.bracket.map { BracketSettings(frameCount: $0.frameCount, step: $0.step) })))
+        await send(.manual(.setBracket(setup.bracket?.settings)))
     }
 }

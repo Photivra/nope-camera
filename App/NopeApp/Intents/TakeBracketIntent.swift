@@ -2,7 +2,8 @@ import AppIntents
 import NopeCore
 
 /// "Take Bracket" for Siri and the Shortcuts app (issue #62): opens the app to the camera and
-/// takes one exposure bracket: 3, 5 or 7 separate photos, a chosen number of stops apart.
+/// takes one exposure bracket: 3, 5 or 7 separate photos, a chosen number of stops apart, in a
+/// chosen order (darkest, metered or brightest first; docs/design/BRACKETING.md, decision 17).
 ///
 /// A separate action from ``TakePhotoIntent``, not a parameter of it: a bracket and a burst are
 /// different captures (exposures set exactly per frame, against frames as fast as the camera
@@ -11,7 +12,7 @@ import NopeCore
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it hands a ``BracketShortcut``
 /// to the app's ``ShortcutInbox`` and says the outcome. The bracket is taken once, through the
-/// same bracket path as the one in Pro Tools; the person's own bracket setting doesn't change.
+/// same bracket path as the shutter's; the bracket chosen on the drive strip doesn't change.
 struct TakeBracketIntent: AppIntent {
     /// The action's name in the Shortcuts app.
     static let title = LocalizedStringResource(
@@ -40,6 +41,13 @@ struct TakeBracketIntent: AppIntent {
         default: .oneStop)
     var step: BracketStepChoice
 
+    /// The order of the frames; Darkest First, the order of earlier versions, by default.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Order", comment: "A setting of nope.'s Take Bracket action: the order in which the photos are taken."),
+        default: .darkestFirst)
+    var order: BracketOrderChoice
+
     /// The preset delay: none, 3 or 10 seconds, as the self-timer offers.
     @Parameter(
         title: LocalizedStringResource(
@@ -59,6 +67,7 @@ struct TakeBracketIntent: AppIntent {
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
         Summary("Take a bracket of \(\.$frames), \(\.$step) apart") {
+            \.$order
             \.$delay
             \.$lens
         }
@@ -70,7 +79,8 @@ struct TakeBracketIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let request = BracketShortcut(
-            frameCount: frames.count, step: step.stops, delaySeconds: delay.timer?.seconds ?? 0, lensKind: lens?.kind)
+            frameCount: frames.count, step: step.stops, order: order.order, delaySeconds: delay.timer?.seconds ?? 0,
+            lensKind: lens?.kind)
         let outcome = await inbox.submit(.takeBracket(request))
         return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
     }
@@ -145,6 +155,40 @@ enum BracketStepChoice: String, AppEnum {
         case .twoThirdsStop: 2.0 / 3.0
         case .oneStop: 1
         case .twoStops: 2
+        }
+    }
+}
+
+/// The orders ``TakeBracketIntent`` offers: those of `BracketOrder`.
+enum BracketOrderChoice: String, AppEnum {
+    /// The darkest frame first.
+    case darkestFirst
+    /// The metered frame first, then outward.
+    case meteredFirst
+    /// The brightest frame first.
+    case brightestFirst
+
+    /// The type's name in the Shortcuts app.
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource(
+            "Order", comment: "A setting of nope.'s Take Bracket action: the order in which the photos are taken."))
+
+    /// Each order's name.
+    static let caseDisplayRepresentations: [BracketOrderChoice: DisplayRepresentation] = [
+        .darkestFirst: DisplayRepresentation(
+            title: LocalizedStringResource("Darkest First", comment: "A choice of the Order setting of nope.'s Take Bracket action: the darkest photo first.")),
+        .meteredFirst: DisplayRepresentation(
+            title: LocalizedStringResource("Metered First", comment: "A choice of the Order setting of nope.'s Take Bracket action: the photo at the metered exposure first, then darker and brighter ones.")),
+        .brightestFirst: DisplayRepresentation(
+            title: LocalizedStringResource("Brightest First", comment: "A choice of the Order setting of nope.'s Take Bracket action: the brightest photo first.")),
+    ]
+
+    /// The order.
+    var order: BracketOrder {
+        switch self {
+        case .darkestFirst: .darkestFirst
+        case .meteredFirst: .meteredFirst
+        case .brightestFirst: .brightestFirst
         }
     }
 }

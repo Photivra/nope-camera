@@ -33,6 +33,9 @@ enum DriveText {
         if drive.burstProgress != nil {
             return Text("Taking a burst. Press to stop.", bundle: .module, comment: "VoiceOver value of the shutter while a burst runs: pressing the shutter stops it.")
         }
+        if model.isBracketOn, let bracket = model.manual.bracket {
+            return BracketText.shutterValue(bracket)
+        }
         switch drive.mode {
         case .single: return nil
         case .timer(let delay):
@@ -200,12 +203,16 @@ enum ModeCardState: Equatable {
     /// Astro's frames run or are paused: the frame, a progress bar and Stop Frames.
     case astroRunning(AstroRun)
 
+    /// An exposure bracket: idle, counting down, taking, saving or saved (``BracketCardState``).
+    case bracket(BracketCardState)
+
     /// Whether the card shows something that runs, and so stays in clean view: stopping never
     /// depends on bringing the controls back.
     var isRunning: Bool {
         switch self {
         case .timerCountdown, .astroCountdown, .burstRunning, .burstSaving, .intervalRunning, .astroRunning: true
         case .burstIdle, .burstEnded, .intervalIdle, .astroReady: false
+        case .bracket(let bracket): bracket.isRunning
         }
     }
 
@@ -267,9 +274,18 @@ enum ModeCardState: Equatable {
     ///   - model: The camera model.
     ///   - endedBurst: A burst whose summary or end message still shows, or `nil`.
     ///   - showsControls: Whether the controls are shown.
+    ///   - savedBracket: The card of the last bracket saved, shown until the next action, or `nil`.
     /// - Returns: The card, or `nil`.
     @MainActor
-    static func current(_ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool) -> ModeCardState? {
+    static func current(
+        _ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool, savedBracket: BracketCardState? = nil
+    ) -> ModeCardState? {
+        // A bracket's card, unless a series runs (a series started by Siri while a bracket is on).
+        if model.manual.intervalProgress == nil, model.astro.progress == nil, model.drive.burstProgress == nil,
+            let bracket = BracketCardState.current(model, saved: savedBracket, showsControls: showsControls)
+        {
+            return .bracket(bracket)
+        }
         let astro = model.astro
         let estimate = model.astroEstimate
         let run = astro.progress.map {
@@ -679,8 +695,14 @@ struct ModeCards: View {
     /// Opens Astro Settings.
     let openAstroSettings: () -> Void
 
+    /// Opens Bracket Settings.
+    let openBracketSettings: () -> Void
+
     /// A burst whose summary or end message the card shows until the next action.
     @State private var endedBurst: BurstResult?
+
+    /// The last bracket saved, whose card shows until the next action.
+    @State private var savedBracket: BracketCardState?
 
     /// When the running series' last photo was counted, for "Next photo in".
     @State private var nextPhoto: NextPhotoTiming?
@@ -692,16 +714,21 @@ struct ModeCards: View {
     ///   - showsControls: Whether the controls are shown.
     ///   - openIntervalSettings: Opens Interval Settings.
     ///   - openAstroSettings: Opens Astro Settings.
-    init(model: CameraModel, showsControls: Bool, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void) {
+    ///   - openBracketSettings: Opens Bracket Settings.
+    init(
+        model: CameraModel, showsControls: Bool, openIntervalSettings: @escaping () -> Void,
+        openAstroSettings: @escaping () -> Void, openBracketSettings: @escaping () -> Void = {}
+    ) {
         self.model = model
         self.showsControls = showsControls
         self.openIntervalSettings = openIntervalSettings
         self.openAstroSettings = openAstroSettings
+        self.openBracketSettings = openBracketSettings
     }
 
     /// The card for now.
     private var state: ModeCardState? {
-        ModeCardState.current(model, endedBurst: endedBurst, showsControls: showsControls)
+        ModeCardState.current(model, endedBurst: endedBurst, showsControls: showsControls, savedBracket: savedBracket)
     }
 
     /// The card, or nothing.
@@ -721,6 +748,14 @@ struct ModeCards: View {
         .onChange(of: model.captureStatus == .capturing) { _, isCapturing in
             if isCapturing, model.drive.burstProgress == nil { endedBurst = nil }
         }
+        // A saved bracket's card shows until the next action: another photo, a change to the
+        // bracket, the mode, the lens or Astro.
+        .onChange(of: model.captureStatus) { _, status in savedBracket = BracketCardState.saved(from: status) }
+        .onChange(of: model.manual.bracket) { savedBracket = nil }
+        .onChange(of: model.drive.mode) { savedBracket = nil }
+        .onChange(of: model.selectedLensID) { savedBracket = nil }
+        .onChange(of: model.astro.isOn) { savedBracket = nil }
+        .bracketFeedback(model)
         .onChange(of: model.manual.intervalProgress?.taken) { _, taken in
             guard let taken, taken > 0 else {
                 nextPhoto = nil
@@ -799,6 +834,8 @@ struct ModeCards: View {
             ) {
                 stopButton(ModeCardText.stopFrames) { send(.astro(.stop)) }
             }
+        case .bracket(let bracket):
+            BracketCard(state: bracket, openSettings: openBracketSettings) { send(.drive(.cancelTimer)) }
         }
     }
 
