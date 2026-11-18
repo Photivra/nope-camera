@@ -11,7 +11,8 @@ extension CameraModel {
     /// Whether the app should take the hardware shutter buttons (the volume buttons and the
     /// Camera Control): while the camera runs. At other times they keep their system behavior,
     /// as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
-    /// "isEnabled"). Not while the compare view is open (issue #55).
+    /// "isEnabled"). Not while the compare view is open (issue #55). While the Last Photo viewer
+    /// is open (``isViewerOpen``) a press closes it and takes no photo.
     public var handlesHardwareButtons: Bool {
         sessionStatus.canCapture && !comparison.isPresented
     }
@@ -72,6 +73,17 @@ extension CameraModel {
     ///
     /// - Parameter phase: How the button moved.
     private func handleHardwareButton(_ phase: HardwareButtonPhase) async {
+        // With the Last Photo viewer open, the press closes it and takes no photo, from its
+        // first phase to its last (BUILD-SPEC.md, decision V1): the framing is hidden.
+        if isViewerOpen {
+            isViewerOpen = false
+            hardwarePressClosedViewer = phase == .pressed
+            return
+        }
+        if hardwarePressClosedViewer {
+            hardwarePressClosedViewer = phase == .pressed
+            return
+        }
         guard drive.mode == .burst else {
             if phase == .released { await pressShutter() }
             return
@@ -165,7 +177,7 @@ extension CameraModel {
         var saved: [SavedPhoto] = []
         var failure: CaptureError?
         var end = endAtLimit
-        var pending: Task<Result<SavedPhoto, CaptureError>, Never>?
+        var pending: PendingFrame?
         var taken = 0
         while taken < limit {
             if pausesWithCamera, seriesShouldPause {
@@ -189,6 +201,7 @@ extension CameraModel {
             }
             let photo: CapturedPhoto
             let start = now()
+            let takenAt = wallClock()
             do {
                 photo = try await backend.capturePhoto(request)
             } catch {
@@ -202,11 +215,12 @@ extension CameraModel {
             let previous = pending
             let captureDuration = now() - start
             let distortionCorrection = distortionCorrection(of: photo)
-            pending = Task {
-                await Self.saveResult(
-                    photo, saver: saver, settings: settings, captureDuration: captureDuration,
-                    distortionCorrection: distortionCorrection)
-            }
+            pending = PendingFrame(
+                save: Task {
+                    await Self.saveResult(
+                        photo, saver: saver, settings: settings, captureDuration: captureDuration,
+                        distortionCorrection: distortionCorrection)
+                }, lens: lens, takenAt: takenAt)
             if let previous, let error = await collect(previous, into: &saved, tracker: tracker) {
                 failure = error
                 break
@@ -233,20 +247,20 @@ extension CameraModel {
         return deviceStatus.fits(bytes: bytesPerPhoto) ? nil : .storageFull
     }
 
-    /// Waits for a frame's save and adds it to the saved frames.
+    /// Waits for a frame's save and adds it to the saved frames and ``sessionPhotos``.
     ///
     /// - Parameters:
-    ///   - save: The frame's save.
+    ///   - frame: The frame's save, lens and time.
     ///   - saved: The frames saved so far.
     ///   - tracker: The run's progress.
     /// - Returns: The error when the save failed, otherwise `nil`.
     private func collect(
-        _ save: Task<Result<SavedPhoto, CaptureError>, Never>, into saved: inout [SavedPhoto],
-        tracker: any FrameRunTracking
+        _ frame: PendingFrame, into saved: inout [SavedPhoto], tracker: any FrameRunTracking
     ) async -> CaptureError? {
-        switch await save.value {
-        case .success(let photo):
-            saved.append(photo)
+        switch await frame.save.value {
+        case .success(let result):
+            keepInSession(result, lens: frame.lens, takenAt: frame.takenAt)
+            saved.append(result.saved)
             tracker.recordSaved()
             return nil
         case .failure(let error):
@@ -279,18 +293,41 @@ extension CameraModel {
     ///   - settings: The settings the burst is taken with.
     ///   - captureDuration: How long the camera took to return the frame.
     ///   - distortionCorrection: The lens's distortion correction, for the details.
-    /// - Returns: The saved photo, or the error.
+    /// - Returns: The saved photo and its preview, or the error.
     private nonisolated static func saveResult(
         _ photo: CapturedPhoto, saver: PhotoSaver, settings: SaveSettings, captureDuration: Duration,
         distortionCorrection: DistortionCorrection?
-    ) async -> Result<SavedPhoto, CaptureError> {
+    ) async -> Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError> {
         do {
             return .success(
-                try await saver.save(
+                try await saver.saveWithPreview(
                     photo, settings: settings, captureDuration: captureDuration,
                     distortionCorrection: distortionCorrection))
         } catch {
             return .failure(error)
         }
+    }
+}
+
+/// A burst or series frame whose save is running, with what ``CameraModel/sessionPhotos`` keeps
+/// about it.
+struct PendingFrame {
+    /// The save, which returns the saved photo and its preview, or the error.
+    let save: Task<Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError>, Never>
+    /// The lens the frame was taken with.
+    let lens: Lens
+    /// When the shutter took the frame.
+    let takenAt: Date
+
+    /// Creates a pending frame.
+    ///
+    /// - Parameters:
+    ///   - save: The running save.
+    ///   - lens: The lens the frame was taken with.
+    ///   - takenAt: When the shutter took the frame.
+    init(save: Task<Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError>, Never>, lens: Lens, takenAt: Date) {
+        self.save = save
+        self.lens = lens
+        self.takenAt = takenAt
     }
 }

@@ -100,6 +100,28 @@ struct SimulatedComparisonRenderer: PhotoThumbnailing {
     }
 }
 
+/// Makes the Last Photo viewer's previews (`SessionPhotos`): a plain 3:4 gray-blue picture, held
+/// upright, whose "compressed" bytes are its pixels. The simulated photos aren't images;
+/// `NopeDevelopTests` cover the ImageIO previewer.
+struct SimulatedPreviewer: PhotoPreviewing {
+    /// The picture's width, in pixels.
+    static let width = 30
+    /// The picture's height, in pixels.
+    static let height = 40
+    /// The picture's pixels.
+    static let pixels = Data(Array(repeating: [UInt8]([70, 90, 120, 255]), count: width * height).joined())
+
+    /// Returns the same preview for every file.
+    func preview(of file: PhotoFile) -> PhotoPreview? {
+        PhotoPreview(width: Self.width, height: Self.height, data: Self.pixels)
+    }
+
+    /// Returns the picture at its own size.
+    func decode(_ preview: PhotoPreview, maximumPixelSize: Int?) -> PhotoThumbnail? {
+        PhotoThumbnail(width: preview.width, height: preview.height, rgba: preview.data)
+    }
+}
+
 /// Accepts or refuses every add, without touching the Simulator's photo library.
 struct SimulatedPhotoLibrary: PhotoLibrary {
     /// Whether adding is allowed.

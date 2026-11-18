@@ -1080,7 +1080,14 @@ and one on 27, the oldest and newest supported versions (issue #78):
   Camera Control takes a burst until it is released, and tapping the shutter starts and stops
   one; record the frames per second (below, "Burst rate"); every saved frame passes the
   read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
-  Allocations); VoiceOver announces the start and the saved count;
+  Allocations) once 20 frames hold Last Photo previews (`SessionPhotos`); VoiceOver announces
+  the start and the saved count;
+- Last Photo previews (`SessionPhotos`, `ImageIOPreviewer`): on the oldest and newest supported
+  iPhone and an iPad, for RAW, RAW + HEIF and HEIF, record the time the preview adds to each
+  save (Instruments, Time Profiler), the size of a 3072-pixel preview at JPEG quality 0.9 and
+  whether it shows artifacts when zoomed in, and the app's memory with 20 previews held and
+  with the viewer open (three decoded pages); after going to the background and back, and with
+  Xcode's Simulate Memory Warning, every preview is released;
 - storage and battery warnings (issue #44): see "Low storage" below; at 20% battery, unplugged,
   "Battery Low" shows and is announced, and it goes away when the device is plugged in; Low Power
   Mode changes the explanation;
