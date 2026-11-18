@@ -15,7 +15,8 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Single Photo | Drive strip | Single | 3 | 1 | Was Quick Controls › Drive › Single Photo. |
 | Self-timer, 3 seconds | Drive strip | Timer | 3 | 1 |  |
 | Self-timer, 10 seconds | Drive strip | Timer › Timer › 10 seconds | 3 | 3 | The delay is remembered while the app is open. |
-| Burst | Drive strip | Burst | 3 | 1 |  |
+| Burst | Drive strip | Burst | 3 | 1 | A tap on the shutter takes one photo; holding takes a burst. |
+| Burst speed | Drive strip | Burst › Burst › speed | – | 3 | New (2026-11-18): Fast or Slow, for the session. Fast at each launch. |
 | Interval Shooting | Drive strip | Interval | 3 | 1 | The shutter starts the series. |
 | Interval and number of photos | Interval card | Interval › Interval Settings | 3 | 2 | Its one home: the Interval section of Pro Tools is removed. |
 | Astro | Drive strip | Astro | 2 | 1 | Was a Quick Controls item, often after scrolling the tray. |

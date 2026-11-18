@@ -1,6 +1,6 @@
 # Burst: continuous shooting
 
-Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0. This document becomes part of the plan when the decisions in section 7 are made; until then [BUILD-SPEC.md](BUILD-SPEC.md) section 3.5 stands. The drawings are in [burst.html](burst.html); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md).
+Design version: 1.0.0, direction B · Reach. Proposed and accepted 2026-11-18 for release 1.0.0: the owner accepted all thirteen recommendations of section 7. This document is the specification of Burst; [BUILD-SPEC.md](BUILD-SPEC.md) section 3.5 points here. Part E (the saving buffer, decision 4) is not built until the device measurement; where this document describes the buffer, it describes that later option. The drawings are in [burst.html](burst.html); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md).
 
 The request: make Burst work as continuous shooting does on a dedicated camera with interchangeable lenses. Conventions of such cameras are described here in general terms.
 
@@ -347,6 +347,8 @@ Nothing here is Honesty wording about processing or signing. The rate and "up to
 
 ## 7. Decisions for the owner
 
+All thirteen recommendations were accepted on 2026-11-18. Decision 3: Slow is hidden on a lens where Fast has been measured under about 3 a second; the app measures this from the bursts it takes at Fast on that lens. Decision 4: no buffer in 1.0.0; the card is `burst-holding-no-buffer`.
+
 | # | Question | Recommendation | Kind |
 | --- | --- | --- | --- |
 | 1 | In Burst, does a tap take one photo, with holding for a burst? Or does a tap keep starting a burst? | A tap takes one photo; holding takes a burst. It is what a dedicated camera does and what the hardware buttons already do | Interface |
@@ -364,6 +366,8 @@ Nothing here is Honesty wording about processing or signing. The rate and "up to
 | 13 | Is the speed remembered between launches? | No, as the drive mode and the timer's delay are not | Interface |
 
 ## 8. When this is accepted
+
+Done on 2026-11-18, with one change: sections 3 to 6 stay in this file as the one specification of Burst, and BUILD-SPEC.md section 3.5 and ACCESSIBILITY.md point here, so the rules are not kept in two places.
 
 - The figures `drive-burst`, `drive-burst-running`, `ipad-burst` and `ipad-burst-running` are replaced by the `burst-*` figures; remove them and point [drive.html](drive.html) and [ipad.html](ipad.html) at [burst.html](burst.html).
 - Add Burst to the page navigation of the set, to [overview.html](overview.html) and to the table in [README.md](README.md); update the screen counts.

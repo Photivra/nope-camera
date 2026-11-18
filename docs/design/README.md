@@ -2,7 +2,7 @@
 
 The design of nope. for release 1.0.0, in direction B (Reach), chosen from the options of issue 74. Static HTML mockups with a PNG of each screen, plus the specifications the app is built from. Open [overview.html](overview.html) in a browser to start; nothing here is part of the app build.
 
-**Design version: 1.0.0 (2026-11-17; the Last Photo viewer added 2026-11-18), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 278 screens are drawn (135 for iPhone, 79 for iPad, 33 for the iPhone Duo, 31 for Apple Watch); the PNG files total 11.3 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
+**Design version: 1.0.0 (2026-11-17; the Last Photo viewer and Burst added 2026-11-18), planned.** This set is ahead of the app: release 1.0.0 is built to match it. Labels and behavior come from the code as of 0.3.0, except where a change is stated. Sample values (file sizes, lens ranges, timings) are examples. 295 screens are drawn (151 for iPhone, 80 for iPad, 33 for the iPhone Duo, 31 for Apple Watch); the PNG files total 11.4 MB. A screen is drawn for a device where its layout, presentation or reach differs from the iPhone drawing; [layouts.html](layouts.html) states the rule for the rest.
 
 | File | What it covers |
 | --- | --- |
@@ -10,6 +10,7 @@ The design of nope. for release 1.0.0, in direction B (Reach), chosen from the o
 | [design-system.html](design-system.html), [tokens.md](tokens.md) | Spacing, radii, sizes and hit targets, type, color, materials over the picture, button types, motion and haptics. Token names map one to one to Swift constants. |
 | [camera.html](camera.html) | The camera screen in full auto and every state: pills, warnings, capture feedback, failures, close-up, the Processed marker, the front camera, clean view, night mode, the smallest iPhone, first run and the permission states. |
 | [drive.html](drive.html) | The drive strip: Single, Timer, Burst, Interval and Astro, idle and running, and the five words in the eleven launch languages. |
+| [burst.html](burst.html), [BURST.md](BURST.md) | Burst (2026-11-18): a tap takes one photo and holding the shutter takes photos until it is let go; Start Burst; the speed menu; the card while held, saving and after; the limits; VoiceOver, night mode, the largest text size, right to left, sideways, the smallest iPhone and iPad. BURST.md holds the behavior, the interaction rules, the build specification, the strings and the owner's decisions. |
 | [quick-menu.html](quick-menu.html) | Q, the quick menu: its tiles (with Focus Peaking), states, a menu, night mode and a long language. |
 | [manual-controls.html](manual-controls.html) | The Manual Controls button, the readout row, each dial and Pro Tools (without Interval). |
 | [sheets.html](sheets.html) | Formats and the processing note, What's in This Photo, Interval and Astro settings, Presets, Compare and the one confirmation. |
