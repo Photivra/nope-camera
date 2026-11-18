@@ -175,6 +175,27 @@ enum AutoShutter {
     /// assumption, checked on the device: docs/TESTING.md).
     static let returnMargin = pow(2, -0.5)
 
+    /// How much longer than full auto's limit a reading's shutter may be and still count as
+    /// taken under that limit: a quarter stop. Auto exposure keeps the shutter within
+    /// `AVCaptureDevice.activeMaxExposureDuration`, so a reading clearly longer than the limit
+    /// was taken before the camera applied it (after a manual or astro exposure, or on the
+    /// previous lens). The margin allows for a reported shutter rounded to the sensor's timing;
+    /// its size is an assumption, checked on the device (docs/TESTING.md).
+    static let predatesLimitMargin = pow(2, 0.25)
+
+    /// Whether a full-auto reading was taken before the camera applied the limit in use, so it
+    /// says nothing about the scene under that limit.
+    ///
+    /// - Parameters:
+    ///   - reading: The reading.
+    ///   - limit: The limit in use, in seconds, or `nil` when it is lifted.
+    /// - Returns: `true` when the reading's shutter is longer than the limit by more than
+    ///   ``predatesLimitMargin``; `false` when the limit is lifted.
+    static func predatesLimit(_ reading: ExposureReading, limit: Double?) -> Bool {
+        guard let limit else { return false }
+        return reading.exposureDuration > limit * predatesLimitMargin
+    }
+
     /// The handheld rule: 1/(2 × 35 mm-equivalent focal length) seconds, inside the lens's
     /// shutter range.
     ///

@@ -131,6 +131,12 @@ extension ManualControlsModel {
     ///
     /// - Parameter reading: What the camera is using now.
     func record(_ reading: ExposureReading) async {
+        if !isEnabled, focusTarget?.isLocked != true, AutoShutter.predatesLimit(reading, limit: longestAutoShutter) {
+            // Taken before the camera applied full auto's limit (just after Manual, Astro or a
+            // lens change): it would lift the limit, and show the hint, for an exposure the
+            // camera no longer uses.
+            return
+        }
         lastReading = reading
         guard let lens else { return }
         if closeUpDismissed || settings.focus != nil || focusTarget?.isLocked == true {
@@ -165,6 +171,15 @@ extension ManualControlsModel {
         closeUpDetector = CloseUpDetector()
         closeUpDismissed = false
         suggestsCloseUpLens = false
+        resetReadingAids()
+    }
+
+    /// Starts the fast shutter rule and the steady hint again from the lens's fastest limit,
+    /// forgetting the last reading: after a lens change, and when manual controls turn on or off
+    /// (Astro too), the readings taken before belong to another exposure. Without this, a limit
+    /// lifted before Manual stayed lifted after it, and the hint stayed until enough new
+    /// readings brought the limit back past the half-stop ``AutoShutter/returnMargin``.
+    func resetReadingAids() {
         showsSteadyHint = false
         lastReading = nil
         longestAutoShutter = lens.flatMap { AutoShutter.limits(for: $0, fastShutter: fastShutter).first }
@@ -193,19 +208,22 @@ extension ManualControlsModel {
 
     /// Decides whether to show "Hold it steady or use a tripod".
     ///
-    /// - Full auto: when the fast shutter limit had to be lifted past the handheld rule.
+    /// - Full auto: when the fast shutter limit had to be lifted past the handheld rule, after a
+    ///   reading in full auto.
     /// - Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
     ///   than the handheld rule. The app changes nothing; it only says so.
     func updateSteadyHint() {
-        guard let lens, let lastReading else {
+        guard let lens else {
             showsSteadyHint = false
             return
         }
         if isEnabled {
-            showsSteadyHint = AutoShutter.risksBlur(settings.shutter ?? lastReading.exposureDuration, on: lens)
+            let shutter = settings.shutter ?? lastReading?.exposureDuration
+            showsSteadyHint = shutter.map { AutoShutter.risksBlur($0, on: lens) } ?? false
         } else {
             showsSteadyHint =
-                longestAutoShutter == nil && lens.isoRange != nil && AutoShutter.handheldLimit(for: lens) != nil
+                lastReading != nil && longestAutoShutter == nil && lens.isoRange != nil
+                && AutoShutter.handheldLimit(for: lens) != nil
         }
     }
 

@@ -1485,6 +1485,12 @@ calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max)
   Apple's published ones within a few millimeters;
 - manual controls: a manual shutter slower than the handheld rule shows the hint and is never
   changed; P mode isn't limited;
+- the hint after a mode change: in dim light with the hint showing, turn Manual Controls on, set
+  a slow shutter, then turn them off; turn Astro on and off; switch lenses; in a bright scene
+  the hint must be gone within about a second of each change (the first readings after a slow
+  exposure are ignored while their shutter is more than a quarter stop longer than full auto's
+  limit, an assumption to check: record the first reported shutters after leaving Astro). While
+  Astro is on the hint doesn't show. In a dark scene it comes back from the new readings;
 - Close-Up: a small subject 5 to 15 cm away in front of a busy background focuses with Close-Up
   on and a tap, and the pill turns it off;
 - close-up hint: below the wide lens's minimum focus distance the suggestion to switch to Ultra

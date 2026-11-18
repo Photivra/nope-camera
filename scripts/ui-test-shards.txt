@@ -194,6 +194,7 @@
 2 2 NopeAppUITests/testStatusLineFormatLeadingPillsTrailing 30e 30e
 1 1 NopeAppUITests/testStatusOnThePictureInTheColumn 120e 70e
 4 1 NopeAppUITests/testStatusOnThePictureSideways 20e 21e
+4 2 NopeAppUITests/testSteadyHintGivesWayToAstroAndDoesNotLinger 69e 69e
 2 3 NopeAppUITests/testStorageAndBatteryWarnings 75 71
 4 3 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 34 32
 1 1 NopeAppUITests/testTappingTheLastPhotoOpensPhotos 33 42

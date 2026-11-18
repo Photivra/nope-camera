@@ -14,6 +14,14 @@ extension CameraModel {
             bytes: bytesPerFrame * Int64(astro.frameCount), framesThatFit: framesThatFit)
     }
 
+    /// Whether the camera should say "Hold it steady or use a tripod.":
+    /// ``ManualControlsModel/showsSteadyHint``, except while the astro helper is on. Its long exposures are meant for a tripod, and its
+    /// own guidance already says "Use a tripod.", so the hint would only repeat it (the Astro
+    /// screens in docs/design draw no hint). Interfaces show the hint from this property.
+    public var showsSteadyHint: Bool {
+        manual.showsSteadyHint && !astro.isOn
+    }
+
     /// Whether the helper can be turned on: the selected lens suits it, and the storage and
     /// battery can be read, so a run can stop before either runs out (not in the Lock Screen
     /// capture extension, which has no reader).
