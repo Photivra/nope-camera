@@ -322,10 +322,13 @@ final class SettingsNavigation {
 
     /// Shows a search result: pushes its page and asks for its row to be scrolled into view.
     /// The search stays, so going back shows the same text and results
-    /// (`docs/design/night-search-field.md`, section 3, "Choose a result").
+    /// (`docs/design/night-search-field.md`, section 3, "Choose a result"). A row on the
+    /// Settings list itself has no page to go back from: the search ends, so the list shows,
+    /// scrolled to the row.
     ///
     /// - Parameter id: The result's item.
     func openSearchResult(_ id: SettingsID) {
+        if id.navigationPath.isEmpty { searchText = "" }
         path = id.navigationPath
         scrollTarget = id.scrollTarget
     }

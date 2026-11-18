@@ -79,6 +79,11 @@ struct SettingsSearchTests {
         #expect(navigation.path == [.details])
         #expect(navigation.scrollTarget == .detailsLocation)
         #expect(navigation.searchText == "gps")
+        // A row on the Settings list itself ends the search, so the list shows it.
+        navigation.openSearchResult(.keepScreenOn)
+        #expect(navigation.path.isEmpty)
+        #expect(navigation.scrollTarget == .keepScreenOn)
+        #expect(navigation.searchText.isEmpty)
         navigation.reset()
         #expect(navigation.searchText.isEmpty)
         #expect(navigation.path.isEmpty)

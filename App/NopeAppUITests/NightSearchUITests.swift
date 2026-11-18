@@ -99,6 +99,12 @@ extension NopeAppUITests {
         app.buttons["nightSearchField.clear"].tap()
         nightSearchField(app).typeText("auto-lock\n")
         XCTAssertTrue(app.buttons["settings.search.settings.keepScreenOn"].waitForExistence(timeout: 5))
+        // Assistant Access, added with the red field, by a keyword; its results are red too.
+        app.buttons["nightSearchField.clear"].tap()
+        nightSearchField(app).typeText("siri\n")
+        waitForKeyboardToClose(app)
+        XCTAssertTrue(app.buttons["settings.search.settings.assistantAccess"].waitForExistence(timeout: 5))
+        XCTAssertEqual(nonRedPixels(app, outside: .zero), 0, "the Assistant Access results aren't all red")
     }
 
     @MainActor
