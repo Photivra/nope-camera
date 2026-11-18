@@ -76,7 +76,7 @@ struct LockedCameraView: View {
         // The volume buttons and the Camera Control are the shutter while the camera runs, as in
         // the app (AVKit, `onCameraCaptureEvent`).
         .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
-            let phase: HardwareButtonPhase =
+            let phase: ShutterPhase =
                 switch event.phase {
                 case .began: .pressed
                 case .ended: .released

@@ -51,6 +51,10 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// Whether the system allows the torch; `false` simulates a device too hot for it.
     public let torchAvailable: Bool
 
+    /// How long ``capturePhoto(_:)`` takes, in seconds: zero, or a camera slow enough for a tap
+    /// on the shutter in burst mode to end before a second photo (docs/design/BURST.md, 5.2).
+    public let captureSeconds: Double
+
     /// The error ``captureComparison(_:)`` throws, or `nil` to succeed.
     public let comparisonError: CaptureError?
 
@@ -105,6 +109,7 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
     ///   - comparisonError: The error taking the comparison shot's second photo throws, or
     ///     `nil` to succeed.
+    ///   - captureSeconds: How long taking a photo takes, in seconds. Defaults to 0.
     public init(
         permission: CameraPermission,
         permissionAfterRequest: CameraPermission? = nil,
@@ -115,9 +120,11 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         reading: ExposureReading = placeholderReading,
         readingCount: Int = 1,
         torchAvailable: Bool = true,
-        comparisonError: CaptureError? = nil
+        comparisonError: CaptureError? = nil,
+        captureSeconds: Double = 0
     ) {
         self.comparisonError = comparisonError
+        self.captureSeconds = captureSeconds
         self.reading = reading
         self.readingCount = readingCount
         self.permission = permission
@@ -195,6 +202,7 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///   RAW, ``placeholderPhotoData`` is also the reference RAW image data.
     /// - Throws: ``captureError``.
     public func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
+        if captureSeconds > 0 { try? await Task.sleep(for: .seconds(captureSeconds)) }
         if let captureError { throw captureError }
         return CapturedPhoto(
             data: Self.placeholderPhotoData,

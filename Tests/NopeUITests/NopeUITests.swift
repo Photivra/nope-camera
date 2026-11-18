@@ -313,6 +313,33 @@ struct DriveTextTests {
         #expect(DriveText.endMessage(BurstResult(end: .cameraStopped, saved: 2)) == "Burst stopped: the camera stopped.")
     }
 
+    @Test func burstCardWords() {
+        #expect(ModeCardText.burstRate(2.64) == "2.6 a second")
+        #expect(ModeCardText.burstRate(2) == "2.0 a second")
+        #expect(ModeCardText.burstDuration(.seconds(4.2)) == "4.2 seconds")
+        #expect(ModeCardText.joined("4.2 seconds", "2.6 a second") == "4.2 seconds · 2.6 a second")
+        #expect(ModeCardText.releaseToStop == "Release to stop")
+        #expect(ModeCardText.photosSaved(12) == "12 photos saved")
+        // Running: the rate from the third photo, and "Release to stop" while held.
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 2, saved: 1, start: .held)) == "Release to stop")
+        #expect(
+            ModeCardText.burstRunningDetail(BurstProgress(taken: 12, saved: 11, start: .held, rate: 1.4))
+                == "1.4 a second · Release to stop")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 12, saved: 11, start: .started, rate: 2.6)) == "2.6 a second")
+        #expect(ModeCardText.burstRunningDetail(BurstProgress(taken: 2, saved: 1, start: .started)) == nil)
+        // Ended: the time and the rate, or the photos saved.
+        let summary = BurstResult(end: .stopped, saved: 12, start: .held, duration: .seconds(4.2), rate: 2.6)
+        #expect(ModeCardText.burstEndedDetail(summary) == "4.2 seconds · 2.6 a second")
+        let two = BurstResult(end: .stopped, saved: 2, start: .held, duration: .seconds(0.4))
+        #expect(ModeCardText.burstEndedDetail(two) == "0.4 seconds")
+        let limit = BurstResult(end: .limitReached, saved: 50, start: .started, duration: .seconds(19.6), rate: 2.5)
+        #expect(ModeCardText.burstEndedDetail(limit) == "19.6 seconds · 2.5 a second")
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .stopped, saved: 1, start: .held)) == nil)
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .storageFull, saved: 7, start: .held)) == "7 photos saved")
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .cameraStopped, saved: 0, start: .held)) == nil)
+        #expect(ModeCardText.burstEndedDetail(BurstResult(end: .countReached, saved: 3, start: .counted)) == nil)
+    }
+
     @Test func secondsUseSystemFormatting() {
         #expect(DriveText.shortSeconds(3).contains("3"))
         #expect(DriveText.spokenSeconds(10).contains("10"))

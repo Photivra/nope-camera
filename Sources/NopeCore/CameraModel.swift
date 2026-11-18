@@ -113,7 +113,7 @@ public final class CameraModel {
         self.saver = saver
         self.now = now
         manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
-        drive = DriveModel(sleep: sleep)
+        drive = DriveModel(sleep: sleep, now: now)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
         live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)

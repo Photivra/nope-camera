@@ -3,9 +3,23 @@ import Foundation
 /// The shutter's drive modes: single, the self-timer and bursts (issues #37, #39 and #46).
 extension CameraModel {
     /// Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
-    /// interval series or astro run runs, which pressing the shutter stops.
+    /// interval series or astro run runs, which pressing the shutter stops. Not while a burst's
+    /// last photos are being saved: a new burst waits for them (docs/design/BURST.md, decision 9).
     public var canPressShutter: Bool {
-        canCapture || drive.isBusy || astro.isRunning || manual.intervalProgress != nil
+        if drive.burstProgress?.isSaving == true { return false }
+        return canCapture || drive.isBusy || astro.isRunning || manual.intervalProgress != nil
+    }
+
+    /// The burst speeds offered on the selected lens: Fast, and Slow unless Fast measured under
+    /// ``DriveModel/slowBurstMinimumFastRate`` on it in this session.
+    public var burstSpeeds: [BurstSpeed] {
+        drive.offersSlowBurst(on: selectedLensID) ? BurstSpeed.allCases : [.fast]
+    }
+
+    /// The speed a burst on the selected lens uses: the session's choice
+    /// (``DriveModel/burstSpeed``) when the lens offers it, otherwise Fast.
+    public var burstSpeed: BurstSpeed {
+        burstSpeeds.contains(drive.burstSpeed) ? drive.burstSpeed : .fast
     }
 
     /// Whether the app should take the hardware shutter buttons (the volume buttons and the
@@ -48,7 +62,9 @@ extension CameraModel {
         switch drive.mode {
         case .single: await capture()
         case .timer(let delay): startTimer(seconds: delay.seconds)
-        case .burst: await takeBurst()
+        // A press that reports no phases (assistive activation, Space, an interface without a
+        // held shutter) takes one photo; holding the shutter takes a burst (`.shutter`).
+        case .burst: await takeBurst(frames: 1)
         case .interval: await send(.manual(.startInterval))
         }
     }
@@ -62,24 +78,41 @@ extension CameraModel {
         case .startTimer(let seconds): startTimer(seconds: seconds)
         case .cancelTimer: drive.countdown.cancel()
         case .stopBurst: drive.requestBurstStop()
-        case .hardwareButton(let phase): await handleHardwareButton(phase)
+        case .hardwareButton(let phase): await handleShutterPhase(phase, isOnScreen: false)
+        case .shutter(let phase): await handleShutterPhase(phase, isOnScreen: true)
+        case .startBurst: await startBurst()
+        case .setBurstSpeed(let speed): drive.setBurstSpeed(speed)
         }
     }
 
-    /// A hardware shutter button: in burst mode, a burst runs while it is held; in the other
-    /// modes, it acts as the shutter when it comes up, as the system Camera app does (AVKit,
-    /// `AVCaptureEventInteraction`, "Capture a photo on press up").
+    /// Starts a burst that needs no holding (docs/design/BURST.md, 3.1), in burst mode with the
+    /// astro helper off, when a photo can be taken and nothing runs.
+    private func startBurst() async {
+        guard drive.mode == .burst, !astro.isOn, canCapture, !drive.isBusy else { return }
+        await takeBurst(start: .started)
+    }
+
+    /// A shutter that reports how it moves. In burst mode a burst runs while it is held: its
+    /// first photo is requested when it goes down, and it ends when it comes up (also a burst
+    /// begun with Start Burst). In the other modes a hardware button acts as the shutter when it
+    /// comes up, as the system Camera app does (AVKit, `AVCaptureEventInteraction`, "Capture a
+    /// photo on press up"), and the on-screen shutter's phases are ignored: it sends
+    /// ``CameraIntent/capture`` instead.
     ///
-    /// - Parameter phase: How the button moved.
-    private func handleHardwareButton(_ phase: HardwareButtonPhase) async {
-        guard drive.mode == .burst else {
-            if phase == .released { await pressShutter() }
+    /// - Parameters:
+    ///   - phase: How the shutter moved.
+    ///   - isOnScreen: Whether it is the on-screen shutter rather than a hardware button.
+    private func handleShutterPhase(_ phase: ShutterPhase, isOnScreen: Bool) async {
+        guard drive.mode == .burst, !(isOnScreen && astro.isOn) else {
+            if !isOnScreen, phase == .released { await pressShutter() }
             return
         }
         guard phase != .pressed else {
-            if !drive.isBusy { await takeBurst() }
+            drive.setShutterHeld(true)
+            if !drive.isBusy { await takeBurst(start: .held) }
             return
         }
+        drive.setShutterHeld(false)
         // Coming up, or cancelled, ends what the press started; a countdown started another way
         // (such as by Siri) is cancelled as the shutter would.
         if drive.burstProgress != nil {
@@ -120,13 +153,29 @@ extension CameraModel {
     /// A burst never fires the flash, as brackets don't: the flash can't recharge between rapid
     /// frames.
     ///
+    /// A held or started burst runs at the session's speed (``burstSpeed``); a counted one
+    /// always at Fast, so "as fast as the camera allows" in the Siri action stays true. A burst
+    /// at Fast of three photos or more records its rate for the lens, which decides whether Slow
+    /// is offered on it (``DriveModel/offersSlowBurst(on:)``).
+    ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     ///
-    /// - Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
-    ///   shutter, or the count a Siri or Shortcuts request asked for (issue #62).
-    func takeBurst(frames: Int = DriveModel.maximumBurstFrames) async {
+    /// - Parameters:
+    ///   - frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for a held or
+    ///     started burst, 1 for a press that reports no phases, or the count a Siri or Shortcuts
+    ///     request asked for (issue #62).
+    ///   - start: Who begins the burst.
+    func takeBurst(frames: Int = DriveModel.maximumBurstFrames, start: BurstStart = .counted) async {
         let end: BurstEnd = frames < DriveModel.maximumBurstFrames ? .countReached : .limitReached
-        await takeFrames(limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end)
+        let speed: BurstSpeed = start == .counted ? .fast : burstSpeed
+        let lensID = selectedLensID
+        drive.prepareBurst(start: start)
+        await takeFrames(
+            limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end,
+            minimumInterval: speed.minimumFrameInterval)
+        if speed == .fast, let lensID, let rate = drive.lastBurst?.rate {
+            drive.recordFastRate(rate, on: lensID)
+        }
     }
 
     /// Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -144,11 +193,14 @@ extension CameraModel {
     ///     foreground or the camera pauses, and continues afterwards (the astro helper, issue
     ///     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again, also
     ///     when its error arrives before the pause does (`failureWasAPause()`).
+    ///   - minimumInterval: The least time between the starts of two frames (a Slow burst), or
+    ///     `nil` to take each as soon as the camera is ready. The run waits with the drive's
+    ///     sleep and checks again whether to stop after the wait.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     func takeFrames(
         limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached,
-        pausesWithCamera: Bool = false
+        pausesWithCamera: Bool = false, minimumInterval: Duration? = nil
     ) async {
         guard canCapture || (pausesWithCamera && seriesShouldPause), let lens = selectedLens else { return }
         guard let saver else {
@@ -167,6 +219,7 @@ extension CameraModel {
         var end = endAtLimit
         var pending: Task<Result<SavedPhoto, CaptureError>, Never>?
         var taken = 0
+        var lastStart: ContinuousClock.Instant?
         while taken < limit {
             if pausesWithCamera, seriesShouldPause {
                 // Every frame taken is saved before the pause, so nothing waits in memory.
@@ -187,8 +240,17 @@ extension CameraModel {
                 end = reason
                 break
             }
+            // A Slow burst waits, then asks again whether to stop: a stop during the wait takes
+            // no further photo.
+            if let minimumInterval, let lastStart, await waitUntil(lastStart + minimumInterval),
+                let reason = stopReason(tracker, bytesPerPhoto: bytesPerPhoto, stopsOnLowBattery: stopsOnLowBattery)
+            {
+                end = reason
+                break
+            }
             let photo: CapturedPhoto
             let start = now()
+            lastStart = start
             do {
                 photo = try await backend.capturePhoto(request)
             } catch {
@@ -212,11 +274,27 @@ extension CameraModel {
                 break
             }
         }
-        if let pending, let error = await collect(pending, into: &saved, tracker: tracker) {
-            failure = failure ?? error
+        if let pending {
+            // No more photos are taken; a new burst waits until the last one is saved.
+            (tracker as? DriveModel)?.beginSaving()
+            if let error = await collect(pending, into: &saved, tracker: tracker) {
+                failure = failure ?? error
+            }
         }
         deviceStatus.refresh()
         finishRun(saved: saved, end: end, failure: failure, tracker: tracker)
+    }
+
+    /// Waits until a time on the model's clock, with the drive's sleep: before the next frame of
+    /// a Slow burst. Returns at once when the time has passed; a sleep that throws ends the wait.
+    ///
+    /// - Parameter time: When the next frame may start.
+    /// - Returns: Whether it waited.
+    private func waitUntil(_ time: ContinuousClock.Instant) async -> Bool {
+        let left = (time - now()) / .seconds(1)
+        guard left > 0 else { return false }
+        try? await drive.sleep(left)
+        return true
     }
 
     /// Why the run should stop before the next frame, or `nil` to take it.

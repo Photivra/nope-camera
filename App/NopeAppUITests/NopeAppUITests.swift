@@ -2143,7 +2143,8 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("slowSaving", extraArguments: Self.signingOn)
         chooseDrive(app, "Burst")
         let shutter = app.buttons["Take Photo"]
-        shutter.tap()
+        // Start Burst runs a burst without holding (docs/design/BURST.md); a tap takes one photo.
+        app.buttons["Start Burst"].tap()
         let stop = app.buttons["Stop Burst"]
         XCTAssertTrue(stop.waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "Photos taken").exists)
@@ -2152,8 +2153,10 @@ final class NopeAppUITests: XCTestCase {
         stop.tap()
         XCTAssertFalse(stop.waitForExistence(timeout: 10))
         XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 15))
-        // The shutter, pressed again, starts and stops a burst too.
-        shutter.tap()
+        // Start Burst again, and the shutter stops it.
+        let start = app.buttons["Start Burst"]
+        XCTAssertTrue(start.waitForExistence(timeout: 15))
+        start.tap()
         XCTAssertTrue(stop.waitForExistence(timeout: 5))
         shutter.tap()
         XCTAssertFalse(stop.waitForExistence(timeout: 10))

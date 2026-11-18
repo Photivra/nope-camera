@@ -72,7 +72,13 @@ The shutter, and every hardware shutter, sends `.capture`; the model applies `dr
 or burst. Enable the shutter with `canPressShutter`, not `canCapture`, so it can stop them. Show
 `drive.countdown.remainingSeconds` and `drive.burstProgress` with a visible way to stop each
 (`.drive(.cancelTimer)`, `.drive(.stopBurst)`), and announce them. Pass the hardware buttons'
-phases as `.drive(.hardwareButton(_:))`. Pass a `DeviceStatusReading` to `CameraModel` and show
+phases as `.drive(.hardwareButton(_:))`. In burst mode, also pass the on-screen shutter's touch
+as `.drive(.shutter(.pressed))` when it goes down and `.released` or `.cancelled` when it comes up
+or the finger slides off, and skip that touch's `.capture`: holding takes a burst and a tap one
+photo. Offer `.drive(.startBurst)` as a button and an accessibility action, so no one has to hold
+the shutter, and the speeds in `burstSpeeds` with `.drive(.setBurstSpeed(_:))`. Show
+`burstProgress.rate` only when it isn't `nil`, and dim the shutter while
+`burstProgress.isSaving` (`canPressShutter` does). Pass a `DeviceStatusReading` to `CameraModel` and show
 `storageWarning` and `deviceStatus.batteryWarning`. During an interval series, call
 `SeriesScreenKeeper.update(isSeriesRunning:isInForeground:)` so the screen stays awake and is
 dimmed, with a visible way to brighten it.

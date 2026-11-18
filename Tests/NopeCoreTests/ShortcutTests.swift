@@ -389,7 +389,7 @@ struct ShortcutTests {
         let outcome = await run(.takePhoto(PhotoShortcut(count: 3)), on: model)
         #expect(outcome == .savedSeveral(allSigned: false))
         #expect(await backend.captureRequests.count == 3)
-        #expect(model.drive.lastBurst == BurstResult(end: .countReached, saved: 3))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
         #expect(model.drive.mode == .single)
     }
 
@@ -398,7 +398,7 @@ struct ShortcutTests {
         let model = await makeModel(backend)
         let outcome = await run(.takePhoto(PhotoShortcut(count: DriveModel.maximumBurstFrames)), on: model)
         #expect(outcome == .savedSeveral(allSigned: false))
-        #expect(model.drive.lastBurst == BurstResult(end: .limitReached, saved: DriveModel.maximumBurstFrames))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .limitReached, saved: DriveModel.maximumBurstFrames))
     }
 
     @Test func aDelayWithACountTakesTheBurstAfterTheCountdown() async {

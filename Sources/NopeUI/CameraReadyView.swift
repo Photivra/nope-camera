@@ -179,10 +179,11 @@ struct CameraReadyView: View {
         model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil
     }
 
-    /// What the shutter's disc shows: a stop square while a series runs, the self-timer's delay
-    /// while Timer is chosen, otherwise the plain disc.
+    /// What the shutter's disc shows: a stop square while a series runs (not a burst the
+    /// shutter holds, which ends when it comes up), the self-timer's delay while Timer is
+    /// chosen, otherwise the plain disc.
     private var shutterFace: ShutterButton.Face {
-        if isSeriesRunning { return .stop }
+        if isSeriesRunning, model.drive.burstProgress?.start != .held { return .stop }
         if !model.astro.isOn, case .timer(let delay) = model.drive.mode { return .timer(seconds: delay.seconds) }
         return .photo
     }
@@ -610,14 +611,35 @@ struct CameraReadyView: View {
         showsControls && showsQuickMenu && layout != .scrolling
     }
 
-    /// The shutter. Pressing it closes the quick menu and takes a photo (or stops a series).
+    /// Whether the shutter is in burst mode, where holding it takes a burst
+    /// (docs/design/BURST.md, 3.1).
+    private var isBurstShutter: Bool {
+        model.drive.mode == .burst && !model.astro.isOn
+    }
+
+    /// The shutter. Pressing it closes the quick menu and takes a photo (or stops a series). In
+    /// burst mode it reports going down and coming up, so holding it takes a burst, and it has
+    /// the action Start Burst while nothing runs.
     private var shutter: some View {
-        ShutterButton(isEnabled: model.canPressShutter, face: shutterFace) {
+        ShutterButton(
+            isEnabled: model.canPressShutter, face: shutterFace,
+            onPressChange: isBurstShutter ? { isPressed in
+                if isPressed { showsQuickMenu = false }
+                Task { await model.send(.drive(.shutter(isPressed ? .pressed : .released))) }
+            } : nil
+        ) {
             showsQuickMenu = false
             Task { await model.send(.capture) }
         }
         .shutterDriveValue(model)
         .accessibilityActions {
+            if isBurstShutter, !isSeriesRunning {
+                Button {
+                    Task { await model.send(.drive(.startBurst)) }
+                } label: {
+                    ModeCardText.startBurst
+                }
+            }
             if model.isCleanView {
                 Button {
                     Task { await model.send(.setCleanView(false)) }

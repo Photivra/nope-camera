@@ -56,6 +56,8 @@ struct DesignTokensTests {
         #expect(NopeSize.shutterRing == 4)
         #expect(NopeSize.shutterDisc == 60)
         #expect(NopeSize.shutterDisc + 2 * NopeSize.shutterRing <= NopeSize.shutter)
+        #expect(NopeSize.shutterDiscHeld == 50)
+        #expect(NopeSize.shutterDiscHeld < NopeSize.shutterDisc)
         #expect(NopeSize.capsuleLarge == 44)
         #expect(NopeSize.lensItemMinWidth == 40)
         let names = Set(NopeSize.all.map(\.name))
@@ -170,6 +172,7 @@ struct DesignTokensTests {
         #expect(NopeHaptic.allAuto == .success)
         #expect(NopeHaptic.driveModeChanged == .selection)
         #expect(NopeHaptic.manualControlsChanged == .selection)
+        #expect(NopeHaptic.burstFrame == .impact(weight: .light, intensity: 0.6))
     }
 
     // MARK: - Contrast (WCAG 2.2: 4.5:1 for text, 1.4.3; 3:1 for symbols and outlines, 1.4.11)

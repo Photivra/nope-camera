@@ -210,7 +210,7 @@ extension NopeAppUITests {
         XCTAssertTrue(single.isSelected)
         let expected = [
             ("Timer", "Self-timer: 3 seconds"),
-            ("Burst", "Burst. Press to start, press again to stop."),
+            ("Burst", "Burst, fast."),
             ("Interval", "Interval shooting. Press to start the series."),
         ]
         for (word, value) in expected {

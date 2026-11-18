@@ -130,6 +130,17 @@ func tick(_ ticker: Ticker, whenWaiting count: Int = 1) async {
     await ticker.tick()
 }
 
+/// A burst's end and saved count, for tests that don't look at its timing.
+struct BurstOutcome: Equatable {
+    let end: BurstEnd
+    let saved: Int
+}
+
+extension Optional where Wrapped == BurstResult {
+    /// The end and the saved count.
+    var outcome: BurstOutcome? { map { BurstOutcome(end: $0.end, saved: $0.saved) } }
+}
+
 /// The self-timer, burst and hardware buttons through `CameraModel` (issues #37, #39, #46).
 @MainActor
 struct DriveTests {
@@ -165,7 +176,7 @@ struct DriveTests {
         #expect(BurstResult(end: .stopped, saved: 3).saved == 3)
         let drive = DriveModel(sleep: { _ in })
         drive.endBurst(.stopped)
-        #expect(drive.lastBurst == BurstResult(end: .stopped, saved: 0))
+        #expect(drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 0))
     }
 
     // MARK: - Countdown
@@ -324,7 +335,7 @@ struct DriveTests {
         await model.send(.drive(.setMode(.burst)))
         await model.send(.drive(.hardwareButton(.pressed)))
         #expect(savedCount(model) == 3)
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 3))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 3))
         #expect(model.drive.burstProgress == nil)
     }
 
@@ -339,7 +350,7 @@ struct DriveTests {
         }
         await model.send(.drive(.setMode(.burst)))
         await model.send(.drive(.hardwareButton(.pressed)))
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 1))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 1))
     }
 
     @Test func hardwareReleaseInBurstModeCancelsATimerFromElsewhere() async {
@@ -361,9 +372,9 @@ struct DriveTests {
         let library = FakeLibrary()
         let model = await makeModel(backend: backend, saver: CameraModelTests.saver(library: library))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(savedCount(model) == DriveModel.maximumBurstFrames)
-        #expect(model.drive.lastBurst == BurstResult(end: .limitReached, saved: DriveModel.maximumBurstFrames))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .limitReached, saved: DriveModel.maximumBurstFrames))
         #expect(await backend.captureRequests.count == DriveModel.maximumBurstFrames)
         #expect(await library.added.count == DriveModel.maximumBurstFrames)
     }
@@ -379,8 +390,8 @@ struct DriveTests {
             await model.send(.capture)
         }
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 2))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 2))
     }
 
     @Test func stopBurstIntentStopsTheBurst() async {
@@ -392,8 +403,8 @@ struct DriveTests {
         }
         await model.send(.drive(.stopBurst))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .stopped, saved: 4))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .stopped, saved: 4))
     }
 
     @Test func burstStopsBeforeStorageRunsOut() async {
@@ -403,7 +414,7 @@ struct DriveTests {
         reader.bytes = perPhoto * 3
         reader.shrinkPerRead = perPhoto / 2
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.drive.lastBurst?.end == .storageFull)
         #expect((model.drive.lastBurst?.saved ?? 0) > 0)
         #expect(savedCount(model) == model.drive.lastBurst?.saved)
@@ -412,8 +423,8 @@ struct DriveTests {
     @Test func burstWithNoRoomSavesNothing() async {
         let model = await makeModel(reader: FakeStatusReader(bytes: 10))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .storageFull, saved: 0))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .storageFull, saved: 0))
         #expect(model.captureStatus == .idle)
     }
 
@@ -431,8 +442,8 @@ struct DriveTests {
             }
         }
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
-        #expect(model.drive.lastBurst == BurstResult(end: .cameraStopped, saved: 2))
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .cameraStopped, saved: 2))
         inner.finish()
         await events.value
     }
@@ -442,9 +453,9 @@ struct DriveTests {
         let library = FakeLibrary()
         let model = await makeModel(backend: backend, saver: CameraModelTests.saver(library: library))
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.captureFailed))
-        #expect(model.drive.lastBurst == BurstResult(end: .failed, saved: 2))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .failed, saved: 2))
         #expect(await library.added.count == 2)
     }
 
@@ -454,7 +465,7 @@ struct DriveTests {
         let saver = PhotoSaver(developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
         let model = await makeModel(saver: saver)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.saveFailed))
         #expect(model.drive.lastBurst?.end == .failed)
         // The frame taken while the failing one was saving is still saved: nothing is dropped.
@@ -467,9 +478,9 @@ struct DriveTests {
         let saver = PhotoSaver(developer: FakeDeveloper(), signer: nil, reader: BytesReader(), library: library, appVersion: "0.2.0")
         let model = await makeModel(saver: saver)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.saveFailed))
-        #expect(model.drive.lastBurst == BurstResult(end: .failed, saved: DriveModel.maximumBurstFrames - 1))
+        #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .failed, saved: DriveModel.maximumBurstFrames - 1))
     }
 
     @Test func aFailedCaptureAndAFailedSaveKeepTheFirstError() async {
@@ -479,14 +490,14 @@ struct DriveTests {
             appVersion: "0.2.0")
         let model = await makeModel(backend: backend, saver: saver)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.captureFailed))
     }
 
     @Test func burstWithoutASaverSaysSo() async {
         let model = await makeModel(saver: nil)
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         #expect(model.captureStatus == .failed(.savingUnavailable))
         #expect(model.drive.burstProgress == nil)
     }
@@ -495,6 +506,7 @@ struct DriveTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
         await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.startBurst))
         await model.send(.capture)
         #expect(model.drive.lastBurst == nil)
         #expect(await backend.captureRequests.isEmpty)
@@ -508,7 +520,7 @@ struct DriveTests {
             if count == 2 { await model.send(.drive(.stopBurst)) }
         }
         await model.send(.drive(.setMode(.burst)))
-        await model.send(.capture)
+        await model.send(.drive(.startBurst))
         let requests = await backend.captureRequests
         #expect(requests.count == 2)
         #expect(requests.allSatisfy { $0 == requests[0] })

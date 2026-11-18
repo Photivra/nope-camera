@@ -532,6 +532,7 @@ settings are never touched.
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
 | `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
+| `burst` | Burst (docs/design/BURST.md, `BurstUITests`): each photo takes 0.4 s and each save 0.5 s, so a tap ends before a second photo. The idle card ("Fast burst", Start Burst) covers no more than a quarter of the picture; a tap saves one photo and shows no summary; holding the shutter (`press(forDuration:)`) saves three or more and leaves the summary with the measured rate; sliding off the shutter stops the burst; Start Burst, Stop Burst and the shutter; the speed menu (Fast, Slow) and the shutter's value "Burst, fast." or "Burst, slow."; the summary until a lens change; at the largest text size, right to left, in night mode (no pixel that isn't red), sideways and on iPad. XCUITest can't read the screen while a press lasts, so "Release to stop" is covered by the unit tests of the card |
 | `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from Q and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
 In right-to-left layout the viewfinder, which `CameraScreen` draws behind the interface, was
@@ -1076,11 +1077,19 @@ and one on 27, the oldest and newest supported versions (issue #78):
 - self-timer (issue #39): 3 s and 10 s count down with a light haptic each second and, with
   VoiceOver, each number spoken; pressing the shutter, a volume button or Cancel Timer stops it
   without a photo; Instruments shows no CPU work during the countdown beyond the running camera;
-- burst (issue #46), on each lens for RAW, RAW + HEIF and HEIF: holding a volume button or the
-  Camera Control takes a burst until it is released, and tapping the shutter starts and stops
-  one; record the frames per second (below, "Burst rate"); every saved frame passes the
-  read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
-  Allocations); VoiceOver announces the start and the saved count;
+- burst (issue #46; docs/design/BURST.md, 5.7), on each lens for RAW, RAW + HEIF and HEIF:
+  holding the on-screen shutter, a volume button or the Camera Control takes the first photo on
+  the press and photos until it is released, stopping within one photo of the release; a tap
+  takes one photo; sliding the finger off the shutter stops the burst; Start Burst runs one until
+  the shutter or Stop Burst; record the frames per second (below, "Burst rate"); every saved
+  frame passes the read-back and is its own photo in Photos; memory stays flat over three bursts
+  of 50 frames at 12 MP and at 48 MP (Instruments, Allocations); the picture between photos stays
+  live (record any stutter); focus and exposure follow a moving subject in full auto and hold with
+  AE/AF lock; the light tap for each photo is felt and the shutter sound follows the system;
+  leaving the app during a burst saves every photo and the Live Activity counts them; with
+  VoiceOver, a double tap takes one photo, a double tap and hold a burst, and the action Start
+  Burst one with no hold; with Voice Control ("Tap Start Burst", "Tap Stop Burst") and Switch
+  Control a burst starts and stops with no hold; record the heat level after three bursts of 50;
 - storage and battery warnings (issue #44): see "Low storage" below; at 20% battery, unplugged,
   "Battery Low" shows and is announced, and it goes away when the device is plugged in; Low Power
   Mode changes the explanation;
@@ -1247,9 +1256,20 @@ burst stops with "Burst stopped: storage is full." before it fails.
 
 ### Burst rate
 
-Not measured yet. On an iPhone 16 Pro Max, for each lens and RAW, RAW + HEIF and HEIF, hold the
-shutter for a 20-frame burst and record frames per second here (time from the first to the last
-frame, from the photos' capture times).
+Not measured yet. The app shows only the rate it measures from the burst that is running, and
+Slow is worded "up to 2 a second"; no rate is stated as a property of a device until it is
+recorded here. On each test device, for each lens, at each Photo Size, for RAW, RAW + HEIF,
+RAW + HEIF + JPEG and HEIF, with signing on and off:
+
+- hold the shutter at Fast for a 20-photo burst and record the photos a second (the summary
+  card's rate, checked against the photos' capture times);
+- record the time to take one photo and the time to save it (Photo Details, "Taking the Photo",
+  and a signpost around the save), which decide whether a deeper saving buffer is worth building
+  (docs/design/BURST.md, decision 4: only if taking is at least one and a half times as fast as
+  saving on the main lens at 12 MP);
+- at Slow, check that no two photos start less than 0.5 s apart and that Slow is slower than
+  Fast. Where Fast measures under about 3 a second, the app stops offering Slow on that lens for
+  the session (`DriveModel.slowBurstMinimumFastRate`); check the Burst menu then has only Fast.
 
 ### Headphones as a remote shutter on a device (issue #81)
 

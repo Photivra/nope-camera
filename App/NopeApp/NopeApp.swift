@@ -157,7 +157,7 @@ struct NopeApp: App {
                 UIApplication.shared.open(url)
             })
         .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
-            let phase: HardwareButtonPhase =
+            let phase: ShutterPhase =
                 switch event.phase {
                 case .began: .pressed
                 case .ended: .released
