@@ -16,6 +16,8 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Self-timer, 3 seconds | Drive strip | Timer | 3 | 1 |  |
 | Self-timer, 10 seconds | Drive strip | Timer › Timer › 10 seconds | 3 | 3 | The delay is remembered while the app is open. |
 | Burst | Drive strip | Burst | 3 | 1 |  |
+| Bracketing | Drive strip | Bracket | 3 | 1 | Was More › Pro Tools › Bracketing, with Manual Controls on; now in full auto too ([BRACKETING.md](BRACKETING.md)). |
+| Bracket Frames, Step, Order, Start Delay | Bracket card | Bracket › Bracket Settings › row › value | 3 | 3 | Its one home: the Bracketing section of Pro Tools is removed. |
 | Interval Shooting | Drive strip | Interval | 3 | 1 | The shutter starts the series. |
 | Interval and number of photos | Interval card | Interval › Interval Settings | 3 | 2 | Its one home: the Interval section of Pro Tools is removed. |
 | Astro | Drive strip | Astro | 2 | 1 | Was a Quick Controls item, often after scrolling the tray. |
@@ -64,7 +66,6 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Pro Tools | Readout row | More › Pro Tools | 2 | 2 |  |
 | Exposure Mode, Metering | Pro Tools | More › Pro Tools › row › value | 4 | 4 |  |
 | Exposure Lock (AE-L), Focus Lock (AF-L) | Pro Tools | More › Pro Tools › switch | 3 | 3 |  |
-| Bracketing, Frames, Step | Pro Tools | More › Pro Tools › Bracketing | 3 | 3 |  |
 | Histogram, Focus Peaking, Live Camera Readout | Pro Tools | More › Pro Tools › switch | 3 | 3 | Also Settings › Viewfinder Overlays; Focus Peaking and the readout are also Q tiles. |
 
 ## In Settings (set once)
@@ -131,7 +132,7 @@ Every option, where it lives, the path to it from the camera, and the number of 
 
 - Used while shooting: on the camera screen or in Q, never only in Settings. Focus Peaking has a Q tile for this reason.
 - Set once: in Settings, at most two levels below it, and found by search, by name or by keyword.
-- Each option has one home. A second way in (a pill, a card button, a Q tile, a Settings page) changes the same value and behaves the same. Fast Shutter’s home is its Q tile; Interval’s is the drive strip; Night Mode’s is its Q tile.
+- Each option has one home. A second way in (a pill, a card button, a Q tile, a Settings page) changes the same value and behaves the same. Fast Shutter’s home is its Q tile; Interval’s and Bracket’s are the drive strip; Night Mode’s is its Q tile.
 - No Settings row appears or disappears when a switch is changed. A row is shown or not by the device only.
 - On iPad and the iPhone Duo inner display Settings has its own button, so every Settings path there is one tap shorter than the iPhone figure.
 - Settings is two taps on iPhone (Q, Settings). That is one more than before; it buys a status line with no button on it and a Q that is always under the thumb.

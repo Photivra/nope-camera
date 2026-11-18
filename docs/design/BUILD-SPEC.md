@@ -4,7 +4,7 @@ Design version: 1.0.0 (2026-11-17; sections 3.14 and 3.15 added 2026-11-18). For
 
 This document says what to build, in which files, and how to tell it is done. The drawings are the mockups in this folder ([overview.html](overview.html)); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md), accessibility in [ACCESSIBILITY.md](ACCESSIBILITY.md), paths in [navigation.md](navigation.md).
 
-Proposed and not yet part of this plan: bracketing on the drive strip for 1.0.0 and focus bracketing for 1.1.0, specified in [BRACKETING.md](BRACKETING.md). Until its decisions are made, sections 3.4 and 3.5 stand as written.
+Bracketing on the drive strip is part of this plan (owner decision, 2026-11-18, all nineteen recommendations of [BRACKETING.md](BRACKETING.md), section 10): its section 7 is the build specification for 1.0.0, and sections 3.4, 3.5, 3.14, 3.15, 4, 6 and 7 below take its changes. Focus bracketing (its section 8) is for 1.1.0 and is not built in 1.0.0.
 
 ## 1. Ground rules
 
@@ -23,7 +23,7 @@ Proposed and not yet part of this plan: bracketing on the drive strip for 1.0.0 
 | --- | --- | --- |
 | Top bar | State pills, format chip, Settings button | Status line: format status leading, pills trailing. No Settings button (stacked and scrolling layouts) |
 | Lens row | Lenses, then the "⋯" Quick Controls button | Manual Controls button, lenses, Switch Camera |
-| Drive | A menu in the tray; Astro a separate tray switch | Drive strip of five words above the shutter |
+| Drive | A menu in the tray; Astro a separate tray switch | Drive strip of six words above the shutter |
 | Shutter row | Last Photo, shutter, Switch Camera | Last Photo, shutter, Q |
 | Quick controls | Sideways-scrolling tray that replaces the lens buttons | Q panel of tiles above the shutter row |
 | Manual Controls | Settings switch; M pill turns it off | Camera button; Settings switch and M pill removed |
@@ -34,6 +34,7 @@ Proposed and not yet part of this plan: bracketing on the drive strip for 1.0.0 
 | Face Detection | Switch and Shortcuts action of that name | Renamed Focus on Faces, switch and action |
 | Focus Peaking | Pro Tools and Settings | Also a Q tile |
 | Interval in Pro Tools | A section with its own Start | Removed; the drive strip is the one home |
+| Bracketing | A Pro Tools section, only with Manual Controls on | Bracket on the drive strip, in full auto and with Manual Controls on, with a card and Bracket Settings ([BRACKETING.md](BRACKETING.md)) |
 | Presets | Rename or Delete page (three levels) | More menu on each preset (two levels); delete asks first |
 | Last Photo | A tap opens the Photos app; touch and hold opens a menu | A tap opens the Last Photo viewer inside the app, with Photo Details and Open in Photos (3.14); the menu is removed |
 
@@ -129,10 +130,10 @@ Change:
 - `ManualReadoutRow` moves into the picture's bottom stack: six `NopeTileStyle` readouts of equal width and the More button (44 pt), `NopeSpace.xxs` apart, height `NopeSize.readout`. Each readout: the mode letter on top ("M" in a filled badge, "A" plain), the value below. The open readout is filled white.
 - `ControlDial` and `AutoExposureDial`: `NopeRadius.large`, `NopeMaterial.backing`, placed directly above the readout row (or alone on the lower edge in full auto). Content unchanged: name, value, meter, Decrease, slider, Increase, Auto, the range line, the notes; white balance keeps Tint and Presets.
 - While a series runs (burst, interval, Astro, a countdown) the readout row and any dial are hidden.
-- `ProToolsSheet`: remove the Interval Shooting section (Interval, Photos, Start) and its `IntervalProgressView` use; the drive strip and its card are the one home of Interval. The sheet keeps exposure mode, metering, the two locks, bracketing and Live Aids. Otherwise tokens only. It stays a full-screen cover in every window.
+- `ProToolsSheet`: remove the Interval Shooting section (Interval, Photos, Start) and its `IntervalProgressView` use; the drive strip and its card are the one home of Interval. The sheet keeps exposure mode, metering, the two locks and Live Aids. The Bracketing section is removed too: Bracket on the drive strip is its one home ([BRACKETING.md](BRACKETING.md), figure `bracket-pro-tools`). Otherwise tokens only. It stays a full-screen cover in every window.
 - Remove the Manual Controls row from Settings › Camera, and the first-row test expectations for it.
 
-AC: Pro Tools has no control that starts or sets up an interval series; one tap turns manual on and one tap turns it off, from full auto and from manual; the button is absent in clean view; VoiceOver reads "Manual Controls, On"; each readout is adjustable with VoiceOver without opening the dial; presets and shortcuts still set manual as before.
+AC: Pro Tools has no control that starts or sets up an interval series, and no bracketing control; one tap turns manual on and one tap turns it off, from full auto and from manual; the button is absent in clean view; VoiceOver reads "Manual Controls, On"; each readout is adjustable with VoiceOver without opening the dial; presets and shortcuts still set manual as before.
 UI tests: `testManualControlsButtonInAuto`, `testManualControlsButtonInManual`, `testCleanViewHidesManualControlsButton`; update every test that turned manual on through Settings.
 
 ### 3.5 Drive strip and mode cards
@@ -142,13 +143,13 @@ Figures: every `drive-*` figure; `landscape-manual`, `landscape-astro`.
 Files: new `DriveStrip.swift`; `DriveControls.swift` (`DriveProgressView`, `CountdownNumber`, `DriveText`); `IntervalControls.swift`; `AstroControls.swift` (`AstroPanel`, `AstroSheet`); `ProToolsSheet.swift` (`IntervalProgressView`, which moves to `DriveControls.swift` in chunk D when chunk F removes the Interval section); `SeriesScreen.swift`; `ShutterButton.swift`.
 
 `DriveStrip`:
-- Five words: Single, Timer, Burst, Interval, Astro. `NopeCapsuleStyle(isSelected:)` at `NopeSize.driveWord`, target 44 pt, `NopeFont.status`. Exactly one is selected.
-- Mapping to existing intents: Single → `DriveMode.single`; Timer → `.timer(delay)`, where `delay` is the last delay chosen in this session, 3 seconds at first; Burst → `.burst`; Interval → `.interval`; Astro → the existing Astro on intent. Choosing any other word while Astro is on turns Astro off first, then sets the mode. Astro is offered only where `canUseAstro` is true or Astro is on; otherwise the strip has four words.
-- Tapping the selected word: Timer opens a `Menu` (3 seconds, 10 seconds); Interval opens `IntervalSheet`; Astro opens `AstroSheet`; Single and Burst do nothing.
+- Six words: Single, Timer, Burst, Bracket, Interval, Astro. `NopeCapsuleStyle(isSelected:)` at `NopeSize.driveWord`, target 44 pt, `NopeFont.status`. Exactly one is selected.
+- Mapping to existing intents: Single → `DriveMode.single`; Timer → `.timer(delay)`, where `delay` is the last delay chosen in this session, 3 seconds at first; Burst → `.burst`; Interval → `.interval`; Astro → the existing Astro on intent. Choosing any other word while Astro is on turns Astro off first, then sets the mode. Astro is offered only where `canUseAstro` is true or Astro is on. Bracket → `.manual(.setBracket(bracketToTurnOn))`, then `bracketDriveMode` (Single, or `.timer(delay)` for its start delay); it is selected while `isBracketOn`, Timer is then not shown selected, and choosing any other word sends `.manual(.setBracket(nil))` first. Bracket is offered where `manual.bracketFrameCounts` is not empty or a bracket is on ([BRACKETING.md](BRACKETING.md), section 7).
+- Tapping the selected word: Timer opens a `Menu` (3 seconds, 10 seconds); Bracket opens `BracketSheet`; Interval opens `IntervalSheet`; Astro opens `AstroSheet`; Single and Burst do nothing.
 - Choosing Interval no longer opens the sheet by itself; the card shows the series and the shutter starts it.
 - Fit: `ViewThatFits` with word padding `NopeSpace.s`, then `NopeSpace.xs`, then a horizontal `ScrollView` that keeps the selected word visible. At the default text size all eleven languages fit at `NopeSpace.xs` (figure `drive-strip-languages`).
 - While the drive is busy the other words are disabled at 0.4 opacity.
-- Sideways: symbols only (`square`, `clock`, `square.stack.3d.down.right`, `timer`, `moon.stars`), with Large Content Viewer labels.
+- Sideways: symbols only (`square`, `clock`, `square.stack.3d.down.right`, `square.3.layers.3d`, `timer`, `moon.stars`), with Large Content Viewer labels.
 - Column layout: the strip sits in a `NopeMaterial.backing` capsule on the lower edge of the picture.
 - `.sensoryFeedback(.selection)` on change; VoiceOver announces the new mode.
 
@@ -159,6 +160,7 @@ Mode cards (one view, `ModeCard`, in `DriveControls.swift`, used by all modes; `
 | Single | none | none | none |
 | Timer | none; the shutter shows "3" or "10" | Countdown number in the picture; "Photo in 3s" and Cancel Timer | none |
 | Burst | none | "Photos taken: 12" and Stop Burst | The end message as text until the next action |
+| Bracket | "Exposure bracket: 3 frames, 1 EV apart" and "−1, 0, +1 EV" (with a delay, "· after 3 seconds"); the whole card is the button Bracket Settings | "Bracket in 3s" and Cancel during a start delay; "Taking 3 frames"; "Saving: 2 of 3 photos saved", progress bar; no Stop | "3 photos saved" until the next action; a frame not saved: the banner "Bracket stopped: 2 of 3 photos saved." with the reason |
 | Interval | "Every 10 seconds, 10 photos"; the whole card is the button Interval Settings | "3 of 10 photos taken", progress bar, Stop | "Paused: 3 of 10 photos taken", Stop |
 | Astro | "Astro frames: 20" and "After 10 seconds · 20 s in all · at most 486 MB"; the whole card is the button Astro Settings | Countdown, then "Frame 7 of 20", progress bar, Stop Frames | "Paused: 7 of 20 frames", Stop Frames |
 
@@ -375,6 +377,7 @@ AC:
 - A tap on Last Photo opens the viewer on the newest photo; it never opens another app. Close, a swipe down, Escape and the two-finger scrub close it, and focus returns to Last Photo.
 - The status line shows only facts from the saved photo. Teal appears only with Signed; amber only with Processed or a failed signature, each with its symbol and words.
 - Each saved photo of the session is one page, a bracket's frames included. The position is correct after a photo arrives while the viewer is open, and the page shown does not change.
+- A bracket's frame shows the chip "Exposure bracket · frame 2 of 3 · 0 EV" on the photo's lower edge (`BracketChip` in `BracketControls.swift`, from `SavedPhoto.bracket`); it hides with the other controls, and the page's VoiceOver label adds "Exposure bracket, frame 2 of 3, 0 EV." ([BRACKETING.md](BRACKETING.md), figure `bracket-viewer`).
 - A zoomed photo shows the preview hint whenever the preview has fewer pixels than the saved photo. No picture is drawn above the zoom limit.
 - A photo whose preview is released shows the fallback, never an enlarged thumbnail filling the screen.
 - Nothing is written to disk; the snapshot taken when the app leaves the screen shows no photo; after the app returns from the background the viewer is closed.
@@ -431,7 +434,7 @@ Order of groups, fixed for every photo. A group with nothing to show is left out
 | 8 | Every Tag | One row for each file, with its count; opens the page below | the page | `files[].entries` (item 16); until then `files[].contents`, names only |
 | 9 | (no header) | Timing | The five steps, as today | `timings` |
 
-After the groups: the existing footer "Only for photos taken since nope. opened…", then Open in Photos (left out when `openPhoto` is `nil`). The bracket picker stays above the summary.
+After the groups: the existing footer "Only for photos taken since nope. opened…", then Open in Photos (left out when `openPhoto` is `nil`). The bracket picker stays above the summary. A bracket's frame has a Bracket group after the summary: Type, This Frame, Planned Exposure, The Bracket, with the Honesty footer that these are session values in no file (`BracketDetailsSection` in `BracketControls.swift`; [BRACKETING.md](BRACKETING.md), figure `bracket-details`).
 
 The Every Tag page (one file): title, the file's format name; the system search field, which filters by name and opens the groups that match; one disclosure row for each place that has entries, closed at first, with its count: TIFF, EXIF, GPS, DNG, XMP, File Structure, Content Credentials. TIFF is IFD0 below tag `0xC612`; DNG is IFD0 from `0xC612` up, without the manifest tag; File Structure is the container blocks. A row is the name in the monospaced body font, the value (`ComparisonText.describe`: the text, the numbers, "Count: n", or "Present, no readable value"), and a footnote with the tag number and the setting that controls it, "Always saved", or "nope.'s Content Credentials signature." A group with hidden values starts with one Show Hidden Values row.
 
@@ -573,6 +576,8 @@ Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. A
 | TIFF; EXIF; GPS; DNG; XMP; File Structure; Show Hidden Values; Always saved | Every Tag page | Names of standards are not translated. "Count: %lld", "Present, no readable value" and "nope.'s Content Credentials signature." exist |
 | Show Value, %@ | VoiceOver label of a Show Value button | The placeholder is the row's title |
 
+Bracketing (1.0.0): the strings of [BRACKETING.md](BRACKETING.md), section 7, "Strings (English), 1.0.0", including the removal of "Bracketing" (the Pro Tools switch).
+
 Remove: "Choose Details"; "In Each Photo" (the header); "File Options"; "Face Detection" and the action strings that use it; every "On by default." and "Off by default." sentence in Settings; the 0.3.0 explanations replaced above; the Interval Shooting section strings of Pro Tools once nothing uses them; "Golden Ratio", "Golden Spiral", "Turn Spiral" and its value (issue 76); "Quick Controls"; "No RAW on This Lens" once nothing uses it; "Rename or Delete"; "Turn Off Manual Controls", "Back to Single Photo", "Turn Off Astro" when their pills go.
 
 ## 5. Wording that needs the Honesty review
@@ -583,6 +588,7 @@ These are drafts. None ships until reviewed in every language (`AGENTS.md`, Loca
 - from the Settings decisions of 2026-11-17: the explanations of Mirror Front Camera, Focus on Faces, Show Processed Marker, Night Mode, Red Viewfinder and Live Activity; the Standard File Tags sentence; the Night Mode entry on the Accessibility page; the Honesty entries Faces and Autofocus and Location Only If You Turn It On; the names Details in Each Photo, HEIF and JPEG Copies and Focus on Faces;
 - from the Last Photo viewer (3.14): Signed and Not signed on its status line, the preview hint, and the Preview Not Kept title and sentence. The hint must stay true for the preview size the data specification chooses, and is shown only when the preview has fewer pixels than the saved photo;
 - from What's in This Photo (3.15): every string marked Honesty in section 4 under that screen. Four need particular care. "RAW: one frame of sensor data" must not be read as "no processing"; it says only what the file is. "Not in the files" and the two footers must stay true if the capture's values stop being kept. "One photo: the RAW with its HEIF" states what the app asked Photos to do, which the device check in `docs/PRIVACY.md` confirms. The sentence about a checker reporting the file as valid and the signer as untrusted follows `docs/PRIVACY.md` (Content Credentials) and c2patool 0.28.6; it must be checked against the checker people are most likely to use before it ships, and it names no product;
+- from bracketing ([BRACKETING.md](BRACKETING.md), section 7): "A bracket never fires the flash.", the Bracket group footer and the limited-frame sentences;
 - to check against the real-device tag dump (issue 79) before it is kept as written: the Always Saved footer, "None of them identify you or link your photos."
 
 The processing note must not name specific processing steps the phone applies unless they are verified; the draft says only that the phone processes the file and that the app cannot turn it off. Focus on Faces must not be described as turning face detection off: the switch decides only whether the app's autofocus and auto exposure follow faces.
@@ -605,6 +611,7 @@ The processing note must not name specific processing steps the phone applies un
 | 15 | The Last Photo viewer's data (owner decision, 2026-11-18): the list of this session's photos with the lens and time of each; a screen-size preview for each, in memory only, released in the background and under memory pressure; how many are kept; whether the viewer is open, so the hardware shutter can close it | `NopeCore`, `NopeDevelop` (`ImageIOThumbnailer`), the app target's capture events. Specified separately | 3.14 |
 | 16 | What's in This Photo: values the read-back already holds but `PhotoDetails` does not expose. (a) `PhotoDetails.File.entries`: every tag, block and XMP property with its value, the setting that controls it, whether it identifies, and its place (TIFF, EXIF, GPS, DNG, XMP, file structure, signature), built as `MetadataComparison.items(in:)` builds them. (b) `PhotoDetails.Exposure` gains the 35 mm equivalent, exposure mode, program, metering, brightness, largest aperture and subject area, with named cases and the raw number for an unknown code. (c) A lens and camera value (lens model, lens make, make, model). (d) For the RAW file: megapixels, active area, default crop, compression, DNG version, baseline exposure, as-shot neutral. (e) For each written item, its value as text (the date parsed and formatted by the interface from a `Date`; the location as coordinates) | `NopeCore/PhotoDetails.swift`, with unit tests to 100%. No new reading: the data is `SavedPhoto.metadata`. Scope: presentation of existing data, so 1.0.0 if the owner agrees (section 7, P1) | 3.15, groups 1, 2, 3, 6 and 8. Without it the sheet shows today's values in the new order, and Every Tag lists names only |
 | 17 | What's in This Photo: values the save knows and does not pass on. (a) The developed copies' color space, quality and size (`DevelopedFileOptions`) and the pairing (`RAWPairing`). (b) Whether Standard File Tags were written (`MetadataSettings`). (c) The shutter and ISO the camera reported (`CapturedPhoto.exposureDuration`, `iso`), kept with the details in memory for the session | `NopeCore/PhotoSaver.swift`, `PhotoDetails.swift`; `docs/PRIVACY.md` (Last photo and its details) must list (c). Scope: 1.0.0 if the owner agrees (P1, P2) | 3.15, groups 1, 4 and 6 |
+| 19 | Bracketing on the drive strip ([BRACKETING.md](BRACKETING.md), section 7, "Core"): `BracketOrder`, `BracketFramePlan`, a bracket in full auto, `CameraModel.bracketProgress` and `failedBracket`, `BracketPlace` on `SavedPhoto` (in memory only), Burst and Interval turning the bracket off, an interval series never taking a bracket, the preset's order and Take Bracket's Order | `NopeCore` | 3.5, 3.14, 3.15 |
 | 18 | Not in 1.0.0, new capability: the bytes of tags the reader does not decode (EXIF version, component configuration, maker notes, the lens correction lists) and of tags with more than 16 values, which needs a change to the fail-closed reader (`TIFFReader`); the name of the color profile; which processing switches the device offered and the app turned off for this photo (`ProcessingSwitches`); focus distance, white balance in kelvin, drive mode and bracket step; a check of the signature by the app; the manifest's other fields (instance ID, certificate serial number). File names are not available to an app with add-only access | `NopeCore`, `NopeCapture`, `NopeSigning` | Nothing drawn. Rows for these read "Present, no readable value" or do not exist |
 | 10 | Deployment targets (issue 78) | Project settings | none; do first if `#available` fallbacks in `CameraStyle.swift` are to be removed with the token work |
 | 11 | App icon assets and the `TRADEMARKS.md` entry | Brand asset; owner decision on the period color | icon.html |
@@ -638,6 +645,8 @@ Still needing the owner:
 5. The spacing scale (4, 8, 12, 16, 24, 32, 48), the radius scale (12, 24, capsule) and the seven button types.
 6. Q with thirteen tiles has five rows and covers about 57% of the picture while it is open on a 402 × 874 pt screen (45% with four rows). Accept, or say which tile should give way.
 7. Section 6, item 14: the Settings popover when Night Mode is turned on inside it.
+
+Made on 2026-11-18: bracketing ([BRACKETING.md](BRACKETING.md), section 10, all nineteen recommendations): Bracket is a sixth word of the drive strip, in full auto and with Manual Controls on; Burst and Interval turn it off and an interval series no longer takes a bracket; focus bracketing waits for 1.1.0 and its device checks; the frames are grouped in the viewer and in What's in This Photo from session values only.
 
 Made on 2026-11-18: a tap on Last Photo shows the photo full screen inside the app, with Open in Photos and Photo Details, for this session's photos (3.14).
 
