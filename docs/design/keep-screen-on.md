@@ -1,6 +1,6 @@
 # Keep Screen On
 
-Status: proposed 2026-11-18 for release 1.0.0 (issue 97); not yet accepted, and not yet part of [BUILD-SPEC.md](BUILD-SPEC.md), [SETTINGS-PLAN.md](SETTINGS-PLAN.md) or the screen counts in [README.md](README.md). The wording is a draft until the Honesty review. Figures named below are `screens/<name>.html`, each with a PNG beside it.
+Status: accepted 2026-11-18 for release 1.0.0 (issue 97), with all twelve decisions as recommended; built for 1.0.0, and the series' already-dark rule of decision 11 is built too (issue 99). [BUILD-SPEC.md](BUILD-SPEC.md) 3.10 and [SETTINGS-PLAN.md](SETTINGS-PLAN.md) have the result. Not yet in the screen counts of [README.md](README.md). The wording is a draft until the Honesty review; 1.0.0 ships English only, so the eleven languages of section 12 come later. Figures named below are `screens/<name>.html`, each with a PNG beside it.
 
 The request: a setting, off by default, that keeps the screen awake while the camera is open, for tripod work with long gaps between photos.
 

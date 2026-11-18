@@ -1,6 +1,6 @@
 # Settings search in Night Mode: the red search field
 
-Status: proposed 2026-11-18 for release 1.0.0 (issue 88); not yet accepted, and not yet part of [BUILD-SPEC.md](BUILD-SPEC.md) or of the screen counts in [README.md](README.md). The wording is a draft until the Honesty review. Figures named below are `screens/<name>.html`, each with a PNG beside it.
+Status: accepted 2026-11-18 for release 1.0.0 (issue 88), with all ten decisions as recommended; built for 1.0.0, and the Every Tag field of decision 9 is built too (issue 98). [BUILD-SPEC.md](BUILD-SPEC.md) 3.10 has the result. Not yet in the screen counts of [README.md](README.md). The wording is a draft until the Honesty review. Figures named below are `screens/<name>.html`, each with a PNG beside it.
 
 The request: Settings has no search field while Night Mode is on. Draw the app's own field, red on black, so search works in Night Mode too.
 
