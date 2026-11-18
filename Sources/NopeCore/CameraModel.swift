@@ -262,6 +262,8 @@ public final class CameraModel {
         case .requestPermission:
             await resolve(await backend.requestPermission())
         case .selectLens(let id):
+            // A range end set on one lens means nothing on another.
+            if bracketing.rangeEditing != nil { await handle(BracketIntent.finishSettingRange(keeps: false)) }
             await selectLens(id)
         case .capture:
             await pressShutter()
@@ -299,6 +301,7 @@ public final class CameraModel {
         case .setViewerOpen(let isOpen):
             isViewerOpen = isOpen
         }
+        await endStaleRangeEditing()
     }
 
     /// Keeps the person's photo sizes, and reconfigures the camera when the selected lens's size

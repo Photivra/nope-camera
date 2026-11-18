@@ -239,7 +239,7 @@ struct FocusTrack: View {
 
     /// The track and its two end labels.
     var body: some View {
-        VStack(spacing: NopeSpace.xxs) {
+        VStack(spacing: 0) {
             GeometryReader { geometry in
                 let width = geometry.size.width
                 let middle = geometry.size.height / 2
@@ -253,7 +253,7 @@ struct FocusTrack: View {
                     }
                 }
             }
-            .frame(height: NopeSpace.l)
+            .frame(height: NopeSpace.m)
             // Positions run from the closest focus on the leading edge (section 6).
             .flipsForRightToLeftLayoutDirection(true)
             HStack {
@@ -278,15 +278,15 @@ struct FocusTrack: View {
         if isCurrent {
             Circle()
                 .strokeBorder(NopeColor.label, lineWidth: 2)
-                .frame(width: NopeSpace.m, height: NopeSpace.m)
+                .frame(width: NopeSpace.s, height: NopeSpace.s)
         } else if isTaken {
             RoundedRectangle(cornerRadius: 1)
                 .fill(NopeColor.label)
-                .frame(width: 3, height: NopeSpace.m)
+                .frame(width: 3, height: NopeSpace.s)
         } else {
             RoundedRectangle(cornerRadius: 1)
                 .strokeBorder(NopeColor.label, lineWidth: 1)
-                .frame(width: 5, height: NopeSpace.m)
+                .frame(width: 5, height: NopeSpace.s)
         }
     }
 }
@@ -326,7 +326,9 @@ struct FocusBracketCard: View {
 
     /// The card.
     var body: some View {
-        VStack(alignment: .leading, spacing: NopeSpace.xs) {
+        // The idle card covers no more than 30% of the picture on a 402 × 874 pt screen
+        // (docs/design/BRACKETING.md, section 8, criterion 10), so its rows sit close.
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             content
         }
         .padding(.leading, NopeSpace.m)

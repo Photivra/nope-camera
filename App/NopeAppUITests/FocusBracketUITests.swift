@@ -53,7 +53,9 @@ extension NopeAppUITests {
         let returns = app.switches["Return Focus When Done"]
         scrollUntilHittable(app, returns)
         XCTAssertEqual(returns.value as? String, "1")
-        XCTAssertTrue(element(app, containing: "Stack them in other software").exists)
+        let honesty = element(app, containing: "Stack them in other software")
+        scrollUntilHittable(app, honesty)
+        XCTAssertTrue(honesty.exists)
         try auditBracketSettings(app, afterScrolling: true)
         closeBracketSettings(app)
         let card = bracketCard(app)

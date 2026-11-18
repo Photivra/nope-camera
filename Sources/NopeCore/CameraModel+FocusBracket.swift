@@ -184,6 +184,14 @@ extension CameraModel {
         await manual.applyCurrentControls()
     }
 
+    /// Ends setting an end of the range, as Cancel does, once the focus bracket it belongs to is
+    /// off (another drive word, Astro, the exposure type, a preset, or a lens that can't take
+    /// it), so the camera's own controls never stay held. Called after every intent.
+    func endStaleRangeEditing() async {
+        guard bracketing.rangeEditing != nil, !isFocusBracketOn else { return }
+        await finishSettingRange(keeps: false)
+    }
+
     /// Moves the lens to a position, ignoring a camera that refuses or isn't running.
     ///
     /// - Parameter position: The position, from 0 to 1.
@@ -202,6 +210,9 @@ extension CameraModel {
             return
         }
         guard canCapture else { return }
+        // The shutter while an end of the range is set leaves the range as it was (as Cancel),
+        // so the series never starts with the camera's controls held by the dial.
+        if bracketing.rangeEditing != nil { await finishSettingRange(keeps: false) }
         let settings = bracketing.focus
         guard let delay = bracketing.focusStartDelay else {
             await takeFocusBracket(settings)
@@ -459,6 +470,31 @@ struct FocusBracketRun {
     /// The estimated size of one frame's files.
     let bytesPerPhoto: Int64
 
+    /// Creates a run.
+    ///
+    /// - Parameters:
+    ///   - settings: The bracket.
+    ///   - lens: The lens.
+    ///   - request: Each frame's request.
+    ///   - save: The settings the frames are saved with.
+    ///   - saver: The save pipeline.
+    ///   - backend: The camera.
+    ///   - locked: The exposure and white balance held for every frame.
+    ///   - bytesPerPhoto: The estimated size of one frame's files.
+    init(
+        settings: FocusBracketSettings, lens: Lens, request: CaptureRequest, save: SaveSettings, saver: PhotoSaver,
+        backend: any ManualCaptureBackend, locked: ManualSettings, bytesPerPhoto: Int64
+    ) {
+        self.settings = settings
+        self.lens = lens
+        self.request = request
+        self.save = save
+        self.saver = saver
+        self.backend = backend
+        self.locked = locked
+        self.bytesPerPhoto = bytesPerPhoto
+    }
+
     /// The controls for a frame: the held exposure and white balance, focus at a position, no
     /// point of interest and no automatic aids.
     ///
@@ -488,4 +524,7 @@ struct FocusBracketOutcome {
 
     /// The last frame's reported position, or `nil` when no frame was saved.
     var lastPosition: Double?
+
+    /// Creates an outcome: nothing saved yet, ended at the limit, no failure.
+    init() {}
 }

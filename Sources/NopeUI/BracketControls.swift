@@ -380,7 +380,8 @@ struct BracketCard: View {
 }
 
 /// Announcements for a bracket without looking at the screen: "Taking 3 frames" when the
-/// request starts. The countdown's numbers are the self-timer's (``DriveFeedback``), and the
+/// request starts; for a focus bracket "Frame 4 of 12" at each frame, with a light tap, and the
+/// end sentence. The countdown's numbers are the self-timer's (``DriveFeedback``), and the
 /// saved photos are announced by the camera's save feedback.
 struct BracketFeedback: ViewModifier {
     /// The camera model.
@@ -403,6 +404,9 @@ struct BracketFeedback: ViewModifier {
                     AccessibilityNotification.Announcement(BracketText.taking(total)).post()
                 }
             }
+            // A focus bracket: a light tap for each frame taken (docs/design/BRACKETING.md,
+            // section 6), as for a burst's frames.
+            .sensoryFeedback(NopeHaptic.burstFrame, trigger: model.bracketing.progress?.taken) { _, taken in (taken ?? 0) > 0 }
             // A focus bracket: "Frame 4 of 12" at each frame, at low priority so it doesn't
             // interrupt VoiceOver, and the end sentence.
             .onChange(of: model.bracketing.progress?.taken) {
@@ -502,14 +506,19 @@ struct BracketSheet: View {
                 })
             Group {
                 if dynamicTypeSize.isAccessibilitySize {
+                    // Two rows; the section header names it, since an inline picker's own label
+                    // doesn't grow with the text size.
                     Picker(selection: selection) { typeChoices } label: { typeLabel }
                         .pickerStyle(.inline)
+                        .labelsHidden()
                 } else {
                     Picker(selection: selection) { typeChoices } label: { typeLabel }
                         .pickerStyle(.segmented)
                 }
             }
             .disabled(!(model.canFocusBracket && model.canExposureBracket))
+        } header: {
+            if dynamicTypeSize.isAccessibilitySize { typeLabel }
         } footer: {
             if !model.canFocusBracket {
                 Text("Focus bracketing needs a lens whose focus can be set. This lens’s focus can’t.", bundle: .module, comment: "Under the Type control in Bracket Settings, on a lens whose focus can't be set by the app.")

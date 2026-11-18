@@ -220,7 +220,7 @@ Names are the visible words: "Done", "More Exposure Details", "More Sensor Detai
 
 ## Bracketing
 
-From [BRACKETING.md](BRACKETING.md), section 6, for the 1.0.0 part (exposure bracketing). The focus forms are for 1.1.0.
+From [BRACKETING.md](BRACKETING.md), section 6. Exposure and focus bracketing are both in 1.0.0 (focus bracketing moved from 1.1.0, issue #90); the focus forms follow the exposure ones.
 
 | Input | Result |
 | --- | --- |
@@ -245,6 +245,32 @@ From [BRACKETING.md](BRACKETING.md), section 6, for the 1.0.0 part (exposure bra
 - Differentiate Without Color, Increase Contrast: the amber triangle always has words.
 - Reduce Motion: the progress bar changes without animation.
 - Sideways, iPad, iPhone Duo: the card on the picture's lower edge; Bracket Settings is a sheet.
+
+Focus bracketing:
+
+| Input | Result |
+| --- | --- |
+| Shutter, volume buttons, Camera Control, Space | Takes the focus bracket after its start delay; during the delay cancels; while it runs or is paused, stops it after the current frame |
+| Escape | Closes the focus dial (as Cancel) |
+| Apple Watch | During a focus bracket the watch reports the camera busy |
+| Siri and Shortcuts | Take Bracket with Type Focus, Focus Frames and Range (As Set in nope., Whole Range) |
+| Live Activity | The series activity: "Frame 4 of 12" |
+
+| Element | Label, value, hint |
+| --- | --- |
+| Type | A segmented control (Exposure, Focus); at accessibility sizes two rows under the header Type. Dimmed, with its sentence, where the lens takes only one type |
+| Idle card | "Bracket Settings", button. Value: "Focus bracket: 12 frames, Focus 0.12 to 0.80, nearest first" |
+| Nearest, Farthest (card) | "Nearest Focus", value "0.12"; "Farthest Focus", value "0.80". Buttons |
+| Focus dial | The slider is adjustable in steps of 0.01, with Decrease and Increase buttons; a tap on the picture focuses there once |
+| The track | Hidden; the words carry it |
+| Shutter | "Take Photo". Value: "Bracket, focus, 12 frames"; while it runs "Taking a focus bracket. Press to stop." |
+| Announcements | "Frame 4 of 12" at each frame at low priority, so VoiceOver isn't interrupted; the end sentence |
+| Viewer chip | Part of the page's label: "Focus bracket, frame 4 of 12, focus 0.31." |
+
+- Largest text sizes: the card's buttons stack and the track is left out; the Type control becomes two rows.
+- Right to left: the track runs from the lens's closest focus on the leading edge; positions keep their order.
+- Night mode: red on black; frames taken are filled marks and frames to come outlined, so the count never depends on color.
+- Reduce Motion: the track's marks change without animation.
 
 ## System surfaces
 

@@ -1035,7 +1035,8 @@ internal, declared in `Sources/NopeUI/BracketControls.swift`
 ```
 
 Announcements for a bracket without looking at the screen: "Taking 3 frames" when the
-request starts. The countdown's numbers are the self-timer's (``DriveFeedback``), and the
+request starts; for a focus bracket "Frame 4 of 12" at each frame, with a light tap, and the
+end sentence. The countdown's numbers are the self-timer's (``DriveFeedback``), and the
 saved photos are announced by the camera's save feedback.
 
 ## `BracketFeedback/body(content:)`

@@ -3365,6 +3365,18 @@ Keeps the bracket and the drive mode together after the drive mode changed: Burs
 Interval turn the bracket off; with a bracket on, Single and the self-timer's delay become
 the bracket's start delay.
 
+## `CameraModel/endStaleRangeEditing()`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor func endStaleRangeEditing() async
+```
+
+Ends setting an end of the range, as Cancel does, once the focus bracket it belongs to is
+off (another drive word, Astro, the exposure type, a preset, or a lens that can't take
+it), so the camera's own controls never stay held. Called after every intent.
+
 ## `CameraModel/failedBracket`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -9316,6 +9328,16 @@ var failure: CaptureError?
 
 The error of the frame that failed, or `nil`.
 
+## `FocusBracketOutcome/init()`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+init()
+```
+
+Creates an outcome: nothing saved yet, ended at the limit, no failure.
+
 ## `FocusBracketOutcome/lastPosition`
 
 internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
@@ -9604,6 +9626,26 @@ point of interest and no automatic aids.
 
 - Parameter position: The lens position.
 - Returns: The controls.
+
+## `FocusBracketRun/init(settings:lens:request:save:saver:backend:locked:bytesPerPhoto:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+init(settings: FocusBracketSettings, lens: Lens, request: CaptureRequest, save: SaveSettings, saver: PhotoSaver, backend: any ManualCaptureBackend, locked: ManualSettings, bytesPerPhoto: Int64)
+```
+
+Creates a run.
+
+- Parameters:
+  - settings: The bracket.
+  - lens: The lens.
+  - request: Each frame's request.
+  - save: The settings the frames are saved with.
+  - saver: The save pipeline.
+  - backend: The camera.
+  - locked: The exposure and white balance held for every frame.
+  - bytesPerPhoto: The estimated size of one frame's files.
 
 ## `FocusBracketRun/lens`
 

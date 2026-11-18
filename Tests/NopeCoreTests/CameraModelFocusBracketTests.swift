@@ -616,6 +616,27 @@ struct CameraModelFocusBracketTests {
         #expect(model.bracketing.focus.farthest == 0.05)
     }
 
+    @Test func settingTheRangeEndsWhenTheFocusBracketGoesOrTheLensChanges() async {
+        let (model, _) = await makeModel(lenses: [ManualFixtures.wide, FocusFixtures.tele])
+        await model.send(.bracket(.beginSettingRange(.nearest)))
+        await model.send(.bracket(.setRangeValue(0.4)))
+        await model.send(.selectLens(FocusFixtures.tele.id))
+        #expect(model.bracketing.rangeEditing == nil)
+        #expect(!model.manual.holdsControls)
+        #expect(model.bracketing.focus.nearest == 0.2)
+        #expect(model.isFocusBracketOn)
+        await model.send(.bracket(.beginSettingRange(.farthest)))
+        await model.send(.bracket(.setRangeValue(0.9)))
+        await model.send(.capture)
+        #expect(model.bracketing.rangeEditing == nil)
+        #expect(model.bracketing.focus.farthest == 0.6)
+        #expect(model.bracketing.lastRun?.saved == 3)
+        await model.send(.bracket(.beginSettingRange(.farthest)))
+        await model.send(.drive(.setMode(.burst)))
+        #expect(model.bracketing.rangeEditing == nil)
+        #expect(!model.manual.holdsControls)
+    }
+
     @Test func endingOrMovingWithoutARangeDoesNothing() async {
         let (model, backend) = await makeModel()
         await model.send(.bracket(.setRangeValue(0.5)))
