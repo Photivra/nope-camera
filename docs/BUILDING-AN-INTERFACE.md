@@ -54,8 +54,9 @@ off with `CameraModel.setManualControls(_:settings:)`, which stores the "Manual 
 and sends `.manual(.setEnabled(_:))` at once. Everything about them is in
 `CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
-exposure modes, bracketing and interval shooting (which, unlike the other manual intents, works
-in full auto too; the `.interval` drive mode starts it from the shutter). Send `.manual(...)`
+exposure modes, bracketing and interval shooting (which, unlike the other manual intents, work
+in full auto too; the `.interval` drive mode starts a series from the shutter, and a bracket that
+is on (`CameraModel.isBracketOn`) is what the shutter takes in Single or with the self-timer). Send `.manual(...)`
 intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure

@@ -124,6 +124,12 @@ struct FailureBanner: View {
     /// Hides the banner.
     let dismiss: () -> Void
 
+    /// How far a bracket got when one of its frames couldn't be saved, or `nil`: the banner then
+    /// starts with "Bracket stopped: 2 of 3 photos saved." and offers only Dismiss, since taking
+    /// the bracket again would save the frames already saved a second time
+    /// (docs/design/BRACKETING.md, section 4).
+    let failedBracket: BracketProgress?
+
     /// Opens Settings, or `nil` when the app can't.
     @Environment(\.openAppSettings) private var openAppSettings
 
@@ -140,11 +146,23 @@ struct FailureBanner: View {
     ///   - canCapture: Whether the shutter can take a photo now.
     ///   - tryAgain: Takes the photo again.
     ///   - dismiss: Hides the banner.
-    init(error: CaptureError, canCapture: Bool, tryAgain: @escaping () -> Void, dismiss: @escaping () -> Void) {
+    ///   - failedBracket: How far a bracket got when a frame couldn't be saved, or `nil`.
+    init(
+        error: CaptureError, canCapture: Bool, tryAgain: @escaping () -> Void, dismiss: @escaping () -> Void,
+        failedBracket: BracketProgress? = nil
+    ) {
         self.error = error
         self.canCapture = canCapture
         self.tryAgain = tryAgain
         self.dismiss = dismiss
+        self.failedBracket = failedBracket
+    }
+
+    /// The banner's sentence: what went wrong, after how far a bracket got.
+    private var message: String {
+        let reason = CaptureMessages.message(for: error)
+        guard let failedBracket else { return reason }
+        return "\(BracketText.stopped(failedBracket)) \(reason)"
     }
 
     /// The banner.
@@ -186,7 +204,7 @@ struct FailureBanner: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(CameraStyle.warning)
                 .accessibilityHidden(true)
-            Text(verbatim: CaptureMessages.message(for: error))
+            Text(verbatim: message)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(NopeColor.label)
                 .fixedSize(horizontal: false, vertical: true)
@@ -214,7 +232,7 @@ struct FailureBanner: View {
 
     /// Try Again or Open Settings, or nothing.
     @ViewBuilder private var actionButton: some View {
-        switch FailureAction(for: error) {
+        switch failedBracket == nil ? FailureAction(for: error) : nil {
         case .tryAgain:
             Button(action: tryAgain) {
                 Text("Try Again", bundle: .module, comment: "Button on the message about a photo that wasn't taken or saved: takes the photo again.")

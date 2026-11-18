@@ -91,6 +91,26 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertFalse(app.buttons["More Manual Controls"].exists)
     }
 
+    /// Take Bracket's Order: the frames are taken in the order asked for, as the photos' details
+    /// show, and the bracket chosen on the drive strip stays off.
+    @MainActor
+    func testABracketIsTakenInTheOrderAsked() {
+        let app = launch("manual", request: "bracket3-brightest")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "Photos saved and signed.")
+        XCTAssertFalse(app.buttons["Bracket Settings"].exists, "the drive strip's bracket was turned on")
+        let thumbnail = app.buttons["Last Photo"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 10))
+        thumbnail.press(forDuration: 1.2)
+        let details = app.buttons["Photo Details"]
+        XCTAssertTrue(details.waitForExistence(timeout: 15))
+        details.tap()
+        let bracket = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Brightest First")).firstMatch
+        XCTAssertTrue(bracket.waitForExistence(timeout: 5))
+        XCTAssertTrue(bracket.label.contains("+1, 0, -1 EV") || bracket.label.contains("+1, 0, −1 EV"), bracket.label)
+    }
+
     @MainActor
     func testApplyPresetSaysWhatChangedAndCanBeUndone() throws {
         // Apply Preset with Factory Defaults, through the same path as the Presets list.

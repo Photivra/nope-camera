@@ -61,7 +61,7 @@ control appears only where the lens's active format reports it (`ManualCapabilit
 | White balance temperature and tint, presets, gains (`setWhiteBalanceModeLocked(with:)`, `deviceWhiteBalanceGains`) | Offered | Temperature and tint (2500–10,000 K) are converted to gains within `maxWhiteBalanceGain`; direct gains aren't shown, because temperature and tint describe the same values. |
 | Aperture (`lensAperture`, iOS 27 variable aperture) | Offered | Where the lens has more than one stop. |
 | Max exposure duration in auto (`activeMaxExposureDuration`) | Offered | Fast Shutter in Settings (issues #35, #41, #51, #56): a shutter limit for auto exposure. |
-| Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Pro Tools; each frame a separate single-frame photo. |
+| Exposure bracket (`AVCaptureManualExposureBracketedStillImageSettings`) | Offered | Bracket on the drive strip, in full auto and with Manual Controls on (docs/design/BRACKETING.md); 3, 5 or 7 frames up to `maxBracketedCapturePhotoCount`, 1/3 to 2 EV apart, darkest, metered or brightest first (the frames are requested in the order of the array); each frame a separate single-frame photo. |
 | Longest exposure (`activeFormat.maxExposureDuration`) | Offered | Through the manual shutter; the Astro helper (issue #60) starts from it. The value per lens is still to be recorded on the test devices (`docs/TESTING.md`, "Astro helper on a device"). |
 | Low-light boost (`automaticallyEnablesLowLightBoostWhenAvailable`) | Not offered | Never turned on by the app; it is documented for low-light frame rates, and its effect on photos isn't measured. |
 | Global tone mapping, video HDR, Center Stage | Not offered | Video and preview processing, not the RAW. |

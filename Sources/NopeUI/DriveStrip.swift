@@ -3,8 +3,10 @@ import SwiftUI
 
 /// One word of the drive strip: what the shutter does (docs/design/BUILD-SPEC.md, 3.5).
 ///
-/// Four words are drive modes of `NopeCore` (`DriveMode`); Astro is the astro helper, which has
-/// its own shutter. The words are an interface's names for existing intents; they hold no rules.
+/// Four words are drive modes of `NopeCore` (`DriveMode`); Bracket is the exposure bracket
+/// (`ManualControlsModel.bracket`) with the mode Single, or the self-timer for its start delay
+/// (docs/design/BRACKETING.md, section 3); Astro is the astro helper, which has its own shutter.
+/// The words are an interface's names for existing intents; they hold no rules.
 enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
     /// One photo per press: `DriveMode/single`.
     case single
@@ -14,6 +16,9 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
 
     /// A rapid run of separate photos: `DriveMode/burst`.
     case burst
+
+    /// An exposure bracket: `ManualControlsModel.bracket`, with Single or the self-timer.
+    case bracket
 
     /// An interval series: `DriveMode/interval`.
     case interval
@@ -30,28 +35,38 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
     ///   - mode: The drive mode.
     ///   - isAstroOn: Whether the astro helper is on; it takes over the shutter whatever the
     ///     mode.
+    ///   - isBracketOn: Whether a bracket is on (`CameraModel.isBracketOn`); Single and Timer
+    ///     are then the bracket's start delay, so Bracket is selected.
     /// - Returns: The selected word.
-    static func selected(mode: DriveMode, isAstroOn: Bool) -> DriveWord {
+    static func selected(mode: DriveMode, isAstroOn: Bool, isBracketOn: Bool = false) -> DriveWord {
         if isAstroOn { return .astro }
         switch mode {
-        case .single: return .single
-        case .timer: return .timer
+        case .single: return isBracketOn ? .bracket : .single
+        case .timer: return isBracketOn ? .bracket : .timer
         case .burst: return .burst
         case .interval: return .interval
         }
     }
 
-    /// The words the strip offers: all five where the astro helper can be used or is on,
-    /// otherwise the four drive modes.
+    /// The words the strip offers: the four drive modes, Bracket where the lens can take a
+    /// bracket or one is on, and Astro where the astro helper can be used or is on.
     ///
-    /// - Parameter offersAstro: Whether Astro is offered.
+    /// - Parameters:
+    ///   - offersAstro: Whether Astro is offered.
+    ///   - offersBracket: Whether Bracket is offered.
     /// - Returns: The words, in display order.
-    static func offered(offersAstro: Bool) -> [DriveWord] {
-        offersAstro ? allCases : allCases.filter { $0 != .astro }
+    static func offered(offersAstro: Bool, offersBracket: Bool = false) -> [DriveWord] {
+        allCases.filter { word in
+            switch word {
+            case .astro: offersAstro
+            case .bracket: offersBracket
+            case .single, .timer, .burst, .interval: true
+            }
+        }
     }
 
-    /// The drive mode the word chooses, or `nil` for Astro, which is turned on with its own
-    /// intent.
+    /// The drive mode the word chooses, or `nil` for Bracket and Astro, which are turned on with
+    /// their own intents.
     ///
     /// - Parameter timerDelay: The self-timer's delay for ``timer``.
     /// - Returns: The mode, or `nil`.
@@ -61,7 +76,7 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
         case .timer: .timer(timerDelay)
         case .burst: .burst
         case .interval: .interval
-        case .astro: nil
+        case .bracket, .astro: nil
         }
     }
 
@@ -71,6 +86,7 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
         case .single: "square"
         case .timer: "clock"
         case .burst: "square.stack.3d.down.right"
+        case .bracket: "square.3.layers.3d"
         case .interval: "timer"
         case .astro: "moon.stars"
         }
@@ -85,6 +101,8 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
             Text(String(localized: "Drive strip: Timer", defaultValue: "Timer", bundle: .module, comment: "Drive mode word in the strip above the shutter: a self-timer of 3 or 10 seconds. A short word; the strip holds five."))
         case .burst:
             Text("Burst", bundle: .module, comment: "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos.")
+        case .bracket:
+            Text(verbatim: BracketText.word)
         case .interval:
             Text(String(localized: "Drive strip: Interval", defaultValue: "Interval", bundle: .module, comment: "Drive mode word in the strip above the shutter: a series of photos at a fixed interval. A short word; the strip holds five."))
         case .astro:
@@ -107,6 +125,8 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
             String(localized: "Drive strip: Timer", defaultValue: "Timer", bundle: .module, comment: "Drive mode word in the strip above the shutter: a self-timer of 3 or 10 seconds. A short word; the strip holds five.")
         case .burst:
             String(localized: "Burst", bundle: .module, comment: "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos.")
+        case .bracket:
+            BracketText.word
         case .interval:
             String(localized: "Drive strip: Interval", defaultValue: "Interval", bundle: .module, comment: "Drive mode word in the strip above the shutter: a series of photos at a fixed interval. A short word; the strip holds five.")
         case .astro:
@@ -115,14 +135,16 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
     }
 }
 
-/// The drive strip above the shutter: Single, Timer, Burst, Interval and Astro, exactly one
-/// selected (docs/design/BUILD-SPEC.md, 3.5). It replaces the Drive menu of the quick-controls
+/// The drive strip above the shutter: Single, Timer, Burst, Bracket, Interval and Astro, exactly
+/// one selected (docs/design/BUILD-SPEC.md, 3.5). It replaces the Drive menu of the quick-controls
 /// tray and the Astro switch, and with them the Drive and Astro pills.
 ///
 /// - Choosing a word sets that mode; choosing another word while Astro is on turns Astro off
-///   first. Choosing Interval only selects it: the shutter starts the series.
-/// - Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Interval and Astro
-///   open their settings; Single and Burst do nothing.
+///   first, and while Bracket is on turns the bracket off first. Choosing Interval only selects
+///   it: the shutter starts the series. Choosing Bracket turns on the session's last bracket
+///   with its start delay; it doesn't open Bracket Settings by itself.
+/// - Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Bracket, Interval
+///   and Astro open their settings; Single and Burst do nothing.
 /// - While a countdown, burst, interval series or astro run is going, the other words are
 ///   disabled.
 /// - It never truncates a word: the words get less padding, then scroll sideways, keeping the
@@ -165,6 +187,9 @@ struct DriveStrip: View {
     /// Opens the astro settings.
     let openAstroSettings: () -> Void
 
+    /// Opens Bracket Settings.
+    let openBracketSettings: () -> Void
+
     /// Creates the strip.
     ///
     /// - Parameters:
@@ -174,9 +199,11 @@ struct DriveStrip: View {
     ///   - timerDelay: The self-timer delay Timer chooses, kept for the session by the camera.
     ///   - openIntervalSettings: Opens the interval settings.
     ///   - openAstroSettings: Opens the astro settings.
+    ///   - openBracketSettings: Opens Bracket Settings.
     init(
         model: CameraModel, settings: NopeSettings, presentation: Presentation, timerDelay: Binding<SelfTimerDelay>,
-        openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void
+        openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void,
+        openBracketSettings: @escaping () -> Void = {}
     ) {
         self.model = model
         self.settings = settings
@@ -184,22 +211,25 @@ struct DriveStrip: View {
         self._timerDelay = timerDelay
         self.openIntervalSettings = openIntervalSettings
         self.openAstroSettings = openAstroSettings
+        self.openBracketSettings = openBracketSettings
     }
 
     /// The selected word.
     private var selected: DriveWord {
-        DriveWord.selected(mode: model.drive.mode, isAstroOn: model.astro.isOn)
+        DriveWord.selected(mode: model.drive.mode, isAstroOn: model.astro.isOn, isBracketOn: model.isBracketOn)
     }
 
     /// The words offered.
     private var words: [DriveWord] {
-        DriveWord.offered(offersAstro: model.canUseAstro || model.astro.isOn)
+        DriveWord.offered(
+            offersAstro: model.canUseAstro || model.astro.isOn,
+            offersBracket: !model.manual.bracketFrameCounts.isEmpty || model.isBracketOn)
     }
 
-    /// Whether a countdown, burst, interval series or astro run is going, so only the selected
-    /// word stays enabled.
+    /// Whether a countdown, burst, bracket, interval series or astro run is going, so only the
+    /// selected word stays enabled.
     private var isBusy: Bool {
-        model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil
+        model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil || model.bracketProgress != nil
     }
 
     /// The strip.
@@ -297,9 +327,23 @@ struct DriveStrip: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         // The selected Interval or Astro opens its settings on a second tap, which nothing on
         // the word shows (docs/design/ACCESSIBILITY.md, the drive strip).
-        .accessibilityHint(isSelected && (word == .interval || word == .astro) ? DriveWord.opensSettingsHint : Text(verbatim: ""))
+        .accessibilityHint(hint(for: word, isSelected: isSelected))
         .accessibilityShowsLargeContentViewer {
             Label { word.title } icon: { Image(systemName: word.systemImage) }
+        }
+    }
+
+    /// The VoiceOver hint of a word: the selected Bracket, Interval or Astro opens its settings.
+    ///
+    /// - Parameters:
+    ///   - word: The word.
+    ///   - isSelected: Whether it is selected.
+    private func hint(for word: DriveWord, isSelected: Bool) -> Text {
+        guard isSelected else { return Text(verbatim: "") }
+        switch word {
+        case .bracket: return BracketText.opensSettingsHint
+        case .interval, .astro: return DriveWord.opensSettingsHint
+        case .single, .timer, .burst: return Text(verbatim: "")
         }
     }
 
@@ -335,6 +379,7 @@ struct DriveStrip: View {
             switch word {
             case .interval: openIntervalSettings()
             case .astro: openAstroSettings()
+            case .bracket: openBracketSettings()
             case .single, .timer, .burst: break
             }
             return
@@ -345,12 +390,23 @@ struct DriveStrip: View {
         Task {
             if word == .astro {
                 // As the astro switch did: turning the helper on turns night mode on too (issue
-                // #60); the helper turns manual controls on itself.
+                // #60); the helper turns manual controls on itself. It turns a bracket off.
                 settings.setNightMode(true)
                 await model.send(.astro(.setOn(true)))
                 return
             }
             if model.astro.isOn { await model.send(.astro(.setOn(false))) }
+            if word == .bracket {
+                // The session's last bracket, with its start delay (read before the bracket
+                // changes the mode).
+                guard let bracket = model.bracketToTurnOn else { return }
+                let mode = model.bracketDriveMode
+                await model.send(.manual(.setBracket(bracket)))
+                await model.send(.drive(.setMode(mode)))
+                return
+            }
+            // Another word turns the bracket off first (docs/design/BRACKETING.md, section 3).
+            if model.manual.bracket != nil { await model.send(.manual(.setBracket(nil))) }
             if let mode = word.mode(timerDelay: delay) { await model.send(.drive(.setMode(mode))) }
         }
     }

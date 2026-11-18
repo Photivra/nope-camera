@@ -1127,19 +1127,25 @@ final class NopeAppUITests: XCTestCase {
         return text.frame.height
     }
 
+    /// Pro Tools has no bracketing control: the drive strip's Bracket is its one home
+    /// (docs/design/BRACKETING.md, decision 1). With manual controls on, Bracket on the strip
+    /// takes the bracket, each frame saved and signed.
     @MainActor
-    func testProToolsBracketing() throws {
+    func testProToolsHasNoBracketing() throws {
         let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
         manualMenu(app, "Pro Tools")
-        let bracketing = app.switches["Bracketing"]
-        XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["Each frame is a separate single-frame photo. Nothing is merged."].exists)
-        try auditProTools(app)
-        bracketing.switches.firstMatch.tap()
-        XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Metering"].waitForExistence(timeout: 20))
+        XCTAssertFalse(app.switches["Bracketing"].exists)
+        XCTAssertFalse(app.staticTexts["Each frame is a separate single-frame photo. Nothing is merged."].exists)
+        let form = app.collectionViews.firstMatch
+        XCTAssertFalse(form.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] %@", "Bracket")).firstMatch.exists)
         try auditProTools(app)
         closeProTools(app)
 
+        let bracket = app.buttons.matching(NSPredicate(format: "label == %@", "Bracket")).firstMatch
+        XCTAssertTrue(bracket.waitForExistence(timeout: 10))
+        bracket.tap()
+        XCTAssertTrue(app.buttons["Bracket Settings"].waitForExistence(timeout: 5))
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 20))
         try audit(app)
@@ -1251,7 +1257,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testProToolsGrowsWithTheLargestTextSize() throws {
         // The Interval section left Pro Tools (BUILD-SPEC.md, 3.4); its other rows are measured.
-        let labels = ["Metering", "Bracketing"]
+        let labels = ["Metering", "Exposure Mode"]
         let regular = launch("manual", extraArguments: Self.manualOn)
         manualMenu(regular, "Pro Tools")
         XCTAssertTrue(regular.staticTexts["Metering"].waitForExistence(timeout: 20))
@@ -1272,7 +1278,7 @@ final class NopeAppUITests: XCTestCase {
         for (label, regularHeight) in zip(labels, regularHeights) {
             XCTAssertGreaterThan(rowTextHeight(large, label), regularHeight * 2, label)
         }
-        // Pro Tools is audited in testProToolsBracketing; an audit here, after the scrolling,
+        // Pro Tools is audited in testProToolsHasNoBracketing; an audit here, after the scrolling,
         // ran past the audit's time limit on the CI Simulator.
     }
 
@@ -2262,14 +2268,11 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testBracketDetailsChooseEachFrame() throws {
         let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
-        manualMenu(app, "Pro Tools")
-        let bracketing = app.switches["Bracketing"]
-        XCTAssertTrue(bracketing.waitForExistence(timeout: 20))
-        bracketing.switches.firstMatch.tap()
-        XCTAssertTrue(element(app, containing: "Frames").waitForExistence(timeout: 20))
-        closeProTools(app)
-        // Let Pro Tools finish closing, so the shutter takes the tap.
-        settle()
+        // Bracket on the drive strip (docs/design/BRACKETING.md); Pro Tools no longer has it.
+        let bracket = app.buttons.matching(NSPredicate(format: "label == %@", "Bracket")).firstMatch
+        XCTAssertTrue(bracket.waitForExistence(timeout: 20))
+        bracket.tap()
+        XCTAssertTrue(app.buttons["Bracket Settings"].waitForExistence(timeout: 5))
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 30))
         app.buttons["Last Photo"].press(forDuration: 1.2)

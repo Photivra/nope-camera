@@ -644,6 +644,667 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 The camera model.
 
+## `BracketCard`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketCard
+```
+
+The bracket's card, one state of ``BracketCardState``. The idle card is one button that opens
+Bracket Settings; the countdown has Cancel; taking and saving have no button, because the
+system can't stop a bracket request once it is made (docs/design/BRACKETING.md, section 2).
+
+## `BracketCard/body`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `BracketCard/cancel`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let cancel: () -> Void
+```
+
+Cancels the start delay.
+
+## `BracketCard/init(state:openSettings:cancel:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(state: BracketCardState, openSettings: @escaping () -> Void, cancel: @escaping () -> Void)
+```
+
+Creates the card.
+
+- Parameters:
+  - state: The card's state.
+  - openSettings: Opens Bracket Settings.
+  - cancel: Cancels the start delay.
+
+## `BracketCard/openSettings`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let openSettings: () -> Void
+```
+
+Opens Bracket Settings.
+
+## `BracketCard/state`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let state: BracketCardState
+```
+
+The card's state.
+
+## `BracketCardState`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+enum BracketCardState
+```
+
+What the bracket's card on the picture's lower edge shows (docs/design/BRACKETING.md,
+section 4, "The card and the shutter"). Plain data from the camera's state, so which card
+shows is tested without drawing.
+
+## `BracketCardState/countdown(remaining:_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case countdown(remaining: Int, BracketSettings)
+```
+
+The start delay counts down: "Bracket in 3s" and Cancel.
+
+## `BracketCardState/current(_:saved:showsControls:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func current(_ model: CameraModel, saved: BracketCardState?, showsControls: Bool) -> BracketCardState?
+```
+
+The card for the camera model's state, or `nil`.
+
+- Parameters:
+  - model: The camera model.
+  - saved: The last bracket saved, whose card shows until the next action, or `nil`.
+  - showsControls: Whether the controls are shown.
+- Returns: The card, or `nil`.
+
+## `BracketCardState/idle(_:startDelay:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case idle(BracketSettings, startDelay: SelfTimerDelay?)
+```
+
+A bracket is on and nothing runs: "Exposure bracket: 3 frames, 1 EV apart". The whole
+card is the button Bracket Settings.
+
+## `BracketCardState/isRunning`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+var isRunning: Bool { get }
+```
+
+Whether the card shows something that runs, and so stays in clean view.
+
+## `BracketCardState/resolve(bracket:startDelay:countdownRemaining:progress:saved:showsControls:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+static func resolve(bracket: BracketSettings?, startDelay: SelfTimerDelay?, countdownRemaining: Int?, progress: BracketProgress?, saved: BracketCardState?, showsControls: Bool) -> BracketCardState?
+```
+
+The card for the camera's state, or `nil` for none.
+
+- Parameters:
+  - bracket: The bracket that is on, or `nil` (also while the astro helper is on).
+  - startDelay: The bracket's start delay.
+  - countdownRemaining: The self-timer's seconds left, or `nil`.
+  - progress: The bracket being taken and saved, or `nil`.
+  - saved: The last bracket saved, whose card shows until the next action, or `nil`.
+  - showsControls: Whether the controls are shown (not clean view).
+- Returns: The card, or `nil`.
+
+## `BracketCardState/saved(count:offsets:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case saved(count: Int, offsets: [Double])
+```
+
+The bracket was saved: "3 photos saved", until the next action.
+
+## `BracketCardState/saved(from:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+static func saved(from status: CaptureStatus) -> BracketCardState?
+```
+
+The saved card for a capture result, or `nil` when it isn't a bracket's.
+
+- Parameter status: A capture status.
+
+## `BracketCardState/saving(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case saving(BracketProgress)
+```
+
+The frames are saved: "Saving: 2 of 3 photos saved", with a progress bar.
+
+## `BracketCardState/taking(total:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case taking(total: Int)
+```
+
+The camera takes the frames: "Taking 3 frames".
+
+## `BracketChip`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketChip
+```
+
+The chip on a bracket's frame in the Last Photo viewer: "Exposure bracket · frame 2 of 3 ·
+0 EV" (docs/design/BRACKETING.md, section 4; figure `bracket-viewer`). From the session's
+values only (`SavedPhoto.bracket`); nothing is read from or written to the file.
+
+Integration: the viewer shows it on the picture's lower edge for a page whose photo has a
+`bracket`, hides it with the other controls, and adds ``BracketText/chipSpoken(_:)`` to the
+page's VoiceOver label (so the chip itself is hidden from VoiceOver).
+
+## `BracketChip/body`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The chip.
+
+## `BracketChip/init(place:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(place: BracketPlace)
+```
+
+Creates the chip.
+
+- Parameter place: The photo's place in its bracket.
+
+## `BracketChip/place`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let place: BracketPlace
+```
+
+The photo's place in its bracket.
+
+## `BracketDetailsSection`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketDetailsSection
+```
+
+The Bracket group of What's in This Photo (docs/design/BRACKETING.md, section 4; figure
+`bracket-details`): Type, This Frame, Planned Exposure and The Bracket, with a footer that
+says these are session values that no file holds.
+
+## `BracketDetailsSection/body`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The section.
+
+## `BracketDetailsSection/init(place:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(place: BracketPlace)
+```
+
+Creates the section.
+
+- Parameter place: The photo's place in its bracket.
+
+## `BracketDetailsSection/place`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let place: BracketPlace
+```
+
+The photo's place in its bracket.
+
+## `BracketFeedback`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketFeedback
+```
+
+Announcements for a bracket without looking at the screen: "Taking 3 frames" when the
+request starts. The countdown's numbers are the self-timer's (``DriveFeedback``), and the
+saved photos are announced by the camera's save feedback.
+
+## `BracketFeedback/body(content:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the feedback attached.
+
+- Parameter content: The camera.
+
+## `BracketFeedback/init(model:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the feedback.
+
+- Parameter model: The camera model.
+
+## `BracketFeedback/model`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `BracketFrameRow`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketFrameRow
+```
+
+One frame of The Frames: its number, its offset (and, when the lens can't give it, the offset
+asked for and why), its shutter speed and ISO. VoiceOver reads it as one sentence.
+
+## `BracketFrameRow/body`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row.
+
+## `BracketFrameRow/frame`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let frame: BracketFramePlan
+```
+
+The frame.
+
+## `BracketFrameRow/init(frame:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(frame: BracketFramePlan)
+```
+
+Creates the row.
+
+- Parameter frame: The frame.
+
+## `BracketSheet`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketSheet
+```
+
+Bracket Settings (docs/design/BRACKETING.md, section 7; figures `bracket-settings` and
+`bracket-settings-limited`): Frames, Step and Order; the Start Delay; The Frames, each
+frame's exposure with the limited ones marked; and the Honesty sentence. Opened from the
+selected Bracket word and from the bracket's card.
+
+Every value is sent to `NopeCore` as an intent: the bracket as
+`ManualControlIntent.setBracket(_:)`, the start delay as the drive mode (Single, or the
+self-timer with the delay). Nothing is stored between launches.
+
+## `BracketSheet/body`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `BracketSheet/init(model:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameter model: The camera model.
+
+## `BracketSheet/model`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `BracketText`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor enum BracketText
+```
+
+The words of exposure bracketing (docs/design/BRACKETING.md, section 7, "Strings"). Keys the
+string catalog doesn't have yet carry their English as the default value.
+
+## `BracketText/bracketIn(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func bracketIn(_ seconds: Int) -> Text
+```
+
+"Bracket in 3s": the countdown card's title.
+
+- Parameter seconds: The seconds left.
+
+## `BracketText/cancel`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static var cancel: Text { get }
+```
+
+"Cancel": the countdown card's button.
+
+## `BracketText/chip(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func chip(_ place: BracketPlace) -> String
+```
+
+"Exposure bracket · frame 2 of 3 · 0 EV": the viewer's chip.
+
+- Parameter place: The photo's place in its bracket.
+
+## `BracketText/chipSpoken(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func chipSpoken(_ place: BracketPlace) -> String
+```
+
+"Exposure bracket, frame 2 of 3, 0 EV.": the chip as part of a page's VoiceOver label.
+
+- Parameter place: The photo's place in its bracket.
+
+## `BracketText/framesAndOffsets(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func framesAndOffsets(_ bracket: BracketSettings) -> String
+```
+
+"3 frames, −1, 0, +1 EV": the countdown card's detail.
+
+- Parameter bracket: The bracket.
+
+## `BracketText/honesty`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static var honesty: some View { get }
+```
+
+The Honesty sentences of Bracket Settings, one under the other.
+
+## `BracketText/idleDetail(_:startDelay:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func idleDetail(_ bracket: BracketSettings, startDelay: SelfTimerDelay?) -> String
+```
+
+The idle card's detail: the offsets, and with a start delay "· after 3 seconds".
+
+- Parameters:
+  - bracket: The bracket.
+  - startDelay: The start delay, or `nil` for none.
+
+## `BracketText/name(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func name(_ order: BracketOrder) -> String
+```
+
+A bracket order's name.
+
+- Parameter order: The order.
+
+## `BracketText/offset(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func offset(_ offset: Double) -> String
+```
+
+An offset with its unit, such as "−1 EV" or "0 EV".
+
+- Parameter offset: The offset, in EV.
+
+## `BracketText/offsets(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func offsets(_ offsets: [Double]) -> String
+```
+
+The offsets in the order they are taken, with one unit: "−1, 0, +1 EV".
+
+- Parameter offsets: The offsets, in EV.
+
+## `BracketText/opensSettingsHint`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static var opensSettingsHint: Text { get }
+```
+
+"Opens Bracket Settings.": the hint of the selected Bracket word.
+
+## `BracketText/saved(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func saved(_ count: Int) -> Text
+```
+
+"3 photos saved": the card after a bracket, shared with Burst.
+
+- Parameter count: The photos saved.
+
+## `BracketText/saving(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func saving(_ progress: BracketProgress) -> Text
+```
+
+"Saving: 2 of 3 photos saved".
+
+- Parameter progress: The bracket's progress.
+
+## `BracketText/settings`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static var settings: Text { get }
+```
+
+"Bracket Settings": the sheet's title, and the idle card's VoiceOver name.
+
+## `BracketText/shutterValue(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func shutterValue(_ bracket: BracketSettings) -> Text
+```
+
+"Bracket, exposure, 3 frames": the shutter's VoiceOver value.
+
+- Parameter bracket: The bracket.
+
+## `BracketText/signed(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func signed(_ offset: Double) -> String
+```
+
+An exposure offset with its sign and no unit, such as "−1", "0" or "+⅔".
+
+- Parameter offset: The offset, in EV.
+
+## `BracketText/stopped(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func stopped(_ progress: BracketProgress) -> String
+```
+
+"Bracket stopped: 2 of 3 photos saved.": the start of the failure banner.
+
+- Parameter progress: How far the bracket got.
+
+## `BracketText/summary(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func summary(_ bracket: BracketSettings) -> String
+```
+
+"Exposure bracket: 3 frames, 1 EV apart": the idle card's title.
+
+- Parameter bracket: The bracket.
+
+## `BracketText/taking(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func taking(_ count: Int) -> String
+```
+
+"Taking 3 frames".
+
+- Parameter count: The frames in the bracket.
+
+## `BracketText/word`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static var word: String { get }
+```
+
+"Bracket": the drive strip's word.
+
 ## `BrightenScreenButton`
 
 internal, declared in `Sources/NopeUI/SeriesScreen.swift`
@@ -3567,14 +4228,16 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 @MainActor struct DriveStrip
 ```
 
-The drive strip above the shutter: Single, Timer, Burst, Interval and Astro, exactly one
-selected (docs/design/BUILD-SPEC.md, 3.5). It replaces the Drive menu of the quick-controls
+The drive strip above the shutter: Single, Timer, Burst, Bracket, Interval and Astro, exactly
+one selected (docs/design/BUILD-SPEC.md, 3.5). It replaces the Drive menu of the quick-controls
 tray and the Astro switch, and with them the Drive and Astro pills.
 
 - Choosing a word sets that mode; choosing another word while Astro is on turns Astro off
-  first. Choosing Interval only selects it: the shutter starts the series.
-- Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Interval and Astro
-  open their settings; Single and Burst do nothing.
+  first, and while Bracket is on turns the bracket off first. Choosing Interval only selects
+  it: the shutter starts the series. Choosing Bracket turns on the session's last bracket
+  with its start delay; it doesn't open Bracket Settings by itself.
+- Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Bracket, Interval
+  and Astro open their settings; Single and Burst do nothing.
 - While a countdown, burst, interval series or astro run is going, the other words are
   disabled.
 - It never truncates a word: the words get less padding, then scroll sideways, keeping the
@@ -3643,12 +4306,12 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 The strip.
 
-## `DriveStrip/init(model:settings:presentation:timerDelay:openIntervalSettings:openAstroSettings:)`
+## `DriveStrip/init(model:settings:presentation:timerDelay:openIntervalSettings:openAstroSettings:openBracketSettings:)`
 
 internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings, presentation: Presentation, timerDelay: Binding<SelfTimerDelay>, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void)
+@MainActor init(model: CameraModel, settings: NopeSettings, presentation: Presentation, timerDelay: Binding<SelfTimerDelay>, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void, openBracketSettings: @escaping () -> Void = {})
 ```
 
 Creates the strip.
@@ -3660,6 +4323,7 @@ Creates the strip.
   - timerDelay: The self-timer delay Timer chooses, kept for the session by the camera.
   - openIntervalSettings: Opens the interval settings.
   - openAstroSettings: Opens the astro settings.
+  - openBracketSettings: Opens Bracket Settings.
 
 ## `DriveStrip/model`
 
@@ -3680,6 +4344,16 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 ```
 
 Opens the astro settings.
+
+## `DriveStrip/openBracketSettings`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let openBracketSettings: () -> Void
+```
+
+Opens Bracket Settings.
 
 ## `DriveStrip/openIntervalSettings`
 
@@ -3791,8 +4465,10 @@ enum DriveWord
 
 One word of the drive strip: what the shutter does (docs/design/BUILD-SPEC.md, 3.5).
 
-Four words are drive modes of `NopeCore` (`DriveMode`); Astro is the astro helper, which has
-its own shutter. The words are an interface's names for existing intents; they hold no rules.
+Four words are drive modes of `NopeCore` (`DriveMode`); Bracket is the exposure bracket
+(`ManualControlsModel.bracket`) with the mode Single, or the self-timer for its start delay
+(docs/design/BRACKETING.md, section 3); Astro is the astro helper, which has its own shutter.
+The words are an interface's names for existing intents; they hold no rules.
 
 ## `DriveWord/astro`
 
@@ -3803,6 +4479,16 @@ case astro
 ```
 
 The astro helper (issue #60).
+
+## `DriveWord/bracket`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case bracket
+```
+
+An exposure bracket: `ManualControlsModel.bracket`, with Single or the self-timer.
 
 ## `DriveWord/burst`
 
@@ -3842,24 +4528,26 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 func mode(timerDelay: SelfTimerDelay) -> DriveMode?
 ```
 
-The drive mode the word chooses, or `nil` for Astro, which is turned on with its own
-intent.
+The drive mode the word chooses, or `nil` for Bracket and Astro, which are turned on with
+their own intents.
 
 - Parameter timerDelay: The self-timer's delay for ``timer``.
 - Returns: The mode, or `nil`.
 
-## `DriveWord/offered(offersAstro:)`
+## `DriveWord/offered(offersAstro:offersBracket:)`
 
 internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-static func offered(offersAstro: Bool) -> [DriveWord]
+static func offered(offersAstro: Bool, offersBracket: Bool = false) -> [DriveWord]
 ```
 
-The words the strip offers: all five where the astro helper can be used or is on,
-otherwise the four drive modes.
+The words the strip offers: the four drive modes, Bracket where the lens can take a
+bracket or one is on, and Astro where the astro helper can be used or is on.
 
-- Parameter offersAstro: Whether Astro is offered.
+- Parameters:
+  - offersAstro: Whether Astro is offered.
+  - offersBracket: Whether Bracket is offered.
 - Returns: The words, in display order.
 
 ## `DriveWord/opensSettingsHint`
@@ -3873,12 +4561,12 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 The VoiceOver hint of the selected Interval or Astro word: choosing it again opens its
 settings.
 
-## `DriveWord/selected(mode:isAstroOn:)`
+## `DriveWord/selected(mode:isAstroOn:isBracketOn:)`
 
 internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-static func selected(mode: DriveMode, isAstroOn: Bool) -> DriveWord
+static func selected(mode: DriveMode, isAstroOn: Bool, isBracketOn: Bool = false) -> DriveWord
 ```
 
 The word that shows what the shutter does now.
@@ -3887,6 +4575,8 @@ The word that shows what the shutter does now.
   - mode: The drive mode.
   - isAstroOn: Whether the astro helper is on; it takes over the shutter whatever the
     mode.
+  - isBracketOn: Whether a bracket is on (`CameraModel.isBracketOn`); Single and Timer
+    are then the bracket's start delay, so Bracket is selected.
 - Returns: The selected word.
 
 ## `DriveWord/single`
@@ -4415,12 +5105,25 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 What went wrong.
 
-## `FailureBanner/init(error:canCapture:tryAgain:dismiss:)`
+## `FailureBanner/failedBracket`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 ```swift
-@MainActor init(error: CaptureError, canCapture: Bool, tryAgain: @escaping () -> Void, dismiss: @escaping () -> Void)
+@MainActor let failedBracket: BracketProgress?
+```
+
+How far a bracket got when one of its frames couldn't be saved, or `nil`: the banner then
+starts with "Bracket stopped: 2 of 3 photos saved." and offers only Dismiss, since taking
+the bracket again would save the frames already saved a second time
+(docs/design/BRACKETING.md, section 4).
+
+## `FailureBanner/init(error:canCapture:tryAgain:dismiss:failedBracket:)`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor init(error: CaptureError, canCapture: Bool, tryAgain: @escaping () -> Void, dismiss: @escaping () -> Void, failedBracket: BracketProgress? = nil)
 ```
 
 Creates the banner.
@@ -4430,6 +5133,7 @@ Creates the banner.
   - canCapture: Whether the shutter can take a photo now.
   - tryAgain: Takes the photo again.
   - dismiss: Hides the banner.
+  - failedBracket: How far a bracket got when a frame couldn't be saved, or `nil`.
 
 ## `FailureBanner/tryAgain`
 
@@ -7732,6 +8436,16 @@ case astroRunning(AstroRun)
 
 Astro's frames run or are paused: the frame, a progress bar and Stop Frames.
 
+## `ModeCardState/bracket(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case bracket(BracketCardState)
+```
+
+An exposure bracket: idle, counting down, taking, saving or saved (``BracketCardState``).
+
 ## `ModeCardState/burstEnded(_:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -7752,12 +8466,12 @@ case burstRunning(taken: Int)
 
 A burst runs: "Photos taken: 12" and Stop Burst.
 
-## `ModeCardState/current(_:endedBurst:showsControls:)`
+## `ModeCardState/current(_:endedBurst:showsControls:savedBracket:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func current(_ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool) -> ModeCardState?
+@MainActor static func current(_ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool, savedBracket: BracketCardState? = nil) -> ModeCardState?
 ```
 
 The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
@@ -7766,6 +8480,7 @@ The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRem
   - model: The camera model.
   - endedBurst: A burst that stopped by itself and whose message still shows, or `nil`.
   - showsControls: Whether the controls are shown.
+  - savedBracket: The card of the last bracket saved, shown until the next action, or `nil`.
 - Returns: The card, or `nil`.
 
 ## `ModeCardState/intervalIdle(_:)`
@@ -8071,12 +8786,12 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 The card, or nothing.
 
-## `ModeCards/init(model:showsControls:openIntervalSettings:openAstroSettings:)`
+## `ModeCards/init(model:showsControls:openIntervalSettings:openAstroSettings:openBracketSettings:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor init(model: CameraModel, showsControls: Bool, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void)
+@MainActor init(model: CameraModel, showsControls: Bool, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void, openBracketSettings: @escaping () -> Void = {})
 ```
 
 Creates the cards.
@@ -8086,6 +8801,7 @@ Creates the cards.
   - showsControls: Whether the controls are shown.
   - openIntervalSettings: Opens Interval Settings.
   - openAstroSettings: Opens Astro Settings.
+  - openBracketSettings: Opens Bracket Settings.
 
 ## `ModeCards/model`
 
@@ -8106,6 +8822,16 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 ```
 
 Opens Astro Settings.
+
+## `ModeCards/openBracketSettings`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let openBracketSettings: () -> Void
+```
+
+Opens Bracket Settings.
 
 ## `ModeCards/openIntervalSettings`
 
@@ -11672,12 +12398,12 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 @MainActor struct ProToolsSheet
 ```
 
-The exposure mode, metering, AE and AF locks, exposure bracketing and the live aids, in a
-standard form, opened from More at the end of the manual readout row
-(docs/design/BUILD-SPEC.md, 3.4).
+The exposure mode, metering, AE and AF locks and the live aids, in a standard form, opened
+from More at the end of the manual readout row (docs/design/BUILD-SPEC.md, 3.4).
 
-Interval shooting is not here: the drive strip and its card are its one home, so no second
-Start button behaves differently (docs/design/SETTINGS-PLAN.md, decision 8). Each section
+Interval shooting and exposure bracketing are not here: the drive strip and its cards are
+their one home, so no second control behaves differently (docs/design/SETTINGS-PLAN.md,
+decision 8; docs/design/BRACKETING.md, decision 1). Each section
 appears only when the selected lens supports it. Like the camera it covers, the sheet is dark
 in either system setting (``ScreenAppearance/camera``), and it covers the whole window on
 every device.
@@ -17740,6 +18466,19 @@ Adds the astro helper's announcements (``AstroFeedback``).
 - Parameters:
   - astro: The astro helper.
   - isNightModeOn: Whether night mode is on.
+
+## `View/bracketFeedback(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor func bracketFeedback(_ model: CameraModel) -> some View
+
+```
+
+Adds the bracket's announcements (``BracketFeedback``).
+
+- Parameter model: The camera model.
 
 ## `View/comparisonCover(_:isNightMode:)`
 

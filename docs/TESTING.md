@@ -528,7 +528,8 @@ each test checks, with `performAccessibilityAudit()` in every state:
 UI test launches store settings in their own `UserDefaults` suite, emptied at each launch
 (`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
 settings are never touched.
-| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the Manual Controls button ("On" or "Off"); the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools (no Interval section) and a 3-frame bracket; the lock pill after AE-L, which unlocks; the Manual Controls button turns manual controls off; interval progress and Stop from the drive strip; clean view from Q; the list at the largest text size; right-to-left |
+| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the Manual Controls button ("On" or "Off"); the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools (no Interval or Bracketing section) and a 3-frame bracket from the drive strip; the lock pill after AE-L, which unlocks; the Manual Controls button turns manual controls off; interval progress and Stop from the drive strip; clean view from Q; the list at the largest text size; right-to-left |
+| `manual`, `dimManual`, `astro` | Bracket on the drive strip (`BracketUITests.swift`): the word in full auto and its card (no more than an eighth of the picture), Bracket Settings (Frames, Step, Order, Start Delay, The Frames, the Honesty sentence), the order and frame count on the card and in The Frames, the limited frames in dim light (`dimManual`: ISO 3200 at 1/4 s), the start delay counting down and cancelled by Cancel and the shutter, the saving and saved cards (`astro`: half a second per save), the Bracket group of What's in This Photo, no Bracket on the front camera; audited at the default and largest text sizes, right to left, in night mode (all red; on iPad the window corner control the system draws is skipped, and Bracket Settings' audit skips the element-less "Potentially inaccessible text" finding for camera text cut by the page sheet's edge, as beside a popover), sideways and on iPad |
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
 | `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
@@ -998,11 +999,12 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
 `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
-`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket, or
+`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket (darkest first;
+`bracket<count>-metered` or `bracket<count>-brightest` for another order), or
 `lens-ultraWide` for Switch Lens. The app sends
 the request through the same `ShortcutInbox` the intents use and shows what Siri would say
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
-of three, a bracket in full auto and a lens switch). The Interval drive mode is covered by
+of three, a bracket in full auto, a bracket taken brightest first and a lens switch). The Interval drive mode is covered by
 `testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
 and right-to-left. The request logic (counts, lenses, the light, interval shooting,
 requests without a camera screen) is unit tested in `ShortcutTests`.
@@ -1112,14 +1114,14 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   the app closed, turning it off says the light is off without opening the app), "Start interval
   shooting in nope." with Manual Controls off (the series runs in full auto; Manual Controls stay
   off) and on (the photos use the manual settings; the screen dims), "Stop interval shooting in
-  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen in Pro Tools
-  (three photos at different exposures; the Pro Tools bracket and Manual Controls are unchanged
-  afterwards; on the front camera Siri says the lens can't take it).
+  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen on the drive
+  strip (three photos at different exposures; the strip's bracket and Manual Controls are
+  unchanged afterwards; on the front camera Siri says the lens can't take it).
 - Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
   Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
   Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
-  Interval Shooting, Take Bracket with 5 and 7 Photos and each Step (7 on a lens that takes fewer
-  says so), and Set Night Mode on and off, with the app closed and with it open (the
+  Interval Shooting, Take Bracket with 5 and 7 Photos, each Step and each Order (7 on a lens that
+  takes fewer says so), and Set Night Mode on and off, with the app closed and with it open (the
   screen turns red at once).
 - Siri does not mistake "Turn on the light in nope." for a HomeKit request.
 - Shortcuts settings actions: Set Focus Range to Close-Up, Far Focus and No Limit (the Close-Up
@@ -1516,6 +1518,27 @@ tripod (issue #60):
   (natural and red viewfinder) with the magnifier on enlarges the real viewfinder;
 - the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
   an assumption), and every frame taken before is saved.
+
+### Bracketing on a device
+
+Exposure bracketing on the drive strip (docs/design/BRACKETING.md, section 9). The plan, the
+order, the progress and each photo's place are unit-tested against a scripted backend
+(`BracketDriveTests.swift`), and the screens with UI tests (`BracketUITests.swift`); these checks
+need each back lens of each supported iPhone, and gate release 1.0.0 (D4 is optional):
+
+- **D1** each order (Darkest First, Metered First, Brightest First) with 3, 5 and 7 frames where
+  the lens allows: the saved files' exposure times and ISO, in the order they were saved, match
+  The Frames in Bracket Settings. Decides whether Order ships.
+- **D2** a bracket in full auto, in bright and in dim light: the frames are planned from the
+  camera's reading at the press of the shutter (the files' exposures centre on the metered one).
+  Decides the footer under The Frames.
+- **D3** the limited-frame mark: at the longest shutter and highest ISO (Manual Controls, or dim
+  light), the frame taken has the offset The Frames states ("+2 EV, not +4"). Decides the mark's
+  wording.
+- **D4** (optional) whether the per-frame delegate calls arrive while later frames are still being
+  exposed. Decides whether "Taking 3 frames" could count frames; not needed to ship.
+
+Record the device, lens, iOS version and the result of each check here.
 
 ### iPhone Duo (foldable) on a device
 

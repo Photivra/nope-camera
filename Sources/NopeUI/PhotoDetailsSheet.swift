@@ -55,6 +55,11 @@ struct PhotoDetailsSheet: View {
                         Text("Photo", bundle: .module, comment: "Label of the picker that chooses which photo of an exposure bracket the details show.")
                     }
                 }
+                // A bracket's frame: its place in the bracket, from the session's values
+                // (docs/design/BRACKETING.md, section 4).
+                if let place = photo?.bracket {
+                    BracketDetailsSection(place: place)
+                }
                 if let details = photo?.details {
                     PhotoDetailsSections(details: details)
                 }

@@ -157,7 +157,18 @@ when the camera opens and when the option changes.
   `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
   photo, and each is saved through the same pipeline as a single photo
   (`CaptureStatus.savedBracket`). Bayer RAW rules still apply: `.speed`, zoom 1.0, no
-  multi-frame processing.
+  multi-frame processing. A bracket is the drive strip's Bracket word: `ManualControlsModel.bracket`
+  (frames, step and `BracketOrder`) with the drive mode Single, or the self-timer for its start
+  delay (`CameraModel.bracketStartDelay`); there is no bracket drive mode. It works in full auto,
+  planned around the camera's last reading, and with manual controls on, around the values set by
+  hand (`ManualControlsModel.bracketPlan`, one `BracketFramePlan` per frame, which marks a frame
+  beyond the lens's ranges). The frames are requested in the bracket's order, and the system
+  takes them in the order of the array. Choosing Burst or Interval turns the bracket off, and an
+  interval series never takes one (`CameraModel+Bracket.swift`). While it is taken and saved,
+  `CameraModel.bracketProgress` says how far it is; a frame that can't be saved stops the saving,
+  and `failedBracket` says how many were saved. Each saved frame carries a `BracketPlace`
+  (`SavedPhoto.bracket`), in memory only, for the viewer's chip and the Bracket group of What's in
+  This Photo; it is in no file.
 - **Interval shooting** calls the same capture path as the shutter; it works in full auto (each
   photo a full-auto photo) and with manual controls on (each photo with the manual settings), and
   turning manual controls off doesn't stop a series. It starts from the Interval drive mode's
@@ -300,10 +311,10 @@ path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLi
 `.stopInterval`, the `ManualControlIntent` values the Interval drive mode sends; Pro Tools no longer starts a
 series in 1.0.0).
 `TakeBracketIntent` is a separate action from Take Photo, because a bracket and a burst are
-different captures with different limits: it asks for 3, 5 or 7 frames and a step of 1/3, 2/3,
-1 or 2 stops (`BracketShortcut` moves any value to the nearest of `BracketSettings.frameCounts`
-and `BracketSettings.steps`), checks the lens with `ManualControlsModel.canBracket(_:)` (the
-same limits as the Pro Tools bracket), waits up to two seconds for the camera's first exposure
+different captures with different limits: it asks for 3, 5 or 7 frames, a step of 1/3, 2/3,
+1 or 2 stops and an order (Darkest First by default; `BracketShortcut` moves any value to the
+nearest of `BracketSettings.frameCounts` and `BracketSettings.steps`), checks the lens with
+`ManualControlsModel.canBracket(_:)` (the same limits as the drive strip's bracket), waits up to two seconds for the camera's first exposure
 reading, and takes it once with `capture(onceBracket:)` through the same bracket path
 (`ManualControlsModel.bracketFrames(once:)`, planned around the last reading in full auto or the
 manual ISO and shutter where set). The person's bracket setting and manual controls don't

@@ -1,12 +1,12 @@
 import NopeCore
 import SwiftUI
 
-/// The exposure mode, metering, AE and AF locks, exposure bracketing and the live aids, in a
-/// standard form, opened from More at the end of the manual readout row
-/// (docs/design/BUILD-SPEC.md, 3.4).
+/// The exposure mode, metering, AE and AF locks and the live aids, in a standard form, opened
+/// from More at the end of the manual readout row (docs/design/BUILD-SPEC.md, 3.4).
 ///
-/// Interval shooting is not here: the drive strip and its card are its one home, so no second
-/// Start button behaves differently (docs/design/SETTINGS-PLAN.md, decision 8). Each section
+/// Interval shooting and exposure bracketing are not here: the drive strip and its cards are
+/// their one home, so no second control behaves differently (docs/design/SETTINGS-PLAN.md,
+/// decision 8; docs/design/BRACKETING.md, decision 1). Each section
 /// appears only when the selected lens supports it. Like the camera it covers, the sheet is dark
 /// in either system setting (``ScreenAppearance/camera``), and it covers the whole window on
 /// every device.
@@ -51,9 +51,6 @@ struct ProToolsSheet: View {
                 }
                 if manual.capabilities.supportsExposureLock || manual.capabilities.supportsFocusLock {
                     locksSection
-                }
-                if !manual.bracketFrameCounts.isEmpty {
-                    bracketSection
                 }
                 if let settings {
                     Section {
@@ -126,50 +123,6 @@ struct ProToolsSheet: View {
                 }
                 .disabled(!manual.canLockFocus && !manual.settings.focusLocked)
             }
-        }
-    }
-
-    /// The bracketing switch, frame count and step.
-    private var bracketSection: some View {
-        Section {
-            Toggle(
-                isOn: Binding(
-                    get: { manual.bracket != nil },
-                    set: { isOn in
-                        let first = manual.bracketFrameCounts[0]
-                        send(.setBracket(isOn ? BracketSettings(frameCount: first, step: 1) : nil))
-                    })
-            ) {
-                Text("Bracketing", bundle: .module, comment: "Switch for exposure bracketing: several photos at different exposures from one press.")
-            }
-            if let bracket = manual.bracket {
-                Picker(
-                    selection: Binding(
-                        get: { bracket.frameCount },
-                        set: { send(.setBracket(BracketSettings(frameCount: $0, step: bracket.step))) })
-                ) {
-                    ForEach(manual.bracketFrameCounts, id: \.self) { count in
-                        Text(verbatim: count.formatted()).tag(count)
-                    }
-                } label: {
-                    Text("Frames", bundle: .module, comment: "Picker for how many photos one bracket takes.")
-                }
-                Picker(
-                    selection: Binding(
-                        get: { bracket.step },
-                        set: { send(.setBracket(BracketSettings(frameCount: bracket.frameCount, step: $0))) })
-                ) {
-                    ForEach(BracketSettings.steps, id: \.self) { step in
-                        Text(verbatim: ControlText.step(step)).tag(step)
-                    }
-                } label: {
-                    Text("Step", bundle: .module, comment: "Picker for the exposure difference between bracketed photos.")
-                }
-            }
-        } footer: {
-            Text(
-                "Each frame is a separate single-frame photo. Nothing is merged.", tableName: "Honesty", bundle: .module,
-                comment: "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.")
         }
     }
 }

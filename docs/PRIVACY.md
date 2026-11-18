@@ -58,7 +58,10 @@ for any user-facing claim comes from
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in
   memory for this session only: never written to disk, logged or copied, and gone when the app
-  quits. The app can't reopen older photos (add-only access). Tapping the thumbnail opens the
+  quits. A bracket's frame also carries its place in the bracket (the frame's number, its planned
+  exposure, the bracket's offsets and order; `SavedPhoto.bracket`), held in memory with the photo
+  until the app quits and written to no file, so the metadata allowlist is unchanged. The app can't
+  reopen older photos (add-only access). Tapping the thumbnail opens the
   Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
   Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
@@ -156,7 +159,7 @@ drive and astro values, saved when the person taps Save Current Settings.
 - **What is stored:** the preset's name as typed, a random identifier, an encoding version, the
   same settings values as above and the camera values (lens identifier, kind and magnification,
   ISO, shutter, aperture, focus position, white balance, exposure compensation, metering, Close-Up,
-  drive mode, bracket, interval and astro choices). No photo, location, date, counter or
+  drive mode, bracket (frames, step and order), interval and astro choices). No photo, location, date, counter or
   device identifier. The lens identifier is the app's own name for the lens on this device and is
   never written to a photo.
 - **Where:** in the same on-device store as the settings (the App Group's `UserDefaults`, key
