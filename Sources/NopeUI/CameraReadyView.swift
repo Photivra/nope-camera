@@ -757,9 +757,8 @@ struct CameraReadyView: View {
             }
             modeCards
             if showsControls, model.manual.isEnabled, !isSeriesRunning {
+                // Each readout is a tile with its own backing (docs/design/screens/camera-manual).
                 ManualReadoutRow(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                    .padding(NopeSpace.xxs)
-                    .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
             }
         }
         .padding(rotation.isSideways ? 0 : NopeSpace.xs)
