@@ -63,14 +63,21 @@ struct ManualReadoutRow: View {
     }
 }
 
-/// The readout row's arrangement: the readouts side by side at one equal width (the widest
-/// readout's ideal width plus ``NopeSpace/xxs``, or more), then More at ``NopeSize/minTarget``,
-/// filling the width offered. When that doesn't fit, two rows of four equal cells: the first four
-/// readouts, then the rest and More.
+/// The readout row's arrangement: the readouts side by side, then More at
+/// ``NopeSize/minTarget``, filling the width offered. The readouts share the width equally; a
+/// readout whose value needs more than its share (its ideal width plus ``NopeSpace/xxs``) gets
+/// what it needs and the others share the rest equally, as the design's flexible row does
+/// (docs/design/screens/drive-astro: "ISO 3200" beside "1 s"). Only when the readouts' needs
+/// don't fit together do they take two rows of four equal cells: the first four readouts, then
+/// the rest and More.
+///
+/// A long value on its own, such as the highest ISO that Astro sets ("ISO 12,096"), so keeps the
+/// one row on a 402-point iPhone: two rows pushed the Astro card up to a third of the picture,
+/// against the quarter BUILD-SPEC.md, 3.5, allows.
 ///
 /// It is a layout rather than `ViewThatFits` over an `HStack` and a `Grid`, so the readouts get
-/// exactly equal widths, More keeps its own width, and one row is chosen whenever the widest
-/// value fits (docs/design/screens/camera-manual, a 402-point iPhone).
+/// exactly equal widths whenever they fit, More keeps its own width, and one row is chosen
+/// whenever the values fit (docs/design/screens/camera-manual, a 402-point iPhone).
 struct ReadoutRowLayout: Layout {
     /// The space between views, in points.
     let spacing: CGFloat
@@ -89,8 +96,11 @@ struct ReadoutRowLayout: Layout {
     struct Arrangement: Equatable {
         /// Whether everything is in one row.
         let isOneRow: Bool
-        /// The width of a readout, in points.
+        /// The width of a readout, in points: the equal share of the readouts that need no more
+        /// than it, or the width of every cell in two rows.
         let cellWidth: CGFloat
+        /// Each readout's width in one row, in points, in order; empty in two rows.
+        let cellWidths: [CGFloat]
         /// The height of a row, in points.
         let rowHeight: CGFloat
         /// The whole size.
@@ -101,11 +111,13 @@ struct ReadoutRowLayout: Layout {
         /// - Parameters:
         ///   - isOneRow: Whether everything is in one row.
         ///   - cellWidth: The width of a readout, in points.
+        ///   - cellWidths: Each readout's width in one row, in points; empty in two rows.
         ///   - rowHeight: The height of a row, in points.
         ///   - size: The whole size, in points.
-        init(isOneRow: Bool, cellWidth: CGFloat, rowHeight: CGFloat, size: CGSize) {
+        init(isOneRow: Bool, cellWidth: CGFloat, cellWidths: [CGFloat] = [], rowHeight: CGFloat, size: CGSize) {
             self.isOneRow = isOneRow
             self.cellWidth = cellWidth
+            self.cellWidths = cellWidths
             self.rowHeight = rowHeight
             self.size = size
         }
@@ -119,13 +131,17 @@ struct ReadoutRowLayout: Layout {
     ///   - spacing: The space between views, in points.
     static func arrangement(ideals: [CGSize], width: CGFloat?, spacing: CGFloat) -> Arrangement {
         let readoutCount = max(ideals.count - 1, 0)
-        let widest = (ideals.dropLast().map(\.width).max() ?? 0) + NopeSpace.xxs
+        let needs = ideals.dropLast().map { $0.width + NopeSpace.xxs }
+        let widest = needs.max() ?? NopeSpace.xxs
         let rowHeight = ideals.map(\.height).max() ?? 0
-        let oneRowWidth = widest * CGFloat(readoutCount) + NopeSize.minTarget + spacing * CGFloat(readoutCount)
+        let fixedWidth = NopeSize.minTarget + spacing * CGFloat(readoutCount)
+        let oneRowWidth = widest * CGFloat(readoutCount) + fixedWidth
         let available = width.flatMap { $0.isFinite ? $0 : nil } ?? oneRowWidth
-        if oneRowWidth <= available {
-            let cell = (available - NopeSize.minTarget - spacing * CGFloat(readoutCount)) / CGFloat(max(readoutCount, 1))
-            return Arrangement(isOneRow: true, cellWidth: cell, rowHeight: rowHeight, size: CGSize(width: available, height: rowHeight))
+        if needs.reduce(0, +) + fixedWidth <= available {
+            let (share, widths) = sharedWidths(needs: needs, total: available - fixedWidth)
+            return Arrangement(
+                isOneRow: true, cellWidth: share, cellWidths: widths, rowHeight: rowHeight,
+                size: CGSize(width: available, height: rowHeight))
         }
         let columns = CGFloat(cellsPerRow)
         let cell = max((available - spacing * (columns - 1)) / columns, widest)
@@ -133,6 +149,30 @@ struct ReadoutRowLayout: Layout {
         return Arrangement(
             isOneRow: false, cellWidth: cell, rowHeight: rowHeight,
             size: CGSize(width: totalWidth, height: rowHeight * 2 + spacing))
+    }
+
+    /// The readouts' widths in one row: an equal share of the total, except that a readout that
+    /// needs more than the share gets what it needs and the others share the rest, repeated
+    /// until every readout has at least what it needs.
+    ///
+    /// - Parameters:
+    ///   - needs: Each readout's ideal width plus ``NopeSpace/xxs``, in points; their sum is at
+    ///     most `total`.
+    ///   - total: The width the readouts share, in points.
+    /// - Returns: The share of the readouts that need no more than it, and every readout's width.
+    static func sharedWidths(needs: [CGFloat], total: CGFloat) -> (share: CGFloat, widths: [CGFloat]) {
+        var fixed = Set<Int>()
+        var share = total / CGFloat(max(needs.count, 1))
+        while true {
+            let grown = needs.indices.filter { !fixed.contains($0) && needs[$0] > share }
+            guard !grown.isEmpty else { break }
+            fixed.formUnion(grown)
+            let left = needs.count - fixed.count
+            guard left > 0 else { break }
+            share = (total - fixed.map { needs[$0] }.reduce(0, +)) / CGFloat(left)
+        }
+        let widths = needs.indices.map { fixed.contains($0) ? needs[$0] : share }
+        return (share, widths)
     }
 
     /// The row's size for the width offered.
@@ -158,14 +198,22 @@ struct ReadoutRowLayout: Layout {
         guard !subviews.isEmpty else { return }
         let ideals = subviews.map { $0.sizeThatFits(.unspecified) }
         let arrangement = Self.arrangement(ideals: ideals, width: bounds.width, spacing: spacing)
+        var oneRowX = bounds.minX
         for (index, subview) in subviews.enumerated() {
             let isMore = index == subviews.count - 1
             let column = arrangement.isOneRow ? index : index % Self.cellsPerRow
             let row = arrangement.isOneRow ? 0 : index / Self.cellsPerRow
-            let width = arrangement.isOneRow && isMore ? NopeSize.minTarget : arrangement.cellWidth
-            let origin = CGPoint(
-                x: bounds.minX + CGFloat(column) * (arrangement.cellWidth + spacing),
-                y: bounds.minY + CGFloat(row) * (arrangement.rowHeight + spacing))
+            let width: CGFloat
+            let x: CGFloat
+            if arrangement.isOneRow {
+                width = isMore ? NopeSize.minTarget : arrangement.cellWidths[index]
+                x = oneRowX
+                oneRowX += width + spacing
+            } else {
+                width = arrangement.cellWidth
+                x = bounds.minX + CGFloat(column) * (arrangement.cellWidth + spacing)
+            }
+            let origin = CGPoint(x: x, y: bounds.minY + CGFloat(row) * (arrangement.rowHeight + spacing))
             subview.place(
                 at: origin, anchor: .topLeading,
                 proposal: ProposedViewSize(width: width, height: arrangement.rowHeight))

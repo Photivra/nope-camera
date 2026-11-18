@@ -43,6 +43,27 @@ struct ManualControlsTests {
         #expect(arrangement.size.width > 300)
     }
 
+    /// One long value (Astro's highest ISO) keeps the one row: it gets the width it needs and the
+    /// other readouts share the rest equally (docs/design/screens/drive-astro).
+    @Test func oneLongValueKeepsTheRow() {
+        var ideals = Self.ideals(widest: 40)
+        ideals[1] = CGSize(width: 74, height: NopeSize.readout)
+        let arrangement = ReadoutRowLayout.arrangement(ideals: ideals, width: 386, spacing: NopeSpace.xxs)
+        #expect(arrangement.isOneRow)
+        #expect(arrangement.cellWidths[1] == 74 + NopeSpace.xxs)
+        let others = arrangement.cellWidths.enumerated().filter { $0.offset != 1 }.map(\.element)
+        #expect(Set(others).count == 1)
+        #expect(abs(arrangement.cellWidths.reduce(0, +) + NopeSize.minTarget + NopeSpace.xxs * 6 - 386) < 0.001)
+    }
+
+    /// When every readout needs more than an equal share, each gets what it needs.
+    @Test func everyReadoutCanGrow() {
+        let shared = ReadoutRowLayout.sharedWidths(needs: [50, 50], total: 100)
+        #expect(shared.widths == [50, 50])
+        let grown = ReadoutRowLayout.sharedWidths(needs: [60, 40], total: 100)
+        #expect(grown.widths == [60, 40])
+    }
+
     /// Without an offered width the row reports the width one row needs.
     @Test func idealWidthIsOneRow() {
         let arrangement = ReadoutRowLayout.arrangement(ideals: Self.ideals(widest: 40), width: nil, spacing: NopeSpace.xxs)
