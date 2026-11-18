@@ -1,74 +1,84 @@
 import NopeCore
 import SwiftUI
 
-/// The processing note of a lens without Bayer RAW (issue #80), opened from the "Processed"
-/// marker: what the phone's camera does to that lens's photo, what the app turns off, whether
-/// the lens lets the app turn off distortion correction, and what the app itself does to the
-/// files it saves.
+/// The processing note of a lens without Bayer RAW (issue #80; docs/design/BUILD-SPEC.md, 3.2),
+/// opened from the "Processed" marker: what the phone does on this lens, then what the app does.
 ///
-/// Each paragraph is its own row, so VoiceOver reads them one at a time and the form scrolls
-/// between them at the largest text sizes. Every sentence describes the code as it is:
-/// - the phone's processing is whatever the camera's pipeline applies to a processed photo,
-///   which AVFoundation offers no switch for;
-/// - the switches the app turns off are `ProcessingSwitches.leastProcessing` in `NopeCapture`;
-/// - the distortion line is what the camera reports (`DistortionCorrection`);
-/// - the fallback file is saved as the camera made it (`PhotoSaver`), and HEIF and JPEG copies
-///   of a RAW are developed as `DevelopedLook` documents.
+/// Two sections, each paragraph its own row, so VoiceOver reads them one at a time and the form
+/// scrolls between them at the largest text sizes:
+/// - **What the Phone Does on This Lens**: the phone's camera processes the file before the app
+///   receives it, and the app can't turn that off (AVFoundation offers no switch for a processed
+///   photo's pipeline). Then the lens's distortion correction as the camera reports it
+///   (`Lens/distortionCorrection`). No processing step is named unless it is verified.
+/// - **What nope. Does**: nothing more to this lens's file (`PhotoSaver` saves the camera's file
+///   as it is); HEIF and JPEG copies developed from a RAW get the chosen look (`DevelopedLook`).
 ///
 /// The wording is a processing claim, so it lives in `Honesty.xcstrings` (AGENTS.md, "Honesty
-/// wording is kept apart").
+/// wording is kept apart"); it is a draft for the Honesty review (BUILD-SPEC.md, section 5).
 struct ProcessingNote: View {
-    /// The lens's processed format.
-    let fallback: ProcessedFallback
-
     /// Whether the lens lets the app turn off distortion correction.
     let distortionCorrection: DistortionCorrection
+
+    /// The look of the HEIF and JPEG copies developed from a RAW.
+    let look: DevelopedLook
 
     /// Creates the note.
     ///
     /// - Parameters:
-    ///   - fallback: The lens's processed format.
     ///   - distortionCorrection: Whether the lens lets the app turn off distortion correction.
-    init(fallback: ProcessedFallback, distortionCorrection: DistortionCorrection) {
-        self.fallback = fallback
+    ///   - look: The look of the HEIF and JPEG copies developed from a RAW.
+    init(distortionCorrection: DistortionCorrection, look: DevelopedLook) {
         self.distortionCorrection = distortionCorrection
+        self.look = look
     }
 
-    /// The note's paragraphs, one row each.
+    /// The note's two sections.
     var body: some View {
-        Group {
-            byThePhone
-            turnedOff
-            Self.distortion(distortionCorrection)
-            byTheApp
+        Section {
+            Group {
+                byThePhone
+                Self.distortion(distortionCorrection)
+            }
+            .lineLimit(nil)
+            .fixedSize(horizontal: false, vertical: true)
+        } header: {
+            Text(
+                "What the Phone Does on This Lens", tableName: "Honesty", bundle: .module,
+                comment: "Heading in the processing note of a lens that can't save RAW: what the phone's camera does to the file. Honesty wording: a fluent human must review every translation before release.")
         }
-        .lineLimit(nil)
-        .fixedSize(horizontal: false, vertical: true)
+        Section {
+            byTheApp
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+        } header: {
+            Text(
+                "What nope. Does", tableName: "Honesty", bundle: .module,
+                comment: "Heading in the processing note of a lens that can't save RAW: what nope. itself does to the file. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.")
+        }
     }
 
-    /// What the phone's camera does to the photo.
+    /// The phone's processing, in one sentence.
     private var byThePhone: Text {
-        let format = fallback == .heif ? "HEIF" : "JPEG"
-        return Text(
-            "The phone's camera makes this photo: it turns the sensor data into a finished image, choosing its colors and tone and any noise reduction and sharpening, and compresses it as \(format). Apps can't turn these steps off.",
-            tableName: "Honesty", bundle: .module,
-            comment: "Processing note of a lens without RAW. The placeholder is a file format name, HEIF or JPEG. Must not claim more than the English: it says what the phone may apply, not that it applies each step.")
-    }
-
-    /// The processing switches the app turns off.
-    private var turnedOff: Text {
         Text(
-            "nope. asks the camera to put speed before quality, and turns off what apps can: Apple ProRAW, zero shutter lag, responsive capture, deferred processing, constant color, content-aware distortion correction and digital zoom.",
+            "The phone's camera processes this file before nope. receives it. nope. can't turn that processing off.",
             tableName: "Honesty", bundle: .module,
-            comment: "Processing note of a lens without RAW: the camera features the app turns off. Apple ProRAW is Apple's name. Keep \"nope.\" unchanged. Must not claim more than the English.")
+            comment: "Processing note of a lens that can't save RAW. Must not name any processing step: it says only that the phone processes the file and that nope. can't turn it off. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.")
     }
 
-    /// What the app does to the files it saves.
+    /// What the app does to this lens's file and to the copies it develops from a RAW.
     private var byTheApp: Text {
-        Text(
-            "nope. saves the camera's file without changing its pixels. On a lens with RAW, nope. develops its own HEIF and JPEG copies from the RAW, with one overall tone curve (Standard) or none (Flat), and no noise reduction, sharpening or local tone mapping.",
-            tableName: "Honesty", bundle: .module,
-            comment: "Processing note of a lens without RAW: what the app itself does. RAW, HEIF and JPEG are file format names; Standard and Flat are the names of the two looks in Settings. Keep \"nope.\" unchanged. Must not claim more than the English.")
+        switch look {
+        case .standard:
+            Text(
+                "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve, and no noise reduction, sharpening or local tone mapping.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Standard: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Standard is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.")
+        case .flat:
+            Text(
+                "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve, and no noise reduction, sharpening or local tone mapping.",
+                tableName: "Honesty", bundle: .module,
+                comment: "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Flat: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Flat is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.")
+        }
     }
 
     /// Whether a lens lets the app turn off distortion correction, in plain words. Also used in

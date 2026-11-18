@@ -222,10 +222,7 @@ public struct CameraScreen<Viewfinder: View>: View {
                         openAppSettings()
                     } label: {
                         Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
-                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                 }
             }
         case .unavailable:

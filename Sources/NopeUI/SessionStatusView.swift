@@ -1,8 +1,10 @@
 import NopeCore
 import SwiftUI
 
-/// A message over the viewfinder when the camera isn't running, with a solid backing so it
-/// stays readable over any scene. Nothing while the camera runs.
+/// A message in the middle of the picture when the camera isn't running (docs/design/BUILD-SPEC.md,
+/// 3.7, figure `camera-paused`), on solid black so it stays readable over any scene. Every pause
+/// uses the same place: another app or a call, split view, cooling down, could not start, no
+/// picture, and the spinner while the camera starts. Nothing while the camera runs.
 struct SessionStatusView: View {
     /// The camera's status.
     let status: SessionStatus
@@ -19,7 +21,7 @@ struct SessionStatusView: View {
         if let message {
             // A large symbol above the words, so a paused camera reads clearly, also in a reduced
             // iPad window (issue #68, "iPad").
-            VStack(spacing: 8) {
+            VStack(spacing: NopeSpace.xs) {
                 Image(systemName: symbol)
                     .font(.largeTitle)
                     .accessibilityHidden(true)
@@ -27,20 +29,20 @@ struct SessionStatusView: View {
                     .font(.body)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(NopeColor.label)
             .multilineTextAlignment(.center)
-            .padding()
+            .padding(NopeSpace.m)
             // Solid black: over the material backing the iPad audit reported this text as low
             // contrast.
-            .background(.black, in: .rect(cornerRadius: CameraStyle.cornerRadius))
+            .nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.small))
             .accessibilityElement(children: .combine)
-            .padding()
+            .padding(NopeSpace.m)
         } else if status == .starting {
             ProgressView {
                 Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
             }
-            .padding()
-            .darkBacking()
+            .padding(NopeSpace.m)
+            .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         }
     }
 
