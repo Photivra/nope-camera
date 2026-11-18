@@ -415,6 +415,11 @@ other finding fails the test:
   the iOS 27.2 Simulator reported system form section headers and footers as "partially
   unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
   included, at the largest accessibility text size;
+- a Dynamic Type finding on the Choose Details footer "On: each photo keeps only what it needs
+  to open. Off: choose each item below." and the header "In Each Photo": the iPad runner's
+  audit reports them although they grow at every text size, which
+  `testChooseDetailsTextGrowsAtEveryTextSize` measures (see "Dynamic Type findings on the iPad
+  runner");
 - open iPad findings, on the manual accessibility pass: the lens buttons' "No RAW" caption in the
   iPad control column is reported as "Dynamic Type font sizes are partially unsupported",
   although it is visibly enlarged at the largest size and passes on iPhone; and the Settings and
@@ -511,7 +516,8 @@ scrolling. The test now waits for the final state ("isn't sending a picture"), s
 top, and audits only once the layout has stopped moving: the shutter's frame must read the same
 twice in a row, half a second apart (`waitUntilStill`), instead of a fixed pause. Issues are
 judged after the audit rather than inside its handler (querying the app from the handler can
-make the audit time out), and a failing audit is repeated once after the layout settles again.
+make the audit time out), and an issue fails the test when two more audits of the same screen
+report it again (see "Dynamic Type findings on the iPad runner" below).
 It could not be made to fail locally before or after the change (10 runs, 4 of them with every
 CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
 
@@ -547,8 +553,8 @@ the local toolchain). Jobs:
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/8` … `8/8` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests 1/3` … `3/3` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/2`, `2/2` | The same tests in two shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
@@ -566,21 +572,38 @@ on-device checks below.
 
 ### UI test shards
 
-The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
-as on a recent Mac, so CI limits are sized from runner times, never from local ones). CI runs it
-in eight shards per device, about 18.5 minutes of tests each by the times of build 43786103024
-plus about 5 minutes of setup (up to 10 when the Simulator is slow to boot), with a 35-minute
-limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
-its time in seconds on the runner (the longer of the iPhone and iPad runs), or, marked `est`,
-twice its local time until the runner has measured it; the shards are balanced by those times
-(longest test first, into the shard with the least time so far). To rebalance, take the times
-from the `Test Case … passed (n seconds)` lines of the shard jobs' logs.
+The UI suite takes about 131 minutes of test time on the iPhone Simulator and 138 on the iPad
+Simulator on the GitHub macOS runner (about twice as long as on a recent Mac, so CI limits are
+sized from runner times, never from local ones). CI runs it in three iPhone shards and two iPad
+shards, each its own job:
 
-`scripts/ui-test-shards.sh args <n>` prints the `-only-testing` arguments of shard n.
+| Job | Tests (listed times) | With about 7 minutes of setup | Limit |
+|---|---|---|---|
+| `ui-tests 1/3`, `2/3`, `3/3` | 44 minutes each | 51 minutes | 100 minutes |
+| `ui-tests-ipad 1/2`, `2/2` | 69 minutes each | 76 minutes | 130 minutes |
+| `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
+
+The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
+runtime disk images on the runner") and for one second run of unfinished tests after an
+infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
+larger jobs, 6 jobs per build boot a Simulator instead of 17, and the runner's Simulator
+failures start in the minutes after a job's first use of the Simulator.
+
+`scripts/ui-test-shards.txt` lists every UI test with its iPhone shard, its iPad shard and its
+time in seconds on the runner on each device, or, with an `e`, an earlier or estimated time
+(twice the local time for a new test) until the runner has measured it. Each device's shards
+are balanced by its own times (longest test first, into the shard with the least time so
+far). To rebalance, take the times from the per-test result files (see "Flaky tests") or from
+the `Test Case … passed (n seconds)` lines of the shard jobs' logs; `scripts/ui-test-shards.sh
+times` prints each shard's total.
+
+`scripts/ui-test-shards.sh args <iphone|ipad> <n>` prints the `-only-testing` arguments of that
+device's shard n, and `count <iphone|ipad>` the number of its shards.
 `scripts/ui-test-shards.sh check`, in `repo-checks`, fails when a test in `App/NopeAppUITests` is
-in no shard or in two, when a listed test doesn't exist, or when the shard matrices or job names
-in `build.yml` don't match the list, so a new test can't be skipped silently: add it to the
-shard with the least time, marked `est` with twice its local time.
+listed for no shard or twice, when a listed test doesn't exist, or when the shard matrices or
+job names in `build.yml` don't match either device's shards, so a new test can't be skipped
+silently: add it to the shard with the least time on each device, with twice its local time
+and an `e`.
 
 Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
 has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
@@ -603,11 +626,11 @@ the app can't be launched once (it ignored a failed launch before).
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
-runner had to boot itself. The script retries a shard once, after rebooting the Simulator, only
-when the test runner failed before any test started (any "… while preparing to run tests" error,
-including "Test crashed with signal term while preparing to run tests", which ended an iPad shard
-of build 43786103024 after its Simulator took five minutes to boot); a run in which a test started
-is never retried. `scripts/test-ui-test-shards.sh` tests both scripts.
+runner had to boot itself. Such a run, in which the test runner failed before any test started (any "… while preparing to
+run tests" error, including "Test crashed with signal term while preparing to run tests", which
+ended an iPad shard of build 43786103024 after its Simulator took five minutes to boot), is an
+infrastructure failure and is run again once; a test that failed is never run again (see
+"Infrastructure and test failures" below). `scripts/test-ui-test-shards.sh` tests the scripts.
 
 On the runner the tests wait for state rather than assume speed: a new launch waits until the
 previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
@@ -683,6 +706,191 @@ Simulator boots again. Checked on two new iPad Simulators on a Mac: the one left
 prewarm (14 seconds there) and about 100 tasks in its first seven minutes, the one with the
 scheduler stopped ran none, and services that asked for a task were refused without retrying
 in a loop (about 240 log lines in six minutes). No test, audit or limit changed.
+
+#### Simulator runtime disk images on the runner
+
+The failures that ended a Simulator in builds 44124454610 and 44149517211 have one cause, shown
+by the disk image service's log (`simdiskimaged.log`) in the 14 result bundles we have from
+builds 44098207588, 44124454610 and 44149517211, all on runner image `xcode-27-arm64`
+20261104.0337.1. When a job first uses the Simulator, the
+service mounts each runtime's disk image. On every runner two of them (watchOS 27.0 and tvOS
+27.0) fail to mount the usual way ("Cryptex mount failed … Code=2") and are mounted from a plain
+disk image under `/Library/Developer/CoreSimulator/Volumes`; from 147 to 716 seconds after its
+start the service tries to mount them again and unmount the first mount, which mostly fails and
+leaves things as they were. On two of the 14 runners another runtime failed too at the start
+("Disk image operation failed with error code 153"), and those are the two jobs whose Simulator
+host process (`SimLaunchHost`) crashed:
+
+| Job | Mount that failed at the start | What followed |
+|---|---|---|
+| 44124454610, iPad shard 1 | xrOS 27.0 | remounted at +427 s; host process crashed at about +432 s; the first test was cut short |
+| 44149517211, iPhone shard 8 | xrOS 27.0 and iOS 27.2, the runtime under test | iOS 27.2 unmounted and remounted at +535 to +550 s; host process crashed three times from +543 s; then "The iOS 27.2 simulator runtime is not available" |
+
+In the 12 other bundles only the two usual runtimes were on plain disk images and the host
+process didn't crash. Two more jobs without a result bundle fit the times: iPad shard 8 of
+44124454610 ("server died" at about +320 s) and iPad shard 4 of 44149517211, where stopping the
+background task scheduler took 9.6 minutes and the install ended with "server died" at about
++707 s; its retry ran into a second loss of the Simulator in the first test and the job's
+35-minute limit. Their cause is assumed, not shown.
+
+`scripts/wait-for-simulator-runtimes.sh`, the first use of simctl in the shard and watch jobs,
+reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
+(`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` in `build.yml`) is mounted under
+`/Library/Developer/CoreSimulator/Volumes`, it waits until 750 seconds have passed, with nothing
+booted, so the remounting is over before a Simulator runs: in the bundles the last unmount came
+716 seconds after the service started, with nothing later in logs that run to 1,772 seconds.
+On other runners it returns at once. The job limits leave room for the wait; no test's time
+limit changed. That the wait is enough rests on
+those logs: a runner whose runtime under test never mounts the usual way hasn't been seen
+through a whole job.
+
+#### A Simulator that dies on the runner
+
+In build 44124454610 two iPad shards lost their Simulator. In shard 1 the first test stopped at
+"Setting up automation session", the test runner was ended ("Test crashed with signal term"),
+`xcodebuild` started it again and the other 12 tests passed, but the shard failed on the test
+that was cut short. In shard 8 `simctl install` ended with "Mach error -308 (ipc/mig) server
+died" before any test ran. Shard 1's result bundle shows the cause: the runner image mounts
+some Simulator runtime disk images twice, and a few minutes into the job the Simulator's disk
+image service (`simdiskimaged.log`) unmounted the duplicates (tvOS 27.0 at 17:39:46, watchOS
+27.0 at 17:39:58; "Image is a duplicate of existing image … preferring cryptex variant").
+A minute later the Simulator's host process, under which every booted Simulator runs, crashed
+while unloading a library from an unmounted image (`SimLaunchHost.arm64`, 17:41:07,
+`EXC_BAD_ACCESS`, `KERN_MEMORY_ERROR` in `dlclose`), and the Simulator's own processes ended
+with it (17:41:07 to 17:41:15). "Simulator runtime disk images on
+the runner" above has what the two crashes share. Shard 8 uploaded no result bundle, so its
+cause is assumed, not shown, to be the same.
+
+This is outside the app and the tests, so such a run is an infrastructure failure and its
+unfinished tests are run again once (next section). The first version of that second run,
+used in build 44149517211, ran only the tests that had started and had no result: in iPhone
+shard 4 the host process crashed in the first test, `xcodebuild` ended the whole run, the one
+test cut short ran again and passed, and the job passed although 17 of its 18 tests had never
+run. The second run now takes every test without a result, and
+`scripts/test-ui-test-shards.sh` has that case.
+
+#### Infrastructure and test failures
+
+`scripts/ui-test-run-lib.sh`, used by the shard jobs and the watch job, classifies a failed
+run from its `xcodebuild` log:
+
+- **Test failure:** a test failed with a result (`Test Case '…' failed`). It is never run
+  again, whatever else happened in the run. A test that was cut short with no sign that the
+  Simulator died (the test runner crashed or was ended) counts as a test failure too.
+- **Infrastructure failure:** no test failed with a result, and no test started, or the
+  Simulator's host process left a new crash report (`SimLaunchHost*.ips` in
+  `~/Library/Logs/DiagnosticReports`), or the log has "simulator runtime is not available" or
+  "(ipc/mig) server died". Failing to boot the Simulator or install the app counts as one.
+
+After an infrastructure failure the job reboots the Simulator and runs once more, in the same
+job, the tests that have no result yet (the finished ones are passed to `xcodebuild` as
+`-skip-testing`); a second infrastructure failure fails the job as one. There is one second
+run per job at most, and no workflow-level rerun, so no passed job or test is repeated. The
+first run's result bundle is kept and uploaded as `…-interrupted.xcresult`.
+
+The job summary on GitHub names the classification ("ui-tests 2/3: Passed", "Test failure" or
+"Infrastructure failure"), says whether a second run happened, and lists the tests that failed
+or were cut short.
+
+#### Flaky tests
+
+Each shard job and the watch job uploads its per-test results as an artifact
+(`test-results-ui-tests-<n>`, `test-results-ui-tests-ipad-<n>`, `test-results-ui-tests-watch`,
+kept 30 days): a JSON Lines file with one line per test and run of it, holding `test`
+(Class/test), `result` (`passed`, `failed`, `skipped`, or `interrupted` for a test that
+started and has no result), `seconds`, `attempt` (2 for the second run after an infrastructure
+failure), `job`, `device`, `shard`, `runner_image`, `run_id`, `run_attempt` and `sha` (the
+pull request's head commit).
+
+```sh
+scripts/flaky-tests.sh                 # the last 20 runs of the build workflow, with gh
+scripts/flaky-tests.sh -n 50 -b main   # more runs, one branch
+scripts/flaky-tests.sh --from results  # result files already downloaded
+```
+
+It lists, with counts, the tests that passed and failed on the same commit, the tests that
+passed and failed across the commits looked at, and the tests that passed only in the second
+run after an infrastructure failure.
+
+#### Dynamic Type findings on the iPad runner
+
+In build 44124454610 two iPad tests failed with "Dynamic Type font sizes are partially
+unsupported" on text that the failing runs' screen recordings show whole, wrapped and not cut,
+at the largest size, and smaller at the smaller sizes the audit switches through:
+`testSettingsAtTheLargestTextSize` on the Choose Details footer "On: each photo keeps only what
+it needs to open. Off: choose each item below." (frame 30, 428.5, 440 × 267, inside the Settings
+popover), and `testLastPhotoDetailsAtTheLargestTextSize` on the Files row title "HEIF" (frame
+40, 355.5, 111.5 × 63.5). On a Mac the audit reports no Dynamic Type finding on either screen,
+also with every core busy.
+
+`audit(_:)` writes each Dynamic Type issue, and each issue no rule ignores, to the test log
+("Audit round n: …", with the type, the element's label and frame, the window's frame and
+whether a rule ignored it). In build 44149517211 those lines show what the iPad runner's audit
+does: its first pass over a screen at the largest text size reported findings no rule ignores
+in five tests (ten findings, nine of them Dynamic Type: the same Choose Details footer in both
+Settings tests, five Files rows of the last photo's details, two texts of the compare view),
+and the second audit of the same screen three seconds later reported none of them, so all five
+tests passed. No iPhone shard had such a finding. The two failures of build 44124454610 were
+runs where the second audit still reported one row; in the details test it was a row the first
+audit hadn't reported.
+
+The audit's findings on these screens therefore change from one audit to the next while the
+screen doesn't. An issue now fails the test when the audit reports it three times in a row: in
+the first audit and again in each of two more audits of the same screen (the same type on an
+element with the same label). A finding that is real is reported every time and still fails.
+Why the runner's first audit reports them isn't known.
+
+In build 44209365138 one finding did pass that rule: in `testNightModeSettingsScreensAtTheLargestTextSize`
+on iPad, where Settings is a sheet, all three audits of Choose Details reported the master
+switch's footer ("On: each photo keeps only what it needs to open. Off: choose each item
+below.", 548 × 167 points) and the header after it ("In Each Photo", 548 × 83.5) as "Dynamic
+Type font sizes are partially unsupported"; these are the two texts of the earlier popover
+failures. Both are a system `Form` section's footer and header with no font, size limit or line
+limit of the app's own. Measured on the iPad Simulator in night mode at each of the nine text
+sizes from the default to the largest, each grows at every step (footer height 30, 50, 54.5,
+59, 68.5, 77.5, 129.5, 147.5, 167 points; header 40.5, 43, 45.5, 47.5, 53.5, 59.5, 68, 76.5,
+83.5), and at the largest size they measure what the runner's audit reported. So the finding
+is the audit's, not the layout's. The audit no longer fails on a Dynamic Type finding on these
+two texts (by label, `measuredDynamicTypeLabels`), and `testChooseDetailsTextGrowsAtEveryTextSize`
+checks what the audit was asked instead, on iPhone and iPad: both texts and the master switch's
+title are larger at every text size than at the size before.
+
+#### Audits that don't finish
+
+In build 44185929631 two tests failed with "Audit failed to complete in time" (XCTest's error
+-56): `testComparisonShotShowsBothPicturesAndTheirDetails` on iPhone and
+`testLastPhotoDetailsAtTheLargestTextSize` on iPad. Both failed in the audit that follows a
+scroll (`audit(_:afterScrolling: true)`), in its first pass, so the rule about repeated audits
+played no part. XCTest gives an audit 15 seconds. On a Mac the compare test failed the same way
+six times out of six: on the compare details, scrolled to the identifier row, the whole audit
+ran into the 15 seconds and so did the contrast check alone (the same list's audit before the
+scroll took two seconds); `performCompleteAccessibilityAudit`, which runs one audit per check
+after such a timeout, has nothing smaller than one check to fall back to. On the iPad runner
+the audit of the last photo's details after a scroll had taken about ten seconds when it passed
+(build 44149517211).
+
+After a scroll every contrast finding is ignored (see `audit(_:)` above: the rows are
+contrast-checked before scrolling), and so are the contrast or Dynamic Type findings of a test
+that skips that check. `audit(_:)` and `auditScrollingScreen(_:)` now leave a check whose every
+finding is ignored out of the audit, so the slowest check doesn't run where its result was
+thrown away; what fails a test is unchanged. With that the compare test passes on a Mac (three
+of three runs on iPhone, two of two on iPad). When an audit does time out,
+`performCompleteAccessibilityAudit` writes to the test log how long it ran and how long each
+check then took alone, which XCTest's error doesn't say. Why the contrast check doesn't finish
+on that part of the compare details isn't known.
+
+#### Continue on the first-run screen (open)
+
+In build 44149517211 two tests at the largest text size failed the same way, once each:
+`testPresetsAtTheLargestTextSize` (iPhone shard 5) and `testLandscapeAtTheLargestTextSize` (iPad
+shard 3). The test tapped Continue on the first-run screen and the camera didn't come within
+ten seconds; the hierarchy and the screen recording at the failure still show the first-run
+screen. The Simulator's log shows the touch reaching the app (touch down and up 71 ms apart,
+then the app's own event dispatch lines), and the steps before the tap took as long as in runs
+that passed. Neither ran during a remount of the runtime disk images (19 and 13 minutes into
+their jobs). Both tests passed in the two builds before with the same app code, and in 25 local
+runs of each on an iPhone Simulator the step worked every time; the camera model received one start request
+per launch in a local check. The cause isn't known, and nothing was changed for it.
 
 To run one shard locally, with a Simulator named as in CI:
 
