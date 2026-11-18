@@ -84,14 +84,12 @@ extension CameraModel {
         }
     }
 
-    /// Stops the countdown before the first frame or the running frames.
+    /// Stops the countdown before the first frame, the running or paused frames, or the
+    /// countdown before a paused run continues.
     private func stopAstroRun() {
         guard astro.isOn else { return }
-        if astro.isRunning {
-            astro.requestStop()
-        } else {
-            drive.countdown.cancel()
-        }
+        if astro.isRunning { astro.requestStop() }
+        drive.countdown.cancel()
     }
 
     /// Keeps the helper consistent after a manual control intent: turning manual controls off
@@ -139,6 +137,69 @@ extension CameraModel {
 
     /// Takes the run's frames, after the countdown.
     private func takeAstroFrames() async {
-        await takeFrames(limit: astro.frameCount, tracker: astro, stopsOnLowBattery: true)
+        await takeFrames(limit: astro.frameCount, tracker: astro, stopsOnLowBattery: true, pausesWithCamera: true)
+    }
+
+    /// Records whether the app is in the foreground, and applies it to the self-timer and the
+    /// astro helper (``CameraIntent/setInForeground(_:)``).
+    ///
+    /// - Parameter isInForeground: Whether the app is in the foreground now.
+    func setInForeground(_ isInForeground: Bool) {
+        self.isInForeground = isInForeground
+        guard !isInForeground else { return }
+        guard astro.isOn else {
+            // The camera stops in the background, so the self-timer can't take its photo.
+            drive.countdown.cancel()
+            return
+        }
+        guard drive.countdown.isRunning, !astro.isRunning, saver != nil else { return }
+        // Left during the start delay: the run starts now, paused, and counts the delay down
+        // again when the app is back. It is marked as begun at once, so it reads as paused, not
+        // ended, before its loop starts.
+        drive.countdown.cancel()
+        astro.beginRun()
+        Task { [weak self] in await self?.takeAstroFrames() }
+    }
+
+    /// Whether an astro run or an interval series should pause: the app is out of the
+    /// foreground, or the camera is paused for a while (an interruption, heat, or starting
+    /// again).
+    var seriesShouldPause: Bool {
+        guard isInForeground else { return true }
+        switch sessionStatus {
+        case .starting, .interrupted, .pausedForHeat: return true
+        case .stopped, .running, .failed, .noPicture: return false
+        }
+    }
+
+    /// Pauses the astro run until the app is in the foreground and the camera can take photos
+    /// again, then counts the start delay down so the phone is still before the next frame. It
+    /// waits for Observation's change notifications; nothing polls (AGENTS.md, "Battery").
+    ///
+    /// - Returns: `false` when the person stopped the run, `true` to continue: the run then
+    ///   checks the camera, storage and battery again before the next frame.
+    func pauseAstroRun() async -> Bool {
+        astro.setPaused(true)
+        while seriesShouldPause, !astro.isStopRequested {
+            await nextChangeOfPauseState()
+        }
+        astro.setPaused(false)
+        guard !astro.isStopRequested else { return false }
+        guard sessionStatus.canCapture else { return true }
+        let counted = await drive.countdown.run(seconds: astro.startDelay.seconds)
+        return counted && !astro.isStopRequested
+    }
+
+    /// Waits until the foreground state, the camera's status or the stop request changes.
+    private func nextChangeOfPauseState() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            withObservationTracking {
+                _ = isInForeground
+                _ = sessionStatus
+                _ = astro.isStopRequested
+            } onChange: {
+                continuation.resume()
+            }
+        }
     }
 }

@@ -101,6 +101,52 @@ accepts every way a TIFF writer can store an empty text (one NUL, a count of 0, 
 and the tag left out, and rejects a space, any text and a non-text value. Which encoding
 AVFoundation writes is a device check (`docs/PRIVACY.md`, "Device checks").
 
+### RAW pairs not saved (PhotoKit error 3300)
+
+**How it was found.** On an iPhone 16 Pro Max (iOS 27.2.1, Debug build of 0.2.0), every photo
+that saved a RAW together with a HEIF or JPEG failed with "Not saved: the photo library couldn't
+add the photo. Try again.", on the 0.6× and 5× lenses, in manual mode. RAW only, JPEG only and
+HEIF plus JPEG saved. The DNG itself, signed, is accepted.
+
+**Cause (measured in the iOS 27.2 Simulator, 2026-11-15).** The app's own files (the fixtures of
+the file compatibility matrix below) added to the Simulator's photo library through the app with
+add-only access: a `PHAssetCreationRequest` with a `.photo` and an `.alternatePhoto` fails with
+`PHPhotosErrorDomain` 3300 (`PHPhotosErrorChangeNotSupported`, "The change request is not
+supported as configured") whenever the alternate is added from memory
+(`addResource(with:data:options:)`): a DNG with a HEIF or a JPEG, in either order, with or
+without type identifiers or matching file names, with any `originalResourceChoice`, and also with
+read-write access. The shape in Apple's RAW capture article (the DNG from a file, the processed
+copy from memory) fails the same way. The same pair succeeds when the alternate is added from a
+file (`addResource(with:fileURL:options:)`), with or without `shouldMoveFile`, whether the main
+file comes from memory or from a file. Single resources from memory succeed, which matches the
+device. The Photos daemon logs "PhotoKit validation failed" before reading the files, so the file
+contents aren't the cause. Apple's documentation doesn't state this rule.
+
+**Fix.** `PhotoKitLibrary` adds each pair's alternate from a file and everything else from
+memory (`PhotoKitMapping.Resource.addsFromFile`, `PhotoKitMapping.prepare(_:stage:)`). The file
+is written by `ResourceStaging` (protected until the first unlock after the device starts,
+so it can be written and read while the device is locked) under a random name in the app's
+temporary directory, moved into the library (`shouldMoveFile`), and anything left is deleted as
+soon as the change ends, whether or not it succeeded. If the file can't be written (for example,
+before the first unlock after the device starts, or when storage is full), the pair is saved
+as two photos from memory, so the photo is still saved. A failed change logs the error's domain
+and code (and its underlying error's), and each request's resource types, marked private; the
+person sees only the plain banner. A Debug build run from Xcode shows the private values in
+Xcode's console (an assumption from developer reports, not from Apple's documentation).
+
+**Tests.** `PhotoKitRequestShapeTests` (`NopeCaptureTests`) checks every format combination
+(RAW, HEIF, JPEG alone and in every combination, which is also every lens's processed fallback),
+with each pairing: every request has one `.photo` first, from memory, and at most one
+`.alternatePhoto`, from a file, only with a DNG as the main file; every file is saved exactly
+once; only the alternate is staged; and when staging fails, each file is its own request.
+Burst, bracket, interval, Astro and comparison frames go through the same `PhotoSaver` call, so
+the same shapes. `ResourceStagingTests` checks the file names, contents and deletion. Checked by
+hand in the iOS 27.2 Simulator on 2026-11-15 with the real `PhotoKitLibrary` and the fixtures
+of six cases (first launch signed, every item on unsigned, ultra wide, telephoto, front camera
+mirrored, a burst and an Astro frame): all 7 format combinations with both pairings saved, the
+library held the DNG as `.photo` with the chosen copy as `.alternatePhoto` and the other copy
+on its own, and no file was left in the temporary directory.
+
 ### Developed looks
 
 The RAW renderer can't run on a hand-built DNG, so one test needs a real DNG and is skipped
@@ -193,24 +239,68 @@ TEST_RUNNER_NOPE_COMPAT_FIXTURES=$PWD/compat-fixtures xcodebuild test -scheme No
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2' \
   -only-testing:NopeSigningTests/FileCompatibilityTests
 scripts/check-file-compat.sh compat-fixtures          # every validator that is installed
-scripts/check-file-compat.sh --require "c2patool exiftool dng_validate" compat-fixtures
+# The pinned, checksum-verified validators CI uses, in a directory of your choice:
+PATH="$(scripts/install-file-validators.sh "$PWD/build/file-validators"):$PATH" \
+  scripts/check-file-compat.sh --require "c2patool exiftool" compat-fixtures
 ```
 
 `check-file-compat.sh` runs c2patool on every file (signed: `Valid` with
 `signingCredential.untrusted` the only failure; unsigned: no manifest), `exiftool -validate` on
-every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG. None of
-them is a project dependency, and none is in `security/allowed-dependencies.txt`. CI writes the
-fixtures in `unit-tests`; the `file-compat` job runs the validators only after the maintainer
-approves them by setting the repository variable `NOPE_FILE_VALIDATORS` to the approved list
-(for example `c2patool exiftool`), and fails if a listed validator is missing. `dng_validate`
-has no install step yet: it is built from Adobe's DNG SDK, whose license must be reviewed first.
+every file (errors fail, warnings are printed) and Adobe's `dng_validate` on every DNG when it is
+installed. None of them is part of the app. c2patool and exiftool are maintainer-approved for CI
+(`security/allowed-dependencies.txt`, `THIRD_PARTY.md`): `scripts/install-file-validators.sh`
+downloads c2patool 0.28.4 (the project's universal macOS release asset) and exiftool 13.55 (the
+latest production release, from SourceForge or CPAN), checks each against its pinned SHA-256
+before unpacking it, and checks the installed versions. CI writes the fixtures in `unit-tests`,
+and the `file-compat` job runs on every build with `--require "c2patool exiftool"`, so a missing
+validator fails it. `dng_validate` isn't approved and doesn't run in CI. Updating a pin is a
+reviewed change to the script, with the new checksum.
 `scripts/test-check-file-compat.sh` tests the script with stand-in validators.
+
+**Run locally on 2026-11-16** with `scripts/install-file-validators.sh` (c2patool 0.28.4,
+exiftool 13.55) on the 280 fixtures of this branch: `check-file-compat.sh --require "c2patool
+exiftool"` passed. c2patool reported every signed file `Valid` with `signingCredential.untrusted`
+the only failure, and no manifest in any unsigned file; exiftool `-validate` reported no errors.
+It printed warnings, which don't fail the check: on 106 of the JPEGs, "Missing required JPEG"
+tags `YCbCrPositioning` (0x0213), `ComponentsConfiguration` (0x9101) and on 90 of them
+`ColorSpace` (0xA001), on 19 `GPSVersionID` and on 6 `ExifVersion`; on 45 DNGs, "[minor] Invalid
+date/time format for EXIF:ModifyDate" (the empty `DateTime` a DNG carries with Date and Time off,
+issue #65). The JPEG tags are on the allowlist where they apply but ImageIO didn't write them;
+the files open. Whether to supply them is a follow-up.
 
 **Run locally on 2026-11-14** (Mac with macOS 27.2.1, iOS 27.2 Simulator), on the 260 files:
 c2patool 0.29.0 (installed on the Mac by hand) reported every signed file `Valid` with
 `signingCredential.untrusted` the only failure and found no manifest in any unsigned file; `sips`
 on macOS opened every file as its type (62 DNG, 99 HEIC, 99 JPEG). exiftool and `dng_validate`
 weren't installed, so they haven't been run on these files.
+
+### Standard File Tags
+
+The matrix saves every case with Standard File Tags on (the default) except `standardTagsOff`:
+first launch and every item on, signed and unsigned, as RAW, HEIF and JPEG and as each processed
+fallback, with the minimal set (`theMatrixCoversEveryOption` requires both states, for every
+format and each fallback). `StandardFileTagsEncodingTests` encodes HEIF and JPEG in each color
+space and checks what ImageIO keeps: every tag, except `ColorSpace` in a Display P3 JPEG, which
+ImageIO drops; the read-back passes either way.
+
+`exiftool -validate` on the 300 fixtures (iOS 27.2 Simulator, exiftool 13.55, 2026-11-16; no
+errors in any file). **With them on:** HEIF and DNG files report no warnings; a DNG without its date
+no longer reports "Invalid date/time format for EXIF:ModifyDate" (exiftool accepts the standard's
+blank form, `    :  :     :  :  `, and reports the empty text); the GPS version, `ExifVersion` and
+`ComponentsConfiguration` warnings are gone. Two remain on JPEGs, because ImageIO can't write
+those tags (`docs/PRIVACY.md`, "Standard File Tags"): "Missing required JPEG IFD0 tag 0x0213
+YCbCrPositioning" (106 JPEGs, all of them) and "Missing required JPEG ExifIFD tag 0xa001
+ColorSpace" (90, the Display P3 ones). **With them off** (the `standardTagsOff` cases): the
+minimal set's warnings, on JPEGs `YCbCrPositioning`, `ColorSpace`, `ComponentsConfiguration`,
+`ExifVersion` (processed fallback) and `GPSVersionID` (with a location), and on DNGs the
+`ModifyDate` format.
+
+**Device checks:** with Standard File Tags on (the default) and the date off, a RAW is saved on
+each lens and its `DateTime` is the 19-character blank date or empty (both pass the read-back;
+note which); with it on and Location on, the HEIF, JPEG and DNG carry `GPSVersionID` 2.3.0.0; an
+exiftool dump of a JPEG and a HEIF shows `ComponentsConfiguration`, `FlashpixVersion` and
+`ColorSpace` as in `docs/PRIVACY.md`; the processed fallback keeps the system's own values where
+it has them. With it off, the files match the earlier minimal set.
 
 ### Manual checks in other apps
 
@@ -264,11 +354,57 @@ and Settings rotates. On iPad the window rotates and the shutter is in the colum
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
 
+Every test runs in the system's light setting, the Simulator's default, unless it sets dark
+with `useAppearance(_:)`; `tearDown` waits (up to 30 seconds) until no photo is being saved,
+closes the app, then restores portrait and, only if it changed, light. Settings, Presets, first run and the camera access screens
+follow that setting, so their audits run in light; `testSettingsScreensPassAccessibilityAudits`, `testSettingsAtTheLargestTextSize`
+and `testSettingsInRightToLeftLayout` set the dark setting, and
+`testSettingsScreensPassAccessibilityAuditsInTheLightSetting` and
+`testSettingsAtTheLargestTextSizeInTheLightSetting` audit every Settings screen in light,
+contrast included (except on iPad, as for dark). `AppearanceUITests` samples the screenshot's
+light share to check which screens are light and which dark, including a change of the setting
+while Settings is open (the iPhone sheet follows it, the iPad popover keeps its setting until
+it closes) and while only the camera shows, and that the camera's own sheets stay dark in the
+light setting.
+
+What we observed on the iOS 27.2 Simulator (Xcode 27.2), locally and on the runner: on a new
+Simulator whose first change of the light or dark setting came from a test
+(`XCUIDevice.appearance`), that change didn't apply, nor did any later one, from a test or from
+`xcrun simctl ui <device> appearance`, until the Simulator booted again; the system's own
+Settings app stayed light too, and the appearance tests failed on every CI shard (0.97 light
+where dark was expected). On new Simulators whose first change came from simctl, every later
+change applied, in each of our tries. The cause isn't known. `scripts/run-ui-test-shard.sh`
+therefore switches the Simulator to dark and back with simctl before the tests, reads each
+setting back and stops the shard if it didn't take, and `useAppearance(_:)` waits up to five
+seconds for the device to report the new setting. On a new local Simulator, run
+`xcrun simctl ui <device> appearance dark` and then `light` once before these tests (or boot it
+again if a test changed the setting first).
+
+The Apple Watch app (issue #63) has its own UI tests on the watch Simulator, with a simulated
+phone (`-NopeSimulatedPhone ready|notSigned|notRunning|permissionDenied|unreachable|countdown`,
+Debug builds only), because a UI test can't drive a paired iPhone:
+
+```sh
+xcodebuild test -project App/NopeCamera.xcodeproj -scheme NopeWatch \
+  -destination 'platform=watchOS Simulator,name=Apple Watch Series 12 (46mm),OS=27.2' CODE_SIGNING_ALLOWED=NO
+```
+
+They run the full accessibility audit in every state (ready, a signed and an unsigned result,
+the camera not running, camera access declined, the phone not reachable, the countdown and its
+cancel, the delay list, and the largest text size) with no exceptions. The audit flagged the
+title "nope." as a label that isn't human-readable, so the watch screen has no title. The watch
+tests aren't in the iPhone shard list; CI runs them in their own job.
+
 `audit(_:)` in `NopeAppUITests.swift` runs every audit with these documented exceptions; every
 other finding fails the test:
 
 - an element cut by the window's edge (a form row below the fold), and a contrast finding with
   no element, which comes from such a row: the audit measures the clipped edge;
+- the same for a row cut by the upper or lower edge of a popover (Settings on iPad). In build
+  44098207588 `testSettingsAtTheLargestTextSize` failed on iPad with "Dynamic Type font sizes
+  are partially unsupported" on the Choose Details header "In Each Photo", whose frame (695.5
+  to 779 points down) ran 27 points past the popover's lower edge (752); the build before it
+  passed with the same code in Settings. It wasn't reproduced locally;
 - in `OverlayUITests`, a finding on text that was below the fold before the audit: the audit
   scrolls such text into view itself and measures it while the scroll view moves (on iPad at the
   largest text size it reported a manual control row 1,324 points down as low contrast at the
@@ -279,6 +415,11 @@ other finding fails the test:
   the iOS 27.2 Simulator reported system form section headers and footers as "partially
   unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
   included, at the largest accessibility text size;
+- a Dynamic Type finding on the Choose Details footer "On: each photo keeps only what it needs
+  to open. Off: choose each item below." and the header "In Each Photo": the iPad runner's
+  audit reports them although they grow at every text size, which
+  `testChooseDetailsTextGrowsAtEveryTextSize` measures (see "Dynamic Type findings on the iPad
+  runner");
 - open iPad findings, on the manual accessibility pass: the lens buttons' "No RAW" caption in the
   iPad control column is reported as "Dynamic Type font sizes are partially unsupported",
   although it is visibly enlarged at the largest size and passes on iPhone; and the Settings and
@@ -346,6 +487,26 @@ settings are never touched.
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
 | `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from the tray and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
+In right-to-left layout the viewfinder, which `CameraScreen` draws behind the interface, was
+placed from the wrong edge: beside the control column (iPad) it sat a column's width to the left
+of the picture's frame, under the column, and left a black strip at the picture's right edge.
+The warning chips ("Location On", "Not Signed") then crossed the picture's edge, and in build
+44075379089 their contrast audit failed on iPad in `testLocationWarningInRightToLeftLayout` and
+`testCameraRightToLeftWithAPhotoAndWarnings` (the failing run's screen recording shows the
+strip). `testViewfinderFillsThePictureRightToLeft` checks, with a yellow viewfinder, that it
+covers the picture's frame to both side edges and nothing outside it.
+
+`testPhotosAccessDeniedIsExplained` failed once on the iPad runner (build 44075379089): the
+shutter was pressed and no failure banner came. The app's output in the result bundle has, at
+that moment, "onChange(of: CaptureStatus) action tried to update multiple times per frame": the
+simulated save fails at once, so the capture status changed several times within one frame, and
+SwiftUI ran the camera view's `onChange` action once and dropped the rest, the failure with
+them. A small SwiftUI program that changes an observed value three times in one frame shows the
+same message, and `onChange(of:)` and `task(id:)` both missed the last value in 12 of 180
+rounds, while a loop that waits for the change with `withObservationTracking` and then reads
+the value missed none. The camera view now records capture results with such a loop
+(`recordCaptureResults()`), so a failure or a save is shown however fast it comes.
+
 At the largest text sizes the screen scrolls, and the audit ignores a contrast issue only for an element that runs past the screen edge (it measures the clipped edge); every other issue still fails (`auditScrollingScreen`).
 
 `testBlankPictureAtTheLargestTextSize` failed intermittently on CI with "Contrast failed" on
@@ -355,7 +516,8 @@ scrolling. The test now waits for the final state ("isn't sending a picture"), s
 top, and audits only once the layout has stopped moving: the shutter's frame must read the same
 twice in a row, half a second apart (`waitUntilStill`), instead of a fixed pause. Issues are
 judged after the audit rather than inside its handler (querying the app from the handler can
-make the audit time out), and a failing audit is repeated once after the layout settles again.
+make the audit time out), and an issue fails the test when two more audits of the same screen
+report it again (see "Dynamic Type findings on the iPad runner" below).
 It could not be made to fail locally before or after the change (10 runs, 4 of them with every
 CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
 
@@ -384,41 +546,78 @@ the local toolchain). Jobs:
 
 | Job | What it runs |
 |---|---|
-| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write the file compatibility fixtures, uploaded when `NOPE_FILE_VALIDATORS` is set), the coverage gate |
+| `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/8` … `8/8` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/8` … `8/8` | The same shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests 1/3` … `3/3` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/2`, `2/2` | The same tests in two shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
-| `file-compat` | Only once the maintainer sets `NOPE_FILE_VALIDATORS`: the approved external validators on the fixtures from `unit-tests` (see "File compatibility") |
+| `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
+| `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
 
 ### UI test shards
 
-The UI suite takes about 85 minutes per device on the GitHub macOS runner (about twice as long
-as on a recent Mac, so CI limits are sized from runner times, never from local ones). CI runs it
-in eight shards per device, about 10.5 minutes of tests each plus about 5 minutes of setup, with
-a 35-minute limit per job. `scripts/ui-test-shards.txt` lists every UI test with its shard and
-its time in seconds on the runner (the longer of the iPhone and iPad runs), or, marked `est`,
-twice its local time until the runner has measured it; the shards are balanced by those times
-(longest test first, into the shard with the least time so far). To rebalance, take the times
-from the `Test Case … passed (n seconds)` lines of the shard jobs' logs.
+The UI suite takes about 131 minutes of test time on the iPhone Simulator and 138 on the iPad
+Simulator on the GitHub macOS runner (about twice as long as on a recent Mac, so CI limits are
+sized from runner times, never from local ones). CI runs it in three iPhone shards and two iPad
+shards, each its own job:
 
-`scripts/ui-test-shards.sh args <n>` prints the `-only-testing` arguments of shard n.
+| Job | Tests (listed times) | With about 7 minutes of setup | Limit |
+|---|---|---|---|
+| `ui-tests 1/3`, `2/3`, `3/3` | 44 minutes each | 51 minutes | 100 minutes |
+| `ui-tests-ipad 1/2`, `2/2` | 69 minutes each | 76 minutes | 130 minutes |
+| `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
+
+The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
+runtime disk images on the runner") and for one second run of unfinished tests after an
+infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
+larger jobs, 6 jobs per build boot a Simulator instead of 17, and the runner's Simulator
+failures start in the minutes after a job's first use of the Simulator.
+
+`scripts/ui-test-shards.txt` lists every UI test with its iPhone shard, its iPad shard and its
+time in seconds on the runner on each device, or, with an `e`, an earlier or estimated time
+(twice the local time for a new test) until the runner has measured it. Each device's shards
+are balanced by its own times (longest test first, into the shard with the least time so
+far). To rebalance, take the times from the per-test result files (see "Flaky tests") or from
+the `Test Case … passed (n seconds)` lines of the shard jobs' logs; `scripts/ui-test-shards.sh
+times` prints each shard's total.
+
+`scripts/ui-test-shards.sh args <iphone|ipad> <n>` prints the `-only-testing` arguments of that
+device's shard n, and `count <iphone|ipad>` the number of its shards.
 `scripts/ui-test-shards.sh check`, in `repo-checks`, fails when a test in `App/NopeAppUITests` is
-in no shard or in two, when a listed test doesn't exist, or when the shard matrices or job names
-in `build.yml` don't match the list, so a new test can't be skipped silently: add it to the
-shard with the least time, marked `est` with twice its local time.
+listed for no shard or twice, when a listed test doesn't exist, or when the shard matrices or
+job names in `build.yml` don't match either device's shards, so a new test can't be skipped
+silently: add it to the shard with the least time on each device, with twice its local time
+and an `e`.
 
 Each shard job runs `scripts/run-ui-test-shard.sh`: it boots the Simulator and waits until it
-has booted (`simctl bootstatus -b`), installs the app and launches it once, then runs the shard.
+has booted (`simctl bootstatus -b`), switches it to dark and back with simctl (so the tests'
+changes of the light or dark setting apply, see "UI tests and accessibility audits"), installs the
+app and launches it once, then runs the shard. Both scripts first stop the Simulator's
+background task scheduler (`scripts/stop-simulator-background-tasks.sh`, see "The Simulator's
+background tasks on the runner" below) and its push service (`scripts/stop-simulator-push.sh`,
+see "The Simulator's push service on the runner" below). The watch job does the same with `scripts/prepare-simulator.sh` before
+`test-without-building`, and names the watch Simulator by the identifier the script prints: on
+the runner its name also matches the iPhone it is paired with, and `build-for-testing` stopped
+with "multiple devices matched" (`xcodebuild test` had accepted the name). in the 0.3.0 run its first test failed to launch the watch app within
+XCTest's limit (301 s) and the next failed to terminate that launch; the watch app hadn't
+changed since its last passing run. In build 44075379089 the first watch test again failed to
+launch the app ("Timed out while launching application via Xcode", 170 s) and the other seven
+passed: the watch's system app answered the test runner at once, but `xcodebuild` started the
+launch two minutes later, while it was booting the iPhone Simulator paired with the watch (it
+boots that iPhone for a watch test run). `scripts/prepare-simulator.sh` now boots the paired
+iPhone too, beside the watch and before the build, and waits for both, and it fails the step if
+the app can't be launched once (it ignored a failed launch before).
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
-runner had to boot itself. The script retries a shard once, after rebooting the Simulator, only
-when the test runner failed before any test started; a run in which a test started is never
-retried. `scripts/test-ui-test-shards.sh` tests both scripts.
+runner had to boot itself. Such a run, in which the test runner failed before any test started (any "… while preparing to
+run tests" error, including "Test crashed with signal term while preparing to run tests", which
+ended an iPad shard of build 43786103024 after its Simulator took five minutes to boot), is an
+infrastructure failure and is run again once; a test that failed is never run again (see
+"Infrastructure and test failures" below). `scripts/test-ui-test-shards.sh` tests the scripts.
 
 On the runner the tests wait for state rather than assume speed: a new launch waits until the
 previous run of the app has exited (`launchAfterThePreviousRunExits()`; a launch right after
@@ -431,6 +630,255 @@ the app showed no crash report, and the spindump XCTest took at a failed launch 
 main thread idle in its run loop with 0.014 s of CPU in 75 s while its threads waited to run: the
 runner, not the app, was stalled.
 
+#### The Simulator's push service on the runner
+
+In build 44075379089 UI tests failed on six jobs with a different timeout each ("Failed to
+terminate", "Timed out while evaluating UI query", "Audit failed to complete in time", "Timed out
+while launching application via Xcode"), as in the builds before it. The Simulator system logs in
+the failed jobs' result bundles (`xcrun xcresulttool export diagnostics`, then `log show
+--archive …/system.logarchive`) show the same thing on every one, iPhone, iPad and watch: the
+Simulator's push service (`apsd`) connects to Apple's push server, can't get its device
+certificate ("Could not get certificate from simulator with error … Client is not supported"),
+closes the connection and connects again at once, without a pause, from boot to the end of the
+job: about 500 connections a minute, each with a TLS handshake and a certificate check in
+`trustd`, and 1,200 to 1,800 log lines a second (1.77 million lines from `apsd` in the 25 minutes
+of one iPhone shard; 312,000 of the 408,000 lines the watch Simulator logged during its failed
+launch). On a developer's Mac the same Simulator's `apsd` logged 97 lines in two minutes and
+no such error. How much of the runner's three cores this takes wasn't measured.
+
+The timeouts themselves were the whole Simulator standing still, not the app: in the iPhone
+shard whose `testPresetsInRightToLeftLayout` timed out on a query, the app answered the test
+runner's accessibility requests the whole time, about 17 log lines a second instead of the
+usual 230, and in the same two minutes the push service's own reconnects fell from about 700 a
+minute to 50. The app showed no crash report or hang in any failed job.
+
+The app has no push notifications and makes no network request, so `scripts/stop-simulator-push.sh`
+removes the service from the Simulator's launchd (`launchctl bootout`) after boot; it comes back
+when the Simulator boots again. The script first prints how often the service gave up its
+connection in the last minute, so each job's log shows whether its runner was affected. No test,
+audit or limit changed.
+
+#### The Simulator's background tasks on the runner
+
+In build 44098207588, with the push service stopped, one test timed out in each of six shards
+(iPad 1, 3, 5 and 7, iPhone 4 and 5): "Failed to terminate", "does not have a process ID"
+after a launch, and a query that took 283 seconds. Two of them ran on Simulators whose push
+service had reported no dropped connection. Each failed test ran within ten minutes of its
+Simulator's boot, and the Simulator system logs show what ran then: the Simulator's background
+task scheduler (`dasd`) started `com.apple.springboard.posterboardupdate.prewarm`, PosterBoard's
+prewarm of the wallpaper gallery, which took 127 to 158 seconds, and then the other first-boot
+tasks (Spotlight indexing, Health, Siri, Mail and Maps migrations, about 100 in all). Prewarm
+and failed test, by the logs' times (UTC):
+
+| Shard | Prewarm | Failed test |
+|---|---|---|
+| iPad 1 | 14:51:26 to 14:53:48 | 14:50:27 to 14:53:53, terminate failed at 14:53:51 |
+| iPad 3 | 14:17:10 to 14:19:48 | 14:16:38 to 14:22:22, stalled from 14:17:29 |
+| iPad 5 | 15:15:46 to 15:17:53 | 15:15:59 to 15:19:49 |
+| iPad 7 | 14:24:38 to 14:26:55 | 14:24:44 to 14:26:59 |
+| iPhone 4 | 15:39:01 to 15:41:16 | 15:39:05 to 15:41:17 |
+| iPhone 5 | 14:27:31 to 14:29:39 | 14:27:57 to 14:32:40 |
+
+The spindump XCTest took during the failed launch on iPhone shard 5 (14:29:15) shows the runner
+(3 cores, 7 GB) with all three cores busy and short of memory: 25 wallpaper extension processes
+and 23 Metal compiler processes of the prewarm, 958 processes in all, and 3.1 of the 7.1 CPU
+seconds sampled spent in the kernel, 1.4 of them in its memory compressor and 1.4 reading the
+Simulator's disk image. The app had launched (the Simulator reported its process ID six seconds
+after the request), and the test runner didn't learn of it for four minutes.
+
+The app has no background modes and schedules no background task, so
+`scripts/stop-simulator-background-tasks.sh` removes the scheduler from the Simulator's launchd
+(`launchctl bootout`) right after boot, before it starts the tasks; it comes back when the
+Simulator boots again. Checked on two new iPad Simulators on a Mac: the one left alone ran the
+prewarm (14 seconds there) and about 100 tasks in its first seven minutes, the one with the
+scheduler stopped ran none, and services that asked for a task were refused without retrying
+in a loop (about 240 log lines in six minutes). No test, audit or limit changed.
+
+#### Simulator runtime disk images on the runner
+
+The failures that ended a Simulator in builds 44124454610 and 44149517211 have one cause, shown
+by the disk image service's log (`simdiskimaged.log`) in the 14 result bundles we have from
+builds 44098207588, 44124454610 and 44149517211, all on runner image `xcode-27-arm64`
+20261104.0337.1. When a job first uses the Simulator, the
+service mounts each runtime's disk image. On every runner two of them (watchOS 27.0 and tvOS
+27.0) fail to mount the usual way ("Cryptex mount failed … Code=2") and are mounted from a plain
+disk image under `/Library/Developer/CoreSimulator/Volumes`; from 147 to 716 seconds after its
+start the service tries to mount them again and unmount the first mount, which mostly fails and
+leaves things as they were. On two of the 14 runners another runtime failed too at the start
+("Disk image operation failed with error code 153"), and those are the two jobs whose Simulator
+host process (`SimLaunchHost`) crashed:
+
+| Job | Mount that failed at the start | What followed |
+|---|---|---|
+| 44124454610, iPad shard 1 | xrOS 27.0 | remounted at +427 s; host process crashed at about +432 s; the first test was cut short |
+| 44149517211, iPhone shard 8 | xrOS 27.0 and iOS 27.2, the runtime under test | iOS 27.2 unmounted and remounted at +535 to +550 s; host process crashed three times from +543 s; then "The iOS 27.2 simulator runtime is not available" |
+
+In the 12 other bundles only the two usual runtimes were on plain disk images and the host
+process didn't crash. Two more jobs without a result bundle fit the times: iPad shard 8 of
+44124454610 ("server died" at about +320 s) and iPad shard 4 of 44149517211, where stopping the
+background task scheduler took 9.6 minutes and the install ended with "server died" at about
++707 s; its retry ran into a second loss of the Simulator in the first test and the job's
+35-minute limit. Their cause is assumed, not shown.
+
+`scripts/wait-for-simulator-runtimes.sh`, the first use of simctl in the shard and watch jobs,
+reads `xcrun simctl runtime list -j`. When a runtime other than the two usual ones
+(`SIMULATOR_RUNTIMES_ON_DISK_IMAGES` in `build.yml`) is mounted under
+`/Library/Developer/CoreSimulator/Volumes`, it waits until 750 seconds have passed, with nothing
+booted, so the remounting is over before a Simulator runs: in the bundles the last unmount came
+716 seconds after the service started, with nothing later in logs that run to 1,772 seconds.
+On other runners it returns at once. The job limits leave room for the wait; no test's time
+limit changed. That the wait is enough rests on
+those logs: a runner whose runtime under test never mounts the usual way hasn't been seen
+through a whole job.
+
+#### A Simulator that dies on the runner
+
+In build 44124454610 two iPad shards lost their Simulator. In shard 1 the first test stopped at
+"Setting up automation session", the test runner was ended ("Test crashed with signal term"),
+`xcodebuild` started it again and the other 12 tests passed, but the shard failed on the test
+that was cut short. In shard 8 `simctl install` ended with "Mach error -308 (ipc/mig) server
+died" before any test ran. Shard 1's result bundle shows the cause: the runner image mounts
+some Simulator runtime disk images twice, and a few minutes into the job the Simulator's disk
+image service (`simdiskimaged.log`) unmounted the duplicates (tvOS 27.0 at 17:39:46, watchOS
+27.0 at 17:39:58; "Image is a duplicate of existing image … preferring cryptex variant").
+A minute later the Simulator's host process, under which every booted Simulator runs, crashed
+while unloading a library from an unmounted image (`SimLaunchHost.arm64`, 17:41:07,
+`EXC_BAD_ACCESS`, `KERN_MEMORY_ERROR` in `dlclose`), and the Simulator's own processes ended
+with it (17:41:07 to 17:41:15). "Simulator runtime disk images on
+the runner" above has what the two crashes share. Shard 8 uploaded no result bundle, so its
+cause is assumed, not shown, to be the same.
+
+This is outside the app and the tests, so such a run is an infrastructure failure and its
+unfinished tests are run again once (next section). The first version of that second run,
+used in build 44149517211, ran only the tests that had started and had no result: in iPhone
+shard 4 the host process crashed in the first test, `xcodebuild` ended the whole run, the one
+test cut short ran again and passed, and the job passed although 17 of its 18 tests had never
+run. The second run now takes every test without a result, and
+`scripts/test-ui-test-shards.sh` has that case.
+
+#### Infrastructure and test failures
+
+`scripts/ui-test-run-lib.sh`, used by the shard jobs and the watch job, classifies a failed
+run from its `xcodebuild` log:
+
+- **Test failure:** a test failed with a result (`Test Case '…' failed`). It is never run
+  again, whatever else happened in the run. A test that was cut short with no sign that the
+  Simulator died (the test runner crashed or was ended) counts as a test failure too.
+- **Infrastructure failure:** no test failed with a result, and no test started, or the
+  Simulator's host process left a new crash report (`SimLaunchHost*.ips` in
+  `~/Library/Logs/DiagnosticReports`), or the log has "simulator runtime is not available" or
+  "(ipc/mig) server died". Failing to boot the Simulator or install the app counts as one.
+
+After an infrastructure failure the job reboots the Simulator and runs once more, in the same
+job, the tests that have no result yet (the finished ones are passed to `xcodebuild` as
+`-skip-testing`); a second infrastructure failure fails the job as one. There is one second
+run per job at most, and no workflow-level rerun, so no passed job or test is repeated. The
+first run's result bundle is kept and uploaded as `…-interrupted.xcresult`.
+
+The job summary on GitHub names the classification ("ui-tests 2/3: Passed", "Test failure" or
+"Infrastructure failure"), says whether a second run happened, and lists the tests that failed
+or were cut short.
+
+#### Flaky tests
+
+Each shard job and the watch job uploads its per-test results as an artifact
+(`test-results-ui-tests-<n>`, `test-results-ui-tests-ipad-<n>`, `test-results-ui-tests-watch`,
+kept 30 days): a JSON Lines file with one line per test and run of it, holding `test`
+(Class/test), `result` (`passed`, `failed`, `skipped`, or `interrupted` for a test that
+started and has no result), `seconds`, `attempt` (2 for the second run after an infrastructure
+failure), `job`, `device`, `shard`, `runner_image`, `run_id`, `run_attempt` and `sha` (the
+pull request's head commit).
+
+```sh
+scripts/flaky-tests.sh                 # the last 20 runs of the build workflow, with gh
+scripts/flaky-tests.sh -n 50 -b main   # more runs, one branch
+scripts/flaky-tests.sh --from results  # result files already downloaded
+```
+
+It lists, with counts, the tests that passed and failed on the same commit, the tests that
+passed and failed across the commits looked at, and the tests that passed only in the second
+run after an infrastructure failure.
+
+#### Dynamic Type findings on the iPad runner
+
+In build 44124454610 two iPad tests failed with "Dynamic Type font sizes are partially
+unsupported" on text that the failing runs' screen recordings show whole, wrapped and not cut,
+at the largest size, and smaller at the smaller sizes the audit switches through:
+`testSettingsAtTheLargestTextSize` on the Choose Details footer "On: each photo keeps only what
+it needs to open. Off: choose each item below." (frame 30, 428.5, 440 × 267, inside the Settings
+popover), and `testLastPhotoDetailsAtTheLargestTextSize` on the Files row title "HEIF" (frame
+40, 355.5, 111.5 × 63.5). On a Mac the audit reports no Dynamic Type finding on either screen,
+also with every core busy.
+
+`audit(_:)` writes each Dynamic Type issue, and each issue no rule ignores, to the test log
+("Audit round n: …", with the type, the element's label and frame, the window's frame and
+whether a rule ignored it). In build 44149517211 those lines show what the iPad runner's audit
+does: its first pass over a screen at the largest text size reported findings no rule ignores
+in five tests (ten findings, nine of them Dynamic Type: the same Choose Details footer in both
+Settings tests, five Files rows of the last photo's details, two texts of the compare view),
+and the second audit of the same screen three seconds later reported none of them, so all five
+tests passed. No iPhone shard had such a finding. The two failures of build 44124454610 were
+runs where the second audit still reported one row; in the details test it was a row the first
+audit hadn't reported.
+
+The audit's findings on these screens therefore change from one audit to the next while the
+screen doesn't. An issue now fails the test when the audit reports it three times in a row: in
+the first audit and again in each of two more audits of the same screen (the same type on an
+element with the same label). A finding that is real is reported every time and still fails.
+Why the runner's first audit reports them isn't known.
+
+In build 44209365138 one finding did pass that rule: in `testNightModeSettingsScreensAtTheLargestTextSize`
+on iPad, where Settings is a sheet, all three audits of Choose Details reported the master
+switch's footer ("On: each photo keeps only what it needs to open. Off: choose each item
+below.", 548 × 167 points) and the header after it ("In Each Photo", 548 × 83.5) as "Dynamic
+Type font sizes are partially unsupported"; these are the two texts of the earlier popover
+failures. Both are a system `Form` section's footer and header with no font, size limit or line
+limit of the app's own. Measured on the iPad Simulator in night mode at each of the nine text
+sizes from the default to the largest, each grows at every step (footer height 30, 50, 54.5,
+59, 68.5, 77.5, 129.5, 147.5, 167 points; header 40.5, 43, 45.5, 47.5, 53.5, 59.5, 68, 76.5,
+83.5), and at the largest size they measure what the runner's audit reported. So the finding
+is the audit's, not the layout's. The audit no longer fails on a Dynamic Type finding on these
+two texts (by label, `measuredDynamicTypeLabels`), and `testChooseDetailsTextGrowsAtEveryTextSize`
+checks what the audit was asked instead, on iPhone and iPad: both texts and the master switch's
+title are larger at every text size than at the size before.
+
+#### Audits that don't finish
+
+In build 44185929631 two tests failed with "Audit failed to complete in time" (XCTest's error
+-56): `testComparisonShotShowsBothPicturesAndTheirDetails` on iPhone and
+`testLastPhotoDetailsAtTheLargestTextSize` on iPad. Both failed in the audit that follows a
+scroll (`audit(_:afterScrolling: true)`), in its first pass, so the rule about repeated audits
+played no part. XCTest gives an audit 15 seconds. On a Mac the compare test failed the same way
+six times out of six: on the compare details, scrolled to the identifier row, the whole audit
+ran into the 15 seconds and so did the contrast check alone (the same list's audit before the
+scroll took two seconds); `performCompleteAccessibilityAudit`, which runs one audit per check
+after such a timeout, has nothing smaller than one check to fall back to. On the iPad runner
+the audit of the last photo's details after a scroll had taken about ten seconds when it passed
+(build 44149517211).
+
+After a scroll every contrast finding is ignored (see `audit(_:)` above: the rows are
+contrast-checked before scrolling), and so are the contrast or Dynamic Type findings of a test
+that skips that check. `audit(_:)` and `auditScrollingScreen(_:)` now leave a check whose every
+finding is ignored out of the audit, so the slowest check doesn't run where its result was
+thrown away; what fails a test is unchanged. With that the compare test passes on a Mac (three
+of three runs on iPhone, two of two on iPad). When an audit does time out,
+`performCompleteAccessibilityAudit` writes to the test log how long it ran and how long each
+check then took alone, which XCTest's error doesn't say. Why the contrast check doesn't finish
+on that part of the compare details isn't known.
+
+#### Continue on the first-run screen (open)
+
+In build 44149517211 two tests at the largest text size failed the same way, once each:
+`testPresetsAtTheLargestTextSize` (iPhone shard 5) and `testLandscapeAtTheLargestTextSize` (iPad
+shard 3). The test tapped Continue on the first-run screen and the camera didn't come within
+ten seconds; the hierarchy and the screen recording at the failure still show the first-run
+screen. The Simulator's log shows the touch reaching the app (touch down and up 71 ms apart,
+then the app's own event dispatch lines), and the steps before the tap took as long as in runs
+that passed. Neither ran during a remount of the runtime disk images (19 and 13 minutes into
+their jobs). Both tests passed in the two builds before with the same app code, and in 25 local
+runs of each on an iPhone Simulator the step worked every time; the camera model received one start request
+per launch in a local check. The cause isn't known, and nothing was changed for it.
+
 To run one shard locally, with a Simulator named as in CI:
 
 ```sh
@@ -442,10 +890,15 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 ### Siri and Shortcuts in the UI tests
 
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
-`-NopeSimulatedShortcut <seconds>`: the app sends a Take Photo request through the same
-`ShortcutInbox` the intent uses and shows what Siri would say (`ShortcutUITests`: a delay with
-the countdown, a cancelled countdown, and no camera access). The request logic is unit tested in
-`ShortcutTests`.
+`-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
+`burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket, or
+`lens-ultraWide` for Switch Lens. The app sends
+the request through the same `ShortcutInbox` the intents use and shows what Siri would say
+(`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
+of three, a bracket in full auto and a lens switch). The Interval drive mode is covered by
+`testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
+and right-to-left. The request logic (counts, lenses, the light, interval shooting,
+requests without a camera screen) is unit tested in `ShortcutTests`.
 
 ## On-device checks
 
@@ -465,7 +918,11 @@ iPad:
 - saving (`PhotoKitLibrary`, `SystemCaptureHardware`, `CoreImageRAWRenderer`): the add-only
   prompt appears once and declining it shows the "isn't allowed to add photos" banner, whose
   Open Settings opens the app's page in the Settings app; a RAW
-  plus HEIF appears as one photo in Photos with the RAW as the original; every saved file passes
+  plus HEIF appears as one photo in Photos with the RAW as the original; RAW plus HEIF, RAW plus
+  JPEG, and RAW plus HEIF plus JPEG with each "Paired with RAW" choice are saved on the wide, 0.6×
+  and 5× lenses, in full auto and manual, and in the Lock Screen camera while locked (see "RAW
+  pairs not saved (PhotoKit error 3300)"); after these photos the app's container holds no photo
+  file (Xcode › Devices and Simulators › Download Container); every saved file passes
   the read-back (`docs/PRIVACY.md`, "Device checks") and an exiftool dump matches the tables in
   `docs/PRIVACY.md`;
 - last photo and its details (`ImageIOThumbnailer`, `PhotoDetails`, `openPhotosApp`): after a
@@ -478,7 +935,12 @@ iPad:
   from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
   for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
   `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
-  file sizes, and the tag list; with signing on, c2patool shows the same claim generator and
+  file sizes, and the tag list; RAW clipping (`RAWClippingMeter`) shows numbers, not "Not
+  measured", on every lens (record each lens's `CVPixelBufferGetPixelFormatType`, width, height
+  and bytes per row against the DNG's `ImageWidth`, `ImageLength`, `ActiveArea` and
+  `BitsPerSample`, and whether the buffer's values are shifted), a frame with a bare bulb or the
+  sun shows clipped highlights and a lens-cap frame clipped shadows (record both shares), and taking a RAW photo is no slower than before by more than the time the count
+  takes (Time Profiler, `clipping(of:dng:)`); with signing on, c2patool shows the same claim generator and
   description; the timings look plausible;
 - manual controls (`SystemCaptureHardware`), on each lens of each test device, with manual
   controls turned on: see "Manual controls on a device" below;
@@ -530,13 +992,139 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   default), signed, and passes the read-back; the thumbnail opens the photo's details, not
   Photos; Settings changes made there don't change the app's settings; the volume buttons take a
   photo; first use before the app was ever opened (camera and Photos prompts) behaves sensibly.
+  Settings: see "Shared settings" below.
 - Siri on the iPhone: "Take a photo with nope." takes a photo and Siri says "Photo saved and
   signed."; "Take a photo in 10 seconds with nope." shows and speaks the countdown; with camera
   access off, Siri says how to turn it on. From an Apple Watch through Siri, the same phrases.
-- Siri while the iPhone is locked: Siri asks to unlock before opening the app.
-- Shortcuts: Take Photo with a custom delay and each lens (a missing lens says so), and Set
-  Night Mode on and off, with the app closed and with it open (the screen turns red at once).
+- Siri while the iPhone is locked: "Take a photo with nope." asks to unlock before opening the
+  app. "Open the camera in nope.": record whether Siri opens the Lock Screen camera, asks to
+  unlock, or refuses (not documented by Apple; docs/ARCHITECTURE.md).
+- Siri, other phrases: "Switch to Ultra Wide in nope." (and a lens the device lacks), "Turn on
+  the light in nope." and "Turn off the light in nope." (the light comes on and goes off; with
+  the app closed, turning it off says the light is off without opening the app), "Start interval
+  shooting in nope." with Manual Controls off (the series runs in full auto; Manual Controls stay
+  off) and on (the photos use the manual settings; the screen dims), "Stop interval shooting in
+  nope.", and "Take a bracket with nope." in full auto and with a bracket chosen in Pro Tools
+  (three photos at different exposures; the Pro Tools bracket and Manual Controls are unchanged
+  afterwards; on the front camera Siri says the lens can't take it).
+- Shortcuts: Take Photo with a custom delay, each lens (a missing lens says so) and Number of
+  Photos 5 (five separate photos, no "Burst stopped" announcement), Switch Lens, Turn On and Turn
+  Off the Light, Start Interval Shooting with Seconds Between Photos and Number of Photos, Stop
+  Interval Shooting, Take Bracket with 5 and 7 Photos and each Step (7 on a lens that takes fewer
+  says so), and Set Night Mode on and off, with the app closed and with it open (the
+  screen turns red at once).
+- Siri does not mistake "Turn on the light in nope." for a HomeKit request.
+- Shortcuts settings actions: Set Focus Range to Close-Up, Far Focus and No Limit (the Close-Up
+  or Far Focus pill shows and goes; a lens without a range limit says so); Set Photo Size Largest
+  and Standard on a lens with a choice (Settings > Photo Size shows it; the next photo's size
+  changes) and on a Bayer RAW lens (says there is one size); Set Fast Shutter and Set Face
+  Detection with the app closed (Settings shows the new value when the app opens). Apply
+  Preset: the picker lists Factory Defaults and the saved presets (a renamed preset shows its new
+  name, a deleted one is gone); with the app closed it opens, applies the preset (lens, values
+  and settings), says it can be undone in Presets, and Presets shows Undo; with a preset that has
+  Location on and access declined, it says some settings couldn't be applied; the light stays
+  off.
 - Check in each of the 11 languages that Siri accepts the localized phrases.
+
+### Live Activity on a device
+
+Issue #64. Turn on Settings › Camera › Live Activity first. Assumptions to confirm: the activity
+starts when a run starts in the foreground, the update sent as the app leaves reaches the system,
+and the time iOS gives to finish saving is enough for a burst's frames.
+
+- Interval series: start one (10 photos, 10 s), go to the Home Screen: the Dynamic Island and the
+  Lock Screen show "Paused: n of 10 photos taken. Open nope. to continue."; tapping the activity
+  opens the app and the series continues; going out again and pressing Stop ends the series and
+  the activity at once, and the app shows the series stopped.
+- Burst: hold the shutter in burst mode, go to the Home Screen while it saves: "Saving: n of m
+  photos saved", then "Photos saved: m" with "Signed." (or the unsigned line with signing off),
+  gone two minutes later; every frame is in Photos.
+- Astro: leave during the frames: the frames pause and the activity shows "Paused: n of N
+  frames. Open nope. to continue." with Stop; coming back counts the start delay down again and
+  the run continues from frame n + 1 (the frame cut short by leaving is taken again); Stop from
+  the Lock Screen ends the run with every frame taken saved. Leave during the start delay: the
+  run starts paused and begins after the delay on return. A call during a run pauses it the same
+  way. Check that a frame cut short by leaving doesn't end the run as failed (the interruption
+  may arrive after the frame fails).
+- Self-timer: start a 10 s timer and lock the phone: the timer is cancelled and the activity says
+  "Stopped. No photo taken."; no photo is taken when the app is opened again.
+- In the foreground no activity is visible, and with the switch off none starts. Night mode shows
+  it red on black. VoiceOver reads the compact, expanded and Lock Screen layouts; larger text sizes
+  stay readable.
+- With Live Activities turned off for nope. in the Settings app, the switch isn't offered.
+- Network capture during these checks shows no traffic (`docs/SECURITY_AUDIT.md`, check 8).
+
+### Shared settings, the Night Mode control and the Lock Screen camera on a device
+
+Issue #42. Assumptions to confirm: cross-process delivery of the settings change signal (a
+Darwin notification) between the app and `NopeControls`; that `NopeControls` may write
+`OpenCameraIntent`'s app context (Apple documents the app and the capture extension); and that
+the Lock Screen camera reads the app context quickly enough not to be ended for having no camera
+view.
+
+- Signing: a device build with automatic signing registers `group.<bundle identifier>` for the
+  app and `NopeControls`; `codesign -d --entitlements - --xml` on each shows exactly that one App
+  Group, and none on `NopeCaptureExtension`.
+- Upgrade: install 0.2.0, change several settings (formats, a detail, signing off, night mode
+  on), install this build over it: the settings are kept.
+- Control: add Night Mode in Control Center and on the Lock Screen. It shows the app's state;
+  turning it on with the app open turns the app red at once (also while Control Center covers the
+  app); with the app in the background or closed, the app is red when opened. Turning night mode
+  on or off in the app (Settings, the tray or the Set Night Mode shortcut) updates the control.
+- Lock Screen camera: with night mode on, RAW plus HEIF plus JPEG, a detail on and signing off
+  in the app, lock the device and open "Open nope.": the camera opens red, without a white flash,
+  and its photo has those formats, that detail and no signature. Change night mode from the
+  Night Mode control on the Lock Screen, then open the camera again: it follows. A setting
+  changed in the Lock Screen camera doesn't change the app's. With the Location switch on in the
+  app, a photo from the Lock Screen camera has no location.
+- After these checks the App Group's preferences file holds only `NopeSettings.` keys, the
+  migration key and the saved presets, `NopePresets.saved` (`docs/SECURITY_AUDIT.md`, check 12).
+
+### Settings presets on a device
+
+Issue #72. The rules are unit-tested (`SettingsPresetsTests`, `CameraSetupTests`) and the screens
+UI-tested on the Simulator; on a device, confirm the parts the simulated camera can't show:
+
+- Save a preset on the telephoto with manual ISO and shutter, a 10 s timer and RAW + JPEG; apply
+  Factory Defaults (wide lens, full auto, single, RAW + HEIF, saved presets still listed), then
+  the preset: the lens switches once without a frozen or black viewfinder, the values and timer
+  are back, and the next photo has those formats.
+- A preset with Location on, applied after location access was declined in Settings: Location
+  stays off, the notice says so, and no prompt appears; with access not yet asked, the system
+  prompt appears once.
+- A preset with the astro helper on, applied in daylight: the helper is on with the preset's
+  frame count and delay, and night mode follows the preset.
+- From the tray in night mode: the presets sheet is red on black and VoiceOver reads each preset
+  and the result after applying. Undo returns the lens and values.
+- After applying a preset, open the Lock Screen camera: it uses the applied formats and night
+  mode (the copy is handed over after every change).
+
+### Apple Watch on a device (issue #63)
+
+Needs an iPhone with the app installed from Xcode (the watch app is embedded and installs on the
+paired Apple Watch through the Watch app, or automatically if that setting is on). Unverified
+assumptions to confirm: a watch command reaches the iPhone app while it is open and unlocked,
+`WCSession.isReachable` follows the watch app being open, and replies arrive within a second.
+
+- Pairing: the watch app appears on the paired watch, named "nope."; it opens to "Camera ready"
+  while the camera is open on the iPhone.
+- Shutter: Take Photo saves a photo on the iPhone (RAW plus HEIF by default, signed); the watch
+  says "Saved and signed" with a haptic; with signing off, "Saved, not signed" in amber.
+- Delays: 3 and 10 seconds start the iPhone's own self-timer (its countdown shows and speaks on
+  the iPhone); the watch shows "Photo in 3 seconds" and counts down with a light haptic each
+  second; Cancel Timer on the watch stops it and nothing is taken; cancelling on the iPhone shows
+  "Timer cancelled. No photo taken." on the watch.
+- Nothing taken when the camera isn't available: with the iPhone app in the background, closed,
+  or with Settings open over the camera, the watch says "Camera not available. Open nope. on your
+  phone." and Take Photo is disabled; opening the app later takes no photo. With camera access
+  declined, the watch says so. With the iPhone out of range or off, "Can't reach your phone".
+- A photo whose result the watch missed (lower the wrist during the countdown): raising it shows
+  the result.
+- VoiceOver on the watch reads the status, the shutter and the delay, and announces each
+  countdown second and the result; the largest text size keeps every control reachable by
+  scrolling.
+- App Privacy Report on the iPhone lists no domain for the app after these checks.
+- iPad: the app runs as before (WatchConnectivity isn't supported there and stays off).
 
 ### Low storage
 
@@ -569,7 +1157,10 @@ frame, from the photos' capture times).
   manual controls, Pro Tools, the format sheet, Settings and every detail screen, warning
   popovers); list what the system still draws (status bar, menus, alerts); the app never changes
   the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
-  Viewfinder; energy with the red viewfinder on (Instruments).
+  Viewfinder; energy with the red viewfinder on (Instruments);
+- night mode and Red Viewfinder switch at once from the tray and from Settings › Camera, with the
+  live picture never freezing, going black or restarting (Instruments Hangs: no hang on the
+  switch; the 0.2.0 build rebuilt the preview layer each time).
 
 ### Manual controls on a device
 
@@ -609,6 +1200,20 @@ Simulator (`FileOptionsEncodingTests`). On a device:
 - **File options** (issue #57): with each compression, HEIF bit depth and color space, a RAW plus
   HEIF plus JPEG photo is saved, opens in Photos and a RAW editor, and the HEIF's depth and both
   copies' color profile (exiftool `ProfileDescription`) match the choice;
+- **Copy Size** (issue #57): with Half Size and Quarter Size, the HEIF and JPEG open in Photos at
+  half (2016 × 1512 from a 12 MP RAW) and a quarter of the RAW's width and height, the RAW is
+  unchanged, and exiftool's `ExifImageWidth` and `ExifImageHeight` match the copy;
+- **Face Detection** (issue #57): with it on (the default), autofocus and exposure follow a face
+  in the frame in full auto, as before; with it off, they stay on the center (or the tapped
+  point) with a face in the frame, on the wide and the front camera; nothing in the files changes;
+- **Far Focus** (issue #57): with manual controls on, Far Focus in the tray, on each rear lens:
+  autofocus ignores a near subject (a hand or a branch close to the lens) and keeps the far scene
+  sharp; Close-Up then replaces it and back; the live readout's focus range shows the limit;
+- **Photo Size** (issue #57): on a device with a lens without Bayer RAW that reports more than
+  one size (the Debug tag check lists each lens's `supportedMaxPhotoDimensions`), each size saves
+  a processed photo of that size that opens in Photos; record the lenses and sizes. On a lens
+  with Bayer RAW, confirm the RAW is 12 MP whatever `maxPhotoDimensions` is (the reason the
+  choice isn't offered there);
 - **Paired with RAW** (issue #50): with RAW, HEIF and JPEG selected, Photos shows two items: the
   RAW paired with the chosen copy, and the other copy on its own; note how Photos labels the
   paired item and which copy it shows and shares by default, for each choice;
@@ -647,7 +1252,8 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   live aid is off, and the energy impact with them on is recorded in the release notes;
 - live camera readout: the values match the saved files' EXIF (ExposureTime, ISOSpeedRatings,
   FNumber, ExposureBiasValue); the processing line reads "All" in RAW; the near focus limit and
-  the torch show when another feature turns them on.
+  the torch show when another feature turns them on; with Keep Readout in Clean View on, the
+  readout stays in clean view and keeps updating, and with it off clean view hides it.
 
 ### Comparison shot on a device (issue #55)
 
@@ -729,6 +1335,38 @@ tripod (issue #60):
 - the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
   an assumption), and every frame taken before is saved.
 
+### iPhone Duo (foldable) on a device
+
+The layout rule is unit-tested at the Duo's measured sizes (`CameraLayoutTests`), and the
+layouts, folding and unfolding were checked on the iPhone Duo Simulator (iOS 27.2). In the
+Simulator, Device Hub's Closed, Partially Open and Open buttons fold and unfold the device (no
+`simctl` command does); `xcrun devicectl device orientation set --device <udid> <orientation>`
+turns it. After a fold, UI test queries wait about a minute for the app to idle, so a UI test
+can't fold the device; no UI test covers folding, and no CI job runs on the Duo. The Simulator
+has no camera, so these checks need a real iPhone Duo:
+
+- the outer display: the stacked layout in portrait, upright icons and text with the phone on
+  its side, the bands over the picture's bottom, and the status bar strip not covering a control;
+- the inner display held like a book and turned: the column layout, the interface turning with
+  the phone, the preview and the saved photos upright (`AVCaptureDevice.RotationCoordinator`,
+  with the inner display's own orientation), and the level's horizon and the grid's spiral in
+  the right place (they assume the interface is portrait; on the inner display and on iPad the
+  interface turns);
+- folding and unfolding with the live view open, during a self-timer, an interval series and an
+  astro run: whether the capture session is interrupted (`AVCaptureSession.wasInterruptedNotification`,
+  and its reason), whether the scene leaves the foreground, and that the run continues or pauses
+  and continues as it says; the self-timer is cancelled only if the app really leaves the
+  foreground; record what happens here;
+- folding with the phone on its side returns the outer display to portrait; the half-open
+  (Partially Open) posture: what the system shows and whether the camera keeps running;
+- the lens row lists only the cameras the Duo reports (expected: ultra wide, wide and front, no
+  telephoto), each with Bayer RAW, and a RAW plus HEIF photo is saved on each;
+- which camera the inner display uses for selfies (the rear cameras or a front camera), and
+  whether the front camera changes when folding;
+- the system camera handoff: the "Open nope." control and the Lock Screen camera
+  (`NopeCaptureExtension`) on each display, and opening the app from the Lock Screen camera
+  after unfolding.
+
 The full release audit is in AGENTS.md, "Before any release, a full security audit must pass".
 
 ## The C2PA library and the networking check
@@ -747,7 +1385,8 @@ scripts/check-no-networking.sh --allow-rust-std build/c2pa-lib/C2PAC.xcframework
 
 CI's `c2pa-lib` job also builds `Tools/NopeSigningLinkCheck` and the app in Release for a device
 and runs `scripts/check-no-networking.sh` on both, with no exceptions; for the app it checks the
-app binary and both extension binaries (`NopeCaptureExtension`, `NopeControls`).
+app binary, both extension binaries (`NopeCaptureExtension`, `NopeControls`, which also draws
+the Live Activity) and the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`).
 
 ## Checking signatures
 

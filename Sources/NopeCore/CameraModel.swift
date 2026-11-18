@@ -42,6 +42,10 @@ public final class CameraModel {
     /// default. Warnings that change what the photo is are never hidden.
     public private(set) var isCleanView = false
 
+    /// Whether the app is in the foreground, as the interface last said with
+    /// ``CameraIntent/setInForeground(_:)``. `true` until it says otherwise.
+    public internal(set) var isInForeground = true
+
     /// The manual and pro controls. Their intents arrive as ``CameraIntent/manual(_:)``.
     public let manual: ManualControlsModel
 
@@ -67,6 +71,10 @@ public final class CameraModel {
     /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
     public let comparison: ComparisonModel
 
+    /// The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
+    /// the camera starts with a lens. Empty by default: every lens at its default size.
+    public private(set) var photoSizes: [Lens.ID: PhotoDimensions] = [:]
+
     /// The last heat level the backend reported.
     private var heatLevel: HeatLevel = .nominal
 
@@ -75,6 +83,12 @@ public final class CameraModel {
 
     /// Reads the monotonic clock, to time each capture for the photo's details (issue #53).
     let now: @Sendable () -> ContinuousClock.Instant
+
+    /// Waits ``pauseAfterErrorSeconds`` after a photo of a series fails, for the pause that may
+    /// have caused it (`failureWasAPause()`). Tests replace it.
+    @ObservationIgnored var pauseAfterErrorSleep: @Sendable () async throws -> Void = {
+        try await Task.sleep(for: .seconds(CameraModel.pauseAfterErrorSeconds))
+    }
 
     /// Creates a model in the ``CameraState/starting`` state.
     ///
@@ -157,7 +171,8 @@ public final class CameraModel {
         case .capture:
             await pressShutter()
         case .manual(let intent):
-            await manual.handle(intent) { [weak self] in await self?.capture() }
+            if case .startInterval = intent, intervalBlocker != nil { return }
+            await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? false }
             await manualControlsDidChange(after: intent)
         case .setCleanView(let isOn):
             isCleanView = isOn
@@ -171,7 +186,24 @@ public final class CameraModel {
             await handle(intent)
         case .comparison(let intent):
             comparison.handle(intent)
+        case .setPhotoSizes(let sizes):
+            await setPhotoSizes(sizes)
+        case .setInForeground(let isInForeground):
+            setInForeground(isInForeground)
         }
+    }
+
+    /// Keeps the person's photo sizes, and reconfigures the camera when the selected lens's size
+    /// changed while it was started.
+    ///
+    /// - Parameter sizes: The chosen size for each lens.
+    private func setPhotoSizes(_ sizes: [Lens.ID: PhotoDimensions]) async {
+        let previous = selectedLens.flatMap { $0.photoSize(for: photoSizes[$0.id]) }
+        photoSizes = sizes
+        guard let lens = selectedLens, lens.photoSize(for: sizes[lens.id]) != previous, sessionStatus != .stopped else {
+            return
+        }
+        await startSession()
     }
 
     /// Applies the backend's events until its stream ends. Run it for as long as the camera
@@ -238,6 +270,10 @@ public final class CameraModel {
             await manual.stepExposureCompensation(by: steps)
         case .setNearFocusLimit(let isOn):
             await manual.setNearFocusLimit(isOn)
+        case .setFarFocusLimit(let isOn):
+            await manual.setFarFocusLimit(isOn)
+        case .setFollowsFaces(let isOn):
+            await manual.setFollowsFaces(isOn)
         case .setFastShutter(let choice):
             await manual.setFastShutter(choice)
         case .dismissCloseUpSuggestion:
@@ -318,7 +354,7 @@ public final class CameraModel {
         manual.lensWillStart(lens)
         light.lensWillStart(lens)
         do {
-            try await backend.startSession(CaptureRequest(lens: lens))
+            try await backend.startSession(CaptureRequest(lens: lens, photoSize: lens.photoSize(for: photoSizes[lens.id])))
             // An interruption or heat event may have arrived while starting; it wins.
             if sessionStatus == .starting { sessionStatus = .running }
             // Starting the camera returns its controls to automatic; apply the manual ones again.
@@ -333,7 +369,12 @@ public final class CameraModel {
     ///
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
     /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
-    func capture() async {
+    ///
+    /// - Parameter onceBracket: A bracket to take this time only, through the same bracket path
+    ///   as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
+    ///   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
+    ///   first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
+    func capture(onceBracket: BracketSettings? = nil) async {
         guard canCapture, let lens = selectedLens else { return }
         deviceStatus.refresh()
         captureStatus = .capturing
@@ -342,7 +383,8 @@ public final class CameraModel {
         plan.location = location?.location(isOn: settings.metadata.isOn(.location))
         plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
         let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
-        if let frames = manual.bracketFrames(), let bracketBackend = backend as? any ManualCaptureBackend {
+        let frames = onceBracket.map(manual.bracketFrames(once:)) ?? manual.bracketFrames()
+        if let frames, let bracketBackend = backend as? any ManualCaptureBackend {
             await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
             return
         }

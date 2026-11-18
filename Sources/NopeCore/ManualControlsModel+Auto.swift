@@ -13,7 +13,8 @@ extension ManualControlsModel {
     /// with manual controls on, the person decides.
     var assist: AssistSettings {
         AssistSettings(
-            focusTarget: focusTarget, nearFocusLimit: nearFocusLimit, longestShutter: isEnabled ? nil : longestAutoShutter)
+            focusTarget: focusTarget, nearFocusLimit: nearFocusLimit, longestShutter: isEnabled ? nil : longestAutoShutter,
+            farFocusLimit: farFocusLimit, followsFaces: followsFaces)
     }
 
     /// Whether the selected lens can set exposure compensation now.
@@ -65,13 +66,35 @@ extension ManualControlsModel {
         await setExposureCompensation(scale.value(from: settings.exposureCompensation, steppedBy: steps))
     }
 
-    /// Turns the near focus limit on or off.
+    /// Turns the near focus limit on or off. Turning it on lifts the far limit: the camera
+    /// has one range restriction (`AVCaptureDevice.autoFocusRangeRestriction`).
     ///
     /// - Parameter isOn: Whether autofocus is limited to near subjects. Turning it on does
     ///   nothing on a lens that can't limit its range.
     func setNearFocusLimit(_ isOn: Bool) async {
         guard isOn != nearFocusLimit, !isOn || capabilities.supportsNearFocusLimit else { return }
         nearFocusLimit = isOn
+        if isOn { farFocusLimit = false }
+        await applyCurrentControls()
+    }
+
+    /// Turns the far focus limit on or off. Turning it on lifts the near limit.
+    ///
+    /// - Parameter isOn: Whether autofocus is limited to far subjects. Turning it on does
+    ///   nothing on a lens that can't limit its range.
+    func setFarFocusLimit(_ isOn: Bool) async {
+        guard isOn != farFocusLimit, !isOn || capabilities.supportsFarFocusLimit else { return }
+        farFocusLimit = isOn
+        if isOn { nearFocusLimit = false }
+        await applyCurrentControls()
+    }
+
+    /// Lets detected faces steer autofocus and auto exposure, or stops them.
+    ///
+    /// - Parameter isOn: Whether faces steer them; `true` is the system's default.
+    func setFollowsFaces(_ isOn: Bool) async {
+        guard isOn != followsFaces else { return }
+        followsFaces = isOn
         await applyCurrentControls()
     }
 
@@ -147,13 +170,14 @@ extension ManualControlsModel {
         longestAutoShutter = lens.flatMap { AutoShutter.limits(for: $0, fastShutter: fastShutter).first }
     }
 
-    /// Clears the tapped point and the near focus limit, for All Auto.
+    /// Clears the tapped point and the near and far focus limits, for All Auto.
     ///
     /// - Returns: Whether anything changed.
     func resetAids() -> Bool {
-        let changed = focusTarget != nil || nearFocusLimit
+        let changed = focusTarget != nil || nearFocusLimit || farFocusLimit
         focusTarget = nil
         nearFocusLimit = false
+        farFocusLimit = false
         return changed
     }
 

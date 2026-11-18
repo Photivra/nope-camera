@@ -1,15 +1,23 @@
 import NopeCore
 import SwiftUI
 
+extension EnvironmentValues {
+    /// Whether the device shows Live Activities and the person allows them for the app, so
+    /// Settings offers the Live Activity switch (issue #64). `false` by default, as in the Lock
+    /// Screen capture extension and previews; the app sets it from ActivityKit.
+    @Entry public var offersLiveActivity = false
+}
+
 /// The settings: a short inset grouped list in a navigation stack, opened from the camera
-/// (issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
-/// signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
-/// and More (Accessibility, Honesty, About).
+/// (issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options, photo size),
+/// Privacy (the master switch, signing, the details), Camera (manual controls, clean view, face
+/// detection, night mode, front camera mirroring) and More (Accessibility, Honesty, About).
 ///
 /// One line per row; each switch's explanation is in a footer or on its detail screen. Each
 /// row shows its current value, so the state reads at a glance. The screen renders a
 /// `NopeSettings` and changes it only through its methods, which hold the rules (AGENTS.md,
-/// "One direction of flow"). It follows the system appearance.
+/// "One direction of flow"). It follows the system's light or dark setting, also when it is
+/// presented from the dark camera (`ScreenAppearance.system`), and is red on black in night mode.
 ///
 /// ```swift
 /// .sheet(isPresented: $showsSettings) {
@@ -30,8 +38,20 @@ public struct SettingsScreen: View {
     /// Location tagging, or `nil` to hide the Location switch.
     private let location: LocationTagging?
 
+    /// The device's lenses, for the Photo Size row (shown only when a lens offers a choice).
+    private let lenses: [Lens]
+
+    /// The saved settings presets, or `nil` to hide the Presets row.
+    private let presets: SettingsPresets?
+
+    /// The camera, whose lens and exposure a preset saves and sets, or `nil`.
+    private let camera: CameraModel?
+
     /// Closes the sheet.
     @Environment(\.dismiss) private var dismiss
+
+    /// Whether to offer the Live Activity switch.
+    @Environment(\.offersLiveActivity) private var offersLiveActivity
 
     /// Creates the settings screen.
     ///
@@ -44,20 +64,33 @@ public struct SettingsScreen: View {
     ///     Pass `true` when it isn't known yet.
     ///   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     ///     location service, which hides the Location switch.
+    ///   - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
+    ///     row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
+    ///   - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
+    ///   - camera: The camera, whose lens and exposure presets save and set, or `nil`.
     public init(
         settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true,
-        location: LocationTagging? = nil
+        location: LocationTagging? = nil, lenses: [Lens] = [], presets: SettingsPresets? = nil,
+        camera: CameraModel? = nil
     ) {
+        self.presets = presets
+        self.camera = camera
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
         self.deviceHasFrontCamera = deviceHasFrontCamera
         self.location = location
+        self.lenses = lenses
     }
 
     /// The form and its toolbar.
     public var body: some View {
         NavigationStack {
             Form {
+                if let presets {
+                    Section {
+                        PresetsScreen.link(presets: presets, settings: settings, camera: camera)
+                    }
+                }
                 photosSection
                 privacySection
                 cameraSection
@@ -89,6 +122,7 @@ public struct SettingsScreen: View {
                 LookSettingsView.link(settings: settings)
                 FileOptionsSettingsView.link(settings: settings)
             }
+            PhotoSizeSettingsView.link(settings: settings, lenses: lenses)
         } header: {
             // Its own key: "Photos" alone is the photo count picker in Pro Tools, translated as a count.
             Text(String(localized: "Settings section: Photos", defaultValue: "Photos", bundle: .module, comment: "Settings section header for the formats and look each photo is saved with (a heading, not a count)."))
@@ -152,6 +186,13 @@ public struct SettingsScreen: View {
                         bundle: .module, comment: "Explains the clean view switch."))
             }
             FastShutterSettingsView.link(settings: settings)
+            Toggle(isOn: Binding(get: { settings.followsFaces }, set: { settings.setFollowsFaces($0) })) {
+                SettingLabel(
+                    title: Text("Face Detection", bundle: .module, comment: "Switch: faces the camera detects steer autofocus and auto exposure."),
+                    explanation: Text(
+                        "Autofocus and auto exposure follow faces the camera finds. On by default.",
+                        bundle: .module, comment: "Explains the Face Detection switch."))
+            }
             OverlaySettingsView.link(settings: settings)
             Toggle(isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) })) {
                 SettingLabel(
@@ -173,16 +214,23 @@ public struct SettingsScreen: View {
                             bundle: .module, comment: "Explains the Red Viewfinder switch, shown while night mode is on."))
                 }
             }
+            if offersLiveActivity {
+                // The explanation is long: below the switch at the accessibility sizes.
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.showsLiveActivity }, set: { settings.setShowsLiveActivity($0) }),
+                    title: Text("Live Activity", bundle: .module, comment: "Switch and its Voice Control name: shows interval shooting, astro frames, a burst or the self-timer on the Lock Screen and in the Dynamic Island. Live Activity is the name of the iOS feature: use its name in the language's iOS."),
+                    explanation: Text(
+                        "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS."))
+            }
             if deviceHasFrontCamera {
-                Toggle(
-                    isOn: Binding(get: { settings.mirrorsFrontCamera }, set: { settings.setMirrorsFrontCamera($0) })
-                ) {
-                    SettingLabel(
-                        title: Text("Mirror Front Camera", bundle: .module, comment: "Switch: front camera photos are saved mirrored, as the viewfinder shows them."),
-                        explanation: Text(
-                            "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.",
-                            bundle: .module, comment: "Explains the Mirror Front Camera switch."))
-                }
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.mirrorsFrontCamera }, set: { settings.setMirrorsFrontCamera($0) }),
+                    title: Text("Mirror Front Camera", bundle: .module, comment: "Switch: front camera photos are saved mirrored, as the viewfinder shows them."),
+                    explanation: Text(
+                        "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way.",
+                        bundle: .module, comment: "Explains the Mirror Front Camera switch."))
             }
         } header: {
             Text("Camera", bundle: .module, comment: "Settings section header for how the camera screen looks and works. Also the name of the menu with camera commands in the iPad menu bar.")

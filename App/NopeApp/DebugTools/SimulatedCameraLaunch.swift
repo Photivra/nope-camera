@@ -14,6 +14,43 @@ enum SimulatedCameraLaunch {
     /// The launch argument: `-NopeSimulatedCamera`.
     static let argument = "-NopeSimulatedCamera"
 
+    /// Interrupts the simulated camera while the app is in the background and ends the
+    /// interruption when it returns, as AVFoundation does for a real camera
+    /// (`videoDeviceNotAvailableInBackground`), so the UI tests can leave and return during a run.
+    ///
+    /// Only an interruption this started is ended: every change of the scene's phase used to end
+    /// any interruption, so the launch's own move to active ended the `interrupted` and
+    /// `multitasking` scenarios' interruption, and their message never showed.
+    ///
+    /// - Parameters:
+    ///   - isInBackground: Whether the app is in the background now.
+    ///   - backend: The launch's backend; anything but the simulated one is left alone.
+    @MainActor static func followScenePhase(_ isInBackground: Bool, backend: any CaptureBackend) {
+        guard let simulated = backend as? SimulatedCaptureBackend,
+            let event = backgroundEvent(isInBackground: isInBackground, interruptedForBackground: &interruptedForBackground)
+        else { return }
+        simulated.emit(event)
+    }
+
+    /// Whether ``followScenePhase(_:backend:)`` interrupted the camera for the background and
+    /// hasn't ended it yet.
+    @MainActor static var interruptedForBackground = false
+
+    /// The event for a change of the scene's phase: an interruption on entering the background,
+    /// its end on leaving it, and nothing otherwise (another phase change, or a return the
+    /// background interruption wasn't sent for).
+    ///
+    /// - Parameters:
+    ///   - isInBackground: Whether the app is in the background now.
+    ///   - interruptedForBackground: Whether the camera is interrupted for the background;
+    ///     updated.
+    /// - Returns: The event to send, or `nil`.
+    static func backgroundEvent(isInBackground: Bool, interruptedForBackground: inout Bool) -> CaptureEvent? {
+        guard isInBackground != interruptedForBackground else { return nil }
+        interruptedForBackground = isInBackground
+        return isInBackground ? .interrupted(.backgrounded) : .interruptionEnded
+    }
+
     /// A simulated camera state.
     enum Scenario: String, CaseIterable {
         /// Permission not asked yet; allowing it gives four lenses, the telephoto without RAW.
@@ -89,7 +126,10 @@ enum SimulatedCameraLaunch {
     /// Two lenses like an iPad's without RAW: a wide and a front camera, neither with Bayer RAW.
     static let lensesWithoutRAW: [Lens] = [
         Lens(id: "simulated-wide-no-raw", kind: .wide, bayerRAWFormat: nil, magnification: 1),
-        Lens(id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil),
+        // Two photo sizes, so Settings offers the Photo Size choice (issue #57).
+        Lens(
+            id: "simulated-front-no-raw", kind: .front, bayerRAWFormat: nil,
+            photoDimensions: [PhotoDimensions(width: 4032, height: 3024), PhotoDimensions(width: 8064, height: 6048)]),
     ]
     /// The `UserDefaults` suite that holds settings during UI tests.
     static let settingsSuiteName = "NopeUITestSettings"

@@ -1,104 +1,143 @@
-# UI test shards for CI (docs/TESTING.md, "UI test shards"): shard, Class/test, seconds on the
-# GitHub macOS runner (the longer of the iPhone and iPad runs of build 43722319731), or "est":
-# twice the time on a local Mac where the runner hasn't measured the test yet. Balanced longest
-# test first into the shard with the least time; add a new test to the shard with the least time.
-1 NopeAppUITests/testHeatPauseIsExplained 19
-1 NopeAppUITests/testInterruptionIsExplained 17
-1 NopeAppUITests/testManualControlsListAtTheLargestTextSize 21
-1 NopeAppUITests/testNightModeSettingsScreensPassAccessibilityAudits 563
-1 OverlayUITests/testHistogramIsNeverShownInFullAuto 13
-2 NopeAppUITests/testBlankPictureExplainsRestartingTheDevice 18
-2 NopeAppUITests/testCleanViewKeepsTheNoRAWWarning 28
-2 NopeAppUITests/testControlGridPanelAndAllAuto 56
-2 NopeAppUITests/testDeclinedLocationStaysOffAndSaysHowToAllowIt 37
-2 NopeAppUITests/testDeviceWithoutRAWAtTheLargestTextSize 15
-2 NopeAppUITests/testLightStaysOnWhileTakingPhotosAndTurnsOffFromItsPill 49
-2 NopeAppUITests/testLocationStatesAtTheLargestTextSize 35
-2 NopeAppUITests/testPhotosAccessDeniedIsExplained 19
-2 NopeAppUITests/testRefusedLightIsExplainedAndCanBeCleared 27
-2 NopeAppUITests/testSelfTimerCountsDownAndCanBeCancelled 46
-2 NopeAppUITests/testSettingsInRightToLeftLayout 256
-2 NopeAppUITests/testStatePillsChangeOrReset 41
-3 NopeAppUITests/testBlankPictureAtTheLargestTextSize 41
-3 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 48
-3 NopeAppUITests/testDeniedOffersOpenSettings 19
-3 NopeAppUITests/testFileOptionsChangeAndRestore 43
-3 NopeAppUITests/testNightModeCameraWithPhotoWarningAndLight 65
-3 NopeAppUITests/testRedViewfinderOption 24
-3 NopeAppUITests/testSettingsAtTheLargestTextSize 251
-3 NopeAppUITests/testSignedFileThatFailsTheCheckSavesUnsignedAndSaysSo 29
-3 NopeAppUITests/testSigningOffShowsAPersistentWarning 37
-3 NopeAppUITests/testSourceCodeIsAnHTTPSLink 20
-3 NopeAppUITests/testWarningsAtTheLargestTextSizeAndRightToLeft 35
-3 ShortcutUITests/testARequestWithADelayCountsDownThenSaysThePhotoWasSaved 16 est
-4 NopeAppUITests/testAstroHelperIsRedOnBlackAndSetsUpTheFrames 81
-4 NopeAppUITests/testCameraRightToLeftWithAPhotoAndWarnings 27
-4 NopeAppUITests/testCaptureFailureIsExplained 19
-4 NopeAppUITests/testCleanViewHidesControlsButKeepsTheShutter 38
-4 NopeAppUITests/testDeviceWithoutRAWShowsTheFallbackChip 42
-4 NopeAppUITests/testExposureCompensationInFullAuto 51
-4 NopeAppUITests/testMirrorFrontCameraIsOffByDefault 29
-4 NopeAppUITests/testMultitaskingPauseIsExplained 23
-4 NopeAppUITests/testPairedWithRAWAppearsOnlyWithAllThreeFormats 36
-4 NopeAppUITests/testSaveStatesAtTheLargestTextSize 16
-4 NopeAppUITests/testSettingsScreensPassAccessibilityAudits 148
-4 OverlayUITests/testFlatLevelSaysItPointsDown 9
-4 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 46
-4 OverlayUITests/testOverlaySettingsAndProTools 65
-5 NopeAppUITests/testCompareViewAtTheLargestTextSizeAndRightToLeft 82
-5 NopeAppUITests/testDimLightSaysHoldItSteady 20
-5 NopeAppUITests/testFirstRunAtTheLargestTextSizeAndRightToLeft 145
-5 NopeAppUITests/testFlashMenuPillAndLensesWithoutALight 43
-5 NopeAppUITests/testFormatChipExplainsTheFormat 27
-5 NopeAppUITests/testLastPhotoDetailsAtTheLargestTextSize 38
-5 NopeAppUITests/testLocationWarningInRightToLeftLayout 35
-5 NopeAppUITests/testMagnifierEnlargesTheNaturalAndTheRedNightViewfinder 67
-5 NopeAppUITests/testMetadataRejectionSavesNothingAndSaysSo 19
-5 NopeAppUITests/testProToolsGrowsWithTheLargestTextSize 46
-5 NopeAppUITests/testQuickControlsTrayOpensAndCloses 31
-5 NopeAppUITests/testRightToLeftLayout 17
-5 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 50 est
-5 ShortcutUITests/testARequestWithoutCameraAccessSaysWhy 12 est
-6 NopeAppUITests/testAstroFramesShowProgressAndStop 121
-6 NopeAppUITests/testBracketDetailsChooseEachFrame 52
-6 NopeAppUITests/testFailedSecondPhotoIsExplainedAndNopesPhotoIsSaved 34
-6 NopeAppUITests/testFastShutterSettingPassesAudits 82 est
-6 NopeAppUITests/testFirstRunStatementsThenTheCameraPrompt 18
-6 NopeAppUITests/testFullAutoShowsOnlyTheDefaultControls 19
-6 NopeAppUITests/testIntervalShootingShowsProgressAndStops 47
-6 NopeAppUITests/testLastPhotoDetailsRightToLeft 39
-6 NopeAppUITests/testPermissionCaptureAndFallbackPassAccessibilityAudits 36
-6 NopeAppUITests/testStorageAndBatteryWarnings 71
-6 NopeAppUITests/testTappingTheLastPhotoOpensPhotos 43
-6 OverlayUITests/testGridOnlyAndLevelOnly 27
-6 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 23
-6 ShortcutUITests/testACancelledCountdownSaysNoPhotoWasTaken 14 est
-7 NopeAppUITests/testComparisonShotShowsBothPicturesAndTheirDetails 110
-7 NopeAppUITests/testExposureModesAndFixedAperture 43
-7 NopeAppUITests/testFocusAidsAtTheLargestTextSize 34
-7 NopeAppUITests/testFocusAidsRightToLeft 24
-7 NopeAppUITests/testFormatsAndPrivacySwitchesFollowTheRules 47
-7 NopeAppUITests/testLandscapeAtTheLargestTextSize 20
-7 NopeAppUITests/testLastPhotoDetailsListWhatWasSaved 53
-7 NopeAppUITests/testManualControlsAreHiddenByDefault 19
-7 NopeAppUITests/testNightModeFromTheTrayIsRedOnBlack 72
-7 NopeAppUITests/testPairedWithRAWAtTheLargestTextSize 28
-7 NopeAppUITests/testProToolsBracketing 40
-7 NopeAppUITests/testSelfTimerAtTheLargestTextSizeAndRightToLeft 83
-7 NopeAppUITests/testSpaceTakesAPhoto 0
-7 NopeAppUITests/testTooCloseSuggestionCanBeDismissed 16 est
-7 OverlayUITests/testGridAndLevelFromTheQuickControls 38
-8 NopeAppUITests/testAstroAtTheLargestTextSizeAndRightToLeft 97
-8 NopeAppUITests/testBurstRunsUntilStoppedAndSavesEachFrame 84 est
-8 NopeAppUITests/testControlsOverWhiteAndYellowFrames 54
-8 NopeAppUITests/testDeniedAndNoCameraStates 40
-8 NopeAppUITests/testFailureBannerOffersOneActionAndCanBeDismissed 35
-8 NopeAppUITests/testHonestyScreenSaysTheComparisonPhotoIsNeverSaved 28
-8 NopeAppUITests/testLandscapeKeepsTheLayoutAndTurnsTheIcons 48
-8 NopeAppUITests/testLargestTextSize 19
-8 NopeAppUITests/testLocationAsksThenShowsAPersistentWarning 38
-8 NopeAppUITests/testManualControlsRightToLeft 15
-8 NopeAppUITests/testSigningFailureSavesUnsignedAndSaysSo 18
-8 NopeAppUITests/testStartInCleanViewSetting 44
-8 NopeAppUITests/testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself 26 est
-8 OverlayUITests/testOverlaySettingsAtTheLargestTextSize 80 est
+# UI test shards for CI (docs/TESTING.md, "UI test shards"). Each line: the iPhone shard, the
+# iPad shard, Class/test, and the test's seconds on the GitHub macOS runner on the iPhone and on
+# the iPad Simulator (builds 44098207588, 44124454610 and 44149517211, the latest run that
+# passed); a time ending in "e" is an earlier or estimated time, kept until the runner has
+# measured the test on that device. Balanced per device, longest test first into the shard
+# with the least time; add a new test to the shard with the least time on each device, with
+# twice its local time and an "e".
+2 2 NopeAppUITests/testAstroAtTheLargestTextSizeAndRightToLeft 56 89
+1 2 NopeAppUITests/testAstroFramesPauseWhenLeavingAndContinueOnReturn 94 100
+2 2 NopeAppUITests/testAstroFramesShowProgressAndStop 115 82
+3 1 NopeAppUITests/testAstroHelperIsRedOnBlackAndSetsUpTheFrames 108 95
+2 1 NopeAppUITests/testBlankPictureAtTheLargestTextSize 30 32
+3 2 NopeAppUITests/testBlankPictureExplainsRestartingTheDevice 23 32
+2 2 NopeAppUITests/testBracketDetailsChooseEachFrame 99 86
+1 2 NopeAppUITests/testBurstRunsUntilStoppedAndSavesEachFrame 63 63
+2 2 NopeAppUITests/testCameraRightToLeftWithAPhotoAndWarnings 30 27
+3 1 NopeAppUITests/testCameraSheetsStayDarkInTheLightSetting 92 103
+2 2 NopeAppUITests/testCaptureFailureIsExplained 24 25
+2 2 NopeAppUITests/testChooseDetailsTextGrowsAtEveryTextSize 300e 320e
+2 2 NopeAppUITests/testCleanViewHidesControlsButKeepsTheShutter 34 50
+3 2 NopeAppUITests/testCleanViewKeepsTheNoRAWWarning 24 30
+1 1 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 42 45
+2 2 NopeAppUITests/testCompareViewAtTheLargestTextSizeAndRightToLeft 85 127
+2 1 NopeAppUITests/testComparisonShotShowsBothPicturesAndTheirDetails 91 109
+3 2 NopeAppUITests/testControlGridPanelAndAllAuto 59 48
+3 2 NopeAppUITests/testControlsOverWhiteAndYellowFrames 38 49
+1 1 NopeAppUITests/testCopySizeInFileOptions 41 46
+1 1 NopeAppUITests/testDeclinedLocationStaysOffAndSaysHowToAllowIt 38 38
+2 2 NopeAppUITests/testDeniedAndNoCameraStates 36 35
+1 2 NopeAppUITests/testDeniedOffersOpenSettings 25 19
+2 2 NopeAppUITests/testDeviceWithoutRAWAtTheLargestTextSize 21 22
+2 1 NopeAppUITests/testDeviceWithoutRAWShowsTheFallbackChip 35 27
+3 1 NopeAppUITests/testDimLightSaysHoldItSteady 37 33
+1 2 NopeAppUITests/testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize 30 27
+1 1 NopeAppUITests/testExposureCompensationInFullAuto 37 38
+1 2 NopeAppUITests/testExposureModesAndFixedAperture 50 59
+2 2 NopeAppUITests/testFaceDetectionIsOnByDefaultAndCanBeTurnedOff 37 41
+3 2 NopeAppUITests/testFailedSecondPhotoIsExplainedAndNopesPhotoIsSaved 34 46
+2 1 NopeAppUITests/testFailureBannerOffersOneActionAndCanBeDismissed 41 46
+2 1 NopeAppUITests/testFarFocusNeedsManualControlsAndShowsAPill 52 62
+3 1 NopeAppUITests/testFastShutterSettingPassesAudits 86 83
+3 2 NopeAppUITests/testFileOptionsChangeAndRestore 60 68
+3 1 NopeAppUITests/testFirstRunAtTheLargestTextSizeAndRightToLeft 39 42
+2 2 NopeAppUITests/testFirstRunStatementsThenTheCameraPrompt 26 28
+1 1 NopeAppUITests/testFlashMenuPillAndLensesWithoutALight 47 55
+1 1 NopeAppUITests/testFocusAidsAtTheLargestTextSize 29 24
+2 2 NopeAppUITests/testFocusAidsRightToLeft 42 31
+1 1 NopeAppUITests/testFormatChipExplainsTheFormat 44 66
+2 2 NopeAppUITests/testFormatsAndPrivacySwitchesFollowTheRules 68 61
+1 2 NopeAppUITests/testFullAutoShowsOnlyTheDefaultControls 25 25
+1 1 NopeAppUITests/testHeatPauseIsExplained 19 24
+3 2 NopeAppUITests/testHonestyScreenSaysTheComparisonPhotoIsNeverSaved 30 30
+1 1 NopeAppUITests/testInterruptionIsExplained 23 37
+1 2 NopeAppUITests/testIntervalSheetAtTheLargestTextSizeAndRightToLeft 73 70
+2 1 NopeAppUITests/testIntervalShootingFromTheDriveMenuInFullAuto 50 49
+2 1 NopeAppUITests/testIntervalShootingShowsProgressAndStops 58 60
+1 2 NopeAppUITests/testIntervalStartIsDisabledWhileAstroIsOn 34 42
+1 1 NopeAppUITests/testLandscapeAtTheLargestTextSize 20 25
+3 1 NopeAppUITests/testLandscapeKeepsTheLayoutAndTurnsTheIcons 48 59
+3 1 NopeAppUITests/testLargestTextSize 23 32
+1 1 NopeAppUITests/testLastPhotoDetailsAtTheLargestTextSize 55 82
+1 1 NopeAppUITests/testLastPhotoDetailsListWhatWasSaved 65 89
+1 2 NopeAppUITests/testLastPhotoDetailsRightToLeft 81 59
+3 1 NopeAppUITests/testLightStaysOnWhileTakingPhotosAndTurnsOffFromItsPill 95 53
+1 1 NopeAppUITests/testLiveActivityLayoutsPassAccessibilityAudits 193 170
+1 1 NopeAppUITests/testLiveActivitySwitchAtTheLargestTextSize 58 70
+3 2 NopeAppUITests/testLiveActivitySwitchIsOffByDefaultAndTurnsOn 36 38
+3 2 NopeAppUITests/testLocationAsksThenShowsAPersistentWarning 67 64
+1 2 NopeAppUITests/testLocationStatesAtTheLargestTextSize 39 54
+3 2 NopeAppUITests/testLocationWarningInRightToLeftLayout 42 49
+2 2 NopeAppUITests/testMagnifierEnlargesTheNaturalAndTheRedNightViewfinder 59 167
+2 1 NopeAppUITests/testManualControlsAreHiddenByDefault 21 20
+2 1 NopeAppUITests/testManualControlsListAtTheLargestTextSize 16 18
+2 2 NopeAppUITests/testManualControlsRightToLeft 27 25
+1 1 NopeAppUITests/testMetadataRejectionSavesNothingAndSaysSo 23 22
+1 2 NopeAppUITests/testMirrorFrontCameraIsOffByDefault 59 41
+2 1 NopeAppUITests/testMultitaskingPauseIsExplained 20 36
+3 2 NopeAppUITests/testNightModeCameraWithPhotoWarningAndLight 50 56
+3 1 NopeAppUITests/testNightModeFromTheTrayIsRedOnBlack 32 34
+2 2 NopeAppUITests/testNightModeSettingsScreensAtTheLargestTextSize 440 362
+2 2 NopeAppUITests/testNightModeSettingsScreensPassAccessibilityAudits 204 215
+3 1 NopeAppUITests/testNightModeSettingsScreensRightToLeft 215 201
+1 2 NopeAppUITests/testNoPhotoSizeRowWhenEveryLensHasRAW 18 15
+2 2 NopeAppUITests/testPairedWithRAWAppearsOnlyWithAllThreeFormats 43 37
+1 2 NopeAppUITests/testPairedWithRAWAtTheLargestTextSize 33 32
+3 1 NopeAppUITests/testPermissionCaptureAndFallbackPassAccessibilityAudits 57 49
+2 2 NopeAppUITests/testPhotoSizeAtTheLargestTextSize 34 36
+2 1 NopeAppUITests/testPhotoSizeOfALensWithoutRAW 30 32
+2 1 NopeAppUITests/testPhotosAccessDeniedIsExplained 23 26
+1 1 NopeAppUITests/testPresetsAtTheLargestTextSize 88e 47
+2 1 NopeAppUITests/testPresetsFromTheTrayInNightMode 46 38
+2 1 NopeAppUITests/testPresetsInRightToLeftLayout 62 53
+1 1 NopeAppUITests/testPresetsSaveApplyUndoRenameAndDelete 147 162
+1 1 NopeAppUITests/testProToolsBracketing 49 57
+3 2 NopeAppUITests/testProToolsGrowsWithTheLargestTextSize 65 74
+3 1 NopeAppUITests/testQuickControlsTrayOpensAndCloses 29 30
+2 2 NopeAppUITests/testRedViewfinderOption 15 19
+1 2 NopeAppUITests/testRefusedLightIsExplainedAndCanBeCleared 28 32
+3 1 NopeAppUITests/testRightToLeftLayout 23 20
+3 2 NopeAppUITests/testSaveStatesAtTheLargestTextSize 19 21
+2 2 NopeAppUITests/testSelfTimerAtTheLargestTextSizeAndRightToLeft 49 47
+3 2 NopeAppUITests/testSelfTimerCountsDownAndCanBeCancelled 47 49
+2 1 NopeAppUITests/testSettingsAndPresetsFollowTheLightSetting 64 56
+3 2 NopeAppUITests/testSettingsAtTheLargestTextSize 438 367
+1 1 NopeAppUITests/testSettingsAtTheLargestTextSizeInTheLightSetting 446 362
+3 2 NopeAppUITests/testSettingsFollowTheDarkSetting 27 23
+1 1 NopeAppUITests/testSettingsInRightToLeftLayout 190 617
+3 1 NopeAppUITests/testSettingsOpenInTheSettingChangedUnderTheCamera 32 31
+3 2 NopeAppUITests/testSettingsScreensPassAccessibilityAudits 185 203
+2 2 NopeAppUITests/testSettingsScreensPassAccessibilityAuditsInTheLightSetting 186 193
+1 2 NopeAppUITests/testSignedFileThatFailsTheCheckSavesUnsignedAndSaysSo 31 24
+1 1 NopeAppUITests/testSigningFailureSavesUnsignedAndSaysSo 23 19
+3 2 NopeAppUITests/testSigningOffShowsAPersistentWarning 37 38
+2 1 NopeAppUITests/testSourceCodeIsAnHTTPSLink 38 21e
+2 1 NopeAppUITests/testSpaceTakesAPhoto 17 24e
+1 2 NopeAppUITests/testStandardFileTagsAreOnByDefaultAndCanBeTurnedOff 33 34
+1 2 NopeAppUITests/testStartInCleanViewSetting 35 33
+1 1 NopeAppUITests/testStatePillsChangeOrReset 37 33
+3 2 NopeAppUITests/testStorageAndBatteryWarnings 75 71
+3 1 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 34 32
+2 1 NopeAppUITests/testTappingTheLastPhotoOpensPhotos 33 42
+3 2 NopeAppUITests/testTooCloseSuggestionCanBeDismissed 17 19
+1 1 NopeAppUITests/testTooCloseSuggestsTheUltraWideAndNeverSwitchesByItself 19 26
+2 1 NopeAppUITests/testViewfinderFillsThePictureRightToLeft 19 17
+2 1 NopeAppUITests/testViewfinderFollowsThePictureInTheScrollingLayout 24 25
+1 1 NopeAppUITests/testViewfinderStaysInsideTheScrollingLayout 30 28
+3 1 NopeAppUITests/testWarningsAtTheLargestTextSizeAndRightToLeft 30 36
+3 2 OverlayUITests/testFlatLevelSaysItPointsDown 13 11
+3 1 OverlayUITests/testGridAndLevelFromTheQuickControls 52 49
+3 2 OverlayUITests/testGridOnlyAndLevelOnly 26 33
+2 2 OverlayUITests/testHistogramAndReadoutShowWithTheManualControls 30 21
+3 2 OverlayUITests/testHistogramIsNeverShownInFullAuto 16 14
+3 2 OverlayUITests/testLiveAidsAtTheLargestTextSizeAndRightToLeft 43 46
+2 1 OverlayUITests/testOverlaySettingsAndProTools 74 64
+1 1 OverlayUITests/testOverlaySettingsAtTheLargestTextSize 60 71
+3 2 OverlayUITests/testPinnedReadoutStaysInCleanView 59 56
+1 2 ShortcutUITests/testABracketIsTakenOnceInFullAuto 11 8
+3 2 ShortcutUITests/testACancelledCountdownSaysNoPhotoWasTaken 12 17
+1 1 ShortcutUITests/testACountTakesABurstThenSaysThePhotosWereSaved 16 12
+3 2 ShortcutUITests/testARequestWithADelayCountsDownThenSaysThePhotoWasSaved 21 25
+2 1 ShortcutUITests/testARequestWithoutCameraAccessSaysWhy 10 11
+3 1 ShortcutUITests/testApplyPresetSaysWhatChangedAndCanBeUndone 19 16
+1 1 ShortcutUITests/testSwitchingLensesSaysWhichCamera 13 12

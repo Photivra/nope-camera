@@ -4,9 +4,11 @@ import SwiftUI
 /// The camera screen: renders a `CameraModel` and sends it intents.
 ///
 /// The screen holds no rules: it shows the model's state and sends `CameraIntent` values
-/// (AGENTS.md, "One direction of flow"). It uses the dark appearance, because a camera is used
-/// in every light and a dark frame doesn't change how a scene looks; other screens follow the
-/// system appearance.
+/// (AGENTS.md, "One direction of flow"). The camera and its own sheets use the dark appearance,
+/// because a camera is used in every light and a dark frame doesn't change how a scene looks;
+/// Settings, first run and the other screens that aren't the camera follow the system's light or
+/// dark setting, read from ``SwiftUICore/EnvironmentValues/systemColorScheme``
+/// (`ScreenAppearance`). Night mode is red on black on every screen.
 ///
 /// The live viewfinder comes from the app target: `NopeUI` can't show camera video, so the app
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
@@ -17,8 +19,10 @@ import SwiftUI
 /// camera access is asked, ``FirstRunView`` says what the app does, then asks.
 ///
 /// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
-/// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
-/// ``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
+/// ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone),
+/// ``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open),
+/// ``SwiftUICore/EnvironmentValues/systemColorScheme`` (the appearance Settings follows) and
+/// ``SwiftUICore/EnvironmentValues/windowAppearance`` (the window's appearance).
 ///
 /// ```swift
 /// CameraScreen(model: model, settings: settings) { source in
@@ -32,6 +36,9 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// The person's settings, shown and changed in the settings sheet.
     private let settings: NopeSettings
 
+    /// The saved settings presets (issue #72), or `nil` to offer none.
+    private let presets: SettingsPresets?
+
     /// Whether the settings sheet is open.
     @State private var showsSettings = false
 
@@ -44,13 +51,16 @@ public struct CameraScreen<Viewfinder: View>: View {
     ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     ///     and runs `CameraModel.observeEvents()` while it is visible.
     ///   - settings: The person's settings, opened from the Settings button.
+    ///   - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    ///     `nil` to offer none (the Lock Screen camera, which can't read them).
     ///   - viewfinder: Makes the live viewfinder from the model's preview source.
     public init(
-        model: CameraModel, settings: NopeSettings,
+        model: CameraModel, settings: NopeSettings, presets: SettingsPresets? = nil,
         @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder
     ) {
         self.model = model
         self.settings = settings
+        self.presets = presets
         self.viewfinder = viewfinder
     }
 
@@ -80,20 +90,42 @@ public struct CameraScreen<Viewfinder: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .nightModeStyle(settings.isNightModeOn)
-        // Night mode with natural colors: the viewfinder is drawn behind the red screen, in the
-        // frame the ready camera reserves for it, so only nope.'s own interface turns red. The
-        // focus magnifier enlarges it here, as it enlarges the picture and focus peaking there.
-        .backgroundPreferenceValue(NaturalViewfinderFrame.self) { anchor in
-            if let anchor, let source = model.previewSource {
+        // Nothing turns upright in a window that rotates with the device (iPad, or the inner
+        // display of a foldable iPhone).
+        .modifier(WindowUprightRotation())
+        // The live viewfinder is always drawn here, behind the interface, in the frame the ready
+        // camera reserves for it (``ViewfinderFrame``), so night mode's red multiply reaches only
+        // nope.'s own interface. It is the same view in every mode: on a device a new viewfinder
+        // is a new preview layer, which attaches to the running capture session on the main
+        // thread and made switching night mode freeze the camera. Red Viewfinder tints it here.
+        // The focus magnifier enlarges it here, as it enlarges the picture and focus peaking there.
+        // In the scrolling layout it is clipped to the scroll view, so it never runs into the
+        // pinned shutter row or past the top of the screen.
+        .backgroundPreferenceValue(ViewfinderFrame.self) { anchors in
+            if let anchor = anchors.frame, let source = model.previewSource {
                 GeometryReader { proxy in
                     let frame = proxy[anchor]
+                    let visible = ViewfinderAnchors.visibleFrame(of: frame, in: anchors.clip.map { proxy[$0] })
                     viewfinder(source)
                         .frame(width: frame.width, height: frame.height)
                         .focusMagnified(model)
-                        .environment(\.layoutDirection, .leftToRight)
                         .clipped()
+                        .colorMultiply(tintsViewfinder ? NightStyle.red : .white)
                         .offset(x: frame.minX, y: frame.minY)
+                        .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
+                        .mask(alignment: .topLeading) {
+                            Rectangle()
+                                .frame(width: visible.width, height: visible.height)
+                                .offset(x: visible.minX, y: visible.minY)
+                        }
                 }
+                // Left to right in every language, placement included: the picture is laid out
+                // left to right (CameraReadyView), and its frame is read here from the left
+                // edge. With only the viewfinder left to right, a right-to-left layout offset it
+                // from the right edge instead, so beside a control column (iPad, wide windows)
+                // it was drawn a column's width from the picture's frame, under the column.
+                .environment(\.layoutDirection, .leftToRight)
+                .accessibilityIgnoresInvertColors()
                 .accessibilityHidden(true)
             }
         }
@@ -102,20 +134,28 @@ public struct CameraScreen<Viewfinder: View>: View {
         .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
-                deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location)
+                deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
+                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
                 .nightModeStyle(settings.isNightModeOn)
-                .preferredColorScheme(settings.isNightModeOn ? .dark : nil)
+                // The system's light or dark setting, not the camera's dark appearance.
+                .screenAppearance(.system, isNightMode: settings.isNightModeOn)
                 .frame(idealWidth: 480, idealHeight: 720)
                 // Opaque: a translucent popover lets the camera through and fails the contrast
                 // audit.
                 .presentationBackground(.background)
         }
         .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
-        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery").
+        // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The model
+        // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
+        // and continue (issue #64).
         .onChange(of: scenePhase) { _, phase in
-            if phase == .background { Task { await model.send(.light(.setTorch(false))) } }
+            Task {
+                if phase == .background { await model.send(.light(.setTorch(false))) }
+                await model.send(.setInForeground(phase != .background))
+            }
         }
-        .preferredColorScheme(.dark)
+        // Dark for the camera; first run, camera access declined and no camera follow the system.
+        .windowAppearance(ScreenAppearance.of(model.state), isNightMode: settings.isNightModeOn)
         // Night mode: the home indicator, a white system bar, fades away until the screen is
         // touched.
         .persistentSystemOverlays(settings.isNightModeOn ? .hidden : .automatic)
@@ -128,6 +168,11 @@ public struct CameraScreen<Viewfinder: View>: View {
         .onDisappear { Task { await model.send(.manual(.stopInterval)) } }
         // The screen stays awake and dimmed during a series; a countdown or burst stops here.
         .seriesScreen(model, isNightMode: settings.isNightModeOn)
+    }
+
+    /// Whether the viewfinder is drawn in night mode's red: night mode with Red Viewfinder on.
+    private var tintsViewfinder: Bool {
+        settings.isNightModeOn && settings.tintsViewfinderInNightMode
     }
 
     /// Whether the camera is ready, so the Settings button is in the camera layout.
@@ -176,13 +221,11 @@ public struct CameraScreen<Viewfinder: View>: View {
                 )
             )
         case .ready(let capabilities):
-            CameraReadyView(model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true }) {
-                if let source = model.previewSource {
-                    viewfinder(source)
-                } else {
-                    Color.black
-                }
-            }
+            // The ready camera leaves the picture's frame clear; the viewfinder is drawn behind
+            // it (see body).
+            CameraReadyView(
+                model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true },
+                presets: presets)
         }
     }
 }

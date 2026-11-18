@@ -22,9 +22,13 @@ env:
   DEVELOPER_DIR: /Applications/Xcode_27.2.app/Contents/Developer
   SIMULATOR: platform=iOS Simulator,name=iPhone 18 Pro,OS=27.2
   IPAD_SIMULATOR: platform=iOS Simulator,name=iPad Air 11-inch (M4),OS=27.2
+  WATCH_SIMULATOR: platform=watchOS Simulator,name=Apple Watch Series 12 (46mm),OS=27.2
   # Every job builds against the C2PA library built from source in the c2pa-lib job, whose
   # checksum must equal the one Package.swift pins for the published asset (c2pa-lib/README.md).
   NOPE_C2PA_LIB_FROM_SOURCE: "1"
+  # The runtimes the runner image mounts from plain disk images in every job; any other one
+  # mounted that way makes scripts/wait-for-simulator-runtimes.sh wait (docs/TESTING.md).
+  SIMULATOR_RUNTIMES_ON_DISK_IMAGES: com.apple.CoreSimulator.SimRuntime.watchOS-27-0 com.apple.CoreSimulator.SimRuntime.tvOS-27-0
 
 jobs:
   c2pa-lib:
@@ -80,7 +84,7 @@ jobs:
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-link \
             CODE_SIGNING_ALLOWED=NO COPY_PHASE_STRIP=NO STRIP_INSTALLED_PRODUCT=NO DEPLOYMENT_POSTPROCESSING=NO
           scripts/check-no-networking.sh DerivedData-link/Build/Products/Release-iphoneos/NopeSigningLinkCheck
-      - name: No networking code in the app and its extensions (Release, device)
+      - name: No networking code in the app, its extensions and the Apple Watch app (Release, device)
         run: |
           xcodebuild build -quiet -project App/NopeCamera.xcodeproj -scheme NopeApp -configuration Release \
             -destination 'generic/platform=iOS' -derivedDataPath DerivedData-app \
@@ -88,7 +92,8 @@ jobs:
           app=DerivedData-app/Build/Products/Release-iphoneos/nope.app
           scripts/check-no-networking.sh "$app/nope" \
             "$app/Extensions/NopeCaptureExtension.appex/NopeCaptureExtension" \
-            "$app/PlugIns/NopeControls.appex/NopeControls"
+            "$app/PlugIns/NopeControls.appex/NopeControls" \
+            "$app/Watch/NopeWatch.app/NopeWatch"
       - name: A normal build fetches the published library (SwiftPM verifies the pinned checksum)
         env:
           NOPE_C2PA_LIB_FROM_SOURCE: ""
@@ -140,7 +145,6 @@ jobs:
       - name: Coverage gate (100% lines and branches of logic modules)
         run: scripts/check-coverage.sh DerivedData
       - name: Upload the file compatibility fixtures for the external validators
-        if: vars.NOPE_FILE_VALIDATORS != ''
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: compat-fixtures
@@ -154,10 +158,12 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  # The UI tests are built once, then run in shards: eight on the iPhone Simulator and eight on
+  # The UI tests are built once, then run in shards: three on the iPhone Simulator and two on
   # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
-  # shard, balanced by test time measured on the runner; repo checks fail when a test is in no
-  # shard or in two (docs/TESTING.md, "UI test shards"). The iPhone and iPad Simulators run in
+  # shard per device, balanced by test time measured on the runner; repo checks fail when a
+  # test is in no shard or in two (docs/TESTING.md, "UI test shards"). A shard job says in its
+  # summary whether a failure is a test failure or an infrastructure failure, runs an
+  # infrastructure failure's unfinished tests once more, and uploads its per-test results. The iPhone and iPad Simulators run in
   # separate jobs: running both in one job stalled the test runner before the second
   # destination's first test. The `ui-tests` and `ui-tests-ipad` jobs pass only when all their shards pass, so the
   # required status checks keep their names.
@@ -198,15 +204,19 @@ jobs:
           retention-days: 1
 
   ui-tests-shard:
-    name: ui-tests ${{ matrix.shard }}/8
+    name: ui-tests ${{ matrix.shard }}/3
     needs: ui-build
     runs-on: xcode-27
-    # About 10.5 minutes of tests on the runner and 5 of setup, so a setup retry still fits.
-    timeout-minutes: 35
+    # About 44 minutes of tests on the runner and 7 of setup; on a runner that has to remount a
+    # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The
+    # rest is room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3]
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -217,16 +227,27 @@ jobs:
           name: ui-tests-build
       - name: Unpack the build
         run: mkdir -p products && tar -xzf ui-tests-build.tgz -C products
-      # Boots the Simulator and waits for it, launches the app once, then runs the shard; it
-      # retries once only when the test runner fails before any test starts.
+      # Boots the Simulator and waits for it, launches the app once, then runs the shard. A test
+      # failure is never run again; an infrastructure failure is, once, without the tests that
+      # passed (scripts/ui-test-run-lib.sh).
       - name: Run the UI tests of this shard with accessibility audits
         run: scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPhone 18 Pro" products ui-tests.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-${{ matrix.shard }}
+          path: ui-tests-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-${{ matrix.shard }}-xcresult
-          path: ui-tests.xcresult
+          path: |
+            ui-tests.xcresult
+            ui-tests-interrupted.xcresult
           retention-days: 7
 
   ui-tests:
@@ -242,14 +263,18 @@ jobs:
   # The source link test is skipped on iPad: there the link isn't found in the Settings popover
   # (docs/TESTING.md).
   ui-tests-ipad-shard:
-    name: ui-tests-ipad ${{ matrix.shard }}/8
+    name: ui-tests-ipad ${{ matrix.shard }}/2
     needs: ui-build
     runs-on: xcode-27
-    timeout-minutes: 35
+    # About 69 minutes of tests on the runner and 7 of setup, up to 12.5 more for a runtime
+    # remount, and room for one second run of unfinished tests after an infrastructure failure.
+    timeout-minutes: 130
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2]
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -264,12 +289,22 @@ jobs:
         run: >
           scripts/run-ui-test-shard.sh "${{ matrix.shard }}" "iPad Air 11-inch (M4)" products ui-tests-ipad.xcresult
           -skip-testing:NopeAppUITests/NopeAppUITests/testSourceCodeIsAnHTTPSLink
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-ipad-${{ matrix.shard }}
+          path: ui-tests-ipad-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Upload test results
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ui-tests-ipad-${{ matrix.shard }}-xcresult
-          path: ui-tests-ipad.xcresult
+          path: |
+            ui-tests-ipad.xcresult
+            ui-tests-ipad-interrupted.xcresult
           retention-days: 7
 
   ui-tests-ipad:
@@ -282,20 +317,73 @@ jobs:
       - name: All iPad shards passed
         run: '[[ "${{ needs.ui-tests-ipad-shard.result }}" == success ]]'
 
-  # External validators on the pipeline-generated fixtures (issue #58): c2patool, exiftool
-  # -validate and Adobe's dng_validate. None is approved yet (security/allowed-dependencies.txt),
-  # so this job runs only once the maintainer sets the repository variable NOPE_FILE_VALIDATORS
-  # to the approved list, for example "c2patool exiftool". scripts/check-file-compat.sh then
-  # fails if a listed validator is missing. dng_validate has no install step: it is built from
-  # Adobe's DNG SDK, whose license must be reviewed first.
+  # The Apple Watch app's UI tests (issue #63), with a simulated phone and accessibility audits.
+  ui-tests-watch:
+    name: ui-tests-watch
+    needs: c2pa-lib
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Get the C2PA library built from source
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: C2PAC.xcframework
+      - name: Unpack the C2PA library
+        run: mkdir -p build/c2pa-lib && (cd build/c2pa-lib && unzip -q ../../C2PAC.xcframework.zip)
+      # The watch Simulator is named by its identifier: on the runner the name also matches the
+      # iPhone paired with it, and build-for-testing stopped with "multiple devices matched".
+      # The paired iPhone Simulator is booted here too, so it boots during the build and not
+      # during the first test, whose launch then timed out (docs/TESTING.md).
+      - name: Find and boot the watch Simulator and its paired iPhone
+        id: watch
+        run: scripts/prepare-simulator.sh "$WATCH_SIMULATOR"
+      - name: Build the watch app and its UI tests
+        run: >
+          xcodebuild build-for-testing
+          -project App/NopeCamera.xcodeproj
+          -scheme NopeWatch
+          -destination "id=${{ steps.watch.outputs.udid }}"
+          -derivedDataPath DerivedData
+          CODE_SIGNING_ALLOWED=NO
+      # As for the iPhone and iPad shards: the app is launched once before the tests (its first
+      # launch on a Simulator that has just booted took longer than XCTest waits), a test
+      # failure is never run again, and an infrastructure failure is, once, without the tests
+      # that passed (scripts/run-watch-ui-tests.sh).
+      - name: Run the watch UI tests with accessibility audits
+        run: scripts/run-watch-ui-tests.sh "$WATCH_SIMULATOR" DerivedData ui-tests-watch.xcresult
+      - name: Upload the per-test results
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results-ui-tests-watch
+          path: ui-tests-watch-results.jsonl
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ui-tests-watch-xcresult
+          path: |
+            ui-tests-watch.xcresult
+            ui-tests-watch-interrupted.xcresult
+          retention-days: 7
+
+  # External validators on the pipeline-generated fixtures (issue #58): c2patool and exiftool
+  # -validate, both maintainer-approved (security/allowed-dependencies.txt). They are installed
+  # at pinned versions, each checked against its SHA-256, by scripts/install-file-validators.sh;
+  # scripts/check-file-compat.sh fails if either is missing. Adobe's dng_validate isn't
+  # approved, so it isn't installed and doesn't run here.
   file-compat:
     name: file-compat
     needs: unit-tests
-    if: vars.NOPE_FILE_VALIDATORS != ''
     runs-on: xcode-27
     timeout-minutes: 20
-    env:
-      NOPE_FILE_VALIDATORS: ${{ vars.NOPE_FILE_VALIDATORS }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -305,19 +393,14 @@ jobs:
         with:
           name: compat-fixtures
           path: compat-fixtures
-      - name: Install exiftool
-        if: contains(vars.NOPE_FILE_VALIDATORS, 'exiftool')
-        run: brew install exiftool
-      - name: Install c2patool
-        if: contains(vars.NOPE_FILE_VALIDATORS, 'c2patool')
-        run: brew install c2patool
+      - name: Install c2patool and exiftool (pinned, checksum-verified)
+        run: scripts/install-file-validators.sh "$RUNNER_TEMP/file-validators" >> "$GITHUB_PATH"
       - name: Show validator versions
         run: |
-          for tool in $NOPE_FILE_VALIDATORS; do echo "$tool: $(command -v "$tool" || echo missing)"; done
-          if command -v exiftool >/dev/null; then exiftool -ver; fi
-          if command -v c2patool >/dev/null; then c2patool --version; fi
+          c2patool --version
+          echo "exiftool $(exiftool -ver)"
       - name: Validate every fixture
-        run: scripts/check-file-compat.sh --require "$NOPE_FILE_VALIDATORS" compat-fixtures
+        run: scripts/check-file-compat.sh --require "c2patool exiftool" compat-fixtures
 
   docs:
     name: docs

@@ -10,8 +10,48 @@ final class NopeAppUITests: XCTestCase {
         iPhoneSideways = false
     }
 
+    /// Every test ends with the app closed, in portrait and in the system's light setting, the
+    /// Simulator's default, which Settings and the screens that aren't the camera follow
+    /// (AppearanceUITests). The app is closed first, so turning the device or changing the
+    /// setting doesn't make the system redraw a running app between tests. The setting is
+    /// changed only by the tests that need it (``useAppearance(_:)``) and restored only if it
+    /// changed.
+    ///
+    /// Before closing it, it waits (up to 30 seconds) until no photo is being saved, so the app
+    /// isn't closed in the middle of adding photos to the library: on the iPad runner the app,
+    /// closed right after an astro run stopped, left the screen but its process didn't exit
+    /// within XCTest's limit ("Failed to terminate"), twice.
     override func tearDown() {
-        MainActor.assumeIsolated { XCUIDevice.shared.orientation = .portrait }
+        MainActor.assumeIsolated {
+            let app = XCUIApplication()
+            if app.state == .runningForeground {
+                let saving = app.descendants(matching: .any)["Saving…"]
+                _ = XCTWaiter().wait(
+                    for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: saving)],
+                    timeout: 30)
+            }
+            if app.state != .notRunning {
+                app.terminate()
+                _ = app.wait(for: .notRunning, timeout: 30)
+            }
+            XCUIDevice.shared.orientation = .portrait
+            if XCUIDevice.shared.appearance == .dark { XCUIDevice.shared.appearance = .light }
+        }
+    }
+
+    /// Sets the system's light or dark setting, if it differs, and waits up to five seconds until
+    /// the device reports it; tearDown restores light.
+    ///
+    /// - Parameter appearance: The setting.
+    @MainActor
+    func useAppearance(_ appearance: XCUIDevice.Appearance, file: StaticString = #filePath, line: UInt = #line) {
+        guard XCUIDevice.shared.appearance != appearance else { return }
+        XCUIDevice.shared.appearance = appearance
+        let deadline = Date().addingTimeInterval(5)
+        while XCUIDevice.shared.appearance != appearance && Date() < deadline {
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Appearance")], timeout: 0.2)
+        }
+        XCTAssertEqual(XCUIDevice.shared.appearance, appearance, "the device's light or dark setting didn't change", file: file, line: line)
     }
 
     /// The launch arguments for the largest accessibility text size.
@@ -98,7 +138,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Opens the manual controls' last button and chooses an item: "All Auto" or "Pro Tools".
     @MainActor
-    private func manualMenu(_ app: XCUIApplication, _ name: String) {
+    func manualMenu(_ app: XCUIApplication, _ name: String) {
         let menu = app.buttons["More Manual Controls"]
         XCTAssertTrue(menu.waitForExistence(timeout: 20))
         menu.tap()
@@ -150,10 +190,12 @@ final class NopeAppUITests: XCTestCase {
             Self.isClippedContrastIssue(issue, in: app) || Self.isOpenIPadFinding(issue)
                 || (!checksContrast && issue.auditType == .contrast)
         }
-        var remaining = try reportedIssues(app).filter { !ignored($0) }
+        // A check whose findings are all ignored isn't run (see ``audit(_:afterScrolling:)``).
+        let types = Self.auditTypes(contrast: checksContrast, dynamicType: true)
+        var remaining = try reportedIssues(app, types).filter { !ignored($0) }
         if !remaining.isEmpty {
             waitUntilStill(app)
-            remaining = try reportedIssues(app).filter { !ignored($0) }
+            remaining = try reportedIssues(app, types).filter { !ignored($0) }
         }
         for issue in remaining {
             XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
@@ -452,8 +494,7 @@ final class NopeAppUITests: XCTestCase {
         checksContrast: Bool = true, file: StaticString = #filePath, line: UInt = #line
     ) throws {
         settle()
-        // One retry: on a slow runner a navigation transition can still be finishing. Issues are
-        // collected during the audit and judged after it, because querying the app from inside
+        // Issues are collected during the audit and judged after it, because querying the app from inside
         // the audit's handler can make the audit time out.
         let sideways = iPhoneSideways
         let ignored = { (issue: XCUIAccessibilityAuditIssue) in
@@ -464,13 +505,28 @@ final class NopeAppUITests: XCTestCase {
                 // element-less Dynamic Type finding on the long Choose Details list (docs/TESTING.md).
                 || (!checksContrast && issue.auditType == .dynamicType && issue.element == nil)
                 || Self.isOpenIPadFinding(issue)
+                || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
-        var remaining = try reportedIssues(app).filter { !ignored($0) }
-        if !remaining.isEmpty {
+        // A check whose every finding is ignored isn't run: the contrast check after a scroll and
+        // where the test skips it, and the Dynamic Type check where the test skips it. The
+        // contrast check is the audit's slowest part, and it alone took longer than XCTest's 15
+        // seconds on the scrolled compare details (docs/TESTING.md, "Audits that don't finish").
+        let types = Self.auditTypes(contrast: checksContrast && !afterScrolling, dynamicType: checksDynamicType)
+        var remaining = try judged(reportedIssues(app, types), in: app, round: 1, ignored: ignored)
+        // An issue fails the test when the audit reports it again in each of two more audits of
+        // the same screen. On the iPad CI runner the audit's first pass over a screen reported
+        // findings that a second audit three seconds later didn't (build 44149517211: ten
+        // findings in five tests, nine of them Dynamic Type, none reported again), on text the
+        // screen recordings of build 44124454610 show whole at every size. A real finding is
+        // reported every time (docs/TESTING.md).
+        var round = 2
+        while !remaining.isEmpty && round <= 3 {
             settle()
-            remaining = try reportedIssues(app).filter { !ignored($0) }
+            let again = try judged(reportedIssues(app, types), in: app, round: round, ignored: ignored)
+            remaining = remaining.filter { issue in again.contains { Self.isSameFinding($0, issue) } }
+            round += 1
         }
         for issue in remaining {
             XCTFail(
@@ -478,11 +534,65 @@ final class NopeAppUITests: XCTestCase {
         }
     }
 
-    /// Runs the accessibility audit and returns every issue it found, without failing the test.
+    /// Whether two audits reported the same finding: the same type on an element with the same
+    /// label, or the same type and description when the audit named no element.
     @MainActor
-    private func reportedIssues(_ app: XCUIApplication) throws -> [XCUIAccessibilityAuditIssue] {
+    private static func isSameFinding(_ first: XCUIAccessibilityAuditIssue, _ second: XCUIAccessibilityAuditIssue) -> Bool {
+        guard first.auditType == second.auditType else { return false }
+        guard let firstElement = first.element, let secondElement = second.element else {
+            return first.element == nil && second.element == nil && first.compactDescription == second.compactDescription
+        }
+        guard firstElement.exists, secondElement.exists else { return false }
+        return firstElement.label == secondElement.label
+    }
+
+    /// Returns the issues that aren't ignored, and writes one line to the test log for each
+    /// Dynamic Type issue and each issue that isn't ignored: its type, the element's label and
+    /// frame, the window's frame, and whether it was ignored. On the CI runner the audit reported Dynamic Type findings on the same rows in
+    /// runs that passed and runs that failed (build 44124454610), and which rule ignored them
+    /// couldn't be told from the log; these lines record it (docs/TESTING.md).
+    @MainActor
+    private func judged(
+        _ issues: [XCUIAccessibilityAuditIssue], in app: XCUIApplication, round: Int,
+        ignored: (XCUIAccessibilityAuditIssue) -> Bool
+    ) throws -> [XCUIAccessibilityAuditIssue] {
+        var remaining: [XCUIAccessibilityAuditIssue] = []
+        for issue in issues {
+            let isIgnored = ignored(issue)
+            if !isIgnored { remaining.append(issue) }
+            guard issue.auditType == .dynamicType || !isIgnored else { continue }
+            // A decision by type alone needs no element; the others are the frame rules'.
+            guard let element = issue.element, element.exists else {
+                NSLog("Audit round %d: %@, no element, ignored: %d", round, issue.compactDescription, isIgnored ? 1 : 0)
+                continue
+            }
+            NSLog(
+                "Audit round %d: %@, \"%@\" at %@ in window %@, ignored: %d", round, issue.compactDescription,
+                element.label, "\(element.frame)", "\(app.windows.firstMatch.frame)", isIgnored ? 1 : 0)
+        }
+        return remaining
+    }
+
+    /// Every audit type except the ones a test skips, whose findings would all be ignored.
+    ///
+    /// - Parameters:
+    ///   - contrast: Whether the contrast check runs.
+    ///   - dynamicType: Whether the Dynamic Type check runs.
+    static func auditTypes(contrast: Bool, dynamicType: Bool) -> XCUIAccessibilityAuditType {
+        var types = XCUIAccessibilityAuditType.all
+        if !contrast { types.subtract(.contrast) }
+        if !dynamicType { types.subtract(.dynamicType) }
+        return types
+    }
+
+    /// Runs the accessibility audit of the given types and returns every issue it found, without
+    /// failing the test.
+    @MainActor
+    private func reportedIssues(
+        _ app: XCUIApplication, _ types: XCUIAccessibilityAuditType = .all
+    ) throws -> [XCUIAccessibilityAuditIssue] {
         var issues: [XCUIAccessibilityAuditIssue] = []
-        try app.performCompleteAccessibilityAudit { issue in
+        try app.performCompleteAccessibilityAudit(for: types) { issue in
             issues.append(issue)
             return true
         }
@@ -493,6 +603,22 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func settle() {
         _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Animations finish")], timeout: 3)
+    }
+
+    /// The Choose Details texts the audit reports as "Dynamic Type font sizes are partially
+    /// unsupported" on the iPad runner: the master switch's footer and the header after it.
+    /// `testChooseDetailsTextGrowsAtEveryTextSize` measures both at all nine text sizes instead.
+    static let measuredDynamicTypeLabels = [
+        "On: each photo keeps only what it needs to open. Off: choose each item below.", "In Each Photo",
+    ]
+
+    /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``. In
+    /// build 44209365138 the iPad runner's audit reported both in three audits in a row in the
+    /// night-mode Settings sheet at the largest text size, where they measure 167 and 83.5 points
+    /// high and grow at every step from the default size (docs/TESTING.md).
+    private static func isMeasuredDynamicTypeFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .dynamicType, let label = issue.element?.label else { return false }
+        return measuredDynamicTypeLabels.contains(label)
     }
 
     /// Whether an issue is the open iPad finding on the lens buttons' "No RAW" caption: the audit
@@ -535,6 +661,16 @@ final class NopeAppUITests: XCTestCase {
         // audited whole after scrolling. Every element fully in the window is checked.
         let window = app.windows.firstMatch.frame
         if let element = issue.element, !window.contains(element.frame) { return true }
+        // The same for a row cut by the lower or upper edge of a popover (Settings on iPad): in
+        // build 44098207588 the Choose Details header "In Each Photo", 27 points past the
+        // popover's lower edge, was reported as "Dynamic Type font sizes are partially
+        // unsupported" (docs/TESTING.md). Only an element within the popover's sides counts.
+        let popover = app.popovers.firstMatch
+        if let element = issue.element, popover.exists {
+            let frame = element.frame, edges = popover.frame
+            let withinSides = frame.minX >= edges.minX && frame.maxX <= edges.maxX
+            if withinSides && edges.intersects(frame) && !edges.contains(frame) { return true }
+        }
         // A Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges
         // the text, pushes it past the edge and can't measure it. The same text styles are
         // measured higher up on other screens (Formats, Choose Details).
@@ -550,15 +686,50 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Scrolls to a navigation row whose label contains the text, and opens it.
+    ///
+    /// It drags by three tenths of the Settings list's height, inside the list, without a fling,
+    /// first down the list and then, if the row isn't found, back up, so it can't skip past a row
+    /// or miss one that is above. At the largest text size Settings is far longer than the screen
+    /// (in 0.3.0 the Mirror Front Camera row alone is about 530 points tall in the iPad sheet),
+    /// and 8 swipes stopped short of More's Accessibility row on iPhone; on iPad full swipes flung
+    /// the sheet past Choose Details. The drags are placed in the list's own frame: on iPad
+    /// Settings is a popover at the window's top leading corner, and drags placed by the window's
+    /// height landed below it and didn't scroll (File Options and Accessibility weren't found).
     @MainActor
-    private func open(_ app: XCUIApplication, row text: String) {
+    func open(_ app: XCUIApplication, row text: String) {
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
-        var swipes = 0
-        while !row.isHittable && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
+        let frame = settingsListFrame(app)
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        func point(_ fraction: CGFloat) -> XCUICoordinate {
+            origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * fraction))
+        }
+        for towardEnd in [true, false] {
+            var steps = 0
+            while !row.isHittable && steps < 30 {
+                point(towardEnd ? 0.7 : 0.4).press(forDuration: 0.05, thenDragTo: point(towardEnd ? 0.4 : 0.7))
+                steps += 1
+            }
         }
         row.tap()
+    }
+
+    /// The frame of the list under the open screen's navigation bar (Settings and its pages): the
+    /// collection view as wide as the bar and below it, so another list on screen (the camera's
+    /// controls list at the largest text size) isn't taken for it. The window's frame when there
+    /// is none.
+    @MainActor
+    func settingsListFrame(_ app: XCUIApplication) -> CGRect {
+        let window = app.windows.firstMatch.frame
+        let bar = app.navigationBars.firstMatch
+        guard bar.exists else { return window }
+        let barFrame = bar.frame
+        let lists = app.collectionViews.allElementsBoundByIndex
+        let list = lists.first { list in
+            let frame = list.frame
+            return abs(frame.minX - barFrame.minX) < 2 && abs(frame.width - barFrame.width) < 2
+                && frame.maxY > barFrame.maxY
+        }
+        return list?.frame ?? window
     }
 
     /// Goes back one screen in the navigation stack.
@@ -569,6 +740,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSettingsScreensPassAccessibilityAudits() throws {
+        // The dark setting; the light one is audited in AppearanceUITests.
+        useAppearance(.dark)
         let app = launch("allow")
         let allow = app.buttons["Continue"]
         XCTAssertTrue(allow.waitForExistence(timeout: 10))
@@ -584,6 +757,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSettingsAtTheLargestTextSize() throws {
+        // The dark setting; the light one is audited in AppearanceUITests.
+        useAppearance(.dark)
         let app = launch("denied", extraArguments: Self.largestTextSize)
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
         try auditSettingsScreens(app, checksContrast: !isPad)
@@ -591,6 +766,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testSettingsInRightToLeftLayout() throws {
+        // The dark setting; the light one is audited in AppearanceUITests.
+        useAppearance(.dark)
         let app = launch(
             "denied", extraArguments: ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"])
         XCTAssertTrue(app.staticTexts["Camera Access Is Off"].waitForExistence(timeout: 10))
@@ -1220,6 +1397,42 @@ final class NopeAppUITests: XCTestCase {
         try auditVisibleElements(app)
     }
 
+    /// At the largest text size every manual control can be set in landscape too: on iPad (and
+    /// the unfolded iPhone Duo) a wide window used the column, which had room only for All Auto
+    /// and Pro Tools. Every window scrolls at these sizes, with the enlarged controls list.
+    @MainActor
+    func testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize() throws {
+        let app = launch("manual", extraArguments: Self.manualOn + Self.largestTextSize)
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        rotate(app, to: .landscapeLeft)
+        XCTAssertTrue(app.steppers.firstMatch.waitForExistence(timeout: 20), "no manual controls list")
+        for name in ["ISO", "Shutter"] {
+            let stepper = app.steppers.matching(NSPredicate(format: "label CONTAINS %@", name)).firstMatch
+            // Drag the row into view, holding at the end so the scroll view doesn't coast past it.
+            let scrollView = app.scrollViews.firstMatch
+            var drags = 0
+            let increment = stepper.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "Increment")).firstMatch
+            while !(increment.exists && increment.isHittable) && drags < 12 {
+                let visible = scrollView.frame.insetBy(dx: 0, dy: 60)
+                let distance = max(-250, min(250, visible.midY - stepper.frame.midY))
+                let start = scrollView.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5))
+                start.press(
+                    forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: distance)),
+                    withVelocity: .slow, thenHoldForDuration: 0.3)
+                drags += 1
+            }
+            XCTAssertTrue(increment.isHittable, "\(name) can't be set")
+            // Setting it makes the control manual and changes its value.
+            let before = stepper.value as? String
+            increment.tap()
+            let changed = NSPredicate { _, _ in stepper.value as? String != before }
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: changed, object: nil)], timeout: 5), .completed,
+                "\(name) didn't change")
+        }
+        rotate(app, to: .portrait)
+    }
+
     @MainActor
     func testDeviceWithoutRAWShowsTheFallbackChip() throws {
         let app = launch("noRAW")
@@ -1360,11 +1573,22 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Restore Defaults"].exists)
         choose(app, "sRGB", inPickerLabeled: "Color Space")
         let restore = app.buttons["Restore Defaults"]
+        // Restore Defaults is the last row, below the fold since Copy Size (issue #57).
+        var swipes = 0
+        while !(restore.exists && restore.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
-        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
         goBack(app)
         XCTAssertTrue(element(app, containing: "Custom").waitForExistence(timeout: 5))
         open(app, row: "File Options")
+        swipes = 0
+        while !(restore.exists && restore.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
         restore.tap()
         XCTAssertFalse(restore.waitForExistence(timeout: 2))
@@ -1633,11 +1857,58 @@ final class NopeAppUITests: XCTestCase {
 
     /// Chooses a drive mode in the tray's Drive menu.
     @MainActor
-    private func chooseDrive(_ app: XCUIApplication, _ option: String) {
+    func chooseDrive(_ app: XCUIApplication, _ option: String) {
         quickControl(app, "Drive")
         let item = app.buttons[option]
         XCTAssertTrue(item.waitForExistence(timeout: 10), option)
         item.tap()
+    }
+
+    /// Interval shooting from the Drive menu, in full auto (manual controls off): its sheet, the
+    /// Interval pill, the shutter starting and stopping the series, and the dimmed screen.
+    @MainActor
+    func testIntervalShootingFromTheDriveMenuInFullAuto() throws {
+        let app = launch("noRAW")
+        chooseDrive(app, "Interval Shooting")
+        let start = app.buttons["Start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, containing: "Each photo is taken in full auto").exists)
+        try audit(app)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Interval Shooting"].waitForExistence(timeout: 5))
+        let shutter = app.buttons["Take Photo"]
+        XCTAssertEqual(shutter.value as? String, "Interval shooting. Press to start the series.")
+        shutter.tap()
+        XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
+        let brighten = app.buttons["Brighten Screen"]
+        XCTAssertTrue(brighten.waitForExistence(timeout: 10))
+        brighten.tap()
+        XCTAssertFalse(brighten.waitForExistence(timeout: 2))
+        XCTAssertEqual(shutter.value as? String, "Interval series running. Press to stop.")
+        try audit(app)
+        shutter.tap()
+        XCTAssertFalse(element(app, containing: "photos taken").waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testIntervalSheetAtTheLargestTextSizeAndRightToLeft() throws {
+        for arguments in [Self.largestTextSize, Self.rightToLeft] {
+            let app = launch("noRAW", extraArguments: arguments)
+            if arguments == Self.largestTextSize {
+                // The tray's button scrolls into view at the largest sizes.
+                let tray = app.buttons["Quick Controls"]
+                XCTAssertTrue(tray.waitForExistence(timeout: 20))
+                var swipes = 0
+                while !tray.isHittable && swipes < 6 {
+                    app.swipeUp()
+                    swipes += 1
+                }
+            }
+            chooseDrive(app, "Interval Shooting")
+            XCTAssertTrue(app.buttons["Start"].waitForExistence(timeout: 10))
+            try audit(app)
+            app.terminate()
+        }
     }
 
     @MainActor
@@ -1749,7 +2020,7 @@ final class NopeAppUITests: XCTestCase {
 
     /// Takes a photo and opens its details from the thumbnail's long-press menu.
     @MainActor
-    private func openPhotoDetails(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+    func openPhotoDetails(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let shutter = app.buttons["Take Photo"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10), file: file, line: line)
         shutter.tap()
@@ -1758,7 +2029,8 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(thumbnail.waitForExistence(timeout: 5), file: file, line: line)
         thumbnail.press(forDuration: 1.2)
         let details = app.buttons["Photo Details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 5), file: file, line: line)
+        // The context menu opens after the press; on the CI runner it took longer than 5 seconds.
+        XCTAssertTrue(details.waitForExistence(timeout: 15), file: file, line: line)
         XCTAssertTrue(app.buttons["Open in Photos"].exists, file: file, line: line)
         details.tap()
         XCTAssertTrue(app.navigationBars["What's in This Photo"].waitForExistence(timeout: 5), file: file, line: line)
@@ -1778,6 +2050,9 @@ final class NopeAppUITests: XCTestCase {
         openPhotoDetails(app)
         XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "RAW (DNG)").exists)
+        // The RAW clipping the simulated camera reports (SimulatedCaptureBackend.placeholderClipping).
+        XCTAssertTrue(element(app, containing: "0.4% of photosites").exists)
+        XCTAssertTrue(element(app, containing: "0.1% of photosites").exists)
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Saved and signed.")))
         // As for the format sheet (testFormatChipExplainsTheFormat): the list's system section
         // headers are reported as "partially unsupported" at the default size; the same list is
@@ -1824,7 +2099,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 30))
         app.buttons["Last Photo"].press(forDuration: 1.2)
         let details = app.buttons["Photo Details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 5))
+        XCTAssertTrue(details.waitForExistence(timeout: 15))
         details.tap()
         let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch
         XCTAssertTrue(picker.waitForExistence(timeout: 5))

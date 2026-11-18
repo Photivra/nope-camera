@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: manual controls</title>
+<style>
+  /* Tokens, phone frame, type scale and figure layout: from the v3 visual language (issue #68). */
+  :root { --bg:#f2f2f7; --ink:#1c1c1e; --muted:#6e6e73; --teal:#5fe0d0; --amber:#ffb340; --red:#ff453a; }
+  /* Night mode uses the app's one night color, pure sRGB red (NightStyle.red); --red elsewhere is the system red for destructive actions. */
+  .night, .nightla { --red:#ff0000; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#000; --ink:#f2f2f7; --muted:#98989f; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
+  header, .notes { max-width:1180px; margin:0 auto; padding:28px 16px 4px; }
+  h1 { font-size:26px; margin:0 0 6px; letter-spacing:-.02em; }
+  header p { margin:0; color:var(--muted); max-width:820px; }
+  .grid { max-width:1180px; margin:0 auto; padding:16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:30px 26px; }
+  figure { margin:0; }
+  figcaption { margin-top:12px; font-size:13px; color:var(--muted); }
+  figcaption b { color:var(--ink); display:block; font-size:14px; margin-bottom:2px; }
+  /* phone: 300px wide ≈ 0.75 × 402 pt; all sizes below are drawn at that scale */
+  .phone { position:relative; width:300px; height:652px; border-radius:46px; background:#000; overflow:hidden; box-shadow:0 0 0 10px #1c1c1e, 0 20px 40px rgba(0,0,0,.25); margin:10px auto 0; color:#fff; font-size:12px; }
+  .phone.land { width:652px; height:300px; max-width:100%; }
+  .island { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:94px; height:27px; background:#000; border-radius:20px; z-index:9; }
+  .land .island { top:50%; left:10px; transform:translateY(-50%); width:27px; height:94px; }
+  .top { position:absolute; top:42px; left:12px; right:12px; height:34px; display:flex; align-items:center; justify-content:space-between; z-index:5; }
+  .pills { display:flex; gap:5px; min-width:84px; }
+  .pill { height:24px; padding:0 8px; border-radius:12px; display:flex; align-items:center; gap:4px; font-size:11px; font-weight:600; background:rgba(58,58,60,.92); }
+  .pill.amber { color:#000; background:var(--amber); }
+  .chip { height:28px; padding:0 11px; border-radius:14px; display:flex; align-items:center; gap:5px; font-weight:600; font-size:12px; color:var(--teal); background:rgba(58,58,60,.92); }
+  .chip.amber { color:#000; background:var(--amber); }
+  .ib { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; font-size:16px; background:rgba(58,58,60,.92); }
+  .vf { position:absolute; left:0; right:0; top:84px; height:400px; background:
+      radial-gradient(120px 90px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(260px 200px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .land .vf { top:0; bottom:0; left:44px; width:400px; height:auto; }
+  .row { position:absolute; left:0; right:0; top:492px; height:34px; display:flex; justify-content:center; align-items:center; gap:8px; z-index:5; }
+  .lens { height:30px; min-width:38px; padding:0 8px; border-radius:15px; display:grid; place-items:center; font-weight:600; background:rgba(58,58,60,.92); }
+  .lens.on { background:#fff; color:#000; font-weight:700; }
+  .tray-btn { width:33px; height:33px; border-radius:50%; display:grid; place-items:center; background:rgba(58,58,60,.92); font-size:14px; margin-left:6px; }
+  .tray { position:absolute; left:8px; right:8px; top:490px; height:40px; border-radius:20px; background:rgba(44,44,46,.97); display:flex; align-items:center; gap:4px; padding:0 6px; overflow:hidden; z-index:6; }
+  .t { flex:0 0 auto; height:30px; padding:0 9px; border-radius:15px; display:flex; align-items:center; gap:4px; font-size:11px; font-weight:600; background:rgba(99,99,102,.5); }
+  .t.on { background:#fff; color:#000; }
+  .bottom { position:absolute; left:0; right:0; bottom:28px; height:84px; display:flex; align-items:center; justify-content:space-between; padding:0 30px; }
+  .land .bottom { left:auto; right:0; top:0; bottom:0; width:120px; height:auto; flex-direction:column; padding:20px 0; }
+  .slot { width:44px; height:44px; }
+  .thumb { width:44px; height:44px; border-radius:9px; background:linear-gradient(135deg,#8a6a3e,#3d5a6b); box-shadow:0 0 0 1.5px #fff, 0 0 0 2.5px #000; position:relative; }
+  .thumb .seal { position:absolute; right:-6px; top:-6px; width:18px; height:18px; border-radius:50%; background:var(--teal); color:#000; font-size:10px; display:grid; place-items:center; box-shadow:0 0 0 1.5px #000; }
+  .shutter { width:66px; height:66px; border-radius:50%; border:4px solid #fff; box-shadow:0 0 0 1px #000 inset, 0 0 0 1px rgba(0,0,0,.6); display:grid; place-items:center; }
+  .shutter::after { content:""; width:52px; height:52px; border-radius:50%; background:#fff; }
+  .flip { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-size:17px; background:rgba(58,58,60,.92); }
+  .banner { position:absolute; left:10px; right:10px; top:92px; border-radius:14px; padding:10px 12px; background:rgba(28,28,30,.96); border:1px solid rgba(255,255,255,.15); z-index:7; font-size:12px; line-height:1.35; }
+  .banner b { display:block; font-size:13px; margin-bottom:2px; }
+  .banner .acts { display:flex; gap:8px; margin-top:8px; }
+  .banner .acts span { padding:6px 10px; border-radius:12px; background:#fff; color:#000; font-weight:600; }
+  .banner .acts span.sec { background:rgba(99,99,102,.6); color:#fff; }
+  .focus { position:absolute; left:60%; top:52%; width:60px; height:60px; transform:translate(-50%,-50%); border:2px solid #fff; box-shadow:0 0 0 1px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.7); }
+  .lockpill { position:absolute; left:60%; top:calc(52% + 42px); transform:translateX(-50%); }
+  .readout { position:absolute; left:0; right:0; top:530px; height:34px; display:flex; justify-content:space-around; align-items:center; font:600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; z-index:5; padding:0 6px; }
+  .readout span { padding:6px 6px; border-radius:8px; }
+  .readout span.sel { background:#fff; color:#000; }
+  .gridov { position:absolute; inset:0; background:
+      linear-gradient(90deg, transparent calc(33.3% - .5px), rgba(255,255,255,.35) calc(33.3% - .5px) calc(33.3% + .5px), transparent calc(33.3% + .5px) calc(66.6% - .5px), rgba(255,255,255,.35) calc(66.6% - .5px) calc(66.6% + .5px), transparent calc(66.6% + .5px)),
+      linear-gradient(0deg, transparent calc(33.3% - .5px), rgba(255,255,255,.35) calc(33.3% - .5px) calc(33.3% + .5px), transparent calc(33.3% + .5px) calc(66.6% - .5px), rgba(255,255,255,.35) calc(66.6% - .5px) calc(66.6% + .5px), transparent calc(66.6% + .5px)); }
+  .night, .night .lens, .night .pill, .night .ib, .night .flip, .night .chip, .night .t { color:var(--red); }
+  .night .vf { filter:sepia(1) saturate(6) hue-rotate(-50deg) brightness(.5); }
+  .night .lens, .night .pill, .night .ib, .night .flip, .night .chip, .night .tray-btn { background:#1a0000; border:1px solid #5a1410; }
+  .night .lens.on, .night .t.on { background:var(--red); color:#000; }
+  .night .shutter { border-color:var(--red); } .night .shutter::after { background:var(--red); }
+  .night .tray { background:#120000; border:1px solid #5a1410; }
+  .night .t { background:#1a0000; border:1px solid #5a1410; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; top:120px; border-radius:22px 22px 0 0; background:#1c1c1e; z-index:8; padding:10px 14px; color:#f2f2f7; }
+  .grab { width:36px; height:5px; border-radius:3px; background:#5a5a5e; margin:0 auto 10px; }
+  .sheet h3 { margin:0 0 8px; font-size:17px; }
+  .sheet .g { background:#2c2c2e; border-radius:11px; margin:8px 0; }
+  .sheet .r { display:flex; justify-content:space-between; padding:9px 11px; border-bottom:.5px solid #3a3a3c; font-size:12.5px; }
+  .sheet .r:last-child { border-bottom:0; }
+  .sheet .r small { color:#98989f; }
+  .ok { color:var(--teal); }
+  .ipad { width:100%; max-width:640px; height:470px; border-radius:30px; }
+  .ipad .vf { top:22px; bottom:22px; left:22px; right:120px; height:auto; border-radius:6px; }
+  .ipad .col { position:absolute; right:0; top:0; bottom:0; width:120px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:22px 0; z-index:5; }
+  .ipad .lensv { display:flex; flex-direction:column; gap:6px; }
+  .notes h2 { font-size:18px; margin:22px 0 8px; }
+  .notes ol, .notes ul { margin:0; padding-left:20px; }
+  .notes li { margin:5px 0; }
+  .notes li span { color:var(--muted); }
+  table { border-collapse:collapse; font-size:13px; margin-top:6px; }
+  td, th { text-align:left; padding:5px 10px 5px 0; vertical-align:top; border-bottom:1px solid rgba(128,128,128,.25); }
+  th { color:var(--muted); font-weight:600; }
+
+  /* ---- 0.3.0 additions: match the app (Sources/NopeUI) where it differs from v3 ---- */
+  header .meta { margin-top:8px; font-size:13px; color:var(--muted); }
+  header .meta a, figcaption a, .notes a { color:inherit; }
+  .sec-h { grid-column:1/-1; margin:14px 0 -8px; padding-top:18px; border-top:1px solid rgba(128,128,128,.25); }
+  .sec-h h2 { margin:0; font-size:20px; letter-spacing:-.01em; }
+  .sec-h p { margin:4px 0 0; font-size:13px; color:var(--muted); max-width:820px; }
+  .wide { grid-column:1/-1; }
+  /* glyphs: inline SVG symbols in the SF Symbols manner, drawn in currentColor */
+  .i { width:1.15em; height:1.15em; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vertical-align:-.2em; flex:0 0 auto; }
+  .ib .i, .flip .i { width:17px; height:17px; }
+  .tray-btn .i { width:15px; height:15px; }
+  .pill .i, .t .i { width:13px; height:13px; }
+  .f { color:var(--teal); } .w { color:var(--amber); }
+  /* format chip: white words, teal seal (verified) or amber triangle (warning) */
+  .chip { color:#fff; background:rgba(51,51,51,.95); }
+  .chip .i { width:14px; height:14px; }
+  /* app sizes: shutter 76 pt, thumbnail and flip 52 pt, targets 44 pt */
+  .shutter { width:57px; height:57px; border-width:3px; }
+  .shutter::after { width:43px; height:43px; }
+  .shutter.off { opacity:.4; }
+  .flip { width:39px; height:39px; }
+  .thumb { width:39px; height:39px; border-radius:6px; box-shadow:0 0 0 1px rgba(0,0,0,.6); }
+  .thumb .seal { top:auto; bottom:-5px; right:-5px; width:16px; height:16px; background:#000; color:var(--teal); box-shadow:none; }
+  .thumb .seal.w { color:var(--amber); }
+  .thumb .seal .i { width:12px; height:12px; }
+  .spin { width:39px; height:39px; display:grid; place-items:center; }
+  .spin::after { content:""; width:18px; height:18px; border-radius:50%; border:2.5px solid rgba(255,255,255,.25); border-top-color:#fff; }
+  .lens small { display:block; font-size:8px; font-weight:500; line-height:1; margin-top:-2px; }
+  .lens.two { line-height:1.05; text-align:center; padding-top:2px; }
+  .tray-btn.open { background:#fff; color:#000; }
+  .row .tray-btn { position:absolute; right:8px; margin:0; }
+  [dir=rtl] .row .tray-btn { right:auto; left:8px; }
+  [dir=rtl] .lens, [dir=rtl] .pill { direction:ltr; }
+  .band .tray-btn { position:absolute; right:8px; margin:0; }
+  .lens { height:33px; min-width:40px; }
+  .chip, .pill { white-space:nowrap; }
+  .tray { right:46px; }
+  .tray + .tray-btn { position:absolute; right:8px; top:493px; z-index:6; margin:0; }
+  /* warning chip: dark backing, amber outline, amber triangle, white words */
+  .warn { height:28px; padding:0 10px; border-radius:14px; display:inline-flex; align-items:center; gap:5px; font-weight:600; font-size:11.5px; color:#fff; background:rgba(12,12,12,.92); border:1px solid var(--amber); white-space:nowrap; }
+  .warn .i { color:var(--amber); width:13px; height:13px; }
+  /* everything drawn over the picture: one column at the picture's top leading edge */
+  .ov { position:absolute; left:6px; right:6px; top:90px; display:flex; flex-direction:column; align-items:flex-start; gap:6px; z-index:6; }
+  .ov .rowx { display:flex; gap:6px; flex-wrap:wrap; }
+  .card { background:rgba(12,12,12,.92); border-radius:8px; padding:8px 10px; font-size:12px; line-height:1.35; color:#fff; }
+  .card .hd { display:flex; gap:6px; align-items:flex-start; font-weight:600; }
+  .card .btns { display:flex; gap:6px; margin-top:8px; }
+  .cap { display:inline-flex; align-items:center; gap:4px; height:30px; padding:0 10px; border-radius:15px; background:#333; color:#fff; font-weight:600; font-size:11.5px; white-space:nowrap; }
+  .cap.on { background:#fff; color:#000; font-weight:700; }
+  .prog { display:flex; align-items:center; gap:12px; background:#000; border-radius:8px; padding:0 10px; height:33px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .prog .stop { color:var(--red); font-weight:600; }
+  .count { position:absolute; left:50%; top:284px; transform:translate(-50%,-50%); font:700 72px/1.1 ui-rounded, -apple-system, system-ui, sans-serif; padding:0 18px; border-radius:8px; background:rgba(12,12,12,.92); z-index:6; }
+  .xbtn { margin-left:auto; width:33px; height:33px; display:grid; place-items:center; }
+  .banner { border:0; background:rgba(12,12,12,.94); border-radius:8px; padding:9px 10px; left:6px; right:6px; }
+  .banner .msg { display:flex; gap:6px; align-items:flex-start; }
+  .banner .msg .i { color:var(--amber); margin-top:1px; }
+  .banner .acts { align-items:center; margin-top:6px; }
+  .banner .acts span { border-radius:15px; padding:7px 12px; }
+  .banner .acts span.xbtn { background:none; color:#fff; padding:0; }
+  /* native menus, popovers and scrims */
+  .scrim { position:absolute; inset:0; background:rgba(0,0,0,.5); z-index:7; }
+  .menu { position:absolute; z-index:10; width:196px; border-radius:13px; background:rgba(40,40,42,.98); color:#f2f2f7; box-shadow:0 10px 30px rgba(0,0,0,.55); overflow:hidden; font-size:12.5px; }
+  .menu .mh { padding:7px 12px 5px; color:#98989f; font-size:10.5px; border-bottom:.5px solid #3a3a3c; }
+  .menu .mi { display:flex; align-items:center; gap:8px; padding:9px 12px; border-bottom:.5px solid #3a3a3c; }
+  .menu .mi:last-child { border-bottom:0; }
+  .menu .mi .ck { width:12px; flex:0 0 12px; }
+  .menu .mi .tr { margin-left:auto; }
+  .pop { position:absolute; z-index:10; background:#2c2c2e; border-radius:13px; padding:10px 12px; font-size:12px; line-height:1.4; color:#f2f2f7; box-shadow:0 10px 30px rgba(0,0,0,.55); }
+  .pop::before { content:""; position:absolute; top:-6px; left:26px; border:6px solid transparent; border-top:0; border-bottom-color:#2c2c2e; }
+  /* sheets: inline title, Done (checkmark) in the corner, inset grouped rows */
+  .sheet.tall { top:54px; }
+  .sheet.full { top:0; border-radius:0; padding-top:46px; }
+  .sheet .nb { position:relative; height:30px; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; margin-bottom:4px; }
+  .sheet .nb .done, .sheet .nb .lead { position:absolute; right:0; top:1px; width:28px; height:28px; border-radius:50%; background:#3a3a3c; display:grid; place-items:center; }
+  .sheet .nb .lead { right:auto; left:0; }
+  .sheet .nb .i { width:14px; height:14px; }
+  .sheet .hd { font-size:10px; text-transform:uppercase; letter-spacing:.02em; color:#8e8e93; margin:10px 6px 3px; }
+  .sheet .ft { font-size:10.5px; color:#8e8e93; margin:4px 6px 0; line-height:1.35; }
+  .sheet .g { margin:4px 0; overflow:hidden; }
+  .sheet .r { align-items:baseline; gap:8px; }
+  .sheet .r.col { display:block; }
+  .sheet .r.col div { color:#98989f; font-size:11px; margin-top:2px; }
+  .sheet .r b { font-weight:600; }
+  .sheet .lnk { color:#0a84ff; }
+  .sheet .dst { color:var(--red); }
+  .sheet.dense .r { padding:6px 10px; font-size:11.5px; }
+  .sheet .mono { font:10.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .sheet .field { color:#6e6e73; }
+  .sheet .fade { position:absolute; left:0; right:0; bottom:0; height:30px; background:linear-gradient(transparent,#1c1c1e); }
+  /* focus aids */
+  .fsq { position:absolute; width:45px; height:45px; transform:translate(-50%,-50%); border:2px solid #fff; box-shadow:0 0 0 1.5px rgba(0,0,0,.7), inset 0 0 0 1px rgba(0,0,0,.7); }
+  .fbtn { position:absolute; transform:translateX(-50%); }
+  .levelbar { position:absolute; left:50%; top:50%; width:135px; height:2px; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.6); transform:translate(-50%,-50%) rotate(-4deg); }
+  .levelbar.ok { height:4px; transform:translate(-50%,-50%); }
+  .levelmk { position:absolute; top:50%; width:12px; height:2px; background:#fff; box-shadow:0 0 0 1px rgba(0,0,0,.6); }
+  .peak { position:absolute; inset:0; background:
+      radial-gradient(3px 2px at 52% 48%, rgba(255,51,217,.85) 98%, transparent),
+      repeating-linear-gradient(35deg, transparent 0 9px, rgba(255,51,217,.75) 9px 10px) 40% 40%/90px 70px no-repeat,
+      repeating-linear-gradient(-60deg, transparent 0 7px, rgba(255,51,217,.75) 7px 8px) 62% 58%/70px 60px no-repeat; }
+  .lro { position:absolute; right:6px; top:6px; background:rgba(12,12,12,.92); border-radius:8px; padding:6px 7px; font-size:8.5px; line-height:1.45; display:grid; grid-template-columns:auto auto; gap:0 6px; z-index:4; }
+  .lro span:nth-child(odd) { color:rgba(255,255,255,.85); }
+  .lro span:nth-child(even) { font-variant-numeric:tabular-nums; }
+  .vf.zoom { background:
+      radial-gradient(360px 270px at 58% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(520px 400px at 20% 20%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  /* manual readout row (the dials themselves are in manual-controls.html) */
+  .mro { position:absolute; left:4px; right:4px; top:528px; height:36px; display:flex; gap:3px; justify-content:center; z-index:5; }
+  .mro span { flex:0 0 auto; min-width:33px; height:36px; padding:0 4px; border-radius:18px; background:#333; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:10px; line-height:1.15; font-variant-numeric:tabular-nums; }
+  .mro span i { font-style:normal; font-size:8px; font-weight:600; }
+  /* other device frames */
+  .phone.se { width:281px; height:500px; border-radius:34px; }
+  .phone.se .top { top:16px; }
+  .phone.se .vf { top:54px; height:375px; }
+  .phone.se .band { position:absolute; left:0; right:0; top:390px; height:39px; background:rgba(0,0,0,.9); display:flex; justify-content:center; align-items:center; gap:8px; z-index:5; }
+  .phone.se .bottom { bottom:4px; height:66px; padding:0 26px; }
+  .phone.land.held .vf { left:84px; width:400px; top:0; bottom:0; height:auto; }
+  .lock { background:linear-gradient(170deg,#24384a,#0c1218 70%); }
+  .lock .date { position:absolute; top:58px; width:100%; text-align:center; font-size:14px; font-weight:600; }
+  .lock .clock { position:absolute; top:74px; width:100%; text-align:center; font-size:64px; font-weight:600; letter-spacing:-.02em; line-height:1.1; }
+  .la { position:absolute; left:10px; right:10px; border-radius:20px; background:rgba(28,28,30,.9); padding:12px; display:flex; gap:10px; align-items:center; font-size:11.5px; line-height:1.35; }
+  .la .ic { font-size:20px; }
+  .la b { font-size:13px; display:block; }
+  .la .bar { height:4px; border-radius:2px; background:#48484a; margin-top:6px; }
+  .la .bar span { display:block; height:100%; border-radius:2px; background:#fff; }
+  .la .st { flex:0 0 auto; padding:7px 11px; border-radius:15px; background:#3a3a3c; font-weight:600; }
+  .la.nightla { background:#000; color:var(--red); border:1px solid #3a0c0a; }
+  .la.nightla .bar { background:#3a0c0a; } .la.nightla .bar span { background:var(--red); }
+  .la.nightla .st { background:#2a0000; }
+  .home { background:linear-gradient(160deg,#3b4f6b,#141a24 75%); }
+  .dic { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:176px; height:27px; border-radius:20px; background:#000; display:flex; justify-content:space-between; align-items:center; padding:0 12px; z-index:9; font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .die { position:absolute; top:150px; left:8px; right:8px; border-radius:36px; background:#000; padding:14px 18px 16px; z-index:9; font-size:11.5px; line-height:1.35; }
+  .die .tp { display:flex; justify-content:space-between; align-items:center; font-weight:600; }
+  .die .bt { display:flex; gap:10px; align-items:center; margin-top:10px; }
+  .watch { position:relative; width:150px; height:186px; border-radius:38px; background:#000; box-shadow:0 0 0 8px #1c1c1e, 0 14px 30px rgba(0,0,0,.25); color:#fff; padding:24px 11px 10px; font-size:11.5px; line-height:1.3; display:flex; flex-direction:column; gap:8px; }
+  .watch .st { display:flex; gap:5px; align-items:flex-start; }
+  .watch .wb { min-height:42px; border-radius:14px; background:#222; display:flex; gap:5px; align-items:center; justify-content:center; font-weight:600; font-size:13px; }
+  .watch .wr { border-radius:12px; background:#222; padding:7px 10px; display:flex; justify-content:space-between; }
+  .watch .wr { flex-direction:column; gap:1px; }
+  .watch .wr small { color:#98989f; font-size:11px; }
+  .devices { display:flex; flex-wrap:wrap; gap:26px; justify-content:center; padding:18px 0 4px; }
+  .speech { background:var(--bg); border:1px solid rgba(128,128,128,.3); border-radius:16px; padding:12px 14px; font-size:13px; }
+  .speech div { padding:7px 0; border-bottom:1px solid rgba(128,128,128,.2); display:grid; grid-template-columns:minmax(120px,1fr) 1.2fr; gap:10px; }
+  .speech div:last-child { border-bottom:0; }
+  .speech q { color:var(--muted); }
+  .order { display:flex; flex-wrap:wrap; gap:8px; padding:14px; border-radius:18px; background:#1c1c1e; }
+  .order .cap { background:#3a3a3c; }
+  .order .cap.on { background:#fff; }
+  /* compare view */
+  .cmp { position:absolute; left:0; right:0; top:90px; height:300px; overflow:hidden; }
+  .cmp .side { position:absolute; inset:0; }
+  .cmp .nopeside { background:radial-gradient(110px 85px at 60% 55%, #b99a6c 0, #806a4a 45%, transparent 70%), radial-gradient(260px 200px at 30% 30%, #45606d 0, #2a3840 60%, #1d2327 100%); clip-path:inset(0 50% 0 0); }
+  .cmp .phoneside { background:radial-gradient(110px 85px at 60% 55%, #f0b45a 0, #a8722c 45%, transparent 70%), radial-gradient(260px 200px at 30% 30%, #3f8db0 0, #1d4a63 60%, #0d2230 100%); }
+  .cmp .div { position:absolute; left:50%; top:0; bottom:0; width:2px; margin-left:-1px; background:#fff; }
+  .cmp .handle { position:absolute; left:50%; top:50%; width:24px; height:24px; margin:-12px 0 0 -12px; border-radius:50%; background:#fff; color:#000; display:grid; place-items:center; font-size:12px; font-weight:700; }
+  .cmp .lbl { position:absolute; top:6px; background:rgba(12,12,12,.92); border-radius:8px; padding:3px 7px; font-size:10.5px; font-weight:600; }
+  .slider { height:4px; border-radius:2px; background:#48484a; position:relative; margin:14px 4px; }
+  .slider::before { content:""; position:absolute; left:0; top:0; bottom:0; width:50%; border-radius:2px; background:#0a84ff; }
+  .slider::after { content:""; position:absolute; left:50%; top:50%; width:20px; height:20px; margin:-10px 0 0 -10px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.4); }
+  .bord { display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:30px; padding:0 10px; border-radius:15px; background:#2c2c2e; color:#0a84ff; }
+  /* night mode additions: the app multiplies every view by red; system menus stay system dark */
+  .night .chip .i, .night .warn .i, .night .f, .night .w, .night .thumb .seal { color:var(--red); }
+  .night .warn { border-color:var(--red); color:var(--red); background:#000; }
+  .night .card, .night .prog, .night .prog .stop, .night .cap { color:var(--red); }
+  .night .cap { background:#140000; }
+  .night .cap.on { background:var(--red); color:#000; }
+  .night .tray-btn.open { background:var(--red); color:#000; }
+  .night .vf.natural { filter:none; }
+  .night .sheet { background:#000; color:var(--red); border-top:1px solid #3a0c0a; }
+  .night .sheet .g { background:#120000; border:1px solid #3a0c0a; }
+  .night .sheet .r { border-color:#3a0c0a; }
+  .night .sheet .r small, .night .sheet .hd, .night .sheet .ft, .night .sheet .lnk, .night .sheet .r.col div { color:var(--red); }
+  .night .sheet .nb .done { background:#2a0000; }
+  .night .sheet .grab { background:#5a1410; }
+  .night .mro span { background:#140000; color:var(--red); }
+  .night .count { color:var(--red); }
+  @media (max-width:700px) { .phone.land, .ipad { transform-origin:top left; } }
+
+  /* ---- manual-controls.html additions (the base classes and symbols above are camera.html's) ---- */
+  h2.part { max-width:1180px; margin:26px auto 0; padding:18px 16px 0; font-size:20px; letter-spacing:-.01em; border-top:1px solid rgba(128,128,128,.25); }
+  .notes p { max-width:820px; }
+  /* manual phone: lens row, readout row, shutter row, as camera.html figure 3 */
+  .man .row { top:488px; }
+  .man .bottom { bottom:12px; height:72px; }
+  /* readout row: six controls and the sliders button; A or M above the value; the open one filled white */
+  .ro { position:absolute; left:3px; right:3px; top:528px; display:flex; justify-content:center; gap:3px; z-index:5; }
+  .ro .b { flex:0 0 auto; min-width:33px; height:36px; padding:0 4px; border-radius:18px; background:#333; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.15; }
+  .ro .b i { font-style:normal; font-size:8px; font-weight:600; }
+  .ro .b span { font-size:9.5px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .ro .b.sel { background:#fff; color:#000; font-weight:700; }
+  .ro .b .i { width:14px; height:14px; }
+  .ro.backed { position:static; display:inline-flex; padding:3px; border-radius:8px; background:rgba(12,12,12,.92); }
+  /* dial: over the picture's bottom on a dark backing */
+  .dial { position:absolute; left:6px; right:6px; bottom:174px; padding:9px 9px 8px; border-radius:8px; background:rgba(12,12,12,.92); z-index:6; color:#fff; }
+  .dial .dh { display:flex; align-items:baseline; gap:6px; font-size:13px; font-weight:600; }
+  .dial .dh .v { font-variant-numeric:tabular-nums; }
+  .dial .dh .m { margin-left:auto; font-size:9.5px; font-weight:400; font-variant-numeric:tabular-nums; }
+  .dial .ctl { display:flex; align-items:center; gap:6px; margin:7px 0 6px; }
+  .cb { flex:0 0 auto; min-width:33px; height:33px; padding:0 7px; border-radius:17px; display:grid; place-items:center; background:#333; font-size:11px; font-weight:600; }
+  .cb.sel { background:#fff; color:#000; font-weight:700; }
+  .sl { flex:1; margin:0 10px; height:4px; border-radius:2px; background:rgba(120,120,128,.5); position:relative; }
+  .sl::before { content:""; position:absolute; left:0; top:0; bottom:0; width:var(--p,50%); border-radius:2px; background:#0a84ff; }
+  .sl::after { content:""; position:absolute; top:50%; left:var(--p,50%); width:20px; height:20px; transform:translate(-50%,-50%); border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.4); }
+  .seg { flex:1; display:flex; padding:2px; border-radius:7px; background:rgba(118,118,128,.3); }
+  .seg span { flex:1; text-align:center; padding:5px 0; font-size:10px; border-radius:6px; }
+  .seg span.on { background:#636366; font-weight:600; }
+  .dial .rng { font-size:9.5px; }
+  .dial .note { font-size:10px; margin:6px 0; }
+  .dial .tint { display:flex; align-items:center; gap:8px; font-size:9.5px; margin:2px 0 4px; }
+  .dial .pre { display:inline-block; color:#0a84ff; font-size:11px; padding:6px 0; }
+  /* live histogram: top trailing corner of the picture, dark backing */
+  .hist { position:absolute; right:6px; top:90px; padding:6px; border-radius:8px; background:rgba(12,12,12,.92); z-index:6; font-size:8px; line-height:1.4; }
+  .hist .gph { width:96px; height:36px; border-bottom:1px solid rgba(255,255,255,.5); background:
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 12%, transparent 12%) 0 100%/12% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 30%, transparent 30%) 14% 100%/18% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 55%, transparent 55%) 34% 100%/18% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 45%, transparent 45%) 54% 100%/16% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 70%, transparent 70%) 76% 100%/14% 100% no-repeat,
+      linear-gradient(0deg, rgba(255,255,255,.85) 0 100%, transparent 100%) 100% 100%/5% 100% no-repeat; }
+  .hist .hw { color:var(--amber); font-weight:600; display:flex; align-items:center; gap:3px; }
+  .hist .hw .i { width:10px; height:10px; }
+  .vf.clip::after { content:""; position:absolute; left:52%; top:34%; width:90px; height:70px; border-radius:50%; background:#fffef6; filter:blur(6px); }
+  .vf .peak { inset:auto; left:118px; top:150px; width:120px; height:110px; }
+  /* Pro Tools: a full-screen form with an inline title (rows as in settings.html) */
+  .form { background:#000; }
+  .form .ttl { padding:48px 16px 2px; text-align:center; font-size:14px; font-weight:600; }
+  .form .gap { height:14px; }
+  .form .gr { margin:0 14px; background:#1c1c1e; border-radius:11px; overflow:hidden; }
+  .form .rw { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:10px 13px; border-bottom:.5px solid #38383a; font-size:14px; }
+  .form .rw:last-child { border-bottom:0; }
+  .form .rw small { color:#8e8e93; font-size:13px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px; }
+  .form .rw small .i { width:11px; height:11px; }
+  .form .ft { padding:6px 30px 0; font-size:10.5px; color:#8e8e93; line-height:1.35; }
+  .form .rw .lbl small { display:block; white-space:normal; font-size:10.5px; line-height:1.3; margin-top:1px; }
+  .form .rw .lnk { color:#0a84ff; }
+  .form .rw .lnk.dis { color:#48484a; }
+  .tog { flex:0 0 auto; width:42px; height:25px; border-radius:13px; background:#34c759; position:relative; }
+  .tog::after { content:""; position:absolute; right:2px; top:2px; width:21px; height:21px; border-radius:50%; background:#fff; }
+  .tog.off { background:#39393d; } .tog.off::after { left:2px; right:auto; }
+  /* night mode: white × red. Selected = red fill with black text; slider and switch tracks use the night track tint (30% gray × red) */
+  .night .ro .b, .night .cb { background:#140000; color:var(--red); }
+  .night .ro .b.sel, .night .cb.sel { background:var(--red); color:#000; }
+  .night .dial { color:var(--red); background:rgba(0,0,0,.92); }
+  .night .sl { background:#2a0000; } .night .sl::before { background:#4d0000; } .night .sl::after { background:var(--red); box-shadow:none; }
+  .night .pill .i { color:var(--red); }
+  .night .thumb { background:linear-gradient(135deg,#8a1a14,#2c0606); }
+  .night .tog { background:#4d0000; } .night .tog::after { background:var(--red); }
+  .night .tog.off { background:#390000; }
+  .night.form { color:var(--red); }
+  .night.form .gr { background:#1c0000; }
+  .night.form .rw { border-color:#380000; }
+  .night.form .rw small, .night.form .ft, .night.form .rw .lnk { color:var(--red); }
+  /* VoiceOver cursor and speech */
+  .vo { position:absolute; z-index:9; border:3px solid #000; outline:2px solid #fff; border-radius:21px; }
+  .say { position:absolute; left:6px; right:6px; top:90px; z-index:9; padding:9px 11px; border-radius:8px; background:rgba(12,12,12,.94); font-size:11.5px; line-height:1.4; }
+  .say b { display:block; font-size:10px; color:#98989f; font-weight:600; text-transform:uppercase; margin:6px 0 1px; }
+  .say b:first-child { margin-top:0; }
+  /* largest text: the scrolling layout */
+  .ax { position:absolute; left:0; right:0; top:44px; bottom:0; padding:0 12px; display:flex; flex-direction:column; gap:9px; }
+  .ax .tb { display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  .ax .tb .pill, .ax .tb .chip { height:34px; font-size:17px; border-radius:17px; padding:0 12px; }
+  .ax .tb .pill .i, .ax .tb .chip .i { width:19px; height:19px; }
+  .ax .tb .ib { width:44px; height:44px; } .ax .tb .ib .i { width:23px; height:23px; }
+  .ax .pic { height:140px; width:105px; margin:0 auto; background:
+      radial-gradient(60px 45px at 62% 55%, #c9a36a 0, #8a6a3e 45%, transparent 70%),
+      radial-gradient(130px 100px at 30% 30%, #3d5a6b 0, #22313a 60%, #161c20 100%); }
+  .ax .lst { background:#000; border:1px solid #2c2c2e; border-radius:9px; padding:9px; display:flex; flex-direction:column; gap:10px; }
+  .ax h4 { margin:0; font-size:21px; line-height:1.15; }
+  .ax .tr { display:flex; justify-content:space-between; align-items:center; font-size:20px; }
+  .ax .stp { display:flex; border-radius:9px; background:#2c2c2e; }
+  .ax .stp span { width:46px; text-align:center; font-size:22px; padding:2px 0; }
+  .ax .stp span + span { border-left:1px solid #48484a; }
+  /* iPhone held sideways: the layout stays put; each readout turns upright */
+  .land .ro.side { position:absolute; left:532px; right:auto; top:0; bottom:0; width:50px; flex-direction:column-reverse; align-items:center; justify-content:center; }
+  /* column layout (iPad, the Duo's inner display): readout and dial over the picture's bottom */
+  .ipad .over { position:absolute; left:28px; right:126px; bottom:28px; display:flex; flex-direction:column; align-items:center; gap:6px; z-index:6; }
+  .ipad .over .dial { position:static; align-self:stretch; }
+  .ipad .col .tophalf, .ipad .col .bothalf { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .ipad .col .bothalf { justify-content:flex-end; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3 7 7M17 17l1.7 1.7M5.3 18.7 7 17M17 7l1.7-1.7"/></symbol>
+    <symbol id="more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.9" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.9" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="flip" viewBox="0 0 24 24"><path d="M3 8h3.5l2-2.5h7l2 2.5H21v11H3z"/><path d="M8.6 13a3.4 3.4 0 0 1 5.9-2.3M15.4 13a3.4 3.4 0 0 1-5.9 2.3"/><path d="M14.8 8.5v2.3h-2.3M9.2 17.5v-2.3h2.3"/></symbol>
+    <symbol id="torch" viewBox="0 0 24 24"><path d="M7 2.5h10v3.5l-3 4v11.5h-4V10L7 6z" fill="currentColor" fill-opacity=".25"/><path d="M12 13v2.5"/></symbol>
+    <symbol id="bolt" viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6.2L10 22l9-12h-6.3z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="boltslash" viewBox="0 0 24 24"><path d="M13.5 2 5 13.5h6.2L10 22l9-12h-6.3z" fill="currentColor" stroke="none" opacity=".9"/><path d="M3.5 3.5l17 17" stroke-width="2.4"/></symbol>
+    <symbol id="boltauto" viewBox="0 0 24 24"><path d="M11.5 2 4 12.5h5.5L8.5 20l8-10.5H11z" fill="currentColor" stroke="none"/><path d="M15.5 22l2.5-7 2.5 7M16.4 19.7h3.2" stroke-width="1.6"/></symbol>
+    <symbol id="timer" viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M9.5 2.5h5"/></symbol>
+    <symbol id="burst" viewBox="0 0 24 24"><rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M5.5 16.5V7.5a2 2 0 0 1 2-2h9M2.5 13.5v-9a2 2 0 0 1 2-2h9"/></symbol>
+    <symbol id="interval" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M18.2 2.6v3.9h-3.9"/><path d="M12 8v4.2l2.8 1.8"/></symbol>
+    <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="pm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M7.5 9.5h5M10 7v5M11.5 15.5h5"/></symbol>
+    <symbol id="grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></symbol>
+    <symbol id="level" viewBox="0 0 24 24"><rect x="2" y="8" width="20" height="8" rx="4"/><circle cx="12" cy="12" r="1.8"/><path d="M8.5 8v8M15.5 8v8"/></symbol>
+    <symbol id="readout" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 9h7M10 12h7M10 15h7"/><path d="M7 9h.01M7 12h.01M7 15h.01" stroke-width="2.6"/></symbol>
+    <symbol id="hare" viewBox="0 0 24 24"><path d="M3 18.5c0-4 3.5-6.5 8-6.5h3.5c2.6 0 4.5 1.5 4.5 3.5 0 1.6-1.1 2.7-2.6 3H3z"/><path d="M13.5 12 10.5 3.5M16.5 12l1-8.5"/><path d="M21 15.5h.5"/></symbol>
+    <symbol id="macro" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="2"/><path d="M12 6.5C12 3.5 14 2.5 14 2.5s1.5 2.5-.6 4.6M10 8.5c-3 0-4-2.3-4-2.3s2.4-1.4 4.4.6M14 8.5c3 0 4-2.3 4-2.3s-2.4-1.4-4.4.6M12 10.5V21.5M12 17c-3.2 0-5.5-2.5-5.5-2.5M12 17c3.2 0 5.5-2.5 5.5-2.5"/></symbol>
+    <symbol id="mountain" viewBox="0 0 24 24"><path d="M2 19.5 9 8l4 6.5 3-4 6 9z"/></symbol>
+    <symbol id="magplus" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M10.5 7.5v6M7.5 10.5h6"/></symbol>
+    <symbol id="magminus" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M7.5 10.5h6"/></symbol>
+    <symbol id="moonstars" viewBox="0 0 24 24"><path d="M15.5 16A7.5 7.5 0 1 1 8.5 4.5a6 6 0 0 0 7 11.5z"/><path d="M18.5 3v4M16.5 5h4M20.5 10v2.6M19.2 11.3h2.6" stroke-width="1.6"/></symbol>
+    <symbol id="moon" viewBox="0 0 24 24"><path d="M19.5 15A8 8 0 1 1 9 4.5a6.5 6.5 0 0 0 10.5 10.5z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="split" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14"/></symbol>
+    <symbol id="presets" viewBox="0 0 24 24"><path d="M12 3 21 7.5 12 12 3 7.5z"/><path d="M3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5"/></symbol>
+    <symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="eyeslash" viewBox="0 0 24 24"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 3l16 18"/></symbol>
+    <symbol id="lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor" stroke="none"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="lockopen" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.6-1.7"/></symbol>
+    <symbol id="seal" viewBox="0 0 24 24"><path d="M12 1.8l2.6 1.9 3.2-.2 1 3 2.6 1.9-1 3 1 3-2.6 1.9-1 3-3.2-.2L12 22.2l-2.6-1.9-3.2.2-1-3-2.6-1.9 1-3-1-3 2.6-1.9 1-3 3.2.2z" fill="currentColor" stroke="none"/><path d="M8.2 12.2l2.6 2.6 5-5.2" stroke="#000" stroke-width="2.3"/></symbol>
+    <symbol id="warn" viewBox="0 0 24 24"><path d="M12 2.5 22.8 21H1.2z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/><path d="M12 9v5.5" stroke="#000" stroke-width="2.3"/><circle cx="12" cy="17.8" r="1.3" fill="#000" stroke="none"/></symbol>
+    <symbol id="hand" viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10.5V4a1.5 1.5 0 0 1 3 0v7M14 10.5V5.5a1.5 1.5 0 0 1 3 0V14c0 4.2-2.6 7-6.6 7-3 0-4.4-2-5.9-5l-1.4-3a1.5 1.5 0 0 1 2.6-1.5L8 13"/></symbol>
+    <symbol id="photo" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="16" cy="9" r="1.4"/></symbol>
+    <symbol id="photos" viewBox="0 0 24 24"><rect x="6" y="7" width="15" height="12" rx="2"/><path d="M3 15V6a2 2 0 0 1 2-2h11"/><path d="M6 17l4-4 3 3 2-2 6 5"/></symbol>
+    <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.6v.2"/></symbol>
+    <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><path d="M12 4.5v1.5M12 18v1.5M4.5 12H6M18 12h1.5M6.7 6.7l1 1M16.3 16.3l1 1M6.7 17.3l1-1M16.3 7.7l1-1"/></symbol>
+    <symbol id="sliders" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2.2" fill="currentColor"/><circle cx="15" cy="12" r="2.2" fill="currentColor"/><circle cx="8" cy="18" r="2.2" fill="currentColor"/></symbol>
+    <symbol id="camcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="currentColor" stroke="none"/><path d="M6.8 9.3h2.1l1.1-1.6h4l1.1 1.6h2.1v7H6.8z" stroke="#222" stroke-width="1.5"/><circle cx="12" cy="12.6" r="1.9" stroke="#222" stroke-width="1.5"/></symbol>
+    <symbol id="xcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="currentColor" stroke="none"/><path d="M8.5 8.5l7 7M15.5 8.5l-7 7" stroke="#222" stroke-width="2.2"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path d="M5 12.5 10 17.5 19 7"/></symbol>
+    <symbol id="camera" viewBox="0 0 24 24"><path d="M3 8h3.5l2-2.5h7l2 2.5H21v11H3z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+    <symbol id="hourglass" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12M7 3c0 5 10 5 10 9s-10 4-10 9M17 3c0 5-10 5-10 9s10 4 10 9"/></symbol>
+    <symbol id="chev" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+    <symbol id="updown" viewBox="0 0 24 24"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"/></symbol>
+    <symbol id="acircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 16.5 12 7.5l3.5 9M9.8 13.5h4.4"/></symbol>
+  </defs>
+</svg>
+
+<header>
+  <h1>nope. design: manual controls</h1>
+  <p>The manual controls as the app ships them: the M pill, one readout row, a dial per control with − and + steppers and Auto, and Pro Tools. Drawn with the same camera screen as camera.html, in the v3 visual language (issue #68): filled white = selected, teal only for verified facts, amber only for warnings (always with a symbol and words), a dark backing for anything over the picture. Sizes are drawn at 0.75 × points; every target is at least 44 pt. Mockups only: where a drawing and the app differ, the app is right.</p>
+  <p class="meta">Design version: 0.3.0 (2026-11-16) · Set: <a href="camera.html">camera.html</a> (camera screen) · <a href="settings.html">settings.html</a> (Settings and system screens) · <b>manual-controls.html</b> · <a href="icon.html">icon.html</a> (app icon) · <a href="README.md">README.md</a></p>
+</header>
+
+<h2 class="part" style="border-top:0;padding-top:0">The readout row</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>1 · Manual Controls on</b>Turned on with the Manual Controls switch in Settings (<a href="settings.html">settings.html</a>); off by default. The M pill (sliders symbol and "M") sits with the other state pills; its action is Turn Off Manual Controls. Below the lens row, one readout row in a fixed order: exposure compensation, ISO, shutter, aperture, focus, white balance, then the sliders button. Each readout shows A or M above the value in use, so the mode never depends on color. Focus is a word (Near, Middle, Far): iOS reports no distance.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div><div class="pill"><svg class="i"><use href="#lock"/></svg>AE-L</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf" style="filter:brightness(.75)"></div>
+      <div class="menu" style="right:8px;top:396px"><div class="mi">All Auto<span class="tr"><svg class="i"><use href="#acircle"/></svg></span></div><div class="mi">Pro Tools<span class="tr"><svg class="i"><use href="#sliders"/></svg></span></div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 400</span></div><div class="b"><i>A</i><span>1/250</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Far</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>2 · The last button: All Auto and Pro Tools</b>A native menu. All Auto returns every control to automatic in one tap, closes the open dial, plays a success haptic and announces "Full auto"; it is dimmed while everything is already on Auto. Pro Tools opens the sheet (figures 14–17). Here ISO is set by hand (M) and exposure is locked, so a lock pill reads "AE-L" ("AF-L" for focus, "AE/AF" for both); tap it to unlock.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div style="position:absolute;left:0;right:0;top:446px;height:124px;background:rgba(0,0,0,.9);z-index:4"></div>
+      <div class="row" style="top:450px"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro" style="top:490px"><div class="b"><i>M</i><span>+0.3</span></div><div class="b"><i>M</i><span>ISO 12,096</span></div><div class="b"><i>M</i><span>1/71,429</span></div><div class="b"><i>M</i><span>f/1.48</span></div></div><div class="ro" style="top:530px"><div class="b"><i>M</i><span>Near</span></div><div class="b"><i>M</i><span>10,000 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>3 · When seven don't fit: two rows</b>Values never truncate or break inside a number. When the seven buttons don't fit side by side (long values, a narrow phone, larger text), the row becomes a grid: four readouts, then the last two and the sliders button. When the bands don't fit below the picture, as here and on a 4.7-inch iPhone, they overlay its bottom edge on a dark backing (<a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+</div>
+
+<h2 class="part">The dials</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="dh">ISO <span class="v">400</span><span class="m">-0.7 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:46%"></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="rng">This lens: 54 – 12,096</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b sel"><i>M</i><span>ISO 400</span></div><div class="b"><i>M</i><span>1/250</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>4 · ISO, set by hand</b>Pressing a readout fills it white and opens its dial over the bottom of the picture; pressing it again closes it. The dial: name and value, the meter (how the exposure compares with the camera's reading), then − and + around a native slider over the lens's real steps, and Auto. ISO steps are the nominal third stops (… 100, 125, 160, 200 …) inside the lens's range, plus the range's own ends. Any step or slider move sets the control to Manual. Example range from the app's simulated wide lens.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="dh">Shutter <span class="v">1/120</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:58%"></div><div class="cb">+</div><div class="cb sel">Auto</div></div><div class="rng">This lens: 1/71,429 – 1 sec</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b sel"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>5 · Shutter on Auto</b>Auto is filled white while the camera sets the value, and the dial shows the value in use. Pressing Auto in Auto fixes the value in use (Manual); pressing it in Manual hands the control back. Shutter steps are third stops from 1/16000 to 30 s, limited to what the lens reports, plus the range's ends; below 0.3 s as fractions ("1/125"), from 0.3 s in seconds ("2 s").</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf" style="filter:brightness(.45)"></div>
+      <div class="ov"><div class="card hd" style="display:flex;gap:6px;font-weight:600"><svg class="i"><use href="#hand"/></svg>Hold it steady or use a tripod.</div></div><div class="dial"><div class="dh">Shutter <span class="v">1 sec</span><span class="m">+0.3 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:100%"></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="rng">This lens: 1/71,429 – 1 sec</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 54</span></div><div class="b sel"><i>M</i><span>1 sec</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>M</i><span>Far</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>6 · Long exposure</b>The slider ends at the longest exposure the lens reports (the scale has third stops up to 30 s; this example lens stops at 1 s). A shutter too slow to hold by hand shows a plain hint, "Hold it steady or use a tripod.", on a dark backing; it isn't a warning about the photo, so it isn't amber, and nothing is changed. The Astro helper sets the longest shutter and highest ISO for night-sky runs (<a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="dh">Aperture <span class="v">f/2.8</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="seg"><span>f/1.48</span><span>f/1.8</span><span class="on">f/2.8</span><span>f/4</span></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="rng">This lens: f/1.48 – f/4</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 250</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b sel"><i>M</i><span>f/2.8</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>7 · Aperture, on a lens that can change it</b>Instead of a slider, a segmented picker of the stops the lens recommends (iOS 27 reports them per format), widest first. Offered only where the lens supports aperture priority. Example stops from the app's simulated manual scenario; a real lens shows its own.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="dh">Aperture <span class="v">f/2.2</span><span class="m">0.0 EV</span></div><div class="note">This lens has a fixed aperture.</div><div class="rng">This lens: f/2.2</div></div>
+      <div class="row"><div class="lens on">0.6×</div><div class="lens">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b sel"><i>A</i><span>f/2.2</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>8 · Fixed aperture</b>A control the lens can't set keeps its place, so nothing jumps around. With a fixed aperture the readout shows the lens's f-number and the dial explains why there are no steppers. VoiceOver reads "Fixed, f/2.2". A control the lens can't set at all shows "n/a" and "Not available on this lens."</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"><div class="peak"></div></div>
+      <div class="dial"><div class="dh">Focus <span class="v">Near</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:25%"></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="rng">This lens: Closest to Far</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b sel"><i>M</i><span>Near</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>9 · Focus, with peaking</b>A relative scale from Closest to Far in twenty steps; the value is a word (Near, Middle, Far), never a distance, because iOS reports only a lens position. Focus Peaking (Pro Tools or Settings › Viewfinder Overlays, off by default) fills the sharpest edges in magenta: a color that isn't one of teal, amber or white. It is drawn on the picture only and never saved.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf" style="filter:sepia(.35) saturate(1.3)"></div>
+      <div class="dial"><div class="dh">White Balance <span class="v">3,200 K</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:9%"></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="tint">Tint <div class="sl" style="--p:50%"></div></div><div class="pre">Presets</div><div class="rng">This lens: 2,500 K – 10,000 K</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 160</span></div><div class="b"><i>A</i><span>1/60</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b sel"><i>M</i><span>3,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>10 · White balance in kelvin</b>2,500–10,000 K in 100 K steps, a Tint slider (green to magenta, −150 to +150 in steps of 5), and a Presets menu. The range is the app's, the same on every lens that allows manual white balance.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf" style="filter:brightness(.75)"></div>
+      <div class="menu" style="left:30px;top:150px"><div class="mi">Tungsten</div><div class="mi">Fluorescent</div><div class="mi">Daylight</div><div class="mi">Cloudy</div><div class="mi">Shade</div></div><div class="dial"><div class="dh">White Balance <span class="v">5,200 K</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:36%"></div><div class="cb">+</div><div class="cb sel">Auto</div></div><div class="tint">Tint <div class="sl" style="--p:50%"></div></div><div class="pre">Presets</div><div class="rng">This lens: 2,500 K – 10,000 K</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b sel"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>11 · White balance presets</b>Tungsten 3,200 K, Fluorescent 4,000 K, Daylight 5,500 K, Cloudy 6,500 K, Shade 7,500 K, each with no tint. Choosing one sets white balance to Manual at that value.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf clip"></div>
+      <div class="hist"><div class="gph"></div><div>Preview</div><div class="hw"><svg class="i"><use href="#warn"/></svg>Highlights clipped</div></div><div class="dial"><div class="dh">Exposure Compensation <span class="v">+1.0</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:67%"></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="rng">This lens: -3.0 – +3.0</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b sel"><i>M</i><span>+1.0</span></div><div class="b"><i>A</i><span>ISO 64</span></div><div class="b"><i>A</i><span>1/500</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Far</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>12 · Exposure compensation and the highlight warning</b>±3 EV in third stops (narrower if the lens allows less); it applies to whatever is on Auto. Zero reads "0.0", other values carry their sign ("+1.0", "-0.7"). The highlight warning comes from the live histogram (Pro Tools or Settings › Viewfinder Overlays, off by default), top right on a dark backing: "Highlights clipped" or "Shadows clipped" in amber with a symbol. It is labeled "Preview" because it measures the processed live preview, not the RAW; the RAW's own clipping is in the photo's details after the shot.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div class="dial"><div class="dh">Exposure Compensation <span class="v">0.0</span><span class="m">-0.3 EV</span></div><div class="note">Exposure compensation works only while ISO or the shutter is on Auto.</div><div class="rng">This lens: -3.0 – +3.0</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b sel"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 200</span></div><div class="b"><i>M</i><span>1/125</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>13 · Compensation with ISO and shutter both set</b>With nothing on Auto there is nothing to compensate, so the dial says why instead of showing steppers; the meter still reads. The readout keeps its place.</figcaption>
+  </figure>
+</div>
+
+<h2 class="part">Pro Tools</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone form"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="gap"></div><div class="gr"><div class="rw">Exposure Mode <small>Shutter Priority<svg class="i"><use href="#updown"/></svg></small></div></div>
+      <div class="gap"></div><div class="gr"><div class="rw">Metering <small>Center<svg class="i"><use href="#updown"/></svg></small></div></div>
+      <div class="gap"></div><div class="gr"><div class="rw">Exposure Lock (AE-L) <span class="tog off"></span></div><div class="rw">Focus Lock (AF-L) <span class="tog off"></span></div></div>
+      <div class="gap"></div><div class="gr"><div class="rw">Bracketing <span class="tog"></span></div><div class="rw">Frames <small>3<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Step <small>1 EV<svg class="i"><use href="#updown"/></svg></small></div></div>
+      <div class="ft">Each frame is a separate single-frame photo. Nothing is merged.</div>
+    </div>
+    <figcaption><b>14 · Pro Tools: modes, metering, locks, bracketing</b>A full-screen form over the camera, dark like the camera in either system setting (night mode turns it red on black). Each section appears only when the lens supports it. Exposure Mode: Program, Shutter Priority, ISO Priority, Manual (S and I where iOS reports them for the lens's format); in S you set the shutter and the camera sets ISO. Metering: Center, Spot, Whole Frame (spot and whole frame need iOS 26). AE-L and AF-L are switches; AE-L needs ISO, shutter and aperture on Auto, AF-L needs focus on Auto. Bracketing: 3, 5 or 7 frames (up to what the lens can take), ⅓ EV, ⅔ EV, 1 EV or 2 EV apart, through the system's manual exposure bracket. Each frame is its own photo.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone form"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="gap"></div><div class="gr"><div class="rw"><b>Interval Shooting</b></div><div class="rw">Interval <small>10 sec<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Photos <small>10<svg class="i"><use href="#updown"/></svg></small></div><div class="rw"><span class="lnk">Start</span></div></div>
+      <div class="ft">Each photo is separate. Nothing is combined. Keep nope. open while the series runs.<br><br>Each photo is taken in full auto, or with your manual settings while Manual Controls are on.</div>
+      <div class="gap"></div><div class="gr"><div class="rw"><span class="lbl">Focus Peaking<small>Highlights the sharpest edges in magenta.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Histogram<small>Shown with the manual controls. It measures the processed live preview, not the RAW.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Live Camera Readout<small>The camera's live values, such as shutter, ISO, focus and white balance.</small></span><span class="tog off"></span></div></div>
+      <div class="gap"></div><div class="gr"><div class="rw"><span class="lnk">Done</span></div></div>
+    </div>
+    <figcaption><b>15 · Pro Tools, scrolled: interval and live aids</b>The interval section is the same one the Drive menu opens in full auto: 1 s to 1 h between photos, 2 to 999 photos, Start (Stop while a series runs). Then the live aid switches, the same ones as in Settings, and Done as a row of the form.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone form"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="gap"></div><div class="gr"><div class="rw"><b>Interval Shooting</b></div><div class="rw">Interval <small>45 sec<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Photos <small>120<svg class="i"><use href="#updown"/></svg></small></div><div class="rw"><span class="lnk dis">Start</span></div></div>
+      <div class="ft">Turn off Astro to start interval shooting.<br><br>Each photo is separate. Nothing is combined. Keep nope. open while the series runs.<br><br>Each photo is taken in full auto, or with your manual settings while Manual Controls are on.</div>
+      <div class="gap"></div><div class="gr"><div class="rw"><span class="lbl">Focus Peaking<small>Highlights the sharpest edges in magenta.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Histogram<small>Shown with the manual controls. It measures the processed live preview, not the RAW.</small></span><span class="tog"></span></div><div class="rw"><span class="lbl">Live Camera Readout<small>The camera's live values, such as shutter, ISO, focus and white balance.</small></span><span class="tog off"></span></div></div>
+    </div>
+    <figcaption><b>16 · Interval: Start refused, and custom values</b>Start is dimmed while a series can't begin, and the reason is the first line under the section: "Turn off Astro to start interval shooting." while Astro is on (as here), or "Interval shooting can start when the self-timer or burst ends." while the self-timer counts down or a burst runs. The pickers list their usual values plus the one in use when Siri, Shortcuts or a preset set another (here 45 seconds and 120 photos), so a picker is never blank. This behavior is part of the review fixes going into 0.3.0.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone form"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="gap"></div><div class="gr"><div class="rw">Exposure Mode <small>Shutter Priority<svg class="i"><use href="#updown"/></svg></small></div></div>
+      <div class="menu" style="right:14px;top:112px;width:200px"><div class="mi"><span class="ck"></span>Program</div><div class="mi"><span class="ck"><svg class="i"><use href="#check"/></svg></span>Shutter Priority</div><div class="mi"><span class="ck"></span>ISO Priority</div><div class="mi"><span class="ck"></span>Manual</div></div>
+    </div>
+    <figcaption><b>17 · Choosing an exposure mode</b>A native menu picker. The mode follows what is set by hand: P when neither ISO nor shutter is set, S for shutter only, I for ISO only, M for both. Choosing S, I or M fixes the values in use for the controls it takes over; choosing P returns ISO and shutter to Auto.</figcaption>
+  </figure>
+</div>
+
+<section class="notes">
+  <h2>Interval shooting in full auto</h2>
+  <p>Interval shooting also works with Manual Controls off, from the Drive menu in the quick-controls tray, with an Interval pill and the shutter starting and stopping the series. It is drawn with the camera screen: see <a href="camera.html">camera.html</a>.</p>
+  <h2>Manual Controls settings</h2>
+  <p>The app has no Manual Controls settings page. Settings › Camera has one switch, Manual Controls ("Shows manual controls on the camera screen. Off by default."); turning it off returns every control to Auto and turns bracketing off. Focus Peaking, Histogram and Live Camera Readout live in Settings › Viewfinder Overlays and in Pro Tools. See <a href="settings.html">settings.html</a>.</p>
+</section>
+
+<h2 class="part">Accessibility, night mode and other layouts</h2>
+<div class="grid">
+
+  <figure>
+    <div class="phone"><div class="island"></div>
+      <div class="ax">
+        <div class="tb"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+        <div class="pic"></div>
+        <div class="lst">
+          <h4>Exposure Compensation</h4>
+          <div class="tr">Manual <span class="tog off"></span></div>
+          <div class="tr">0.0 <div class="stp"><span>−</span><span>+</span></div></div>
+          <h4>ISO</h4>
+          <div class="tr">Manual <span class="tog"></span></div>
+          <div class="tr">200 <div class="stp"><span>−</span><span>+</span></div></div>
+          <h4>Shutter</h4>
+          <div class="tr">Manual <span class="tog off"></span></div>
+        </div>
+      </div>
+    </div>
+    <figcaption><b>18 · Largest text sizes</b>At accessibility text sizes the camera scrolls in every window (iPhone, iPad and the iPhone Duo's inner display alike; in a window wider than tall the picture is landscape), and the readout row and dials become a list: one block per control in the same order, each with its name, a Manual switch and a stepper with the value. A control the lens can't set shows its value in words ("Fixed, f/2.2"). The sliders button (All Auto, Pro Tools) follows the list, then the lens buttons and ⋯.</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div class="say"><b>Readout, set by hand</b>"ISO, Manual, 200. Button. Adjustable."<br>Actions: Switch to Auto · All Auto<b>Readout, on Auto</b>"Shutter, Auto, 1/125. Button. Adjustable."<br>Actions: Switch to Manual · All Auto<b>Dial's Auto button</b>"Auto. Button." Hint: "Switch to Auto"; while on Auto: "Selected", hint "Switch to Manual"</div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 200</span></div><div class="b"><i>A</i><span>1/125</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div><div class="vo" style="left:43px;top:525px;width:50px;height:42px"></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>19 · VoiceOver</b>Each readout is one adjustable element: its full name ("Exposure Compensation", "White Balance") and a value of Auto or Manual and the value ("Fixed, f/2.2", "Not available"). Swiping up or down steps the value without opening the dial; double-tap opens it. Each readout has one switching action, named for where it goes: "Switch to Auto" on a control set by hand, "Switch to Manual" on one the camera sets (it fixes the value in use). All Auto is offered whenever anything is set by hand. In the dial, the Auto button reads as selected while the camera sets the value, and its hint is the same pair of names. Voice Control accepts the short and full names ("WB", "White Balance").</figcaption>
+  </figure>
+  <figure>
+    <div class="phone man night"><div class="island"></div>
+      <div class="top"><div class="pills"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div></div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf natural"></div>
+      <div class="dial"><div class="dh">Shutter <span class="v">1/30</span><span class="m">-0.3 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:72%"></div><div class="cb">+</div><div class="cb">Auto</div></div><div class="rng">This lens: 1/71,429 – 1 sec</div></div>
+      <div class="row"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>M</i><span>ISO 800</span></div><div class="b sel"><i>M</i><span>1/30</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>M</i><span>Far</span></div><div class="b"><i>A</i><span>3,800 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div class="bottom"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>20 · Night mode</b>Everything is drawn red on black: the app multiplies each view by pure red, so white becomes the full red. The selected readout and Auto are filled red with black text; the others are red on a near-black fill, so states differ by fill and by the A/M letter, not by color. The slider's filled track uses the night track tint, a dark red, so the full-red thumb stands out from it by at least 3:1. The seal and the pill's symbol are red and keep their shapes. The viewfinder keeps its natural colors unless Red Viewfinder is on (<a href="camera.html">camera.html</a>).</figcaption>
+  </figure>
+  <figure>
+    <div class="phone form night"><div class="island"></div>
+      <div class="ttl">Pro Tools</div>
+      <div class="gap"></div><div class="gr"><div class="rw">Exposure Mode <small>Manual<svg class="i"><use href="#updown"/></svg></small></div></div>
+      <div class="gap"></div><div class="gr"><div class="rw">Exposure Lock (AE-L) <span class="tog off"></span></div><div class="rw">Focus Lock (AF-L) <span class="tog"></span></div></div>
+      <div class="gap"></div><div class="gr"><div class="rw">Bracketing <span class="tog"></span></div><div class="rw">Frames <small>5<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Step <small>⅔ EV<svg class="i"><use href="#updown"/></svg></small></div></div>
+      <div class="ft">Each frame is a separate single-frame photo. Nothing is merged.</div>
+      <div class="gap"></div><div class="gr"><div class="rw"><b>Interval Shooting</b></div><div class="rw">Interval <small>10 sec<svg class="i"><use href="#updown"/></svg></small></div><div class="rw">Photos <small>10<svg class="i"><use href="#updown"/></svg></small></div><div class="rw"><span class="lnk">Start</span></div></div>
+    </div>
+    <figcaption><b>21 · Pro Tools at night</b>The form is red on black too. Switches use the night switch style: a dark red track with a full-red knob, on and off told apart by the knob's position. Picker values, footers and the Start and Done rows are the full red.</figcaption>
+  </figure>
+  <figure class="wide">
+    <div class="phone land held man"><div class="island"></div>
+      <div style="position:absolute;left:30px;top:0;bottom:0;width:50px;display:flex;flex-direction:column;justify-content:flex-start;align-items:center;padding-top:16px;z-index:5"><div class="ib"><svg class="i"><use href="#gear"/></svg></div></div>
+      <div class="vf"></div>
+      <div style="position:absolute;left:92px;top:8px;display:flex;gap:6px;z-index:6"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div>
+      <div style="position:absolute;left:490px;top:0;bottom:0;width:40px;display:flex;flex-direction:column-reverse;justify-content:center;align-items:center;gap:8px;z-index:5"><div class="lens">0.6×</div><div class="lens on">1×</div><div class="lens">5×</div><div class="tray-btn" style="position:absolute;top:8px;margin:0"><svg class="i"><use href="#more"/></svg></div></div>
+      <div class="ro side"><div class="b"><i>A</i><span>0.0</span></div><div class="b"><i>A</i><span>ISO 100</span></div><div class="b sel"><i>M</i><span>1/250</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div>
+      <div style="position:absolute;left:586px;right:8px;top:0;bottom:0;display:flex;flex-direction:column-reverse;justify-content:space-between;align-items:center;padding:30px 0;z-index:5"><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div><div class="shutter"></div><div class="flip"><svg class="i"><use href="#flip"/></svg></div></div>
+    </div>
+    <figcaption><b>22 · iPhone held sideways</b>The camera layout stays put, so the readout row runs along the long edge beside the lens row, and each readout turns upright as one unit, taking its turned size so nothing overlaps. Pills and the format chip move over the picture; only Settings stays in the top band. The open dial turns upright the same way and wraps to the picture's height (<a href="camera.html">camera.html</a> has the full sideways screen).</figcaption>
+  </figure>
+  <figure class="wide">
+    <div class="phone ipad">
+      <div class="vf"></div>
+      <div style="position:absolute;left:30px;top:30px;display:flex;gap:6px;z-index:6"><div class="pill"><svg class="i"><use href="#sliders"/></svg>M</div><div class="chip"><svg class="i f"><use href="#seal"/></svg>RAW + HEIF</div></div>
+      <div class="over"><div class="dial"><div class="dh">ISO <span class="v">100</span><span class="m">0.0 EV</span></div><div class="ctl"><div class="cb">−</div><div class="sl" style="--p:14%"></div><div class="cb">+</div><div class="cb sel">Auto</div></div><div class="rng">This lens: 54 – 12,096</div></div><div class="ro backed"><div class="b"><i>A</i><span>0.0</span></div><div class="b sel"><i>A</i><span>ISO 100</span></div><div class="b"><i>A</i><span>1/120</span></div><div class="b"><i>A</i><span>f/1.78</span></div><div class="b"><i>A</i><span>Middle</span></div><div class="b"><i>A</i><span>5,200 K</span></div><div class="b"><svg class="i"><use href="#sliders"/></svg></div></div></div>
+      <div class="col"><div class="tophalf"><div class="ib"><svg class="i"><use href="#gear"/></svg></div><div class="lens">0.6×</div><div class="lens on">1×</div><div class="tray-btn" style="margin:0"><svg class="i"><use href="#more"/></svg></div></div><div class="shutter"></div><div class="bothalf"><div class="flip"><svg class="i"><use href="#flip"/></svg></div><div class="thumb"><div class="seal"><svg class="i"><use href="#seal"/></svg></div></div></div></div>
+    </div>
+    <figcaption><b>23 · iPad, and the iPhone Duo's inner display</b>In the column layout the picture sits beside a trailing column: Settings, the lenses and ⋯ at the top, the shutter centered, the flip and thumbnail at the bottom. The manual controls sit over the picture's bottom edge: the readout row on a dark backing with its sliders button, and the open dial across the picture above it. The window rotates with the device, so nothing turns upright by itself. The column is used only below the accessibility text sizes: at those sizes every window, iPad in either orientation and the Duo's inner display included, scrolls as in figure 18, with the list of controls and a picture shaped like the window, so every control stays settable. Lens buttons show what the device has (<a href="camera.html">camera.html</a> has the Duo screens).</figcaption>
+  </figure>
+</div>
+
+<section class="notes">
+  <h2>Controls at a glance</h2>
+  <table>
+    <tr><th>Control</th><th>Readout</th><th>Dial</th><th>Steps and range</th></tr>
+    <tr><td>Exposure Compensation (EV)</td><td>0.0 · +0.3 · -0.7</td><td>− slider + · Auto</td><td>Third stops, ±3 EV or the lens's narrower range. Only while ISO or the shutter is on Auto.</td></tr>
+    <tr><td>ISO</td><td>ISO 200</td><td>− slider + · Auto</td><td>Nominal third stops (10 … 25,600) inside the lens's range, plus its ends.</td></tr>
+    <tr><td>Shutter</td><td>1/125 · 2 sec</td><td>− slider + · Auto</td><td>Third stops 1/16000 … 30 s inside the lens's range, plus its ends.</td></tr>
+    <tr><td>Aperture</td><td>f/1.78</td><td>− segmented stops + · Auto, or "This lens has a fixed aperture."</td><td>The lens's recommended stops.</td></tr>
+    <tr><td>Focus</td><td>Near · Middle · Far</td><td>− slider + · Auto</td><td>Relative 0–1 in 0.05 steps, "Closest to Far". No distances.</td></tr>
+    <tr><td>White Balance (WB)</td><td>5,200 K</td><td>− slider + · Auto, Tint, Presets</td><td>2,500–10,000 K in 100 K steps; tint −150 to +150 in 5s.</td></tr>
+  </table>
+  <h2>Rules behind it</h2>
+  <ul>
+    <li>Full auto is the default; manual controls appear only with the Settings switch, and the M pill turns them off again.</li>
+    <li>One readout row, fixed order; a control the lens can't set keeps its place ("Fixed" values or "n/a").</li>
+    <li>Filled white = the open readout and Auto while the camera sets the value. A/M letters carry the mode without color.</li>
+    <li>Every value has a button: − and + step it, Auto hands it back, All Auto resets everything. No gesture is required.</li>
+    <li>Anything over the picture (dial, hint, histogram) sits on a dark backing; amber only for the clipping warnings, always with a symbol and words.</li>
+    <li>Multi-frame tools never merge: each bracket frame and each interval photo is its own single-frame photo.</li>
+  </ul>
+</section>
+</body>
+</html>

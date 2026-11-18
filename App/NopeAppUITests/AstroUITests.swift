@@ -23,6 +23,33 @@ extension NopeAppUITests {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "back from the \(picker) list")
     }
 
+    /// While Astro is on, an interval series can't start: Start in Pro Tools is disabled and
+    /// says why.
+    @MainActor
+    func testIntervalStartIsDisabledWhileAstroIsOn() throws {
+        let app = launch("manual")
+        quickControl(app, "Astro")
+        closeTray(app)
+        let more = app.buttons["More Manual Controls"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
+        more.tap()
+        app.buttons["Pro Tools"].tap()
+        let reason = element(app, containing: "Turn off Astro to start interval shooting.")
+        var swipes = 0
+        while !reason.exists && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(reason.exists)
+        let start = app.buttons["Start"]
+        XCTAssertTrue(start.exists)
+        XCTAssertFalse(start.isEnabled)
+        // As for the other form screens at the default size, the iOS 27.2 Simulator reports form
+        // text as "partially unsupported" Dynamic Type; the form is audited at the largest size
+        // in testIntervalSheetAtTheLargestTextSizeAndRightToLeft.
+        try audit(app, afterScrolling: true, checksDynamicType: false)
+    }
+
     @MainActor
     func testAstroHelperIsRedOnBlackAndSetsUpTheFrames() throws {
         let app = launch("manual", extraArguments: ["-NopeSimulatedViewfinder", "white"])
@@ -100,6 +127,55 @@ extension NopeAppUITests {
         let stop = app.buttons["Stop Frames"]
         XCTAssertTrue(stop.waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "of 300").exists)
+        try audit(app)
+        stop.tap()
+        XCTAssertFalse(stop.waitForExistence(timeout: 10))
+        XCTAssertTrue(element(app, containing: "Astro frames: 300").waitForExistence(timeout: 10))
+    }
+
+    /// The frame number "Frame n of 300" shows, or `nil`.
+    @MainActor
+    private func frameNumber(_ app: XCUIApplication) -> Int? {
+        let label = element(app, containing: "of 300").label
+        return label.split(separator: " ").compactMap { Int($0) }.first
+    }
+
+    /// Leaving the app pauses the frames; coming back counts the start delay down again and the
+    /// run continues from where it was (issue #64, owner decision).
+    @MainActor
+    func testAstroFramesPauseWhenLeavingAndContinueOnReturn() throws {
+        let app = launch("astro")
+        quickControl(app, "Astro")
+        closeTray(app)
+        app.buttons["Astro Settings"].tap()
+        choose(app, "300", in: "Frames")
+        choose(app, "3 seconds", in: "Start Delay")
+        let done = app.buttons["Done"]
+        var swipes = 0
+        while !(done.exists && done.isHittable) && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+        done.tap()
+        app.buttons["Take Photo"].tap()
+        let brighten = app.buttons["Brighten Screen"]
+        XCTAssertTrue(brighten.waitForExistence(timeout: 15))
+        brighten.tap()
+        let stop = app.buttons["Stop Frames"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 5))
+        let started = NSPredicate { _, _ in (self.frameNumber(app) ?? 0) >= 3 }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: started, object: nil)], timeout: 20), .completed)
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(app.wait(for: .runningBackgroundSuspended, timeout: 10) || app.state == .runningBackground)
+        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Away from the app")], timeout: 3)
+        app.activate()
+        XCTAssertTrue(stop.waitForExistence(timeout: 10), "the run is still there")
+        let pausedAt = try XCTUnwrap(frameNumber(app))
+        // The start delay counts down again before the next frame, then the run continues.
+        let continued = NSPredicate { _, _ in (self.frameNumber(app) ?? 0) > pausedAt + 1 }
+        XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: continued, object: nil)], timeout: 30), .completed)
+        if brighten.exists { brighten.tap() }
         try audit(app)
         stop.tap()
         XCTAssertFalse(stop.waitForExistence(timeout: 10))

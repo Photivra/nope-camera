@@ -9,8 +9,9 @@ import Observation
 /// master switch). Each change is saved at once. The app passes ``save`` to
 /// ``CameraModel/saveSettings`` whenever it changes, so the next photo uses it.
 ///
-/// Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in the app's own
-/// `UserDefaults` on the device only. They are never synced through iCloud or sent anywhere.
+/// Privacy rule (AGENTS.md, "No network, no analytics"): settings are stored in `UserDefaults` on
+/// the device only: the app's App Group store, shared with its extensions (``SharedSettingsStore``).
+/// They are never synced through iCloud or sent anywhere.
 ///
 /// The model is isolated to the main actor, so an interface can read its properties directly.
 ///
@@ -64,8 +65,24 @@ public final class NopeSettings {
     /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
     public private(set) var tintsViewfinderInNightMode: Bool
 
-    /// Where the settings are stored.
-    private let defaults: UserDefaults
+    /// Whether a Live Activity shows a series and its saving on the Lock Screen and in the
+    /// Dynamic Island (issue #64). Off by default.
+    public private(set) var showsLiveActivity: Bool
+
+    /// Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
+    /// #57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
+    /// with ``AutoControlIntent/setFollowsFaces(_:)``.
+    public private(set) var followsFaces: Bool
+
+    /// The photo size chosen for each lens that offers a choice (``Lens/photoSizeChoices``,
+    /// issue #57). Empty by default: every lens at its default size. The app passes it to the
+    /// camera with ``CameraIntent/setPhotoSizes(_:)``. Lens identifiers are the app's own and
+    /// stay on the device.
+    public private(set) var photoSizes: [Lens.ID: PhotoDimensions]
+
+    /// Where the settings are stored. ``SharedSettingsSync`` watches it and
+    /// ``makeSnapshot()`` copies it.
+    let defaults: UserDefaults
 
     /// Loads the settings, using the default for any value not stored yet or not readable.
     ///
@@ -90,6 +107,12 @@ public final class NopeSettings {
             ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
         isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
+        showsLiveActivity = defaults.bool(forKey: Key.showsLiveActivity)
+        followsFaces = defaults.object(forKey: Key.followsFaces) == nil || defaults.bool(forKey: Key.followsFaces)
+        // Unreadable sizes fall back to the defaults: every lens at its default size.
+        photoSizes = defaults.data(forKey: Key.photoSizes).flatMap {
+            try? JSONDecoder().decode([Lens.ID: PhotoDimensions].self, from: $0)
+        } ?? [:]
         migrateManualControlsOption()
     }
 
@@ -194,6 +217,14 @@ public final class NopeSettings {
     /// - Parameter isOn: Whether each photo is signed.
     public func setSignsPhotos(_ isOn: Bool) {
         save.metadata.signsPhotos = isOn
+        store()
+    }
+
+    /// Turns the standard file tags on or off, and saves the change.
+    ///
+    /// - Parameter isOn: See ``MetadataSettings/writesStandardFileTags``.
+    public func setWritesStandardFileTags(_ isOn: Bool) {
+        save.metadata.writesStandardFileTags = isOn
         store()
     }
 
@@ -319,6 +350,85 @@ public final class NopeSettings {
         defaults.set(isOn, forKey: Key.tintsViewfinderInNightMode)
     }
 
+    /// Turns the Live Activity on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether a Live Activity shows a series and its saving.
+    public func setShowsLiveActivity(_ isOn: Bool) {
+        showsLiveActivity = isOn
+        defaults.set(isOn, forKey: Key.showsLiveActivity)
+    }
+
+    /// Reads every setting from the store again, for a change made by another process (a
+    /// Control Center control) or by ``apply(_:)``.
+    ///
+    /// Only values that differ are assigned, so the interface redraws only for what changed. A
+    /// setting added to this type needs a line here.
+    ///
+    /// - Returns: `true` when any setting changed.
+    @discardableResult
+    public func reload() -> Bool {
+        let stored = NopeSettings(defaults: defaults)
+        let changes = [
+            update(\.save, from: stored),
+            update(\.showsManualControls, from: stored),
+            update(\.startsInCleanView, from: stored),
+            update(\.overlays, from: stored),
+            update(\.fastShutter, from: stored),
+            update(\.flashMode, from: stored),
+            update(\.torchLevel, from: stored),
+            update(\.isNightModeOn, from: stored),
+            update(\.tintsViewfinderInNightMode, from: stored),
+            update(\.showsLiveActivity, from: stored),
+            update(\.followsFaces, from: stored),
+            update(\.photoSizes, from: stored),
+        ]
+        return changes.contains(true)
+    }
+
+    /// Copies one setting from freshly loaded settings if it differs.
+    ///
+    /// - Parameters:
+    ///   - keyPath: The setting.
+    ///   - stored: Settings just loaded from the same store.
+    /// - Returns: `true` when the value changed.
+    private func update<Value: Equatable>(
+        _ keyPath: ReferenceWritableKeyPath<NopeSettings, Value>, from stored: NopeSettings
+    ) -> Bool {
+        guard self[keyPath: keyPath] != stored[keyPath: keyPath] else { return false }
+        self[keyPath: keyPath] = stored[keyPath: keyPath]
+        return true
+    }
+
+    /// Turns Face Detection on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether detected faces steer autofocus and auto exposure.
+    public func setFollowsFaces(_ isOn: Bool) {
+        followsFaces = isOn
+        defaults.set(isOn, forKey: Key.followsFaces)
+    }
+
+    /// The photo size chosen for a lens, as the camera will use it: the choice when the lens
+    /// offers it, otherwise the lens's default.
+    ///
+    /// - Parameter lens: A lens.
+    /// - Returns: The size, or `nil` when the lens reported none.
+    public func photoSize(for lens: Lens) -> PhotoDimensions? {
+        lens.photoSize(for: photoSizes[lens.id])
+    }
+
+    /// Chooses a lens's photo size, and saves the change. Choosing the lens's default removes
+    /// the stored choice.
+    ///
+    /// - Parameters:
+    ///   - size: One of the lens's ``Lens/photoSizeChoices``; any other size does nothing.
+    ///   - lens: The lens.
+    public func setPhotoSize(_ size: PhotoDimensions, for lens: Lens) {
+        guard lens.photoSizeChoices.contains(size) else { return }
+        photoSizes[lens.id] = size == lens.defaultPhotoSize ? nil : size
+        // Encoding a dictionary of strings to pairs of integers can't fail.
+        defaults.set(try? JSONEncoder().encode(photoSizes), forKey: Key.photoSizes)
+    }
+
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
     /// once: a stored value is kept unless this model already has one, and the old key is
     /// removed.
@@ -356,5 +466,11 @@ public final class NopeSettings {
         static let isNightModeOn = "NopeSettings.isNightModeOn"
         /// Whether night mode tints the viewfinder, a Boolean.
         static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
+        /// Whether the Live Activity is on, a Boolean.
+        static let showsLiveActivity = "NopeSettings.showsLiveActivity"
+        /// Whether detected faces steer autofocus and auto exposure, a Boolean.
+        static let followsFaces = "NopeSettings.followsFaces"
+        /// The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
+        static let photoSizes = "NopeSettings.photoSizes"
     }
 }

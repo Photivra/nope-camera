@@ -54,8 +54,20 @@ public struct MetadataAllowlist: Equatable, Sendable {
         case exactly(String)
         /// Text that starts with this prefix.
         case prefix(String)
+        /// Exactly one of these texts.
+        case oneOf([String])
         /// Any text: the value is the system's own (for example the system version).
         case any
+        /// A date with no date in it: empty, or at most ``blankDateMaximumLength`` characters
+        /// that are each a blank or a colon. This is the Exif standard's form for an unknown date
+        /// ("all the character spaces except colons filled with blank characters", Exif 2.32 and
+        /// 3.0, `DateTime`) however the system pads or shortens it; the reader stops at the first
+        /// NUL, so NUL padding passes too. Any digit or other character fails.
+        case blankDate
+
+        /// The length of an Exif date and time, `YYYY:MM:DD HH:MM:SS`, without its closing NUL
+        /// (Exif 2.32, `DateTime`: 20 bytes with it).
+        public static let blankDateMaximumLength = 19
 
         /// Whether a value follows the rule.
         ///
@@ -65,7 +77,10 @@ public struct MetadataAllowlist: Equatable, Sendable {
             switch self {
             case .exactly(let expected): value == expected
             case .prefix(let prefix): value?.hasPrefix(prefix) == true
+            case .oneOf(let values): value.map(values.contains) == true
             case .any: true
+            case .blankDate:
+                value.map { $0.count <= Self.blankDateMaximumLength && $0.allSatisfy { $0 == " " || $0 == ":" } } == true
             }
         }
     }

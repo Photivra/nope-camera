@@ -33,9 +33,15 @@ public enum AstroIntent: Equatable, Sendable {
 /// - **The shutter** then starts the self-timer (``startDelay``), so touching the phone doesn't
 ///   shake the first frame, and takes ``frameCount`` frames back to back, each saved while the
 ///   next is exposed.
-/// - **A run stops** when the person stops it, when the next frame wouldn't fit in storage, when
-///   the battery is at or below ``stopBatteryLevel`` and not charging, when the camera stops, or
-///   at the first frame that can't be taken or saved. Every frame taken before that is saved.
+/// - **A run pauses** (``isPaused``, issue #64) when the app leaves the foreground or the camera
+///   pauses (a call, another app, heat): the frames taken are saved, and a frame cut short is
+///   taken again. When the app is open and the camera runs again, the start delay counts down
+///   once more and the run continues, after storage and battery are checked again. Leaving during
+///   the start delay starts the run paused.
+/// - **A run stops** when the person stops it (also while paused), when the next frame wouldn't
+///   fit in storage, when the battery is at or below ``stopBatteryLevel`` and not charging, when
+///   the camera stops for good (it failed), or at the first frame that can't be taken or saved
+///   in the foreground. Every frame taken before that is saved.
 /// - **Turning it off** turns manual controls off again if the helper turned them on.
 ///
 /// ``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
@@ -49,7 +55,7 @@ public final class AstroModel {
     public static let frameCounts = [5, 10, 20, 30, 50, 100, 200, 300]
 
     /// The frame count a run starts with.
-    public static let defaultFrameCount = 20
+    nonisolated public static let defaultFrameCount = 20
 
     /// At or below this charge, unplugged, a run stops before the next frame: 10%. An
     /// assumption to be checked on a device: low enough not to stop a run the person can still
@@ -72,6 +78,12 @@ public final class AstroModel {
 
     /// How the last run ended, or `nil` before the first one. Cleared when the next starts.
     public private(set) var lastRun: BurstResult?
+
+    /// Whether the running frames are paused (issue #64): the app left the foreground, or the
+    /// camera is paused (a call, another app, heat). ``progress`` keeps the frames taken; when
+    /// the app is open and the camera runs again, the start delay counts down once more, so the
+    /// phone is still, and the run continues after storage and battery are checked again.
+    public private(set) var isPaused = false
 
     /// Whether the person asked the running frames to stop.
     private(set) var isStopRequested = false
@@ -145,6 +157,13 @@ extension AstroModel: FrameRunTracking {
         progress = BurstProgress(taken: 0, saved: 0)
     }
 
+    /// Records the running frames as paused or not.
+    ///
+    /// - Parameter isPaused: Whether they are paused.
+    func setPaused(_ isPaused: Bool) {
+        self.isPaused = isPaused
+    }
+
     /// Asks the running frames to stop after the frame being taken. Called only while they run.
     func requestStop() {
         isStopRequested = true
@@ -167,6 +186,7 @@ extension AstroModel: FrameRunTracking {
         lastRun = BurstResult(end: end, saved: progress?.saved ?? 0)
         progress = nil
         isStopRequested = false
+        isPaused = false
     }
 }
 

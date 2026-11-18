@@ -76,6 +76,14 @@ Related documentation in the repository:
 - ``MetadataItem``
 - ``LockedMetadataItem``
 
+### Shared settings
+
+- ``SharedSettingsStore``
+- ``SharedSettingsSync``
+- ``SettingsChangeSignaling``
+- ``DarwinSettingsChangeSignal``
+- ``NopeSettingsSnapshot``
+
 ### Saving
 
 - ``PhotoSaver``
@@ -119,6 +127,7 @@ Related documentation in the repository:
 - ``BracketFrame``
 - ``IntervalSettings``
 - ``IntervalProgress``
+- ``IntervalBlocker``
 
 ### Drive modes, self-timer and burst
 
@@ -143,6 +152,16 @@ Related documentation in the repository:
 - ``SeriesScreenKeeper``
 - ``ScreenControlling``
 
+### Live Activity
+
+- ``LiveActivityCoordinator``
+- ``LiveActivityContent``
+- ``LiveActivityStatusLine``
+- ``LiveActivitySigningLine``
+- ``LiveActivityDismissal``
+- ``LiveActivityPresenting``
+- ``BackgroundTimeRequesting``
+
 ### Full-auto aids
 
 - ``AutoControlIntent``
@@ -150,6 +169,21 @@ Related documentation in the repository:
 - ``FocusTarget``
 - ``FramePoint``
 - ``AssistSettings``
+
+### Apple Watch remote shutter
+
+- ``WatchRemote``
+- ``PhoneLink``
+- ``WatchCommandServer``
+- ``WatchLink``
+- ``WatchCommand``
+- ``WatchDelay``
+- ``WatchStatus``
+- ``WatchCameraProblem``
+- ``WatchResult``
+- ``PhoneUpdate``
+- ``WatchMessageCoding``
+- ``WatchMessageError``
 
 ### Hardware
 

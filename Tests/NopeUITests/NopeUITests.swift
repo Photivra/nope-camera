@@ -114,7 +114,12 @@ struct CameraLayoutTests {
     @Test func wideSpaceOrFullIPadUsesTheColumn() {
         let landscape = CGSize(width: 874, height: 402)
         #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: false, isRegularSize: false) == .column)
-        #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: true, isRegularSize: false) == .column)
+        // At accessibility sizes every window scrolls: the column has no room for the enlarged
+        // manual controls list, so it offered only All Auto and Pro Tools.
+        #expect(CameraLayout.arrangement(for: landscape, isAccessibilitySize: true, isRegularSize: false) == .scrolling)
+        let iPadLandscape = CGSize(width: 1180, height: 820)
+        #expect(CameraLayout.arrangement(for: iPadLandscape, isAccessibilitySize: false, isRegularSize: true) == .column)
+        #expect(CameraLayout.arrangement(for: iPadLandscape, isAccessibilitySize: true, isRegularSize: true) == .scrolling)
         let iPadPortrait = CGSize(width: 820, height: 1160)
         #expect(CameraLayout.arrangement(for: iPadPortrait, isAccessibilitySize: false, isRegularSize: true) == .column)
         #expect(CameraLayout.arrangement(for: iPadPortrait, isAccessibilitySize: true, isRegularSize: true) == .scrolling)
@@ -141,6 +146,67 @@ struct CameraLayoutTests {
         #expect(UprightRotation.landscapeRight.angle == .degrees(-90))
         #expect(!UprightRotation.portrait.isSideways)
         #expect(UprightRotation.landscapeLeft.isSideways)
+    }
+
+    // iPhone Duo, measured on its Simulator (iOS 27.2): the space inside the safe area and the
+    // size classes on each display.
+
+    @Test func duoOuterDisplayStacksInBothOrientations() {
+        // 466 × 678 pt, with the status bar in a trailing strip: 382 × 644 inside the safe area,
+        // compact width and regular height. The interface stays portrait when the phone turns,
+        // so the space is the same sideways.
+        let outer = CGSize(width: 382, height: 644)
+        let isRegular = CameraLayout.isRegularSize(horizontal: .compact, vertical: .regular)
+        #expect(!isRegular)
+        #expect(CameraLayout.arrangement(for: outer, isAccessibilitySize: false, isRegularSize: isRegular) == .stacked)
+        #expect(CameraLayout.arrangement(for: outer, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
+        // The whole 4:3 picture and the bands don't fit one above the other, so the bands
+        // overlay the picture's bottom, as on a 4.7-inch iPhone.
+        let space = CGSize(width: 382, height: 644 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
+        #expect(CameraLayout.bandsOverlayPicture(in: space, bandsHeight: 88))
+        // Icons and text turn upright on the outer display.
+        #expect(UprightRotation.landscapeLeft.inWindow(isRegularSize: isRegular) == .landscapeLeft)
+        #expect(UprightRotation.landscapeRight.inWindow(isRegularSize: isRegular) == .landscapeRight)
+    }
+
+    @Test func duoInnerDisplayUsesTheColumnAndRotatesForReal() {
+        // 951 × 669 pt held like a book (867 × 635 inside the safe area), 669 × 951 turned
+        // (669 × 835): regular in both size classes, so the window rotates as on iPad.
+        let isRegular = CameraLayout.isRegularSize(horizontal: .regular, vertical: .regular)
+        #expect(isRegular)
+        let wide = CGSize(width: 867, height: 635)
+        let tall = CGSize(width: 669, height: 835)
+        #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: false, isRegularSize: isRegular) == .column)
+        #expect(CameraLayout.arrangement(for: tall, isAccessibilitySize: false, isRegularSize: isRegular) == .column)
+        #expect(CameraLayout.arrangement(for: wide, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
+        #expect(CameraLayout.arrangement(for: tall, isAccessibilitySize: true, isRegularSize: isRegular) == .scrolling)
+        #expect(CameraLayout.pictureAspectRatio(in: wide) == CameraLayout.photoAspectRatio)
+        #expect(CameraLayout.pictureAspectRatio(in: tall) == 1 / CameraLayout.photoAspectRatio)
+        // The interface already turns with the device, so nothing turns again as an upright unit.
+        #expect(UprightRotation.landscapeLeft.inWindow(isRegularSize: isRegular) == .portrait)
+        #expect(UprightRotation.landscapeRight.inWindow(isRegularSize: isRegular) == .portrait)
+        #expect(UprightRotation.portrait.inWindow(isRegularSize: isRegular) == .portrait)
+    }
+
+    @Test func viewfinderStaysInsideTheScrollView() {
+        let picture = CGRect(x: 40, y: 300, width: 210, height: 280)
+        // Not clipped outside the scrolling layout.
+        #expect(ViewfinderAnchors.visibleFrame(of: picture, in: nil) == picture)
+        // An iPhone SE at the largest text size: the scroll view ends at 520, above the pinned
+        // shutter row, so only the picture's top 220 points show.
+        let scrollView = CGRect(x: 0, y: 20, width: 375, height: 500)
+        #expect(ViewfinderAnchors.visibleFrame(of: picture, in: scrollView) == CGRect(x: 40, y: 300, width: 210, height: 220))
+        // Scrolled up past the top: only the part still in the scroll view.
+        let scrolledUp = picture.offsetBy(dx: 0, dy: -400)
+        #expect(ViewfinderAnchors.visibleFrame(of: scrolledUp, in: scrollView) == CGRect(x: 40, y: 20, width: 210, height: 160))
+        // Scrolled out of view: nothing.
+        #expect(ViewfinderAnchors.visibleFrame(of: picture.offsetBy(dx: 0, dy: -700), in: scrollView) == .zero)
+    }
+
+    @Test func regularSizeNeedsBothSizeClasses() {
+        #expect(!CameraLayout.isRegularSize(horizontal: .regular, vertical: .compact))
+        #expect(!CameraLayout.isRegularSize(horizontal: .compact, vertical: .compact))
+        #expect(!CameraLayout.isRegularSize(horizontal: nil, vertical: .regular))
     }
 }
 
@@ -239,5 +305,38 @@ struct DriveTextTests {
         #expect(DriveText.shortSeconds(3).contains("3"))
         #expect(DriveText.spokenSeconds(10).contains("10"))
         #expect(DriveText.systemImage(for: .burst) != DriveText.systemImage(for: .single))
+    }
+}
+
+/// Night mode's colors after the red multiply meet WCAG 2.2 contrast (issue #61).
+@MainActor
+struct NightStyleContrastTests {
+    /// The WCAG 2.2 relative luminance of a color after night mode's multiply by pure red: only
+    /// its red channel is left.
+    static func nightLuminance(_ color: Color) -> Double {
+        0.2126 * Double(color.resolve(in: EnvironmentValues()).linearRed)
+    }
+
+    /// The WCAG 2.2 contrast ratio of two relative luminances.
+    static func contrast(_ first: Double, _ second: Double) -> Double {
+        (max(first, second) + 0.05) / (min(first, second) + 0.05)
+    }
+
+    /// Tinted text and icons (a back button, a checkmark) are the full red, at least 4.5:1 on
+    /// black; a mid gray tint showed as about 1.9:1.
+    @Test func tintedTextAndIconsAreTheFullRed() {
+        let tint = Self.nightLuminance(NightStyle.controlTint)
+        #expect(tint == Self.nightLuminance(.white))
+        #expect(Self.contrast(tint, 0) >= 4.5)
+        #expect(Self.contrast(Self.nightLuminance(Color(white: 0.5)), 0) < 3)
+    }
+
+    /// A switch's knob and a slider's thumb (white, shown as the full red) stand out from their
+    /// filled track by at least 3:1, as WCAG 2.2 asks of a control's parts (1.4.11).
+    @Test func knobsStandOutFromTheirTracks() {
+        let knob = Self.nightLuminance(.white)
+        let track = Self.nightLuminance(NightStyle.trackTint)
+        #expect(Self.contrast(knob, track) >= 3)
+        #expect(track > 0, "the track still shows as a dark red")
     }
 }

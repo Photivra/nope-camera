@@ -18,6 +18,14 @@ while read -r target; do
   if [[ ! -e "$target" ]]; then echo "llms.txt links to a missing file: $target"; fail=1; fi
 done < <(grep -oE '\]\([^)#]+\)' llms.txt | sed -E 's/^\]\((.*)\)$/\1/' | grep -vE '^[a-z]+://')
 
+# Version (AGENTS.md, "Versioning"): the app's marketing version, written into the Software tag,
+# the C2PA claim and About, is the newest release in CHANGELOG.md.
+version=$(sed -nE 's/^MARKETING_VERSION = ([0-9]+[.][0-9]+[.][0-9]+)$/\1/p' Config/Base.xcconfig)
+released=$(sed -nE 's/^## \[([0-9]+[.][0-9]+[.][0-9]+)\].*/\1/p' CHANGELOG.md | head -n 1)
+if [[ -z "$version" || "$version" != "$released" ]]; then
+  echo "MARKETING_VERSION in Config/Base.xcconfig (${version:-none}) must be the newest release in CHANGELOG.md (${released:-none})"; fail=1
+fi
+
 # Sign-off: every commit in the range BASE..HEAD needs a Signed-off-by trailer.
 if [[ -n "${BASE_SHA:-}" && -n "${HEAD_SHA:-}" ]]; then
   while read -r sha; do

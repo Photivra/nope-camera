@@ -4,15 +4,9 @@ import SwiftUI
 /// The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
 /// standard form, opened from the last button of the manual controls row.
 ///
-/// Each section appears only when the selected lens supports it. The sheet follows the system
-/// appearance.
+/// Each section appears only when the selected lens supports it. Like the camera it covers, the
+/// sheet is dark in either system setting (``ScreenAppearance/camera``).
 struct ProToolsSheet: View {
-    /// The intervals offered, in seconds: 1 second to 1 hour.
-    static let intervals: [Double] = [1, 2, 3, 5, 10, 15, 20, 30, 60, 120, 300, 600, 900, 1800, 3600]
-
-    /// The photo counts offered for a series, from 2 to the 999 the app allows.
-    static let photoCounts = [2, 3, 5, 10, 20, 30, 50, 100, 200, 500, 999]
-
     /// The camera model.
     let model: CameraModel
 
@@ -171,56 +165,10 @@ struct ProToolsSheet: View {
         }
     }
 
-    /// The interval, photo count, and start or stop.
+    /// The interval, photo count, and start or stop: the same section as the Drive menu's
+    /// Interval sheet.
     private var intervalSection: some View {
-        Section {
-            Text("Interval Shooting", bundle: .module, comment: "Section title: a series of photos taken at a fixed interval.")
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            Picker(
-                selection: Binding(
-                    get: { manual.interval.interval },
-                    set: { send(.setInterval(IntervalSettings(interval: $0, count: manual.interval.count))) })
-            ) {
-                ForEach(Self.intervals, id: \.self) { seconds in
-                    Text(verbatim: Duration.seconds(seconds).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated)))
-                        .tag(seconds)
-                }
-            } label: {
-                Text("Interval", bundle: .module, comment: "Picker for the time between photos in interval shooting.")
-            }
-            Picker(
-                selection: Binding(
-                    get: { manual.interval.count },
-                    set: { send(.setInterval(IntervalSettings(interval: manual.interval.interval, count: $0))) })
-            ) {
-                ForEach(Self.photoCounts, id: \.self) { count in
-                    Text(verbatim: count.formatted()).tag(count)
-                }
-            } label: {
-                Text("Photos", bundle: .module, comment: "Picker for how many photos an interval series takes.")
-            }
-            if manual.intervalProgress == nil {
-                Button {
-                    send(.startInterval)
-                    dismiss()
-                } label: {
-                    Text("Start", bundle: .module, comment: "Button that starts interval shooting.")
-                }
-                .disabled(!model.canCapture)
-            } else {
-                Button(role: .destructive) {
-                    send(.stopInterval)
-                } label: {
-                    Text("Stop", bundle: .module, comment: "Button that stops interval shooting.")
-                }
-            }
-        } footer: {
-            Text(
-                "Each photo is separate. Nothing is combined. Keep nope. open while the series runs.", tableName: "Honesty",
-                bundle: .module,
-                comment: "Explains interval shooting. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.")
-        }
+        IntervalSection(model: model) { dismiss() }
     }
 }
 
@@ -246,8 +194,14 @@ struct IntervalProgressView: View {
     /// The count and the Stop button.
     var body: some View {
         HStack(spacing: 12) {
-            Text("\(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
-                .font(.callout.monospacedDigit())
+            Group {
+                if progress.isPaused {
+                    Text("Paused: \(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.")
+                } else {
+                    Text("\(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
+                }
+            }
+            .font(.callout.monospacedDigit())
             Button(role: .destructive, action: stop) {
                 Text("Stop", bundle: .module, comment: "Button that stops interval shooting.")
                     .frame(minHeight: 44)

@@ -776,6 +776,17 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The camera model.
 
+## `CameraControlContext/presets`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var presets: SettingsPresets?
+```
+
+The saved settings presets, for the Presets tray item (issue #72), or `nil` where there
+are none (the Lock Screen camera).
+
 ## `CameraControlContext/send(_:)`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -808,6 +819,27 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 Whether the full-auto exposure dial is open, for the Exposure tray item. The camera
 screen sets it; a constant `false` elsewhere.
+
+## `CameraControlContext/showsIntervalSettings`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var showsIntervalSettings: Binding<Bool>
+```
+
+Whether the Interval sheet is open, for the Drive menu and the Interval pill. The camera
+screen sets it; a constant `false` elsewhere.
+
+## `CameraControlContext/showsPresets`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var showsPresets: Binding<Bool>
+```
+
+Whether the presets sheet is open, for the Presets tray item. The camera screen sets it.
 
 ## `CameraFlipButton`
 
@@ -910,15 +942,22 @@ How the camera screen arranges the picture and its controls (issue #68, "Point b
 
 The rule depends only on the space and the text size, so it covers iPhone and iPad in every
 orientation and window size:
-- a space taller than wide, on a phone-sized screen, stacks the bands: top bar, picture, lens
-  row, manual readout and shutter row (``stacked``), or scrolls them at accessibility text
-  sizes (``scrolling``, also on a portrait iPad);
+- at accessibility text sizes, every window scrolls the bands with a shorter picture
+  (``scrolling``), because only that layout has room for the enlarged manual controls list:
+  the column has no room for it, and offered only All Auto and Pro Tools there;
+- otherwise, a space taller than wide, on a phone-sized screen, stacks the bands: top bar,
+  picture, lens row, manual readout and shutter row (``stacked``);
 - a space wider than tall, or a full-size iPad window, puts the picture beside a control
   column on the trailing edge with the shutter centered (``column``).
 
 The iPhone keeps its interface in portrait, so it uses ``stacked`` in both orientations and
 turns icons and text upright instead (``UprightUnit``); it meets ``column`` only while a
-rotated sheet is open over the camera.
+rotated sheet is open over the camera. A window that is regular in both size classes rotates
+for real, as on iPad: the unfolded inner display of a foldable iPhone (iPhone Duo) is such a
+window, and the system turns it with the device whatever the app asks, so it uses ``column``
+(``scrolling`` at accessibility sizes) and nothing turns upright
+(``isRegularSize(horizontal:vertical:)``). The Duo's outer display is a compact-width iPhone
+window and stays portrait.
 
 ## `CameraLayout/arrangement(for:isAccessibilitySize:isRegularSize:)`
 
@@ -962,6 +1001,23 @@ case column
 ```
 
 The picture beside a trailing control column: iPad, and any window wider than tall.
+
+## `CameraLayout/isRegularSize(horizontal:vertical:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func isRegularSize(horizontal: UserInterfaceSizeClass?, vertical: UserInterfaceSizeClass?) -> Bool
+```
+
+Whether a window is regular in both size classes: a full-size iPad window, or the
+unfolded inner display of a foldable iPhone. Such a window rotates with the device, so
+the camera uses ``column`` beside the picture and turns nothing upright by itself.
+
+- Parameters:
+  - horizontal: The horizontal size class.
+  - vertical: The vertical size class.
+- Returns: `true` when both are regular.
 
 ## `CameraLayout/photoAspectRatio`
 
@@ -1010,7 +1066,8 @@ case scrolling
 ```
 
 The stacked bands in a scrolling column with a shorter picture, at accessibility text
-sizes, so no control is clipped (AGENTS.md, "Larger Text").
+sizes in every window, so no control is clipped and every manual control is in the
+enlarged list (AGENTS.md, "Larger Text").
 
 ## `CameraLayout/scrollingPictureHeight`
 
@@ -1058,7 +1115,7 @@ The top bar's height, in points (issue #68, "Point budget").
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor struct CameraReadyView<Viewfinder> where Viewfinder : View
+@MainActor struct CameraReadyView
 ```
 
 The camera when it is ready, in the approved clean layout (issue #68, "UX v3").
@@ -1075,14 +1132,18 @@ readout row and its dial when the "Manual controls" option is on, and a failure 
   4.7-inch iPhone, they overlay its bottom on a dark backing. The layout stays put when the
   iPhone turns; icons and text blocks turn upright as units, and the chip, pills and warnings
   move to the picture's upper edge.
-- **Scrolling**: the same bands in a scroll view at accessibility text sizes.
-- **Column** (iPad, or a window wider than tall): the picture beside a trailing column with
-  the shutter centered; pills, chip and warnings over the picture's top, and the manual
-  controls and tray over its bottom.
+- **Scrolling**: the same bands in a scroll view at accessibility text sizes, in every window,
+  with the enlarged manual controls list; the viewfinder is clipped to the scroll view.
+- **Column** (iPad, or a window wider than tall, below the accessibility sizes): the picture
+  beside a trailing column with the shutter centered; pills, chip and warnings over the
+  picture's top, and the manual controls and tray over its bottom.
 
 Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
 place and any warning. Every gesture has a button: swiping the picture down or up is a
 shortcut for Hide Controls (in the tray) and Show Controls.
+
+The picture's frame is left clear and reported (``ViewfinderFrame``): ``CameraScreen`` draws
+the live viewfinder there, behind this view, so it stays the same view in every mode.
 
 ## `CameraReadyView/body`
 
@@ -1094,12 +1155,12 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The screen.
 
-## `CameraReadyView/init(model:settings:lenses:openSettings:viewfinder:)`
+## `CameraReadyView/init(model:settings:lenses:openSettings:presets:)`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void, @ViewBuilder viewfinder: () -> Viewfinder)
+@MainActor init(model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void, presets: SettingsPresets? = nil)
 ```
 
 Creates the ready view.
@@ -1109,7 +1170,7 @@ Creates the ready view.
   - settings: The person's settings.
   - lenses: The lenses, in display order.
   - openSettings: Opens Settings.
-  - viewfinder: Makes the live viewfinder.
+  - presets: The saved settings presets, or `nil` for no Presets tray item.
 
 ## `CameraReadyView/lenses`
 
@@ -1141,6 +1202,16 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 Opens Settings.
 
+## `CameraReadyView/presets`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+@MainActor let presets: SettingsPresets?
+```
+
+The saved settings presets (issue #72), or `nil` for no Presets tray item.
+
 ## `CameraReadyView/settings`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
@@ -1150,16 +1221,6 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 The person's settings.
-
-## `CameraReadyView/viewfinder`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-@MainActor let viewfinder: Viewfinder
-```
-
-The live viewfinder from the app.
 
 ## `CameraScreen`
 
@@ -1172,9 +1233,11 @@ public, declared in `Sources/NopeUI/CameraScreen.swift`
 The camera screen: renders a `CameraModel` and sends it intents.
 
 The screen holds no rules: it shows the model's state and sends `CameraIntent` values
-(AGENTS.md, "One direction of flow"). It uses the dark appearance, because a camera is used
-in every light and a dark frame doesn't change how a scene looks; other screens follow the
-system appearance.
+(AGENTS.md, "One direction of flow"). The camera and its own sheets use the dark appearance,
+because a camera is used in every light and a dark frame doesn't change how a scene looks;
+Settings, first run and the other screens that aren't the camera follow the system's light or
+dark setting, read from ``SwiftUICore/EnvironmentValues/systemColorScheme``
+(`ScreenAppearance`). Night mode is red on black on every screen.
 
 The live viewfinder comes from the app target: `NopeUI` can't show camera video, so the app
 passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
@@ -1185,8 +1248,10 @@ state, so settings and the Honesty screen are reachable before the camera is all
 camera access is asked, ``FirstRunView`` says what the app does, then asks.
 
 The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
-``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone) and
-``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open).
+``SwiftUICore/EnvironmentValues/cameraUprightRotation`` (upright icons on a turned iPhone),
+``SwiftUICore/EnvironmentValues/cameraPresentsSheet`` (rotation while a sheet is open),
+``SwiftUICore/EnvironmentValues/systemColorScheme`` (the appearance Settings follows) and
+``SwiftUICore/EnvironmentValues/windowAppearance`` (the window's appearance).
 
 ```swift
 CameraScreen(model: model, settings: settings) { source in
@@ -1218,12 +1283,12 @@ Creates the camera screen with a plain black viewfinder, for tests and previews.
   - model: The model to render.
   - settings: The person's settings.
 
-## `CameraScreen/init(model:settings:viewfinder:)`
+## `CameraScreen/init(model:settings:presets:viewfinder:)`
 
 public, declared in `Sources/NopeUI/CameraScreen.swift`
 
 ```swift
-@MainActor init(model: CameraModel, settings: NopeSettings, @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder)
+@MainActor init(model: CameraModel, settings: NopeSettings, presets: SettingsPresets? = nil, @ViewBuilder viewfinder: @escaping (any CameraPreviewSource) -> Viewfinder)
 ```
 
 Creates the camera screen.
@@ -1232,6 +1297,8 @@ Creates the camera screen.
   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     and runs `CameraModel.observeEvents()` while it is visible.
   - settings: The person's settings, opened from the Settings button.
+  - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    `nil` to offer none (the Lock Screen camera, which can't read them).
   - viewfinder: Makes the live viewfinder from the model's preview source.
 
 ## `CameraStyle`
@@ -2997,12 +3064,12 @@ A number of seconds in the system's short form, such as "3s" or "3 Sek.".
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor static func shutterValue(_ drive: DriveModel) -> Text?
+@MainActor static func shutterValue(_ model: CameraModel) -> Text?
 ```
 
 What the shutter does now, for VoiceOver, or `nil` in single mode with nothing running.
 
-- Parameter drive: The drive model.
+- Parameter model: The camera model.
 
 ## `DriveText/spokenSeconds(_:)`
 
@@ -3027,6 +3094,60 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 The SF Symbol for a mode.
 
 - Parameter mode: The mode.
+
+## `EditPresetsScreen`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct EditPresetsScreen
+```
+
+The saved presets, each opening its rename and delete screen; swiping a row deletes it.
+
+## `EditPresetsScreen/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list.
+
+## `EditPresetsScreen/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel?
+```
+
+The camera, or `nil`.
+
+## `EditPresetsScreen/init(presets:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, camera: CameraModel?)
+```
+
+Creates the list.
+
+- Parameters:
+  - presets: The presets.
+  - camera: The camera, or `nil`.
+
+## `EditPresetsScreen/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
 
 ## `EnvironmentValues/cameraGravitySource`
 
@@ -3074,6 +3195,29 @@ var isNightMode: Bool { get set }
 Whether night mode is on, for views that need a different color in it
 (``CameraColor``). Set by ``NightModeStyle``.
 
+## `EnvironmentValues/isPresentedInPopover`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+var isPresentedInPopover: Bool { get set }
+```
+
+Whether the view is presented in a popover (Settings and the format details on iPad), set
+by ``AdaptivePresentation``.
+
+## `EnvironmentValues/offersLiveActivity`
+
+public, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+var offersLiveActivity: Bool { get set }
+```
+
+Whether the device shows Live Activities and the person allows them for the app, so
+Settings offers the Live Activity switch (issue #64). `false` by default, as in the Lock
+Screen capture extension and previews; the app sets it from ActivityKit.
+
 ## `EnvironmentValues/openAppSettings`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -3109,6 +3253,110 @@ var seriesScreenKeeper: SeriesScreenKeeper? { get set }
 
 Keeps the screen awake and dimmed during an interval series (issue #48), or `nil` when
 the app gives none, as in previews: then the screen is left alone.
+
+## `EnvironmentValues/systemColorScheme`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var systemColorScheme: ColorScheme? { get set }
+```
+
+The light or dark appearance chosen in the system's settings, which Settings and the
+other screens that aren't the camera follow (``CameraScreen``, "Appearance").
+
+The camera screen's window is dark, so its own color scheme can't tell the system's
+setting, and a sheet presented from the camera would stay dark. The app target sets this
+from its window scene and updates it when the setting changes. `nil` (not known, the default) leaves those sheets in the camera's dark
+appearance.
+
+## `EnvironmentValues/windowAppearance`
+
+public, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+var windowAppearance: WindowAppearanceAction? { get set }
+```
+
+Sets the appearance of the window the camera screen is in: dark while the camera shows,
+following the system on first run and the other screens that aren't the camera, and
+hears when a sheet that follows the system opens or closes (``WindowAppearanceRequest``).
+The app target sets it so it can keep reading the system's setting for
+``systemColorScheme``. `nil` (the default) makes the camera screen ask with
+`preferredColorScheme(_:)`.
+
+## `ExplainedToggle`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor struct ExplainedToggle
+```
+
+A Settings switch with a long explanation (``SettingLabel``).
+
+At the standard text sizes the explanation is part of the switch's label, as in every other
+switch row. At the accessibility sizes the switch takes a large share of the row's width, and
+a long explanation beside it became a very narrow, very tall column: the Live Activity row was
+about 1,146 points tall at the largest size, more than the screen, and pushed the rows below
+it far down. There the explanation goes below the switch, across the row's full width, and
+the two are combined into one accessibility element, so VoiceOver still reads the name and
+the explanation as the switch, as at the standard sizes.
+
+## `ExplainedToggle/body`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The switch, with the explanation in its label or below it.
+
+## `ExplainedToggle/explanation`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor let explanation: Text
+```
+
+What the setting does.
+
+## `ExplainedToggle/init(isOn:title:explanation:)`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor init(isOn: Binding<Bool>, title: Text, explanation: Text)
+```
+
+Creates the row.
+
+- Parameters:
+  - isOn: Whether the setting is on.
+  - title: The setting's name.
+  - explanation: What the setting does.
+
+## `ExplainedToggle/isOn`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor let isOn: Binding<Bool>
+```
+
+Whether the setting is on.
+
+## `ExplainedToggle/title`
+
+internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The setting's name, also the switch's Voice Control name.
 
 ## `FailureAction`
 
@@ -3231,6 +3479,26 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 Takes the photo again.
+
+## `FarFocusText`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+enum FarFocusText
+```
+
+The name of the far focus limit (issue #57).
+
+## `FarFocusText/title`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var title: Text { get }
+```
+
+"Far Focus".
 
 ## `FastShutterSettingsView`
 
@@ -3384,8 +3652,8 @@ internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
 @MainActor struct FileOptionsSettingsView
 ```
 
-How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth and color
-space, each a native picker with a one-line explanation, and a button that restores the
+How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth, color
+space and size, each a native picker with a one-line explanation, and a button that restores the
 defaults.
 
 Advanced options: Settings links to this screen only while HEIF or JPEG is selected, and the
@@ -3486,6 +3754,19 @@ internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
 A compression's name.
 
 - Parameter quality: The compression.
+- Returns: Its localized name.
+
+## `FileOptionsSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
+
+```swift
+@MainActor static func title(of size: OutputSize) -> Text
+```
+
+A size's name.
+
+- Parameter size: The size.
 - Returns: Its localized name.
 
 ## `FirstRunView`
@@ -4663,6 +4944,121 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 
 Stops the series.
 
+## `IntervalSection`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor struct IntervalSection
+```
+
+The interval and photo count of interval shooting (issue #48), with Start or Stop: one
+section, shown in the Interval sheet of the Drive menu and in Pro Tools, so both offer the
+same thing.
+
+A series works in full auto and with manual controls on; `NopeCore` holds the series
+(`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
+
+## `IntervalSection/body`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The pickers and the button, with the honesty footer.
+
+## `IntervalSection/didStart`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let didStart: () -> Void
+```
+
+Runs after Start, such as closing the sheet so the series can be seen.
+
+## `IntervalSection/init(model:didStart:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor init(model: CameraModel, didStart: @escaping () -> Void)
+```
+
+Creates the section.
+
+- Parameters:
+  - model: The camera model.
+  - didStart: Runs after Start.
+
+## `IntervalSection/model`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `IntervalSection/reason(_:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static func reason(_ blocker: IntervalBlocker) -> Text
+```
+
+Why Start is unavailable, said beside the disabled button.
+
+- Parameter blocker: Why a series can't start now.
+- Returns: The sentence.
+
+## `IntervalSheet`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor struct IntervalSheet
+```
+
+The Interval sheet, opened from the Drive menu and the Interval pill: the series' interval
+and photo count, and Start. In the Interval drive mode the shutter starts the series too.
+
+## `IntervalSheet/body`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `IntervalSheet/init(model:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor init(model: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameter model: The camera model.
+
+## `IntervalSheet/model`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
 ## `LegalTextView`
 
 internal, declared in `Sources/NopeUI/AboutScreen.swift`
@@ -4683,6 +5079,13 @@ internal, declared in `Sources/NopeUI/AboutScreen.swift`
 ```
 
 The text in a scrolling, selectable column.
+
+The column is lazy: only the paragraphs on screen are laid out and in the accessibility
+tree. The license is about 160,000 points tall at the largest text size; laid out whole,
+the CI test that audits this screen took 770 seconds and the audit's Dynamic Type check
+failed on the first paragraph (build 43786103024). Lazy, the audit at the largest size
+takes about 8 seconds on a local Simulator. VoiceOver still reads on through the text,
+which scrolls as it goes.
 
 ## `LegalTextView/init(resource:title:)`
 
@@ -5349,6 +5752,16 @@ The name of a pressure level.
 
 - Parameter pressure: The level.
 
+## `LiveReadoutText/pinTitle`
+
+internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
+
+```swift
+@MainActor static var pinTitle: Text { get }
+```
+
+The name of the choice that keeps the readout on screen in clean view.
+
 ## `LiveReadoutText/processingRow(_:)`
 
 internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
@@ -5376,6 +5789,16 @@ the readout stays small over the picture.
   - reading: The hardware's values.
   - lens: The lens in use, or `nil`.
   - format: The format of the next photo, or `nil`; its name says whether it is Bayer RAW.
+
+## `LiveReadoutText/shortTitle`
+
+internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
+
+```swift
+@MainActor static var shortTitle: Text { get }
+```
+
+The readout's short name in the quick-controls tray, "Readout".
 
 ## `LiveReadoutText/signed(_:fractionLength:)`
 
@@ -5768,51 +6191,6 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 
 Whether Pro Tools is shown; the camera screen presents it.
 
-## `NaturalViewfinderFrame`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-struct NaturalViewfinderFrame
-```
-
-Where the ready camera reserves room for a viewfinder in natural colors while night mode is
-on, for ``CameraScreen`` to draw it behind the red interface (issue #61). `nil` otherwise.
-
-## `NaturalViewfinderFrame/defaultValue`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-static var defaultValue: Anchor<CGRect>? { get }
-```
-
-No frame: the viewfinder is drawn in place.
-
-## `NaturalViewfinderFrame/init()`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-init()
-```
-
-Creates the key. It holds no state.
-
-## `NaturalViewfinderFrame/reduce(value:nextValue:)`
-
-internal, declared in `Sources/NopeUI/CameraReadyView.swift`
-
-```swift
-static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?)
-```
-
-Keeps the first frame reported.
-
-- Parameters:
-  - value: The frame so far.
-  - nextValue: The next frame reported.
-
 ## `NightModeStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -5826,7 +6204,7 @@ otherwise (issue #61).
 
 The view's structure stays the same in both modes, so switching keeps each view's state.
 System menus, alerts and the keyboard are drawn by the system outside the app's views and keep
-the system's dark appearance; the system's Color Filters (red tint) cover them too.
+the dark appearance night mode asks for; the system's Color Filters (red tint) cover them too.
 
 ## `NightModeStyle/body(content:)`
 
@@ -5863,6 +6241,75 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Whether night mode is on.
 
+## `NightModeSwitchStyle`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeSwitchStyle
+```
+
+The system switch, with ``NightStyle/trackTint`` on its track in night mode, so its knob
+stays distinct from the track while other tinted controls use the full night red. Outside
+night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
+with its own style keeps that style.
+
+## `NightModeSwitchStyle/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NightModeSwitchStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The toggle, drawn by the system.
+
+- Parameter configuration: The toggle's label and state.
+
+## `NightModeTrackTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeTrackTint
+```
+
+Puts ``NightStyle/trackTint`` on a control's track in night mode.
+
+## `NightModeTrackTint/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The control, with the track tint in night mode.
+
+- Parameter content: The control.
+
+## `NightModeTrackTint/init()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state.
+
 ## `NightStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -5890,8 +6337,10 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var controlTint: Color { get }
 ```
 
-The tint of system controls in night mode, before the multiply: a mid gray, which shows
-as a dark red, so a switch's white knob (shown red) stays visible on its track.
+The tint of system controls in night mode, before the multiply: white, shown as the full
+night red. Tinted text and icons (a back button, a picker's checkmark, a button in a list)
+need it: a mid gray showed as about `#800000`, under 2:1 against black and the dark red
+rows, below WCAG 2.2's 3:1 for icons (1.4.11) and 4.5:1 for text (1.4.3).
 
 ## `NightStyle/red`
 
@@ -5902,6 +6351,19 @@ static var red: Color { get }
 ```
 
 The one color of night mode: pure sRGB red.
+
+## `NightStyle/trackTint`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static var trackTint: Color { get }
+```
+
+The tint of a switch's track and a slider's filled track in night mode, before the
+multiply: a dark gray, shown as a dark red, so the knob or thumb (white, shown as the full
+red) stands out from the track by at least 3:1 (WCAG 2.2, 1.4.11). Applied by
+``NightModeSwitchStyle`` and `nightModeTrackTint()`.
 
 ## `OverlaySettingsView`
 
@@ -6151,7 +6613,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 opened from the last-photo thumbnail.
 
 A native list with one section per topic, each with a heading VoiceOver can jump between:
-the files, the exposure as written, the processing, the signature, the details kept and left
+the files, the RAW clipping, the exposure as written, the processing, the signature, the details kept and left
 out, everything the read-back found, and the timings. Every value comes from
 `SavedPhoto.details`; a value the file doesn't hold isn't shown.
 
@@ -6202,6 +6664,429 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 The photos of the last press of the shutter: one, or a bracket's frames.
 
+## `PhotoSizeSettingsView`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor struct PhotoSizeSettingsView
+```
+
+The photo size of each lens that offers more than one (issue #57): a pushed-list picker per
+lens, with the sizes the lens reports and a plain explanation.
+
+Advanced option: Settings links here only when a lens offers a choice
+(`Lens.photoSizeChoices`), which is a lens without Bayer RAW; a Bayer RAW lens always takes
+the sensor's binned RAW. The default is the smallest size, as before this option existed.
+The rules are in `Lens` and `NopeSettings`; this view only shows them.
+
+## `PhotoSizeSettingsView/body`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form: one picker per lens, then the explanation.
+
+## `PhotoSizeSettingsView/init(settings:lenses:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor init(settings: NopeSettings, lenses: [Lens])
+```
+
+Creates the screen.
+
+- Parameters:
+  - settings: The settings to show and change.
+  - lenses: The device's lenses; only those with a choice are shown.
+
+## `PhotoSizeSettingsView/lenses`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The lenses that offer a choice, in the order the camera lists them.
+
+## `PhotoSizeSettingsView/lensesWithChoices(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static func lensesWithChoices(_ lenses: [Lens]) -> [Lens]
+```
+
+The lenses that offer a choice of photo size.
+
+- Parameter lenses: The device's lenses.
+- Returns: Those with `Lens.photoSizeChoices`.
+
+## `PhotoSizeSettingsView/link(settings:lenses:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@ViewBuilder @MainActor static func link(settings: NopeSettings, lenses: [Lens]) -> some View
+
+```
+
+A navigation row to the screen, or nothing when no lens offers a choice.
+
+- Parameters:
+  - settings: The settings.
+  - lenses: The device's lenses.
+
+## `PhotoSizeSettingsView/rowTitle`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static var rowTitle: Text { get }
+```
+
+The row and screen title, "Photo Size".
+
+## `PhotoSizeSettingsView/settings`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings to show and change.
+
+## `PhotoSizeSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static func title(of size: PhotoDimensions) -> Text
+```
+
+A size's name: its megapixels and its width and height in pixels.
+
+- Parameter size: The size.
+- Returns: For example "12 MP (4032 × 3024)".
+
+## `PresetNameScreen`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetNameScreen
+```
+
+Names a new preset, or renames or deletes a saved one.
+
+## `PresetNameScreen/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `PresetNameScreen/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel?
+```
+
+The camera whose state a new preset saves, or `nil`.
+
+## `PresetNameScreen/editing`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let editing: SettingsPreset?
+```
+
+The preset being renamed, or `nil` for a new one.
+
+## `PresetNameScreen/init(presets:camera:editing:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, camera: CameraModel?, editing: SettingsPreset?)
+```
+
+Creates the screen.
+
+- Parameters:
+  - presets: The presets.
+  - camera: The camera, or `nil`.
+  - editing: The preset to rename, or `nil` for a new one.
+
+## `PresetNameScreen/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
+
+## `PresetText`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+enum PresetText
+```
+
+The words of the presets screens.
+
+## `PresetText/factoryDefaults`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let factoryDefaults: Text
+```
+
+The built-in preset's name.
+
+## `PresetText/factoryDefaultsExplanation`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let factoryDefaultsExplanation: Text
+```
+
+What Factory Defaults does.
+
+## `PresetText/notice(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func notice(_ notice: PresetNotice) -> String
+```
+
+What a notice tells the person.
+
+- Parameter notice: The notice.
+- Returns: The sentence.
+
+## `PresetText/problem(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func problem(_ problem: PresetNameProblem) -> String
+```
+
+Why a name can't be saved.
+
+- Parameter problem: The problem.
+- Returns: The sentence.
+
+## `PresetText/summary(of:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func summary(of result: PresetApplyResult) -> String
+```
+
+What an apply did, in one sentence.
+
+- Parameter result: The result.
+- Returns: The sentence.
+
+## `PresetText/title`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let title: Text
+```
+
+"Presets": the Settings row, the screen and the tray item.
+
+Its own key: "Presets" alone is the white balance presets menu.
+
+## `PresetText/undoFailed`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static var undoFailed: String { get }
+```
+
+What a failed Undo tells the person: nothing changed, and why it can happen.
+
+## `PresetsScreen`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetsScreen
+```
+
+The settings presets (issue #72): Factory Defaults and the saved presets, each applied with
+one tap, the result of the last apply with an Undo button, and links to save the current
+settings and to rename or delete saved presets.
+
+The same list opens from Settings (pushed) and from the Presets item of the quick-controls
+tray (``PresetsSheet``), and applying works the same from both. A preset is applied only when
+the person taps it, and Undo stays until the list closes, so a preset tapped by mistake costs
+nothing: that is why there is no confirmation step. The screen renders a `SettingsPresets`
+and changes it only through its methods, which hold the rules (AGENTS.md, "One direction of
+flow").
+
+## `PresetsScreen/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list.
+
+## `PresetsScreen/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel?
+```
+
+The camera a preset saves and sets up, or `nil`.
+
+## `PresetsScreen/init(presets:settings:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel?)
+```
+
+Creates the list.
+
+- Parameters:
+  - presets: The presets.
+  - settings: The settings.
+  - camera: The camera, or `nil`.
+
+## `PresetsScreen/link(presets:settings:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor static func link(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel?) -> some View
+
+```
+
+The Presets row in Settings, with the number of saved presets.
+
+- Parameters:
+  - presets: The presets.
+  - settings: The settings.
+  - camera: The camera, or `nil`.
+- Returns: The link.
+
+## `PresetsScreen/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
+
+## `PresetsScreen/settings`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings, for night mode.
+
+## `PresetsSheet`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetsSheet
+```
+
+The presets list in its own sheet, opened from the quick-controls tray.
+
+## `PresetsSheet/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list in a navigation stack, with Done.
+
+## `PresetsSheet/camera`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let camera: CameraModel
+```
+
+The camera.
+
+## `PresetsSheet/init(presets:settings:camera:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel)
+```
+
+Creates the sheet.
+
+- Parameters:
+  - presets: The presets.
+  - settings: The settings.
+  - camera: The camera.
+
+## `PresetsSheet/presets`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let presets: SettingsPresets
+```
+
+The presets.
+
+## `PresetsSheet/settings`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings.
+
 ## `PrivacySettingsView`
 
 internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
@@ -6214,7 +7099,8 @@ The metadata switches, the signing switch and the locked items, as in `docs/PRIV
 "Metadata plan".
 
 The master switch comes first, then one switch per optional item with what turning it off
-costs, then the items every file keeps, each marked locked with the reason. The signing switch
+costs, then the Standard File Tags switch (outside the master switch, on by default), then the
+items every file keeps, each marked locked with the reason. The signing switch
 is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
 `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 `MetadataSettings`; this view only shows them.
@@ -6350,8 +7236,8 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
 standard form, opened from the last button of the manual controls row.
 
-Each section appears only when the selected lens supports it. The sheet follows the system
-appearance.
+Each section appears only when the selected lens supports it. Like the camera it covers, the
+sheet is dark in either system setting (``ScreenAppearance/camera``).
 
 ## `ProToolsSheet/body`
 
@@ -6378,16 +7264,6 @@ Creates the sheet.
   - settings: The person's settings, for the focus peaking, histogram and live readout
     switches, or `nil` to leave them out.
 
-## `ProToolsSheet/intervals`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor static let intervals: [Double]
-```
-
-The intervals offered, in seconds: 1 second to 1 hour.
-
 ## `ProToolsSheet/model`
 
 internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
@@ -6397,16 +7273,6 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 ```
 
 The camera model.
-
-## `ProToolsSheet/photoCounts`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor static let photoCounts: [Int]
-```
-
-The photo counts offered for a series, from 2 to the 999 the app allows.
 
 ## `ProToolsSheet/settings`
 
@@ -6672,7 +7538,7 @@ function here; the tray shows whatever the functions return for the current lens
 settings (`nil` hides an item the device can't do).
 
 The planned order is Light, Flash, Drive, Exposure, Grid, Level, Fast Shutter, Night, then
-Hide Controls last (issue #68).
+Hide Controls last (issue #68); Presets (issue #72) comes just before Night.
 
 ## `QuickControls/astro(_:)`
 
@@ -6744,8 +7610,9 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func drive(_ context: CameraControlContext) -> QuickControlItem?
 ```
 
-Drive: a menu of single, the 3 and 10 second self-timer, and burst (issue #68). Bracket
-and interval shooting stay in Pro Tools, behind the manual controls.
+Drive: a menu of single, the 3 and 10 second self-timer, burst and interval shooting
+(issue #68). Choosing Interval Shooting also opens its settings (``IntervalSheet``).
+Bracketing stays in Pro Tools, behind the manual controls.
 
 - Parameter context: The model and settings.
 
@@ -6759,6 +7626,20 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Exposure: opens the exposure compensation dial in full auto (issue #41). Shown when the
 lens can compensate and manual controls are off; with them on, the readout row has it.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/farFocus(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+@MainActor static func farFocus(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Far Focus: limits autofocus to far subjects, so it doesn't catch a near branch or a window
+(issue #57). An advanced option: shown with manual controls on where the lens supports
+it, or while it is on.
 
 - Parameter context: The model and settings.
 
@@ -6838,6 +7719,19 @@ on a lens with a torch. Its brightness is on the Light pill that appears while i
 
 - Parameter context: The model and settings.
 
+## `QuickControls/liveReadout(_:)`
+
+internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+
+```swift
+@MainActor static func liveReadout(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Live camera readout: a menu of Off, On, and On that stays in clean view (issue #52), the
+same choices as the switches in Settings and Pro Tools.
+
+- Parameter context: The model and settings.
+
 ## `QuickControls/magnifier(_:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -6861,6 +7755,20 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Night: red and black screens for working in the dark (issue #61). Remembered between
 launches; the app never changes the screen's brightness.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/presets(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor static func presets(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Presets: opens the list of presets, Factory Defaults and the saved ones (issue #72), the
+same list as in Settings. Shown wherever the app has presets (not in the Lock Screen
+camera).
 
 - Parameter context: The model and settings.
 
@@ -6986,6 +7894,103 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Whether the items wrap into rows instead of scrolling.
 
+## `RAWClippingSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct RAWClippingSection
+```
+
+The clipping counted from the RAW sensor data when the photo was taken (issue #53): the share
+of photosites that are clipped highlights and clipped shadows, then each color's, with the
+definition under them; or why it wasn't measured.
+
+## `RAWClippingSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The section.
+
+## `RAWClippingSection/init(result:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init(result: RAWClippingResult)
+```
+
+Creates the section.
+
+- Parameter result: The clipping, or why it wasn't measured.
+
+## `RAWClippingSection/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func name(of color: CFAColor) -> Text
+```
+
+The name of a color of the color filter.
+
+- Parameter color: The color.
+- Returns: The name.
+
+## `RAWClippingSection/percent(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func percent(_ share: Double) -> String
+```
+
+A share as a percentage with up to two significant digits, such as "0.4%" or "0.0012%",
+so a small share never reads as 0; exactly 0 is "0%".
+
+- Parameter share: The share, 0 to 1.
+- Returns: The percentage, in the current language.
+
+## `RAWClippingSection/reason(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func reason(_ failure: RAWClippingFailure) -> Text
+```
+
+Why the clipping wasn't measured, in plain words.
+
+- Parameter failure: The reason.
+- Returns: The text, from `Honesty.xcstrings`.
+
+## `RAWClippingSection/result`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let result: RAWClippingResult
+```
+
+The clipping, or why it wasn't measured.
+
+## `RAWClippingSection/share(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func share(_ share: Double) -> Text
+```
+
+A share of photosites, such as "0.4% of photosites".
+
+- Parameter share: The share, 0 to 1.
+- Returns: The text.
+
 ## `ResourceWarningAnnouncements`
 
 internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
@@ -7086,6 +8091,143 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The camera model.
 
+## `ScreenAppearance`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+enum ScreenAppearance
+```
+
+Which appearance a screen uses: the camera's dark appearance, or the person's light or dark
+setting.
+
+The camera screen and its own sheets (the format details, What's in This Photo, Compare, the
+astro and interval settings, Pro Tools) are always dark: a camera is used in every light, and
+a dark frame doesn't change how a scene looks. Settings and the other screens that aren't the
+camera (first run, camera access declined, no camera, Presets, Honesty, About and Licenses)
+follow the system's light or dark setting. Night mode is red on black everywhere: its style
+is drawn on the dark appearance.
+
+## `ScreenAppearance/camera`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case camera
+```
+
+Always dark: the camera screen and its own sheets.
+
+## `ScreenAppearance/colorScheme(isNightMode:system:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+func colorScheme(isNightMode: Bool, system: ColorScheme?) -> ColorScheme?
+```
+
+The color scheme to ask for.
+
+The camera screen asks its window for the dark appearance, and a sheet presented from it
+inherits that unless it asks for a scheme of its own; so a screen that follows the system
+asks for the system's scheme by name.
+
+- Parameters:
+  - isNightMode: Whether night mode is on: always dark.
+  - system: The system's light or dark setting
+    (``SwiftUICore/EnvironmentValues/systemColorScheme``), or `nil` when it isn't known.
+- Returns: `ColorScheme.dark` for the camera or in night mode, otherwise the
+  system's scheme, or `nil` (no preference) when that isn't known.
+
+## `ScreenAppearance/of(_:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+static func of(_ state: CameraState) -> ScreenAppearance
+```
+
+The appearance of the camera screen's content in a camera state: the ready camera and the
+brief starting message are the camera; first run, camera access declined and no camera
+aren't.
+
+- Parameter state: The camera's state.
+- Returns: The appearance for that state.
+
+## `ScreenAppearance/system`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case system
+```
+
+The system's light or dark setting: Settings and the screens that aren't the camera.
+
+## `ScreenAppearanceModifier`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor struct ScreenAppearanceModifier
+```
+
+Asks the nearest presentation (a sheet or a popover) for a screen's appearance, and tells the
+app while it shows a screen that follows the system
+(``WindowAppearanceRequest/showsSystemScreen(_:)``).
+
+A sheet follows changes of the system's setting while it is open. A popover (Settings on
+iPad) keeps the setting it opened with until it closes: when the scheme changed under an
+open popover, its glass stayed half in the old appearance, a mid gray behind white text.
+
+## `ScreenAppearanceModifier/appearance`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let appearance: ScreenAppearance
+```
+
+The screen's appearance.
+
+## `ScreenAppearanceModifier/body(content:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with its color scheme preference.
+
+- Parameter content: The content.
+
+## `ScreenAppearanceModifier/init(appearance:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor init(appearance: ScreenAppearance, isNightMode: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
+
+## `ScreenAppearanceModifier/isNightMode`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether night mode is on.
+
 ## `SecondaryText`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -7094,8 +8236,13 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 struct SecondaryText
 ```
 
-The style of secondary text: `.secondary` normally, white in night mode (shown as the full
-night red by ``NightModeStyle``). See ``CameraStyle/secondaryText``.
+The style of secondary text: `.secondary` in the dark appearance, a darker gray in the light
+one, and white in night mode (shown as the full night red by ``NightModeStyle``). See
+``CameraStyle/secondaryText``.
+
+In the light appearance the accessibility audit reported footnote-sized explanations in the
+system's secondary gray as low contrast ("Contrast nearly passed") on Settings' white rows, so
+light uses ``lightGray``, as the design does (docs/design/settings.html).
 
 ## `SecondaryText/init()`
 
@@ -7106,6 +8253,17 @@ init()
 ```
 
 Creates the style. It holds no state.
+
+## `SecondaryText/lightGray`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+static let lightGray: Color
+```
+
+Secondary text in the light appearance: 5.2:1 on white and 4.8:1 on the grouped
+background (#F2F2F7), above WCAG 2.2's 4.5:1 for body text.
 
 ## `SecondaryText/resolve(in:)`
 
@@ -7390,14 +8548,15 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 ```
 
 The settings: a short inset grouped list in a navigation stack, opened from the camera
-(issue #68, "Settings"): Photos (formats, look, file options), Privacy (the master switch,
-signing, the details), Camera (manual controls, clean view, night mode, front camera mirroring)
-and More (Accessibility, Honesty, About).
+(issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options, photo size),
+Privacy (the master switch, signing, the details), Camera (manual controls, clean view, face
+detection, night mode, front camera mirroring) and More (Accessibility, Honesty, About).
 
 One line per row; each switch's explanation is in a footer or on its detail screen. Each
 row shows its current value, so the state reads at a glance. The screen renders a
 `NopeSettings` and changes it only through its methods, which hold the rules (AGENTS.md,
-"One direction of flow"). It follows the system appearance.
+"One direction of flow"). It follows the system's light or dark setting, also when it is
+presented from the dark camera (`ScreenAppearance.system`), and is red on black in night mode.
 
 ```swift
 .sheet(isPresented: $showsSettings) {
@@ -7415,12 +8574,12 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 The form and its toolbar.
 
-## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:)`
+## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:lenses:presets:camera:)`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil)
+@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool = true, location: LocationTagging? = nil, lenses: [Lens] = [], presets: SettingsPresets? = nil, camera: CameraModel? = nil)
 ```
 
 Creates the settings screen.
@@ -7434,6 +8593,10 @@ Creates the settings screen.
     Pass `true` when it isn't known yet.
   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     location service, which hides the Location switch.
+  - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
+    row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
+  - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
+  - camera: The camera, whose lens and exposure presets save and set, or `nil`.
 
 ## `SheetPresentationAction`
 
@@ -8058,8 +9221,9 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func drive(_ context: CameraControlContext) -> StatePill?
 ```
 
-The self-timer's delay ("3s") or "Burst" while the drive mode isn't single; its action
-returns to single photos.
+The self-timer's delay ("3s"), "Burst" or "Interval" while the drive mode isn't single;
+its action returns to single photos, and the Interval pill also opens the interval
+settings.
 
 - Parameter context: The model and settings.
 
@@ -8073,6 +9237,19 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The exposure compensation in full auto, such as "−0.7", while it isn't 0 (issue #41);
 its action resets it. With manual controls on, the readout row shows it instead.
+
+- Parameter context: The model and settings.
+
+## `StatePills/farFocus(_:)`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor static func farFocus(_ context: CameraControlContext) -> StatePill?
+```
+
+"Far Focus" while autofocus is limited to far subjects (issue #57); its action turns the
+limit off.
 
 - Parameter context: The model and settings.
 
@@ -8418,6 +9595,22 @@ var angle: Angle { get }
 
 The angle that turns content upright for the person.
 
+## `UprightRotation/inWindow(isRegularSize:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+func inWindow(isRegularSize: Bool) -> UprightRotation
+```
+
+The turn upright content needs in a window, given the device's orientation: none in a
+window that is regular in both size classes (``CameraLayout/isRegularSize(horizontal:vertical:)``),
+because that window rotates with the device, as on iPad and on the unfolded inner display
+of a foldable iPhone, where the system turns the interface whatever the app asks.
+
+- Parameter isRegularSize: Whether the window is regular in both size classes.
+- Returns: This rotation in a portrait-only window, otherwise ``portrait``.
+
 ## `UprightRotation/isSideways`
 
 internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -8474,6 +9667,13 @@ the turned size in the layout, so neighbors make room for it.
 It measures the content's natural size, turns it a quarter turn, and swaps the frame's width
 and height. With `sidewaysWidth`, text wraps at that width before turning, for banners.
 
+The measured size settles (``settledSize(_:measured:)``): it is rounded up to whole points,
+and within a point of the size in use it only grows. The turned frame can sit at a
+fractional position, where the content measured a third of a point larger or smaller; taking
+every such measurement made the frame move, the content measure again, and so on without end,
+which kept the main thread busy (a sideways iPhone at the largest text size with manual controls on; UI test
+testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize).
+
 ## `UprightUnit/body(content:)`
 
 internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -8499,6 +9699,24 @@ Creates the modifier.
 
 - Parameter sidewaysWidth: The width the content wraps at while sideways, or `nil` for
   its natural width.
+
+## `UprightUnit/settledSize(_:measured:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor static func settledSize(_ current: CGSize, measured: CGSize) -> CGSize
+```
+
+The size to lay out with, given the size in use and a new measurement: the measurement
+rounded up to whole points, so the frame is never smaller than the content. Within a point
+of the size in use, in both dimensions, the size only grows, so sub-point changes can't
+make it go back and forth; a larger change is taken as it is.
+
+- Parameters:
+  - current: The size in use.
+  - measured: The content's new measured size.
+- Returns: The size to lay out with.
 
 ## `UprightUnit/sidewaysWidth`
 
@@ -8617,8 +9835,7 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 Draws the view enlarged around the magnifier's point while the focus magnifier is on.
 The ready camera applies it to the picture and focus peaking, and ``CameraScreen`` to the
-natural-color viewfinder it draws behind the red interface in night mode, so all three
-stay aligned. The layout frame doesn't change, so the caller clips it.
+live viewfinder it draws behind the interface, so all three stay aligned. The layout frame doesn't change, so the caller clips it.
 
 - Parameter model: The camera model.
 
@@ -8648,6 +9865,18 @@ Draws the view in night mode's red on black while `isOn` is `true`.
 
 - Parameter isOn: Whether night mode is on.
 
+## `View/nightModeTrackTint()`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor func nightModeTrackTint() -> some View
+
+```
+
+Draws a switch's or slider's filled track in night mode's dark red
+(``NightStyle/trackTint``), so its knob or thumb stays visible on it.
+
 ## `View/pillShape()`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -8659,6 +9888,22 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The look of a state pill: small bold text on a dark capsule, inside a touch target at
 least 44 points on each side.
+
+## `View/screenAppearance(_:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func screenAppearance(_ appearance: ScreenAppearance, isNightMode: Bool) -> some View
+
+```
+
+Asks the nearest sheet or popover for a screen's appearance: dark for the camera, the
+system's light or dark setting for other screens, and dark in night mode.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
 
 ## `View/seriesScreen(_:isNightMode:)`
 
@@ -8704,6 +9949,132 @@ Turns this block upright as one unit while the iPhone is on its side.
 - Parameter sidewaysWidth: The width text wraps at while sideways, or `nil` for the
   natural width.
 
+## `View/windowAppearance(_:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func windowAppearance(_ appearance: ScreenAppearance, isNightMode: Bool) -> some View
+
+```
+
+Gives the window a screen's appearance: dark for the camera and in night mode, otherwise
+the system's.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
+
+## `ViewfinderAnchors`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+struct ViewfinderAnchors
+```
+
+The picture's frame and, when the picture scrolls, the scroll view's frame, which the
+viewfinder must stay inside: ``CameraScreen`` draws it behind the interface, outside the
+scroll view, so without the clip it would run past the scroll view's edges into the pinned
+shutter row or the top of the screen (the scrolling layout at accessibility text sizes).
+
+## `ViewfinderAnchors/clip`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+var clip: Anchor<CGRect>?
+```
+
+The frame the picture is seen through, or `nil` when it isn't clipped.
+
+## `ViewfinderAnchors/frame`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+var frame: Anchor<CGRect>?
+```
+
+The picture's frame, or `nil` when there is no picture.
+
+## `ViewfinderAnchors/init(frame:clip:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+init(frame: Anchor<CGRect>? = nil, clip: Anchor<CGRect>? = nil)
+```
+
+Creates the anchors.
+
+- Parameters:
+  - frame: The picture's frame.
+  - clip: The frame the picture is seen through.
+
+## `ViewfinderAnchors/visibleFrame(of:in:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static func visibleFrame(of frame: CGRect, in clip: CGRect?) -> CGRect
+```
+
+The part of the picture to show: all of it, or the part inside the clip; empty when the
+picture has scrolled out of view.
+
+- Parameters:
+  - frame: The picture's frame.
+  - clip: The frame the picture is seen through, or `nil`.
+- Returns: The visible frame, in the same coordinates.
+
+## `ViewfinderFrame`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+struct ViewfinderFrame
+```
+
+Where the ready camera reserves room for the live viewfinder, for ``CameraScreen`` to draw it
+behind the interface: so night mode's red stays off the picture (issue #61), and so switching
+night mode or Red Viewfinder never replaces the viewfinder (on a device, its preview layer).
+Empty outside the ready camera.
+
+## `ViewfinderFrame/defaultValue`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static var defaultValue: ViewfinderAnchors { get }
+```
+
+No frame: there is no picture to fill.
+
+## `ViewfinderFrame/init()`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+init()
+```
+
+Creates the key. It holds no state.
+
+## `ViewfinderFrame/reduce(value:nextValue:)`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+static func reduce(value: inout ViewfinderAnchors, nextValue: () -> ViewfinderAnchors)
+```
+
+Keeps the first frame and the first clip reported.
+
+- Parameters:
+  - value: The anchors so far.
+  - nextValue: The next anchors reported.
+
 ## `ViewfinderOverlays`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
@@ -8717,7 +10088,7 @@ text sizes, the histogram and the live camera readout (``LiveAidsPanel``).
 
 Everything here is on screen only and never written to the photo (issues #40, #47, #51 and
 #52). Nothing takes touches, so the viewfinder's own gestures still work. The guides stay in
-clean view; the histogram and the readout don't.
+clean view; the histogram doesn't, and the readout only when it is pinned.
 
 It tells the model what the live analysis must measure and whether the readout is on, as
 the options and the screen change, and turns both off when it goes away (AGENTS.md,
@@ -8922,6 +10293,177 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The warning.
+
+## `WindowAppearanceAction`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+struct WindowAppearanceAction
+```
+
+Sets the appearance of the window the camera screen is in. Call it like a function with a
+``WindowAppearanceRequest``.
+
+## `WindowAppearanceAction/callAsFunction(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@discardableResult @MainActor func callAsFunction(_ request: WindowAppearanceRequest) -> ColorScheme?
+```
+
+Handles a request.
+
+- Parameter request: The request.
+- Returns: The system's light or dark setting when the request read it, otherwise `nil`.
+
+## `WindowAppearanceAction/init(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+init(_ handler: @escaping @MainActor @Sendable (WindowAppearanceRequest) -> ColorScheme?)
+```
+
+Creates an action.
+
+- Parameter handler: Handles a request, on the main actor. For
+  ``WindowAppearanceRequest/showsSystemScreen(_:)`` with `true` it returns the system's
+  light or dark setting, read as the screen opens; otherwise `nil`.
+
+## `WindowAppearanceModifier`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor struct WindowAppearanceModifier
+```
+
+Gives the window a screen's appearance: through the app's
+``SwiftUICore/EnvironmentValues/windowAppearance`` when it sets one, otherwise with
+`preferredColorScheme(_:)`.
+
+SwiftUI applies a window's `preferredColorScheme(_:)` to the whole window scene, which then
+no longer shows the system's own setting; the app sets the appearance itself so it can read
+that setting for Settings (``SwiftUICore/EnvironmentValues/systemColorScheme``).
+
+## `WindowAppearanceModifier/appearance`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let appearance: ScreenAppearance
+```
+
+The screen's appearance.
+
+## `WindowAppearanceModifier/body(content:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the window's appearance set.
+
+- Parameter content: The content.
+
+## `WindowAppearanceModifier/init(appearance:isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor init(appearance: ScreenAppearance, isNightMode: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - appearance: The screen's appearance.
+  - isNightMode: Whether night mode is on.
+
+## `WindowAppearanceModifier/isNightMode`
+
+internal, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether night mode is on.
+
+## `WindowAppearanceRequest`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+enum WindowAppearanceRequest
+```
+
+What the camera screen asks of the app's window through ``WindowAppearanceAction``.
+
+## `WindowAppearanceRequest/camera(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case camera(ColorScheme?)
+```
+
+The camera screen's own appearance: `ColorScheme.dark` for the camera and in night mode,
+or `nil` to follow the system (first run, camera access declined, no camera).
+
+## `WindowAppearanceRequest/showsSystemScreen(_:)`
+
+public, declared in `Sources/NopeUI/ScreenAppearance.swift`
+
+```swift
+case showsSystemScreen(Bool)
+```
+
+A sheet or popover that follows the system's light or dark setting (Settings, Presets)
+opened (`true`) or closed (`false`). While one is open, the window scene shows the
+system's setting, so the app can read and follow it; otherwise the whole scene is dark
+with the camera, so the camera's own sheets match the scene they are in.
+
+## `WindowUprightRotation`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor struct WindowUprightRotation
+```
+
+Clears ``SwiftUICore/EnvironmentValues/cameraUprightRotation`` in a window that rotates with
+the device, so icons and text aren't turned twice: once by the interface and again as
+upright units. The size classes come from the environment, so the same rule covers an iPad
+and both displays of a foldable iPhone, and changes as it folds or unfolds.
+
+## `WindowUprightRotation/body(content:)`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the rotation its window needs.
+
+- Parameter content: The content.
+
+## `WindowUprightRotation/init()`
+
+internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It reads everything from the environment.
 
 ## `WrappingRows`
 

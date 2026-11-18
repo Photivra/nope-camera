@@ -972,10 +972,12 @@ static func sessionConfiguration(for request: CaptureRequest) -> SessionConfigur
 
 The session configuration for a request.
 
-The photo size is the lens's smallest supported size: on 48 MP sensors that is the
-native 12 MP binned readout, the same size as the Bayer RAW (capability survey, item 1).
-Larger processed sizes are made by the camera's pipeline, and 24 MP needs deferred
-delivery, which the app turns off (`AVCapturePhotoOutput.h`).
+The photo size is the request's (the person's choice for a lens without Bayer RAW,
+`Lens.photoSizeChoices`, issue #57) when the lens reports it, and otherwise the lens's
+smallest supported size: on 48 MP sensors that is the native 12 MP binned readout, the
+same size as the Bayer RAW (capability survey, item 1). Larger processed sizes are made
+by the camera's pipeline, and 24 MP needs deferred delivery, which the app turns off
+(`AVCapturePhotoOutput.h`).
 
 - Parameter request: The lens and format.
 - Returns: The configuration, or `nil` if the request's RAW format code is invalid.
@@ -1401,12 +1403,12 @@ let exposureDuration: Double?
 
 The exposure duration read just before the capture, in seconds.
 
-## `HardwarePhoto/init(data:dimensions:exposureDuration:iso:pixelSample:rawImageData:)`
+## `HardwarePhoto/init(data:dimensions:exposureDuration:iso:pixelSample:rawImageData:rawClipping:)`
 
 internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
 
 ```swift
-init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?, rawImageData: Data? = nil)
+init(data: Data, dimensions: PhotoDimensions, exposureDuration: Double?, iso: Double?, pixelSample: [UInt8]?, rawImageData: Data? = nil, rawClipping: RAWClippingResult? = nil)
 ```
 
 Creates a photo result.
@@ -1418,6 +1420,7 @@ Creates a photo result.
   - iso: The ISO before the capture.
   - pixelSample: The sampled pixel buffer bytes, or `nil`.
   - rawImageData: The reference RAW image data, or `nil`.
+  - rawClipping: The RAW clipping, or `nil`.
 
 ## `HardwarePhoto/iso`
 
@@ -1440,6 +1443,17 @@ let pixelSample: [UInt8]?
 The bytes at ``PictureCheck/sampleOffsets(byteCount:)`` of the photo's pixel buffer, or
 `nil` when the photo has none (a compressed HEIF or JPEG). Used only to detect a blank
 buffer; never stored or logged.
+
+## `HardwarePhoto/rawClipping`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+let rawClipping: RAWClippingResult?
+```
+
+For RAW, the clipping counted from the photo's sensor buffer (``RAWClippingMeter``);
+`nil` for a processed photo.
 
 ## `HardwarePhoto/rawImageData`
 
@@ -2183,9 +2197,15 @@ device (docs/TESTING.md); its decisions are in ``PhotoKitMapping``.
 - Access: `PHPhotoLibrary.requestAuthorization(for: .addOnly)`, which uses the localized
   `NSPhotoLibraryAddUsageDescription`. Add-only access can't read the library.
 - Adding: one `PHPhotoLibrary.performChanges` call; each `PhotoLibraryAsset` becomes one
-  `PHAssetCreationRequest` with its files added from memory
-  (`addResource(with:data:options:)`), so no temporary file is written. No location or
+  `PHAssetCreationRequest`. Every file is added from memory
+  (`addResource(with:data:options:)`) except the alternate of a RAW pair, which PhotoKit
+  accepts only from a file (``PhotoKitMapping/Resource/addsFromFile``): it is written with
+  complete file protection (``ResourceStaging``), moved into the library
+  (`shouldMoveFile`), and anything left is deleted when the change ends. No location or
   creation date is set on the asset.
+- Failures: the error's domain and code (never its description or user info) are logged,
+  marked private, so a failed save on a device can be diagnosed from a Debug build's console.
+  The person sees only the plain banner for `CaptureError.saveFailed`.
 
 ## `PhotoKitLibrary/add(_:)`
 
@@ -2222,6 +2242,118 @@ enum PhotoKitMapping
 The PhotoKit decisions behind ``PhotoKitLibrary``, as plain functions so they are tested
 without a photo library.
 
+## `PhotoKitMapping/PreparedChange`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+struct PreparedChange
+```
+
+The creation requests for one change, and the files staged for them.
+
+## `PhotoKitMapping/PreparedChange/init(requests:stagedFiles:unpairedBecauseStagingFailed:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+init(requests: [[PreparedResource]], stagedFiles: [URL], unpairedBecauseStagingFailed: Bool)
+```
+
+Creates a prepared change.
+
+- Parameters:
+  - requests: The resources of each creation request.
+  - stagedFiles: Every staged file.
+  - unpairedBecauseStagingFailed: Whether a pair was split because staging failed.
+
+## `PhotoKitMapping/PreparedChange/requests`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let requests: [[PreparedResource]]
+```
+
+One entry for each `PHAssetCreationRequest`: its resources, main file first.
+
+## `PhotoKitMapping/PreparedChange/stagedFiles`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let stagedFiles: [URL]
+```
+
+Every staged file. The caller deletes each one after the change, whether or not it
+succeeded: Photos moves the files of a change that succeeds, so deleting what is left
+is a no-op then.
+
+## `PhotoKitMapping/PreparedChange/unpairedBecauseStagingFailed`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let unpairedBecauseStagingFailed: Bool
+```
+
+Whether an alternate couldn't be staged, so its pair was saved as two assets.
+
+## `PhotoKitMapping/PreparedResource`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+struct PreparedResource
+```
+
+One resource, ready to add: its type, type identifier and source.
+
+## `PhotoKitMapping/PreparedResource/init(type:typeIdentifier:source:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+init(type: PHAssetResourceType, typeIdentifier: String, source: Source)
+```
+
+Creates a prepared resource.
+
+- Parameters:
+  - type: The resource type.
+  - typeIdentifier: The file's uniform type identifier.
+  - source: Where the bytes come from.
+
+## `PhotoKitMapping/PreparedResource/source`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let source: Source
+```
+
+Where the bytes come from.
+
+## `PhotoKitMapping/PreparedResource/type`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let type: PHAssetResourceType
+```
+
+The resource type.
+
+## `PhotoKitMapping/PreparedResource/typeIdentifier`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+let typeIdentifier: String
+```
+
+The file's uniform type identifier.
+
 ## `PhotoKitMapping/Resource`
 
 internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
@@ -2231,6 +2363,28 @@ struct Resource
 ```
 
 One resource to add to a new asset.
+
+## `PhotoKitMapping/Resource/addsFromFile`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+var addsFromFile: Bool { get }
+```
+
+Whether the resource must be added from a file (`addResource(with:fileURL:options:)`)
+instead of from memory (`addResource(with:data:options:)`).
+
+Only the alternate of a pair is. Measured on 2026-11-15 in the iOS 27.2 Simulator,
+and matching the failure on an iPhone 16 Pro Max (iOS 27.2.1): a request with a
+`.photo` and an `.alternatePhoto` fails with `PHPhotosErrorDomain` 3300
+(`PHPhotosErrorChangeNotSupported`) whenever the alternate is added from memory, for
+a DNG with a HEIF or a JPEG, in either order, with any `originalResourceChoice`,
+type identifier or file name; it succeeds when the alternate is added from a file,
+whether the main file comes from memory or from a file. A single resource added from
+memory succeeds. Apple documents none of this; its RAW capture article adds the
+alternate from memory, and that shape fails too. See docs/TESTING.md, "RAW pairs not
+saved (PhotoKit error 3300)".
 
 ## `PhotoKitMapping/Resource/file`
 
@@ -2279,6 +2433,36 @@ let typeIdentifier: String
 The file's uniform type identifier, passed as
 `PHAssetResourceCreationOptions.uniformTypeIdentifier`.
 
+## `PhotoKitMapping/Source`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+enum Source
+```
+
+Where a prepared resource's bytes come from.
+
+## `PhotoKitMapping/Source/data(_:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+case data(Data)
+```
+
+From memory.
+
+## `PhotoKitMapping/Source/file(_:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+case file(URL)
+```
+
+From a staged file, which Photos moves into the library.
+
 ## `PhotoKitMapping/canAdd(_:)`
 
 internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
@@ -2296,6 +2480,54 @@ accepted here to stay correct if that changes.
 - Parameter status: The status for `PHAccessLevel.addOnly`.
 - Returns: `true` if photos can be added.
 
+## `PhotoKitMapping/fileExtension(for:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func fileExtension(for format: PhotoFormat) -> String
+```
+
+The file name extension of a format's staged file.
+
+- Parameter format: The format.
+- Returns: `dng`, `heic` or `jpg`.
+
+## `PhotoKitMapping/logDescription(of:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func logDescription(of error: any Error) -> String
+```
+
+The part of an error that is safe and useful to log: its domain and code, and those of
+its underlying error, never its description or user info (which can hold file paths).
+
+- Parameter error: The error PhotoKit or the file system reported.
+- Returns: For example `PHPhotosErrorDomain 3300` or
+  `PHPhotosErrorDomain 3302 (underlying NSCocoaErrorDomain 4)`.
+
+## `PhotoKitMapping/prepare(_:stage:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func prepare(_ assets: [PhotoLibraryAsset], stage: (PhotoFile) throws -> URL) -> PreparedChange
+```
+
+Prepares the creation requests for a change: every resource from memory, except each
+pair's alternate, which is staged as a file (``Resource/addsFromFile``).
+
+If an alternate can't be staged (for example, while the device is locked a file with
+complete protection can't be created), its pair is saved as two assets from memory
+instead, so the photo is still saved; the files are unchanged.
+
+- Parameters:
+  - assets: The assets to add.
+  - stage: Writes one file and returns its location, or throws.
+- Returns: The requests and the staged files.
+
 ## `PhotoKitMapping/resources(for:)`
 
 internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
@@ -2310,6 +2542,20 @@ Apple ProRAW Formats", "Save the photos to the photos library").
 
 - Parameter asset: The asset.
 - Returns: The resources, main file first.
+
+## `PhotoKitMapping/shapeDescription(of:)`
+
+internal, declared in `Sources/NopeCapture/PhotoKitMapping.swift`
+
+```swift
+static func shapeDescription(of change: PreparedChange) -> String
+```
+
+The shape of a change, for the log: each request's resources by type identifier, with
+`(file)` after a staged one.
+
+- Parameter change: The prepared change.
+- Returns: For example `com.adobe.raw-image+public.heic(file), public.jpeg`.
 
 ## `PhotoKitMapping/typeIdentifier(for:)`
 
@@ -2811,6 +3057,599 @@ the frame exposed after the shutter, and because it is meant for `.balanced` and
 `.quality` (`AVCapturePhotoOutput.isZeroShutterLagEnabled`). It is on by default for
 apps built for iOS 17 or later.
 
+## `RAWClippingMeter`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+enum RAWClippingMeter
+```
+
+Counts a RAW photo's clipped photosites from its Bayer sensor buffer (issue #53).
+
+The hardware adapter reads each 16-bit sample of `AVCapturePhoto.pixelBuffer` through the
+`sample` closure of ``measure(pixelFormat:versatileBayerPattern:width:height:dng:sample:)``,
+and passes the read-back of the camera's own DNG for the size, active area, bit depth, and
+black and white levels. Every photosite of the active area is counted once, into a
+histogram per position of the 2 × 2 color filter pattern; the clipping is then read from the
+histograms (`RAWClipping`).
+
+The buffer and the DNG hold the same photo but are written separately, so the meter checks
+that they agree before comparing: the same size, and buffer values that fit the DNG's
+white level, either as they are or shifted up by the difference in bit depth (all low bits
+zero). Anything else gives a `RAWClippingFailure` instead of a guess.
+
+References: CoreVideo `CVPixelBuffer.h` (the 14-bit Bayer formats, "packed in 16-bits", and
+`kCVPixelFormatType_16VersatileBayer` with its `kCVPixelBufferVersatileBayerKey_BayerPattern`
+attachment); DNG 1.7 (`ActiveArea`, `BlackLevelRepeatDim`, `BlackLevel`, whose pattern
+starts at the top-left corner of the active area, `WhiteLevel`, `LinearizationTable`,
+`BlackLevelDeltaH` and `BlackLevelDeltaV`).
+
+## `RAWClippingMeter/Area`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+struct Area
+```
+
+A rectangle of photosites: rows `top..<bottom`, columns `left..<right`.
+
+## `RAWClippingMeter/Area/bottom`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let bottom: Int
+```
+
+The row after the last.
+
+## `RAWClippingMeter/Area/init(top:left:bottom:right:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+init(top: Int, left: Int, bottom: Int, right: Int)
+```
+
+Creates an area.
+
+- Parameters:
+  - top: The first row.
+  - left: The first column.
+  - bottom: The row after the last.
+  - right: The column after the last.
+
+## `RAWClippingMeter/Area/left`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let left: Int
+```
+
+The first column.
+
+## `RAWClippingMeter/Area/right`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let right: Int
+```
+
+The column after the last.
+
+## `RAWClippingMeter/Area/top`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let top: Int
+```
+
+The first row.
+
+## `RAWClippingMeter/Histogram`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+struct Histogram
+```
+
+How many photosites hold each value, for each position of the 2 × 2 pattern.
+
+## `RAWClippingMeter/Histogram/add(_:position:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+mutating func add(_ value: UInt16, position: Int)
+```
+
+Counts one photosite.
+
+- Parameters:
+  - value: Its value.
+  - position: Its position in the 2 × 2 pattern, `row × 2 + column`.
+
+## `RAWClippingMeter/Histogram/binCount`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let binCount: Int
+```
+
+The bins per position: every 16-bit value.
+
+## `RAWClippingMeter/Histogram/count(position:in:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+func count(position: Int, in range: ClosedRange<Int>) -> Int
+```
+
+The photosites of a position whose values are in a range.
+
+- Parameters:
+  - position: The position in the 2 × 2 pattern.
+  - range: The values, within 0...65535.
+- Returns: The count.
+
+## `RAWClippingMeter/Histogram/counts`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+var counts: [UInt32] { get }
+```
+
+The counts: position `p`'s bin for value `v` is at `p × binCount + v`.
+
+## `RAWClippingMeter/Histogram/extent`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+var extent: (maximum: Int, bits: Int) { get }
+```
+
+The largest value counted and the bits set in any value counted; both 0 when nothing
+was counted.
+
+## `RAWClippingMeter/Histogram/init()`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+init()
+```
+
+Creates an empty histogram.
+
+## `RAWClippingMeter/Histogram/total`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+var total: Int { get }
+```
+
+Every photosite counted.
+
+## `RAWClippingMeter/Layout`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+struct Layout
+```
+
+The layout of a Bayer sensor buffer.
+
+## `RAWClippingMeter/Layout/bitsPerSample`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let bitsPerSample: Int
+```
+
+The significant bits of each 16-bit sample.
+
+## `RAWClippingMeter/Layout/colors`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let colors: [CFAColor]
+```
+
+The colors of the 2 × 2 pattern at the buffer's top-left corner, row by row, such as
+`[.red, .green, .green, .blue]` for RGGB.
+
+## `RAWClippingMeter/Layout/init(pattern:bitsPerSample:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+init(pattern: String, bitsPerSample: Int)
+```
+
+Creates a layout.
+
+- Parameters:
+  - pattern: Four letters, such as `RGGB`.
+  - bitsPerSample: The significant bits of each sample.
+
+## `RAWClippingMeter/Levels`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+struct Levels
+```
+
+What the camera's DNG says about its RAW samples.
+
+## `RAWClippingMeter/Levels/activeArea`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let activeArea: Area
+```
+
+`ActiveArea`, or the whole image without one.
+
+## `RAWClippingMeter/Levels/bitsPerSample`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let bitsPerSample: Int
+```
+
+`BitsPerSample`.
+
+## `RAWClippingMeter/Levels/blackLevel(row:column:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+func blackLevel(row: Int, column: Int) -> Double
+```
+
+The black level of a position of the 2 × 2 color filter pattern, counted from the
+buffer's top-left corner; the black level pattern starts at the active area's.
+
+- Parameters:
+  - row: 0 or 1.
+  - column: 0 or 1.
+- Returns: The black level.
+
+## `RAWClippingMeter/Levels/blackLevels`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let blackLevels: [Double]
+```
+
+`BlackLevel`, row by row over ``repeatRows`` × ``repeatColumns``.
+
+## `RAWClippingMeter/Levels/height`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let height: Int
+```
+
+`ImageLength`.
+
+## `RAWClippingMeter/Levels/init(width:height:activeArea:bitsPerSample:whiteLevel:blackLevels:repeatRows:repeatColumns:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+init(width: Int, height: Int, activeArea: Area, bitsPerSample: Int, whiteLevel: Double, blackLevels: [Double], repeatRows: Int, repeatColumns: Int)
+```
+
+Creates the levels.
+
+- Parameters:
+  - width: `ImageWidth`.
+  - height: `ImageLength`.
+  - activeArea: The active area.
+  - bitsPerSample: `BitsPerSample`.
+  - whiteLevel: `WhiteLevel`.
+  - blackLevels: The black levels, row by row.
+  - repeatRows: The black level pattern's rows.
+  - repeatColumns: The black level pattern's columns.
+
+## `RAWClippingMeter/Levels/repeatColumns`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let repeatColumns: Int
+```
+
+The black level pattern's columns: 1 or 2.
+
+## `RAWClippingMeter/Levels/repeatRows`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let repeatRows: Int
+```
+
+The black level pattern's rows: 1 or 2.
+
+## `RAWClippingMeter/Levels/whiteLevel`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let whiteLevel: Double
+```
+
+`WhiteLevel`.
+
+## `RAWClippingMeter/Levels/width`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+let width: Int
+```
+
+`ImageWidth`.
+
+## `RAWClippingMeter/Tag`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+enum Tag
+```
+
+DNG tag numbers (DNG 1.7, TIFF 6.0).
+
+## `RAWClippingMeter/Tag/activeArea`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let activeArea: UInt16
+```
+
+`ActiveArea`.
+
+## `RAWClippingMeter/Tag/bitsPerSample`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let bitsPerSample: UInt16
+```
+
+`BitsPerSample`.
+
+## `RAWClippingMeter/Tag/blackLevel`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let blackLevel: UInt16
+```
+
+`BlackLevel`.
+
+## `RAWClippingMeter/Tag/blackLevelDeltaH`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let blackLevelDeltaH: UInt16
+```
+
+`BlackLevelDeltaH`.
+
+## `RAWClippingMeter/Tag/blackLevelDeltaV`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let blackLevelDeltaV: UInt16
+```
+
+`BlackLevelDeltaV`.
+
+## `RAWClippingMeter/Tag/blackLevelRepeatDim`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let blackLevelRepeatDim: UInt16
+```
+
+`BlackLevelRepeatDim`.
+
+## `RAWClippingMeter/Tag/imageLength`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let imageLength: UInt16
+```
+
+`ImageLength`.
+
+## `RAWClippingMeter/Tag/imageWidth`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let imageWidth: UInt16
+```
+
+`ImageWidth`.
+
+## `RAWClippingMeter/Tag/linearizationTable`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let linearizationTable: UInt16
+```
+
+`LinearizationTable`.
+
+## `RAWClippingMeter/Tag/whiteLevel`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let whiteLevel: UInt16
+```
+
+`WhiteLevel`.
+
+## `RAWClippingMeter/clipping(of:layout:levels:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static func clipping(of histogram: Histogram, layout: Layout, levels: Levels) -> RAWClippingResult
+```
+
+The clipping a histogram shows (`RAWClipping`, "Definition").
+
+- Parameters:
+  - histogram: The counted photosites.
+  - layout: The buffer's layout.
+  - levels: The DNG's levels.
+- Returns: The clipping, or why it can't be read.
+
+## `RAWClippingMeter/fourteenBitPatterns`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let fourteenBitPatterns: [String : String]
+```
+
+The 14-bit Bayer formats, each with its pattern (`CVPixelBuffer.h`).
+
+## `RAWClippingMeter/histogram(of:sample:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static func histogram(of area: Area, sample: (_ row: Int, _ column: Int) -> UInt16) -> Histogram
+```
+
+Counts every photosite of an area.
+
+- Parameters:
+  - area: The rows and columns, inside the buffer.
+  - sample: Reads the sample at a row and column.
+- Returns: The histogram.
+
+## `RAWClippingMeter/layout(pixelFormat:versatileBayerPattern:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static func layout(pixelFormat: UInt32, versatileBayerPattern: Int?) -> Layout?
+```
+
+The layout of a buffer's pixel format.
+
+- Parameters:
+  - pixelFormat: The buffer's pixel format code.
+  - versatileBayerPattern: The buffer's Bayer pattern attachment, or `nil` without one.
+- Returns: The layout, or `nil` for a format the meter doesn't read (any other format,
+  including the packed 12-bit one).
+
+## `RAWClippingMeter/levels(in:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static func levels(in inventory: MetadataInventory) -> Levels?
+```
+
+The levels a DNG's IFD0 records.
+
+A pattern of black levels larger than 2 × 2 is used only when all its values are equal.
+
+- Parameter inventory: The read-back of the camera's DNG.
+- Returns: The levels, or `nil` without a size, bit depth or white level, with a
+  linearization table or nonzero black level deltas, with black levels that don't match
+  their pattern, an active area outside the image, or a white level not above every
+  black level.
+
+## `RAWClippingMeter/measure(pixelFormat:versatileBayerPattern:width:height:dng:sample:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static func measure(pixelFormat: UInt32, versatileBayerPattern: Int?, width: Int, height: Int, dng: MetadataInventory, sample: (_ row: Int, _ column: Int) -> UInt16) -> RAWClippingResult
+```
+
+Measures a photo's clipping.
+
+- Parameters:
+  - pixelFormat: The sensor buffer's pixel format code.
+  - versatileBayerPattern: The buffer's Bayer pattern attachment, or `nil`.
+  - width: The buffer's width, in photosites.
+  - height: The buffer's height, in photosites.
+  - dng: The read-back of the camera's own DNG of the same photo.
+  - sample: Reads the 16-bit sample at a row and column; called only for rows below
+    `height` and columns below `width`.
+- Returns: The clipping, or why it wasn't measured.
+
+## `RAWClippingMeter/scale(of:layout:levels:)`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static func scale(of histogram: Histogram, layout: Layout, levels: Levels) -> Double?
+```
+
+The factor that turns the DNG's levels into buffer values: 1 when the buffer's values fit
+the white level as they are, or 2 to the power of the difference in bit depth when every
+value has those low bits zero (shifted up) and fits the shifted white level.
+
+Assumption: a buffer that holds the DNG's values unshifted has sensor noise in its low
+bits, so its values are never all multiples of the shift (the same reasoning as
+``PictureCheck``).
+
+- Parameters:
+  - histogram: The counted photosites.
+  - layout: The buffer's layout.
+  - levels: The DNG's levels.
+- Returns: The factor, or `nil` when the values fit neither way.
+
+## `RAWClippingMeter/versatilePatterns`
+
+internal, declared in `Sources/NopeCapture/RAWClippingMeter.swift`
+
+```swift
+static let versatilePatterns: [String]
+```
+
+The patterns of a versatile Bayer buffer, by its pattern attachment's value
+(`kCVVersatileBayer_BayerPattern_RGGB` 0, `GRBG` 1, `GBRG` 2, `BGGR` 3).
+
 ## `ReadingThrottle`
 
 internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
@@ -2856,6 +3695,86 @@ Whether a reading at a time should be sent, and records it if so.
 - Parameter time: The time of the reading, in seconds on any steady clock.
 - Returns: `true` for the first reading and for each one at least ``interval`` after the
   last one let through.
+
+## `ResourceStaging`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+struct ResourceStaging
+```
+
+Writes the one file PhotoKit needs on disk, the alternate of a RAW pair
+(``PhotoKitMapping/Resource/addsFromFile``), and deletes it again.
+
+Privacy (AGENTS.md, "Photos never linger"): the file is written under a random name in the
+app's temporary directory with ``protection``, and Photos moves it into the library
+(`PHAssetResourceCreationOptions.shouldMoveFile`). ``PhotoKitLibrary`` deletes whatever is
+left as soon as the change ends, whether or not it succeeded.
+
+## `ResourceStaging/directory`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+let directory: URL
+```
+
+The directory the files are written to.
+
+## `ResourceStaging/init(directory:)`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+init(directory: URL = FileManager.default.temporaryDirectory)
+```
+
+Creates a stager.
+
+- Parameter directory: The directory to write to. Defaults to the app's temporary
+  directory.
+
+## `ResourceStaging/protection`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+static let protection: Data.WritingOptions
+```
+
+The file protection of a staged file: encrypted until the device is first unlocked after
+it starts (`NSFileProtectionCompleteUntilFirstUserAuthentication`). Complete protection
+can't be used: Apple documents that a file with it can't be written or read while the
+device is locked, so every RAW pair taken with the Lock Screen camera, or still saving
+when the screen locks, would be split into two photos. The file exists only for the
+moment the save takes.
+
+## `ResourceStaging/remove(_:)`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+func remove(_ urls: [URL])
+```
+
+Deletes staged files. A file Photos already moved is skipped.
+
+- Parameter urls: The staged files.
+
+## `ResourceStaging/stage(_:)`
+
+internal, declared in `Sources/NopeCapture/ResourceStaging.swift`
+
+```swift
+func stage(_ file: PhotoFile) throws -> URL
+```
+
+Writes a file with ``protection``, never over an existing file.
+
+- Parameter file: The file to write.
+- Returns: Where it was written.
+- Throws: The file system's error, for example while the device is locked.
 
 ## `SessionConfiguration`
 

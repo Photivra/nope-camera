@@ -121,9 +121,16 @@ struct LegalTextView: View {
     }
 
     /// The text in a scrolling, selectable column.
+    ///
+    /// The column is lazy: only the paragraphs on screen are laid out and in the accessibility
+    /// tree. The license is about 160,000 points tall at the largest text size; laid out whole,
+    /// the CI test that audits this screen took 770 seconds and the audit's Dynamic Type check
+    /// failed on the first paragraph (build 43786103024). Lazy, the audit at the largest size
+    /// takes about 8 seconds on a local Simulator. VoiceOver still reads on through the text,
+    /// which scrolls as it goes.
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: 12) {
                 ForEach(paragraphs.indices, id: \.self) { index in
                     Text(verbatim: paragraphs[index])
                         .font(.body)

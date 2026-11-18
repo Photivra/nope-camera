@@ -12,8 +12,8 @@ for any user-facing claim comes from
 - **Network:** none. The app contains no networking code; `scripts/check-security.sh` fails a
   pull request that adds any.
 - **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains and
-  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1`), for the
-  settings below.
+  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1` and
+  `1C8F.1`), for the settings below.
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
   for camera access when the person presses "Allow Camera Access", and for add-only Photos access
@@ -29,7 +29,15 @@ for any user-facing claim comes from
   default); the other is its own asset (issue #50). Pairing changes nothing in any file. The formats are RAW plus
   HEIF by default (`SaveSettings`); a lens without RAW saves its labeled processed fallback. If a
   file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
-  that the photo holds only the details you chose." Files are never written to disk.
+  that the photo holds only the details you chose." Files aren't written to disk, with one
+  exception PhotoKit requires: the processed copy paired with a RAW is added to Photos from a
+  file, written under a random name in the app's temporary directory, moved into Photos, and
+  deleted as soon as the save ends if anything is left (`docs/TESTING.md`, "RAW pairs not saved
+  (PhotoKit error 3300)"). That file is protected until the device is first unlocked after it
+  starts (`completeFileProtectionUntilFirstUserAuthentication`), not with complete protection:
+  a file with complete protection can't be written while the device is locked, so a pair taken
+  with the Lock Screen camera, or still saving after the screen locked, would be split into two
+  photos. It exists only for the moment the save takes.
 - **Signing:** every file is signed with Content Credentials when the signature switch is on
   (the default), and the screen says "Saved and signed." If signing fails, the photo is saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
@@ -40,7 +48,9 @@ for any user-facing claim comes from
   (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from the
   thumbnail's long-press menu or its VoiceOver action) lists what the read-back found in each
   saved file (pixel size, bit depth, file size, the DNG's color filter pattern, black and white
-  levels and whether it stores lens correction instructions; the exposure tags as written; every
+  levels and whether it stores lens correction instructions; the share of clipped highlights and
+  shadows counted from the RAW sensor buffer at capture time (counts only, `RAWClipping`; the
+  samples are read once and never copied, stored or logged); the exposure tags as written; every
   tag, block and property by name), which optional details were written or left out and why, the
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in
@@ -49,10 +59,12 @@ for any user-facing claim comes from
   Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
   Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
-  HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in the app's own `UserDefaults` on the device. They are
-  never synced or sent. The name and copyright fields of `SaveSettings` stay empty: Settings
-  has no text entry for them yet. The privacy manifest declares the `UserDefaults` required-reason API
-  with reason `CA92.1` (the app's own data).
+  HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in
+  `UserDefaults` on the device. They are never synced or sent. The name and copyright fields of
+  `SaveSettings` stay empty: Settings has no text entry for them yet. The privacy manifest
+  declares the `UserDefaults` required-reason API with reasons `CA92.1` (the app's own data) and
+  `1C8F.1` (data shared with the app's own extensions through its App Group). See "Settings
+  shared with the extensions" below.
 - **Location:** off by default; see "Location" below. The location is never stored by the app
   outside the photo itself, never logged and never sent. The privacy manifest declares no
   collected data: Apple's "collected" means data transmitted off the device, and the location
@@ -70,13 +82,89 @@ for any user-facing claim comes from
   exactly as without Compare. Identifying values (maker notes, location, unique IDs and serial
   numbers) are hidden until the person taps Show Value. The view's contents are hidden while
   the app isn't the active app. No network request is involved.
+- **Live Activity (issue #64):** off by default (Settings › Camera › Live Activity). While it is
+  on, an interval series, astro run, burst or self-timer shows a Live Activity on the Lock Screen
+  and in the Dynamic Island: counts and status only ("Paused: 42 of 120 photos taken", "Saving: 4
+  of 7 photos saved", whether the saved photos are signed), never image data, a thumbnail,
+  location or metadata. It is updated by the app on the device only (ActivityKit local updates):
+  the app never asks for a push token and sends nothing anywhere. Its content lives with the
+  system's Live Activity until it ends; the app ends it when the run ends (at once in the
+  foreground, two minutes later otherwise) and ends any left from an earlier launch. Whether the
+  switch is on or off, when the app leaves the foreground while photos are still being taken or
+  saved, it asks iOS for a little time to finish saving them
+  (`UIApplication.beginBackgroundTask`), which is not a background mode.
+- **Apple Watch app (issue #63):** the watch app sends the iPhone app only commands (the
+  status, take a photo after none, 3 or 10 seconds, cancel the timer) and gets back only short
+  status: whether the camera is ready, the seconds left, and whether a photo was saved and signed
+  or why not. No image data, preview, thumbnail or metadata goes to the watch. The messages go
+  through WatchConnectivity (`WCSession.sendMessageData`), which watchOS and iOS carry on their own
+  connection between the paired devices; neither app opens a network connection, and
+  `scripts/check-no-networking.sh` checks the watch app's binary too. The watch app stores nothing
+  (the delay is kept only while it runs), logs nothing and has no entitlements. Its privacy
+  manifest declares no tracking, no tracking domains and no collected data; it declares
+  `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
+  iPhone app's settings code, which the watch app never runs.
 - **Entitlements:** none.
-- **Files and logs:** Release builds write no files (photos go from memory to Photos) and log
-  nothing. Debug builds include the
+- **Files and logs:** Release builds write no files except the paired copy above, which
+  Photos moves into the library (photos otherwise go from memory to Photos). They log only why
+  adding to Photos failed: the error's domain and code and the resource types, marked private;
+  never photo data or metadata. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
   `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
   "Black frames").
+
+## Settings shared with the extensions
+
+Since 0.3.0 the settings are kept in the `UserDefaults` of the app's App Group
+(`group.<bundle identifier>`, for example `group.com.photivra.nope.dev` in development builds),
+so the app and its Control Center and Lock Screen controls read the same values (issue #42).
+
+- **What is shared:** only the settings listed above, under keys that start with
+  `NopeSettings.`: Booleans, the names of choices (formats, flash mode, look) and numbers (torch
+  brightness). No photo, thumbnail, metadata value, location, file name, date of use, counter or
+  identifier is stored or shared.
+- **Who can read it:** the app and its own extensions signed by the same team: today the
+  controls extension (`NopeControls`), which reads and writes night mode. Another app can't read
+  an App Group it doesn't belong to.
+- **It stays on the device.** The App Group container is local: it isn't synced through iCloud,
+  and nothing in it is sent anywhere. Device backups include it as they include the app's own
+  preferences.
+- **Moving the old settings:** on the first launch of 0.3.0 the app copies its settings from its
+  own `UserDefaults` into the App Group's once (`SharedSettingsStore.migrate`); the old copy is
+  left in place and no longer read.
+- **Change signal:** when a setting changes, the process that changed it posts a Darwin
+  notification named `<App Group>.settings-changed`. It carries no data; the app and the controls
+  read the store again when they hear it.
+- **The Lock Screen camera** (`NopeCaptureExtension`) can't open the App Group: Apple's
+  LockedCameraCapture documentation says a capture extension "can't read from or write to the App
+  Group's shared container". So the app (and the night mode control) hand it a copy of the same
+  settings through the `appContext` of the "Open nope." intent (`NopeSettingsSnapshot`, at most
+  4 KB, kept by the system on the device). The Lock Screen camera reads it when it opens; changes
+  made there last until it closes, because the system erases the extension's own container. Its
+  restrictions are unchanged: it has no location reader and no storage or battery reader, so a
+  photo taken there never carries a location even if the Location switch is on.
+
+## Settings presets
+
+Presets (issue #72) are named copies of the settings above plus the camera's lens, exposure,
+drive and astro values, saved when the person taps Save Current Settings.
+
+- **What is stored:** the preset's name as typed, a random identifier, an encoding version, the
+  same settings values as above and the camera values (lens identifier, kind and magnification,
+  ISO, shutter, aperture, focus position, white balance, exposure compensation, metering, Close-Up,
+  drive mode, bracket, interval and astro choices). No photo, location, date, counter or
+  device identifier. The lens identifier is the app's own name for the lens on this device and is
+  never written to a photo.
+- **Where:** in the same on-device store as the settings (the App Group's `UserDefaults`, key
+  `NopePresets.saved`). Presets are not part of the copy handed to the Lock Screen camera, are
+  never synced through iCloud and never leave the device; device backups include them as they
+  include the settings.
+- **Permissions are never bypassed.** Applying a preset that has Location on asks for location
+  access through the normal prompt; if access isn't allowed, Location stays off and the person
+  is told. A preset can't grant camera or Photos access either: those prompts are unchanged.
+- **Deleting** a preset removes it from the store; Factory Defaults resets every setting but
+  keeps the saved presets.
 
 ## Content Credentials (signing)
 
@@ -302,11 +390,41 @@ copy. Orientation is a locked item and the read-back accepts all eight values.
 ### Developed file options
 
 Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
-HEIF bit depth (10 or 8) and the color space (Display P3 or sRGB). They change only how the
-developed copies are encoded, never the RAW or any metadata; the defaults are the earlier
-encoding. Every combination is encoded and read back in the unit tests. The full list of what an
+HEIF bit depth (10 or 8), the color space (Display P3 or sRGB) and the copy size (full, half or a
+quarter of the RAW's width and height). They change only how the developed copies are encoded,
+never the RAW; the only metadata they touch is EXIF `PixelXDimension` and `PixelYDimension` of a
+smaller copy, set to its size. The defaults are the earlier encoding. Every combination is encoded and read back in the unit tests. The full list of what an
 app can control, and what the app offers, is in
 [`research/capture-and-file-settings.md`](research/capture-and-file-settings.md).
+
+### Standard File Tags
+
+Settings › Privacy › Choose Details › Standard File Tags, **on by default** (owner decision,
+2026-11-16) and outside "Remove all optional details", like signing
+(`MetadataSettings.writesStandardFileTags`). It writes the tags the Exif standard requires that
+are fixed values and say nothing about the photo, the device or the person:
+
+| Tag | Value | Files |
+|---|---|---|
+| EXIF `ExifVersion` (`0x9000`) | `0232`, where the system's metadata has none | HEIF and JPEG |
+| EXIF `ComponentsConfiguration` (`0x9101`) | Y, Cb, Cr (`1 2 3 0`) | HEIF and JPEG |
+| EXIF `FlashpixVersion` (`0xA000`) | `0100` | HEIF and JPEG |
+| EXIF `ColorSpace` (`0xA001`) | 1 (sRGB) for an sRGB copy, `0xFFFF` (Uncalibrated) for Display P3 | HEIF and JPEG; ImageIO drops it from a Display P3 JPEG |
+| GPS `GPSVersionID` (`0x0000`) | 2.3.0.0 | Every file with a location (Location on) |
+| IFD0 `DateTime` (`0x0132`) when Date and Time is off | 19 characters: blanks and colons, the Exif standard's form for an unknown date | DNG (instead of the empty text of issue #65) |
+
+ImageIO writes `ExifVersion` itself into the copies it develops, but a processed fallback encoded
+from metadata without one had none. Each value comes from the allowlist
+(the locked image structure fields, or the Location item's GPS fields); a value the system's own
+metadata already has is kept. The blank date has no digits, so it says nothing about when the
+photo was taken. **Off** writes the minimal set the app wrote before: no added tags, and an empty
+`DateTime` in a DNG with the date off.
+
+ImageIO can't write `YCbCrPositioning` (IFD0 `0x0213`), which exiftool also expects in a JPEG:
+`CGImageProperties.h` has no key for it, and neither a `{TIFF}` value nor an XMP
+`tiff:YCbCrPositioning` tag puts it in the EXIF block (macOS 27.2, 2026-11-16). Writing it, or
+`ColorSpace` in a Display P3 JPEG, would need the app to edit the file's bytes, which AGENTS.md
+allows only where no system API exists, with fuzzing; that is an open owner decision.
 
 ### Locked (the photo breaks without these)
 
@@ -408,10 +526,15 @@ the replacement metadata's `{TIFF}` dictionary has `DateTime`, `Make`, `Model` a
 (measured with debug runs on the device; Apple doesn't document it). Leaving out any one fails;
 `HostComputer` and the resolution keys aren't needed; an empty text for each of the four works,
 and `NSNull` doesn't. So every DNG's dictionary has all four (`MetadataPlan.requiredRAWTIFFFields`):
-the real value when the item's switch is on, and an empty text, never a placeholder, when it is
-off. An empty field says nothing about the date, camera or software. The read-back accepts each
-of the four when its switch is off only if it is empty: one NUL, a count of 0, only NULs, or the
-tag left out (which of these AVFoundation writes is a device check below); any text fails. HEIF
+the real value when the item's switch is on, and an empty text, never a made-up value, when it is
+off. An empty field says nothing about the date, camera or software. With Standard File Tags on
+(the default), `DateTime` is instead the Exif standard's unknown form, blanks and colons
+(`MetadataPlan.unknownDateTime`), which `exiftool -validate` accepts where it reports the empty
+text as an invalid date; it holds no date either. The read-back accepts each of the four when its
+switch is off only if it is that value (empty: one NUL, a count of 0, only NULs, or the tag left
+out; and for `DateTime` with Standard File Tags on, any blank date: at most 19 characters, each a
+blank or a colon, with or without NUL padding): which encoding AVFoundation writes is a device
+check below; a digit or any other text fails. HEIF
 and JPEG don't need them, so they leave them out when the switch is off. `UniqueCameraModel`
 keeps its "Generic camera" value.
 
@@ -442,7 +565,9 @@ Simulator has no camera and no real DNG can be made in a unit test:
 - with "Remove all optional details" on (the default) and with every switch on, a RAW is saved
   (issue #65), and the saved DNG's `DateTime`, `Make`, `Model` and `Software` are empty with the
   switches off: note which encoding AVFoundation uses (one NUL, a count of 0, or the tag left
-  out), and that the read-back accepts it;
+  out), and that the read-back accepts it; with Standard File Tags on (the default), a RAW is
+  still saved and its `DateTime` is the 19-character blank date, byte for byte (exiftool
+  `-IFD0:ModifyDate -b`), and `exiftool -validate` reports no date warning; with it off, as before;
 - on a lens without Bayer RAW, the processed fallback HEIF (and JPEG) is saved with "Remove all
   optional details" on: it is written through the same `fileDataRepresentation(with:)` call
   without the four TIFF fields, and whether AVFoundation needs them for a processed photo too

@@ -90,7 +90,7 @@ struct QuickControlItem: Identifiable {
 /// settings (`nil` hides an item the device can't do).
 ///
 /// The planned order is Light, Flash, Drive, Exposure, Grid, Level, Fast Shutter, Night, then
-/// Hide Controls last (issue #68).
+/// Hide Controls last (issue #68); Presets (issue #72) comes just before Night.
 @MainActor
 enum QuickControls {
     /// Every item builder, in display order. Add a feature's builder here, before
@@ -102,11 +102,14 @@ enum QuickControls {
         exposure,
         grid,
         level,
+        liveReadout,
         fastShutter,
         closeUp,
+        farFocus,
         magnifier,
         astro,
         compare,
+        presets,
         night,
         hideControls,
     ]
@@ -162,6 +165,19 @@ enum QuickControls {
         return QuickControlItem(
             id: "closeUp", title: CloseUpText.title, systemImage: "camera.macro",
             kind: .toggle(isOn: manual.nearFocusLimit) { context.send(.auto(.setNearFocusLimit($0))) })
+    }
+
+    /// Far Focus: limits autofocus to far subjects, so it doesn't catch a near branch or a window
+    /// (issue #57). An advanced option: shown with manual controls on where the lens supports
+    /// it, or while it is on.
+    ///
+    /// - Parameter context: The model and settings.
+    static func farFocus(_ context: CameraControlContext) -> QuickControlItem? {
+        let manual = context.model.manual
+        guard (manual.isEnabled && manual.capabilities.supportsFarFocusLimit) || manual.farFocusLimit else { return nil }
+        return QuickControlItem(
+            id: "farFocus", title: FarFocusText.title, systemImage: "mountain.2",
+            kind: .toggle(isOn: manual.farFocusLimit) { context.send(.auto(.setFarFocusLimit($0))) })
     }
 
     /// Magnify: shows the viewfinder enlarged around the focus point, for checking focus

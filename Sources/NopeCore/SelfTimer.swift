@@ -42,6 +42,9 @@ public final class Countdown {
     /// The running countdown.
     private var task: Task<Void, Never>?
 
+    /// The caller waiting in ``run(seconds:)``, told whether the countdown reached zero.
+    private var waiter: CheckedContinuation<Bool, Never>?
+
     /// Creates a countdown that isn't running.
     ///
     /// - Parameter sleep: Waits a number of seconds between ticks, throwing when cancelled.
@@ -79,10 +82,34 @@ public final class Countdown {
         }
     }
 
+    /// Counts down and waits until the count reaches zero or the countdown is cancelled: the
+    /// astro helper's start delay before it resumes a paused run (issue #64).
+    ///
+    /// - Parameter seconds: The delay, in seconds. Less than 1 doesn't wait.
+    /// - Returns: `true` when the count reached zero, `false` when the countdown was cancelled or
+    ///   another countdown was already running.
+    public func run(seconds: Int) async -> Bool {
+        guard seconds > 0 else { return true }
+        guard task == nil else { return false }
+        return await withCheckedContinuation { continuation in
+            waiter = continuation
+            start(seconds: seconds) { [weak self] in self?.finishWaiting(fired: true) }
+        }
+    }
+
     /// Stops the countdown without running its action. Does nothing when none runs.
     public func cancel() {
         task?.cancel()
         task = nil
         remainingSeconds = nil
+        finishWaiting(fired: false)
+    }
+
+    /// Tells the caller of ``run(seconds:)``, if any, how the countdown ended.
+    ///
+    /// - Parameter fired: Whether the count reached zero.
+    private func finishWaiting(fired: Bool) {
+        waiter?.resume(returning: fired)
+        waiter = nil
     }
 }

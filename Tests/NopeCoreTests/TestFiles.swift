@@ -141,6 +141,8 @@ enum CleanFiles {
         switch rule {
         case .exactly(let text): text
         case .prefix(let prefix): prefix + " (27.2.1)"
+        case .oneOf(let texts): texts.last ?? ""
+        case .blankDate: MetadataPlan.unknownDateTime
         case .any, nil: "27.2.1"
         }
     }

@@ -13,11 +13,12 @@ signed with Content Credentials when signing is on.
 | `Package.swift` | The `NopeKit` Swift package: every module and its tests |
 | `Sources/<Module>/` | One folder per module, each with a DocC catalog (`<Module>.docc`) |
 | `Tests/<Module>Tests/` | Swift Testing unit tests for each module |
-| `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests |
+| `App/NopeCamera.xcodeproj` | The app project: the `NopeApp` target and the `NopeAppUITests` UI tests, the extensions, and the `NopeWatch` app with its `NopeWatchUITests` (embedded in the iPhone app) |
 | `App/NopeApp/` | App sources, `InfoPlist.xcstrings` and `PrivacyInfo.xcprivacy`; `Intents/` holds the Siri and Shortcuts App Intents and `AppShortcuts.xcstrings` |
 | `App/NopeCaptureExtension/` | The Lock Screen camera (LockedCameraCapture capture extension), with its own privacy manifest |
-| `App/NopeControls/` | The "Open nope." control (WidgetKit control extension), with its own privacy manifest |
-| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent` and `Localizable.xcstrings` |
+| `App/NopeControls/` | The "Open nope." and Night Mode controls and the Live Activity's layouts (WidgetKit extension), with its own privacy manifest; its entitlements are `App/NopeControls.entitlements` |
+| `App/NopeWatch/` | The Apple Watch app (issue #63): a remote shutter and delay for the iPhone app over WatchConnectivity, with its own `Localizable.xcstrings` and privacy manifest; `App/NopeWatchUITests/` holds its UI tests |
+| `App/Shared/` | Code and strings in the app and both extensions: `OpenCameraIntent`, `SharedSettings` (the App Group store and change signal), `Localizable.xcstrings` and `Honesty.xcstrings`; the Live Activity's attributes, Stop intent and views (`SeriesActivity.swift`, app and `NopeControls` only) |
 | `Config/Base.xcconfig` | Shared build settings; includes the untracked `Config/Local.xcconfig` |
 | `docs/api/` | The API exported as Markdown from the DocC comments (generated) |
 
@@ -25,13 +26,14 @@ signed with Content Credentials when signing is on.
 
 | Module | Holds | May import |
 |---|---|---|
-| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol | Foundation |
+| `NopeCore` | `CameraModel` (the state machine), `CameraState`, `SessionStatus`, `CaptureStatus`, `CameraIntent`, `DeviceCapabilities`, `Lens`, `CaptureFormat` (RAW or the labeled fallback), `CapturedPhoto`, `CaptureEvent`, the `CaptureBackend` and `CameraPreviewSource` protocols, `SimulatedCaptureBackend`; the settings (`SaveSettings`, `MetadataSettings`); the metadata allowlist (`MetadataPlan`, `MetadataField`, `MetadataAllowlist`), the project's own tag reader (`MetadataFileReader`: TIFF/DNG, JPEG, HEIF, XMP) and `MetadataVerifier`; the save pipeline `PhotoSaver` and its protocols (`PhotoDeveloping`, `PhotoSigning`, `MetadataReading`, `PhotoLibrary`), and the manual controls: `ManualControlsModel`, `ManualControlIntent`, `ManualCapabilities`, `ControlScale`, `ManualSettings`, `DeviceControls` and the `ManualCaptureBackend` protocol, the full-auto aids (`AutoControlIntent`, `FastShutter`, `FocusTarget`, `FramePoint`, `AssistSettings`, and the internal `AutoShutter` and `CloseUpDetector` rules), and the settings model `NopeSettings` (which stores `SaveSettings`) with `LockedMetadataItem`; the drive modes (`DriveModel`, `DriveMode`, `DriveIntent`, the self-timer `Countdown`, bursts), the astro helper (`AstroModel`, `AstroIntent`, `AstroExposure`, `AstroEstimate`), the Siri and Shortcuts requests (`ShortcutInbox`, `ShortcutRequest`, `PhotoShortcut`, `BracketShortcut`, `IntervalShortcut`, `ShortcutOutcome`, `CameraUnavailability`), the Apple Watch messages and both ends of their protocol (`WatchCommand`, `PhoneUpdate`, `WatchStatus`, `WatchResult`, `WatchMessageCoding`, `WatchCommandServer` with the `WatchLink` protocol, `WatchRemote` with the `PhoneLink` protocol), the storage and battery warnings (`DeviceStatus`, `DeviceStatusReading`, `PhotoSizeEstimate`) and `SeriesScreenKeeper` with the `ScreenControlling` protocol, and the Live Activity (`LiveActivityCoordinator`, `LiveActivityContent`, the `LiveActivityPresenting` and `BackgroundTimeRequesting` protocols) | Foundation |
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
 | `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
-| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents | Everything |
-| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." control | Everything; the control uses only AppIntents, WidgetKit and SwiftUI |
+| App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents and the Apple Watch link (`PhoneWatchSession`) | Everything |
+| Watch app (`NopeWatch`) | The Apple Watch remote shutter: hosts `WatchRemote` from `NopeCore` with a WatchConnectivity link and its own SwiftUI screen; it takes no photos | `NopeCore`, SwiftUI, WatchConnectivity |
+| Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." and Night Mode controls and the Live Activity's layouts | Everything; `NopeControls` uses only `NopeCore` (`NopeSettings`, and `LiveActivityContent` for the Live Activity), ActivityKit, AppIntents, WidgetKit and SwiftUI |
 
 `scripts/check-architecture.sh` enforces the import column on every pull request.
 
@@ -141,7 +143,12 @@ when the camera opens and when the option changes.
   from the readings), the limit is lifted and the screen says "Hold it steady or use a tripod."
   With manual controls on nothing is limited; the hint shows when the shutter is slower than the
   handheld rule.
-- **Close-Up** sets `autoFocusRangeRestriction = .near`. The **close-up hint** suggests the ultra
+- **Close-Up** sets `autoFocusRangeRestriction = .near`; **Far Focus** (manual controls on, issue
+  #57) sets `.far`, and the two replace each other. **Face Detection** (Settings, on by default)
+  leaves face-driven autofocus and auto exposure to the system, or turns both off
+  (`DeviceControls.followsFaces`). The **photo size** of a lens without Bayer RAW
+  (`CameraIntent.setPhotoSizes`, `Lens.photoSizeChoices`) is configured when the session starts.
+- The **close-up hint** suggests the ultra
   wide lens when the lens stays at its nearest position while autofocus searches; the app never
   switches lenses itself. The **magnifier** scales the preview view only.
 - **Focus peaking** is part of the live frame analysis (below, "Viewfinder overlays").
@@ -150,8 +157,20 @@ when the camera opens and when the option changes.
   photo, and each is saved through the same pipeline as a single photo
   (`CaptureStatus.savedBracket`). Bayer RAW rules still apply: `.speed`, zoom 1.0, no
   multi-frame processing.
-- **Interval shooting** calls the same capture path as the shutter; its timer exists only while a
-  series runs, and the camera screen stops it when it disappears. While a series runs in the
+- **Interval shooting** calls the same capture path as the shutter; it works in full auto (each
+  photo a full-auto photo) and with manual controls on (each photo with the manual settings), and
+  turning manual controls off doesn't stop a series. It starts from the Interval drive mode's
+  shutter (`DriveMode.interval`), Start in the Interval sheet or Pro Tools (the same
+  `IntervalSection` in `NopeUI`), or Siri; the shutter stops a running series in any mode. Its
+  timer exists only while a series runs, and the camera screen stops it when it disappears.
+  `ManualControlsModel` holds the series and counts only photos taken and saved;
+  `CameraModel.takeIntervalPhoto()` takes each one. While the app is out of the foreground or the
+  camera is paused (`seriesShouldPause`, the same rule as an astro run) the photo waits and the
+  series is marked paused (`IntervalProgress.isPaused`); it also waits while another photo is
+  being taken or saved. A photo cut short by a pause is taken again, also when its error arrives
+  before the pause (`failureWasAPause()` waits `CameraModel.pauseAfterErrorSeconds` for it); any
+  other failure ends the series. A series doesn't start while Astro is on or the self-timer or a
+  burst runs (`CameraModel.intervalBlocker`). While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
   background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
@@ -185,9 +204,16 @@ sets focus to lens position 1, the longest shutter and the highest ISO the lens 
 the light off, returns the drive mode to single and turns bracketing off; after that the manual
 controls are the person's. While it is on, the shutter starts `drive.countdown` with
 `astro.startDelay` and then `astro.frameCount` frames; the same shutter (or `.astro(.stop)`)
-stops them. A run also stops before a frame that wouldn't fit in storage, at or below
-`AstroModel.stopBatteryLevel` unplugged (`BurstEnd.batteryLow`), when the camera stops, or at a
-failed frame. `CameraModel.astroEstimate` gives the total exposure time and an upper estimate of
+stops them. When the app leaves the foreground (`CameraIntent.setInForeground(false)`, sent by
+the camera screen on each scene phase change) or the camera pauses (an interruption, heat, a
+restart), the run pauses instead of stopping (`AstroModel.isPaused`, issue #64): the frames taken
+are saved, a frame cut short is taken again (also when its error arrives before the pause, see
+`CameraModel.pauseAfterErrorSeconds`), and `pauseAstroRun()` waits on Observation, without
+polling, until the app is in the foreground and the camera runs; then `Countdown.run(seconds:)`
+counts the start delay down again so the phone is still, and the loop checks storage and battery
+before the next frame. Leaving during the start delay starts the run paused. A run stops before a
+frame that wouldn't fit in storage, at or below `AstroModel.stopBatteryLevel` unplugged
+(`BurstEnd.batteryLow`), when the camera stops for good, or at a failed frame in the foreground. `CameraModel.astroEstimate` gives the total exposure time and an upper estimate of
 the storage. Turning it off turns manual controls off again only if it turned them on. The torch
 can't be turned on while it is on, and a lens it can't use turns it off. It is offered only
 where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen capture extension has
@@ -231,18 +257,22 @@ mode and brightness are `NopeSettings.flashMode` and `torchLevel`, passed in by 
 and of each sheet: every text style is drawn white, then everything is multiplied by pure red,
 so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
 turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
-colors, the ready camera leaves its frame clear and reports it (`NaturalViewfinderFrame`), and
-`CameraScreen` draws the viewfinder there, behind the red interface. The focus magnifier is the
-same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in the ready camera,
-and on the natural-color viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
-keyboard and the status bar are drawn by the system and keep its dark appearance.
+colors, the ready camera leaves its frame clear and reports it (`ViewfinderFrame`), and
+`CameraScreen` draws the viewfinder there, behind the red interface, in every mode; Red
+Viewfinder multiplies only that view by red. The viewfinder is never moved or rebuilt when night
+mode or Red Viewfinder changes: on a device a new viewfinder is a new
+`AVCaptureVideoPreviewLayer`, which attaches to the running capture session on the main thread,
+and switching night mode froze the camera in 0.2.0 (`NightModeViewfinderTests`). The focus
+magnifier is the same `focusMagnified(_:)` modifier on both: on the picture and focus peaking in
+the ready camera, and on the viewfinder in `CameraScreen`, so all three stay aligned. System menus, alerts, the
+keyboard and the status bar are drawn by the system in the dark appearance night mode asks for.
 
 ### Siri, Shortcuts, Control Center and the Lock Screen (issues #42, #62)
 
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
 parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
-outcome. The camera screen runs `CameraModel.serveShortcuts(from:)` while it is shown: the model
+outcome. The camera screen runs `CameraModel.serveShortcuts(from:settings:presets:)` while it is shown: the model
 waits for the camera to start (at most `ShortcutInbox.startTimeoutSeconds`, following its
 observable state, without polling), switches the lens if asked, then takes one photo at once or
 starts the self-timer with `.drive(.startTimer(seconds:))`, and reports a `ShortcutOutcome`:
@@ -251,16 +281,240 @@ content or metadata leaves the model. `SetNightModeIntent` calls `NopeSettings.s
 without opening the app. The app registers its `ShortcutInbox` and `NopeSettings` with
 `AppDependencyManager`, and `NopeShortcuts` lists the Siri phrases.
 
+The camera screen performs requests one at a time, each in its own child task: a request that
+arrives while another runs (for example during a Siri self-timer) waits for it, and if it has
+waited `ShortcutInbox.startTimeoutSeconds` it ends with `ShortcutOutcome.busyWithEarlierRequest`
+("nope. is still doing an earlier request. Nothing changed.") rather than claiming the camera
+isn't running. Turning the light off and stopping a series (`ShortcutRequest.isInstant`) never
+wait: the inbox hands them over at once, alongside the request in progress. Only one camera
+screen serves the inbox; a cancelled server ends only its own wait, never the one that replaced
+it.
+
+Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
+with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
+burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
+path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
+(`.setLight(isOn:)`, the tray's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
+`StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
+`.stopInterval`, the `ManualControlIntent` values the Interval drive mode and Pro Tools send).
+`TakeBracketIntent` is a separate action from Take Photo, because a bracket and a burst are
+different captures with different limits: it asks for 3, 5 or 7 frames and a step of 1/3, 2/3,
+1 or 2 stops (`BracketShortcut` moves any value to the nearest of `BracketSettings.frameCounts`
+and `BracketSettings.steps`), checks the lens with `ManualControlsModel.canBracket(_:)` (the
+same limits as the Pro Tools bracket), waits up to two seconds for the camera's first exposure
+reading, and takes it once with `capture(onceBracket:)` through the same bracket path
+(`ManualControlsModel.bracketFrames(once:)`, planned around the last reading in full auto or the
+manual ISO and shutter where set). The person's bracket setting and manual controls don't
+change.
+
+Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
+Far Focus in one action, because the camera has one autofocus range restriction, so the two
+limits exclude each other), `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
+in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+`AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
+choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
+its settings to `serveShortcuts(from:settings:presets:)`; the app then applies the new size as it does
+from Settings. `SetFastShutterIntent` and `SetFaceDetectionIntent` change only stored settings
+(`NopeSettings.setFastShutter(_:)`, `setFollowsFaces(_:)`), as `SetNightModeIntent` does, so they
+run without opening the app. None of them changes a manual value. App Shortcuts allows ten per
+app, all used by capture and eyes-free actions (photo, bracket, open, lens, light, interval and
+night mode), so these settings, which are set rather than used while shooting, are Shortcuts
+actions that a person can still run by voice through a shortcut they name. Requests that need the
+camera open the app, because the camera, the light and a series run only in the foreground
+(AGENTS.md, "Battery"). Turning the light off and stopping a series don't open the app: without
+a camera screen serving the inbox (`ShortcutInbox.isServed`) nothing is running, so they end at
+once with `ShortcutRequest.outcomeWithoutCameraScreen`. A series started by Siri is the same as
+the Interval drive mode's: full auto, or the manual settings while manual controls are on; it
+never turns them on. A request never starts while a photo, countdown, burst, series or astro run is
+in progress (`ShortcutOutcome.busy`).
+
+Siri on a locked device: the app's intents can't take a photo without unlocking. A request that
+opens the app needs the device unlocked (iOS asks first), and the camera only runs in the
+foreground. The Lock Screen capture extension can't serve requests either: Apple documents that
+the system launches it only from a control in Control Center, on the Lock Screen or on the
+Action button ("Creating a camera experience for the Lock Screen", LockedCameraCapture), that it
+can't read or write the App Group container, and that its container is erased when it is
+suspended, so no request can reach it from the app's process. `CameraCaptureIntent` passes only
+an `appContext` the app or extension wrote earlier, not a per-launch request. The "Open the
+camera in nope." phrase runs `OpenCameraIntent`, the `CameraCaptureIntent` the control runs;
+whether Siri opens the capture extension from it on a locked device isn't documented, so it is
+a device check (docs/TESTING.md).
+
 `OpenCameraIntent` is a `CameraCaptureIntent`, compiled into the app, the capture extension and
 the control extension (`App/Shared`), as Apple requires. The `NopeControls` extension offers it
 as the "Open nope." control for Control Center, the Lock Screen and the Action button. On a
 locked device the system opens `NopeCaptureExtension`, which runs the same `CameraModel` and
 `PhotoSaver` as the app (RAW, the allowlist and read-back, a signature per photo, add-only
-saving). It sees only its own container, so it keeps its own settings, starting from the
-defaults, and offers no button that opens another app; it has no storage and battery warnings
+saving). It sees only its own container (not the App Group's), so it starts from the copy of the
+person's settings in `OpenCameraIntent`'s app context (see "Shared settings" below), and offers no
+button that opens another app; it has no location reader and no storage and battery warnings
 (their system reader uses API that extensions can't use). It shares `CameraPreviewView.swift`
 and `MotionGravitySource.swift` with the app through the project's file membership, with the
 `NOPE_CAPTURE_EXTENSION` compilation condition leaving out the Debug UI-test scenarios.
+
+### Live Activity (issue #64)
+
+iOS shows an app's Live Activity only while the app isn't on screen, and the camera stops when the
+app leaves the foreground, so the activity shows status, not shooting: a paused interval series
+or astro run (no photos are taken or counted while it is paused; it continues when the app is
+opened again; Stop ends it), frames still being saved
+after a burst, a cancelled self-timer, and how each run ended, with whether the saved photos are
+signed. It is off by default (`NopeSettings.showsLiveActivity`).
+
+`LiveActivityCoordinator` (`NopeCore`) holds the rules. `CameraModel.liveActivityContent(...)`
+turns the model's state into a `LiveActivityContent` (kind, phase, counts, countdown end, signing,
+night mode) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
+model with Observation (`observe(_:)`, no polling) and calls a `LiveActivityPresenting`, which the
+app implements with ActivityKit (`SystemLiveActivities`): an activity can only be started in the
+foreground, so it starts when the run starts while the app is active (`isActive`, scene phase
+`active`); the content counts an inactive app (Control Center or a system alert over it) as in the
+foreground (`isInForeground`, any phase but `background`), since the camera keeps taking photos
+then; while the app is in the foreground a change of the
+counts alone is sent at most every 30 seconds, and phase changes and the content at the moment
+the app leaves are sent at once; countdowns are drawn by the system from their end time. Updates
+are local only: no push type, no push token, no network. The coordinator also asks iOS for time to
+finish saving (`BackgroundTimeRequesting`, `UIApplication.beginBackgroundTask`) while photos are
+still being taken or saved out of the foreground. When the app leaves the foreground the camera
+screen cancels a running self-timer, since the camera can't take its photo then.
+
+The activity's layouts (Lock Screen and Dynamic Island) are in the `NopeControls` widget
+extension, the app's one WidgetKit extension: a Live Activity is drawn by a widget extension, and
+the control and the activity fit one `WidgetBundle`, so no second extension, privacy manifest or
+binary is needed. `NopeControls` links `NopeCore` for `LiveActivityContent`, which is the
+activity's content state, and the views (`App/Shared/SeriesActivity.swift`) are compiled into the
+app too, for a Debug gallery that the UI tests audit (`-NopeLiveActivityGallery`). The Stop button
+runs `StopSeriesIntent`, a `LiveActivityIntent`, which the system runs in the app's process; it
+calls `LiveActivityCoordinator.stopSeries(_:)`.
+
+### Shared settings: App Group, controls and the Lock Screen camera (issue #42)
+
+The person's settings live in one place that every target of the app can read: the
+`UserDefaults` of the App Group `$(NOPE_APP_GROUP_IDENTIFIER)` (`group.$(NOPE_BUNDLE_IDENTIFIER)`,
+`Config/Base.xcconfig`). The app (`App/NopeApp.entitlements`) and `NopeControls`
+(`App/NopeControls.entitlements`) request it; each reads the name from its Info.plist key
+`NopeAppGroupIdentifier` (`App/NopeApp-Info.plist`, `App/NopeControls/Info.plist`).
+
+```
+ app: NopeSettings ──┐                               ┌── NopeControls: NightModeControl
+                     ├──▶ App Group UserDefaults ◀───┤     (value provider, SetNightModeControlIntent)
+ SharedSettingsSync ─┘                               │
+        ▲ │ Darwin notification "<group>.settings-changed" (posted by the writer, heard by all)
+        │ ▼
+ app ── makeSnapshot() ──▶ OpenCameraIntent.updateAppContext ──▶ NopeCaptureExtension: apply(_:)
+```
+
+- **`NopeCore` API** (`SharedSettings.swift`, `NopeSettingsSnapshot.swift`):
+  `SharedSettingsStore` (`groupIdentifier(infoDictionary:)`, `defaults(groupIdentifier:)`,
+  `migrate(from:domainName:to:)`, `changeSignalName(groupIdentifier:)`, `isSettingsKey(_:)`);
+  `SettingsChangeSignaling` and `DarwinSettingsChangeSignal`; `SharedSettingsSync`;
+  `NopeSettings.reload()`, `makeSnapshot()` and `apply(_:)`; `NopeSettingsSnapshot`. The app-side
+  glue for every target is `App/Shared/SharedSettings.swift` (`SharedSettings.store()`,
+  `appStore()`, `changeSignal`, `publishToLockScreenCamera(_:)`) and `NopeControlKind`.
+- **Moving old settings.** The app's first launch with the App Group copies every
+  `NopeSettings.` key from its standard `UserDefaults` once (`migrate`), keeping any value a
+  control already wrote. Extensions never migrate: their own stores are empty.
+- **Changes between processes, without polling.** `SharedSettingsSync` posts the Darwin
+  notification whenever this process writes the store (`UserDefaults.didChangeNotification`, which
+  is posted only for this process's writes, before the setter returns), and calls
+  `NopeSettings.reload()` when it hears one, assigning only the values that changed. The app also
+  reloads when it returns to the foreground, for a notification sent while it was suspended. After
+  a change the app refreshes the Night Mode control (`ControlCenter.reloadControls(ofKind:)`) and
+  hands the settings to the Lock Screen camera.
+- **The Night Mode control** (`NightModeControl`, a `ControlWidgetToggle`) reads
+  `NopeSettings.isNightModeOn` from the App Group in its value provider and sets it with
+  `SetNightModeControlIntent` (a `SetValueIntent`, hidden from Shortcuts), which then posts the
+  signal and updates the Lock Screen camera's copy.
+- **The Lock Screen camera can't open the App Group** (Apple: a capture extension "can't read from
+  or write to the App Group's shared container"). The app writes a `NopeSettingsSnapshot` (a
+  property list of every `NopeSettings.` key, well under Apple's 4 KB `appContext` limit, checked
+  by a test) to `OpenCameraIntent.updateAppContext(_:)` at launch and after every change; the
+  extension shows black until it has read and applied it, so it never starts in the wrong mode.
+  Its changes last until it closes.
+- **Later targets.** A widget extension joins the same App Group (an entitlement and the Info.plist
+  key) and uses `SharedSettings.store()` and `changeSignal`. The Live Activity needs no settings of
+  its own: night mode travels in its content state. A Watch app can't
+  share an App Group with the iPhone (each device has its own containers): on the watch, the Watch
+  app and its own extensions can share a group the same way, and the iPhone would send a
+  `NopeSettingsSnapshot` across with WatchConnectivity.
+
+### Settings presets (issue #72)
+
+A preset is a named snapshot of every setting, applied all at once when the person chooses it.
+Nothing applies a preset on its own: the app never changes the person's settings by itself.
+
+- **What a preset holds** (`SettingsPreset`): a `NopeSettingsSnapshot` of every stored
+  `NopeSettings` key (formats, file options, pairing, privacy, signing, location, mirroring,
+  overlays, flash, night mode and anything added later) and a `CameraSetup` with the camera's own
+  state, which the app doesn't remember between launches: the lens, the manual exposure values,
+  Close-Up, the drive mode, the bracket, the interval series and the astro helper. Left out on
+  purpose, because they belong to one moment: the torch being on (the light always starts off),
+  a tapped focus point and the locks, the magnifier, clean view while open, and the comparison
+  shot.
+- **Every setting is covered by construction.** The settings part copies every key with the
+  `NopeSettings.` prefix, so a setting added later is in every preset saved after it exists. Tests
+  fail when a `NopeSettings` property, a `CameraSetup` value or a `ManualSettings` value isn't
+  saved and restored (or, for the locks, listed as left out).
+- **Versioned, forward-compatible encoding.** Each preset records `SettingsPreset.encodingVersion`;
+  only its identifier, name and settings are required, and every camera value is optional when
+  read. A setting missing from an older preset gets its default when the preset is applied
+  (`NopeSettings.apply(_:)` removes keys the snapshot doesn't have); a choice a later version adds
+  is read as the default. One damaged preset is skipped without hiding the others.
+- **Applying** (`SettingsPresets.apply(_:camera:location:)`): the snapshot replaces the
+  settings, then `CameraModel.applyCameraSetup(_:manualControlsOn:)` sets the camera through the
+  same intents as the interface, so every lens rule still applies. Factory Defaults is an empty
+  snapshot and `CameraSetup.factory`; saved presets are kept. Location is never turned on by the
+  snapshot: it is turned off and then on again through `LocationTagging.turnOn(in:)`, which asks
+  for access and leaves it off with `PresetNotice.locationNotAllowed` if access isn't allowed.
+  Other notices: no matching lens, values moved into the lens's range, camera not on yet, camera
+  busy (a countdown, burst, series or astro run; nothing changes), unreadable preset. The last
+  apply can be undone (`undo(camera:location:)`), which is why applying needs no confirmation.
+- **Storage.** The list is JSON under `NopePresets.saved` in the same store as the settings (the
+  App Group's `UserDefaults`). The key doesn't have the `NopeSettings.` prefix, so presets aren't
+  part of a settings snapshot or the Lock Screen camera's copy, which doesn't offer presets.
+  Applying writes the settings store, so `SharedSettingsSync` posts the change signal and the app
+  hands the new settings to the Lock Screen camera as after any other change.
+- **Interface.** `PresetsScreen` (a native `List`) opens from the first row of Settings and from
+  Presets in the quick-controls tray (`PresetsSheet`, a sheet so night mode stays red): Factory
+  Defaults and the saved presets, each applied with one tap; the result, its notices and Undo;
+  Save Current Settings (`PresetNameScreen`) and Rename or Delete (`EditPresetsScreen`).
+- **Shortcuts.** `ApplyPresetIntent` (a Shortcuts action with no Siri phrase; every App Shortcut
+  slot is used) picks a `PresetEntity` (Factory Defaults, then the saved presets, from
+  `PresetQuery` over the app's `SettingsPresets`, registered with `AppDependencyManager`). It
+  opens the app and sends `ShortcutRequest.applyPreset(_:)` through the inbox; the model waits for
+  the camera, then calls the same `SettingsPresets.apply(_:camera:location:)` (a camera that
+  can't start leaves the camera values unchanged, `PresetNotice.cameraNotReady`). The outcome,
+  `ShortcutOutcome.presetApplied(_:)`, `.busy` or `.presetUnavailable`, becomes one spoken
+  sentence: which preset, whether everything applied as saved, and that Presets can undo it,
+  because the apply leaves the same Undo in the Presets list. A preset never turns the light on.
+
+### Apple Watch remote shutter (issue #63)
+
+The watch app takes no photos and runs no timer. `WatchRemote` (in `NopeCore`, built for
+watchOS too) sends `WatchCommand` values (status, take a photo after none, 3 or 10 seconds,
+cancel the timer) and shows the `PhoneUpdate` the phone sends back: the camera's `WatchStatus`
+(ready, counting down, busy, or why it isn't available) and, when a photo ends, its
+`WatchResult` (saved and signed or not, or why not). `WatchMessageCoding` encodes both as JSON
+with a protocol version; a message of another version is answered with "not understood"
+instead of guessed at. Only commands and short status cross the link, never image data or
+metadata, so the watch shows no preview.
+
+On the iPhone, `PhoneWatchSession` (in the app target) is the WatchConnectivity adapter: it only
+carries bytes (`WCSession.sendMessageData`). While the camera screen is shown it runs a
+`WatchCommandServer`, which answers each command. A photo goes through the same
+`ShortcutInbox` as a Siri request, so the camera screen takes it with its own intents and a delay
+runs the camera's self-timer (`.drive(.startTimer(seconds:))`). A photo is asked for only while
+`CameraModel.watchStatus` is `ready`; otherwise the watch hears why at once and nothing is taken
+later. The server follows `watchStatus` with Observation and sends each change while the watch
+app is reachable; a result the watch missed comes with its next reply. While no camera screen is
+shown (the app in the background, or launched in the background by a watch message), the reply
+says the camera isn't running.
+
+On the watch, `WatchSessionLink` is the WatchConnectivity adapter, and `RemoteShutterView` the
+only screen: the status and result lines (symbol and words; teal for a verified fact, amber for a
+warning), the shutter or Cancel Timer, and the delay as a pushed list. Haptics confirm the
+shutter, each countdown second and the result; VoiceOver announces the countdown and the
+result. The watch app has no entitlements; WatchConnectivity needs none. It needs none of the person's settings, so
+it has no App Group and is sent no `NopeSettingsSnapshot`.
 
 ### The viewfinder
 
@@ -307,7 +561,8 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 - **Live camera readout** ("stats for nerds"): the values AVFoundation reports
   (`CameraStatsReading`), built from the camera readings' own key-value observations (at most
   four a second) while the readout is shown; no second set of observations and no video. Hidden
-  in clean view.
+  in clean view unless pinned (`OverlayOptions.pinsLiveReadout`, "Keep Readout in Clean View",
+  `OverlayOptions.showsLiveReadout(inCleanView:)`).
 
 ```
  NopeUI ViewfinderOverlays ── setNeeds / setShowsStats ──▶ CameraModel.live (LiveViewModel)
@@ -319,7 +574,7 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 
 ### Camera layout
 
-The camera screen follows the approved layout in [`design/ux-v3.html`](design/ux-v3.html)
+The camera screen follows the approved layout in [`design/camera.html`](design/camera.html)
 (issue #68). `CameraLayout` chooses the arrangement from the space and the text size:
 
 - **iPhone (stacked):** top bar (pills, format chip, Settings), the whole 4:3 picture, the lens
@@ -333,8 +588,30 @@ The camera screen follows the approved layout in [`design/ux-v3.html`](design/ux
   open, the app lets the interface rotate (`EnvironmentValues.cameraPresentsSheet`).
 - **iPad, or any window wider than tall (column):** the interface rotates; the picture sits
   beside a trailing column with the shutter centered, and Settings and the format details open as
-  popovers. In a reduced window the camera shows the multitasking pause.
-- **Accessibility text sizes (scrolling):** the iPhone bands in a scroll view.
+  popovers. The column's halves above and below the shutter share its height, and the upper one
+  scrolls if its buttons don't fit, so nothing passes under the shutter in a short window. In a
+  reduced window the camera shows the multitasking pause.
+- **Accessibility text sizes (scrolling), in every window:** the iPhone bands in a scroll view
+  with a shorter picture (landscape in a wide window) and the enlarged manual controls list. The
+  column isn't used at these sizes: it has no room for that list, and offered only All Auto and
+  Pro Tools. `CameraScreen` draws the viewfinder outside the scroll view, so the scroll view
+  reports its frame with the picture's (`ViewfinderAnchors.clip`) and the viewfinder is masked
+  to it (`ViewfinderAnchors.visibleFrame(of:in:)`): it never runs into the pinned shutter row or
+  past the top when the picture scrolls.
+- **Foldable iPhone (iPhone Duo):** the rule reads the window's size classes, not the device
+  model. The outer display (466 × 678 points, compact width and regular height, with the status
+  bar in a trailing strip) is an iPhone window: stacked, kept in portrait, with upright icons;
+  its bands overlay the picture's bottom, as on a 4.7-inch iPhone. The unfolded inner display
+  (951 × 669 points held like a book, 669 × 951 turned) is regular in both size classes, and the
+  system rotates it with the device whatever the app asks, so it is treated like an iPad window:
+  the column beside the 4:3 picture (scrolling at accessibility sizes),
+  and nothing turns as an upright unit (`CameraLayout.isRegularSize(horizontal:vertical:)`,
+  `UprightRotation.inWindow(isRegularSize:)`, applied by `CameraScreen`). The app delegate allows
+  every orientation for such a window, never forces it back to portrait when a sheet closes, and
+  asks UIKit again when the size classes change (`FollowsWindowSizeClasses`), so a phone folded
+  while on its side returns the outer display to portrait. Folding or unfolding changes only the
+  layout: the dial, the tray, sheets and runs (self-timer, interval, astro) are state in the
+  model or in `CameraReadyView` and carry over.
 
 Three registries let later features add to the camera without touching the layout:
 `QuickControls.builders` (tray items: buttons, switches or native menus), `StatePills.builders`
@@ -367,7 +644,9 @@ takes VoiceOver focus and offers one action (Try Again or Open Settings, through
       is read back the same way, and one that fails is replaced by its unsigned file, with
       "not signed" and the reason in the status
    4. PhotoKitLibrary (NopeCapture): add-only access, one PHAssetCreationRequest per asset;
-      the DNG as `.photo` and its HEIF (or JPEG) as `.alternatePhoto`
+      the DNG as `.photo` (from memory) and its HEIF (or JPEG) as `.alternatePhoto` (from a
+      file with complete protection, moved into Photos: PhotoKit rejects an alternate added
+      from memory with error 3300)
    5. in memory, for the interface: SavedPhoto.thumbnail (PhotoThumbnailing: ImageIOThumbnailer,
       NopeDevelop) and SavedPhoto.details (PhotoDetails, built from each file's read-back, the
       plan, the signer's ContentCredentialsSummary and SaveTimings)
@@ -382,6 +661,19 @@ injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The c
 shows the thumbnail in the last-photo slot: a tap opens Photos through
 `EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
 and accessibility actions offer Open in Photos and Photo Details.
+
+**RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
+has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
+adapter counts the photo's own uncompressed Bayer buffer (`AVCapturePhoto.pixelBuffer`) at
+capture time: `RAWClippingMeter` (NopeCapture) reads every 16-bit sample of the active area once
+into a histogram per position of the 2 × 2 color filter pattern, takes the size, active area, bit
+depth and black and white levels from the read-back of the camera's own DNG of the same photo,
+and gives `RAWClippingResult` (NopeCore): per-color counts of photosites within 0.5% of the white
+level or above, and within 0.5% of the black level or below. It reads the four 14-bit Bayer
+formats and 16-bit versatile Bayer (with its pattern attachment); it accepts the buffer's values
+as they are, or shifted up by the difference in bit depth when every value's low bits are zero,
+and otherwise reports why it didn't measure (`RAWClippingFailure`). The result travels with
+`CapturedPhoto.rawClipping` into `PhotoDetails.rawClipping`; only the counts are kept.
 
 **Why the DNG's metadata is written by AVFoundation.** ImageIO can't write DNG: on macOS 27 and
 the iOS 27 Simulator, `CGImageDestinationCopyTypeIdentifiers()` doesn't list
@@ -406,6 +698,15 @@ each is on the allowlist only where it holds nothing beyond what the switches al
 (docs/PRIVACY.md).
 
 Photos go from memory to Photos (`addResource(with:data:options:)`) and never linger on disk.
+The one exception is the alternate of a RAW pair, which PhotoKit accepts only from a file
+(`PhotoKitMapping.Resource.addsFromFile`): `ResourceStaging` writes it under a random name in
+the temporary directory, Photos moves it into the library (`shouldMoveFile`), and anything left
+is deleted as soon as the change ends (docs/TESTING.md, "RAW pairs not saved (PhotoKit error
+3300)"). The file is protected until the first unlock after the device starts
+(`completeFileProtectionUntilFirstUserAuthentication`, `ResourceStaging.protection`): Apple's
+complete protection makes a file unwritable and unreadable while the device is locked, which
+would split every pair the Lock Screen camera takes, or that finishes saving after the screen
+locks, into two photos.
 
 ### Signing
 
@@ -488,7 +789,7 @@ last format can't be turned off; turning on one item turns the master switch off
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
 network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
 Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
-state. Settings is a short grouped list: Photos (formats with the RAW pairing, look, file
+state. Settings is a short grouped list: Presets (see "Settings presets"), Photos (formats with the RAW pairing, look, file
 options), Privacy (the master switch, "Choose Details", signing), Camera (manual controls, clean
 view, front camera mirroring) and More (Accessibility, Honesty, About); explanations are in
 footers and on the detail screens.
@@ -518,9 +819,50 @@ Simulator (docs/TESTING.md). Release builds always use `AVFoundationCaptureBacke
 
 ## Appearance
 
-The camera screen uses the dark appearance (`preferredColorScheme(.dark)`). The settings sheet
-is presented from it and inherits the dark appearance for now; following the system appearance
-in the sheet is a follow-up.
+The camera screen and its own sheets (the format details, What's in This Photo, Compare, the
+astro and interval settings, Pro Tools) are always dark: a camera is used in every light, and a
+dark frame doesn't change how a scene looks. Settings and its pages, Presets (from Settings or
+the quick-controls tray), Honesty, About and Licenses, first run and the camera access screens
+follow the system's light or dark setting, as a sheet on iPhone and a popover on iPad (owner
+decision for 0.3.0). A sheet changes with the setting while it is open; the iPad popover keeps
+the setting it opened with until it closes, because a popover whose scheme changed while open
+kept its glass half in the old appearance, a mid gray behind white text. The brief "Starting the camera…" message
+is dark, like the camera it leads to. Night mode is red on black everywhere: `NightModeStyle` on
+the dark appearance.
+
+`ScreenAppearance` holds the rule: `.camera` is always dark, `.system` is the system's scheme,
+and night mode is dark for both; `ScreenAppearance.of(_:)` picks it from the camera state.
+SwiftUI applies a window's `preferredColorScheme(_:)` to the whole window scene, after which
+nothing in the scene (and not `UIScreen`) shows the system's setting, and a sheet presented
+from the dark camera inherits dark unless it names a scheme. So the app target sets the
+appearance itself (`ProvidesSystemAppearance` in `App/NopeApp/Camera/SystemAppearance.swift`,
+also in the Lock Screen camera), on requests from `CameraScreen` through
+`EnvironmentValues.windowAppearance` (`WindowAppearanceRequest`):
+- the window's `overrideUserInterfaceStyle` is dark while the camera shows (`.camera(.dark)`),
+  so the camera stays dark under any sheet, and unspecified on first run and the access screens;
+- the window scene's `traitOverrides` are dark too while no screen that follows the system is
+  open, so the camera's own sheets sit in a dark scene, as they did with
+  `preferredColorScheme(_:)`: with a light scene the accessibility audit measured their
+  navigation titles (What's in This Photo, Astro Settings) as low contrast;
+- while Settings or Presets is open (`.showsSystemScreen(true)`, sent by
+  `screenAppearance(.system, isNightMode:)`, not in night mode), the scene isn't overridden: it
+  shows the system's setting, which the app reads, follows with `registerForTraitChanges`, and
+  passes as `EnvironmentValues.systemColorScheme`. Settings and Presets ask their sheet or
+  popover for that scheme by name. The value read before may be stale (the setting can change
+  while the scene shows the camera's dark), so on `.showsSystemScreen(true)` the app removes the
+  scene's override at once, reads the scene's style and returns it; the screen opens with it.
+
+The bridge applies the styles and reports the system's setting on the next turn of the main
+actor, never while SwiftUI updates its views (which SwiftUI warned about as "Modifying state
+during view update"), and doesn't report an unchanged setting again.
+
+Without the app's action (tests, previews) `CameraScreen` falls back to
+`preferredColorScheme(_:)` and Settings stays dark. The status bar, system menus and alerts over
+the camera follow the window and stay dark.
+
+`AppearanceUITests` checks light and dark Settings, Presets and first run by sampling the
+screen, a change of the setting while Settings is open and while only the camera shows, and
+that the camera's sheets stay dark in the light setting; the Settings screens are audited in both settings (docs/TESTING.md).
 
 ## Signing and secrets
 

@@ -529,6 +529,72 @@
         }
       }
     },
+    "Apple Watch Sends Only Commands": {
+      "comment": "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Apple Watch sendet nur Befehle"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El Apple Watch solo envía órdenes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "L’Apple Watch n’envoie que des commandes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch invia solo comandi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watchが送るのは操作だけ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch는 명령만 보냅니다"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch stuurt alleen opdrachten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O Apple Watch envia apenas comandos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 只发送指令"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 只傳送指令"
+          }
+        }
+      }
+    },
     "Apple encrypts and re-signs App Store apps, so there's no standard way to confirm a download was built from our public source.": {
       "comment": "Claim 15 in docs/research/privacy-claims.md. App Store is Apple's name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -1185,6 +1251,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Content Credentials"
+          }
+        }
+      }
+    },
+    "Counted on the RAW sensor data when the photo was taken, over every photosite of the active area. Clipped highlights are within 0.5% of the white level or above it; clipped shadows are within 0.5% of the black level or below it, where 0.5% is of the range between the two levels.": {
+      "comment": "Footer in the photo details: how the RAW clipping is defined and measured. A photosite is one sensor element. The white and black levels are the RAW file's own values. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Beim Aufnehmen an den RAW-Sensordaten gezählt, über alle Sensorpixel des aktiven Bereichs. Beschnittene Lichter liegen höchstens 0,5 % unter dem Weißwert oder darüber; beschnittene Tiefen höchstens 0,5 % über dem Schwarzwert oder darunter. Die 0,5 % beziehen sich auf den Bereich zwischen den beiden Werten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contado en los datos RAW del sensor al tomar la foto, en todos los fotositos del área activa. Las altas luces recortadas están a menos del 0,5 % del nivel de blanco o por encima; las sombras recortadas, a menos del 0,5 % del nivel de negro o por debajo. El 0,5 % es del rango entre ambos niveles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Compté sur les données RAW du capteur à la prise de vue, sur tous les photosites de la zone active. Les hautes lumières écrêtées sont à moins de 0,5 % du niveau de blanc ou au-dessus ; les ombres bouchées à moins de 0,5 % du niveau de noir ou en dessous. Les 0,5 % portent sur l’écart entre les deux niveaux."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contato sui dati RAW del sensore al momento dello scatto, su tutti i fotositi dell’area attiva. Le alte luci tagliate sono entro lo 0,5% dal livello del bianco o sopra; le ombre tagliate entro lo 0,5% dal livello del nero o sotto. Lo 0,5% è riferito all’intervallo tra i due livelli."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "撮影時にRAWセンサーデータで、有効領域のすべてのフォトサイトを数えています。白飛びは白レベルから0.5%以内かそれ以上、黒つぶれは黒レベルから0.5%以内かそれ以下です。0.5%は2つのレベルの間の幅に対する割合です。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "사진을 찍을 때 RAW 센서 데이터에서 유효 영역의 모든 포토사이트를 셉니다. 하이라이트 클리핑은 화이트 레벨에서 0.5% 이내이거나 그 이상, 섀도 클리핑은 블랙 레벨에서 0.5% 이내이거나 그 이하입니다. 0.5%는 두 레벨 사이 범위에 대한 비율입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geteld op de RAW-sensorgegevens toen de foto werd genomen, over elke fotosite van het actieve gebied. Geclipte hooglichten liggen binnen 0,5% van het witniveau of erboven; geclipte schaduwen binnen 0,5% van het zwartniveau of eronder, waarbij 0,5% geldt voor het bereik tussen beide niveaus."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Contado nos dados RAW do sensor quando a foto foi tirada, em todos os fotossítios da área ativa. Realces cortados ficam a até 0,5% do nível de branco ou acima dele; sombras cortadas, a até 0,5% do nível de preto ou abaixo dele. Os 0,5% são do intervalo entre os dois níveis."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍摄时在 RAW 传感器数据上统计，涵盖有效区域内的每个感光单元。高光剪切指距白电平 0.5% 以内或更高；暗部剪切指距黑电平 0.5% 以内或更低。0.5% 指两个电平之间范围的比例。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "拍攝時在 RAW 感光元件資料上統計，涵蓋有效區域內的每個感光單元。高光剪切指距白電平 0.5% 以內或更高；暗部剪切指距黑電平 0.5% 以內或更低。0.5% 指兩個電平之間範圍的比例。"
           }
         }
       }
@@ -2307,6 +2439,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "人臉與自動對焦"
+          }
+        }
+      }
+    },
+    "Fixed values the file standard asks for, such as version numbers and the color space. They say nothing about you, your phone or the photo. On by default.": {
+      "comment": "Explains the Standard File Tags switch. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Feste Werte, die der Dateistandard verlangt, etwa Versionsnummern und der Farbraum. Sie sagen nichts über dich, dein Telefon oder das Foto. Standardmäßig an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores fijos que pide el estándar del archivo, como números de versión y el espacio de color. No dicen nada de ti, de tu teléfono ni de la foto. Activado de forma predeterminada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valeurs fixes demandées par la norme du fichier, comme les numéros de version et l'espace colorimétrique. Elles ne disent rien de vous, de votre téléphone ni de la photo. Activé par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valori fissi richiesti dallo standard del file, come i numeri di versione e lo spazio colore. Non dicono nulla di te, del tuo telefono o della foto. Attivo per impostazione predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "ファイル規格が求める固定の値（バージョン番号や色空間など）です。あなた、電話、写真について何も示しません。デフォルトでオンです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "버전 번호와 색 공간처럼 파일 표준이 요구하는 고정 값입니다. 사용자, 휴대폰, 사진에 대해 아무것도 알려 주지 않습니다. 기본적으로 켜져 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vaste waarden die de bestandsstandaard vraagt, zoals versienummers en de kleurruimte. Ze zeggen niets over jou, je telefoon of de foto. Standaard aan."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Valores fixos que o padrão do arquivo pede, como números de versão e o espaço de cor. Eles não dizem nada sobre você, seu telefone ou a foto. Ativado por padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "文件标准要求的固定值，例如版本号和色彩空间。它们不透露关于你、你的手机或照片的任何信息。默认开启。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "檔案標準要求的固定值，例如版本號和色彩空間。它們不透露關於你、你的手機或照片的任何資訊。預設開啟。"
           }
         }
       }
@@ -3697,6 +3895,72 @@
         }
       }
     },
+    "Location stays off, because location access isn't allowed for nope. You can allow it in Settings.": {
+      "comment": "Shown after applying a settings preset that includes Location when location access is off. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "„Standort“ bleibt aus, weil der Standortzugriff für nope. nicht erlaubt ist. Du kannst ihn in den Einstellungen erlauben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ubicación sigue desactivada porque el acceso a la ubicación no está permitido para nope. Puedes permitirlo en Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localisation reste désactivée, car l’accès à la localisation n’est pas autorisé pour nope. Vous pouvez l’autoriser dans Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Posizione resta disattivata, perché l’accesso alla posizione non è consentito per nope. Puoi consentirlo in Impostazioni."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. に位置情報へのアクセスが許可されていないため、「位置情報」はオフのままです。「設定」で許可できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope.에 위치 접근이 허용되지 않아 위치가 꺼진 상태로 유지됩니다. 설정에서 허용할 수 있습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Locatie blijft uit, omdat toegang tot de locatie niet is toegestaan voor nope. Je kunt het toestaan in Instellingen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Localização continua desativada porque o acesso à localização não está permitido para o nope. Você pode permiti-lo em Ajustes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "“位置”保持关闭，因为 nope. 未获准访问位置。你可以在“设置”中允许。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "「位置」保持關閉，因為 nope. 未獲准取用位置。你可以在「設定」中允許。"
+          }
+        }
+      }
+    },
     "Locked": {
       "comment": "VoiceOver: this detail is always saved and can't be turned off. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -4419,6 +4683,336 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "不在檔案中：曝光設定在「設定」中已關閉。"
+          }
+        }
+      }
+    },
+    "Not measured: nope. can't read how this camera lays out its RAW samples.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample format isn't one nope. reads. Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: nope. kann nicht lesen, wie diese Kamera ihre RAW-Werte anordnet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: nope. no puede leer cómo organiza esta cámara sus muestras RAW."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : nope. ne sait pas lire la disposition des échantillons RAW de cet appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: nope. non sa leggere come questa fotocamera dispone i campioni RAW."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：nope. はこのカメラのRAWサンプルの並びを読み取れません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: nope.은 이 카메라의 RAW 샘플 배열을 읽을 수 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: nope. kan niet lezen hoe deze camera zijn RAW-samples ordent."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: o nope. não consegue ler como esta câmera organiza as amostras RAW."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：nope. 无法读取此相机 RAW 样本的排列方式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：nope. 無法讀取此相機 RAW 樣本的排列方式。"
+          }
+        }
+      }
+    },
+    "Not measured: the RAW samples and the RAW file differ in size.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera's RAW samples and its RAW file don't have the same size, so they can't be compared.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: RAW-Werte und RAW-Datei haben unterschiedliche Größen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: las muestras RAW y el archivo RAW tienen tamaños distintos."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : les échantillons RAW et le fichier RAW n’ont pas la même taille."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: i campioni RAW e il file RAW hanno dimensioni diverse."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：RAWサンプルとRAWファイルのサイズが異なります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: RAW 샘플과 RAW 파일의 크기가 다릅니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: de RAW-samples en het RAW-bestand verschillen in grootte."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: as amostras RAW e o arquivo RAW têm tamanhos diferentes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：RAW 样本与 RAW 文件的尺寸不同。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：RAW 樣本與 RAW 檔案的尺寸不同。"
+          }
+        }
+      }
+    },
+    "Not measured: the RAW samples don't fit the RAW file's white level.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample values are larger than the RAW file's white level allows, so they can't be compared.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: Die RAW-Werte passen nicht zum Weißwert der RAW-Datei."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: las muestras RAW no encajan con el nivel de blanco del archivo RAW."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : les échantillons RAW ne correspondent pas au niveau de blanc du fichier RAW."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: i campioni RAW non corrispondono al livello del bianco del file RAW."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：RAWサンプルがRAWファイルの白レベルに合いません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: RAW 샘플이 RAW 파일의 화이트 레벨과 맞지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: de RAW-samples passen niet bij het witniveau van het RAW-bestand."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: as amostras RAW não se encaixam no nível de branco do arquivo RAW."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：RAW 样本与 RAW 文件的白电平不符。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：RAW 樣本與 RAW 檔案的白電平不符。"
+          }
+        }
+      }
+    },
+    "Not measured: the camera gave no RAW samples to count.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the camera returned no RAW sensor samples with the photo.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: Die Kamera hat keine RAW-Werte zum Zählen geliefert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: la cámara no dio muestras RAW que contar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : l’appareil n’a fourni aucun échantillon RAW à compter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: la fotocamera non ha fornito campioni RAW da contare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：カメラから数えるためのRAWサンプルが得られませんでした。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: 카메라가 셀 RAW 샘플을 제공하지 않았습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: de camera gaf geen RAW-samples om te tellen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: a câmera não forneceu amostras RAW para contar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：相机没有提供可统计的 RAW 样本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：相機沒有提供可統計的 RAW 樣本。"
+          }
+        }
+      }
+    },
+    "Not measured: the camera's RAW file doesn't give black and white levels that nope. can apply.": {
+      "comment": "In the photo details, why the RAW clipping isn't shown: the RAW file's black and white levels are missing or in a form nope. doesn't apply. Keep nope. unchanged.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht gemessen: Die RAW-Datei der Kamera enthält keine Schwarz- und Weißwerte, die nope. anwenden kann."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No medido: el archivo RAW de la cámara no da niveles de negro y blanco que nope. pueda aplicar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non mesuré : le fichier RAW de l’appareil ne donne pas de niveaux de noir et de blanc que nope. puisse appliquer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non misurato: il file RAW della fotocamera non fornisce livelli di nero e di bianco che nope. possa applicare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測定：カメラのRAWファイルに、nope. が適用できる黒レベルと白レベルがありません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "측정 안 됨: 카메라의 RAW 파일에 nope.이 적용할 수 있는 블랙 및 화이트 레벨이 없습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet gemeten: het RAW-bestand van de camera geeft geen zwart- en witniveaus die nope. kan toepassen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Não medido: o arquivo RAW da câmera não traz níveis de preto e branco que o nope. possa aplicar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未测量：相机的 RAW 文件没有提供 nope. 可以使用的黑电平和白电平。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "未測量：相機的 RAW 檔案沒有提供 nope. 可以使用的黑電平和白電平。"
           }
         }
       }
@@ -6073,6 +6667,72 @@
         }
       }
     },
+    "Presets are kept on this device only.": {
+      "comment": "Privacy note under the settings presets. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Presets werden nur auf diesem Gerät gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Los preajustes se guardan solo en este dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les préréglages sont conservés uniquement sur cet appareil."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le preimpostazioni sono conservate solo su questo dispositivo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "プリセットはこのデバイスにのみ保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "프리셋은 이 기기에만 보관됩니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Presets worden alleen op dit apparaat bewaard."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "As predefinições ficam guardadas apenas neste dispositivo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "预设仅保存在此设备上。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "預設僅保存在此裝置上。"
+          }
+        }
+      }
+    },
     "Processed by the phone's camera: this lens can't save RAW": {
       "comment": "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.",
       "extractionState": "manual",
@@ -7261,6 +7921,72 @@
         }
       }
     },
+    "Standard File Tags": {
+      "comment": "Switch: files carry the fixed tags the photo file standard (Exif) asks for, such as version numbers and the color space.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standard-Datei-Tags"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Etiquetas estándar del archivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Balises standard du fichier"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tag standard del file"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準のファイルタグ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "표준 파일 태그"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Standaard bestandstags"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tags padrão do arquivo"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "标准文件标签"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "標準檔案標籤"
+          }
+        }
+      }
+    },
     "Sub-Second Time": {
       "comment": "Metadata item: fractions of a second in the time taken. Honesty wording: a fluent human must review every translation before release.",
       "extractionState": "manual",
@@ -8445,6 +9171,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 絕不會做的事"
+          }
+        }
+      }
+    },
+    "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.": {
+      "comment": "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wenn du nope. während einer Serie oder beim Sichern von Fotos verlässt, zeigen der Sperrbildschirm und die Dynamic Island den Fortschritt. Nur Zahlen, auf diesem iPhone aktualisiert und nie irgendwohin gesendet. Standardmäßig aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Si sales de nope. durante una serie o mientras se guardan fotos, muestra el progreso en la pantalla bloqueada y en la Dynamic Island. Solo recuentos, actualizados en este iPhone y nunca enviados a ningún sitio. Desactivado de forma predeterminada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Si vous quittez nope. pendant une série ou l’enregistrement de photos, affiche la progression sur l’écran verrouillé et dans la Dynamic Island. Seulement des nombres, mis à jour sur cet iPhone et jamais envoyés nulle part. Désactivé par défaut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Se esci da nope. durante una serie o mentre le foto vengono salvate, mostra l’avanzamento nella schermata di blocco e nella Dynamic Island. Solo conteggi, aggiornati su questo iPhone e mai inviati altrove. Disattivato per impostazione predefinita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "シリーズ撮影中や写真の保存中にnope.を離れると、ロック画面とDynamic Islandに進行状況を表示します。表示するのは枚数のみで、このiPhone上で更新され、どこにも送信されません。デフォルトはオフです。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "시리즈 촬영 중이거나 사진을 저장하는 동안 nope.을 떠나면 잠금 화면과 Dynamic Island에 진행 상황을 표시합니다. 개수만 표시하며, 이 iPhone에서 업데이트되고 어디로도 전송되지 않습니다. 기본값은 끔입니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Als je nope. verlaat tijdens een serie of terwijl foto’s worden bewaard, toont het de voortgang op het toegangsscherm en in het Dynamic Island. Alleen aantallen, bijgewerkt op deze iPhone en nooit ergens naartoe gestuurd. Standaard uit."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ao sair do nope. durante uma série ou enquanto as fotos são salvas, mostra o progresso na Tela Bloqueada e na Dynamic Island. Somente contagens, atualizadas neste iPhone e nunca enviadas a lugar nenhum. Desativado por padrão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在系列拍摄过程中或照片存储时离开 nope.，会在锁定屏幕和灵动岛上显示进度。仅显示数量，在这台 iPhone 上更新，从不发送到任何地方。默认关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "在系列拍攝期間或照片儲存時離開 nope.，會在鎖定畫面和動態島上顯示進度。僅顯示數量，在這台 iPhone 上更新，絕不傳送到任何地方。預設為關閉。"
           }
         }
       }
@@ -9699,6 +10491,72 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "nope. 從不寫入此項。"
+          }
+        }
+      }
+    },
+    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection.": {
+      "comment": "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. auf der Apple Watch sendet nur deine Befehle, etwa den Auslöser und die Verzögerung, an nope. auf deinem iPhone und erhält nur einen kurzen Status zurück, etwa „Gesichert und signiert“. Keine Fotos und keine Fotodetails gelangen auf die Uhr. watchOS und iOS übertragen diese Nachrichten über ihre eigene Verbindung zwischen deinen gekoppelten Geräten; nope. öffnet keine Netzwerkverbindung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. en el Apple Watch solo envía tus órdenes, como el disparador y el retardo, a nope. en tu iPhone, y solo recibe un estado breve, como «Guardada y firmada». Ninguna foto ni ningún detalle de las fotos llega al reloj. watchOS e iOS transmiten estos mensajes por su propia conexión entre tus dispositivos enlazados; nope. no abre ninguna conexión de red."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. sur l’Apple Watch envoie uniquement vos commandes, comme le déclencheur et le délai, à nope. sur votre iPhone, et ne reçoit en retour qu’un bref état, comme « Enregistrée et signée ». Aucune photo ni aucun détail de photo n’est envoyé à la montre. watchOS et iOS transmettent ces messages par leur propre connexion entre vos appareils jumelés ; nope. n’ouvre aucune connexion réseau."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. su Apple Watch invia solo i tuoi comandi, come lo scatto e il ritardo, a nope. sul tuo iPhone, e riceve solo uno stato breve, come “Salvata e firmata”. Nessuna foto né alcun dettaglio delle foto arriva all’orologio. watchOS e iOS trasmettono questi messaggi tramite la propria connessione tra i dispositivi abbinati; nope. non apre alcuna connessione di rete."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watchのnope.は、シャッターや遅延などの操作だけをiPhoneのnope.に送り、「保存・署名済み」などの短い状態だけを受け取ります。写真や写真の詳細がウォッチに送られることはありません。これらのメッセージは、ペアリングされたデバイス間の独自の接続を使ってwatchOSとiOSが運びます。nope.はネットワーク接続を開きません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch의 nope.는 셔터와 지연 같은 명령만 iPhone의 nope.로 보내고, '저장 및 서명됨' 같은 짧은 상태만 받습니다. 사진이나 사진 세부 정보는 워치로 전송되지 않습니다. 이 메시지는 watchOS와 iOS가 페어링된 기기 사이의 자체 연결로 전달하며, nope.는 네트워크 연결을 열지 않습니다."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "nope. op Apple Watch stuurt alleen je opdrachten, zoals de sluiter en de vertraging, naar nope. op je iPhone, en krijgt alleen een korte status terug, zoals 'Bewaard en ondertekend'. Er gaan geen foto's of fotogegevens naar het horloge. watchOS en iOS brengen deze berichten over via hun eigen verbinding tussen je gekoppelde apparaten; nope. opent geen netwerkverbinding."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "O nope. no Apple Watch envia apenas seus comandos, como o obturador e o atraso, ao nope. no seu iPhone, e recebe de volta apenas um status curto, como “Salva e assinada”. Nenhuma foto nem detalhe de foto vai para o relógio. O watchOS e o iOS levam essas mensagens pela própria conexão entre seus dispositivos emparelhados; o nope. não abre nenhuma conexão de rede."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 上的 nope. 只会把你的指令（例如快门和延迟）发送到 iPhone 上的 nope.，并只收回简短的状态，例如“已存储并签名”。不会有任何照片或照片详细信息发送到手表。这些消息由 watchOS 和 iOS 通过你已配对设备之间的自有连接传送；nope. 不会打开任何网络连接。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Apple Watch 上的 nope. 只會把你的指令（例如快門和延遲）傳送到 iPhone 上的 nope.，並只收回簡短的狀態，例如「已儲存並簽署」。不會有任何照片或照片詳細資訊傳送到手錶。這些訊息由 watchOS 和 iOS 透過你已配對裝置之間的自有連線傳送；nope. 不會開啟任何網路連線。"
           }
         }
       }

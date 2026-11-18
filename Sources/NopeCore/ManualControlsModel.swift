@@ -64,6 +64,15 @@ public final class ManualControlsModel {
     /// Auto.
     public internal(set) var nearFocusLimit = false
 
+    /// Whether autofocus is limited to far subjects (Far Focus, issue #57). Off by default; never
+    /// on with ``nearFocusLimit``; reset by All Auto.
+    public internal(set) var farFocusLimit = false
+
+    /// Whether faces the camera detects steer autofocus and auto exposure. On by default, the
+    /// system's behavior; the app sets it from the person's Face Detection setting
+    /// (``AutoControlIntent/setFollowsFaces(_:)``). All Auto doesn't change it.
+    public internal(set) var followsFaces = true
+
     /// How fast a shutter full auto prefers. ``FastShutter/handheld`` by default.
     public internal(set) var fastShutter = FastShutter.handheld
 
@@ -226,8 +235,45 @@ public final class ManualControlsModel {
     /// The base exposure is the person's ISO and shutter where set, otherwise the camera's
     /// reading, which already includes exposure compensation.
     func bracketFrames() -> [BracketFrame]? {
-        guard isEnabled, let bracket, let lens, let isoRange = lens.isoRange, let durationRange = lens.exposureDurationRange,
-            let iso = value(of: .iso), let duration = value(of: .shutter)
+        guard isEnabled, let bracket else { return nil }
+        return plan(bracket, iso: value(of: .iso), duration: value(of: .shutter))
+    }
+
+    /// Whether the selected lens can take this bracket: it reports ISO and shutter ranges, the
+    /// frame count is one ``bracketFrameCounts`` offers, and the step is one of
+    /// ``BracketSettings/steps``. The same limits as the bracket in Pro Tools.
+    ///
+    /// - Parameter bracket: The bracket.
+    func canBracket(_ bracket: BracketSettings) -> Bool {
+        lens?.isoRange != nil && lens?.exposureDurationRange != nil
+            && bracketFrameCounts.contains(bracket.frameCount) && BracketSettings.steps.contains(bracket.step)
+    }
+
+    /// The frames of a bracket taken once, for a Siri or Shortcuts request (issue #62), whether
+    /// or not manual controls are on. It leaves ``bracket`` and every setting as they are.
+    ///
+    /// The base exposure is the person's ISO and shutter where set (only while manual controls
+    /// are on; otherwise the settings are automatic), otherwise the camera's last reading.
+    ///
+    /// - Parameter bracket: The bracket.
+    /// - Returns: The frames, or `nil` when the lens can't take it (``canBracket(_:)``) or the
+    ///   camera hasn't reported an exposure yet.
+    func bracketFrames(once bracket: BracketSettings) -> [BracketFrame]? {
+        guard canBracket(bracket) else { return nil }
+        return plan(
+            bracket, iso: settings.iso ?? lastReading?.iso, duration: settings.shutter ?? lastReading?.exposureDuration)
+    }
+
+    /// Plans a bracket's frames around a base exposure, within the lens's ranges.
+    ///
+    /// - Parameters:
+    ///   - bracket: The bracket.
+    ///   - iso: The base ISO, or `nil` when there is none yet.
+    ///   - duration: The base exposure duration in seconds, or `nil` when there is none yet.
+    /// - Returns: The frames, or `nil` without a base exposure or the lens's ranges.
+    private func plan(_ bracket: BracketSettings, iso: Double?, duration: Double?) -> [BracketFrame]? {
+        guard let lens, let isoRange = lens.isoRange, let durationRange = lens.exposureDurationRange, let iso,
+            let duration
         else { return nil }
         return BracketFrame.plan(
             offsets: bracket.offsets, base: BracketFrame(iso: iso, exposureDuration: duration),
@@ -250,12 +296,15 @@ public final class ManualControlsModel {
 
     /// Handles one intent. ``CameraModel/send(_:)`` calls it.
     ///
-    /// Settings intents and starting a series have no effect while manual controls are off.
+    /// Settings intents have no effect while manual controls are off. Interval shooting works
+    /// in full auto too (each photo is then a full-auto photo), so choosing, starting and
+    /// stopping a series always applies.
     ///
     /// - Parameters:
     ///   - intent: The intent.
-    ///   - capture: Takes one photo the way the shutter does; used by interval shooting.
-    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Void) async {
+    ///   - capture: Takes one photo of an interval series the way the shutter does, waiting
+    ///     while the series is paused, and returns whether the photo was taken and saved.
+    func handle(_ intent: ManualControlIntent, capture: @escaping @MainActor () async -> Bool) async {
         var next = settings
         switch intent {
         case .setEnabled(let enabled):
@@ -268,7 +317,7 @@ public final class ManualControlsModel {
             self.interval = interval
             return
         case .startInterval:
-            if isEnabled { startInterval(capture: capture) }
+            startInterval(capture: capture)
             return
         case .stopInterval:
             stopInterval()
@@ -312,7 +361,8 @@ public final class ManualControlsModel {
 
     // MARK: - Rules
 
-    /// Turns manual controls on or off. Off returns everything to automatic and stops a series.
+    /// Turns manual controls on or off. Off returns everything to automatic; a running interval
+    /// series continues, with full-auto photos from then on.
     ///
     /// - Parameter enabled: Whether manual controls are on.
     private func setEnabled(_ enabled: Bool) async {
@@ -324,7 +374,6 @@ public final class ManualControlsModel {
             if longestAutoShutter != nil { await applyCurrentControls() }
             return
         }
-        stopInterval()
         bracket = nil
         reading = nil
         let previous = settings
@@ -471,18 +520,21 @@ public final class ManualControlsModel {
     // MARK: - Interval shooting
 
     /// Starts an interval series: takes a photo, waits ``interval``, and repeats until
-    /// ``IntervalSettings/count`` photos are taken or the series is stopped. A photo the camera
-    /// can't take, for example during a pause, is skipped and still counted.
+    /// ``IntervalSettings/count`` photos are taken or the series is stopped. Only photos taken and
+    /// saved are counted: `capture` waits while the series is paused (``setIntervalPaused(_:)``)
+    /// instead of skipping a photo. A photo that can't be taken for another reason (the camera
+    /// stopped for good, or the photo failed) ends the series, and the camera says why.
     ///
-    /// - Parameter capture: Takes one photo.
-    private func startInterval(capture: @escaping @MainActor () async -> Void) {
+    /// - Parameter capture: Takes one photo and returns whether it was taken and saved.
+    private func startInterval(capture: @escaping @MainActor () async -> Bool) {
         guard intervalProgress == nil else { return }
         let series = interval
         intervalProgress = IntervalProgress(taken: 0, total: series.count)
         intervalTask = Task {
             for taken in 1...series.count {
-                await capture()
+                let wasTaken = await capture()
                 guard !Task.isCancelled else { return }
+                guard wasTaken else { break }
                 intervalProgress = IntervalProgress(taken: taken, total: series.count)
                 guard taken < series.count else { break }
                 do {
@@ -494,6 +546,15 @@ public final class ManualControlsModel {
             intervalProgress = nil
             intervalTask = nil
         }
+    }
+
+    /// Marks the running series as paused or running again, for the camera screen and the Live
+    /// Activity. Does nothing while no series runs.
+    ///
+    /// - Parameter isPaused: Whether the series is paused.
+    func setIntervalPaused(_ isPaused: Bool) {
+        guard let progress = intervalProgress, progress.isPaused != isPaused else { return }
+        intervalProgress = IntervalProgress(taken: progress.taken, total: progress.total, isPaused: isPaused)
     }
 
     /// Stops the running interval series, if any.

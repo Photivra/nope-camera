@@ -127,6 +127,36 @@ extension NopeAppUITests {
         XCTAssertEqual(centerColor(app, of: app.otherElements["Viewfinder"].frame), .red)
     }
 
+    /// The viewfinder is drawn behind the camera interface in every mode, so it stays the same
+    /// view when night mode changes; in the scrolling layout it must still move with the
+    /// picture.
+    ///
+    /// The manual controls list is shown so the scrolling layout is taller than the screen on
+    /// the iPad too: without it, a portrait iPad fits the whole layout at the largest text size,
+    /// so a drag only bounced and the picture returned to where it was.
+    @MainActor
+    func testViewfinderFollowsThePictureInTheScrollingLayout() throws {
+        let app = launch(
+            "manual",
+            extraArguments: Self.largestTextSize + ["-NopeSettings.showsManualControls", "YES", "-NopeSimulatedViewfinder", "white"])
+        let viewfinder = app.otherElements["Viewfinder"]
+        XCTAssertTrue(viewfinder.waitForExistence(timeout: 10))
+        settle()
+        let before = viewfinder.frame
+        XCTAssertEqual(centerColor(app, of: before), .white)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+        start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -120)))
+        settle()
+        let after = viewfinder.frame
+        XCTAssertLessThan(after.minY, before.minY - 40, "the layout scrolled")
+        // The white picture is where the viewfinder element is now, and not below it, where it
+        // was before the scroll.
+        let visible = after.intersection(app.windows.firstMatch.frame)
+        XCTAssertEqual(centerColor(app, of: visible), .white)
+        let below = CGRect(x: after.minX, y: after.maxY + 8, width: after.width, height: 2)
+        XCTAssertNotEqual(centerColor(app, of: below), .white)
+    }
+
     @MainActor
     func testNightModeSettingsScreensPassAccessibilityAudits() throws {
         let app = launch("photosDenied", extraArguments: Self.nightModeOn)
@@ -145,16 +175,58 @@ extension NopeAppUITests {
         // As in testSettingsScreensPassAccessibilityAudits: Dynamic Type is checked at the
         // largest size below.
         try auditSettingsScreens(app, checksDynamicType: false, checksContrast: !isPad)
-        app.terminate()
+    }
 
+    // The largest text size and right to left are separate tests: together with the default
+    // size they took 770 seconds in one CI test (build 43786103024), most of a shard.
+
+    @MainActor
+    func testNightModeSettingsScreensAtTheLargestTextSize() throws {
         let large = launch("photosDenied", extraArguments: Self.nightModeOn + Self.largestTextSize)
         XCTAssertTrue(large.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditSettingsScreens(large, checksContrast: !isPad)
-        large.terminate()
+    }
 
+    @MainActor
+    func testNightModeSettingsScreensRightToLeft() throws {
         let rightToLeft = launch("photosDenied", extraArguments: Self.nightModeOn + Self.rightToLeft)
         XCTAssertTrue(rightToLeft.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)
+    }
+
+    /// The Choose Details footer and header, which the audit's Dynamic Type check is not asked
+    /// about (``NopeAppUITests/measuredDynamicTypeLabels``), and the master switch's title are
+    /// measured here instead: each is larger at every one of the nine text sizes than at the
+    /// size before, in night mode, where Settings is a sheet on iPad too.
+    @MainActor
+    func testChooseDetailsTextGrowsAtEveryTextSize() throws {
+        let categories = [
+            "L", "XL", "XXL", "XXXL", "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL",
+            "AccessibilityXXXL",
+        ]
+        let labels = Self.measuredDynamicTypeLabels + ["Remove All Optional Details"]
+        var previous: [String: CGFloat] = [:]
+        for category in categories {
+            let app = launch(
+                "photosDenied",
+                extraArguments: Self.nightModeOn + ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory" + category])
+            XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
+            app.buttons["Settings"].tap()
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+            open(app, row: "Choose Details")
+            XCTAssertTrue(app.navigationBars["Choose Details"].waitForExistence(timeout: 5))
+            for label in labels {
+                let text = app.staticTexts[label]
+                XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
+                // The text's area: a line that wraps gets narrower and taller.
+                let area = text.frame.width * text.frame.height
+                if let before = previous[label] {
+                    XCTAssertGreaterThan(area, before, "\(label) isn't larger at \(category) than at the size before")
+                }
+                previous[label] = area
+            }
+            app.terminate()
+        }
     }
 
     // MARK: - Pixels
@@ -185,6 +257,75 @@ extension NopeAppUITests {
         // Anti-aliased edges and the system's glass highlights mix in a little green and blue;
         // a pixel counts when green or blue is more than a quarter of its red (and visible).
         countPixels(app, outside: excluded) { red, green, blue in max(green, blue) > max(24, red / 4) }
+    }
+
+    /// At the largest text size the camera scrolls, and the viewfinder, drawn behind the
+    /// interface, stays inside the scroll view: no yellow from a pure yellow viewfinder shows in
+    /// the pinned shutter row or above the scroll view, before or after scrolling the picture
+    /// past the top. It ran into the shutter row on short screens (iPhone SE, the iPhone Duo's
+    /// outer display) and past the top when scrolled.
+    @MainActor
+    func testViewfinderStaysInsideTheScrollingLayout() throws {
+        let app = launch(
+            "manual",
+            extraArguments: ["-NopeSettings.showsManualControls", "YES", "-NopeSimulatedViewfinder", "yellow"]
+                + Self.largestTextSize)
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        let scrollView = app.scrollViews.firstMatch
+        XCTAssertTrue(scrollView.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(yellowPixels(app, outside: scrollView.frame), -1)
+        XCTAssertEqual(yellowPixels(app, outside: scrollView.frame), 0, "the viewfinder shows outside the scroll view")
+        // Scroll the picture partly past the scroll view's top edge.
+        let start = scrollView.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.6))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -250)))
+        XCTAssertEqual(yellowPixels(app, outside: scrollView.frame), 0, "the scrolled viewfinder shows outside the scroll view")
+    }
+
+    /// In right-to-left layout the viewfinder, drawn behind the interface, fills the picture's
+    /// frame and nothing else. Beside the control column (iPad) it was drawn a column's width
+    /// to the left, under the column, which left the picture's right edge black; the warning
+    /// chips then crossed the picture's edge, and their contrast audit failed on some runs.
+    @MainActor
+    func testViewfinderFillsThePictureRightToLeft() throws {
+        let app = launch("manual", extraArguments: Self.rightToLeft + ["-NopeSimulatedViewfinder", "yellow"])
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
+        let viewfinder = app.otherElements["Viewfinder"]
+        XCTAssertTrue(viewfinder.waitForExistence(timeout: 5))
+        let frame = viewfinder.frame
+        XCTAssertEqual(yellowPixels(app, outside: frame), 0, "the viewfinder shows outside the picture's frame")
+        // Halfway down, just inside each side edge, where no control is drawn over the picture.
+        XCTAssertTrue(isYellow(app, at: CGPoint(x: frame.minX + 8, y: frame.midY)), "the picture's left edge isn't the viewfinder")
+        XCTAssertTrue(isYellow(app, at: CGPoint(x: frame.maxX - 8, y: frame.midY)), "the picture's right edge isn't the viewfinder")
+    }
+
+    /// Whether the screen is pure yellow (the simulated yellow viewfinder) at a point.
+    @MainActor
+    private func isYellow(_ app: XCUIApplication, at point: CGPoint) -> Bool {
+        let image = XCUIScreen.main.screenshot().image
+        guard let pixels = Pixels(image) else { return false }
+        let (red, green, blue) = pixels.color(x: Int(point.x * image.scale), y: Int(point.y * image.scale))
+        return red > 200 && green > 200 && blue < 60
+    }
+
+    /// Counts sampled pure yellow pixels (the simulated yellow viewfinder) outside a frame, or
+    /// -1 when the screenshot can't be read.
+    @MainActor
+    private func yellowPixels(_ app: XCUIApplication, outside frame: CGRect) -> Int {
+        settle()
+        let image = XCUIScreen.main.screenshot().image
+        guard let pixels = Pixels(image) else { return -1 }
+        let scale = image.scale
+        let size = app.windows.firstMatch.frame.size
+        // A point's margin inside the frame's edges, for anti-aliasing.
+        let inside = frame.insetBy(dx: -1, dy: -1)
+        var count = 0
+        for y in stride(from: CGFloat(0), to: size.height, by: 4) {
+            for x in stride(from: CGFloat(0), to: size.width, by: 4) where !inside.contains(CGPoint(x: x, y: y)) {
+                let (red, green, blue) = pixels.color(x: Int(x * scale), y: Int(y * scale))
+                if red > 200, green > 200, blue < 60 { count += 1 }
+            }
+        }
+        return count
     }
 
     /// Closes the quick-controls tray if it is open.

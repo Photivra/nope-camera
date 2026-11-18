@@ -2,10 +2,10 @@ import Foundation
 
 /// The shutter's drive modes: single, the self-timer and bursts (issues #37, #39 and #46).
 extension CameraModel {
-    /// Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst
-    /// or astro run runs, which pressing the shutter stops.
+    /// Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
+    /// interval series or astro run runs, which pressing the shutter stops.
     public var canPressShutter: Bool {
-        canCapture || drive.isBusy || astro.isRunning
+        canCapture || drive.isBusy || astro.isRunning || manual.intervalProgress != nil
     }
 
     /// Whether the app should take the hardware shutter buttons (the volume buttons and the
@@ -23,9 +23,9 @@ extension CameraModel {
         return deviceStatus.storageWarning(bytesPerPhoto: PhotoSizeEstimate.bytes(for: lens, settings: saveSettings))
     }
 
-    /// What the shutter does: stops a running countdown or burst, or else applies the drive mode:
-    /// one photo, the self-timer, or a burst. While the astro helper is on, it starts or stops
-    /// an astro run instead (``AstroModel``).
+    /// What the shutter does: stops a running countdown, burst or interval series, or else
+    /// applies the drive mode: one photo, the self-timer, a burst or an interval series. While
+    /// the astro helper is on, it starts or stops an astro run instead (``AstroModel``).
     func pressShutter() async {
         if astro.isOn {
             pressAstroShutter()
@@ -39,10 +39,17 @@ extension CameraModel {
             drive.requestBurstStop()
             return
         }
+        // A series started from Pro Tools, Siri or this mode: the shutter stops it, as it stops
+        // a burst.
+        if manual.intervalProgress != nil {
+            await send(.manual(.stopInterval))
+            return
+        }
         switch drive.mode {
         case .single: await capture()
         case .timer(let delay): startTimer(seconds: delay.seconds)
         case .burst: await takeBurst()
+        case .interval: await send(.manual(.startInterval))
         }
     }
 
@@ -82,14 +89,21 @@ extension CameraModel {
         }
     }
 
-    /// Starts the self-timer, which takes one photo when it reaches zero. Ignored while a photo
-    /// can't be taken or a countdown or burst runs.
+    /// Starts the self-timer, which takes one photo when it reaches zero, or what `shot` takes.
+    /// Ignored while a photo can't be taken or a countdown or burst runs.
     ///
-    /// - Parameter seconds: The delay, in seconds.
-    private func startTimer(seconds: Int) {
+    /// - Parameters:
+    ///   - seconds: The delay, in seconds.
+    ///   - shot: What to take at zero instead of one photo, such as the burst or bracket a Siri
+    ///     or Shortcuts request asked for (issue #62), or `nil` for one photo.
+    func startTimer(seconds: Int, shot: (@MainActor () async -> Void)? = nil) {
         guard canCapture, !drive.isBusy else { return }
         drive.countdown.start(seconds: seconds) { [weak self] in
-            await self?.capture()
+            if let shot {
+                await shot()
+            } else {
+                await self?.capture()
+            }
         }
     }
 
@@ -107,8 +121,12 @@ extension CameraModel {
     /// frames.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
-    private func takeBurst() async {
-        await takeFrames(limit: DriveModel.maximumBurstFrames, tracker: drive, stopsOnLowBattery: false)
+    ///
+    /// - Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
+    ///   shutter, or the count a Siri or Shortcuts request asked for (issue #62).
+    func takeBurst(frames: Int = DriveModel.maximumBurstFrames) async {
+        let end: BurstEnd = frames < DriveModel.maximumBurstFrames ? .countReached : .limitReached
+        await takeFrames(limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end)
     }
 
     /// Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -121,10 +139,18 @@ extension CameraModel {
     ///   - tracker: What the run reports its progress to.
     ///   - stopsOnLowBattery: Whether the run also stops when the battery is at or below
     ///     ``AstroModel/stopBatteryLevel`` and not charging.
+    ///   - endAtLimit: What the run reports when it takes all `limit` frames.
+    ///   - pausesWithCamera: Whether the run pauses instead of stopping when the app leaves the
+    ///     foreground or the camera pauses, and continues afterwards (the astro helper, issue
+    ///     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again, also
+    ///     when its error arrives before the pause does (`failureWasAPause()`).
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
-    func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool) async {
-        guard canCapture, let lens = selectedLens else { return }
+    func takeFrames(
+        limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached,
+        pausesWithCamera: Bool = false
+    ) async {
+        guard canCapture || (pausesWithCamera && seriesShouldPause), let lens = selectedLens else { return }
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
@@ -138,9 +164,25 @@ extension CameraModel {
         captureStatus = .capturing
         var saved: [SavedPhoto] = []
         var failure: CaptureError?
-        var end = BurstEnd.limitReached
+        var end = endAtLimit
         var pending: Task<Result<SavedPhoto, CaptureError>, Never>?
-        for _ in 0..<limit {
+        var taken = 0
+        while taken < limit {
+            if pausesWithCamera, seriesShouldPause {
+                // Every frame taken is saved before the pause, so nothing waits in memory.
+                if let previous = pending {
+                    pending = nil
+                    if let error = await collect(previous, into: &saved, tracker: tracker) {
+                        failure = error
+                        break
+                    }
+                }
+                guard await pauseAstroRun() else {
+                    end = .stopped
+                    break
+                }
+                continue
+            }
             if let reason = stopReason(tracker, bytesPerPhoto: bytesPerPhoto, stopsOnLowBattery: stopsOnLowBattery) {
                 end = reason
                 break
@@ -150,9 +192,12 @@ extension CameraModel {
             do {
                 photo = try await backend.capturePhoto(request)
             } catch {
+                // A frame cut short by leaving the app or a camera pause is taken again after it.
+                if pausesWithCamera, await failureWasAPause() { continue }
                 failure = error
                 break
             }
+            taken += 1
             tracker.recordTaken()
             let previous = pending
             let captureDuration = now() - start

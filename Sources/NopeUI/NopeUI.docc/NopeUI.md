@@ -13,7 +13,7 @@ honesty claims (the RAW badge, the no-RAW fallback wording, the privacy and sign
 the Honesty screen), which are in `Honesty.xcstrings` and need a fluent human review before
 release.
 
-``CameraScreen`` follows the approved clean layout (issue #68, `docs/design/ux-v3.html`): in
+``CameraScreen`` follows the approved clean layout (issue #68; current design in `docs/design/camera.html`): in
 full auto a format chip, Settings, the lens row below the 4:3 picture with a quick-controls
 button, the shutter, a camera flip and the last-photo slot. State pills, warning chips, the
 quick-controls tray and the manual readout row with its dial appear only when needed; later
@@ -29,7 +29,9 @@ values: ``SwiftUICore/EnvironmentValues/cameraUprightRotation``,
 
 The live viewfinder view is supplied by the app target, because `NopeUI` imports only `NopeCore`
 and SwiftUI. The
-camera screen uses the dark appearance; other screens follow the system. Each screen and state
+camera screen and its own sheets use the dark appearance; Settings, first run and the other
+screens that aren't the camera follow the system's light or dark setting (`ScreenAppearance`,
+``SwiftUICore/EnvironmentValues/systemColorScheme``). Each screen and state
 is checked by the UI tests with `performAccessibilityAudit()`.
 
 ## Topics
@@ -45,3 +47,5 @@ is checked by the UI tests with `performAccessibilityAudit()`.
 - ``UprightRotation``
 - ``CameraAction``
 - ``SheetPresentationAction``
+- ``WindowAppearanceAction``
+- ``WindowAppearanceRequest``

@@ -15,15 +15,19 @@ import SwiftUI
 ///   4.7-inch iPhone, they overlay its bottom on a dark backing. The layout stays put when the
 ///   iPhone turns; icons and text blocks turn upright as units, and the chip, pills and warnings
 ///   move to the picture's upper edge.
-/// - **Scrolling**: the same bands in a scroll view at accessibility text sizes.
-/// - **Column** (iPad, or a window wider than tall): the picture beside a trailing column with
-///   the shutter centered; pills, chip and warnings over the picture's top, and the manual
-///   controls and tray over its bottom.
+/// - **Scrolling**: the same bands in a scroll view at accessibility text sizes, in every window,
+///   with the enlarged manual controls list; the viewfinder is clipped to the scroll view.
+/// - **Column** (iPad, or a window wider than tall, below the accessibility sizes): the picture
+///   beside a trailing column with the shutter centered; pills, chip and warnings over the
+///   picture's top, and the manual controls and tray over its bottom.
 ///
 /// Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
 /// place and any warning. Every gesture has a button: swiping the picture down or up is a
 /// shortcut for Hide Controls (in the tray) and Show Controls.
-struct CameraReadyView<Viewfinder: View>: View {
+///
+/// The picture's frame is left clear and reported (``ViewfinderFrame``): ``CameraScreen`` draws
+/// the live viewfinder there, behind this view, so it stays the same view in every mode.
+struct CameraReadyView: View {
     /// The model to render and send intents to.
     let model: CameraModel
 
@@ -36,8 +40,8 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Opens Settings.
     let openSettings: () -> Void
 
-    /// The live viewfinder from the app.
-    let viewfinder: Viewfinder
+    /// The saved settings presets (issue #72), or `nil` for no Presets tray item.
+    let presets: SettingsPresets?
 
     /// The current text size; accessibility sizes switch to the scrolling layout.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -106,6 +110,12 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// Whether the astro helper's settings are shown (issue #60).
     @State private var showsAstroSettings = false
 
+    /// Whether the presets sheet is shown (issue #72).
+    @State private var showsPresets = false
+
+    /// Whether the Interval sheet is shown (the Drive menu's Interval Shooting).
+    @State private var showsIntervalSettings = false
+
     /// The viewfinder's size, to turn a touch into a point in the picture.
     @State private var viewfinderSize = CGSize.zero
 
@@ -116,22 +126,25 @@ struct CameraReadyView<Viewfinder: View>: View {
     ///   - settings: The person's settings.
     ///   - lenses: The lenses, in display order.
     ///   - openSettings: Opens Settings.
-    ///   - viewfinder: Makes the live viewfinder.
+    ///   - presets: The saved settings presets, or `nil` for no Presets tray item.
     init(
         model: CameraModel, settings: NopeSettings, lenses: [Lens], openSettings: @escaping () -> Void,
-        @ViewBuilder viewfinder: () -> Viewfinder
+        presets: SettingsPresets? = nil
     ) {
         self.model = model
         self.settings = settings
         self.lenses = lenses
         self.openSettings = openSettings
-        self.viewfinder = viewfinder()
+        self.presets = presets
     }
 
     /// The registries' context.
     private var context: CameraControlContext {
         var context = CameraControlContext(model: model, settings: settings)
         context.showsExposureDial = $showsExposureDial
+        context.presets = presets
+        context.showsPresets = $showsPresets
+        context.showsIntervalSettings = $showsIntervalSettings
         return context
     }
 
@@ -139,7 +152,7 @@ struct CameraReadyView<Viewfinder: View>: View {
     private var layout: CameraLayout {
         CameraLayout.arrangement(
             for: size, isAccessibilitySize: dynamicTypeSize.isAccessibilitySize,
-            isRegularSize: horizontalSizeClass == .regular && verticalSizeClass == .regular)
+            isRegularSize: CameraLayout.isRegularSize(horizontal: horizontalSizeClass, vertical: verticalSizeClass))
     }
 
     /// Whether the bands are shown: not in clean view.
@@ -204,8 +217,31 @@ struct CameraReadyView<Viewfinder: View>: View {
                 .presentationSizing(.page)
         }
         .onChange(of: model.astro.isOn) { _, isOn in if !isOn { showsAstroSettings = false } }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
-        .onChange(of: model.captureStatus) { _, status in record(status) }
+        // A sheet with an opaque background on iPad too, as the astro settings above, and page
+        // sized there for the same reason as What's in This Photo: in the shorter form sheet the
+        // explanation under Start ("Each photo is separate…") ran to the sheet's lower edge, where
+        // the audit measured it against the dimmed camera.
+        .sheet(isPresented: $showsIntervalSettings) {
+            IntervalSheet(model: model)
+                .nightModeStyle(isNightMode)
+                .presentationBackground(.background)
+                .presentationDetents([.large])
+                .presentationSizing(.page)
+        }
+        // The same presets list as in Settings (issue #72), a sheet for the reasons above.
+        .sheet(isPresented: $showsPresets) {
+            if let presets {
+                PresetsSheet(presets: presets, settings: settings, camera: model)
+                    .nightModeStyle(isNightMode)
+                    // Presets follows the system's light or dark setting, as in Settings.
+                    .screenAppearance(.system, isNightMode: isNightMode)
+                    .presentationBackground(.background)
+                    .presentationDetents([.large])
+                    .presentationSizing(.page)
+            }
+        }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
             showsExposureDial = false
@@ -270,6 +306,8 @@ struct CameraReadyView<Viewfinder: View>: View {
             scrollingStack
         }
         .hardScrollEdges()
+        // The viewfinder is drawn outside the scroll view (CameraScreen); this keeps it inside.
+        .transformAnchorPreference(key: ViewfinderFrame.self, value: .bounds) { $0.clip = $1 }
     }
 
     /// The scrolling layout's parts, top to bottom.
@@ -285,8 +323,9 @@ struct CameraReadyView<Viewfinder: View>: View {
                 // these text sizes it is taller than the picture and overlapped the banner and
                 // the lens buttons.
                 SessionStatusView(status: model.sessionStatus)
+                // Landscape in a wide window, where the preview turns with the interface.
                 picture(showsStatus: false)
-                    .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
+                    .aspectRatio(CameraLayout.pictureAspectRatio(in: size), contentMode: .fit)
                     .frame(height: CameraLayout.scrollingPictureHeight)
                 if LiveAidsPanel.isShown(model) {
                     LiveAidsPanel(model: model, settings: settings)
@@ -327,7 +366,7 @@ struct CameraReadyView<Viewfinder: View>: View {
                                 if showsExposureDial {
                                     AutoExposureDial(model: model) { showsExposureDial = false }
                                 }
-                                if model.manual.isEnabled && !dynamicTypeSize.isAccessibilitySize {
+                                if model.manual.isEnabled {
                                     if let openControl {
                                         ControlDial(model: model, control: openControl)
                                     }
@@ -346,9 +385,12 @@ struct CameraReadyView<Viewfinder: View>: View {
     }
 
     /// The trailing column: Settings, lenses and ⋯ at the top, the shutter centered, the camera
-    /// flip and the thumbnail at the bottom. It scrolls if the text is too large to fit.
+    /// flip and the thumbnail at the bottom. The top part scrolls if the text is too large to
+    /// fit, and stops above the shutter: the two halves around the shutter share the height
+    /// equally, so the shutter stays centered and nothing scrolls under it, even in a short
+    /// window such as the unfolded inner display of a foldable iPhone held like a book.
     private var controlColumn: some View {
-        ZStack {
+        VStack(spacing: CameraStyle.targetSpacing) {
             VStack(spacing: CameraStyle.targetSpacing) {
                 if showsControls {
                     SettingsButton(action: openSettings)
@@ -356,20 +398,20 @@ struct CameraReadyView<Viewfinder: View>: View {
                         VStack(spacing: CameraStyle.targetSpacing) {
                             LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID, isVertical: true) { select($0) }
                             QuickControlsButton(isOpen: showsTray) { showsTray.toggle() }
-                            if model.manual.isEnabled && dynamicTypeSize.isAccessibilitySize {
-                                ManualOptionsMenu(model: model, openControl: $openControl, showsProTools: $showsProTools)
-                            }
                         }
                     }
                     .scrollBounceBehavior(.basedOnSize)
                 }
-                Spacer(minLength: ShutterButton.diameter + 2 * CameraStyle.targetSpacing)
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            shutter
+            VStack(spacing: CameraStyle.targetSpacing) {
                 if showsControls, let flip = flipTarget {
                     CameraFlipButton { select(flip) }
                 }
                 thumbnailOrShowControls
             }
-            shutter
+            .frame(maxHeight: .infinity, alignment: .bottom)
         }
         .frame(minWidth: ShutterButton.diameter + 2 * CameraStyle.targetSpacing)
         .padding(.vertical)
@@ -621,13 +663,14 @@ struct CameraReadyView<Viewfinder: View>: View {
     /// is laid out left to right in every language: it is a picture, and a tapped point must
     /// mean the same place in the camera.
     private var viewfinderLayer: some View {
-        viewfinderContent
+        // Clear: CameraScreen draws the live viewfinder behind it.
+        Color.clear
             // Focus peaking is drawn on the picture itself, so the magnifier enlarges it too.
             .overlay { FocusPeakingLayer(model: model) }
             .focusMagnified(model)
             // Reported outside the enlargement, so CameraScreen gets the picture's own frame and
-            // enlarges the natural-color viewfinder the same way (FocusMagnifier).
-            .background { naturalViewfinderFrame }
+            // enlarges the viewfinder the same way (FocusMagnifier).
+            .background { Color.clear.anchorPreference(key: ViewfinderFrame.self, value: .bounds) { ViewfinderAnchors(frame: $0) } }
             .overlay { FocusSquareLayer(model: model, part: .square) }
             .accessibilityIgnoresInvertColors()
             .accessibilityElement(children: .ignore)
@@ -674,30 +717,6 @@ struct CameraReadyView<Viewfinder: View>: View {
                     FocusText.lock
                 }
             }
-        }
-    }
-
-    /// Whether the viewfinder is drawn by ``CameraScreen`` behind the red interface: night mode
-    /// with natural colors, so the red tint doesn't reach the picture. The photo is never
-    /// changed either way.
-    private var drawsNaturalViewfinder: Bool {
-        isNightMode && !settings.tintsViewfinderInNightMode
-    }
-
-    /// The live viewfinder, or a clear area where ``CameraScreen`` draws it from behind.
-    @ViewBuilder private var viewfinderContent: some View {
-        if drawsNaturalViewfinder {
-            Color.clear
-        } else {
-            viewfinder
-        }
-    }
-
-    /// The frame ``CameraScreen`` fills with the natural-color viewfinder
-    /// (``NaturalViewfinderFrame``), or nothing.
-    @ViewBuilder private var naturalViewfinderFrame: some View {
-        if drawsNaturalViewfinder {
-            Color.clear.anchorPreference(key: NaturalViewfinderFrame.self, value: .bounds) { $0 }
         }
     }
 
@@ -750,6 +769,32 @@ struct CameraReadyView<Viewfinder: View>: View {
     }
 
     // MARK: - Feedback
+
+    /// Records each new capture status for as long as the view is shown (``record(_:)``).
+    ///
+    /// It waits for the model's status to change and then reads it, instead of using
+    /// `onChange(of:)` or `task(id:)`: when a photo is taken and fails (or is saved) within one
+    /// frame, the status changes several times in that frame, and SwiftUI then runs those
+    /// actions once and drops the rest ("onChange(of: CaptureStatus) action tried to update
+    /// multiple times per frame"), so the failure banner never came, although the view was
+    /// drawn again. Read after each change, the last status of a burst of changes is never
+    /// missed; statuses in between may be, as before.
+    private func recordCaptureResults() async {
+        var last = model.captureStatus
+        while !Task.isCancelled {
+            await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                withObservationTracking {
+                    _ = model.captureStatus
+                } onChange: {
+                    continuation.resume()
+                }
+            }
+            let status = model.captureStatus
+            guard !Task.isCancelled, status != last else { continue }
+            last = status
+            record(status)
+        }
+    }
 
     /// Records a capture result: a good save updates the thumbnail quietly, with a light haptic
     /// and a low-priority VoiceOver announcement, and clears the banner; a failure shows the
@@ -905,21 +950,60 @@ struct ShowControlsButton: View {
     }
 }
 
-/// Where the ready camera reserves room for a viewfinder in natural colors while night mode is
-/// on, for ``CameraScreen`` to draw it behind the red interface (issue #61). `nil` otherwise.
-struct NaturalViewfinderFrame: PreferenceKey {
+/// Where the ready camera reserves room for the live viewfinder, for ``CameraScreen`` to draw it
+/// behind the interface: so night mode's red stays off the picture (issue #61), and so switching
+/// night mode or Red Viewfinder never replaces the viewfinder (on a device, its preview layer).
+/// Empty outside the ready camera.
+struct ViewfinderFrame: PreferenceKey {
     /// Creates the key. It holds no state.
     init() {}
 
-    /// No frame: the viewfinder is drawn in place.
-    static var defaultValue: Anchor<CGRect>? { nil }
+    /// No frame: there is no picture to fill.
+    static var defaultValue: ViewfinderAnchors { ViewfinderAnchors() }
 
-    /// Keeps the first frame reported.
+    /// Keeps the first frame and the first clip reported.
     ///
     /// - Parameters:
-    ///   - value: The frame so far.
-    ///   - nextValue: The next frame reported.
-    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
-        value = value ?? nextValue()
+    ///   - value: The anchors so far.
+    ///   - nextValue: The next anchors reported.
+    static func reduce(value: inout ViewfinderAnchors, nextValue: () -> ViewfinderAnchors) {
+        let next = nextValue()
+        value.frame = value.frame ?? next.frame
+        value.clip = value.clip ?? next.clip
+    }
+}
+
+/// The picture's frame and, when the picture scrolls, the scroll view's frame, which the
+/// viewfinder must stay inside: ``CameraScreen`` draws it behind the interface, outside the
+/// scroll view, so without the clip it would run past the scroll view's edges into the pinned
+/// shutter row or the top of the screen (the scrolling layout at accessibility text sizes).
+struct ViewfinderAnchors {
+    /// The picture's frame, or `nil` when there is no picture.
+    var frame: Anchor<CGRect>?
+
+    /// The frame the picture is seen through, or `nil` when it isn't clipped.
+    var clip: Anchor<CGRect>?
+
+    /// Creates the anchors.
+    ///
+    /// - Parameters:
+    ///   - frame: The picture's frame.
+    ///   - clip: The frame the picture is seen through.
+    init(frame: Anchor<CGRect>? = nil, clip: Anchor<CGRect>? = nil) {
+        self.frame = frame
+        self.clip = clip
+    }
+
+    /// The part of the picture to show: all of it, or the part inside the clip; empty when the
+    /// picture has scrolled out of view.
+    ///
+    /// - Parameters:
+    ///   - frame: The picture's frame.
+    ///   - clip: The frame the picture is seen through, or `nil`.
+    /// - Returns: The visible frame, in the same coordinates.
+    static func visibleFrame(of frame: CGRect, in clip: CGRect?) -> CGRect {
+        guard let clip else { return frame }
+        let visible = frame.intersection(clip)
+        return visible.isNull ? .zero : visible
     }
 }

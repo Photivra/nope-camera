@@ -447,6 +447,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         if let point, point.exposes, device.isExposurePointOfInterestSupported {
             device.exposurePointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
         }
+        // Face detection is set before the exposure and focus modes, which apply it
+        // (AVCaptureDevice.h, faceDrivenAutoExposureEnabled and faceDrivenAutoFocusEnabled).
+        applyFaceDetection(controls.followsFaces, to: device)
         applyExposure(controls.exposure, locksAtPoint: point.map { $0.exposes && $0.locks } ?? false, to: device)
         applyLongestAutoExposure(controls.longestAutoExposure, to: device)
         applyFocusAids(controls, to: device)
@@ -550,13 +553,35 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///   - device: The camera.
     private func applyFocusAids(_ controls: DeviceControls, to device: AVCaptureDevice) {
         if device.isAutoFocusRangeRestrictionSupported {
-            device.autoFocusRangeRestriction = controls.nearFocusLimit ? .near : .none
+            device.autoFocusRangeRestriction = controls.nearFocusLimit ? .near : controls.farFocusLimit ? .far : .none
         }
         guard device.isFocusPointOfInterestSupported else { return }
         if let point = controls.pointOfInterest, point.focuses {
             device.focusPointOfInterest = CGPoint(x: point.point.x, y: point.point.y)
         } else {
             device.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
+        }
+    }
+
+    /// Lets detected faces steer autofocus and auto exposure (the system's automatic choice), or
+    /// turns that off. Call only on `queue`, with the camera locked.
+    ///
+    /// AVFoundation raises an exception when either is set on a camera without autofocus or
+    /// auto exposure, or while its "automatically adjusts" property is on (AVCaptureDevice.h), so
+    /// each is set only where the camera supports the continuous mode, and the automatic
+    /// property is turned off before the value is set.
+    ///
+    /// - Parameters:
+    ///   - followsFaces: Whether faces steer autofocus and auto exposure.
+    ///   - device: The camera.
+    private func applyFaceDetection(_ followsFaces: Bool, to device: AVCaptureDevice) {
+        if device.isFocusModeSupported(.continuousAutoFocus) {
+            device.automaticallyAdjustsFaceDrivenAutoFocusEnabled = followsFaces
+            if !followsFaces { device.isFaceDrivenAutoFocusEnabled = false }
+        }
+        if device.isExposureModeSupported(.continuousAutoExposure) {
+            device.automaticallyAdjustsFaceDrivenAutoExposureEnabled = followsFaces
+            if !followsFaces { device.isFaceDrivenAutoExposureEnabled = false }
         }
     }
 
@@ -987,7 +1012,10 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
             failed = true
             return
         }
-        let rawImageData = photo.isRawPhoto ? photo.fileDataRepresentation().flatMap(MetadataFileReader.rawImageData(ofDNG:)) : nil
+        let systemDNG = photo.isRawPhoto ? photo.fileDataRepresentation().map { MetadataFileReader.read($0, format: .raw) } : nil
+        let rawClipping = systemDNG.map { dng in
+            photo.pixelBuffer.map { Self.clipping(of: $0, dng: dng.inventory) } ?? .notMeasured(.noSamples)
+        }
         let size = photo.isRawPhoto ? photo.resolvedSettings.rawPhotoDimensions : photo.resolvedSettings.photoDimensions
         let frame = photo.bracketSettings as? AVCaptureManualExposureBracketedStillImageSettings
         photos.append(
@@ -995,7 +1023,38 @@ final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate, @unch
                 data: data, dimensions: PhotoDimensions(width: Int(size.width), height: Int(size.height)),
                 exposureDuration: frame.map { $0.exposureDuration.seconds } ?? exposureDuration,
                 iso: frame.map { Double($0.iso) } ?? iso, pixelSample: photo.pixelBuffer.flatMap(Self.sample),
-                rawImageData: rawImageData))
+                rawImageData: systemDNG?.rawImageData, rawClipping: rawClipping))
+    }
+
+    /// Counts the clipped photosites of a RAW photo's sensor buffer (``RAWClippingMeter``),
+    /// against the levels of the camera's own DNG of the same photo.
+    ///
+    /// Reads every 16-bit sample of the active area once, row by row, from the locked buffer;
+    /// a multi-plane buffer, or one whose rows are shorter than its width of 16-bit samples, isn't
+    /// read. Privacy: only the counts are kept; the samples are never copied, stored or logged.
+    ///
+    /// - Parameters:
+    ///   - pixelBuffer: The photo's pixel buffer (`AVCapturePhoto.pixelBuffer`), the Bayer RAW
+    ///     samples of a RAW photo.
+    ///   - dng: The read-back of the camera's DNG.
+    /// - Returns: The clipping, or why it wasn't measured.
+    private static func clipping(of pixelBuffer: CVPixelBuffer, dng: MetadataInventory) -> RAWClippingResult {
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+        let width = CVPixelBufferGetWidth(pixelBuffer)
+        let height = CVPixelBufferGetHeight(pixelBuffer)
+        let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
+        guard !CVPixelBufferIsPlanar(pixelBuffer), width * 2 <= bytesPerRow, let base = CVPixelBufferGetBaseAddress(pixelBuffer)
+        else { return .notMeasured(.unsupportedLayout) }
+        let pattern = (CVBufferCopyAttachment(pixelBuffer, kCVPixelBufferVersatileBayerKey_BayerPattern, nil) as? NSNumber)?.intValue
+        return RAWClippingMeter.measure(
+            pixelFormat: CVPixelBufferGetPixelFormatType(pixelBuffer), versatileBayerPattern: pattern, width: width,
+            height: height, dng: dng
+        ) { row, column in
+            // The meter reads only rows below height and columns below width, and each row
+            // holds width 16-bit samples (checked above), so each read is in bounds.
+            UInt16(littleEndian: base.loadUnaligned(fromByteOffset: row * bytesPerRow + column * 2, as: UInt16.self))
+        }
     }
 
     /// Reads the bytes at ``PictureCheck/sampleOffsets(byteCount:)`` from the buffer's first

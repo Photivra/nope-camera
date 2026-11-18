@@ -1,4 +1,5 @@
 import AVKit
+import ActivityKit
 import AppIntents
 import NopeCapture
 import NopeCore
@@ -7,6 +8,7 @@ import NopeSigning
 import NopeUI
 import SwiftUI
 import UIKit
+import WidgetKit
 
 /// The Photivra Nope Camera app: wires the capture backend into `NopeCore` and hosts `NopeUI`.
 ///
@@ -32,11 +34,34 @@ struct NopeApp: App {
     /// screen shows (``SetNightModeIntent``).
     private static let sharedSettings = NopeSettings(defaults: makeSettingsStore())
 
+    /// Keeps the settings in step with the Control Center controls (issue #42); `nil` without the
+    /// App Group and in UI tests, whose settings are their own.
+    private static let settingsSync = makeSettingsSync()
+
+    /// Whether the app is in the foreground, to read the shared settings again when it returns,
+    /// and for the Live Activity.
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// The saved settings presets (issue #72), stored with the settings on the device.
+    @State private var presets = Self.sharedPresets
+
+    /// The presets object, created once so the Apply Preset action lists and applies the same
+    /// presets the camera screen shows (``ApplyPresetIntent``).
+    private static let sharedPresets = SettingsPresets(settings: sharedSettings)
+
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
 
+    /// The link to the Apple Watch app (issue #63), whose commands go through ``shortcuts``.
+    private static let watchSession = PhoneWatchSession()
+
     /// Location tagging for photos (issue #43): off until the person turns Location on.
     @State private var location = LocationTagging(provider: Self.makeLocationProvider())
+
+    /// The Live Activity for a series and its saving (issue #64), and the time to finish saving
+    /// after the app leaves the foreground.
+    @State private var liveActivities = LiveActivityCoordinator(
+        presenter: SystemLiveActivities(), backgroundTime: SystemBackgroundTime())
 
     /// Keeps the iPhone camera in portrait while sheets rotate.
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -46,11 +71,17 @@ struct NopeApp: App {
 
     /// Registers what the App Intents need: the settings and the Siri and Shortcuts inbox
     /// (App Intents, `AppDependencyManager`).
+    /// Activates the link to the Apple Watch app (WatchConnectivity), so a watch command that
+    /// launches the app is delivered.
     init() {
         let settings = Self.sharedSettings
         let shortcuts = Self.shortcuts
         AppDependencyManager.shared.add(dependency: settings)
         AppDependencyManager.shared.add(dependency: shortcuts)
+        let presets = Self.sharedPresets
+        AppDependencyManager.shared.add(dependency: presets)
+        _ = Self.settingsSync
+        Self.watchSession.activate()
     }
 
     /// The app's single window, showing the camera screen.
@@ -71,6 +102,9 @@ struct NopeApp: App {
             case .armed(let run):
                 Text(verbatim: "Debug run \(run.rawValue) armed. Close nope. and open it from the Home Screen.")
                     .padding()
+            case .none where LiveActivityGallery.isRequested:
+                // UI tests only: the Live Activity layouts (`-NopeLiveActivityGallery`).
+                LiveActivityGallery()
             case .none:
                 cameraScreen
             }
@@ -92,10 +126,13 @@ struct NopeApp: App {
     /// The system delivers these events only while a capture session runs; while the camera
     /// isn't running, the interaction is off, so the buttons keep their system behavior.
     private var cameraScreen: some View {
-        CameraScreen(model: model, settings: settings) { source in
+        CameraScreen(model: model, settings: settings, presets: presets) { source in
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
+        .modifier(FollowsWindowSizeClasses())
+        // Settings and the screens that aren't the camera follow the system's light or dark setting.
+        .modifier(ProvidesSystemAppearance())
         .environment(\.cameraGravitySource, Self.gravitySource)
         .environment(\.cameraPresentsSheet, SheetPresentationAction { AppDelegate.setSheetPresented($0) })
         // Open Settings goes to nope.'s own page in the Settings app (UIKit,
@@ -126,8 +163,25 @@ struct NopeApp: App {
             Task { await model.send(.drive(.hardwareButton(phase))) }
         }
         .environment(\.seriesScreenKeeper, screenKeeper)
+        // The Live Activity follows the camera model while the camera screen is shown; its Stop
+        // button stops the interval series here (StopSeriesIntent runs in the app).
+        .environment(\.offersLiveActivity, ActivityAuthorizationInfo().areActivitiesEnabled)
+        .task {
+            SeriesActivityActions.stop = { [liveActivities, model] in await liveActivities.stopSeries(model) }
+            await liveActivities.observe(model)
+        }
+        // Inactive (Control Center, a system alert) is still the foreground: the camera keeps
+        // shooting. An activity starts only while the app is active.
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            liveActivities.isInForeground = phase != .background
+            liveActivities.isActive = phase == .active
+        }
+        .onChange(of: settings.showsLiveActivity, initial: true) { _, isOn in liveActivities.isEnabled = isOn }
+        .onChange(of: settings.isNightModeOn, initial: true) { _, isOn in liveActivities.isNightMode = isOn }
         // Siri and Shortcuts requests are performed while the camera screen is shown.
-        .task { await model.serveShortcuts(from: Self.shortcuts) }
+        .task { await model.serveShortcuts(from: Self.shortcuts, settings: settings, presets: presets) }
+        // The Apple Watch app's shutter and status (issue #63), while the camera screen is shown.
+        .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
         .task { await SimulatedShortcut.run(with: Self.shortcuts) }
@@ -152,14 +206,24 @@ struct NopeApp: App {
             await location.update(
                 isOn: settings.metadata.isOn(.location), cameraIsRunning: model.sessionStatus == .running)
         }
-        // The "Manual controls" option from Settings shows or hides the manual controls.
+        // The "Manual controls" option from Settings shows or hides the manual controls. A
+        // preset sets them up itself, with the astro helper, so its change isn't sent again.
         .task(id: settings.showsManualControls) {
+            guard !presets.handlesManualControlsChange(to: settings.showsManualControls) else { return }
             await model.send(.manual(.setEnabled(settings.showsManualControls)))
         }
         // "Fast Shutter": full auto's shutter rule, applied when the camera opens and whenever the
         // choice changes (in Settings or the quick-controls tray).
         .task(id: settings.fastShutter) {
             await model.send(.auto(.setFastShutter(settings.fastShutter)))
+        }
+        // Face Detection (issue #57): applied when the camera opens and whenever it changes.
+        .task(id: settings.followsFaces) {
+            await model.send(.auto(.setFollowsFaces(settings.followsFaces)))
+        }
+        // The photo size of each lens that offers a choice (issue #57).
+        .task(id: settings.photoSizes) {
+            await model.send(.setPhotoSizes(settings.photoSizes))
         }
         // "Start in clean view": applied when the camera opens and whenever the option changes;
         // the camera's own button still toggles clean view at any time.
@@ -173,6 +237,15 @@ struct NopeApp: App {
         }
         .task(id: settings.torchLevel) {
             await model.send(.light(.setTorchLevel(settings.torchLevel)))
+        }
+        // A control's change normally arrives at once (`SharedSettingsSync`); reading the store
+        // again on return to the foreground also covers a signal sent while the app was suspended.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, Self.settingsSync != nil, settings.reload() { Self.settingsDidChange() }
+            #if DEBUG
+            // UI tests: the simulated camera is interrupted in the background, as AVFoundation's is.
+            SimulatedCameraLaunch.followScenePhase(phase == .background, backend: Self.backend)
+            #endif
         }
     }
 
@@ -204,13 +277,34 @@ struct NopeApp: App {
         return MotionGravitySource()
     }
 
-    /// Where settings are stored: the app's standard `UserDefaults`, or in Debug builds launched
-    /// by the UI tests, an empty store of their own, so every test starts from the defaults.
+    /// Where settings are stored: the App Group's `UserDefaults`, shared with the controls (with
+    /// the settings of earlier versions moved in once), or in Debug builds launched by the UI
+    /// tests, an empty store of their own, so every test starts from the defaults.
     private static func makeSettingsStore() -> UserDefaults {
         #if DEBUG
         if let store = SimulatedCameraLaunch.settingsStore() { return store }
         #endif
-        return .standard
+        return SharedSettings.appStore()
+    }
+
+    /// Follows the shared settings, and hands the current ones to the Lock Screen camera.
+    ///
+    /// - Returns: The sync, or `nil` without the App Group or in a UI test.
+    private static func makeSettingsSync() -> SharedSettingsSync? {
+        #if DEBUG
+        if SimulatedCameraLaunch.scenario != nil { return nil }
+        #endif
+        guard let signal = SharedSettings.changeSignal else { return nil }
+        let sync = SharedSettingsSync(settings: sharedSettings, signal: signal) { settingsDidChange() }
+        settingsDidChange()
+        return sync
+    }
+
+    /// After a settings change here or in a control: refreshes the Night Mode control and hands the
+    /// settings to the Lock Screen camera. Never called in UI tests, so they can't change either.
+    private static func settingsDidChange() {
+        ControlCenter.shared.reloadControls(ofKind: NopeControlKind.nightMode)
+        Task { await SharedSettings.publishToLockScreenCamera(sharedSettings) }
     }
 
     /// The location service for this launch: a simulated one for a UI test scenario in Debug

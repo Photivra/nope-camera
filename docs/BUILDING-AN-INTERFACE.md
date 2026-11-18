@@ -53,10 +53,12 @@ Manual controls are off by default; the "Manual controls" option in Settings tur
 the app target sends `.manual(.setEnabled(_:))` when it changes. Everything about them is in
 `CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
-exposure modes, bracketing and interval shooting. Send `.manual(...)` intents to change them; the
+exposure modes, bracketing and interval shooting (which, unlike the other manual intents, works
+in full auto too; the `.interval` drive mode starts it from the shutter). Send `.manual(...)`
+intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
-compensation, Close-Up, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
+compensation, Close-Up, Far Focus, Face Detection, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
 intents that work with manual controls off; see the DocC article for what to show. Run
 `manual.observeReadings()` in a second `.task` so the
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
@@ -74,13 +76,13 @@ phases as `.drive(.hardwareButton(_:))`. Pass a `DeviceStatusReading` to `Camera
 `SeriesScreenKeeper.update(isSeriesRunning:isInForeground:)` so the screen stays awake and is
 dimmed, with a visible way to brighten it.
 
-To take requests from Siri and Shortcuts, run `serveShortcuts(from:)` with the app's
+To take requests from Siri and Shortcuts, run `serveShortcuts(from:settings:presets:)` with the app's
 `ShortcutInbox` in a `.task` while the camera is shown; the intents call `submit(_:)`.
 
 ## The standard camera layout
 
 `NopeUI`'s camera screen is one interface on this contract, following the approved layout in
-[`design/ux-v3.html`](design/ux-v3.html). If you extend it rather than replace it, add camera
+[`design/camera.html`](design/camera.html). If you extend it rather than replace it, add camera
 toggles to `QuickControls.builders`, non-default states to `StatePills.builders` and persistent
 warnings to `CameraWarnings.builders`; the layout places them. The app target supplies four
 environment values: `cameraUprightRotation` (which way up the iPhone is held),

@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// What one press of the shutter does: take one photo, start the self-timer, or take a burst
-/// (issue #68, "Drive"). Single is the default.
+/// What one press of the shutter does: take one photo, start the self-timer, take a burst, or
+/// start an interval series (issue #68, "Drive"). Single is the default.
 public enum DriveMode: Hashable, Sendable {
     /// One photo per press.
     case single
@@ -13,8 +13,13 @@ public enum DriveMode: Hashable, Sendable {
     /// A rapid run of single, unprocessed frames, each saved as its own photo (issue #46).
     case burst
 
-    /// Every mode, in the order an interface lists them: single, 3 s, 10 s, burst.
-    public static let allCases: [DriveMode] = [.single, .timer(.threeSeconds), .timer(.tenSeconds), .burst]
+    /// An interval series (issue #48): separate photos at a fixed interval, with the interval
+    /// and count chosen with ``ManualControlIntent/setInterval(_:)``
+    /// (``ManualControlsModel/interval``). It works in full auto and with manual controls on.
+    case interval
+
+    /// Every mode, in the order an interface lists them: single, 3 s, 10 s, burst, interval.
+    public static let allCases: [DriveMode] = [.single, .timer(.threeSeconds), .timer(.tenSeconds), .burst, .interval]
 }
 
 /// How a hardware shutter button moved: the volume buttons or the Camera Control (issue #37).
@@ -79,8 +84,13 @@ public enum BurstEnd: Equatable, Sendable {
     /// The person let go of the button, or pressed Stop.
     case stopped
 
-    /// The burst reached ``DriveModel/maximumBurstFrames``.
+    /// The burst reached ``DriveModel/maximumBurstFrames``, or an astro run took all its frames.
     case limitReached
+
+    /// The burst took the number of frames a Siri or Shortcuts request asked for (issue #62),
+    /// fewer than ``DriveModel/maximumBurstFrames``. Siri reports the result, so an interface
+    /// needn't announce it.
+    case countReached
 
     /// The next frame wouldn't fit in the device's free storage (issue #44).
     case storageFull
@@ -127,7 +137,7 @@ public final class DriveModel {
     /// The most frames one burst takes (issue #46, "Limits"). An assumption to be confirmed on a
     /// device: with RAW and HEIF at 12 MP this is under 2 GB, and memory stays bounded at any
     /// count, because each frame is saved while the next is taken.
-    public static let maximumBurstFrames = 50
+    nonisolated public static let maximumBurstFrames = 50
 
     /// What the shutter does.
     public private(set) var mode = DriveMode.single

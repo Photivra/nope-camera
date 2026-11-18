@@ -52,7 +52,8 @@ struct MetadataVerifierTests {
     /// is off. Every way a TIFF writer can store an empty ASCII value passes: one NUL (TIFF 6.0,
     /// section 2: "the last byte must be NUL"), a count of 0, several NULs, or the tag left out.
     /// Which one AVFoundation writes is a device check (docs/TESTING.md). Any text, a space, or a
-    /// value that isn't ASCII fails.
+    /// value that isn't ASCII fails, except that a space is a blank date for `DateTime` while the
+    /// standard file tags are on (``everyBlankDateEncodingPassesAndRealDatesFail()``).
     @Test func emptyTIFFFieldsInADNGAreAcceptedInEveryEncoding() {
         let encodings: [(TIFFBuilder.Value, passes: Bool)] = [
             (.ascii(""), true),
@@ -70,9 +71,73 @@ struct MetadataVerifierTests {
                 root.entries.removeAll { $0.0 == tag }
                 root.entries.append((tag, value))
                 let found = violations(Data(TIFFBuilder.build(root)), .raw, allowlist)
-                #expect(found == (passes ? [] : [.unexpectedValue(MetadataAllowlist.TagID(.primary, tag))]), "\(tag) \(value)")
+                var blankDate = false
+                if tag == 0x0132, case .ascii(" ") = value { blankDate = true }
+                #expect(
+                    found == (passes || blankDate ? [] : [.unexpectedValue(MetadataAllowlist.TagID(.primary, tag))]),
+                    "\(tag) \(value)")
             }
         }
+    }
+
+    /// With the standard file tags on (the default), a DNG's `DateTime` may also be the Exif
+    /// standard's unknown date, blanks and colons; with them off, and for the other three fields,
+    /// it fails.
+    @Test func theStandardUnknownDatePassesOnlyForTheDateWithTheStandardTagsOn() {
+        var minimal = MetadataSettings()
+        minimal.writesStandardFileTags = false
+        for (plan, standardTags) in [(Self.plan, true), (MetadataPlan(settings: minimal), false)] {
+            let allowlist = plan.allowlist(for: .raw, signed: false)
+            for tag: UInt16 in [0x0132, 0x010F, 0x0110, 0x0131] {
+                let root = CleanFiles.tiff(for: allowlist)
+                root.entries.removeAll { $0.0 == tag }
+                root.entries.append((tag, .ascii(MetadataPlan.unknownDateTime)))
+                let found = violations(Data(TIFFBuilder.build(root)), .raw, allowlist)
+                let passes = standardTags && tag == 0x0132
+                #expect(found == (passes ? [] : [.unexpectedValue(MetadataAllowlist.TagID(.primary, tag))]), "\(tag)")
+            }
+        }
+        #expect(!MetadataAllowlist.TextRule.oneOf(["a"]).accepts(nil))
+    }
+
+    /// However AVFoundation stores the blank date, padded with NULs, trimmed or all blanks, it
+    /// passes with the standard file tags on; a real date, a digit or a longer text fails, and
+    /// with the standard file tags off only the empty text passes.
+    @Test func everyBlankDateEncodingPassesAndRealDatesFail() {
+        let blank = Array(MetadataPlan.unknownDateTime.utf8)
+        // Each value, whether it is a blank date, and whether it is the empty text.
+        let encodings: [(TIFFBuilder.Value, Bool, Bool)] = [
+            (.ascii(MetadataPlan.unknownDateTime), true, false),
+            (.raw(type: 2, count: 20, bytes: blank + [0]), true, false),
+            (.raw(type: 2, count: 24, bytes: blank + [0, 0, 0, 0, 0]), true, false),
+            (.ascii("    :  :     :  :"), true, false),
+            (.ascii(String(repeating: " ", count: 19)), true, false),
+            (.ascii("  :  "), true, false),
+            (.ascii(""), true, true),
+            (.raw(type: 2, count: 4, bytes: [0, 0, 0, 0]), true, true),
+            (.raw(type: 2, count: 20, bytes: [0x20, 0x20, 0, 0x32] + blank.dropFirst(4) + [0]), true, false),
+            (.ascii("2026:11:16 10:42:07"), false, false),
+            (.ascii("    :  :     :  :0 "), false, false),
+            (.ascii("    -  -     :  :  "), false, false),
+            (.ascii(String(repeating: " ", count: 20)), false, false),
+            (.raw(type: 2, count: 20, bytes: blank.dropLast() + [0x37, 0]), false, false),
+            (.bytes(blank), false, false),
+        ]
+        var minimal = MetadataSettings()
+        minimal.writesStandardFileTags = false
+        let dateTime: UInt16 = 0x0132
+        for (plan, standardTags) in [(Self.plan, true), (MetadataPlan(settings: minimal), false)] {
+            let allowlist = plan.allowlist(for: .raw, signed: false)
+            for (value, isBlank, isEmpty) in encodings {
+                let root = CleanFiles.tiff(for: allowlist)
+                root.entries.removeAll { $0.0 == dateTime }
+                root.entries.append((dateTime, value))
+                let found = violations(Data(TIFFBuilder.build(root)), .raw, allowlist)
+                let passes = standardTags ? isBlank : isEmpty
+                #expect(found == (passes ? [] : [.unexpectedValue(MetadataAllowlist.TagID(.primary, dateTime))]), "\(value)")
+            }
+        }
+        #expect(!MetadataAllowlist.TextRule.blankDate.accepts(nil))
     }
 
     @Test func theFourTIFFFieldsMayBeAbsentFromADNG() {

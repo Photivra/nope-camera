@@ -32,6 +32,21 @@ struct LensCatalogTests {
         #expect(lenses.map(\.magnification) == [0.5, 1, 5, nil])
     }
 
+    /// A dual rear camera with no telephoto, like the iPhone Duo's two 48 MP cameras: the lens
+    /// row lists only what discovery finds, so no telephoto lens appears.
+    @Test func dualRearCameraHasNoTelephoto() {
+        let lenses = LensCatalog.lenses(from: [
+            camera("dual-wide", .other),
+            camera("wide", .wideAngle, fieldOfView: 70.3),
+            camera("ultra", .ultraWide, fieldOfView: 106.2),
+            camera("front", .wideAngle, .front, fieldOfView: 80),
+        ])
+        #expect(lenses.map(\.kind) == [.ultraWide, .wide, .front])
+        #expect(!lenses.contains { $0.kind == .telephoto })
+        #expect(lenses.map(\.magnification) == [0.5, 1, nil])
+        #expect(lenses.allSatisfy { $0.supportsBayerRAW })
+    }
+
     @Test func copiesCapabilities() throws {
         let lens = try #require(LensCatalog.lenses(from: [camera("wide", .wideAngle)]).first)
         #expect(lens.bayerRAWFormat == "bgg4")

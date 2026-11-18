@@ -46,6 +46,7 @@ struct NopeSettingsTests {
         #expect(!settings.showsManualControls)
         #expect(!settings.startsInCleanView)
         #expect(settings.developedLook == .standard)
+        #expect(!settings.showsLiveActivity)
     }
 
     @Test func everyChangeIsSavedAndReloaded() {
@@ -58,6 +59,7 @@ struct NopeSettingsTests {
         settings.setShowsManualControls(true)
         settings.setStartsInCleanView(true)
         settings.setDevelopedLook(.flat)
+        settings.setShowsLiveActivity(true)
 
         let reloaded = NopeSettings(defaults: scratch.defaults)
         #expect(reloaded.orderedFormats == [.raw, .jpeg])
@@ -67,6 +69,7 @@ struct NopeSettingsTests {
         #expect(reloaded.showsManualControls)
         #expect(reloaded.developedLook == .flat)
         #expect(reloaded.startsInCleanView)
+        #expect(reloaded.showsLiveActivity)
 
         reloaded.setRemovesAllOptionalDetails(true)
         let master = NopeSettings(defaults: scratch.defaults).metadata

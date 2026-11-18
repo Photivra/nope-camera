@@ -32,7 +32,7 @@ enum AstroText {
             return Text("Taking astro frames. Press to stop.", bundle: .module, comment: "VoiceOver value of the shutter while the night sky helper takes its frames: pressing the shutter stops them.")
         }
         if model.drive.countdown.isRunning {
-            return DriveText.shutterValue(model.drive)
+            return DriveText.shutterValue(model)
         }
         return Text("Astro. Press to start the frames after the start delay.", bundle: .module, comment: "VoiceOver value of the shutter while the night sky helper is on: one press starts the self-timer, then the series of frames.")
     }
@@ -45,7 +45,9 @@ enum AstroText {
         switch result.end {
         case .stopped, .failed:
             nil
-        case .limitReached:
+        case .limitReached, .countReached:
+            // Astro runs end at their own frame count with limitReached; countReached is a Siri
+            // burst's, listed so the switch covers every case.
             String(localized: "Astro finished. Frames saved: \(result.saved)", bundle: .module, comment: "Announced to VoiceOver when the night sky helper has taken all its frames. The number is how many frames were saved.")
         case .storageFull:
             String(localized: "Astro stopped: storage is full. Frames saved: \(result.saved)", bundle: .module, comment: "Announced to VoiceOver when the night sky helper stops because the next frame wouldn't fit in storage. The number is how many frames were saved.")
@@ -123,7 +125,9 @@ struct AstroPanel: View {
     var body: some View {
         if let progress = model.astro.progress {
             row(
-                Text("Frame \(min(progress.taken + 1, model.astro.frameCount)) of \(model.astro.frameCount)", bundle: .module, comment: "Progress of the night sky helper on the camera: which frame is being taken, of how many. Both numbers are counts of frames."),
+                model.astro.isPaused
+                    ? Text("Paused: \(progress.taken) of \(model.astro.frameCount) frames", bundle: .module, comment: "Shown on the camera while the night sky helper's frames are paused because the camera is paused (for example by a call): they continue, after the start delay, when the camera is back. Both numbers are counts of frames.")
+                    : Text("Frame \(min(progress.taken + 1, model.astro.frameCount)) of \(model.astro.frameCount)", bundle: .module, comment: "Progress of the night sky helper on the camera: which frame is being taken, of how many. Both numbers are counts of frames."),
                 button: Button(role: .destructive) {
                     Task { await model.send(.astro(.stop)) }
                 } label: {

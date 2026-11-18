@@ -100,8 +100,10 @@ user. The full design is in issue #1.
     release, and before every app release. Update the allowlist only by a reviewed pull
     request.
 - **Photos never linger.** They go from memory to Photos. Any temporary file uses complete file
-  protection and is deleted immediately. Logs mark every value private, and never contain photo
-  data or metadata.
+  protection and is deleted immediately. One exception: the capture staging file that hands a
+  RAW pair's second file to Photos uses protection until first unlock, so a save that finishes
+  while the phone is locked keeps the pair together; it is still deleted right after the save.
+  Logs mark every value private, and never contain photo data or metadata.
 - **Battery.**
   - The camera session runs only while the camera screen is in use. Stop it in the background,
     on interruptions and after an idle pause.

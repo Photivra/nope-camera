@@ -2,7 +2,7 @@ import Foundation
 import NopeCore
 
 /// What Siri and Shortcuts say for each ``ShortcutOutcome`` (issue #62): whether the photo was
-/// saved and signed, or why not. Never image data or metadata.
+/// saved and signed, what changed, or why not. Never image data or metadata.
 enum ShortcutDialog {
     /// The sentence for an outcome, as each ``ShortcutOutcome`` case documents it.
     ///
@@ -37,10 +37,81 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "nope. is already taking a photo.",
                 comment: "Siri's answer when a photo, countdown or burst is already running. Keep \"nope.\" unchanged.")
+        case .busyWithEarlierRequest:
+            LocalizedStringResource(
+                "nope. is still doing an earlier request. Nothing changed.",
+                comment: "Siri's answer when the request waited too long behind an earlier Siri, Shortcuts or Apple Watch request that nope. was still doing. Keep \"nope.\" unchanged.")
         case .lensUnavailable:
             LocalizedStringResource(
                 "This device doesn't have that lens.",
                 comment: "Siri's answer when the lens asked for doesn't exist on this iPhone or iPad.")
+        case .lensSelected(.ultraWide):
+            LocalizedStringResource(
+                "Now using the ultra wide camera.", comment: "Siri's answer after nope. switched to the ultra wide rear camera.")
+        case .lensSelected(.wide):
+            LocalizedStringResource(
+                "Now using the wide camera.", comment: "Siri's answer after nope. switched to the wide (main) rear camera.")
+        case .lensSelected(.telephoto):
+            LocalizedStringResource(
+                "Now using the telephoto camera.", comment: "Siri's answer after nope. switched to the telephoto rear camera.")
+        case .lensSelected(.front):
+            LocalizedStringResource(
+                "Now using the front camera.", comment: "Siri's answer after nope. switched to the front (selfie) camera.")
+        case .lightOn:
+            LocalizedStringResource(
+                "The light is on.", comment: "Siri's answer after nope. turned its steady light (the torch) on.")
+        case .lightOff:
+            LocalizedStringResource(
+                "The light is off.", comment: "Siri's answer after nope.'s steady light (the torch) was turned off, or was already off.")
+        case .noLight:
+            LocalizedStringResource(
+                "This lens has no light.", comment: "Siri's answer when the lens in use has no steady light (torch), for example the front camera.")
+        case .lightUnavailable:
+            LocalizedStringResource(
+                "The light isn't available right now.",
+                comment: "Siri's answer when the system didn't allow the steady light (torch), for example because the phone is warm, or the night sky helper keeps it off.")
+        case .intervalStarted:
+            LocalizedStringResource(
+                "Interval shooting started.", comment: "Siri's answer after nope. started a series of photos at a fixed interval.")
+        case .intervalBlockedByAstro:
+            LocalizedStringResource(
+                "Astro is on. Turn it off to start interval shooting.",
+                comment: "Siri's answer when interval shooting was asked for while nope.'s night sky helper is on. Astro is the helper's name on the camera.")
+        case .intervalStopped:
+            LocalizedStringResource(
+                "Interval shooting stopped. The photos taken are saved.",
+                comment: "Siri's answer after nope.'s interval series was stopped; the photos already taken are kept.")
+        case .noIntervalRunning:
+            LocalizedStringResource(
+                "No interval series is running.", comment: "Siri's answer when asked to stop interval shooting while none runs.")
+        case .focusRangeSet(.unlimited):
+            LocalizedStringResource(
+                "Autofocus has no range limit.", comment: "Siri's answer after nope.'s autofocus range limit (Close-Up or Far Focus) was lifted.")
+        case .focusRangeSet(.closeUp):
+            LocalizedStringResource(
+                "Close-Up is on.", comment: "Siri's answer after nope. limited autofocus to near subjects. Close-Up is the camera control's name.")
+        case .focusRangeSet(.far):
+            LocalizedStringResource(
+                "Far Focus is on.", comment: "Siri's answer after nope. limited autofocus to far subjects. Far Focus is the camera control's name.")
+        case .focusRangeUnavailable:
+            LocalizedStringResource(
+                "This lens can't limit its focus range.", comment: "Siri's answer when the lens in use can't limit autofocus to near or far subjects.")
+        case .photoSizeSet:
+            LocalizedStringResource(
+                "The photo size is set.", comment: "Siri's answer after nope. changed a lens's photo size; it applies from the next photo.")
+        case .noPhotoSizeChoice:
+            LocalizedStringResource(
+                "This lens has only one photo size.", comment: "Siri's answer when the lens offers no choice of photo size.")
+        case .bracketUnavailable:
+            LocalizedStringResource(
+                "This lens can't take that bracket.",
+                comment: "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.")
+        case .presetApplied(let result):
+            presetMessage(for: result)
+        case .presetUnavailable:
+            LocalizedStringResource(
+                "That preset can't be found. Nothing changed.",
+                comment: "Siri's answer when the settings preset asked for was deleted or can't be read.")
         case .cameraUnavailable(.needsPermission):
             LocalizedStringResource(
                 "Open nope. to allow camera access.",
@@ -57,6 +128,32 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "The camera isn't available right now.",
                 comment: "Siri's answer when the camera didn't start, is in use by another app or is paused.")
+        }
+    }
+
+    /// What Siri says after a preset was applied: which one, whether everything applied as saved,
+    /// and that the Presets list can undo it.
+    ///
+    /// - Parameter result: The result of the apply.
+    /// - Returns: A whole, localized sentence.
+    static func presetMessage(for result: PresetApplyResult) -> LocalizedStringResource {
+        switch (result.name, result.notices.isEmpty) {
+        case (nil, true):
+            LocalizedStringResource(
+                "Factory Defaults applied. You can undo it in Presets.",
+                comment: "Siri's answer after nope. returned every setting to a fresh install's. Presets is the name of the list in nope.'s Settings.")
+        case (nil, false):
+            LocalizedStringResource(
+                "Factory Defaults applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.",
+                comment: "Siri's answer after nope. applied Factory Defaults but, for example, the camera wasn't on. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.")
+        case (let name?, true):
+            LocalizedStringResource(
+                "“\(name)” applied. You can undo it in Presets.",
+                comment: "Siri's answer after nope. applied a saved settings preset. The placeholder is the preset's name, in the language's quotation marks. Presets is the name of the list in nope.'s Settings.")
+        case (let name?, false):
+            LocalizedStringResource(
+                "“\(name)” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it.",
+                comment: "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged.")
         }
     }
 }

@@ -18,8 +18,7 @@ enum FocusMagnifier {
 extension View {
     /// Draws the view enlarged around the magnifier's point while the focus magnifier is on.
     /// The ready camera applies it to the picture and focus peaking, and ``CameraScreen`` to the
-    /// natural-color viewfinder it draws behind the red interface in night mode, so all three
-    /// stay aligned. The layout frame doesn't change, so the caller clips it.
+    /// live viewfinder it draws behind the interface, so all three stay aligned. The layout frame doesn't change, so the caller clips it.
     ///
     /// - Parameter model: The camera model.
     func focusMagnified(_ model: CameraModel) -> some View {
@@ -356,6 +355,7 @@ struct AutoExposureDial: View {
                 Text("Exposure", bundle: .module, comment: "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.")
             }
             .accessibilityValue(Text(verbatim: valueText))
+            .nightModeTrackTint()
         }
     }
 
@@ -545,6 +545,14 @@ enum CloseUpText {
     /// "Close-Up".
     static var title: Text {
         Text("Close-Up", bundle: .module, comment: "Quick control and pill on the camera: limits autofocus to near subjects, for small things close to the lens.")
+    }
+}
+
+/// The name of the far focus limit (issue #57).
+enum FarFocusText {
+    /// "Far Focus".
+    static var title: Text {
+        Text("Far Focus", bundle: .module, comment: "Quick control and pill on the camera: limits autofocus to far subjects, such as a landscape seen past near branches.")
     }
 }
 

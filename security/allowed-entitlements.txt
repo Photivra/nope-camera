@@ -1,3 +1,6 @@
 # Entitlement keys the app and its extensions may request, one per line.
 # Adding a line is a reviewed decision: see AGENTS.md, "Security checks".
 com.apple.developer.locked-camera-capture
+# The App Group the app and its Control Center controls share for the person's settings
+# (issue #42). Named group.$(NOPE_BUNDLE_IDENTIFIER); holds settings only.
+com.apple.security.application-groups

@@ -51,6 +51,32 @@ struct SaveSettingsOptionTests {
         #expect(settings == SaveSettings())
     }
 
+    /// The copy size (issue #57): full by default, stored only when changed, and file options
+    /// saved before it existed decode at full size.
+    @Test func theCopySizeDefaultsToFullAndRoundTrips() throws {
+        var options = DevelopedFileOptions()
+        #expect(options.size == .full)
+        options.size = .quarter
+        #expect(!options.isDefault)
+        let decoded = try JSONDecoder().decode(DevelopedFileOptions.self, from: JSONEncoder().encode(options))
+        #expect(decoded.size == .quarter)
+        options.size = .full
+        #expect(options.isDefault)
+        let old = #"{"heifQuality":"high","jpegQuality":"maximum","heifBitDepth":10,"colorSpace":"sRGB"}"#
+        let earlier = try JSONDecoder().decode(DevelopedFileOptions.self, from: Data(old.utf8))
+        #expect(earlier.size == .full)
+        #expect(earlier.heifQuality == .high)
+    }
+
+    @Test func eachCopySizeScalesBothSidesAndNeverReachesZero() {
+        let raw = PhotoDimensions(width: 4032, height: 3024)
+        #expect(OutputSize.full.dimensions(of: raw) == raw)
+        #expect(OutputSize.half.dimensions(of: raw) == PhotoDimensions(width: 2016, height: 1512))
+        #expect(OutputSize.quarter.dimensions(of: raw) == PhotoDimensions(width: 1008, height: 756))
+        #expect(OutputSize.quarter.dimensions(of: PhotoDimensions(width: 3, height: 1)) == PhotoDimensions(width: 1, height: 1))
+        #expect(OutputSize.allCases.map(\.scale) == [1, 0.5, 0.25])
+    }
+
     @Test func thePairingChoiceAppliesOnlyWithAllThreeFormats() {
         var settings = SaveSettings()
         settings.setFormat(.jpeg, isSelected: true)
@@ -289,6 +315,8 @@ struct PhotoLocationTests {
 
         var settings = MetadataSettings()
         settings.set(.location, isOn: true)
+        // The GPS version the standard file tags add is tested in `StandardFileTagsTests`.
+        settings.writesStandardFileTags = false
         var on = MetadataPlan(settings: settings)
         on.location = place
         let gps = on.properties(for: format, from: source)["{GPS}"] as? [String: Any]

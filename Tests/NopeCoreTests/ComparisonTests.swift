@@ -114,6 +114,10 @@ struct ComparisonTests {
         await model.send(.comparison(.setOn(true)))
         #expect(model.comparison.isOn)
         #expect(model.comparisonAppliesToNextPhoto)
+        // An interval series takes its own photos, without the comparison.
+        await model.send(.drive(.setMode(.interval)))
+        #expect(!model.comparisonAppliesToNextPhoto)
+        await model.send(.drive(.setMode(.single)))
         await model.send(.comparison(.setOn(false)))
         #expect(!model.comparison.isOn)
     }
