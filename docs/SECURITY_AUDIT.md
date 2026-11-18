@@ -165,7 +165,7 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
   - Each string is accurate, says "nope.", and is present in every language that ships (English
-    and Spanish, `es` and `es-419`, in 1.0.0; issues #86 and #87).
+    only in 1.0.0, issue #86; Spanish is planned for 1.1.0, issue #87).
   - The items added to 1.0.0 on 2026-11-18 add no usage string: App Intents (#82) need no Siri
     usage string or entitlement (only SiriKit's `INPreferences.requestSiriAuthorization` does,
     and the app doesn't call it), and keeping the screen on (#97,
@@ -216,12 +216,12 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
 
-Items added to 1.0.0 on 2026-11-18 (all built except #87, the Spanish translation): #82 (App
-Intents, the Assistant Access setting and its tip) is expected to use `UserDefaults` only, already declared with
-`CA92.1` and `1C8F.1` if the setting is shared with the controls extension; #97 (keep the
-screen on) uses the idle timer, which isn't a required-reason API; #87, #88, #90 and #95 add no
-listed API. Rerun the search below on the build that includes them, in the app and each
-extension.
+Items added to 1.0.0 on 2026-11-18 (all built; #87, the Spanish translation, moved to 1.1.0):
+#82 (App Intents, the Assistant Access setting and its tip) is expected to use `UserDefaults`
+only, already declared with `CA92.1` and `1C8F.1` if the setting is shared with the controls
+extension; #97 (keep the screen on) uses the idle timer, which isn't a required-reason API; #87,
+#88, #90 and #95 add no listed API. Rerun the search below on the build that includes them, in
+the app and each extension.
 
 - **Run:**
   - Search Release code for the APIs Apple lists in each category, for example
