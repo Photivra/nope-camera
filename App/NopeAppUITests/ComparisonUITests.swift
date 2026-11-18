@@ -13,10 +13,12 @@ extension NopeAppUITests {
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
     }
 
-    /// Turns Compare on from the quick-controls tray, checks the hint, and takes the photos.
+    /// Turns Compare on from Q, closes Q (its panel covers the hints on the picture's lower
+    /// edge), checks the hint, and takes the photos.
     @MainActor
     private func takeComparisonShot(_ app: XCUIApplication) {
         quickControl(app, "Compare")
+        closeTray(app)
         XCTAssertTrue(
             element(app, containing: "Two photos are taken, a moment apart.").waitForExistence(timeout: 5))
         app.buttons["Take Photo"].tap()
@@ -153,8 +155,7 @@ extension NopeAppUITests {
     @MainActor
     func testHonestyScreenSaysTheComparisonPhotoIsNeverSaved() throws {
         let app = launch("denied")
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
+        openSettings(app)
         let honesty = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Honesty")).firstMatch
         var rowSwipes = 0
         while !honesty.isHittable && rowSwipes < 8 {

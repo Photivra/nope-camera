@@ -1,11 +1,17 @@
 import XCTest
 
 /// UI tests for the "Processed" marker of a lens without RAW, its processing note and its
-/// Settings switch (issue #80), each with an accessibility audit at the default and largest text
+/// Settings switch, Show Processed Marker (issue #80; BUILD-SPEC.md, 3.2), each with an accessibility audit at the default and largest text
 /// sizes, in the dark setting, in night mode and in right-to-left layout.
 extension NopeAppUITests {
     /// The first sentence of the processing note.
-    private static let notePhone = "The phone's camera makes this photo"
+    private static let notePhone = "The phone's camera processes this file before nope. receives it."
+
+    /// The format status's VoiceOver value on the simulated lenses without RAW.
+    private static let processedValue = "Processed: no RAW on this lens, HEIF"
+
+    /// The processing note's last line, about the files nope. saves.
+    private static let noteLast = "Nothing more to this lens's file."
 
     /// The note's line for a lens that lets the app turn off distortion correction (the
     /// simulated wide lens without RAW).
@@ -37,22 +43,19 @@ extension NopeAppUITests {
         return swipes
     }
 
-    /// The Processed Marker switch in Settings.
+    /// The Show Processed Marker switch in Settings.
     @MainActor
     private func markerSwitch(_ app: XCUIApplication) -> XCUIElement {
-        app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Processed Marker")).firstMatch
+        app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Show Processed Marker")).firstMatch
     }
 
-    /// Opens Settings and scrolls to the Processed Marker switch.
+    /// Opens Settings and scrolls to the Show Processed Marker switch.
     ///
     /// - Returns: How many swipes it took.
     @MainActor
     @discardableResult
     private func openMarkerSwitch(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) -> Int {
-        let settings = app.buttons["Settings"]
-        XCTAssertTrue(settings.waitForExistence(timeout: 15), file: file, line: line)
-        settings.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), file: file, line: line)
+        openSettings(app, file: file, line: line)
         let swipes = swipeUntilHittable(app, markerSwitch(app))
         XCTAssertTrue(markerSwitch(app).exists, file: file, line: line)
         return swipes
@@ -62,11 +65,11 @@ extension NopeAppUITests {
     func testProcessedMarkerOpensTheLensProcessingNote() throws {
         let app = launch("noRAW")
         // The marker shows before the first photo, and VoiceOver names the processed format.
-        XCTAssertTrue(formatChipValue(app, contains: "HEIF with some device processing"))
+        XCTAssertTrue(formatChipValue(app, contains: Self.processedValue))
+        XCTAssertTrue(app.buttons["FormatStatus.processedMarker"].exists)
         openProcessingNote(app)
-        XCTAssertTrue(element(app, containing: "turns off what apps can").exists)
         XCTAssertTrue(element(app, containing: Self.noteDistortionOff).exists)
-        XCTAssertTrue(element(app, containing: "saves the camera's file without changing its pixels").exists)
+        XCTAssertTrue(element(app, containing: Self.noteLast).exists)
         // As for the format sheet (testFormatChipExplainsTheFormat).
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         app.buttons["Done"].tap()
@@ -88,18 +91,22 @@ extension NopeAppUITests {
     @MainActor
     func testProcessedMarkerSwitchHidesOnlyTheMarker() throws {
         let app = launch("noRAW")
-        XCTAssertTrue(formatChipValue(app, contains: "device processing"))
+        XCTAssertTrue(formatChipValue(app, contains: Self.processedValue))
         let swipes = openMarkerSwitch(app)
         let marker = markerSwitch(app)
         XCTAssertEqual(marker.value as? String, "1")
-        XCTAssertTrue(marker.label.contains("On by default."))
+        // On by default; Settings no longer says so in words (BUILD-SPEC.md, section 4).
+        XCTAssertFalse(marker.label.contains("On by default."))
         try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
         marker.switches.firstMatch.tap()
         XCTAssertEqual(marker.value as? String, "0")
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.buttons["Photo Format"].waitForExistence(timeout: 2))
-        // VoiceOver still names the processed format, and the photo's details still say it.
+        // Only the marker goes: the status names the file without the triangle (BUILD-SPEC.md,
+        // 3.2). VoiceOver still names the processed format, and the photo's details still say it.
+        XCTAssertTrue(app.buttons["FormatStatus.processedName"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["FormatStatus.processedMarker"].exists)
+        XCTAssertTrue(formatChipValue(app, contains: Self.processedValue))
         XCTAssertEqual(
             app.otherElements["Viewfinder"].value as? String, "Lens: Wide. Format: HEIF with some device processing.")
         try audit(app)
@@ -113,11 +120,11 @@ extension NopeAppUITests {
     @MainActor
     func testProcessedMarkerAndNoteAtTheLargestTextSize() throws {
         let app = launch("noRAW", extraArguments: Self.largestTextSize)
-        XCTAssertTrue(formatChipValue(app, contains: "device processing"))
+        XCTAssertTrue(formatChipValue(app, contains: Self.processedValue))
         try auditVisibleElements(app)
         openProcessingNote(app)
         try audit(app, checksContrast: !isPad)
-        let last = element(app, containing: "saves the camera's file without changing its pixels")
+        let last = element(app, containing: Self.noteLast)
         let swipes = swipeUntilHittable(app, last)
         XCTAssertTrue(last.exists)
         try audit(app, afterScrolling: swipes > 0, checksContrast: !isPad)
@@ -130,7 +137,7 @@ extension NopeAppUITests {
     func testProcessedMarkerAndNoteInTheDarkSettingAndNightMode() throws {
         useAppearance(.dark)
         let dark = launch("noRAW")
-        XCTAssertTrue(formatChipValue(dark, contains: "device processing"))
+        XCTAssertTrue(formatChipValue(dark, contains: Self.processedValue))
         try audit(dark)
         openProcessingNote(dark)
         try audit(dark, checksDynamicType: false, checksContrast: !isPad)
@@ -140,7 +147,7 @@ extension NopeAppUITests {
         dark.terminate()
 
         let night = launch("noRAW", extraArguments: Self.nightModeOn)
-        XCTAssertTrue(formatChipValue(night, contains: "device processing"))
+        XCTAssertTrue(formatChipValue(night, contains: Self.processedValue))
         try audit(night)
         openProcessingNote(night)
         try audit(night, checksDynamicType: false, checksContrast: !isPad)
@@ -152,7 +159,7 @@ extension NopeAppUITests {
     @MainActor
     func testProcessedMarkerAndNoteRightToLeft() throws {
         let app = launch("noRAW", extraArguments: Self.rightToLeft)
-        XCTAssertTrue(formatChipValue(app, contains: "device processing"))
+        XCTAssertTrue(formatChipValue(app, contains: Self.processedValue))
         try audit(app)
         openProcessingNote(app)
         try audit(app, checksDynamicType: false, checksContrast: !isPad)

@@ -64,10 +64,10 @@ extension NopeAppUITests {
         XCTAssertTrue(flashPill.waitForExistence(timeout: 5))
         flashPill.tap()
         XCTAssertFalse(flashPill.waitForExistence(timeout: 2))
-        // The ultra wide has neither: the tray doesn't offer them.
+        // The ultra wide has neither: Q doesn't offer them.
         closeTray(app)
         app.buttons["Ultra Wide"].tap()
-        app.buttons["Quick Controls"].tap()
+        quickMenuButton(app).tap()
         XCTAssertTrue(app.buttons["Hide Controls"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Light"].exists)
         XCTAssertFalse(app.buttons["Flash"].exists)
@@ -161,8 +161,7 @@ extension NopeAppUITests {
     func testNightModeSettingsScreensPassAccessibilityAudits() throws {
         let app = launch("photosDenied", extraArguments: Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         let tint = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Red Viewfinder")).firstMatch
         var swipes = 0
         while !tint.isHittable && swipes < 6 {
@@ -293,11 +292,13 @@ extension NopeAppUITests {
         return count
     }
 
-    /// Closes the quick-controls tray if it is open.
+    /// Closes Q, the quick menu that replaced the quick-controls tray, if it is open.
     @MainActor
     func closeTray(_ app: XCUIApplication) {
-        let tray = app.buttons["Quick Controls"]
-        if tray.isSelected { tray.tap() }
+        let quick = quickMenuButton(app)
+        guard quick.exists, quick.isSelected else { return }
+        quick.tap()
+        _ = app.descendants(matching: .any)["quickMenu"].waitForNonExistence(timeout: 5)
     }
 
     /// Counts sampled pixels of a screenshot that match a test.

@@ -19,12 +19,13 @@ struct LocalizationTests {
     func stringsAreTranslated(locale: String) throws {
         let path = try #require(Bundle.module.path(forResource: locale, ofType: "lproj"))
         let bundle = try #require(Bundle(path: path))
-        let value = bundle.localizedString(forKey: "Allow Camera Access", value: "MISSING", table: nil)
+        // Keys the 1.0.0 interface uses: the shutter's name and the format status's name.
+        let value = bundle.localizedString(forKey: "Take Photo", value: "MISSING", table: nil)
         #expect(value != "MISSING")
-        #expect(value != "Allow Camera Access")
-        let honesty = bundle.localizedString(forKey: "Processed: No RAW on This Lens", value: "MISSING", table: "Honesty")
+        #expect(value != "Take Photo")
+        let honesty = bundle.localizedString(forKey: "Photo Format", value: "MISSING", table: "Honesty")
         #expect(honesty != "MISSING")
-        #expect(honesty != "Processed: No RAW on This Lens")
+        #expect(honesty != "Photo Format")
     }
 }
 

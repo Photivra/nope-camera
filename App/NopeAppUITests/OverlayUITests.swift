@@ -1,7 +1,7 @@
 import XCTest
 
 /// UI tests for the viewfinder overlays (issues #40, #47, #51 and #52) against the simulated
-/// backend: the grid and level from the quick-controls tray, the histogram and live readout with
+/// backend: the grid and level from Q, the quick menu, the histogram and live readout with
 /// the manual controls, their switches in Settings and Pro Tools, and accessibility audits of
 /// each state at the default and largest text sizes and right-to-left.
 final class OverlayUITests: XCTestCase {
@@ -73,12 +73,30 @@ final class OverlayUITests: XCTestCase {
         }
     }
 
-    /// Opens the quick-controls tray.
+    /// Q, the quick menu that replaced the quick-controls tray (docs/design/BUILD-SPEC.md, 3.6).
+    @MainActor
+    private func quickMenuButton(_ app: XCUIApplication) -> XCUIElement {
+        app.buttons.matching(NSPredicate(format: "identifier == 'quickMenuButton' OR label == 'Quick Menu'")).firstMatch
+    }
+
+    /// Opens Q.
     @MainActor
     private func openTray(_ app: XCUIApplication) {
-        let tray = app.buttons["Quick Controls"]
-        XCTAssertTrue(tray.waitForExistence(timeout: 10))
-        tray.tap()
+        let quick = quickMenuButton(app)
+        XCTAssertTrue(quick.waitForExistence(timeout: 10))
+        quick.tap()
+    }
+
+    /// Opens Settings: from its button in the iPad's column, otherwise from Q.
+    @MainActor
+    private func openSettings(_ app: XCUIApplication) {
+        let settings = app.buttons["Settings"]
+        if !settings.exists {
+            openTray(app)
+            XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        }
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -97,15 +115,18 @@ final class OverlayUITests: XCTestCase {
 
         let grid = app.buttons["Grid"]
         grid.tap()
-        let spiral = app.buttons["Golden Spiral"]
-        XCTAssertTrue(spiral.waitForExistence(timeout: 5))
-        spiral.tap()
-        // The tray stays open after a menu choice; the tray itself is audited with every item
-        // in NopeAppUITests.testQuickControlsTrayOpensAndCloses.
+        // The golden grids were removed (issue #76); 4 × 4 is a menu choice like them.
+        let fourByFour = app.buttons["4 × 4"]
+        XCTAssertTrue(fourByFour.waitForExistence(timeout: 5))
+        fourByFour.tap()
+        // Q stays open after a menu choice; Q itself is audited with every tile in
+        // QuickMenuUITests.
         let hide = app.buttons["Hide Controls"]
+        XCTAssertTrue(hide.waitForExistence(timeout: 5))
+        XCTAssertEqual(grid.value as? String, "4 × 4")
         for _ in 0..<3 where hide.exists {
-            app.buttons["Quick Controls"].tap()
-            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Tray closes")], timeout: 1)
+            quickMenuButton(app).tap()
+            _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Q closes")], timeout: 1)
         }
         XCTAssertFalse(hide.exists)
         try audit(app)
@@ -147,13 +168,13 @@ final class OverlayUITests: XCTestCase {
         try audit(app)
 
         // Clean view hides both; the guides and peaking would stay.
-        app.buttons["Quick Controls"].tap()
+        openTray(app)
         app.buttons["Hide Controls"].tap()
         XCTAssertFalse(histogram.waitForExistence(timeout: 2))
         XCTAssertFalse(app.otherElements["Live Camera Readout"].exists)
     }
 
-    /// The readout pinned from the quick-controls tray stays in clean view (issue #52).
+    /// The readout pinned from Q stays in clean view (issue #52).
     @MainActor
     func testPinnedReadoutStaysInCleanView() throws {
         let app = launch("manual", ["-NopeSettings.overlays.showsLiveReadout", "YES"])
@@ -210,7 +231,7 @@ final class OverlayUITests: XCTestCase {
     @MainActor
     func testOverlaySettingsAndProTools() throws {
         let app = launch("manual", ["-NopeSettings.showsManualControls", "YES", "-NopeSettings.overlays.showsLiveReadout", "YES"])
-        app.buttons["Settings"].tap()
+        openSettings(app)
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
         var swipes = 0
         while !row.isHittable && swipes < 6 {
@@ -231,18 +252,17 @@ final class OverlayUITests: XCTestCase {
         gridSwitch.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         XCTAssertEqual(gridSwitch.value as? String, "1")
 
-        let spiral = app.buttons["Golden Spiral"].firstMatch
+        // A grid style; the golden grids and Turn Spiral were removed (issue #76).
+        let fourByFour = app.buttons["4 × 4"].firstMatch
         var styleSwipes = 0
-        while !(spiral.exists && spiral.isHittable) && styleSwipes < 6 {
+        while !(fourByFour.exists && fourByFour.isHittable) && styleSwipes < 6 {
             app.swipeUp()
             styleSwipes += 1
         }
-        spiral.tap()
-        let turn = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Turn Spiral'")).firstMatch
-        XCTAssertTrue(turn.waitForExistence(timeout: 5))
-        XCTAssertTrue(turn.label.contains("1 of 8"))
-        turn.tap()
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS '2 of 8'")).firstMatch.waitForExistence(timeout: 5))
+        fourByFour.tap()
+        XCTAssertTrue(fourByFour.isSelected)
+        XCTAssertFalse(app.buttons["Golden Spiral"].exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Turn Spiral'")).firstMatch.exists)
         try audit(app, checksDynamicType: false, checksContrast: UIDevice.current.userInterfaceIdiom != .pad)
 
         // Pro Tools has the live aid switches too.
@@ -266,10 +286,10 @@ final class OverlayUITests: XCTestCase {
     func testOverlaySettingsAtTheLargestTextSize() throws {
         // The readout on, so its Keep Readout in Clean View switch is audited too.
         let app = launch("manual", Self.largestTextSize + [
-            "-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "goldenSpiral",
+            "-NopeSettings.overlays.showsGrid", "YES", "-NopeSettings.overlays.gridStyle", "fourByFour",
             "-NopeSettings.overlays.showsLiveReadout", "YES",
         ])
-        app.buttons["Settings"].tap()
+        openSettings(app)
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS 'Viewfinder Overlays'")).firstMatch
         var swipes = 0
         while !row.isHittable && swipes < 10 {

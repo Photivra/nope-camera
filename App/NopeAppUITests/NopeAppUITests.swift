@@ -98,7 +98,7 @@ final class NopeAppUITests: XCTestCase {
     private var iPhoneSideways = false
 
     /// Waits for the format chip and returns whether its VoiceOver value contains the text,
-    /// such as "single-frame RAW" or "device processing".
+    /// such as "single-frame RAW" or "Processed: no RAW on this lens".
     @MainActor
     private func formatChip(_ app: XCUIApplication, says text: String, timeout: TimeInterval = 10) -> Bool {
         let chip = app.buttons["Photo Format"]
@@ -117,15 +117,56 @@ final class NopeAppUITests: XCTestCase {
             == .completed
     }
 
-    /// Opens the quick-controls tray and presses one of its items.
+    /// Opens Q, the quick menu (docs/design/BUILD-SPEC.md, 3.6), and presses one of its tiles
+    /// or foot buttons by name, such as "Grid" or "Hide Controls". At the largest text sizes Q is
+    /// a list; the item is scrolled into view first.
     @MainActor
     func quickControl(_ app: XCUIApplication, _ name: String) {
-        let tray = app.buttons["Quick Controls"]
-        XCTAssertTrue(tray.waitForExistence(timeout: 20))
-        tray.tap()
+        let quick = quickMenuButton(app)
+        XCTAssertTrue(quick.waitForExistence(timeout: 20))
+        scrollUntilHittable(app, quick)
+        quick.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["quickMenu"].waitForExistence(timeout: 10))
         let item = app.buttons[name]
-        XCTAssertTrue(item.waitForExistence(timeout: 10))
+        scrollUntilHittable(app, item)
+        XCTAssertTrue(item.waitForExistence(timeout: 5), name)
         item.tap()
+    }
+
+    /// Swipes up until the element exists and can be tapped, at most eight times: at the largest
+    /// text sizes the camera and Q's list scroll, and the list creates rows only as they scroll
+    /// into view.
+    @MainActor
+    func scrollUntilHittable(_ app: XCUIApplication, _ element: XCUIElement) {
+        var swipes = 0
+        while !(element.exists && element.isHittable) && swipes < 8 {
+            app.swipeUp()
+            swipes += 1
+        }
+    }
+
+    /// Opens Settings: from its button where the screen has one (the iPad's column, and the
+    /// screens before the camera is ready), otherwise from Q, where the stacked camera keeps it
+    /// (docs/design/BUILD-SPEC.md, 3.1).
+    @MainActor
+    func openSettings(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        let settings = app.buttons["Settings"]
+        let quick = quickMenuButton(app)
+        let deadline = Date().addingTimeInterval(20)
+        while !settings.exists && !quick.exists && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        if !settings.exists {
+            XCTAssertTrue(quick.exists, "no Settings button and no Q", file: file, line: line)
+            scrollUntilHittable(app, quick)
+            quick.tap()
+            XCTAssertTrue(app.descendants(matching: .any)["quickMenu"].waitForExistence(timeout: 10), file: file, line: line)
+            // At the largest text sizes Settings is the last row of Q's list.
+            scrollUntilHittable(app, settings)
+            XCTAssertTrue(settings.exists, file: file, line: line)
+        }
+        settings.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5), file: file, line: line)
     }
 
     /// Presses Pro Tools' Done row at the end of its form, scrolling down to it.
@@ -206,10 +247,22 @@ final class NopeAppUITests: XCTestCase {
 
     /// Whether an issue is a contrast issue of an element that isn't wholly on screen, or of no
     /// element, which ``auditScrollingScreen(_:file:line:)`` ignores.
+    ///
+    /// In the 1.0.0 scrolling layout Q and the shutter stay pinned over the bottom of the scroll
+    /// view (docs/design/BUILD-SPEC.md, 3.12), so a row partly scrolled under them is measured
+    /// against the pinned row, as `CameraShellUITests` judges it; the row is measured whole in
+    /// another audit, before or after scrolling.
     @MainActor
     private static func isClippedContrastIssue(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
         guard issue.auditType == .contrast else { return false }
         guard let element = issue.element, element.exists else { return true }
+        // Only a row that runs from above the pinned row into it; the pinned row's own buttons
+        // are still checked.
+        let quick = app.buttons["Quick Menu"]
+        if quick.exists, !quick.isSelected {
+            let pinnedTop = quick.frame.minY - 2 * 8
+            if element.frame.minY < pinnedTop, element.frame.maxY > pinnedTop { return true }
+        }
         return !app.frame.contains(element.frame)
     }
 
@@ -264,7 +317,7 @@ final class NopeAppUITests: XCTestCase {
         let telephoto = app.buttons["Telephoto"]
         XCTAssertTrue(telephoto.exists)
         telephoto.tap()
-        XCTAssertTrue(formatChip(app, says: "device processing"))
+        XCTAssertTrue(formatChip(app, says: "Processed: no RAW on this lens"))
         XCTAssertTrue(telephoto.isSelected)
         try audit(app)
     }
@@ -423,34 +476,30 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Opens Settings from the camera screen and audits every settings screen: Settings,
-    /// Formats, Look, File Options, Privacy, Honesty, About and the license text.
+    /// Formats, HEIF and JPEG Copies, Details in Each Photo, Accessibility, Honesty, About and the
+    /// license text.
     @MainActor
     func auditSettingsScreens(_ app: XCUIApplication, checksDynamicType: Bool = true, checksContrast: Bool = true) throws {
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
 
         open(app, row: "Formats")
         XCTAssertTrue(app.navigationBars["Formats"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
-        // RAW only by default (issue #80); HEIF shows the Look and File Options rows.
+        // RAW only by default (issue #80); with HEIF the copies page shows its look and files.
         app.buttons["HEIF"].tap()
         goBack(app)
 
-        open(app, row: "Look")
-        XCTAssertTrue(app.navigationBars["Look"].waitForExistence(timeout: 5))
+        open(app, row: "HEIF and JPEG Copies")
+        XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
+        app.swipeUp()
+        app.swipeUp()
+        try audit(app, afterScrolling: true, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
         goBack(app)
 
-        open(app, row: "File Options")
-        XCTAssertTrue(app.navigationBars["File Options"].waitForExistence(timeout: 5))
-        try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
-        goBack(app)
-
-        open(app, row: "Choose Details")
-        XCTAssertTrue(app.navigationBars["Choose Details"].waitForExistence(timeout: 5))
+        open(app, row: "Details in Each Photo")
+        XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
         app.swipeUp()
         app.swipeUp()
@@ -479,7 +528,7 @@ final class NopeAppUITests: XCTestCase {
         goBack(app)
 
         app.buttons["Done"].tap()
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Settings"].waitForNonExistence(timeout: 5))
     }
 
     /// Waits for navigation and scrolling animations to finish, then runs the accessibility
@@ -507,7 +556,8 @@ final class NopeAppUITests: XCTestCase {
                 || (!checksContrast && issue.auditType == .contrast)
                 || (!checksContrast && issue.auditType == .textClipped && issue.element == nil)
                 // iPad Settings in night mode, a sheet: at the largest size the audit reported an
-                // element-less Dynamic Type finding on the long Choose Details list (docs/TESTING.md).
+                // element-less Dynamic Type finding on the long Details in Each Photo list
+                // (docs/TESTING.md).
                 || (!checksContrast && issue.auditType == .dynamicType && issue.element == nil)
                 || Self.isOpenIPadFinding(issue)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
@@ -704,9 +754,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testSourceCodeIsAnHTTPSLink() throws {
         let app = launch("denied")
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
+        openSettings(app)
         open(app, row: "About and Licenses")
         let link = app.links["Source code address"]
         var swipes = 0
@@ -722,17 +770,16 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testFormatsAndPrivacySwitchesFollowTheRules() throws {
         let app = launch("denied")
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
+        openSettings(app)
         XCTAssertTrue(element(app, containing: "RAW (DNG)").waitForExistence(timeout: 5))
-        XCTAssertFalse(element(app, containing: "HEIF").exists)
         XCTAssertTrue(element(app, containing: "All Optional Removed").exists)
 
         // RAW only by default (issue #80), and at least one format: with only RAW, RAW can't be
-        // turned off. The Look row shows only while a developed format is selected.
-        let lookRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Look")).firstMatch
-        XCTAssertFalse(lookRow.exists)
+        // turned off. HEIF and JPEG Copies says no copy is saved until a developed format is
+        // selected, then shows the look.
+        let copiesRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "HEIF and JPEG Copies")).firstMatch
+        XCTAssertTrue(copiesRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(copiesRow.label.contains("Not Saved"), copiesRow.label)
         open(app, row: "Formats")
         let raw = app.buttons["RAW (DNG)"]
         let heif = app.buttons["HEIF"]
@@ -745,34 +792,38 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(heif.isSelected)
         XCTAssertTrue(raw.isEnabled)
         goBack(app)
-        XCTAssertTrue(lookRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(copiesRow.waitForExistence(timeout: 5))
+        XCTAssertTrue(copiesRow.label.contains("Standard"), copiesRow.label)
 
-        open(app, row: "Look")
+        open(app, row: "HEIF and JPEG Copies")
         let flat = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Flat")).firstMatch
         XCTAssertTrue(flat.waitForExistence(timeout: 5))
         flat.tap()
         XCTAssertTrue(flat.isSelected)
         goBack(app)
-        XCTAssertTrue(element(app, containing: "Flat").waitForExistence(timeout: 5))
+        XCTAssertTrue(copiesRow.label.contains("Flat"), copiesRow.label)
 
         // The master switch is on and signing off by default (issue #80); turning on one detail
-        // makes it "Custom".
-        let master = app.switches["Remove All Optional Details"]
-        XCTAssertTrue(master.waitForExistence(timeout: 5))
-        XCTAssertEqual(master.value as? String, "1")
+        // makes it "Custom". The master switch is on the Details in Each Photo page.
         let sign = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Sign Each Photo")).firstMatch
+        var swipes = 0
+        while !(sign.exists && sign.isHittable) && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
         XCTAssertEqual(sign.value as? String, "0")
-        XCTAssertTrue(sign.label.contains("taken with nope. and which version"))
-        open(app, row: "Choose Details")
-        let detailMaster = app.switches["Remove All Optional Details"]
+        XCTAssertTrue(sign.label.contains("taken with nope., and which version"), sign.label)
+        open(app, row: "Details in Each Photo")
+        let detailMaster = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Remove All Optional Details")).firstMatch
         XCTAssertTrue(detailMaster.waitForExistence(timeout: 5))
+        XCTAssertEqual(detailMaster.value as? String, "1")
         let timeZone = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Time Zone")).firstMatch
         XCTAssertEqual(timeZone.value as? String, "0")
         timeZone.switches.firstMatch.tap()
         XCTAssertEqual(timeZone.value as? String, "1")
         XCTAssertEqual(detailMaster.value as? String, "0")
         let locked = element(app, containing: "Image Size and Layout")
-        var swipes = 0
+        swipes = 0
         while !locked.exists && swipes < 6 {
             app.swipeUp()
             swipes += 1
@@ -802,7 +853,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20))
         XCTAssertFalse(app.buttons["More Manual Controls"].exists)
         XCTAssertFalse(app.buttons["Shutter"].exists)
-        XCTAssertFalse(app.buttons["Manual Controls"].exists)
+        XCTAssertEqual(app.buttons["ManualControlsButton"].value as? String, "Off")
         try audit(app)
     }
 
@@ -815,8 +866,8 @@ final class NopeAppUITests: XCTestCase {
             XCTAssertTrue(app.buttons[name].exists, name)
         }
         XCTAssertTrue(hasValue(iso, startingWith: "Auto"))
-        // The M pill says manual controls are on.
-        XCTAssertTrue(app.buttons["Manual Controls"].exists)
+        // The Manual Controls button says manual controls are on.
+        XCTAssertEqual(app.buttons["ManualControlsButton"].value as? String, "On")
         try audit(app)
 
         // The dial opens over the picture; the lens row stays. Auto (selected) fixes the value in
@@ -928,11 +979,11 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testIntervalShootingShowsProgressAndStops() throws {
+        // With manual controls on, from the drive strip: Pro Tools no longer starts a series
+        // (BUILD-SPEC.md, 3.4); the shutter does once Interval is chosen.
         let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
-        manualMenu(app, "Pro Tools")
-        let start = app.buttons["Start"]
-        XCTAssertTrue(start.waitForExistence(timeout: 20))
-        start.tap()
+        chooseDrive(app, "Interval")
+        app.buttons["Take Photo"].tap()
         XCTAssertTrue(element(app, containing: "photos taken").waitForExistence(timeout: 20))
         // The screen dims during the series (issue #48); a tap anywhere brightens it, and the
         // series continues.
@@ -958,9 +1009,7 @@ final class NopeAppUITests: XCTestCase {
         app.terminate()
 
         let fresh = launch("manual")
-        let settingsButton = fresh.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 20))
-        settingsButton.tap()
+        openSettings(fresh)
         let toggle = fresh.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Start in Clean View")).firstMatch
         // The row can be below the fold, in the iPad popover too: drag inside Settings, just
         // below its navigation bar, not in the middle of the screen, which on iPad is outside
@@ -989,6 +1038,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Wide"].exists)
         XCTAssertFalse(app.buttons["ISO"].exists)
         XCTAssertFalse(app.buttons["Settings"].exists)
+        XCTAssertFalse(quickMenuButton(app).exists)
         XCTAssertFalse(app.buttons["Photo Format"].exists)
         try audit(app)
         app.buttons["Show Controls"].tap()
@@ -1005,7 +1055,7 @@ final class NopeAppUITests: XCTestCase {
         telephoto.tap()
         quickControl(app, "Hide Controls")
         XCTAssertTrue(app.buttons["Show Controls"].waitForExistence(timeout: 20))
-        XCTAssertTrue(formatChip(app, says: "device processing"))
+        XCTAssertTrue(formatChip(app, says: "Processed: no RAW on this lens"))
         try audit(app)
     }
 
@@ -1032,7 +1082,8 @@ final class NopeAppUITests: XCTestCase {
 
     @MainActor
     func testProToolsGrowsWithTheLargestTextSize() throws {
-        let labels = ["Metering", "Interval", "Photos"]
+        // The Interval section left Pro Tools (BUILD-SPEC.md, 3.4); its other rows are measured.
+        let labels = ["Metering", "Bracketing"]
         let regular = launch("manual", extraArguments: Self.manualOn)
         manualMenu(regular, "Pro Tools")
         XCTAssertTrue(regular.staticTexts["Metering"].waitForExistence(timeout: 20))
@@ -1088,7 +1139,7 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("allow")
         XCTAssertTrue(app.staticTexts["Photos with as little processing as this phone allows."].waitForExistence(timeout: 10))
         XCTAssertTrue(
-            app.staticTexts["Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed."].exists)
+            app.staticTexts["You can sign each photo, so changes can be detected. Signing is off until you turn it on."].exists)
         XCTAssertTrue(app.staticTexts["nope. never connects to the internet and keeps nothing about you."].exists)
         XCTAssertTrue(element(app, containing: "Photos access is asked the first time you save").exists)
         try audit(app)
@@ -1120,12 +1171,14 @@ final class NopeAppUITests: XCTestCase {
     func testFullAutoShowsOnlyTheDefaultControls() throws {
         let app = launch("allow")
         continuePastFirstRun(app)
-        for name in ["Photo Format", "Settings", "Wide", "Ultra Wide", "Telephoto", "Quick Controls", "Switch Camera", "Take Photo"] {
+        for name in ["Photo Format", "Wide", "Ultra Wide", "Telephoto", "Quick Menu", "Switch Camera", "Take Photo", "Single"] {
             XCTAssertTrue(app.buttons[name].exists, name)
         }
+        // Settings is in the column on iPad and in Q on the stacked camera (BUILD-SPEC.md, 3.1).
+        XCTAssertEqual(app.buttons["Settings"].exists, isPad)
         // The front camera has its own button, not a lens button; no pills at the defaults.
         XCTAssertFalse(app.buttons["Front"].exists)
-        XCTAssertFalse(app.buttons["Manual Controls"].exists)
+        XCTAssertEqual(app.buttons["ManualControlsButton"].value as? String, "Off")
         XCTAssertFalse(app.buttons["Not Signed"].exists)
         app.buttons["Switch Camera"].tap()
         XCTAssertTrue(
@@ -1161,33 +1214,34 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(chip.waitForExistence(timeout: 5))
     }
 
+    /// Q, which replaced the quick-controls tray (BUILD-SPEC.md, 3.6), opens over the picture
+    /// and closes with the shutter and with Q itself.
     @MainActor
     func testQuickControlsTrayOpensAndCloses() throws {
         let app = launch("allow")
         continuePastFirstRun(app)
-        app.buttons["Quick Controls"].tap()
+        let quick = quickMenuButton(app)
+        quick.tap()
         let hide = app.buttons["Hide Controls"]
         XCTAssertTrue(hide.waitForExistence(timeout: 5))
-        // On iPhone the tray takes the lens row's place; on iPad it opens over the picture.
-        if !isPad { XCTAssertFalse(app.buttons["Wide"].exists) }
-        XCTAssertTrue(app.buttons["Quick Controls"].isSelected)
+        XCTAssertTrue(quick.isSelected)
         try audit(app)
         // The shutter closes it.
         app.buttons["Take Photo"].tap()
-        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 5))
-        XCTAssertFalse(hide.waitForExistence(timeout: 1))
-        // The ⋯ button closes it too.
-        app.buttons["Quick Controls"].tap()
+        XCTAssertTrue(hide.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Wide"].exists)
+        // Q closes it too.
+        quick.tap()
         XCTAssertTrue(hide.waitForExistence(timeout: 5))
-        app.buttons["Quick Controls"].tap()
-        XCTAssertTrue(app.buttons["Wide"].waitForExistence(timeout: 5))
+        quick.tap()
+        XCTAssertTrue(hide.waitForNonExistence(timeout: 5))
     }
 
     @MainActor
     func testStatePillsChangeOrReset() throws {
         let app = launch("manual", extraArguments: Self.manualOn)
-        let manualPill = app.buttons["Manual Controls"]
-        XCTAssertTrue(manualPill.waitForExistence(timeout: 20))
+        let manualButton = app.buttons["ManualControlsButton"]
+        XCTAssertTrue(manualButton.waitForExistence(timeout: 20))
         // Lock exposure in Pro Tools: a lock pill appears, and pressing it unlocks.
         manualMenu(app, "Pro Tools")
         let lock = app.switches["Exposure Lock (AE-L)"]
@@ -1199,10 +1253,10 @@ final class NopeAppUITests: XCTestCase {
         try audit(app)
         lockPill.tap()
         XCTAssertFalse(lockPill.waitForExistence(timeout: 2))
-        // The M pill turns manual controls off.
-        manualPill.tap()
-        XCTAssertFalse(app.buttons["ISO"].waitForExistence(timeout: 2))
-        XCTAssertFalse(manualPill.exists)
+        // The Manual Controls button, which replaced the M pill, turns manual controls off.
+        manualButton.tap()
+        XCTAssertTrue(app.buttons["ISO"].waitForNonExistence(timeout: 5))
+        XCTAssertEqual(manualButton.value as? String, "Off")
     }
 
     @MainActor
@@ -1216,9 +1270,10 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Not Signed"].exists)
         try audit(app)
         // Turned on in Settings, the next photo is signed.
-        app.buttons["Settings"].tap()
+        openSettings(app)
         let sign = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Sign Each Photo")).firstMatch
         XCTAssertTrue(sign.waitForExistence(timeout: 5))
+        scrollUntilHittable(app, sign)
         XCTAssertEqual(sign.value as? String, "0")
         sign.switches.firstMatch.tap()
         XCTAssertEqual(sign.value as? String, "1")
@@ -1282,12 +1337,11 @@ final class NopeAppUITests: XCTestCase {
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))
         app.buttons["Telephoto"].tap()
-        XCTAssertTrue(formatChip(app, says: "device processing"))
+        XCTAssertTrue(formatChip(app, says: "Processed: no RAW on this lens"))
         try audit(app)
 
         // Settings rotates normally, and the camera is back in its layout when it closes.
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         Thread.sleep(forTimeInterval: 1.5)
         let window = app.windows.firstMatch.frame
         XCTAssertGreaterThan(window.width, window.height, "Settings didn't rotate")
@@ -1360,7 +1414,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testDeviceWithoutRAWShowsTheFallbackChip() throws {
         let app = launch("noRAW")
-        XCTAssertTrue(formatChip(app, says: "HEIF with some device processing"))
+        XCTAssertTrue(formatChip(app, says: "Processed: no RAW on this lens, HEIF"))
         XCTAssertEqual(
             app.otherElements["Viewfinder"].value as? String, "Lens: Wide. Format: HEIF with some device processing.")
         try audit(app)
@@ -1372,7 +1426,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testDeviceWithoutRAWAtTheLargestTextSize() throws {
         let app = launch("noRAW", extraArguments: Self.largestTextSize)
-        XCTAssertTrue(formatChip(app, says: "device processing"))
+        XCTAssertTrue(formatChip(app, says: "Processed: no RAW on this lens"))
         try auditVisibleElements(app)
     }
 
@@ -1419,6 +1473,8 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     private func choose(_ app: XCUIApplication, _ option: String, inPickerLabeled label: String) {
         let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", label)).firstMatch
+        // The list creates rows only as they scroll into view (Color Space is below the fold).
+        scrollUntilHittable(app, picker)
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         let options = app.buttons.matching(NSPredicate(format: "label == %@", option))
         let rows = Set(options.allElementsBoundByIndex.map(\.frame.debugDescription))
@@ -1438,9 +1494,7 @@ final class NopeAppUITests: XCTestCase {
     /// Selects JPEG as well, so RAW, HEIF and JPEG are all saved.
     @MainActor
     private func openFormatsWithAllThree(_ app: XCUIApplication) {
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
+        openSettings(app)
         open(app, row: "Formats")
         let jpeg = app.buttons["JPEG"]
         XCTAssertTrue(jpeg.waitForExistence(timeout: 5))
@@ -1454,9 +1508,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testPairedWithRAWAppearsOnlyWithAllThreeFormats() throws {
         let app = launch("denied")
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
+        openSettings(app)
         open(app, row: "Formats")
         XCTAssertTrue(app.buttons["JPEG"].waitForExistence(timeout: 5))
         XCTAssertFalse(element(app, containing: "Paired with RAW").exists)
@@ -1495,8 +1547,8 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("denied")
         openFormatsWithAllThree(app)
         goBack(app)
-        open(app, row: "File Options")
-        XCTAssertTrue(app.navigationBars["File Options"].waitForExistence(timeout: 5))
+        open(app, row: "HEIF and JPEG Copies")
+        XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "HEIF Compression").exists)
         XCTAssertTrue(element(app, containing: "JPEG Compression").exists)
         XCTAssertTrue(element(app, containing: "HEIF Bit Depth").exists)
@@ -1511,9 +1563,12 @@ final class NopeAppUITests: XCTestCase {
         }
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
         try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
+        // The choice is kept when the page opens again; the row in Settings shows the look.
         goBack(app)
-        XCTAssertTrue(element(app, containing: "Custom").waitForExistence(timeout: 5))
-        open(app, row: "File Options")
+        open(app, row: "HEIF and JPEG Copies")
+        let colorSpace = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Color Space")).firstMatch
+        XCTAssertTrue(colorSpace.waitForExistence(timeout: 5))
+        XCTAssertTrue(colorSpace.label.contains("sRGB") || (colorSpace.value as? String) == "sRGB", colorSpace.label)
         swipes = 0
         while !(restore.exists && restore.isHittable) && swipes < 6 {
             app.swipeUp()
@@ -1527,9 +1582,7 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testMirrorFrontCameraIsOffByDefault() throws {
         let app = launch("denied")
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
+        openSettings(app)
         let mirror = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Mirror Front Camera")).firstMatch
         var swipes = 0
         while !(mirror.exists && mirror.isHittable) && swipes < 6 {
@@ -1537,7 +1590,7 @@ final class NopeAppUITests: XCTestCase {
             swipes += 1
         }
         XCTAssertEqual(mirror.value as? String, "0")
-        XCTAssertTrue(mirror.label.contains("The viewfinder is mirrored either way"))
+        XCTAssertTrue(mirror.label.contains("Saves front camera photos mirrored"), mirror.label)
         mirror.switches.firstMatch.tap()
         XCTAssertEqual(mirror.value as? String, "1")
         try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
@@ -1548,8 +1601,8 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         XCTAssertFalse(app.buttons["Location On"].exists)
-        app.buttons["Settings"].tap()
-        open(app, row: "Choose Details")
+        openSettings(app)
+        open(app, row: "Details in Each Photo")
         let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
         XCTAssertTrue(location.waitForExistence(timeout: 5))
         XCTAssertEqual(location.value as? String, "0")
@@ -1571,10 +1624,8 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testDeclinedLocationStaysOffAndSaysHowToAllowIt() throws {
         let app = launch("denied", extraArguments: ["-NopeSimulatedLocation", "denied"])
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
-        open(app, row: "Choose Details")
+        openSettings(app)
+        open(app, row: "Details in Each Photo")
         let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
         XCTAssertTrue(location.waitForExistence(timeout: 5))
         location.switches.firstMatch.tap()
@@ -1586,10 +1637,8 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testLocationStatesAtTheLargestTextSize() throws {
         let app = launch("denied", extraArguments: Self.largestTextSize + ["-NopeSimulatedLocation", "denied"])
-        let settingsButton = app.buttons["Settings"]
-        XCTAssertTrue(settingsButton.waitForExistence(timeout: 10))
-        settingsButton.tap()
-        open(app, row: "Choose Details")
+        openSettings(app)
+        open(app, row: "Details in Each Photo")
         let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
         XCTAssertTrue(location.waitForExistence(timeout: 5))
         location.switches.firstMatch.tap()
@@ -1601,8 +1650,8 @@ final class NopeAppUITests: XCTestCase {
     func testLocationWarningInRightToLeftLayout() throws {
         let app = launch("allow", extraArguments: Self.rightToLeft)
         continuePastFirstRun(app)
-        app.buttons["Settings"].tap()
-        open(app, row: "Choose Details")
+        openSettings(app)
+        open(app, row: "Details in Each Photo")
         let location = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Location")).firstMatch
         XCTAssertTrue(location.waitForExistence(timeout: 5))
         location.switches.firstMatch.tap()
@@ -1663,10 +1712,10 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testExposureCompensationInFullAuto() throws {
         let app = launch("aids")
+        // Q's Exposure tile closes Q and opens the dial.
         quickControl(app, "Exposure")
         let slider = app.sliders["Exposure"]
         XCTAssertTrue(slider.waitForExistence(timeout: 10))
-        app.buttons["Quick Controls"].tap()
         app.buttons["Brighter"].tap()
         XCTAssertTrue(
             XCTWaiter().wait(
@@ -1685,14 +1734,15 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testCloseUpMagnifierAndFastShutterPills() throws {
         let app = launch("aids")
-        // Switches stay in the open tray; Fast Shutter is a menu of choices.
+        // Switches stay in the open Q panel; Fast Shutter is a menu of choices.
         quickControl(app, "Close-Up")
         app.buttons["Magnify"].tap()
         app.buttons["Fast Shutter"].tap()
         let freeze = app.buttons["Freeze Motion (1/500 s)"]
         XCTAssertTrue(freeze.waitForExistence(timeout: 10))
         freeze.tap()
-        app.buttons["Quick Controls"].tap()
+        quickMenuButton(app).tap()
+        XCTAssertTrue(app.buttons["Hide Controls"].waitForNonExistence(timeout: 5))
         for name in ["Close-Up", "Magnify", "Fast Shutter"] {
             XCTAssertTrue(app.buttons[name].waitForExistence(timeout: 10), name)
         }
@@ -1757,7 +1807,6 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Lock Focus and Exposure"].waitForExistence(timeout: 10))
         quickControl(app, "Exposure")
         XCTAssertTrue(app.sliders["Exposure"].waitForExistence(timeout: 10))
-        app.buttons["Quick Controls"].tap()
         try audit(app)
     }
 
@@ -1765,8 +1814,7 @@ final class NopeAppUITests: XCTestCase {
     func testFastShutterSettingPassesAudits() throws {
         for arguments in [[String](), Self.largestTextSize] {
             let app = launch("aids", extraArguments: arguments)
-            XCTAssertTrue(app.buttons["Settings"].waitForExistence(timeout: 20))
-            app.buttons["Settings"].tap()
+            openSettings(app)
             let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fast Shutter")).firstMatch
             var swipes = 0
             while !(row.exists && row.isHittable) && swipes < 8 {
@@ -1785,17 +1833,51 @@ final class NopeAppUITests: XCTestCase {
 
     // MARK: - Drive, warnings (issues #39, #44, #46)
 
-    /// Chooses a drive mode in the tray's Drive menu.
+    /// The drive strip's word of that name (docs/design/BUILD-SPEC.md, 3.5): the lowest button
+    /// with the label, since the status line may show the selected mode's name too, scrolled
+    /// into view at the largest text sizes.
     @MainActor
-    func chooseDrive(_ app: XCUIApplication, _ option: String) {
-        quickControl(app, "Drive")
-        let item = app.buttons[option]
-        XCTAssertTrue(item.waitForExistence(timeout: 10), option)
-        item.tap()
+    func driveStripWord(_ app: XCUIApplication, _ name: String) -> XCUIElement {
+        let matches = app.buttons.matching(NSPredicate(format: "label == %@", name))
+        XCTAssertTrue(matches.firstMatch.waitForExistence(timeout: 20), name)
+        var swipes = 0
+        while swipes < 6 {
+            let lowest = matches.allElementsBoundByIndex.max { $0.frame.minY < $1.frame.minY }
+            if let lowest, lowest.isHittable { return lowest }
+            app.swipeUp()
+            swipes += 1
+        }
+        return matches.firstMatch
     }
 
-    /// Interval shooting from the Drive menu, in full auto (manual controls off): its sheet, the
-    /// Interval pill, the shutter starting and stopping the series, and the dimmed screen.
+    /// Chooses a drive mode on the drive strip, which replaced the quick-controls tray's Drive
+    /// menu: "Interval Shooting" selects Interval and opens its settings from the selected word;
+    /// "Timer: 10s" selects Timer and its 10-second delay; any other name is the strip's word.
+    @MainActor
+    func chooseDrive(_ app: XCUIApplication, _ option: String) {
+        let selected = { (word: String) in
+            app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", word)).firstMatch
+        }
+        switch option {
+        case "Interval Shooting":
+            driveStripWord(app, "Interval").tap()
+            XCTAssertTrue(selected("Interval").waitForExistence(timeout: 5))
+            driveStripWord(app, "Interval").tap()
+        case "Timer: 10s":
+            driveStripWord(app, "Timer").tap()
+            XCTAssertTrue(selected("Timer").waitForExistence(timeout: 5))
+            driveStripWord(app, "Timer").tap()
+            let ten = app.buttons["10 seconds"]
+            XCTAssertTrue(ten.waitForExistence(timeout: 5))
+            ten.tap()
+        default:
+            driveStripWord(app, option).tap()
+            XCTAssertTrue(selected(option).waitForExistence(timeout: 5), option)
+        }
+    }
+
+    /// Interval shooting from the drive strip, in full auto (manual controls off): its sheet, the
+    /// Interval card, the shutter starting and stopping the series, and the dimmed screen.
     @MainActor
     func testIntervalShootingFromTheDriveMenuInFullAuto() throws {
         let app = launch("noRAW")
@@ -1805,7 +1887,7 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(element(app, containing: "Each photo is taken in full auto").exists)
         try audit(app)
         app.buttons["Done"].tap()
-        XCTAssertTrue(app.buttons["Interval Shooting"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Interval Settings"].waitForExistence(timeout: 5))
         let shutter = app.buttons["Take Photo"]
         XCTAssertEqual(shutter.value as? String, "Interval shooting. Press to start the series.")
         shutter.tap()
@@ -1824,16 +1906,6 @@ final class NopeAppUITests: XCTestCase {
     func testIntervalSheetAtTheLargestTextSizeAndRightToLeft() throws {
         for arguments in [Self.largestTextSize, Self.rightToLeft] {
             let app = launch("noRAW", extraArguments: arguments)
-            if arguments == Self.largestTextSize {
-                // The tray's button scrolls into view at the largest sizes.
-                let tray = app.buttons["Quick Controls"]
-                XCTAssertTrue(tray.waitForExistence(timeout: 20))
-                var swipes = 0
-                while !tray.isHittable && swipes < 6 {
-                    app.swipeUp()
-                    swipes += 1
-                }
-            }
             chooseDrive(app, "Interval Shooting")
             XCTAssertTrue(app.buttons["Start"].waitForExistence(timeout: 10))
             try audit(app)
@@ -1846,8 +1918,6 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("noRAW", extraArguments: Self.signingOn)
         // Ten seconds, so the countdown is still running after the audit.
         chooseDrive(app, "Timer: 10s")
-        let pill = app.buttons["Self-Timer"]
-        XCTAssertTrue(pill.waitForExistence(timeout: 5))
         let shutter = app.buttons["Take Photo"]
         shutter.tap()
         let cancel = app.buttons["Cancel Timer"]
@@ -1861,25 +1931,18 @@ final class NopeAppUITests: XCTestCase {
         // Counting down again takes the photo at zero.
         shutter.tap()
         XCTAssertTrue(lastPhoto(app, says: "Saved and signed.", timeout: 20))
-        // The pill goes back to single photos.
-        pill.tap()
-        XCTAssertFalse(pill.waitForExistence(timeout: 2))
+        // Single goes back to single photos.
+        driveStripWord(app, "Single").tap()
+        XCTAssertTrue(
+            app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", "Single")).firstMatch
+                .waitForExistence(timeout: 5))
+        XCTAssertEqual(shutter.value as? String, "")
     }
 
     @MainActor
     func testSelfTimerAtTheLargestTextSizeAndRightToLeft() throws {
         for arguments in [Self.largestTextSize, Self.rightToLeft] {
             let app = launch("noRAW", extraArguments: arguments)
-            if arguments == Self.largestTextSize {
-                // The tray's button scrolls into view at the largest sizes.
-                let tray = app.buttons["Quick Controls"]
-                XCTAssertTrue(tray.waitForExistence(timeout: 20))
-                var swipes = 0
-                while !tray.isHittable && swipes < 6 {
-                    app.swipeUp()
-                    swipes += 1
-                }
-            }
             chooseDrive(app, "Timer: 10s")
             app.buttons["Take Photo"].tap()
             XCTAssertTrue(app.buttons["Cancel Timer"].waitForExistence(timeout: 5))
@@ -1896,7 +1959,6 @@ final class NopeAppUITests: XCTestCase {
     func testBurstRunsUntilStoppedAndSavesEachFrame() throws {
         let app = launch("slowSaving", extraArguments: Self.signingOn)
         chooseDrive(app, "Burst")
-        XCTAssertTrue(app.buttons["Burst"].waitForExistence(timeout: 5))
         let shutter = app.buttons["Take Photo"]
         shutter.tap()
         let stop = app.buttons["Stop Burst"]
