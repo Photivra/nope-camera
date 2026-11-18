@@ -2561,6 +2561,19 @@ How long a bracket request waits for the camera's first exposure reading, which 
 bracket's frames are planned around, in seconds. An assumption, to be confirmed on a
 device: the camera reports readings several times a second once it runs.
 
+## `CameraModel/bracketReadingWaitSeconds`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor static let bracketReadingWaitSeconds: Double
+```
+
+How long the shutter waits for the camera's first exposure reading before a bracket, in
+seconds (docs/design/BRACKETING.md, section 4). An assumption, to be confirmed on a
+device: the camera reports readings several times a second once it runs, so a reading
+normally arrives well within it.
+
 ## `CameraModel/bracketStartDelay`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2707,6 +2720,13 @@ always a single photo (docs/design/BRACKETING.md, decision 3).
 
 A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
 camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
+
+A bracket's frames are planned around the camera's exposure. When the camera has not
+reported one yet (just after a lens change, or after manual controls or the astro helper
+turned on or off), the shutter waits up to ``bracketReadingWaitSeconds`` for it, then
+takes the bracket; if none arrives, it takes nothing and reports
+``CaptureError/bracketNotReady``. A bracket never becomes a single photo, and with a
+bracket on no photo fires the flash (``shutterUsesFlash``).
 
 - Parameter onceBracket: A bracket to take this time only, through the same bracket path
   as the shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or
@@ -3027,6 +3047,20 @@ public, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
 Whether a press of the shutter takes the bracket: a bracket is on and the astro helper,
 which takes over the shutter, is off. An interface shows the Bracket word selected.
 
+## `CameraModel/isBurstShutter`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var isBurstShutter: Bool { get }
+```
+
+Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): in Burst mode
+with the astro helper off, while no interval series runs. An interface reports the
+shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and sends
+``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in every
+drive mode.
+
 ## `CameraModel/isBusyForPresets`
 
 public, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -3152,13 +3186,30 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 @MainActor func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date)
 ```
 
-Adds a saved photo and its preview to ``sessionPhotos``. A preview made after the app
-left the foreground is released at once, so none outlasts the visit.
+Adds a saved photo and its preview to ``sessionPhotos``, and the photo to
+``lastPressPhotos``. A preview made after the app left the foreground is released at
+once, so none outlasts the visit.
 
 - Parameters:
   - result: The saved photo and its preview.
   - lens: The lens it was taken with.
   - takenAt: When the shutter took it.
+
+## `CameraModel/lastPressPhotos`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var lastPressPhotos: [SavedPhoto] { get set }
+```
+
+The photos the latest press of the shutter saved, in the order saved: one photo, or a
+bracket's, burst's or astro run's frames. It also holds the frames saved before a
+bracket, burst or run stopped on an error, which ``captureStatus`` then reports only as
+``CaptureStatus/failed(_:)``. Empty from the start of each press until its first save.
+
+An interface shows Last Photo, its badges and a Not Signed warning from these after a
+press ends, so they show the newest saved photo also after a part-way failure.
 
 ## `CameraModel/lensChangeBlocker`
 
@@ -3747,7 +3798,7 @@ Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false, minimumInterval: Duration? = nil) async
+@discardableResult @MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false, minimumInterval: Duration? = nil) async -> Bool
 ```
 
 Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -3768,6 +3819,8 @@ location when the Location switch is on, as a single photo does.
   - minimumInterval: The least time between the starts of two frames (a Slow burst), or
     `nil` to take each as soon as the camera is ready. The run waits with the drive's
     sleep and checks again whether to stop after the wait.
+- Returns: Whether the run began: `false` when no photo could be taken, the camera has no
+  lens or there is no save pipeline, and the tracker was not told of a run.
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
@@ -5144,6 +5197,22 @@ is running and sending frames, but no picture. The photo is discarded.
 to ``SessionStatus/noPicture``. Say that no photo was taken because the camera sent a
 blank picture.
 
+## `CaptureError/bracketNotReady`
+
+public, declared in `Sources/NopeCore/CaptureError.swift`
+
+```swift
+case bracketNotReady
+```
+
+A bracket was asked for, but the camera reported no exposure to plan its frames around
+within ``CameraModel/bracketReadingWaitSeconds`` (just after a lens change, or after
+manual controls or the astro helper turned on or off), or the lens can't take it. No
+photo was taken: a bracket never becomes a single photo.
+
+Say that no photos were taken because the camera wasn't ready for the bracket, and that
+the person can try again.
+
 ## `CaptureError/captureFailed`
 
 public, declared in `Sources/NopeCore/CaptureError.swift`
@@ -5742,6 +5811,25 @@ internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
 ```
 
 Whether the timeout passed.
+
+## `ChangeWaiter/wait(timeoutSeconds:sleep:until:)`
+
+internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
+
+```swift
+@MainActor static func wait(timeoutSeconds: Double?, sleep: @escaping @Sendable (Double) async throws -> Void, until condition: @escaping @MainActor () -> Bool) async -> Bool
+```
+
+Waits, without polling, until the condition holds, or until the timeout passes.
+
+The condition is checked again each time a value it read changes (Observation,
+`withObservationTracking`), so it must read only observable state.
+
+- Parameters:
+  - timeoutSeconds: The longest wait in seconds, or `nil` to wait until it holds.
+  - sleep: Waits a number of seconds, for the timeout.
+  - condition: What to wait for.
+- Returns: Whether the condition holds at the end.
 
 ## `ChangeWaiter/waitForChange(of:)`
 
@@ -24855,6 +24943,18 @@ Creates an empty list.
   - decoder: Decodes previews, or `nil`.
   - countLimit: The most records kept; at least 1.
   - previewLimit: How many of the newest photos keep a preview.
+
+## `SessionPhotos/makesPreviews`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var makesPreviews: Bool { get }
+```
+
+Whether this model makes previews: `false` without a decoder, as in the Lock Screen
+camera, whose save pipeline makes none. An interface then says that previews aren't made
+there, rather than that one was released.
 
 ## `SessionPhotos/maximumCount`
 

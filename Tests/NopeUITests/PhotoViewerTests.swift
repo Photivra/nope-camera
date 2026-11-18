@@ -68,6 +68,20 @@ struct PhotoViewerTests {
             "Preview Not Kept. nope. keeps previews in memory only and has released this one. The photo is saved in Photos."))
     }
 
+    @Test func theLockScreenCameraSaysItMakesNoPreviews() {
+        // The Lock Screen camera makes no previews, so none was released (owner decision 1).
+        let photo = Self.photo(1, preview: nil)
+        let value = PhotoViewerFacts.spokenValue(of: photo, isZoomed: false, makesPreviews: false)
+        #expect(value.hasSuffix("No Preview. On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos."))
+        #expect(!value.contains("released"))
+        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: false) == "No Preview")
+        #expect(PhotoViewerText.noPreviewTitle(makesPreviews: true) == "Preview Not Kept")
+        #expect(PhotoViewerText.noPreviewSentence(makesPreviews: true) == PhotoViewerText.previewNotKeptSentence)
+        #expect(
+            PhotoViewerText.noPreviewSentence(makesPreviews: false)
+                == "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos.")
+    }
+
     @Test func spokenValueAddsTheHintWhenThePreviewIsSmaller() {
         let file = PhotoDetails.File(
             format: .heif, byteCount: 1, pixelWidth: 4032, pixelHeight: 3024, bitDepth: 8, colorFilterPattern: nil,

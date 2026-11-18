@@ -199,10 +199,14 @@ struct CameraModelBracketTests {
         await model.send(.capture)
         #expect(model.captureStatus == .failed(.saveFailed))
         #expect(model.failedBracket == BracketProgress(taken: 3, saved: 2, total: 3))
+        // Last Photo shows the newest frame saved, which the viewer opens on.
+        #expect(model.lastPressPhotos.compactMap(\.bracket?.frame.number) == [1, 2])
+        #expect(model.lastPressPhotos.last == model.sessionPhotos.newest?.photo)
         // The next capture starts afresh.
         await model.send(.manual(.setBracket(nil)))
         await model.send(.capture)
         #expect(model.failedBracket == nil)
+        #expect(model.lastPressPhotos.isEmpty, "the single photo's save failed too")
     }
 
     @Test func aFailedRequestSavesNothingAndIsNotAShortfall() async {
@@ -304,6 +308,57 @@ struct CameraModelBracketTests {
         await model.send(.drive(.setMode(.burst)))
         await model.send(.selectLens("wide"))
         #expect(model.drive.mode == .burst)
+    }
+
+    @Test func aBracketWaitsForTheFirstReadingAfterALensChange() async throws {
+        let backend = ScriptedManualBackend(lenses: [Fixtures.wide, Fixtures.basicLens])
+        // The wait's timeout never passes in this test; the reading ends the wait.
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in try await Task.sleep(for: .seconds(60)) })
+        await model.send(.start)
+        await model.manual.record(Fixtures.reading)
+        await model.send(.manual(.setBracket(.standard)))
+        // A lens change forgets the reading (`resetReadingAids()`).
+        await model.send(.selectLens("basic"))
+        #expect(model.manual.bracket == .standard)
+        #expect(model.manual.bracketPlan == nil)
+        let press = Task { await model.send(.capture) }
+        await waitUntil { model.captureStatus == .capturing }
+        await settle()
+        #expect(await backend.brackets.isEmpty, "the shutter waits for a reading")
+        #expect(await backend.captureCount == 0)
+        await model.manual.record(Fixtures.reading)
+        await press.value
+        #expect(await backend.brackets.count == 1)
+        #expect(await backend.captureCount == 0, "no single photo")
+        guard case .savedBracket(let photos) = model.captureStatus else {
+            Issue.record("expected a saved bracket")
+            return
+        }
+        #expect(photos.count == 3)
+    }
+
+    @Test func aBracketWithNoReadingInTimeTakesNothing() async {
+        let (model, backend) = await makeModel(lenses: [Fixtures.wide, Fixtures.basicLens])
+        await model.send(.manual(.setBracket(.standard)))
+        await model.send(.selectLens("basic"))
+        // The test's sleep returns at once, so the wait's timeout passes at once.
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.bracketNotReady))
+        #expect(await backend.brackets.isEmpty)
+        #expect(await backend.captureCount == 0, "a bracket never becomes a single photo")
+        #expect(model.manual.bracket == .standard, "the bracket stays on")
+        #expect(model.canCapture)
+        #expect(CameraModel.bracketReadingWaitSeconds == 1)
+    }
+
+    @Test func aBracketTheLensCantTakeTakesNothing() async {
+        let (model, backend) = await makeModel()
+        // Seven frames: more than the wide lens's five.
+        await model.capture(onceBracket: BracketSettings(frameCount: 7, step: 1))
+        #expect(model.captureStatus == .failed(.bracketNotReady))
+        #expect(await backend.brackets.isEmpty)
+        #expect(await backend.captureCount == 0)
     }
 
     @Test func anIntervalSeriesNeverTakesABracket() async {

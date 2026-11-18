@@ -237,7 +237,7 @@ struct CaptureFeedbackTests {
 
     @Test func everyFailureHasOneActionOrNone() {
         #expect(FailureAction(for: .photosAccessDenied) == .openSettings)
-        for error in [CaptureError.configurationFailed, .captureFailed, .developmentFailed, .metadataNotAllowed, .saveFailed] {
+        for error in [CaptureError.configurationFailed, .captureFailed, .bracketNotReady, .developmentFailed, .metadataNotAllowed, .saveFailed] {
             #expect(FailureAction(for: error) == .tryAgain)
         }
         for error in [CaptureError.notRunning, .blankPicture, .savingUnavailable] {

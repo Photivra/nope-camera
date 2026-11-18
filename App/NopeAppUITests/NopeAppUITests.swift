@@ -93,6 +93,68 @@ final class NopeAppUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 1.5)
     }
 
+    /// The error a sideways test throws when the app never showed the turn.
+    struct TurnNotShown: Error, CustomStringConvertible {
+        /// The orientation asked for.
+        let orientation: UIDeviceOrientation
+
+        /// What went wrong.
+        var description: String {
+            "The app didn't show the turn to orientation \(orientation.rawValue) within 10 seconds."
+        }
+    }
+
+    /// Whether the tests run on the iPhone Duo Simulator, whose outer display doesn't pass a turn
+    /// of the device to the app (its turned layout is checked on a device; docs/TESTING.md,
+    /// iPhone Duo). CI doesn't run on it.
+    var isIPhoneDuoSimulator: Bool {
+        ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"]?.contains("Duo") == true
+    }
+
+    /// Turns the iPhone on its side and waits until the camera shows it: the drive mode named on
+    /// the picture (`DriveModePill`, which shows only sideways), turned to the new side, at rest
+    /// for two polls in a row. It
+    /// polls every 0.2 seconds for up to 10 seconds, as ``rotate(_:to:file:line:)`` does, rather
+    /// than sleeping a fixed time; an `XCTWaiter` predicate that queries the app stalled the test
+    /// runner on CI.
+    ///
+    /// A turn the app never shows fails the test (it throws ``TurnNotShown``), so a sideways
+    /// layout can't go untested while the run stays green. The one exception is the iPhone Duo
+    /// Simulator (``isIPhoneDuoSimulator``), which never passes the turn on; the test is skipped
+    /// there, and CI doesn't use it.
+    ///
+    /// - Parameters:
+    ///   - app: The app.
+    ///   - orientation: `.landscapeLeft` or `.landscapeRight`.
+    ///   - mode: The selected drive mode's word, which the pill shows, such as "Single".
+    @MainActor
+    func turnSideways(_ app: XCUIApplication, to orientation: UIDeviceOrientation = .landscapeLeft, mode: String = "Single") throws {
+        let pill = app.staticTexts[mode].firstMatch
+        let before = pill.exists ? pill.frame : nil
+        XCUIDevice.shared.orientation = orientation
+        let deadline = Date().addingTimeInterval(10)
+        var last: CGRect?
+        while Date() < deadline {
+            let frame = pill.exists ? pill.frame : nil
+            if let frame, frame != before, frame == last {
+                iPhoneSideways = true
+                settle()
+                return
+            }
+            last = frame
+            Thread.sleep(forTimeInterval: 0.2)
+        }
+        XCUIDevice.shared.orientation = .portrait
+        if isIPhoneDuoSimulator {
+            throw XCTSkip("The iPhone Duo Simulator's outer display doesn't pass the turn to the app; checked on a device.")
+        }
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "Not turned"
+        shot.lifetime = .keepAlways
+        add(shot)
+        throw TurnNotShown(orientation: orientation)
+    }
+
     /// Whether the iPhone is turned on its side, so the camera's icons and text are drawn turned
     /// a quarter turn inside the portrait layout (see ``audit(_:afterScrolling:file:line:)``).
     private var iPhoneSideways = false

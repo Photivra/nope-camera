@@ -470,6 +470,28 @@ struct DriveTests {
         #expect(model.drive.lastBurst?.end == .failed)
         // The frame taken while the failing one was saving is still saved: nothing is dropped.
         #expect(model.drive.lastBurst?.saved == failingAdd)
+        // Last Photo shows the newest of them.
+        #expect(model.lastPressPhotos.count == failingAdd)
+        #expect(model.lastPressPhotos.last == model.sessionPhotos.newest?.photo)
+    }
+
+    @Test func eachPressStartsItsOwnPhotos() async {
+        let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens, captureErrors: [nil, nil, .captureFailed, .captureFailed])
+        let model = await makeModel(backend: backend)
+        #expect(model.lastPressPhotos.isEmpty)
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.startBurst))
+        #expect(model.captureStatus == .failed(.captureFailed))
+        #expect(model.lastPressPhotos.count == 2)
+        // A press that saves nothing leaves nothing to show; Last Photo keeps the earlier photo.
+        await model.send(.drive(.setMode(.single)))
+        await model.send(.capture)
+        #expect(model.captureStatus == .failed(.captureFailed))
+        #expect(model.lastPressPhotos.isEmpty)
+        await model.send(.capture)
+        #expect(savedCount(model) == 1)
+        #expect(model.lastPressPhotos.count == 1)
+        #expect(model.sessionPhotos.photos.count == 3)
     }
 
     @Test func lastFrameThatCantBeSavedEndsTheBurst() async {

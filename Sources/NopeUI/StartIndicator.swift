@@ -219,12 +219,17 @@ struct StartIndicator: View {
                 .frame(width: NopeSize.startMark, height: NopeSize.startMark)
                 .alignmentGuide(.startMarkCenter) { $0[VerticalAlignment.center] }
             if showsWords {
-                Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
-                    .font(.subheadline)
-                    .foregroundStyle(isNightMode ? NopeColor.label : NopeColor.labelSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: max(width - 2 * NopeSpace.l, 0))
+                // As wide as the words need, up to the window less the margins, where they wrap.
+                // A flexible frame took the whole width, so the plate behind them became a black
+                // band across the window that hid the iPad column's shutter and the lower half of
+                // Q (second review of 1.0.0).
+                StartWordsWidth(maximumWidth: max(width - 2 * NopeSpace.l, 0)) {
+                    Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
+                        .font(.subheadline)
+                        .foregroundStyle(isNightMode ? NopeColor.label : NopeColor.labelSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
         }
         .padding(NopeSpace.m)
@@ -238,5 +243,46 @@ struct StartIndicator: View {
         .accessibilityLabel(
             Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access."))
         .accessibilityIdentifier("startIndicator")
+    }
+}
+
+/// Lays out its one subview at most ``maximumWidth`` wide and takes the subview's own size, so
+/// the plate behind the first start's words is only as wide as the words (wrapped where they
+/// don't fit), never the whole window.
+struct StartWordsWidth: Layout {
+    /// The widest the subview may be, in points.
+    let maximumWidth: CGFloat
+
+    /// Creates the layout.
+    ///
+    /// - Parameter maximumWidth: The widest the subview may be, in points.
+    init(maximumWidth: CGFloat) {
+        self.maximumWidth = maximumWidth
+    }
+
+    /// The subview's size when offered the smaller of the proposed width and ``maximumWidth``.
+    ///
+    /// - Parameters:
+    ///   - proposal: The size offered.
+    ///   - subviews: The one subview.
+    ///   - cache: Unused.
+    /// - Returns: The subview's size.
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let subview = subviews.first else { return .zero }
+        let width = min(proposal.width ?? maximumWidth, maximumWidth)
+        return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
+    }
+
+    /// Places the subview at the center of the bounds, at their size.
+    ///
+    /// - Parameters:
+    ///   - bounds: Where the subview goes.
+    ///   - proposal: The size offered.
+    ///   - subviews: The one subview.
+    ///   - cache: Unused.
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(
+            at: CGPoint(x: bounds.midX, y: bounds.midY), anchor: .center,
+            proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
     }
 }

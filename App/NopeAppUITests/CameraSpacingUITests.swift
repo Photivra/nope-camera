@@ -166,14 +166,7 @@ extension NopeAppUITests {
         settle()
         let portraitPicture = app.otherElements["Viewfinder"].frame
         for orientation in [UIDeviceOrientation.landscapeLeft, .landscapeRight] {
-            XCUIDevice.shared.orientation = orientation
-            Thread.sleep(forTimeInterval: 1.5)
-            // The iPhone Duo Simulator's outer display doesn't pass the turn to the app.
-            if app.staticTexts["Auto"].exists {
-                XCUIDevice.shared.orientation = .portrait
-                throw XCTSkip("The device didn't report the turn to the app.")
-            }
-            settle()
+            try turnSideways(app, to: orientation)
             let context = "sideways \(orientation.rawValue)"
             let rows = stackedRows(app)
             XCTAssertEqual(rows.picture, portraitPicture, "\(context): the picture moved when the iPhone turned")

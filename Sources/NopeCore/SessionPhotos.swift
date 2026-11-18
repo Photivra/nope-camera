@@ -141,6 +141,11 @@ public final class SessionPhotos {
         self.init(decoder: decoder, countLimit: Self.maximumCount, previewLimit: Self.maximumPreviews)
     }
 
+    /// Whether this model makes previews: `false` without a decoder, as in the Lock Screen
+    /// camera, whose save pipeline makes none. An interface then says that previews aren't made
+    /// there, rather than that one was released.
+    public var makesPreviews: Bool { decoder != nil }
+
     /// The newest photo, or `nil` before the first save.
     public var newest: SessionPhoto? { photos.last }
 

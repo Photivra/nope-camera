@@ -170,14 +170,17 @@ enum PhotoViewerFacts {
     }
 
     /// The photo's VoiceOver value: the formats, the save sentence, the lens and the time, then,
-    /// while zoomed, that it is zoomed and is a preview; for a released preview, the fallback's
-    /// title and sentence (docs/design/ACCESSIBILITY.md, "Last Photo viewer", VoiceOver).
+    /// while zoomed, that it is zoomed and is a preview; for a photo without a preview, the
+    /// fallback's title and sentence (docs/design/ACCESSIBILITY.md, "Last Photo viewer",
+    /// VoiceOver).
     ///
     /// - Parameters:
     ///   - photo: The photo shown.
     ///   - isZoomed: Whether it is zoomed in.
+    ///   - makesPreviews: Whether this process makes previews (`SessionPhotos.makesPreviews`):
+    ///     `false` in the Lock Screen camera, which makes none.
     /// - Returns: The value, sentences joined with spaces.
-    static func spokenValue(of photo: SessionPhoto, isZoomed: Bool) -> String {
+    static func spokenValue(of photo: SessionPhoto, isZoomed: Bool, makesPreviews: Bool = true) -> String {
         let formats = photo.photo.formats.map { FormatChip.names(of: [$0]) }.formatted(.list(type: .and))
         var sentences = [String]()
         if photo.photo.isProcessedFallback {
@@ -189,8 +192,8 @@ enum PhotoViewerFacts {
         if let lens = photo.lens { sentences.append(LensName.string(for: lens.kind) + ".") }
         sentences.append(time(photo.takenAt) + ".")
         if photo.preview == nil {
-            sentences.append(PhotoViewerText.previewNotKeptTitle + ".")
-            sentences.append(PhotoViewerText.previewNotKeptSentence)
+            sentences.append(PhotoViewerText.noPreviewTitle(makesPreviews: makesPreviews) + ".")
+            sentences.append(PhotoViewerText.noPreviewSentence(makesPreviews: makesPreviews))
         } else if isZoomed {
             sentences.append(PhotoViewerText.zoomedIn)
             if photo.previewIsSmallerThanPhoto { sentences.append(PhotoViewerText.previewHint) }
@@ -401,6 +404,37 @@ enum PhotoViewerText {
             localized: "nope. keeps previews in memory only and has released this one. The photo is saved in Photos.",
             table: "Honesty", bundle: .module,
             comment: "Sentence under Preview Not Kept in the Last Photo viewer. Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
+    }
+
+    /// "No Preview", the title in the Lock Screen camera's viewer, which makes no previews.
+    static var lockScreenNoPreviewTitle: String {
+        String(
+            localized: "No Preview", table: "Honesty", bundle: .module,
+            comment: "Title in the Last Photo viewer of the camera opened from the Lock Screen: it makes no previews, so only the photo's small thumbnail is shown. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
+    }
+
+    /// "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos."
+    static var lockScreenNoPreviewSentence: String {
+        String(
+            localized: "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos.",
+            table: "Honesty", bundle: .module,
+            comment: "Sentence under No Preview in the Last Photo viewer of the camera opened from the Lock Screen, which makes no previews. Lock Screen is the system's name for it; Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.")
+    }
+
+    /// The title for a photo without a preview: ``previewNotKeptTitle`` where previews are made
+    /// and this one was released, ``lockScreenNoPreviewTitle`` where none are made.
+    ///
+    /// - Parameter makesPreviews: Whether this process makes previews.
+    static func noPreviewTitle(makesPreviews: Bool) -> String {
+        makesPreviews ? previewNotKeptTitle : lockScreenNoPreviewTitle
+    }
+
+    /// The sentence for a photo without a preview: ``previewNotKeptSentence`` where previews are
+    /// made and this one was released, ``lockScreenNoPreviewSentence`` where none are made.
+    ///
+    /// - Parameter makesPreviews: Whether this process makes previews.
+    static func noPreviewSentence(makesPreviews: Bool) -> String {
+        makesPreviews ? previewNotKeptSentence : lockScreenNoPreviewSentence
     }
 
     /// "Processed", the word of the format status for a lens without RAW (``FormatChip``).
@@ -850,7 +884,7 @@ struct PhotoViewerScreen: View {
             // The scroll view reports no page while a drag it doesn't scroll is under way; that
             // isn't a page change, and mustn't reset the zoom.
             photos: photos, shownID: Binding(get: { shownID }, set: { id in if let id { shownID = id } }), pictures: pictures, zoom: $zoom, maximumZoom: maximumZoom,
-            pageSize: pageSize, toggleControls: toggleControls
+            pageSize: pageSize, makesPreviews: model.sessionPhotos.makesPreviews, toggleControls: toggleControls
         )
         .onGeometryChange(for: CGSize.self) { $0.size } action: { pageSize = $0 }
         // Not in the scrolling arrangement, where a vertical drag scrolls the rows.
@@ -870,7 +904,12 @@ struct PhotoViewerScreen: View {
         content()
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: PhotoViewerFacts.spokenLabel(of: shown, in: photos)))
-            .accessibilityValue(Text(verbatim: shown.map { PhotoViewerFacts.spokenValue(of: $0, isZoomed: zoom.isZoomed) } ?? ""))
+            .accessibilityValue(
+                Text(
+                    verbatim: shown.map {
+                        PhotoViewerFacts.spokenValue(
+                            of: $0, isZoomed: zoom.isZoomed, makesPreviews: model.sessionPhotos.makesPreviews)
+                    } ?? ""))
             .accessibilityAddTraits(.isImage)
             .accessibilityRemoveTraits(.isButton)
             .accessibilityInputLabels([Text(verbatim: PhotoViewerFacts.label(of: nil, in: []))])
@@ -1125,6 +1164,9 @@ struct PhotoViewerPager: View {
     /// The page's size.
     let pageSize: CGSize
 
+    /// Whether this process makes previews (`SessionPhotos.makesPreviews`).
+    let makesPreviews: Bool
+
     /// Hides or shows the controls.
     let toggleControls: () -> Void
 
@@ -1140,10 +1182,11 @@ struct PhotoViewerPager: View {
     ///   - zoom: The zoom of the photo shown.
     ///   - maximumZoom: The zoom limit of the photo shown.
     ///   - pageSize: The page's size, in points.
+    ///   - makesPreviews: Whether this process makes previews.
     ///   - toggleControls: Hides or shows the controls.
     init(
         photos: [SessionPhoto], shownID: Binding<Int?>, pictures: [Int: Image], zoom: Binding<PhotoViewerZoom>,
-        maximumZoom: CGFloat, pageSize: CGSize, toggleControls: @escaping () -> Void
+        maximumZoom: CGFloat, pageSize: CGSize, makesPreviews: Bool = true, toggleControls: @escaping () -> Void
     ) {
         self.photos = photos
         _shownID = shownID
@@ -1151,6 +1194,7 @@ struct PhotoViewerPager: View {
         _zoom = zoom
         self.maximumZoom = maximumZoom
         self.pageSize = pageSize
+        self.makesPreviews = makesPreviews
         self.toggleControls = toggleControls
     }
 
@@ -1164,7 +1208,7 @@ struct PhotoViewerPager: View {
                     PhotoViewerPage(
                         photo: photo, picture: pictures[photo.id],
                         zoom: photo.id == shownID ? $zoom : .constant(.fit), maximumZoom: maximumZoom,
-                        toggleControls: toggleControls
+                        makesPreviews: makesPreviews, toggleControls: toggleControls
                     )
                     .containerRelativeFrame([.horizontal, .vertical])
                     .scrollTransition(.interactive, axis: .horizontal) { content, phase in
@@ -1200,6 +1244,10 @@ struct PhotoViewerPage: View {
     /// The zoom limit.
     let maximumZoom: CGFloat
 
+    /// Whether this process makes previews (`SessionPhotos.makesPreviews`), for the
+    /// fallback's words.
+    let makesPreviews: Bool
+
     /// Hides or shows the controls.
     let toggleControls: () -> Void
 
@@ -1222,15 +1270,17 @@ struct PhotoViewerPage: View {
     ///   - picture: Its decoded picture, or `nil`.
     ///   - zoom: The zoom; a constant fit for pages not shown.
     ///   - maximumZoom: The zoom limit.
+    ///   - makesPreviews: Whether this process makes previews, for the fallback's words.
     ///   - toggleControls: Hides or shows the controls.
     init(
         photo: SessionPhoto, picture: Image?, zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat,
-        toggleControls: @escaping () -> Void
+        makesPreviews: Bool = true, toggleControls: @escaping () -> Void
     ) {
         self.photo = photo
         self.picture = picture
         _zoom = zoom
         self.maximumZoom = maximumZoom
+        self.makesPreviews = makesPreviews
         self.toggleControls = toggleControls
     }
 
@@ -1258,7 +1308,7 @@ struct PhotoViewerPage: View {
                         .onTapGesture(perform: toggleControls)
                 }
             } else {
-                PhotoViewerFallback(thumbnail: photo.photo.thumbnail)
+                PhotoViewerFallback(thumbnail: photo.photo.thumbnail, makesPreviews: makesPreviews)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(.rect)
                     .onTapGesture(perform: toggleControls)
@@ -1316,17 +1366,25 @@ struct PhotoViewerPage: View {
     }
 }
 
-/// A photo whose preview was released: the small thumbnail, never stretched to the screen, and
-/// why (BUILD-SPEC.md, 3.14; the wording is an Honesty draft). No zoom.
+/// A photo without a preview: the small thumbnail, never stretched to the screen, and why
+/// (BUILD-SPEC.md, 3.14; the wording is an Honesty draft): its preview was released, or, in the
+/// Lock Screen camera, which makes none, that previews aren't made there. No zoom.
 struct PhotoViewerFallback: View {
     /// The saved photo's thumbnail, or `nil` for a photo symbol.
     let thumbnail: PhotoThumbnail?
 
+    /// Whether this process makes previews (`SessionPhotos.makesPreviews`).
+    let makesPreviews: Bool
+
     /// Creates the fallback.
     ///
-    /// - Parameter thumbnail: The saved photo's thumbnail, or `nil`.
-    init(thumbnail: PhotoThumbnail?) {
+    /// - Parameters:
+    ///   - thumbnail: The saved photo's thumbnail, or `nil`.
+    ///   - makesPreviews: Whether this process makes previews: `false` in the Lock Screen
+    ///     camera.
+    init(thumbnail: PhotoThumbnail?, makesPreviews: Bool = true) {
         self.thumbnail = thumbnail
+        self.makesPreviews = makesPreviews
     }
 
     /// The fallback.
@@ -1334,10 +1392,10 @@ struct PhotoViewerFallback: View {
         VStack(spacing: NopeSpace.m) {
             picture
             VStack(spacing: NopeSpace.xs) {
-                Text(verbatim: PhotoViewerText.previewNotKeptTitle)
+                Text(verbatim: PhotoViewerText.noPreviewTitle(makesPreviews: makesPreviews))
                     .font(.headline)
                     .foregroundStyle(NopeColor.label)
-                Text(verbatim: PhotoViewerText.previewNotKeptSentence)
+                Text(verbatim: PhotoViewerText.noPreviewSentence(makesPreviews: makesPreviews))
                     .font(.subheadline)
                     .foregroundStyle(CameraColor(NopeColor.labelSecondary))
             }

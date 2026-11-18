@@ -147,7 +147,7 @@ struct StatusTests {
         ]
         #expect(statuses.filter(\.canCapture) == [.running])
         #expect(InterruptionReason.allCases.count == 5)
-        #expect(CaptureError.allCases.count == 9)
+        #expect(CaptureError.allCases.count == 10)
     }
 }
 

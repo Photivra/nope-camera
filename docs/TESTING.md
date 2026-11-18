@@ -355,6 +355,19 @@ and Settings rotates. On iPad the window rotates and the shutter is in the colum
 picture. Running the iPhone tests on an iPhone SE (3rd generation) Simulator covers the
 4.7-inch layout, where the lens row overlays the bottom of the picture.
 
+The iPhone sideways tests turn the device with `turnSideways(_:to:mode:)`, which polls (every
+0.2 seconds, for up to 10) until the camera shows the turned layout: the drive mode named on the
+picture, turned to the new side. A turn the app never shows fails the test; it is not skipped,
+so a sideways layout can't go untested while the run stays green. The one exception is the
+iPhone Duo Simulator, whose outer display doesn't pass the turn to the app: the test is skipped
+there, CI doesn't use it, and the turned layout is checked on a device ("iPhone Duo").
+
+The night mode checks (`nonRedPixels`) count every sampled pixel that isn't red or black. On
+iPad they leave out the window's bottom trailing corner (`windowCorner(_:)`, 40 points), where
+iPadOS draws its window resize control: it is the system's, drawn outside the app's views where
+night mode's red can't reach, and `persistentSystemOverlays(.hidden)` hides it only after a
+delay. Everything else on the screen must be red or black.
+
 Every test runs in the system's light setting, the Simulator's default, unless it sets dark
 with `useAppearance(_:)`; `tearDown` waits (up to 30 seconds) until no photo is being saved,
 closes the app, then restores portrait and, only if it changed, light. Settings, Presets, first run and the camera access screens
@@ -523,7 +536,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure banner: Try Again, Dismiss |
-| `noRAW`, `signingFails`, `allow`, `firstSaveOnly` | The Last Photo viewer (`PhotoViewerUITests.swift`; docs/design/BUILD-SPEC.md, 3.14): a tap on Last Photo opens it on the newest photo with the status and caption facts in the photo's VoiceOver value; Close, Escape and a swipe down close it; swipes and the arrow keys page, oldest first; the three status variants; double tap and pinch zoom with the preview hint (the simulated read-back reports HEIF and JPEG at 4032 × 3024, larger than the 30 × 40 simulated preview); tap hides and shows the controls; Photo Details and Open in Photos; a photo from a running interval series gives New Photo; with `firstSaveOnly` (the first photo is saved, every later save fails) the Photo Not Saved chip, which closes the viewer to the banner; after the background the viewer is closed and shows "Preview Not Kept"; Space closes it and takes no photo; the largest text size, right to left, night mode (no pixel other than red or black), iPhone sideways, iPad in both orientations, and `-NopeSimulatedLockScreenCamera` (no Open in Photos, as in the Lock Screen camera) |
+| `noRAW`, `signingFails`, `allow`, `firstSaveOnly` | The Last Photo viewer (`PhotoViewerUITests.swift`; docs/design/BUILD-SPEC.md, 3.14): a tap on Last Photo opens it on the newest photo with the status and caption facts in the photo's VoiceOver value; Close, Escape and a swipe down close it; swipes and the arrow keys page, oldest first; the three status variants; double tap and pinch zoom with the preview hint (the simulated read-back reports HEIF and JPEG at 4032 × 3024, larger than the 30 × 40 simulated preview); tap hides and shows the controls; Photo Details and Open in Photos; a photo from a running interval series gives New Photo; with `firstSaveOnly` (the first photo is saved, every later save fails) the Photo Not Saved chip, which closes the viewer to the banner; after the background the viewer is closed and shows "Preview Not Kept"; Space closes it and takes no photo; the largest text size, right to left, night mode (no pixel other than red or black), iPhone sideways, iPad in both orientations, and `-NopeSimulatedLockScreenCamera` (no Open in Photos and no previews, as in the Lock Screen camera, so each photo shows "No Preview" and never "has released this one") |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off screen with Open Settings, and the no-camera screen |
 | `allow`, `denied` | Settings, opened from Q on the stacked camera and from the Settings button elsewhere: Settings, Formats, HEIF and JPEG Copies (top and bottom), Details in Each Photo (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG Copies row ("Not Saved" with RAW only, otherwise the look) and the privacy rules (the master switch on and signing off by default, one item on makes it "Custom", locked items read "Locked"); `SettingsUITests.swift` covers the root rows, search, Show Processed Marker and the presets' More menu |
@@ -532,7 +545,7 @@ UI test launches store settings in their own `UserDefaults` suite, emptied at ea
 (`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
 settings are never touched.
 | `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the Manual Controls button ("On" or "Off"); the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools (no Interval or Bracketing section) and a 3-frame bracket from the drive strip; the lock pill after AE-L, which unlocks; the Manual Controls button turns manual controls off; interval progress and Stop from the drive strip; clean view from Q; the list at the largest text size; right-to-left |
-| `manual`, `dimManual`, `astro` | Bracket on the drive strip (`BracketUITests.swift`): the word in full auto and its card (no more than an eighth of the picture), Bracket Settings (Frames, Step, Order, Start Delay, The Frames, the Honesty sentence), the order and frame count on the card and in The Frames, the limited frames in dim light (`dimManual`: ISO 3200 at 1/4 s), the start delay counting down and cancelled by Cancel and the shutter, the saving and saved cards (`astro`: half a second per save), the Bracket group of What's in This Photo, no Bracket on the front camera; audited at the default and largest text sizes, right to left, in night mode (all red; on iPad the window corner control the system draws is skipped, and Bracket Settings' audit skips the element-less "Potentially inaccessible text" finding for camera text cut by the page sheet's edge, as beside a popover), sideways and on iPad |
+| `manual`, `dimManual`, `astro`, `manualFirstSaveOnly` | Bracket on the drive strip (`BracketUITests.swift`): the word in full auto and its card (no more than an eighth of the picture), Bracket Settings (Frames, Step, Order, Start Delay, The Frames, the Honesty sentence), the order and frame count on the card and in The Frames, the limited frames in dim light (`dimManual`: ISO 3200 at 1/4 s), the start delay counting down and cancelled by Cancel and the shutter, the saving and saved cards (`astro`: half a second per save), the Bracket group of What's in This Photo, no Bracket on the front camera, a bracket that stops part-way as the first capture (`manualFirstSaveOnly`: the first save works, later ones fail) shows the frame saved on Last Photo and opens the viewer on it; audited at the default and largest text sizes, right to left, in night mode (all red; on iPad the window corner control the system draws is skipped, and Bracket Settings' audit skips the element-less "Potentially inaccessible text" finding for camera text cut by the page sheet's edge, as beside a popover), sideways and on iPad |
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
 | `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
@@ -1044,7 +1057,9 @@ Automated:
   black outside it, the screen black and the status bar's content white in the light
   appearance, red only in night mode, the audit, the largest text size and right to left (in the
   dark appearance); then that the indicator ends when the camera runs and stays gone after the
-  background and a lens change, and that first run ends it.
+  background and a lens change, and that first run ends it; and that the shutter and Q are
+  there under the indicator, whole, inside the window and usable (`testFirstStartKeepsTheControlsWhole`,
+  on the iPhone and the iPad).
 - `FirstStartTests` (NopeCore) covers `CameraModel.isFirstStart`; `StartIndicatorTests` (NopeUI)
   the mark's geometry and colors.
 
@@ -1202,11 +1217,16 @@ and one on 27, the oldest and newest supported versions (issue #78):
   Simulator, so no UI test covers it) and the VoiceOver scrub close it; the volume buttons and
   the Camera Control close the viewer and take no photo, and the next press takes one (decision
   V1); a photo from Apple Watch while the viewer is open gives New Photo; the app switcher's
-  snapshot shows no photo; Reduce Motion fades the viewer and crossfades pages; night mode draws
+  snapshot shows no photo, for the viewer, for Photo Details opened from the camera and for
+  Photo Details opened over the viewer (they rely on `scenePhase` inside a full-screen cover and
+  inside a sheet, which no UI test can see; a privacy claim in `docs/PRIVACY.md`, so record the
+  device, iOS version and date here before each release); Reduce Motion fades the viewer and crossfades pages; night mode draws
   the photo red; VoiceOver (the photo's value, the adjustable paging, the actions, Escape, focus
   back on Last Photo), Voice Control ("Close", "Photo Details", "Open in Photos", "New Photo"),
   Switch Control and Full Keyboard Access; the Lock Screen camera's viewer has no Open in
-  Photos; the iPhone Duo fold pair (`duo-fold-viewer`): the viewer stays open on the same photo;
+  Photos and shows "No Preview" for each photo (it makes no previews); Photo Details' Files row
+  shows 10-bit for a 10-bit HEIF copy (unit-tested in `PhotoDetailsTests`; the simulated files
+  have no 10-bit HEIF); the iPhone Duo fold pair (`duo-fold-viewer`): the viewer stays open on the same photo;
 - Last Photo previews (`SessionPhotos`, `ImageIOPreviewer`): on the oldest and newest supported
   iPhone and an iPad, for RAW, RAW + HEIF and HEIF, record the time the preview adds to each
   save (Instruments, Time Profiler), the size of a 3072-pixel preview at JPEG quality 0.9 and
@@ -1588,7 +1608,10 @@ The geometry, level, analysis and rate rules are unit-tested; these checks cover
   `-NopeSimulatedGravity becomesLevel`):
   1. iPhone: the tap can be felt in the hand, in portrait and on its side, with and without a
      case, and can't be mistaken for the saved-photo tap. If it can't be felt, switch
-     `NopeHaptic.levelReached` to the fallback in the design (section 3) and repeat;
+     `NopeHaptic.levelTap` to `.rigidFallback` (one line in `DesignTokens.swift`; the
+     fallback, `.impact(flexibility: .rigid, intensity: 0.6)` from the design's section 3, is
+     built and unit-tested) and repeat. Open until done: until this check is recorded, the tap
+     may not be felt;
   2. one tap per entry; none while held; none within 1 second of the last; none when Level is
      switched on while level;
   3. with System Haptics off in iOS Settings: no tap; with Low Power Mode on: record what the
@@ -1742,10 +1765,12 @@ in flight (`LensWhileBusyTests`), and the disabled lens controls with UI tests
   after about half a second and returns when the photo is saved;
 - a lens press during a long exposure, a burst and an interval series: nothing changes, and the
   photo or series ends normally with one lens;
-- the capture backend's own check (`CapturePolicy.camera(_:matches:)` in
-  `SystemCaptureHardware`): not reachable from the interface any more; a debug build that sends
-  `.selectLens` during a long exposure should end that photo with "camera not running" rather
-  than lose it silently or raise an exception;
+- the capture backend's own check: the rule (`CapturePolicy.cameraToCapture`, a plan made for
+  lens A with lens B attached, a stopped session or no camera takes no photo) is unit-tested in
+  `CapturePolicyTests`; that `SystemCaptureHardware` calls it before a photo, a bracket and the
+  comparison shot needs camera hardware. It is not reachable from the interface any more; a
+  debug build that sends `.selectLens` during a long exposure should end that photo with
+  "camera not running" rather than lose it silently or raise an exception;
 - VoiceOver reads "dimmed" and, during a series, the hint "The camera is taking photos. Try
   again when it's done."; focus stays on a control that becomes dimmed. Switch Control and Full
   Keyboard Access skip the dimmed controls. The Large Content Viewer still shows a dimmed lens

@@ -169,6 +169,11 @@ struct DesignTokensTests {
         #expect(NopeHaptic.lensChanged == .selection)
         #expect(NopeHaptic.countdownSecond == .impact(weight: .light))
         #expect(NopeHaptic.levelReached == .alignment)
+        // The fallback is built and one line away (docs/design/level-haptic.md, section 3).
+        #expect(NopeHaptic.levelTap == .alignment)
+        #expect(NopeHaptic.LevelTap.alignment.feedback == .alignment)
+        #expect(NopeHaptic.LevelTap.rigidFallback.feedback == .impact(flexibility: .rigid, intensity: 0.6))
+        #expect(NopeHaptic.LevelTap.rigidFallback.feedback != NopeHaptic.levelReached)
         #expect(NopeHaptic.allAuto == .success)
         #expect(NopeHaptic.driveModeChanged == .selection)
         #expect(NopeHaptic.manualControlsChanged == .selection)

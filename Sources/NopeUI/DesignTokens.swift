@@ -657,9 +657,32 @@ enum NopeHaptic {
     /// One second of a countdown passed.
     static var countdownSecond: SensoryFeedback { .impact(weight: .light) }
 
+    /// The two feedbacks the level tap can use (docs/design/level-haptic.md, section 3).
+    enum LevelTap: Equatable {
+        /// `.alignment`: an item coming into alignment. The default.
+        case alignment
+
+        /// `.impact(flexibility: .rigid, intensity: 0.6)`: a short, crisp tap unlike the others
+        /// in the app, for use only if the device check finds `.alignment` can't be felt on
+        /// iPhone (section 10, check 1).
+        case rigidFallback
+
+        /// The feedback this choice plays.
+        var feedback: SensoryFeedback {
+            switch self {
+            case .alignment: .alignment
+            case .rigidFallback: .impact(flexibility: .rigid, intensity: 0.6)
+            }
+        }
+    }
+
+    /// Which feedback the level tap uses. Switching to the fallback is this one line, after the
+    /// device check (docs/design/level-haptic.md, sections 3 and 10).
+    static let levelTap: LevelTap = .alignment
+
     /// The level became level: the horizon level or the top-down level
     /// (docs/design/level-haptic.md).
-    static var levelReached: SensoryFeedback { .alignment }
+    static var levelReached: SensoryFeedback { levelTap.feedback }
 
     /// All Auto returned every manual control to auto.
     static var allAuto: SensoryFeedback { .success }

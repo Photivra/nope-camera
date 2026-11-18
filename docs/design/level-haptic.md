@@ -71,7 +71,7 @@ Why the minimum time is added: a hand held near 1.2° can drift past 1.5° and b
 | `.impact(weight: .light)` | No | The app's "photo saved" and "countdown second" tap. A level tap that feels like a saved photo misleads someone not looking at the screen |
 | `.impact` | No | The shutter press |
 | `.success` | No | All Auto. A notification pattern is also too long for an event that can repeat |
-| `.impact(flexibility: .rigid, intensity: 0.6)` | Fallback | A short, crisp tap unlike the others in the app. Use it only if the device check finds `.alignment` cannot be felt on iPhone (section 10, check 1) |
+| `.impact(flexibility: .rigid, intensity: 0.6)` | Fallback | A short, crisp tap unlike the others in the app. Use it only if the device check finds `.alignment` cannot be felt on iPhone (section 10, check 1). Built and unit-tested as `NopeHaptic.LevelTap.rigidFallback`; switching is the one line `NopeHaptic.levelTap` in `DesignTokens.swift` (owner decision, 2026-11-18) |
 
 The same feedback for both levels: one meaning, one feel. Two feels would need to be learned, and the screen already shows which level is in use.
 

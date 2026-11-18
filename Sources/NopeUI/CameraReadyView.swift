@@ -684,10 +684,10 @@ struct CameraReadyView: View {
         showsControls && showsQuickMenu && layout != .scrolling
     }
 
-    /// Whether the shutter is in burst mode, where holding it takes a burst
-    /// (docs/design/BURST.md, 3.1).
+    /// Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): not while a
+    /// series runs, which the shutter stops in every drive mode (`CameraModel.isBurstShutter`).
     private var isBurstShutter: Bool {
-        model.drive.mode == .burst && !model.astro.isOn
+        model.isBurstShutter
     }
 
     /// The shutter. Pressing it closes the quick menu and takes a photo (or stops a series). In
@@ -1110,7 +1110,9 @@ struct CameraReadyView: View {
 
     /// Records a capture result: a good save updates the thumbnail quietly, with a light haptic
     /// and a low-priority VoiceOver announcement, and clears the banner; a failure shows the
-    /// banner until it is dismissed or the next good save.
+    /// banner until it is dismissed or the next good save. A bracket, burst or astro run that
+    /// stopped on an error after saving some frames shows the newest of them as Last Photo,
+    /// with their badges and Not Signed warning (`CameraModel.lastPressPhotos`).
     ///
     /// - Parameter status: The new capture status.
     private func record(_ status: CaptureStatus) {
@@ -1122,6 +1124,7 @@ struct CameraReadyView: View {
             announcement.accessibilitySpeechAnnouncementPriority = .low
             AccessibilityNotification.Announcement(announcement).post()
         } else if let error = CaptureMessages.error(in: status) {
+            if !model.lastPressPhotos.isEmpty { sessionPhotos = model.lastPressPhotos }
             bannerError = error
             failureCount += 1
         }

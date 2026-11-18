@@ -75,6 +75,24 @@ struct CapturePolicyTests {
         #expect(CapturePolicy.comparisonPlan(for: CaptureRequest(lens: lens)).deviceID == "wide-id")
     }
 
+    /// Issue #96, the check every capture in `SystemCaptureHardware` makes on the session queue
+    /// (a photo, a bracket and the comparison shot): a plan made for lens A, with lens B attached
+    /// by then, takes no photo (`notRunning`); nor does a stopped session or no camera.
+    @Test func aCaptureUsesOnlyTheRunningCameraItsPlanWasMadeFor() throws {
+        let wide = Lens(id: "wide-id", kind: .wide, bayerRAWFormat: "bgg4")
+        let plan = try #require(CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: wide))).photoSettings
+        struct Camera: Equatable { let uniqueID: String }
+        let wideCamera = Camera(uniqueID: "wide-id")
+        let teleCamera = Camera(uniqueID: "tele-id")
+        #expect(CapturePolicy.cameraToCapture(wideCamera, id: \.uniqueID, isRunning: true, plan: plan) == wideCamera)
+        #expect(CapturePolicy.cameraToCapture(teleCamera, id: \.uniqueID, isRunning: true, plan: plan) == nil)
+        #expect(CapturePolicy.cameraToCapture(wideCamera, id: \.uniqueID, isRunning: false, plan: plan) == nil)
+        #expect(CapturePolicy.cameraToCapture(Camera?.none, id: \.uniqueID, isRunning: true, plan: plan) == nil)
+        let comparison = CapturePolicy.comparisonPlan(for: CaptureRequest(lens: wide))
+        #expect(CapturePolicy.cameraToCapture(teleCamera, id: \.uniqueID, isRunning: true, plan: comparison) == nil)
+        #expect(CapturePolicy.cameraToCapture(wideCamera, id: \.uniqueID, isRunning: true, plan: comparison) == wideCamera)
+    }
+
     @Test func invalidRAWCodeHasNoConfiguration() {
         let lens = Lens(id: "bad", kind: .wide, bayerRAWFormat: "not a code")
         #expect(CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: lens)) == nil)

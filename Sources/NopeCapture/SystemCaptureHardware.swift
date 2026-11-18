@@ -210,8 +210,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         }
         let result: Result<[HardwarePhoto], CaptureError> = await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, let device = self.currentInput?.device,
-                    CapturePolicy.camera(device.uniqueID, matches: plan)
+                guard
+                    let device = CapturePolicy.cameraToCapture(
+                        self.currentInput?.device, id: \.uniqueID, isRunning: self.session.isRunning, plan: plan)
                 else {
                     continuation.resume(returning: .failure(.notRunning))
                     return
@@ -863,8 +864,10 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         _ plan: PhotoSettingsPlan, metadata: MetadataPlan, completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
     ) {
         // The attached camera must be the plan's: a lens change may have reconfigured the
-        // session while this photo waited for the output (CapturePolicy.camera(_:matches:)).
-        guard session.isRunning, let device = currentInput?.device, CapturePolicy.camera(device.uniqueID, matches: plan) else {
+        // session while this photo waited for the output (CapturePolicy.cameraToCapture).
+        guard
+            let device = CapturePolicy.cameraToCapture(currentInput?.device, id: \.uniqueID, isRunning: session.isRunning, plan: plan)
+        else {
             completion(.failure(.notRunning))
             return
         }
@@ -1138,8 +1141,9 @@ extension SystemCaptureHardware: ComparisonHardware {
         }
         let result: Result<HardwarePhoto, CaptureError> = await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, let device = self.currentInput?.device,
-                    CapturePolicy.camera(device.uniqueID, matches: plan)
+                guard
+                    CapturePolicy.cameraToCapture(
+                        self.currentInput?.device, id: \.uniqueID, isRunning: self.session.isRunning, plan: plan) != nil
                 else {
                     continuation.resume(returning: .failure(.notRunning))
                     return

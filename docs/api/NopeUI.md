@@ -11375,6 +11375,48 @@ VoiceOver announcement (docs/design/tokens.md, "Haptics").
 .sensoryFeedback(NopeHaptic.driveModeChanged, trigger: driveMode)
 ```
 
+## `NopeHaptic/LevelTap`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum LevelTap
+```
+
+The two feedbacks the level tap can use (docs/design/level-haptic.md, section 3).
+
+## `NopeHaptic/LevelTap/alignment`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case alignment
+```
+
+`.alignment`: an item coming into alignment. The default.
+
+## `NopeHaptic/LevelTap/feedback`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+var feedback: SensoryFeedback { get }
+```
+
+The feedback this choice plays.
+
+## `NopeHaptic/LevelTap/rigidFallback`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case rigidFallback
+```
+
+`.impact(flexibility: .rigid, intensity: 0.6)`: a short, crisp tap unlike the others
+in the app, for use only if the device check finds `.alignment` can't be felt on
+iPhone (section 10, check 1).
+
 ## `NopeHaptic/allAuto`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -11436,6 +11478,17 @@ static var levelReached: SensoryFeedback { get }
 
 The level became level: the horizon level or the top-down level
 (docs/design/level-haptic.md).
+
+## `NopeHaptic/levelTap`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let levelTap: LevelTap
+```
+
+Which feedback the level tap uses. Switching to the fallback is this one line, after the
+device check (docs/design/level-haptic.md, sections 3 and 10).
 
 ## `NopeHaptic/manualControlsChanged`
 
@@ -14190,21 +14243,24 @@ section 4, "Viewer chip").
   - photos: The session's photos, oldest first.
 - Returns: The label.
 
-## `PhotoViewerFacts/spokenValue(of:isZoomed:)`
+## `PhotoViewerFacts/spokenValue(of:isZoomed:makesPreviews:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-@MainActor static func spokenValue(of photo: SessionPhoto, isZoomed: Bool) -> String
+@MainActor static func spokenValue(of photo: SessionPhoto, isZoomed: Bool, makesPreviews: Bool = true) -> String
 ```
 
 The photo's VoiceOver value: the formats, the save sentence, the lens and the time, then,
-while zoomed, that it is zoomed and is a preview; for a released preview, the fallback's
-title and sentence (docs/design/ACCESSIBILITY.md, "Last Photo viewer", VoiceOver).
+while zoomed, that it is zoomed and is a preview; for a photo without a preview, the
+fallback's title and sentence (docs/design/ACCESSIBILITY.md, "Last Photo viewer",
+VoiceOver).
 
 - Parameters:
   - photo: The photo shown.
   - isZoomed: Whether it is zoomed in.
+  - makesPreviews: Whether this process makes previews (`SessionPhotos.makesPreviews`):
+    `false` in the Lock Screen camera, which makes none.
 - Returns: The value, sentences joined with spaces.
 
 ## `PhotoViewerFacts/time(_:)`
@@ -14228,8 +14284,9 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 @MainActor struct PhotoViewerFallback
 ```
 
-A photo whose preview was released: the small thumbnail, never stretched to the screen, and
-why (BUILD-SPEC.md, 3.14; the wording is an Honesty draft). No zoom.
+A photo without a preview: the small thumbnail, never stretched to the screen, and why
+(BUILD-SPEC.md, 3.14; the wording is an Honesty draft): its preview was released, or, in the
+Lock Screen camera, which makes none, that previews aren't made there. No zoom.
 
 ## `PhotoViewerFallback/body`
 
@@ -14241,17 +14298,30 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 The fallback.
 
-## `PhotoViewerFallback/init(thumbnail:)`
+## `PhotoViewerFallback/init(thumbnail:makesPreviews:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-@MainActor init(thumbnail: PhotoThumbnail?)
+@MainActor init(thumbnail: PhotoThumbnail?, makesPreviews: Bool = true)
 ```
 
 Creates the fallback.
 
-- Parameter thumbnail: The saved photo's thumbnail, or `nil`.
+- Parameters:
+  - thumbnail: The saved photo's thumbnail, or `nil`.
+  - makesPreviews: Whether this process makes previews: `false` in the Lock Screen
+    camera.
+
+## `PhotoViewerFallback/makesPreviews`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let makesPreviews: Bool
+```
+
+Whether this process makes previews (`SessionPhotos.makesPreviews`).
 
 ## `PhotoViewerFallback/thumbnail`
 
@@ -14316,12 +14386,12 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 The page.
 
-## `PhotoViewerPage/init(photo:picture:zoom:maximumZoom:toggleControls:)`
+## `PhotoViewerPage/init(photo:picture:zoom:maximumZoom:makesPreviews:toggleControls:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-@MainActor init(photo: SessionPhoto, picture: Image?, zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat, toggleControls: @escaping () -> Void)
+@MainActor init(photo: SessionPhoto, picture: Image?, zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat, makesPreviews: Bool = true, toggleControls: @escaping () -> Void)
 ```
 
 Creates a page.
@@ -14331,7 +14401,19 @@ Creates a page.
   - picture: Its decoded picture, or `nil`.
   - zoom: The zoom; a constant fit for pages not shown.
   - maximumZoom: The zoom limit.
+  - makesPreviews: Whether this process makes previews, for the fallback's words.
   - toggleControls: Hides or shows the controls.
+
+## `PhotoViewerPage/makesPreviews`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let makesPreviews: Bool
+```
+
+Whether this process makes previews (`SessionPhotos.makesPreviews`), for the
+fallback's words.
 
 ## `PhotoViewerPage/maximumZoom`
 
@@ -14406,12 +14488,12 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 The pages.
 
-## `PhotoViewerPager/init(photos:shownID:pictures:zoom:maximumZoom:pageSize:toggleControls:)`
+## `PhotoViewerPager/init(photos:shownID:pictures:zoom:maximumZoom:pageSize:makesPreviews:toggleControls:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 ```swift
-@MainActor init(photos: [SessionPhoto], shownID: Binding<Int?>, pictures: [Int : Image], zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat, pageSize: CGSize, toggleControls: @escaping () -> Void)
+@MainActor init(photos: [SessionPhoto], shownID: Binding<Int?>, pictures: [Int : Image], zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat, pageSize: CGSize, makesPreviews: Bool = true, toggleControls: @escaping () -> Void)
 ```
 
 Creates the pages.
@@ -14423,7 +14505,18 @@ Creates the pages.
   - zoom: The zoom of the photo shown.
   - maximumZoom: The zoom limit of the photo shown.
   - pageSize: The page's size, in points.
+  - makesPreviews: Whether this process makes previews.
   - toggleControls: Hides or shows the controls.
+
+## `PhotoViewerPager/makesPreviews`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let makesPreviews: Bool
+```
+
+Whether this process makes previews (`SessionPhotos.makesPreviews`).
 
 ## `PhotoViewerPager/maximumZoom`
 
@@ -14688,6 +14781,26 @@ static var lastPhotoHint: Text { get }
 
 "Shows the photo."
 
+## `PhotoViewerText/lockScreenNoPreviewSentence`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var lockScreenNoPreviewSentence: String { get }
+```
+
+"On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos."
+
+## `PhotoViewerText/lockScreenNoPreviewTitle`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var lockScreenNoPreviewTitle: String { get }
+```
+
+"No Preview", the title in the Lock Screen camera's viewer, which makes no previews.
+
 ## `PhotoViewerText/newPhoto`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
@@ -14697,6 +14810,32 @@ static var newPhoto: Text { get }
 ```
 
 "New Photo".
+
+## `PhotoViewerText/noPreviewSentence(makesPreviews:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static func noPreviewSentence(makesPreviews: Bool) -> String
+```
+
+The sentence for a photo without a preview: ``previewNotKeptSentence`` where previews are
+made and this one was released, ``lockScreenNoPreviewSentence`` where none are made.
+
+- Parameter makesPreviews: Whether this process makes previews.
+
+## `PhotoViewerText/noPreviewTitle(makesPreviews:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static func noPreviewTitle(makesPreviews: Bool) -> String
+```
+
+The title for a photo without a preview: ``previewNotKeptTitle`` where previews are made
+and this one was released, ``lockScreenNoPreviewTitle`` where none are made.
+
+- Parameter makesPreviews: Whether this process makes previews.
 
 ## `PhotoViewerText/notSigned`
 
@@ -21093,6 +21232,72 @@ The shape in the rect, scaled uniformly from the 1024-unit grid.
 
 - Parameter rect: The rect to draw in, normally a ``NopeSize/startMark`` square.
 - Returns: The path.
+
+## `StartWordsWidth`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+struct StartWordsWidth
+```
+
+Lays out its one subview at most ``maximumWidth`` wide and takes the subview's own size, so
+the plate behind the first start's words is only as wide as the words (wrapped where they
+don't fit), never the whole window.
+
+## `StartWordsWidth/init(maximumWidth:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+init(maximumWidth: CGFloat)
+```
+
+Creates the layout.
+
+- Parameter maximumWidth: The widest the subview may be, in points.
+
+## `StartWordsWidth/maximumWidth`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+let maximumWidth: CGFloat
+```
+
+The widest the subview may be, in points.
+
+## `StartWordsWidth/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Places the subview at the center of the bounds, at their size.
+
+- Parameters:
+  - bounds: Where the subview goes.
+  - proposal: The size offered.
+  - subviews: The one subview.
+  - cache: Unused.
+
+## `StartWordsWidth/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The subview's size when offered the smaller of the proposed width and ``maximumWidth``.
+
+- Parameters:
+  - proposal: The size offered.
+  - subviews: The one subview.
+  - cache: Unused.
+- Returns: The subview's size.
 
 ## `StatePill`
 
