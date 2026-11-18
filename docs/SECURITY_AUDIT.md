@@ -164,7 +164,7 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
     `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` (the location switch ships in 0.2.0). No `NSPhotoLibraryUsageDescription` (full library access), no
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
-  - Each string is accurate, says "nope.", and is translated in all 11 languages.
+  - Each string is accurate, says "nope.", and is present in every language that ships (English only in 1.0.0).
   - No `UIBackgroundModes`, `CFBundleURLTypes` (URL schemes), `CFBundleDocumentTypes`,
     `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`, `NSAppTransportSecurity`
     exceptions, or `NSBonjourServices`.
@@ -481,7 +481,7 @@ Copy this into the audit report issue for each release.
 - [ ] 2. Full-history secret scan clean
 - [ ] 3. Binary: no secrets, no Debug tools, no networking symbols in the app or any linked binary (no exceptions); signature verifies
 - [ ] 4. Signed entitlements match the allowlist
-- [ ] 5. Info.plist: only the needed usage strings, accurate in 11 languages; no background modes, URL schemes, file sharing or ATS exceptions; `ITSAppUsesNonExemptEncryption` = `NO`
+- [ ] 5. Info.plist: only the needed usage strings, accurate in every language that ships; no background modes, URL schemes, file sharing or ATS exceptions; `ITSAppUsesNonExemptEncryption` = `NO`
 - [ ] 6. Privacy manifest matches every required-reason API in the binary; Xcode privacy report reviewed
 - [ ] 7. Static no-network proof
 - [ ] 8. Packet capture, App Privacy Report and offline run: zero app traffic

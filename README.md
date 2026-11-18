@@ -14,6 +14,10 @@ Photivra Nope Camera supports the two latest versions of each operating system: 
 
 These are the devices that run iOS, iPadOS and watchOS 26, as Apple lists them. Devices that run only an earlier version, such as iPhone XS, XS Max and XR, aren't supported. The app detects each camera feature at run time and shows only what the device supports.
 
+## Languages
+
+Version 1.0.0 is in English only. The interface is built for translation (every string is in a String Catalog, and layouts are tested with long text and right to left), and other languages are planned for later releases.
+
 ## License
 
 The source code is licensed under the GNU General Public License, version 3 only (GPL-3.0-only); see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).
