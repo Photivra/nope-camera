@@ -211,6 +211,73 @@ struct LevelTapHeldBackTests {
         #expect(!model.holdsBackLevelTap)
     }
 
+    @Test func aBurstHeldOnTheScreenHoldsTheTapBack() async {
+        // The on-screen shutter held in Burst (docs/design/BURST.md): held back from the first
+        // photo, which is requested as the shutter goes down.
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.oneLens))
+        let model = CameraModel(backend: hooked, saver: CameraModelTests.saver())
+        await model.send(.start)
+        await hooked.setOnCapture { [model] count in
+            await MainActor.run {
+                #expect(model.drive.burstProgress != nil)
+                #expect(model.holdsBackLevelTap)
+            }
+            guard count == 2 else { return }
+            await model.send(.drive(.shutter(.released)))
+        }
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.drive(.shutter(.pressed)))
+        #expect(model.drive.burstProgress == nil)
+        #expect(!model.holdsBackLevelTap)
+    }
+
+    @Test func aBracketInFullAutoHoldsTheTapBack() async {
+        // A bracket from the drive strip with Manual Controls off (docs/design/BRACKETING.md),
+        // and its start delay, which counts down as the self-timer does.
+        let backend = GatedLensBackend(lenses: [ManualFixtures.wide])
+        let ticker = Ticker()
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in await ticker.sleep() },
+            deviceStatusReader: FakeStatusReader(bytes: nil))
+        await model.send(.start)
+        await model.manual.record(ManualFixtures.reading)
+        await model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
+        #expect(!model.manual.isEnabled)
+        await backend.setHoldsCapture(true)
+        let shot = Task { await model.send(.capture) }
+        await waitForActor { await backend.isCaptureHeld }
+        #expect(model.bracketProgress != nil)
+        #expect(model.holdsBackLevelTap)
+        await backend.releaseCapture()
+        await shot.value
+        #expect(!model.holdsBackLevelTap)
+
+        await model.send(.drive(.setMode(.timer(.threeSeconds))))
+        await model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
+        await model.send(.capture)
+        #expect(model.drive.countdown.isRunning)
+        #expect(model.holdsBackLevelTap)
+        await model.send(.capture)
+        #expect(!model.holdsBackLevelTap)
+    }
+
+    @Test func anIntervalSeriesThatStopsAfterATimeHoldsTheTapBack() async {
+        let ticker = Ticker()
+        let model = CameraModel(
+            backend: ScriptedManualBackend(lenses: [ManualFixtures.wide]), saver: CameraModelTests.saver(),
+            sleep: { _ in await ticker.sleep() }, deviceStatusReader: FakeStatusReader(bytes: nil))
+        await model.send(.start)
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 10, stopAfter: .time, duration: 600))))
+        await model.send(.manual(.startInterval))
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        #expect(model.manual.intervalProgress?.timeSpan != nil)
+        #expect(model.captureStatus != .capturing)
+        #expect(model.holdsBackLevelTap)
+        await model.send(.manual(.stopInterval))
+        await waitUntil { model.manual.intervalProgress == nil }
+        #expect(!model.holdsBackLevelTap)
+    }
+
     @Test func anIntervalSeriesHoldsTheTapBackRunningAndPaused() async {
         let ticker = Ticker()
         let backend = PausingBackend(ScriptedManualBackend(lenses: [ManualFixtures.wide]))

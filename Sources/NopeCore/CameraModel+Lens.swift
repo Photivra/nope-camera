@@ -47,8 +47,10 @@ extension CameraModel {
         drive.isBusy || manual.intervalProgress != nil || astro.isRunning
     }
 
-    /// Whether a photo or an exposure bracket is being taken or saved.
+    /// Whether a photo or an exposure bracket is being taken or saved. A bracket counts from its
+    /// request to its last frame's save (``bracketProgress``), in full auto as with Manual
+    /// Controls on.
     var isTakingPhoto: Bool {
-        captureStatus == .capturing || captureStatus == .saving
+        captureStatus == .capturing || captureStatus == .saving || bracketProgress != nil
     }
 }

@@ -125,15 +125,16 @@ func waitForActor(_ condition: @Sendable () async -> Bool) async {
 struct LensWhileBusyTests {
     /// Each state in which the lens can't be changed.
     enum Busy: String, CaseIterable, Sendable, CustomTestStringConvertible {
-        case capturing, saving, countdown, burst, bracket, intervalFrame, intervalWait, astroRun, compareView
+        case capturing, saving, countdown, burst, heldBurst, bracket, bracketFullAuto, bracketSaving, bracketDelay
+        case intervalFrame, intervalWait, astroRun, compareView
 
         var testDescription: String { rawValue }
 
         /// The reason the model gives in this state.
         var blocker: LensChangeBlocker {
             switch self {
-            case .capturing, .saving, .bracket: .takingPhoto
-            case .countdown, .burst, .intervalFrame, .intervalWait, .astroRun: .runningSeries
+            case .capturing, .saving, .bracket, .bracketFullAuto, .bracketSaving: .takingPhoto
+            case .countdown, .burst, .heldBurst, .bracketDelay, .intervalFrame, .intervalWait, .astroRun: .runningSeries
             case .compareView: .comparing
             }
         }
@@ -227,6 +228,56 @@ struct LensWhileBusyTests {
             await camera.backend.releaseCapture()
             await shot.value
             return camera
+        case .heldBurst:
+            // Burst held on the on-screen shutter (docs/design/BURST.md): busy from the first
+            // photo, which is requested as the shutter goes down, until the release.
+            let camera = await makeCamera()
+            await camera.model.send(.drive(.setMode(.burst)))
+            await camera.backend.setOnCapture { count in
+                if count == 1 { await action(camera.model) }
+                if count == 2 { await camera.model.send(.drive(.shutter(.released))) }
+            }
+            await camera.model.send(.drive(.shutter(.pressed)))
+            return camera
+        case .bracketFullAuto:
+            // A bracket from the drive strip with Manual Controls off (docs/design/BRACKETING.md).
+            let camera = await makeCamera()
+            await camera.model.manual.record(ManualFixtures.reading)
+            await camera.model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
+            #expect(!camera.model.manual.isEnabled)
+            await camera.backend.setHoldsCapture(true)
+            let shot = Task { await camera.model.send(.capture) }
+            await waitForActor { await camera.backend.isCaptureHeld }
+            #expect(camera.model.bracketProgress != nil)
+            await action(camera.model)
+            await camera.backend.releaseCapture()
+            await shot.value
+            return camera
+        case .bracketSaving:
+            let library = HeldLibrary()
+            let camera = await makeCamera(library: library)
+            await camera.model.manual.record(ManualFixtures.reading)
+            await camera.model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
+            let shot = Task { await camera.model.send(.capture) }
+            await waitForActor { await library.isHeld }
+            #expect(camera.model.bracketProgress?.taken == 3)
+            await action(camera.model)
+            await library.release()
+            await shot.value
+            return camera
+        case .bracketDelay:
+            // A bracket with its start delay counts down as the self-timer does.
+            let camera = await makeCamera(ticks: true)
+            await camera.model.manual.record(ManualFixtures.reading)
+            await camera.model.send(.drive(.setMode(.timer(.threeSeconds))))
+            await camera.model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
+            #expect(camera.model.bracketStartDelay == .threeSeconds)
+            await camera.model.send(.capture)
+            #expect(camera.model.drive.countdown.isRunning)
+            await action(camera.model)
+            for _ in 0..<3 { await tick(camera.ticker) }
+            await waitUntil { camera.model.captureStatus != .idle && !camera.model.isTakingPhoto }
+            return camera
         case .intervalFrame, .intervalWait:
             let camera = await makeCamera(ticks: true)
             if state == .intervalFrame {
@@ -283,7 +334,8 @@ struct LensWhileBusyTests {
     /// The photos each state takes once it ends normally.
     func photos(in state: Busy) -> Int {
         switch state {
-        case .capturing, .saving, .countdown, .bracket, .compareView: 1
+        case .capturing, .saving, .countdown, .bracket, .bracketFullAuto, .bracketSaving, .bracketDelay, .compareView: 1
+        case .heldBurst: 2
         case .burst, .intervalFrame, .intervalWait: 3
         case .astroRun: 5
         }
