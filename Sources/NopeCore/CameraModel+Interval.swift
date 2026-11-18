@@ -9,6 +9,11 @@ public enum IntervalBlocker: Equatable, Sendable {
 
     /// The self-timer counts down or a burst runs. Wait until it ends.
     case driveIsBusy
+
+    /// The series stops after a time, and the interval is as long as the time or longer, so it
+    /// would take only one photo. Choose a shorter interval or a longer time
+    /// (``IntervalSettings/isIntervalShorterThanTime``).
+    case intervalNotShorterThanTime
 }
 
 /// The photos of an interval series (issue #48). ``ManualControlsModel`` holds the series; the
@@ -30,6 +35,7 @@ extension CameraModel {
     public var intervalBlocker: IntervalBlocker? {
         if astro.isOn { return .astroIsOn }
         if drive.isBusy { return .driveIsBusy }
+        if !manual.interval.isIntervalShorterThanTime { return .intervalNotShorterThanTime }
         return nil
     }
 
@@ -60,23 +66,42 @@ extension CameraModel {
 
     /// Waits until the next interval photo can be taken, with the series marked as paused while
     /// it should pause. It waits for Observation's change notifications; nothing polls
-    /// (AGENTS.md, "Battery").
+    /// (AGENTS.md, "Battery"). For a series that stops after a time, it also wakes when the time
+    /// is up, so a series paused in the foreground (by a call, say) ends at its time.
     ///
-    /// - Returns: `false` when the series was stopped while it waited.
+    /// - Returns: `false` when the series was stopped while it waited, or its time is up.
     private func waitForIntervalPhoto() async -> Bool {
-        let waiter = ChangeWaiter()
-        await withTaskCancellationHandler {
-            while intervalPhotoMustWait, !waiter.isExpired {
-                manual.setIntervalPaused(seriesShouldPause)
-                await waiter.waitForChange { self.intervalPhotoMustWait }
+        while !Task.isCancelled, !manual.isIntervalTimeUp, intervalPhotoMustWait {
+            let waiter = ChangeWaiter()
+            let timeUp = wakeAtIntervalEnd(waiter)
+            await withTaskCancellationHandler {
+                while intervalPhotoMustWait, !waiter.isExpired {
+                    manual.setIntervalPaused(seriesShouldPause)
+                    await waiter.waitForChange { self.intervalPhotoMustWait }
+                }
+            } onCancel: {
+                Task { @MainActor in waiter.expire() }
             }
-        } onCancel: {
-            Task { @MainActor in waiter.expire() }
+            timeUp?.cancel()
         }
-        // A stopped series is already gone; only a running one is marked as running again.
-        guard !Task.isCancelled else { return false }
+        // A stopped series is already gone.
+        guard !Task.isCancelled, !manual.isIntervalTimeUp else { return false }
+        // Only a running series is marked as running again.
         manual.setIntervalPaused(false)
         return true
+    }
+
+    /// Wakes a wait for the next interval photo when the running series' time is up.
+    ///
+    /// - Parameter waiter: The wait to wake.
+    /// - Returns: The task that wakes it, to cancel when the wait ends, or `nil` for a series that
+    ///   stops after a number of photos.
+    private func wakeAtIntervalEnd(_ waiter: ChangeWaiter) -> Task<Void, Never>? {
+        guard let secondsLeft = manual.intervalProgress?.secondsLeft(at: manual.currentDate()) else { return nil }
+        return Task { [intervalEndSleep] in
+            guard (try? await intervalEndSleep(secondsLeft)) != nil else { return }
+            waiter.expire()
+        }
     }
 
     /// Whether a photo of an astro run or an interval series that failed was cut short by a

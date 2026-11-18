@@ -2,7 +2,8 @@ import AppIntents
 import NopeCore
 
 /// "Start Interval Shooting" for Siri and the Shortcuts app (issue #62): opens the app to the
-/// camera and starts an interval series, as Start in Pro Tools does.
+/// camera and starts an interval series, as Start in Interval Settings does. The series stops
+/// after a number of photos or, with a duration, after a time.
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it hands an
 /// ``IntervalShortcut`` to the app's ``ShortcutInbox`` and says the outcome. The series is the
@@ -23,7 +24,7 @@ struct StartIntervalIntent: AppIntent {
     /// The series needs the camera, which runs only in the foreground.
     static let openAppWhenRun = true
 
-    /// The time between photos in seconds, or `nil` for the interval chosen in Pro Tools.
+    /// The time between photos in seconds, or `nil` for the interval chosen in Interval Settings.
     @Parameter(
         title: LocalizedStringResource(
             "Seconds Between Photos", comment: "A setting of nope.'s Start Interval Shooting action: the time from one photo to the next, in seconds."),
@@ -31,13 +32,26 @@ struct StartIntervalIntent: AppIntent {
         inclusiveRange: (1, 3600))
     var intervalSeconds: Int?
 
-    /// How many photos, or `nil` for the number chosen in Pro Tools.
+    /// How many photos, or `nil` for the number chosen in Interval Settings. Without a duration,
+    /// the series stops after this number of photos.
     @Parameter(
         title: LocalizedStringResource(
             "Number of Photos", comment: "A setting of nope.'s actions: how many photos to take."),
         // A compile-time constant: IntervalSettings.countRange, which also checks the value.
         inclusiveRange: (2, 999))
     var count: Int?
+
+    /// How long the series runs in minutes, or `nil` to keep the end chosen in Interval
+    /// Settings. With a duration the series stops after that time, instead of after a number of
+    /// photos; it takes priority over the number of photos.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Duration in Minutes",
+            comment: "A setting of nope.'s Start Interval Shooting action: the series stops after this many minutes, instead of after a number of photos."),
+        // A compile-time constant: IntervalSettings.durationRange (1 minute to 24 hours) in
+        // minutes, which also checks the value.
+        inclusiveRange: (1, 1440))
+    var durationMinutes: Int?
 
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
@@ -47,6 +61,7 @@ struct StartIntervalIntent: AppIntent {
         Summary("Start interval shooting") {
             \.$intervalSeconds
             \.$count
+            \.$durationMinutes
         }
     }
 
@@ -55,7 +70,9 @@ struct StartIntervalIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let series = IntervalShortcut(intervalSeconds: intervalSeconds.map(Double.init), count: count)
+        let series = IntervalShortcut(
+            intervalSeconds: intervalSeconds.map(Double.init), count: count,
+            durationSeconds: durationMinutes.map { Double($0) * 60 })
         let outcome = await inbox.submit(.startInterval(series))
         return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
     }

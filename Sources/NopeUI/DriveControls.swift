@@ -185,11 +185,12 @@ enum ModeCardState: Equatable {
     /// by itself (``DriveText/endMessage(_:)``), until the next action.
     case burstEnded(BurstResult)
 
-    /// Interval is chosen and no series runs: "Every 10 seconds, 10 photos". The whole card is
-    /// the button Interval Settings.
+    /// Interval is chosen and no series runs: "Every 10 seconds, 10 photos", or "Every 10
+    /// seconds, for 1 hour, 30 minutes". The whole card is the button Interval Settings.
     case intervalIdle(IntervalSettings)
 
-    /// An interval series runs or is paused: the count, a progress bar and Stop.
+    /// An interval series runs or is paused: the count, or for a series that stops after a time
+    /// the count and the time left, a progress bar and Stop.
     case intervalRunning(IntervalProgress)
 
     /// Astro is on and ready: the frames and the estimate. The whole card is the button Astro
@@ -345,13 +346,98 @@ enum ModeCardText {
             .units(allowed: [.hours, .minutes, .seconds], width: .wide, maximumUnitCount: 2, fractionalPart: .hide(rounded: .up)))
     }
 
-    /// "Every 10 seconds, 10 photos".
+    /// "Every 10 seconds, 10 photos", or for a series that stops after a time, "Every 10
+    /// seconds, for 1 hour, 30 minutes".
     ///
     /// - Parameter settings: The series.
     static func intervalSummary(_ settings: IntervalSettings) -> String {
+        switch settings.stopAfter {
+        case .numberOfPhotos:
+            String(
+                localized: "Every \(spokenDuration(settings.interval)), \(settings.count) photos", bundle: .module,
+                comment: "Interval card on the camera, before a series starts: the time between photos, then how many photos the series takes. The first placeholder is a duration formatted by the system, such as \"10 seconds\"; the number is at least 2.")
+        case .time:
+            String(
+                localized: "Every \(spokenDuration(settings.interval)), for \(spokenDuration(settings.duration))", bundle: .module,
+                comment: "Interval card on the camera, before a series that stops after a time starts: the time between photos, then how long the series runs. Both placeholders are durations formatted by the system, such as \"10 seconds\" and \"1 hour, 30 minutes\".")
+        }
+    }
+
+    /// The idle card's second line: why the shutter can't start the series, or `nil`.
+    ///
+    /// - Parameter settings: The series.
+    static func intervalIdleDetail(_ settings: IntervalSettings) -> String? {
+        settings.isIntervalShorterThanTime ? nil : intervalNotShorterThanTimeString
+    }
+
+    /// "Choose an interval shorter than the time.": the interval isn't shorter than the series'
+    /// time (`IntervalBlocker.intervalNotShorterThanTime`).
+    static var intervalNotShorterThanTimeString: String {
         String(
-            localized: "Every \(spokenDuration(settings.interval)), \(settings.count) photos", bundle: .module,
-            comment: "Interval card on the camera, before a series starts: the time between photos, then how many photos the series takes. The first placeholder is a duration formatted by the system, such as \"10 seconds\"; the number is at least 2.")
+            localized: "Choose an interval shorter than the time.", bundle: .module,
+            comment: "Shown on the interval card and under the disabled Start button when the series stops after a time that is no longer than the time between photos, so it would take only one photo.")
+    }
+
+    /// ``intervalNotShorterThanTimeString`` as text.
+    static var intervalNotShorterThanTime: Text {
+        Text(verbatim: intervalNotShorterThanTimeString)
+    }
+
+    /// The time left of a series that stops after a time, in the system's abbreviated form with
+    /// hours and minutes, the minutes rounded up: "1 hr, 12 min", or in words for VoiceOver.
+    ///
+    /// - Parameters:
+    ///   - seconds: The time left, in seconds.
+    ///   - width: How the units are written: abbreviated on screen, wide for VoiceOver.
+    static func timeLeftDuration(_ seconds: Double, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated) -> String {
+        Duration.seconds(seconds).formatted(
+            .units(allowed: [.hours, .minutes], width: width, maximumUnitCount: 2, fractionalPart: .hide(rounded: .up)))
+    }
+
+    /// "12 photos taken · 1 hr, 12 min left", or "Paused: 12 photos taken · 1 hr, 12 min left",
+    /// for a series that stops after a time. VoiceOver reads the units in full.
+    ///
+    /// - Parameters:
+    ///   - progress: The series' progress.
+    ///   - now: The current time.
+    static func intervalTimeProgress(_ progress: IntervalProgress, at now: Date) -> Text {
+        Text(verbatim: intervalTimeProgressString(progress, at: now))
+            .accessibilityLabel(Text(verbatim: intervalTimeProgressString(progress, at: now, width: .wide)))
+    }
+
+    /// The words of ``intervalTimeProgress(_:at:)``.
+    ///
+    /// - Parameters:
+    ///   - progress: The series' progress.
+    ///   - now: The current time.
+    ///   - width: How the units of the time left are written.
+    static func intervalTimeProgressString(
+        _ progress: IntervalProgress, at now: Date, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated
+    ) -> String {
+        let left = timeLeftDuration(progress.secondsLeft(at: now) ?? 0, width: width)
+        if progress.isPaused {
+            return String(
+                localized: "Paused: \(progress.taken) photos taken · \(left) left", bundle: .module,
+                comment: "Interval shooting that stops after a time, paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back, and its time keeps running meanwhile. The number is a count of photos; the placeholder is the time left, such as \"1 hr, 12 min\", formatted by the system. Keep \"nope.\" unchanged.")
+        }
+        return String(
+            localized: "\(progress.taken) photos taken · \(left) left", bundle: .module,
+            comment: "Interval shooting progress for a series that stops after a time: how many photos are taken so far, and the time left. The number is a count of photos; the placeholder is the time left, such as \"1 hr, 12 min\", formatted by the system.")
+    }
+
+    /// "Ends at 9:41 PM", or with the day when the series ends on another day: "Ends at Tue 9:41
+    /// PM".
+    ///
+    /// - Parameters:
+    ///   - end: When the series ends.
+    ///   - now: The current time.
+    static func intervalEnds(at end: Date, now: Date) -> String {
+        let format: Date.FormatStyle =
+            Calendar.current.isDate(end, inSameDayAs: now)
+            ? .dateTime.hour().minute() : .dateTime.weekday(.abbreviated).hour().minute()
+        return String(
+            localized: "Ends at \(end.formatted(format))", bundle: .module,
+            comment: "Interval card on the camera while a series that stops after a time is paused: the time on the clock when it ends, such as 9:41 PM, with the day of the week when it is not today. Formatted by the system.")
     }
 
     /// "Interval Settings".
@@ -363,10 +449,11 @@ enum ModeCardText {
     ///
     /// - Parameter progress: The series' progress.
     static func intervalProgress(_ progress: IntervalProgress) -> Text {
-        if progress.isPaused {
-            Text("Paused: \(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.")
+        let total = progress.total ?? progress.taken
+        return if progress.isPaused {
+            Text("Paused: \(progress.taken) of \(total) photos taken", bundle: .module, comment: "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.")
         } else {
-            Text("\(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
+            Text("\(progress.taken) of \(total) photos taken", bundle: .module, comment: "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.")
         }
     }
 
@@ -685,13 +772,17 @@ struct ModeCards: View {
             }
         case .intervalIdle(let settings):
             SettingsCard(
-                title: ModeCardText.intervalSummary(settings), detail: nil, name: ModeCardText.intervalSettings,
-                action: openIntervalSettings)
+                title: ModeCardText.intervalSummary(settings), detail: ModeCardText.intervalIdleDetail(settings),
+                name: ModeCardText.intervalSettings, action: openIntervalSettings)
+        case .intervalRunning(let progress) where progress.timeSpan != nil:
+            IntervalTimeCard(progress: progress, nextPhoto: nextPhoto) {
+                stopButton(ModeCardText.stopInterval) { send(.manual(.stopInterval)) }
+            }
         case .intervalRunning(let progress):
             ModeCard(
                 title: ModeCardText.intervalProgress(progress),
                 detail: progress.isPaused ? nil : nextPhoto.map { NextPhotoDetail(timing: $0) },
-                fractionDone: Double(progress.taken) / Double(max(progress.total, 1))
+                fractionDone: progress.fractionDone(at: .now)
             ) {
                 stopButton(ModeCardText.stopInterval) { send(.manual(.stopInterval)) }
             }
@@ -732,6 +823,84 @@ struct ModeCards: View {
     private func send(_ intent: CameraIntent) {
         let model = model
         Task { await model.send(intent) }
+    }
+}
+
+/// The running card of an interval series that stops after a time: the photos taken and the time
+/// left, the next photo's time (or, paused, when the series ends), a progress bar by time, and
+/// Stop. The time keeps running while the series is paused, so the card counts it down then too.
+struct IntervalTimeCard<Accessory: View>: View {
+    /// How often the time left and the bar are redrawn, in seconds: the time is shown in whole
+    /// minutes, counted from the series' start.
+    static var refreshSeconds: Double { 60 }
+
+    /// The series' progress.
+    let progress: IntervalProgress
+
+    /// When the next photo is due, or `nil` before a photo is counted.
+    let nextPhoto: NextPhotoTiming?
+
+    /// The Stop capsule.
+    let accessory: Accessory
+
+    /// Creates the card.
+    ///
+    /// - Parameters:
+    ///   - progress: The series' progress; its `IntervalProgress.timeSpan` is set.
+    ///   - nextPhoto: When the next photo is due, or `nil`.
+    ///   - accessory: The Stop capsule.
+    init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, @ViewBuilder accessory: () -> Accessory) {
+        self.progress = progress
+        self.nextPhoto = nextPhoto
+        self.accessory = accessory()
+    }
+
+    /// The card, redrawn each minute of the series.
+    var body: some View {
+        let start = progress.timeSpan?.lowerBound ?? .now
+        TimelineView(.periodic(from: start, by: Self.refreshSeconds)) { context in
+            ModeCard(
+                title: ModeCardText.intervalTimeProgress(progress, at: context.date),
+                detail: IntervalTimeDetail(progress: progress, nextPhoto: nextPhoto, now: context.date),
+                fractionDone: progress.fractionDone(at: context.date)
+            ) {
+                accessory
+            }
+        }
+    }
+}
+
+/// The second line of ``IntervalTimeCard``: "Next photo in 6s" while it runs, "Ends at 9:41 PM"
+/// while it is paused.
+struct IntervalTimeDetail: View {
+    /// The series' progress.
+    let progress: IntervalProgress
+
+    /// When the next photo is due, or `nil`.
+    let nextPhoto: NextPhotoTiming?
+
+    /// The current time.
+    let now: Date
+
+    /// Creates the line.
+    ///
+    /// - Parameters:
+    ///   - progress: The series' progress.
+    ///   - nextPhoto: When the next photo is due, or `nil`.
+    ///   - now: The current time.
+    init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, now: Date) {
+        self.progress = progress
+        self.nextPhoto = nextPhoto
+        self.now = now
+    }
+
+    /// The line, or nothing.
+    var body: some View {
+        if progress.isPaused, let end = progress.timeSpan?.upperBound {
+            Text(verbatim: ModeCardText.intervalEnds(at: end, now: now))
+        } else if !progress.isPaused, let nextPhoto {
+            NextPhotoDetail(timing: nextPhoto)
+        }
     }
 }
 

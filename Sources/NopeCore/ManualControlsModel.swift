@@ -35,11 +35,15 @@ public final class ManualControlsModel {
     /// The exposure bracket for the next photo, or `nil` when bracketing is off.
     public private(set) var bracket: BracketSettings?
 
-    /// The interval and photo count of the next interval series.
+    /// The interval, and the number of photos or the time, of the next interval series.
     public private(set) var interval = IntervalSettings.standard
 
     /// The running interval series, or `nil` when none is running.
     public private(set) var intervalProgress: IntervalProgress?
+
+    /// How the last interval series ended, or `nil` before the first one ends. Cleared when the
+    /// next starts.
+    public private(set) var lastIntervalEnd: IntervalEnd?
 
     /// The selected lens, or `nil` before the camera is ready.
     public private(set) var lens: Lens?
@@ -49,6 +53,9 @@ public final class ManualControlsModel {
 
     /// Waits between interval photos; the time is in seconds.
     private let sleep: @Sendable (Double) async throws -> Void
+
+    /// Reads the clock on the wall, for the end of a series that stops after a time.
+    let currentDate: @Sendable () -> Date
 
     /// The running interval series.
     private var intervalTask: Task<Void, Never>?
@@ -108,12 +115,16 @@ public final class ManualControlsModel {
     /// - Parameters:
     ///   - backend: The hardware, or `nil` when it has no manual controls.
     ///   - sleep: Waits a number of seconds between interval photos, throwing when cancelled.
+    ///   - currentDate: Reads the clock on the wall, for a series that stops after a time. Tests
+    ///     pass a scripted one.
     public init(
         backend: (any ManualCaptureBackend)?,
-        sleep: @escaping @Sendable (Double) async throws -> Void
+        sleep: @escaping @Sendable (Double) async throws -> Void,
+        currentDate: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.backend = backend
         self.sleep = sleep
+        self.currentDate = currentDate
     }
 
     // MARK: - What an interface reads
@@ -525,32 +536,71 @@ public final class ManualControlsModel {
     // MARK: - Interval shooting
 
     /// Starts an interval series: takes a photo, waits ``interval``, and repeats until
-    /// ``IntervalSettings/count`` photos are taken or the series is stopped. Only photos taken and
-    /// saved are counted: `capture` waits while the series is paused (``setIntervalPaused(_:)``)
-    /// instead of skipping a photo. A photo that can't be taken for another reason (the camera
-    /// stopped for good, or the photo failed) ends the series, and the camera says why.
+    /// ``IntervalSettings/count`` photos are taken, the time is up (``IntervalSettings/StopAfter/time``),
+    /// or the series is stopped. Only photos taken and saved are counted: `capture` waits while
+    /// the series is paused (``setIntervalPaused(_:)``) instead of skipping a photo. A photo that
+    /// can't be taken for another reason (the camera stopped for good, or the photo failed) ends
+    /// the series, and the camera says why.
+    ///
+    /// A series that stops after a time ends at a fixed time on the wall clock, set when it
+    /// starts: it takes no photo whose interval would end at or after that time, and when the
+    /// time is up while it waits for the camera, `capture` returns `false` and the series ends
+    /// as finished.
     ///
     /// - Parameter capture: Takes one photo and returns whether it was taken and saved.
     private func startInterval(capture: @escaping @MainActor () async -> Bool) {
         guard intervalProgress == nil else { return }
         let series = interval
-        intervalProgress = IntervalProgress(taken: 0, total: series.count)
+        let start = currentDate()
+        let timeSpan = series.stopAfter == .time ? start...start.addingTimeInterval(series.duration) : nil
+        lastIntervalEnd = nil
+        intervalProgress = IntervalProgress(
+            taken: 0, total: series.stopAfter == .numberOfPhotos ? series.count : nil, timeSpan: timeSpan)
         intervalTask = Task {
-            for taken in 1...series.count {
+            var taken = 0
+            var isFinished = false
+            while true {
                 let wasTaken = await capture()
                 guard !Task.isCancelled else { return }
-                guard wasTaken else { break }
-                intervalProgress = IntervalProgress(taken: taken, total: series.count)
-                guard taken < series.count else { break }
+                guard wasTaken else {
+                    isFinished = isIntervalTimeUp
+                    break
+                }
+                taken += 1
+                intervalProgress = intervalProgress?.with(taken: taken)
+                guard hasTimeForAnotherPhoto(series, taken: taken, timeSpan: timeSpan) else {
+                    isFinished = true
+                    break
+                }
                 do {
                     try await sleep(series.interval)
                 } catch {
                     return
                 }
             }
+            lastIntervalEnd = isFinished ? .finished : .stopped
             intervalProgress = nil
             intervalTask = nil
         }
+    }
+
+    /// Whether a series takes another photo after this one: fewer than its count are taken, or,
+    /// for a series that stops after a time, the next interval ends before the time is up.
+    ///
+    /// - Parameters:
+    ///   - series: The series' settings.
+    ///   - taken: The photos taken so far.
+    ///   - timeSpan: When a series that stops after a time started and ends, or `nil`.
+    /// - Returns: Whether to wait the interval and take another photo.
+    private func hasTimeForAnotherPhoto(_ series: IntervalSettings, taken: Int, timeSpan: ClosedRange<Date>?) -> Bool {
+        guard let timeSpan else { return taken < series.count }
+        return currentDate().addingTimeInterval(series.interval) < timeSpan.upperBound
+    }
+
+    /// Whether the running series stops after a time and that time is up.
+    var isIntervalTimeUp: Bool {
+        guard let end = intervalProgress?.timeSpan?.upperBound else { return false }
+        return currentDate() >= end
     }
 
     /// Marks the running series as paused or running again, for the camera screen and the Live
@@ -559,13 +609,15 @@ public final class ManualControlsModel {
     /// - Parameter isPaused: Whether the series is paused.
     func setIntervalPaused(_ isPaused: Bool) {
         guard let progress = intervalProgress, progress.isPaused != isPaused else { return }
-        intervalProgress = IntervalProgress(taken: progress.taken, total: progress.total, isPaused: isPaused)
+        intervalProgress = progress.with(isPaused: isPaused)
     }
 
     /// Stops the running interval series, if any.
     private func stopInterval() {
+        guard intervalProgress != nil else { return }
         intervalTask?.cancel()
         intervalTask = nil
         intervalProgress = nil
+        lastIntervalEnd = .stopped
     }
 }

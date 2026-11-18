@@ -69,8 +69,15 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     /// counted, as on the camera screen (``IntervalProgress/taken``).
     public var taken: Int
 
-    /// The photos the run takes, or `nil` when it has no set number (a burst or the self-timer).
+    /// The photos the run takes, or `nil` when it has no set number (a burst, the self-timer, or
+    /// an interval series that stops after a time).
     public var total: Int?
+
+    /// When an interval series that stops after a time started and when it ends, or `nil`. The
+    /// system counts down to the end and fills the progress bar by time on screen, so the content
+    /// isn't updated for it. The time keeps running while the series is paused
+    /// (``IntervalProgress/timeSpan``).
+    public var seriesTime: ClosedRange<Date>?
 
     /// The photos saved so far.
     public var saved: Int
@@ -97,14 +104,17 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
     ///   - countdownEnd: When the countdown ends, or `nil`.
     ///   - signing: Whether the saved photos are signed, or `nil`.
     ///   - isNightMode: Whether night mode is on.
+    ///   - seriesTime: When an interval series that stops after a time started and ends, or
+    ///     `nil`.
     public init(
         kind: Kind, phase: Phase, taken: Int = 0, total: Int? = nil, saved: Int = 0, countdownEnd: Date? = nil,
-        signing: Signing? = nil, isNightMode: Bool = false
+        signing: Signing? = nil, isNightMode: Bool = false, seriesTime: ClosedRange<Date>? = nil
     ) {
         self.kind = kind
         self.phase = phase
         self.taken = taken
         self.total = total
+        self.seriesTime = seriesTime
         self.saved = saved
         self.countdownEnd = countdownEnd
         self.signing = signing
@@ -148,8 +158,15 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         }
     }
 
+    /// Whether the activity shows the time left of an interval series that stops after a time,
+    /// with a progress bar by time (``seriesTime``): while the series runs or is paused.
+    public var showsTimeLeft: Bool {
+        seriesTime != nil && (phase == .running || phase == .paused)
+    }
+
     /// The main line of text: what is happening, with the counts.
     public var statusLine: LiveActivityStatusLine {
+        if seriesTime != nil, let line = timedSeriesLine { return line }
         let total = total ?? taken
         switch phase {
         case .countingDown:
@@ -173,6 +190,18 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
             return stoppedLine(total: total)
         case .failed:
             return .failed
+        }
+    }
+
+    /// The status line of an interval series that stops after a time, or `nil` for a phase it
+    /// shares with other runs.
+    private var timedSeriesLine: LiveActivityStatusLine? {
+        switch phase {
+        case .running: .photosTakenTimeLeft(taken)
+        case .paused: .pausedTimeLeft(taken)
+        case .finished: .seriesDoneAfterTime(taken)
+        case .stopped: .seriesStoppedBeforeTime(taken)
+        case .countingDown, .saving, .savingPaused, .failed: nil
         }
     }
 
@@ -211,6 +240,16 @@ public enum LiveActivityStatusLine: Equatable, Sendable {
     case takingPhoto
     /// "12 of 120 photos taken": an interval series runs.
     case photosTaken(taken: Int, total: Int)
+    /// "12 photos taken · 1:12:00 left", the time counted down by the system to the end of
+    /// ``LiveActivityContent/seriesTime``: an interval series that stops after a time runs.
+    case photosTakenTimeLeft(Int)
+    /// "Paused: 12 photos taken · 1:12:00 left. Open nope. to continue.": an interval series that
+    /// stops after a time is paused, and its time keeps running.
+    case pausedTimeLeft(Int)
+    /// "Done: 120 photos taken.": an interval series that stops after a time reached its time.
+    case seriesDoneAfterTime(Int)
+    /// "Stopped: 42 photos taken.": an interval series that stops after a time ended before it.
+    case seriesStoppedBeforeTime(Int)
     /// "Frame 5 of 20": the astro helper takes this frame.
     case frame(number: Int, total: Int)
     /// "Photos taken: 12": a burst runs.

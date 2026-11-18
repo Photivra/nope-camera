@@ -205,20 +205,24 @@ extension CameraModel {
     }
 
     /// Starts an interval series with ``ManualControlIntent/startInterval``, as the shutter in
-    /// the Interval drive mode and Start in Pro Tools do, after choosing the request's interval
-    /// and count with ``ManualControlIntent/setInterval(_:)``. It runs in full auto, or with the
-    /// manual settings while manual controls are on; it never turns them on. Refused while the
-    /// astro helper is on (``IntervalBlocker/astroIsOn``), as Start is.
+    /// the Interval drive mode and Start in Interval Settings do, after choosing the request's
+    /// interval, count and time with ``ManualControlIntent/setInterval(_:)``. It runs in full
+    /// auto, or with the manual settings while manual controls are on; it never turns them on.
+    /// Refused while the astro helper is on (``IntervalBlocker/astroIsOn``), as Start is, and
+    /// when the interval isn't shorter than the time
+    /// (``IntervalBlocker/intervalNotShorterThanTime``); the chosen values are kept then.
     ///
     /// - Parameters:
-    ///   - series: The request's interval and count.
+    ///   - series: The request's interval, count and time.
     ///   - inbox: The inbox, for its waits and timeouts.
     /// - Returns: How it ended.
     private func startInterval(_ series: IntervalShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         guard canCapture, !isRunningSeries else { return .busy }
         guard intervalBlocker != .astroIsOn else { return .intervalBlockedByAstro }
-        await send(.manual(.setInterval(series.settings(over: manual.interval))))
+        let settings = series.settings(over: manual.interval)
+        guard settings.isIntervalShorterThanTime else { return .intervalNotShorterThanTime }
+        await send(.manual(.setInterval(settings)))
         await send(.manual(.startInterval))
         return .intervalStarted
     }

@@ -129,6 +129,7 @@ Related documentation in the repository:
 - ``IntervalSettings``
 - ``IntervalProgress``
 - ``IntervalBlocker``
+- ``IntervalEnd``
 
 ### Drive modes, self-timer and burst
 

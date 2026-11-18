@@ -162,12 +162,12 @@ Mode cards (one view, `ModeCard`, in `DriveControls.swift`, used by all modes; `
 | Single | none | none | none |
 | Timer | none; the shutter shows "3" or "10" | Countdown number in the picture; "Photo in 3s" and Cancel Timer | none |
 | Burst | "Fast burst", "Hold the shutter. A tap takes one photo." and Start Burst | "Photos taken: 12", the measured rate, and "Release to stop" or Stop Burst | "Saving: 9 of 12 photos saved", then the summary until the next action ([BURST.md](BURST.md)) |
-| Interval | "Every 10 seconds, 10 photos"; the whole card is the button Interval Settings | "3 of 10 photos taken", progress bar, Stop | "Paused: 3 of 10 photos taken", Stop |
+| Interval | "Every 10 seconds, 10 photos", or with Stop After: Time "Every 10 seconds, for 1 hour, 30 minutes" (with "Choose an interval shorter than the time." while it isn't); the whole card is the button Interval Settings | "3 of 10 photos taken", progress bar, Stop; for a time, "12 photos taken · 1 hr, 12 min left", progress bar by time, Stop (figure `drive-interval-time-running`) | "Paused: 3 of 10 photos taken", Stop; for a time, "Paused: 12 photos taken · 1 hr, 12 min left" and "Ends at 9:41 PM", Stop |
 | Astro | "Astro frames: 20" and "After 10 seconds · 20 s in all · at most 486 MB"; the whole card is the button Astro Settings | Countdown, then "Frame 7 of 20", progress bar, Stop Frames | "Paused: 7 of 20 frames", Stop Frames |
 
 - `AstroPanel`, `DriveProgressView` and `IntervalProgressView` become uses of `ModeCard` and move from the top of the picture to the bottom stack.
 - `ShutterButton`: while a series or countdown runs, the disc is a stop square; with Timer selected and idle, the disc shows the delay in black. Its label stays "Take Photo"; the value says the mode.
-- `IntervalSheet` and `AstroSheet`: content unchanged; medium and large detents.
+- `IntervalSheet` and `AstroSheet`: content unchanged; medium and large detents. Added on 2026-11-18 (owner decision): Interval Settings' Stop After picker, Number of Photos (the default) or Time, with Hours and Minutes and "At most N" photos (figure `sheet-interval-time`).
 - Astro keeps today's behavior: it turns on Manual Controls and night mode, and hides the Light tile. Leaving Astro turns each off again only if Astro turned it on (owner decision, 2026-11-18): night mode the person had on, or changed while Astro was on, stays as it is, and Keep Night Mode After Astro (Settings › Screen, off by default) keeps it on.
 
 AC: each mode is one tap from the default screen; the mode's name is always visible; an idle Astro screen covers no more than a quarter of the picture and a running one no more than a sixth; no white element appears at any point in Astro with night mode on; the strip never truncates a word in any launch language.
@@ -217,7 +217,7 @@ AC: the explanation precedes the system prompt; audits pass in light, dark, larg
 
 ### 3.9 Sheets
 
-Figures: `sheet-interval`, `sheet-astro`, `sheet-presets`, `sheet-presets-applied`, `sheet-preset-save`, `sheet-preset-delete`, `sheet-compare`.
+Figures: `sheet-interval`, `sheet-interval-time`, `sheet-astro`, `sheet-presets`, `sheet-presets-applied`, `sheet-preset-save`, `sheet-preset-delete`, `sheet-compare`.
 
 Files: `PresetsScreen.swift`, `ComparisonScreen.swift`.
 

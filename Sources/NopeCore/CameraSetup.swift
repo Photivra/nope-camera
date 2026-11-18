@@ -89,8 +89,16 @@ public struct CameraSetup: Codable, Equatable, Sendable {
     /// The time between interval photos, in seconds.
     public var intervalSeconds: Double
 
-    /// How many photos an interval series takes.
+    /// How many photos an interval series takes when it stops after a number of photos.
     public var intervalCount: Int
+
+    /// What ends an interval series, as an ``IntervalSettings/StopAfter`` raw value:
+    /// `numberOfPhotos` or `time`. A preset saved before the choice existed reads as
+    /// `numberOfPhotos`, the series it ran then.
+    public var intervalStopAfter: String
+
+    /// How long an interval series runs when it stops after a time, in seconds.
+    public var intervalDuration: Double
 
     /// Whether the astro helper is on.
     public var astroIsOn: Bool
@@ -154,6 +162,8 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         bracket = nil
         intervalSeconds = IntervalSettings.standard.interval
         intervalCount = IntervalSettings.standard.count
+        intervalStopAfter = IntervalSettings.standard.stopAfter.rawValue
+        intervalDuration = IntervalSettings.standard.duration
         astroIsOn = false
         astroFrameCount = AstroModel.defaultFrameCount
         astroStartDelay = SelfTimerDelay.tenSeconds.seconds
@@ -181,6 +191,9 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         bracket = try? container.decodeIfPresent(BracketValue.self, forKey: .bracket)
         intervalSeconds = (try? container.decodeIfPresent(Double.self, forKey: .intervalSeconds)) ?? factory.intervalSeconds
         intervalCount = (try? container.decodeIfPresent(Int.self, forKey: .intervalCount)) ?? factory.intervalCount
+        intervalStopAfter =
+            (try? container.decodeIfPresent(String.self, forKey: .intervalStopAfter)) ?? factory.intervalStopAfter
+        intervalDuration = (try? container.decodeIfPresent(Double.self, forKey: .intervalDuration)) ?? factory.intervalDuration
         astroIsOn = (try? container.decodeIfPresent(Bool.self, forKey: .astroIsOn)) ?? factory.astroIsOn
         astroFrameCount = (try? container.decodeIfPresent(Int.self, forKey: .astroFrameCount)) ?? factory.astroFrameCount
         astroStartDelay = (try? container.decodeIfPresent(Int.self, forKey: .astroStartDelay)) ?? factory.astroStartDelay
@@ -214,6 +227,10 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         case intervalSeconds
         /// ``CameraSetup/intervalCount``.
         case intervalCount
+        /// ``CameraSetup/intervalStopAfter``.
+        case intervalStopAfter
+        /// ``CameraSetup/intervalDuration``.
+        case intervalDuration
         /// ``CameraSetup/astroIsOn``.
         case astroIsOn
         /// ``CameraSetup/astroFrameCount``.
@@ -256,6 +273,15 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         DriveMode.allCases.first { driveName($0) == name } ?? .single
     }
 
+    /// The interval series this setup holds. A stored end this version doesn't know reads as
+    /// ``IntervalSettings/StopAfter/numberOfPhotos``.
+    public var intervalSettings: IntervalSettings {
+        IntervalSettings(
+            interval: intervalSeconds, count: intervalCount,
+            stopAfter: IntervalSettings.StopAfter(rawValue: intervalStopAfter) ?? .numberOfPhotos,
+            duration: intervalDuration)
+    }
+
     /// The manual settings this setup holds: every value except the locks, which belong to one
     /// scene.
     public var manualSettings: ManualSettings {
@@ -285,6 +311,8 @@ extension CameraModel {
         setup.bracket = manual.bracket.map(CameraSetup.BracketValue.init)
         setup.intervalSeconds = manual.interval.interval
         setup.intervalCount = manual.interval.count
+        setup.intervalStopAfter = manual.interval.stopAfter.rawValue
+        setup.intervalDuration = manual.interval.duration
         setup.astroIsOn = astro.isOn
         setup.astroFrameCount = astro.frameCount
         setup.astroStartDelay = astro.startDelay.seconds
@@ -327,7 +355,7 @@ extension CameraModel {
         }
         await send(.manual(.setEnabled(manualControlsOn)))
         await send(.manual(.allAuto))
-        await send(.manual(.setInterval(IntervalSettings(interval: setup.intervalSeconds, count: setup.intervalCount))))
+        await send(.manual(.setInterval(setup.intervalSettings)))
         await send(.drive(.setMode(CameraSetup.driveMode(named: setup.drive))))
         await send(.astro(.setFrameCount(setup.astroFrameCount)))
         await send(.astro(.setStartDelay(SelfTimerDelay(rawValue: setup.astroStartDelay) ?? .tenSeconds)))

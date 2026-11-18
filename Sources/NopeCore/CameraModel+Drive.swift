@@ -5,9 +5,13 @@ extension CameraModel {
     /// Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
     /// interval series or astro run runs, which pressing the shutter stops. Not while a burst's
     /// last photos are being saved: a new burst waits for them (docs/design/BURST.md, decision 9).
+    /// In the Interval drive mode, not while the interval is as long as the series' time or
+    /// longer (``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
     public var canPressShutter: Bool {
         if drive.burstProgress?.isSaving == true { return false }
-        return canCapture || drive.isBusy || astro.isRunning || manual.intervalProgress != nil
+        if drive.isBusy || astro.isRunning || manual.intervalProgress != nil { return true }
+        let startsNoSeries = drive.mode == .interval && intervalBlocker == .intervalNotShorterThanTime
+        return canCapture && !startsNoSeries
     }
 
     /// Whether the shutter's photos can fire the flash. Not in Burst (docs/design/BURST.md,

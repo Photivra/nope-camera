@@ -6086,9 +6086,10 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 @MainActor struct IntervalSection
 ```
 
-The interval and photo count of interval shooting (issue #48), with Start or Stop: one
-section, shown in Interval Settings (``IntervalSheet``). The drive strip and its card are the
-one home of Interval; Pro Tools has no Interval section (docs/design/BUILD-SPEC.md, 3.4).
+The interval, and the number of photos or the time, of interval shooting (issue #48), with
+Start or Stop: one section, shown in Interval Settings (``IntervalSheet``). The drive strip
+and its card are the one home of Interval; Pro Tools has no Interval section
+(docs/design/BUILD-SPEC.md, 3.4).
 
 A series works in full auto and with manual controls on; `NopeCore` holds the series
 (`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
@@ -6137,6 +6138,19 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 
 The camera model.
 
+## `IntervalSection/name(of:)`
+
+internal, declared in `Sources/NopeUI/IntervalControls.swift`
+
+```swift
+@MainActor static func name(of stopAfter: IntervalSettings.StopAfter) -> Text
+```
+
+The name of what ends a series, in the Stop After picker.
+
+- Parameter stopAfter: What ends the series.
+- Returns: "Number of Photos" or "Time".
+
 ## `IntervalSection/reason(_:)`
 
 internal, declared in `Sources/NopeUI/IntervalControls.swift`
@@ -6159,8 +6173,8 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 ```
 
 Interval Settings, opened from the selected Interval word of the drive strip and from the
-interval card (docs/design/BUILD-SPEC.md, 3.5): the series' interval and photo count, and
-Start. In the Interval drive mode the shutter starts the series too.
+interval card (docs/design/BUILD-SPEC.md, 3.5): the series' interval, what ends it (a number
+of photos or a time), and Start. In the Interval drive mode the shutter starts the series too.
 
 ## `IntervalSheet/body`
 
@@ -6193,6 +6207,150 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 ```
 
 The camera model.
+
+## `IntervalTimeCard`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct IntervalTimeCard<Accessory> where Accessory : View
+```
+
+The running card of an interval series that stops after a time: the photos taken and the time
+left, the next photo's time (or, paused, when the series ends), a progress bar by time, and
+Stop. The time keeps running while the series is paused, so the card counts it down then too.
+
+## `IntervalTimeCard/accessory`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let accessory: Accessory
+```
+
+The Stop capsule.
+
+## `IntervalTimeCard/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card, redrawn each minute of the series.
+
+## `IntervalTimeCard/init(progress:nextPhoto:accessory:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, @ViewBuilder accessory: () -> Accessory)
+```
+
+Creates the card.
+
+- Parameters:
+  - progress: The series' progress; its `IntervalProgress.timeSpan` is set.
+  - nextPhoto: When the next photo is due, or `nil`.
+  - accessory: The Stop capsule.
+
+## `IntervalTimeCard/nextPhoto`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let nextPhoto: NextPhotoTiming?
+```
+
+When the next photo is due, or `nil` before a photo is counted.
+
+## `IntervalTimeCard/progress`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let progress: IntervalProgress
+```
+
+The series' progress.
+
+## `IntervalTimeCard/refreshSeconds`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var refreshSeconds: Double { get }
+```
+
+How often the time left and the bar are redrawn, in seconds: the time is shown in whole
+minutes, counted from the series' start.
+
+## `IntervalTimeDetail`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct IntervalTimeDetail
+```
+
+The second line of ``IntervalTimeCard``: "Next photo in 6s" while it runs, "Ends at 9:41 PM"
+while it is paused.
+
+## `IntervalTimeDetail/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The line, or nothing.
+
+## `IntervalTimeDetail/init(progress:nextPhoto:now:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(progress: IntervalProgress, nextPhoto: NextPhotoTiming?, now: Date)
+```
+
+Creates the line.
+
+- Parameters:
+  - progress: The series' progress.
+  - nextPhoto: When the next photo is due, or `nil`.
+  - now: The current time.
+
+## `IntervalTimeDetail/nextPhoto`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let nextPhoto: NextPhotoTiming?
+```
+
+When the next photo is due, or `nil`.
+
+## `IntervalTimeDetail/now`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let now: Date
+```
+
+The current time.
+
+## `IntervalTimeDetail/progress`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let progress: IntervalProgress
+```
+
+The series' progress.
 
 ## `LegalTextView`
 
@@ -7821,8 +7979,8 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 case intervalIdle(IntervalSettings)
 ```
 
-Interval is chosen and no series runs: "Every 10 seconds, 10 photos". The whole card is
-the button Interval Settings.
+Interval is chosen and no series runs: "Every 10 seconds, 10 photos", or "Every 10
+seconds, for 1 hour, 30 minutes". The whole card is the button Interval Settings.
 
 ## `ModeCardState/intervalRunning(_:)`
 
@@ -7832,7 +7990,8 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 case intervalRunning(IntervalProgress)
 ```
 
-An interval series runs or is paused: the count, a progress bar and Stop.
+An interval series runs or is paused: the count, or for a series that stops after a time
+the count and the time left, a progress bar and Stop.
 
 ## `ModeCardState/isRunning`
 
@@ -7976,6 +8135,54 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 - Parameter seconds: The seconds left.
 
+## `ModeCardText/intervalEnds(at:now:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func intervalEnds(at end: Date, now: Date) -> String
+```
+
+"Ends at 9:41 PM", or with the day when the series ends on another day: "Ends at Tue 9:41
+PM".
+
+- Parameters:
+  - end: When the series ends.
+  - now: The current time.
+
+## `ModeCardText/intervalIdleDetail(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func intervalIdleDetail(_ settings: IntervalSettings) -> String?
+```
+
+The idle card's second line: why the shutter can't start the series, or `nil`.
+
+- Parameter settings: The series.
+
+## `ModeCardText/intervalNotShorterThanTime`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var intervalNotShorterThanTime: Text { get }
+```
+
+``intervalNotShorterThanTimeString`` as text.
+
+## `ModeCardText/intervalNotShorterThanTimeString`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var intervalNotShorterThanTimeString: String { get }
+```
+
+"Choose an interval shorter than the time.": the interval isn't shorter than the series'
+time (`IntervalBlocker.intervalNotShorterThanTime`).
+
 ## `ModeCardText/intervalProgress(_:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -8006,9 +8213,40 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func intervalSummary(_ settings: IntervalSettings) -> String
 ```
 
-"Every 10 seconds, 10 photos".
+"Every 10 seconds, 10 photos", or for a series that stops after a time, "Every 10
+seconds, for 1 hour, 30 minutes".
 
 - Parameter settings: The series.
+
+## `ModeCardText/intervalTimeProgress(_:at:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func intervalTimeProgress(_ progress: IntervalProgress, at now: Date) -> Text
+```
+
+"12 photos taken · 1 hr, 12 min left", or "Paused: 12 photos taken · 1 hr, 12 min left",
+for a series that stops after a time. VoiceOver reads the units in full.
+
+- Parameters:
+  - progress: The series' progress.
+  - now: The current time.
+
+## `ModeCardText/intervalTimeProgressString(_:at:width:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func intervalTimeProgressString(_ progress: IntervalProgress, at now: Date, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated) -> String
+```
+
+The words of ``intervalTimeProgress(_:at:)``.
+
+- Parameters:
+  - progress: The series' progress.
+  - now: The current time.
+  - width: How the units of the time left are written.
 
 ## `ModeCardText/nextPhoto(in:)`
 
@@ -8087,6 +8325,21 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 ```
 
 "Stop", for an interval series.
+
+## `ModeCardText/timeLeftDuration(_:width:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func timeLeftDuration(_ seconds: Double, width: Duration.UnitsFormatStyle.UnitWidth = .abbreviated) -> String
+```
+
+The time left of a series that stops after a time, in the system's abbreviated form with
+hours and minutes, the minutes rounded up: "1 hr, 12 min", or in words for VoiceOver.
+
+- Parameters:
+  - seconds: The time left, in seconds.
+  - width: How the units are written: abbreviated on screen, wide for VoiceOver.
 
 ## `ModeCards`
 

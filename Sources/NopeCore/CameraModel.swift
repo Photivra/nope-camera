@@ -110,6 +110,13 @@ public final class CameraModel {
         try await Task.sleep(for: .seconds(CameraModel.pauseAfterErrorSeconds))
     }
 
+    /// Waits until the time of an interval series that stops after a time is up, while the
+    /// series waits for the camera (`waitForIntervalPhoto()`); the time is in seconds. Tests
+    /// replace it.
+    @ObservationIgnored var intervalEndSleep: @Sendable (Double) async throws -> Void = {
+        try await Task.sleep(for: .seconds($0))
+    }
+
     /// Creates a model in the ``CameraState/starting`` state.
     ///
     /// - Parameters:
@@ -120,6 +127,8 @@ public final class CameraModel {
     ///     pass a faster one.
     ///   - now: Reads the clock that times each capture. Tests pass a scripted one.
     ///   - deviceStatusReader: Reads the free storage and battery, or `nil` for no warnings.
+    ///   - currentDate: Reads the clock on the wall, for an interval series that stops after a
+    ///     time. Tests pass a scripted one.
     ///
     /// A ``ManualCaptureBackend`` also gets manual controls (``manual``), and a
     /// ``LightCaptureBackend`` a torch (``light``).
@@ -127,12 +136,14 @@ public final class CameraModel {
         backend: any CaptureBackend, saver: PhotoSaver? = nil,
         sleep: @escaping @Sendable (Double) async throws -> Void = { try await Task.sleep(for: .seconds($0)) },
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now },
-        deviceStatusReader: (any DeviceStatusReading)? = nil
+        deviceStatusReader: (any DeviceStatusReading)? = nil,
+        currentDate: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.backend = backend
         self.saver = saver
         self.now = now
-        manual = ManualControlsModel(backend: backend as? any ManualCaptureBackend, sleep: sleep)
+        manual = ManualControlsModel(
+            backend: backend as? any ManualCaptureBackend, sleep: sleep, currentDate: currentDate)
         drive = DriveModel(sleep: sleep, now: now)
         deviceStatus = DeviceStatus(reader: deviceStatusReader)
         live = LiveViewModel(backend: backend as? any LiveViewBackend)

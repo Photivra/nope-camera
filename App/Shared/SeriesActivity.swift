@@ -145,6 +145,14 @@ enum SeriesActivityText {
             Text("Taking the photo…", comment: "Live Activity: the self-timer's photo is being taken.")
         case .photosTaken(let taken, let total):
             Text("\(taken) of \(total) photos taken", comment: "Live Activity: interval shooting progress. Both numbers are counts of photos; the second is at least 2.")
+        case .photosTakenTimeLeft(let taken):
+            Text("\(taken) photos taken · \(timeLeft(content)) left", comment: "Live Activity: interval shooting that stops after a time. The number is a count of photos; the placeholder is the time left, such as 1:12:00, counted down by the system.")
+        case .pausedTimeLeft(let taken):
+            Text("Paused: \(taken) photos taken · \(timeLeft(content)) left. Open nope. to continue.", comment: "Live Activity after the person left nope. during interval shooting that stops after a time: the series continues when nope. is opened again, and its time keeps running meanwhile. The number is a count of photos; the placeholder is the time left, such as 1:12:00, counted down by the system. Keep \"nope.\" unchanged.")
+        case .seriesDoneAfterTime(let taken):
+            Text("Done: \(taken) photos taken", comment: "Live Activity: interval shooting that stops after a time reached its time. The number is a count of photos.")
+        case .seriesStoppedBeforeTime(let taken):
+            Text("Stopped: \(taken) photos taken", comment: "Live Activity: interval shooting that stops after a time was stopped before its time was up. The number is a count of photos.")
         case .frame(let number, let total):
             Text("Frame \(number) of \(total)", comment: "Live Activity: which frame of the night sky helper's series is being taken, of how many.")
         case .burstPhotosTaken(let taken):
@@ -172,6 +180,14 @@ enum SeriesActivityText {
         case .failed:
             Text("A photo wasn't saved. Open nope. for details.", comment: "Live Activity: a photo couldn't be taken or saved; nope. says why. Keep \"nope.\" unchanged.")
         }
+    }
+
+    /// The time left of an interval series that stops after a time, counted down by the system.
+    ///
+    /// - Parameter content: What the activity shows.
+    /// - Returns: The time left, such as 1:12:00.
+    static func timeLeft(_ content: LiveActivityContent) -> Text {
+        countdown(to: content.seriesTime?.upperBound)
     }
 
     /// The system's countdown, drawn without updates.
@@ -294,6 +310,15 @@ struct SeriesActivityDetails: View {
                 ProgressView(value: progress)
                     .tint(SeriesActivityStyle.foreground(content))
                     .accessibilityHidden(true)
+            } else if content.showsTimeLeft, let time = content.seriesTime {
+                // Filled by the system as time passes, so the content isn't updated for it.
+                ProgressView(timerInterval: time, countsDown: false) {
+                    EmptyView()
+                } currentValueLabel: {
+                    EmptyView()
+                }
+                .tint(SeriesActivityStyle.foreground(content))
+                .accessibilityHidden(true)
             }
         }
         .accessibilityElement(children: .combine)

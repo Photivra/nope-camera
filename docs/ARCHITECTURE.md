@@ -174,7 +174,22 @@ when the camera opens and when the option changes.
   being taken or saved. A photo cut short by a pause is taken again, also when its error arrives
   before the pause (`failureWasAPause()` waits `CameraModel.pauseAfterErrorSeconds` for it); any
   other failure ends the series. A series doesn't start while Astro is on or the self-timer or a
-  burst runs (`CameraModel.intervalBlocker`). While a series runs in the
+  burst runs (`CameraModel.intervalBlocker`).
+- **Stop After** (`IntervalSettings.stopAfter`): a series stops after a number of photos (the
+  default) or after a time, 1 minute to 24 hours (`.time`, `IntervalSettings.duration`). A timed
+  series fixes its end on the wall clock when it starts (`IntervalProgress.timeSpan`, read from
+  `CameraModel`'s `currentDate`), and the time keeps running while the series is paused, so
+  "1 hour from 8:41 PM" ends at 9:41 PM however long the app was away. It takes no photo whose
+  interval would end at or after the end; when the end passes while the series waits for the
+  camera, the wait wakes (`intervalEndSleep`, a one-shot wait only while it waits) and the series
+  ends without another photo. `ManualControlsModel.lastIntervalEnd` says whether the last series
+  finished (its count or its time) or was stopped early; a stop, a failed or unsaved photo and a
+  camera that stops end a timed series as they end a counted one. The interval must be shorter
+  than the time (`IntervalBlocker.intervalNotShorterThanTime`); the sheet then disables Start, the
+  card says why, and the Interval shutter is disabled. `IntervalSettings.maximumPhotoCount` is the
+  most a timed series can take (one at the start and one after each interval that starts before
+  the end); saving each photo adds time, so the sheet says "At most".
+- While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
   background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
@@ -337,7 +352,8 @@ with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as t
 burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
 path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
 (`.setLight(isOn:)`, Q's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
-`StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
+`StopIntervalIntent` (`.startInterval(_:)` with an optional interval, count and duration in
+minutes; a duration makes the series stop after that time, `IntervalShortcut`; and
 `.stopInterval`, the `ManualControlIntent` values the Interval drive mode sends; Pro Tools no longer starts a
 series in 1.0.0).
 `TakeBracketIntent` is a separate action from Take Photo, because a bracket and a burst are
@@ -406,7 +422,8 @@ signed. It is off by default (`NopeSettings.showsLiveActivity`).
 
 `LiveActivityCoordinator` (`NopeCore`) holds the rules. `CameraModel.liveActivityContent(...)`
 turns the model's state into a `LiveActivityContent` (kind, phase, counts, countdown end, signing,
-night mode) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
+night mode, and for an interval series that stops after a time its start and end, `seriesTime`,
+which the system counts down and fills the progress bar by, without updates) and `liveActivityOutcome(after:)` into the final content. The coordinator follows the
 model with Observation (`observe(_:)`, no polling) and calls a `LiveActivityPresenting`, which the
 app implements with ActivityKit (`SystemLiveActivities`): an activity can only be started in the
 foreground, so it starts when the run starts while the app is active (`isActive`, scene phase
@@ -489,7 +506,8 @@ Nothing applies a preset on its own: the app never changes the person's settings
   `NopeSettings` key (formats, file options, pairing, privacy, signing, location, mirroring,
   overlays, flash, night mode and anything added later) and a `CameraSetup` with the camera's own
   state, which the app doesn't remember between launches: the lens, the manual exposure values,
-  Close-Up, the drive mode, the bracket, the interval series and the astro helper. Left out on
+  Close-Up, the drive mode, the bracket, the interval series (with Stop After and its time; an
+  older preset reads as a number of photos) and the astro helper. Left out on
   purpose, because they belong to one moment: the torch being on (the light always starts off),
   a tapped focus point and the locks, the magnifier, clean view while open, and the comparison
   shot.

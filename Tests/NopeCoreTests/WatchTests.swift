@@ -207,8 +207,8 @@ struct WatchTests {
         #expect(WatchResult(ShortcutOutcome.notSaved(.saveFailed)) == .notSaved)
         let otherRequests: [ShortcutOutcome] = [
             .lensUnavailable, .lensSelected(.wide), .lightOn, .lightOff, .noLight, .lightUnavailable,
-            .intervalStarted, .intervalBlockedByAstro, .intervalStopped, .noIntervalRunning, .bracketUnavailable,
-            .focusRangeSet(.closeUp),
+            .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
+            .bracketUnavailable, .focusRangeSet(.closeUp),
             .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetUnavailable,
             .presetApplied(PresetApplyResult(choice: .factoryDefaults, name: nil, isApplied: true, notices: [])),
         ]

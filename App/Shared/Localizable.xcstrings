@@ -454,6 +454,150 @@
     },
     "Wide" : {
       "comment" : "The wide (main) rear camera, as a lens choice."
+    },
+    "%lld photos taken · %@ left" : {
+      "comment" : "Live Activity: interval shooting that stops after a time. The number is a count of photos; the placeholder is the time left, such as 1:12:00, counted down by the system.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@photos@ · %2$@ left"
+          },
+          "substitutions" : {
+            "photos" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photo taken"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photos taken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Paused: %lld photos taken · %@ left. Open nope. to continue." : {
+      "comment" : "Live Activity after the person left nope. during interval shooting that stops after a time: the series continues when nope. is opened again, and its time keeps running meanwhile. The number is a count of photos; the placeholder is the time left, such as 1:12:00, counted down by the system. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paused: %#@photos@ · %2$@ left. Open nope. to continue."
+          },
+          "substitutions" : {
+            "photos" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photo taken"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photos taken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Done: %lld photos taken" : {
+      "comment" : "Live Activity: interval shooting that stops after a time reached its time. The number is a count of photos.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done: %#@photos@"
+          },
+          "substitutions" : {
+            "photos" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photo taken"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photos taken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Stopped: %lld photos taken" : {
+      "comment" : "Live Activity: interval shooting that stops after a time was stopped before its time was up. The number is a count of photos.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stopped: %#@photos@"
+          },
+          "substitutions" : {
+            "photos" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photo taken"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg photos taken"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Duration in Minutes" : {
+      "comment" : "A setting of nope.'s Start Interval Shooting action: the series stops after this many minutes, instead of after a number of photos.",
+      "extractionState" : "manual"
+    },
+    "Interval shooting didn't start. The time between photos must be shorter than the duration." : {
+      "comment" : "Siri's answer when interval shooting was asked for with a duration that is no longer than the time between photos, so the series would take only one photo.",
+      "extractionState" : "manual"
     }
   },
   "version" : "1.0"
