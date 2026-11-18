@@ -147,7 +147,11 @@ extension NopeAppUITests {
         openPhotoDetails(app)
         XCTAssertTrue(app.staticTexts["Exposure"].waitForExistence(timeout: 5))
         assertAppearance(app, isLight: false, "What's in This Photo")
+        // Done returns to the Last Photo viewer, and Close to the camera.
         app.buttons["Done"].tap()
+        let close = app.buttons["Close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
         XCTAssertTrue(app.buttons["Photo Format"].waitForExistence(timeout: 5))
 
         app.buttons["Photo Format"].tap()

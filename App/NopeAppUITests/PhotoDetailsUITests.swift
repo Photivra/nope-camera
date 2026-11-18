@@ -207,10 +207,14 @@ extension NopeAppUITests {
         show.tap()
         XCTAssertTrue(element(app, containing: "0.5°").waitForExistence(timeout: 5))
         XCTAssertFalse(show.exists)
-        // Closed and opened again: hidden again.
+        // Closed and opened again: hidden again. Done returns to the Last Photo viewer, Close to
+        // the camera, and the thumbnail opens the viewer again.
         app.buttons["Done"].tap()
+        let close = app.buttons["Close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
         XCTAssertTrue(app.buttons["Last Photo"].waitForExistence(timeout: 5))
-        app.buttons["Last Photo"].press(forDuration: 1.2)
+        app.buttons["Last Photo"].tap()
         let details = app.buttons["Photo Details"]
         XCTAssertTrue(details.waitForExistence(timeout: 15))
         details.tap()
