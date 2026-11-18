@@ -9,7 +9,7 @@ NOTHING TRACKS YOU
 • nope. contains no networking code and makes no network connections. No analytics, no ads, no accounts.
 • Check it yourself with App Privacy Report in Settings: nope. should list no domains.
 • Optional details, such as the time zone, iOS version and maker notes, are removed by default. You choose what each photo keeps.
-• Location and face detection are off by default.
+• Location is off by default. So is Focus on Faces: autofocus and auto exposure don't follow faces unless you turn it on.
 • nope. can only add photos to your library. iOS doesn't let it see your existing photos.
 
 SIGNED, IF YOU CHOOSE
@@ -17,7 +17,7 @@ SIGNED, IF YOU CHOOSE
 • The signature shows whether the file has changed since nope. saved it, and that it was taken with nope. and which version. It doesn't prove who took the photo.
 
 HONEST ABOUT THE LIMITS
-• The Honesty screen (ⓘ) lists every detail in your last photo, what your phone may still do outside nope.'s control, and what no app can remove, such as the sensor's faint noise pattern.
+• What's in This Photo lists every detail in your last photo. The Honesty screen says what your phone may still do outside nope.'s control, and what no app can remove, such as the sensor's faint noise pattern.
 
 FOR EVERYONE
 • Works with VoiceOver, Voice Control and the largest text sizes. The volume buttons work as a shutter.

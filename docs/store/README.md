@@ -49,8 +49,8 @@ The description describes the planned 1.0 app. As of 2026-11-12, saving to Photo
 metadata allowlist and fail-closed read-back, HEIF and JPEG development, and Content
 Credentials signing, the settings screens (formats and Privacy) and the Honesty screen are
 merged and tested in the Simulator, **but not yet checked on a device**, and the Honesty and
-privacy wording still needs fluent human review. The Honesty screen doesn't yet show the last
-photo's details. **Every claim below must be
+privacy wording still needs fluent human review. The last photo's details are on What's in This
+Photo, not on the Honesty screen. **Every claim below must be
 shipped and verified, on a device where the table says so, before the listing is submitted;
 remove any sentence whose feature isn't in the release.**
 
@@ -62,10 +62,10 @@ remove any sentence whose feature isn't in the release.**
 | C4 | No networking code, no network connections, no analytics, ads or accounts | Merged; the C2PA library is built without network features and CI checks the library and the linked app for networking code (`scripts/check-no-networking.sh`) | `docs/SECURITY_AUDIT.md` checks 3, 7 and 8 |
 | C5 | App Privacy Report lists no domains for the app | C4 | Audit check 8 on a device, over 7 days |
 | C6 | Optional details removed by default; you choose what each photo keeps | Metadata allowlist and fail-closed read-back (merged; device check pending); the Privacy settings screen where you choose (merged; device check pending) | Audit check 9 |
-| C7 | Location and face detection off by default | Location switch off by default; asks for "while using the app" access when turned on; writes latitude, longitude and altitude only (`LocationTagging`, issue #43; device check pending); Face Detection off by default (issue #80) | Audit checks 9 and 16; unit tests (`NopeSettingsTests`) |
+| C7 | Location off by default; Focus on Faces off by default, so autofocus and auto exposure don't follow faces (the listing doesn't say face detection is off: iOS may still detect faces in the viewfinder, as the Honesty screen says) | Location switch off by default; asks for "while using the app" access when turned on; writes latitude, longitude and altitude only (`LocationTagging`, issue #43; device check pending); Focus on Faces off by default (issue #80) | Audit checks 9 and 16; unit tests (`NopeSettingsTests`) |
 | C8 | Add-only Photos access; can't see existing photos | Add-only saving (merged; device check pending) | Audit check 16 |
 | C9 | Signing off by default; when it's on, every photo is signed with a new key, signatures can't link photos, and a signed photo shows that it was taken with the app and which version | Signing off by default (issue #80); `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10; unit tests (`MetadataSettingsTests`) |
-| C10 | The Honesty screen lists the last photo's details, what the phone may still do, and what no app can remove | Honesty screen (merged: what the app never does, what iOS may still do, what no app can remove); the last photo's details on screen (not built) | UI tests; human review of `Honesty.xcstrings` |
+| C10 | What's in This Photo lists the last photo's details; the Honesty screen says what the phone may still do and what no app can remove | What's in This Photo, opened from the last photo (merged); Honesty screen in Settings (merged: what the app never does, what iOS may still do, what no app can remove) | UI tests; human review of `Honesty.xcstrings` |
 | C11 | VoiceOver, Voice Control, the largest text sizes; volume buttons as a shutter | Volume and Camera Control shutter (merged); every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md` |
 | C12 | Free and open source under GPL-3.0 | True today | `LICENSE` |
 

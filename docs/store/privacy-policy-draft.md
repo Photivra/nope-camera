@@ -90,7 +90,7 @@ with the app and which version. The signature doesn't prove who took the photo.
 ## What your phone may still do outside the app's control
 
 Once a photo is in your library, iOS and the Photos app handle it. The Honesty screen in the app
-(the ⓘ button) explains each of these, with a link to its setting:
+(Settings, then Honesty) explains each of these, with a link to its setting:
 
 - **iCloud Photos.** With standard protection, Apple holds the keys to iCloud Photos. With
   Advanced Data Protection, only your devices do. Some photo metadata and Shared Albums stay
