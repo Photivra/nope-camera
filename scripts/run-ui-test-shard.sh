@@ -35,6 +35,9 @@ os=${SIMULATOR_OS:-27.2}
 scripts=$(cd "$(dirname "$0")" && pwd)
 # shellcheck source=scripts/ui-test-run-lib.sh
 source "$scripts/ui-test-run-lib.sh"
+# Runs a command with a time limit in seconds: a simctl call that never returns must not use up
+# the job (scripts/with-timeout.sh).
+limited() { "$scripts/with-timeout.sh" "$@"; }
 
 kind=iphone
 [[ $device == *iPad* ]] && kind=ipad
@@ -56,7 +59,7 @@ bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.pl
 "$scripts/wait-for-simulator-runtimes.sh"
 
 runtime_prefix="com.apple.CoreSimulator.SimRuntime.iOS-${os//./-}"
-udid=$(xcrun simctl list devices available -j | python3 -c '
+udid=$(limited 120 xcrun simctl list devices available -j | python3 -c '
 import json, sys
 name, prefix = sys.argv[1], sys.argv[2]
 for runtime, devices in json.load(sys.stdin)["devices"].items():
@@ -69,13 +72,15 @@ for runtime, devices in json.load(sys.stdin)["devices"].items():
 
 prepare() {
   echo "Booting $device ($udid)"
-  xcrun simctl boot "$udid" 2>/dev/null || true
-  xcrun simctl bootstatus "$udid" -b || return 1
+  local status=0
+  limited 180 xcrun simctl boot "$udid" 2>/dev/null || status=$?
+  [[ $status -ne 124 ]] || { echo "error: booting $device didn't return" >&2; return 1; }
+  limited 600 xcrun simctl bootstatus "$udid" -b || return 1
   # The Simulator's scheduler starts first-boot background tasks a few minutes after boot, and
   # the runner stalls while they run; no test needs it. It is stopped first, before they start.
-  "$scripts/stop-simulator-background-tasks.sh" "$udid"
+  limited 180 "$scripts/stop-simulator-background-tasks.sh" "$udid" || return 1
   # The Simulator's push service reconnects without a pause on the runner; no test needs it.
-  "$scripts/stop-simulator-push.sh" "$udid"
+  limited 300 "$scripts/stop-simulator-push.sh" "$udid" || return 1
   # The first change of a Simulator's light or dark setting must come from simctl: when the
   # first one came from a test (XCUIDevice.appearance), the setting stayed light for every app,
   # the system's Settings included, until the Simulator booted again, and the appearance tests
@@ -83,26 +88,26 @@ prepare() {
   echo "Switching $device to dark and back, so the tests' light and dark changes apply"
   local style
   for style in dark light; do
-    xcrun simctl ui "$udid" appearance "$style" || return 1
-    if [[ $(xcrun simctl ui "$udid" appearance) != "$style" ]]; then
+    limited 60 xcrun simctl ui "$udid" appearance "$style" || return 1
+    if [[ $(limited 60 xcrun simctl ui "$udid" appearance) != "$style" ]]; then
       echo "error: $device didn't switch to $style" >&2
       return 1
     fi
   done
   echo "Installing and launching $bundle_id once"
-  xcrun simctl install "$udid" "$app" || return 1
-  xcrun simctl launch "$udid" "$bundle_id" -NopeSimulatedCamera allow >/dev/null || true
+  limited 300 xcrun simctl install "$udid" "$app" || return 1
+  limited 120 xcrun simctl launch "$udid" "$bundle_id" -NopeSimulatedCamera allow >/dev/null || true
   sleep 5
-  xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
+  limited 60 xcrun simctl terminate "$udid" "$bundle_id" 2>/dev/null || true
 }
 
 # Shuts the Simulator down and waits, up to five minutes, until simctl lists it as available
 # again: while the runner remounts the runtime's disk image, booting fails at once with "The
 # iOS 27.2 simulator runtime is not available" (iPhone shard 8 of build 44149517211).
 reboot() {
-  xcrun simctl shutdown "$udid" 2>/dev/null || true
+  limited 120 xcrun simctl shutdown "$udid" 2>/dev/null || true
   local waited=0
-  until xcrun simctl list devices available 2>/dev/null | grep -q "$udid"; do
+  until limited 60 xcrun simctl list devices available 2>/dev/null | grep -q "$udid"; do
     (( waited >= 300 )) && return 0
     sleep 10
     waited=$(( waited + 10 ))
