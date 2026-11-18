@@ -248,6 +248,8 @@ extension CameraModel {
     ///   saved, a countdown, burst, bracket, interval series or astro run is going, or the
     ///   compare view is open;
     /// - while the astro helper is on, even idle (decision 6);
+    /// - while an end of the focus bracket's range is being set on the picture
+    ///   (``BracketModel/rangeEditing``): its dial is open, and a dial takes the touch (section 5);
     /// - while the camera isn't running: before it is ready, during its first start, and while it
     ///   is paused, interrupted, too hot, failed or sends no picture. A restart for a lens change
     ///   counts as running, so a pinch can go on while the camera switches;
@@ -259,7 +261,9 @@ extension CameraModel {
     /// - Parameter setting: The Pinch setting (``NopeSettings/pinch``).
     /// - Returns: `true` when a pinch may switch lenses.
     public func pinchSwitchesLenses(setting: PinchAction) -> Bool {
-        guard setting == .switchLenses, canChangeLens, !astro.isOn, isRunningForPinch, let capabilities = capabilities else {
+        guard setting == .switchLenses, canChangeLens, !astro.isOn, bracketing.rangeEditing == nil, isRunningForPinch,
+            let capabilities = capabilities
+        else {
             return false
         }
         return LensPinch(lenses: capabilities.lenses, startingAt: selectedLensID) != nil

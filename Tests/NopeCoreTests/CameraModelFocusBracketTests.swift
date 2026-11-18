@@ -622,6 +622,15 @@ struct CameraModelFocusBracketTests {
 
     // MARK: - The range on the picture
 
+    @Test func aPinchDoesNothingWhileAnEndIsSet() async {
+        let (model, _) = await makeModel(lenses: [ManualFixtures.wide, FocusFixtures.tele])
+        #expect(model.pinchSwitchesLenses(setting: .switchLenses))
+        await model.send(.bracket(.beginSettingRange(.nearest)))
+        #expect(!model.pinchSwitchesLenses(setting: .switchLenses), "the range dial takes the touch")
+        await model.send(.bracket(.finishSettingRange(keeps: false)))
+        #expect(model.pinchSwitchesLenses(setting: .switchLenses))
+    }
+
     @Test func anEndIsSetWithTheSliderAndKeptOrCancelled() async {
         let (model, backend) = await makeModel()
         await model.send(.bracket(.beginSettingRange(.nearest)))
