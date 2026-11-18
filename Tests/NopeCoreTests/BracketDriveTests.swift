@@ -162,6 +162,9 @@ struct CameraModelBracketTests {
     @Test func manualISOChangesTheShutterAndAManualShutterChangesISO() async throws {
         let (model, _) = await makeModel()
         await model.send(.manual(.setEnabled(true)))
+        // Turning Manual Controls on forgets the last reading (`resetReadingAids()`); the
+        // camera reports the next one.
+        await model.manual.record(Fixtures.reading)
         await model.send(.manual(.setBracket(.standard)))
         #expect(!model.manual.bracketChangesISOFirst)
         await model.send(.manual(.setValue(.shutter, 0.01)))
