@@ -235,10 +235,12 @@ final class NopeAppUITests: XCTestCase {
             Self.isClippedContrastIssue(issue, in: app) || Self.isOpenIPadFinding(issue)
                 || (!checksContrast && issue.auditType == .contrast)
         }
-        var remaining = try reportedIssues(app).filter { !ignored($0) }
+        // A check whose findings are all ignored isn't run (see ``audit(_:afterScrolling:)``).
+        let types = Self.auditTypes(contrast: checksContrast, dynamicType: true)
+        var remaining = try reportedIssues(app, types).filter { !ignored($0) }
         if !remaining.isEmpty {
             waitUntilStill(app)
-            remaining = try reportedIssues(app).filter { !ignored($0) }
+            remaining = try reportedIssues(app, types).filter { !ignored($0) }
         }
         for issue in remaining {
             XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
@@ -544,8 +546,7 @@ final class NopeAppUITests: XCTestCase {
         checksContrast: Bool = true, file: StaticString = #filePath, line: UInt = #line
     ) throws {
         settle()
-        // One retry: on a slow runner a navigation transition can still be finishing. Issues are
-        // collected during the audit and judged after it, because querying the app from inside
+        // Issues are collected during the audit and judged after it, because querying the app from inside
         // the audit's handler can make the audit time out.
         let sideways = iPhoneSideways
         let ignored = { (issue: XCUIAccessibilityAuditIssue) in
@@ -557,13 +558,28 @@ final class NopeAppUITests: XCTestCase {
                 // (docs/TESTING.md).
                 || (!checksContrast && issue.auditType == .dynamicType && issue.element == nil)
                 || Self.isOpenIPadFinding(issue)
+                || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
-        var remaining = try reportedIssues(app).filter { !ignored($0) }
-        if !remaining.isEmpty {
+        // A check whose every finding is ignored isn't run: the contrast check after a scroll and
+        // where the test skips it, and the Dynamic Type check where the test skips it. The
+        // contrast check is the audit's slowest part, and it alone took longer than XCTest's 15
+        // seconds on the scrolled compare details (docs/TESTING.md, "Audits that don't finish").
+        let types = Self.auditTypes(contrast: checksContrast && !afterScrolling, dynamicType: checksDynamicType)
+        var remaining = try judged(reportedIssues(app, types), in: app, round: 1, ignored: ignored)
+        // An issue fails the test when the audit reports it again in each of two more audits of
+        // the same screen. On the iPad CI runner the audit's first pass over a screen reported
+        // findings that a second audit three seconds later didn't (build 44149517211: ten
+        // findings in five tests, nine of them Dynamic Type, none reported again), on text the
+        // screen recordings of build 44124454610 show whole at every size. A real finding is
+        // reported every time (docs/TESTING.md).
+        var round = 2
+        while !remaining.isEmpty && round <= 3 {
             settle()
-            remaining = try reportedIssues(app).filter { !ignored($0) }
+            let again = try judged(reportedIssues(app, types), in: app, round: round, ignored: ignored)
+            remaining = remaining.filter { issue in again.contains { Self.isSameFinding($0, issue) } }
+            round += 1
         }
         for issue in remaining {
             XCTFail(
@@ -571,11 +587,65 @@ final class NopeAppUITests: XCTestCase {
         }
     }
 
-    /// Runs the accessibility audit and returns every issue it found, without failing the test.
+    /// Whether two audits reported the same finding: the same type on an element with the same
+    /// label, or the same type and description when the audit named no element.
     @MainActor
-    private func reportedIssues(_ app: XCUIApplication) throws -> [XCUIAccessibilityAuditIssue] {
+    private static func isSameFinding(_ first: XCUIAccessibilityAuditIssue, _ second: XCUIAccessibilityAuditIssue) -> Bool {
+        guard first.auditType == second.auditType else { return false }
+        guard let firstElement = first.element, let secondElement = second.element else {
+            return first.element == nil && second.element == nil && first.compactDescription == second.compactDescription
+        }
+        guard firstElement.exists, secondElement.exists else { return false }
+        return firstElement.label == secondElement.label
+    }
+
+    /// Returns the issues that aren't ignored, and writes one line to the test log for each
+    /// Dynamic Type issue and each issue that isn't ignored: its type, the element's label and
+    /// frame, the window's frame, and whether it was ignored. On the CI runner the audit reported Dynamic Type findings on the same rows in
+    /// runs that passed and runs that failed (build 44124454610), and which rule ignored them
+    /// couldn't be told from the log; these lines record it (docs/TESTING.md).
+    @MainActor
+    private func judged(
+        _ issues: [XCUIAccessibilityAuditIssue], in app: XCUIApplication, round: Int,
+        ignored: (XCUIAccessibilityAuditIssue) -> Bool
+    ) throws -> [XCUIAccessibilityAuditIssue] {
+        var remaining: [XCUIAccessibilityAuditIssue] = []
+        for issue in issues {
+            let isIgnored = ignored(issue)
+            if !isIgnored { remaining.append(issue) }
+            guard issue.auditType == .dynamicType || !isIgnored else { continue }
+            // A decision by type alone needs no element; the others are the frame rules'.
+            guard let element = issue.element, element.exists else {
+                NSLog("Audit round %d: %@, no element, ignored: %d", round, issue.compactDescription, isIgnored ? 1 : 0)
+                continue
+            }
+            NSLog(
+                "Audit round %d: %@, \"%@\" at %@ in window %@, ignored: %d", round, issue.compactDescription,
+                element.label, "\(element.frame)", "\(app.windows.firstMatch.frame)", isIgnored ? 1 : 0)
+        }
+        return remaining
+    }
+
+    /// Every audit type except the ones a test skips, whose findings would all be ignored.
+    ///
+    /// - Parameters:
+    ///   - contrast: Whether the contrast check runs.
+    ///   - dynamicType: Whether the Dynamic Type check runs.
+    static func auditTypes(contrast: Bool, dynamicType: Bool) -> XCUIAccessibilityAuditType {
+        var types = XCUIAccessibilityAuditType.all
+        if !contrast { types.subtract(.contrast) }
+        if !dynamicType { types.subtract(.dynamicType) }
+        return types
+    }
+
+    /// Runs the accessibility audit of the given types and returns every issue it found, without
+    /// failing the test.
+    @MainActor
+    private func reportedIssues(
+        _ app: XCUIApplication, _ types: XCUIAccessibilityAuditType = .all
+    ) throws -> [XCUIAccessibilityAuditIssue] {
         var issues: [XCUIAccessibilityAuditIssue] = []
-        try app.performCompleteAccessibilityAudit { issue in
+        try app.performCompleteAccessibilityAudit(for: types) { issue in
             issues.append(issue)
             return true
         }
@@ -586,6 +656,22 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func settle() {
         _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Animations finish")], timeout: 3)
+    }
+
+    /// The Choose Details texts the audit reports as "Dynamic Type font sizes are partially
+    /// unsupported" on the iPad runner: the master switch's footer and the header after it.
+    /// `testChooseDetailsTextGrowsAtEveryTextSize` measures both at all nine text sizes instead.
+    static let measuredDynamicTypeLabels = [
+        "On: each photo keeps only what it needs to open. Off: choose each item below.", "In Each Photo",
+    ]
+
+    /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``. In
+    /// build 44209365138 the iPad runner's audit reported both in three audits in a row in the
+    /// night-mode Settings sheet at the largest text size, where they measure 167 and 83.5 points
+    /// high and grow at every step from the default size (docs/TESTING.md).
+    private static func isMeasuredDynamicTypeFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .dynamicType, let label = issue.element?.label else { return false }
+        return measuredDynamicTypeLabels.contains(label)
     }
 
     /// Whether an issue is the open iPad finding on the lens buttons' "No RAW" caption: the audit
