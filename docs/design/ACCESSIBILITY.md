@@ -256,7 +256,7 @@ From [BRACKETING.md](BRACKETING.md), section 6, for the 1.0.0 part (exposure bra
 
 ## Siri and Shortcuts
 
-The set of actions is unchanged in 1.0.0: no action is added or removed. One is renamed, Set Focus on Faces. All ten App Shortcut places are in use today and stay as they are.
+One action is added in 1.0.0, Open Assistant Access, and one is renamed, Set Focus on Faces. Every other action now goes through the Assistant Access check (issue 82, [assistant-access.md](assistant-access.md), sections 5 and 13): off by default, it answers that access is off; with Every Action the system asks before each action. All ten App Shortcut places are in use today and stay as they are.
 
 | App Shortcut | Phrase (English) | Matches in the interface |
 | --- | --- | --- |

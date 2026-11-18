@@ -208,6 +208,39 @@ drive and astro values, saved when the person taps Save Current Settings.
 - **Deleting** a preset removes it from the store; Factory Defaults resets every setting but
   keeps the saved presets.
 
+## Siri, Shortcuts and assistants
+
+Assistant Access (issue #82; `docs/design/assistant-access.md`) decides whether Siri, the
+Shortcuts app and other assistants that run App Intents may use the app's actions.
+
+- **The setting.** Settings › Privacy › Assistant Access: a switch, off by default for new
+  installs and updates, and Ask First (Every Action by default, Only Before a Photo, Never).
+  Both are stored with the other settings (`NopeSettings.assistantAccess`, `assistantAsk`) and
+  are in the Lock Screen camera's snapshot, where the row is read only. No preset stores or
+  applies them; Factory Defaults applied in the app returns them to their defaults. No action,
+  control or preset changes them.
+- **The check.** Every gated action asks `AssistantAccess` inside `perform()`, through one
+  helper (`AssistantGate`); with access off it answers that access is off and changes nothing.
+  Every gated action requires an unlocked device. The entry points are listed in
+  `security/assistant-entry-points.txt`, enforced by `scripts/check-security.sh`.
+- **What an answer contains.** One sentence about what happened ("Photo saved. It isn't
+  signed."), and for Take Photo, Take Bracket and Start Interval Shooting a number: the photos
+  this request saved. Never a photo, a thumbnail, a file, a location, a photo's details, the
+  camera's state or the Privacy settings' values.
+- **Preset names.** Apply Preset offers the names of saved presets, the person's own text, only
+  while access is on; Factory Defaults is always offered. Through an assistant a preset applies
+  everything except the Privacy settings (Details in Each Photo, Location, Sign Each Photo) and
+  Assistant Access, and the answer says so.
+- **Nothing indexed or donated.** No Core Spotlight or indexed entity, no
+  `IntentDonationManager`, no `NSUserActivity`, no URL scheme and no on-screen content described
+  to the system. No assistant schema is adopted.
+- **The session record.** The page's This Session list (up to 20 lines: an action's name and
+  what happened) and the camera's refusal count are kept in memory only, and cleared when the
+  process ends. The one stored value is the tip's counter (`NopeAssistant.confirmedCount`), a
+  number that stops at six, outside the settings snapshot and presets.
+- **Outside the app's control:** photos saved to Photos, what a person lets an assistant see on
+  the screen, and opening the app are the system's.
+
 ## Content Credentials (signing)
 
 The app signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials

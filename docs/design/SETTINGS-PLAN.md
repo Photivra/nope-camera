@@ -184,8 +184,10 @@ Settings                                             search field at the top
 │  ├─ Details in Each Photo        value: All Optional Removed / Custom / Custom, Location On   page
 │  │    (renames Choose Details; holds Remove All Optional Details, Location, the other
 │  │     details, Standard File Tags, Always Saved)
-│  └─ Sign Each Photo              switch
-│       room for 1.1.0: Save Photos To, Lock Captures, Assistant Access
+│  ├─ Sign Each Photo              switch
+│  └─ Assistant Access             value: Off / Ask Every Action / Ask Before a Photo / Never Ask
+│                                  page (1.0.0, issue 82; assistant-access.md)
+│       room for 1.1.0, above Assistant Access: Save Photos To, Lock Captures
 │
 ├─ CAMERA                          how the camera focuses and exposes
 │  ├─ Fast Shutter                 value: Standard                  page   (home: Q tile)
