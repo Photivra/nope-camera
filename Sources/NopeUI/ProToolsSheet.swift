@@ -1,11 +1,15 @@
 import NopeCore
 import SwiftUI
 
-/// The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
-/// standard form, opened from the last button of the manual controls row.
+/// The exposure mode, metering, AE and AF locks, exposure bracketing and the live aids, in a
+/// standard form, opened from More at the end of the manual readout row
+/// (docs/design/BUILD-SPEC.md, 3.4).
 ///
-/// Each section appears only when the selected lens supports it. Like the camera it covers, the
-/// sheet is dark in either system setting (``ScreenAppearance/camera``).
+/// Interval shooting is not here: the drive strip and its card are its one home, so no second
+/// Start button behaves differently (docs/design/SETTINGS-PLAN.md, decision 8). Each section
+/// appears only when the selected lens supports it. Like the camera it covers, the sheet is dark
+/// in either system setting (``ScreenAppearance/camera``), and it covers the whole window on
+/// every device.
 struct ProToolsSheet: View {
     /// The camera model.
     let model: CameraModel
@@ -34,11 +38,16 @@ struct ProToolsSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                if manual.exposureModes.count > 1 {
-                    exposureModeSection
-                }
-                if manual.capabilities.meteringModes.count > 1 {
-                    meteringSection
+                if manual.exposureModes.count > 1 || manual.capabilities.meteringModes.count > 1 {
+                    // One group, as drawn (docs/design/screens/manual-pro-tools).
+                    Section {
+                        if manual.exposureModes.count > 1 {
+                            exposureModePicker
+                        }
+                        if manual.capabilities.meteringModes.count > 1 {
+                            meteringPicker
+                        }
+                    }
                 }
                 if manual.capabilities.supportsExposureLock || manual.capabilities.supportsFocusLock {
                     locksSection
@@ -46,9 +55,12 @@ struct ProToolsSheet: View {
                 if !manual.bracketFrameCounts.isEmpty {
                     bracketSection
                 }
-                intervalSection
                 if let settings {
-                    Section { LiveAidToggles(settings: settings) }
+                    Section {
+                        LiveAidToggles(settings: settings)
+                    } header: {
+                        Text("Live Aids", bundle: .module, comment: "Settings section header above focus peaking, the histogram and the live camera readout.")
+                    }
                 }
                 // Done is a row of the form, not a bar button: the accessibility audit can't
                 // measure the contrast of the glass bar button.
@@ -73,33 +85,29 @@ struct ProToolsSheet: View {
     }
 
     /// The exposure mode picker: P, S, I or M, as the lens supports.
-    private var exposureModeSection: some View {
-        Section {
-            Picker(
-                selection: Binding(get: { manual.settings.exposureMode }, set: { send(.setExposureMode($0)) })
-            ) {
-                ForEach(manual.exposureModes, id: \.self) { mode in
-                    Text(verbatim: ControlText.name(mode)).tag(mode)
-                }
-            } label: {
-                Text("Exposure Mode", bundle: .module, comment: "Name of the picker for the exposure mode: P, S, I or M.")
+    private var exposureModePicker: some View {
+        Picker(
+            selection: Binding(get: { manual.settings.exposureMode }, set: { send(.setExposureMode($0)) })
+        ) {
+            ForEach(manual.exposureModes, id: \.self) { mode in
+                Text(verbatim: ControlText.name(mode)).tag(mode)
             }
-            .accessibilityIdentifier("exposure-mode")
+        } label: {
+            Text("Exposure Mode", bundle: .module, comment: "Name of the picker for the exposure mode: P, S, I or M.")
         }
+        .accessibilityIdentifier("exposure-mode")
     }
 
     /// The metering mode picker.
-    private var meteringSection: some View {
-        Section {
-            Picker(
-                selection: Binding(get: { manual.settings.metering }, set: { send(.setMetering($0)) })
-            ) {
-                ForEach(manual.capabilities.meteringModes, id: \.self) { mode in
-                    Text(verbatim: ControlText.name(mode)).tag(mode)
-                }
-            } label: {
-                Text("Metering", bundle: .module, comment: "Picker for how auto exposure measures the scene.")
+    private var meteringPicker: some View {
+        Picker(
+            selection: Binding(get: { manual.settings.metering }, set: { send(.setMetering($0)) })
+        ) {
+            ForEach(manual.capabilities.meteringModes, id: \.self) { mode in
+                Text(verbatim: ControlText.name(mode)).tag(mode)
             }
+        } label: {
+            Text("Metering", bundle: .module, comment: "Picker for how auto exposure measures the scene.")
         }
     }
 
@@ -164,16 +172,13 @@ struct ProToolsSheet: View {
                 comment: "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.")
         }
     }
-
-    /// The interval, photo count, and start or stop: the same section as the Drive menu's
-    /// Interval sheet.
-    private var intervalSection: some View {
-        IntervalSection(model: model) { dismiss() }
-    }
 }
 
 /// The progress of a running interval series and a button to stop it. It stays on screen, even
 /// in clean view, until the series ends.
+///
+/// The camera shows it until the interval mode card replaces it (docs/design/BUILD-SPEC.md, 3.5,
+/// chunk D, which moves it to `DriveControls.swift`).
 struct IntervalProgressView: View {
     /// The progress.
     let progress: IntervalProgress
@@ -193,7 +198,7 @@ struct IntervalProgressView: View {
 
     /// The count and the Stop button.
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: NopeSpace.s) {
             Group {
                 if progress.isPaused {
                     Text("Paused: \(progress.taken) of \(progress.total) photos taken", bundle: .module, comment: "Interval shooting progress while the series is paused because the camera is paused (for example by a call) or nope. is in the background: it continues when the camera is back. Both numbers are counts of photos; the second is at least 2. Keep \"nope.\" unchanged.")
@@ -204,12 +209,12 @@ struct IntervalProgressView: View {
             .font(.callout.monospacedDigit())
             Button(role: .destructive, action: stop) {
                 Text("Stop", bundle: .module, comment: "Button that stops interval shooting.")
-                    .frame(minHeight: 44)
+                    .frame(minHeight: NopeSize.minTarget)
             }
             // Borderless: red on the black backing passes the contrast audit; on a bordered fill
             // it doesn't.
         }
-        .padding(.horizontal, 12)
-        .background(.black, in: .rect(cornerRadius: 10))
+        .padding(.horizontal, NopeSpace.s)
+        .nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.small))
     }
 }

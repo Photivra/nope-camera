@@ -82,7 +82,7 @@ struct ViewfinderOverlays: View {
                 LiveAidsPanel(model: model, settings: settings)
                     .allowsHitTesting(false)
                     .uprightUnit()
-                    .padding(CameraStyle.targetSpacing)
+                    .padding(NopeSpace.xs)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: panelAlignment)
             }
         }
@@ -201,8 +201,9 @@ struct FocusPeakingOverlay: View {
     /// The map of in-focus cells.
     let map: FocusPeakingMap
 
-    /// The highlight color.
-    static let color = Color(red: 1, green: 0.2, blue: 0.85)
+    /// The highlight color: magenta, a color the interface uses for nothing else
+    /// (``NopeColor/peaking``).
+    static var color: Color { NopeColor.peaking }
 
     /// Creates the overlay.
     ///

@@ -31,7 +31,7 @@ struct LiveAidsPanel: View {
 
     /// The histogram and the readout.
     var body: some View {
-        VStack(alignment: .trailing, spacing: CameraStyle.targetSpacing) {
+        VStack(alignment: .trailing, spacing: NopeSpace.xs) {
             if model.live.needs.contains(.histogram), let histogram = model.live.analysis?.histogram {
                 HistogramView(histogram: histogram)
             }
@@ -67,12 +67,12 @@ struct HistogramView: View {
 
     /// The graph, its caption and the clipping warnings.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             graph
                 .frame(width: graphWidth, height: graphHeight)
             Text("Preview", bundle: .module, comment: "Caption under the live histogram: it measures the live preview, not the RAW file.")
                 .font(.caption2)
-                .foregroundStyle(.white)
+                .foregroundStyle(NopeColor.label)
             let clipping = histogram.clipping
             if clipping.highlights {
                 warning(Text("Highlights clipped", bundle: .module, comment: "Warning under the live histogram: part of the preview is pure white."), systemImage: "sun.max.trianglebadge.exclamationmark")
@@ -81,8 +81,8 @@ struct HistogramView: View {
                 warning(Text("Shadows clipped", bundle: .module, comment: "Warning under the live histogram: part of the preview is pure black."), systemImage: "moon.circle")
             }
         }
-        .padding(CameraStyle.targetSpacing)
-        .darkBacking()
+        .padding(NopeSpace.xs)
+        .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Histogram", bundle: .module, comment: "Name of the live brightness histogram shown with the manual controls, and of its switch."))
         .accessibilityValue(HistogramText.description(of: histogram.clipping))
@@ -149,6 +149,10 @@ struct LiveReadoutView: View {
     /// The lines.
     let rows: [LiveReadoutText.Row]
 
+    /// The space between lines, in points: one point, so the lines read as one dense block of
+    /// small type, as a camera's readout does.
+    static let lineSpacing: CGFloat = 1
+
     /// Creates the readout.
     ///
     /// - Parameter rows: The lines.
@@ -158,21 +162,21 @@ struct LiveReadoutView: View {
 
     /// The lines.
     var body: some View {
-        Grid(alignment: .leading, horizontalSpacing: CameraStyle.targetSpacing, verticalSpacing: 1) {
+        Grid(alignment: .leading, horizontalSpacing: NopeSpace.xs, verticalSpacing: Self.lineSpacing) {
             ForEach(rows) { row in
                 GridRow {
                     Text(row.name)
                         .foregroundStyle(.white.opacity(0.85))
                     Text(row.value)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NopeColor.label)
                         .monospacedDigit()
                 }
                 .accessibilityElement(children: .combine)
             }
         }
         .font(.caption2)
-        .padding(CameraStyle.targetSpacing)
-        .darkBacking()
+        .padding(NopeSpace.xs)
+        .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(LiveReadoutText.title)
     }
