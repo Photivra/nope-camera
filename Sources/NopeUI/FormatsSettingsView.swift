@@ -6,18 +6,14 @@ import SwiftUI
 /// At least one format stays selected: `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 /// disables the last one. On a device without Bayer RAW the RAW row stays visible, unavailable,
 /// and says why. The camera's format status shows the same list between an explanation of the
-/// next photo and its links (``FormatDetailsSheet``); for a lens without RAW on a device that has
-/// RAW, the RAW row says "Not on this lens" and stays a choice for the other lenses.
+/// next photo and its links (``FormatDetailsSheet``) for a lens with RAW; for a lens without RAW
+/// that sheet shows its one processed file instead, read-only.
 struct FormatsSettingsView: View {
     /// The settings to show and change.
     let settings: NopeSettings
 
     /// Whether any camera on the device gives Bayer RAW.
     let deviceSupportsBayerRAW: Bool
-
-    /// Whether the lens the list is shown for gives Bayer RAW; `true` in Settings, where the
-    /// list is for every lens.
-    let lensSupportsBayerRAW: Bool
 
     /// Sections shown above the formats, or `nil`.
     let explanation: AnyView?
@@ -30,16 +26,14 @@ struct FormatsSettingsView: View {
     /// - Parameters:
     ///   - settings: The settings to show and change.
     ///   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-    ///   - lensSupportsBayerRAW: Whether the lens the list is shown for gives Bayer RAW.
     ///   - explanation: Sections shown above the formats, or `nil`.
     ///   - footer: Sections shown below the formats, or `nil`.
     init(
-        settings: NopeSettings, deviceSupportsBayerRAW: Bool, lensSupportsBayerRAW: Bool = true,
+        settings: NopeSettings, deviceSupportsBayerRAW: Bool,
         explanation: AnyView? = nil, footer: AnyView? = nil
     ) {
         self.settings = settings
         self.deviceSupportsBayerRAW = deviceSupportsBayerRAW
-        self.lensSupportsBayerRAW = lensSupportsBayerRAW
         self.explanation = explanation
         self.footer = footer
     }
@@ -129,21 +123,15 @@ struct FormatsSettingsView: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// Why a format's row is unavailable, or doesn't apply to this lens, or `nil`.
+    /// Why a format's row is unavailable, or `nil`.
     ///
     /// - Parameters:
     ///   - format: The format.
     ///   - isAvailable: Whether the device can save the format.
-    /// - Returns: "Not available on this device", "Not on this lens", or `nil`.
+    /// - Returns: "Not available on this device", or `nil`.
     private func caption(for format: PhotoFormat, isAvailable: Bool) -> Text? {
-        guard format == .raw else { return nil }
-        if !isAvailable {
-            return Text("Not available on this device", bundle: .module, comment: "Shown under the RAW format on a device without RAW.")
-        }
-        guard !lensSupportsBayerRAW else { return nil }
-        return Text(
-            "Not on this lens", tableName: "Honesty", bundle: .module,
-            comment: "Caption under RAW (DNG) in the format list of a lens that can't save RAW: this lens doesn't offer RAW. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.")
+        guard format == .raw, !isAvailable else { return nil }
+        return Text("Not available on this device", bundle: .module, comment: "Shown under the RAW format on a device without RAW.")
     }
 
     /// The format's name. Format names are the same in every language, so they aren't

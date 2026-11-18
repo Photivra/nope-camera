@@ -262,14 +262,18 @@ struct FormatStatusStyle: ButtonStyle {
     }
 }
 
-/// The format status's sheet: what the next photo is, in plain words; for a lens without RAW the
-/// processing note (``ProcessingNote``, issue #80); then the formats, the Show Processed Marker
-/// switch on such a lens, the Look row while a HEIF or JPEG copy is saved, and All Photo
+/// The format status's sheet: what the next photo is, in plain words; then, for a lens with RAW,
+/// the formats to choose from, the Look row while a HEIF or JPEG copy is saved, and All Photo
 /// Settings (BUILD-SPEC.md, 3.2). A popover on iPad, a sheet on iPhone.
 ///
-/// Look and All Photo Settings close the sheet and then open Settings at HEIF and JPEG Copies or
-/// the Photos group, through `openSettingsAt`. Settings opens only once the sheet has gone, since
-/// the camera can't show both at once.
+/// For a lens without RAW the formats are read-only (owner decision of 2026-11-18): the sheet
+/// shows the processing note (``ProcessingNote``, issue #80), the one processed file that lens
+/// saves, that the format choices are for the other lenses, the Show Processed Marker switch, and
+/// a row that opens Settings at Formats to change them. Nothing on it changes the formats.
+///
+/// Look, All Photo Settings and Formats for Other Lenses close the sheet and then open Settings
+/// through `openSettingsAt`. Settings opens only once the sheet has gone, since the camera can't
+/// show both at once.
 struct FormatDetailsSheet: View {
     /// The person's settings.
     let settings: NopeSettings
@@ -313,9 +317,7 @@ struct FormatDetailsSheet: View {
     /// The explanation, the formats and the links, with a Done button.
     var body: some View {
         NavigationStack {
-            FormatsSettingsView(
-                settings: settings, deviceSupportsBayerRAW: deviceSupportsBayerRAW, lensSupportsBayerRAW: format.isBayerRAW,
-                explanation: AnyView(explanation), footer: AnyView(footer))
+            content
                 // A short title, so the picture behind the sheet stays in view.
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -331,29 +333,19 @@ struct FormatDetailsSheet: View {
         }
     }
 
-    /// What the next photo is, in plain words, and for a lens without RAW its processing note.
-    @ViewBuilder private var explanation: some View {
-        Section {
-            summary
-        }
-        if !format.isBayerRAW {
-            ProcessingNote(distortionCorrection: distortionCorrection, look: settings.developedLook)
+    /// The formats to choose from for a lens with RAW; the read-only list for a lens without it.
+    @ViewBuilder private var content: some View {
+        if format.isBayerRAW {
+            FormatsSettingsView(
+                settings: settings, deviceSupportsBayerRAW: deviceSupportsBayerRAW,
+                explanation: AnyView(Section { summary }), footer: AnyView(rawLensLinks))
+        } else {
+            processedLensForm
         }
     }
 
-    /// The Show Processed Marker switch on a lens without RAW, then Look while a HEIF or JPEG
-    /// copy is saved, and All Photo Settings.
-    @ViewBuilder private var footer: some View {
-        if !format.isBayerRAW {
-            Section {
-                ExplainedToggle(
-                    isOn: Binding(get: { settings.showsProcessedMarker }, set: { settings.setShowsProcessedMarker($0) }),
-                    title: Text(SettingsText.showProcessedMarker),
-                    explanation: Text(
-                        "Shows Processed on the camera when a lens can't save RAW.", tableName: "Honesty", bundle: .module,
-                        comment: "Explains the Show Processed Marker switch. \"Processed\" is the marker's text on the camera; use the same word as its translation. RAW is a file format name. Must not claim more than the English."))
-            }
-        }
+    /// Look while a HEIF or JPEG copy is saved, and All Photo Settings, for a lens with RAW.
+    @ViewBuilder private var rawLensLinks: some View {
         if openSettingsAt != nil {
             Section {
                 if settings.savesDevelopedFormat {
@@ -366,6 +358,50 @@ struct FormatDetailsSheet: View {
                 }
             }
         }
+    }
+
+    /// The sheet for a lens without RAW: the summary and the processing note, the one file the
+    /// lens saves (read-only), the Show Processed Marker switch, and the row that opens Formats.
+    private var processedLensForm: some View {
+        Form {
+            Section {
+                summary
+            }
+            ProcessingNote(distortionCorrection: distortionCorrection, look: settings.developedLook)
+            Section {
+                Text(verbatim: FormatChip.names(of: FormatChip.files(for: format, savedFormats: [])))
+                    .accessibilityIdentifier("formatSheet.lensFile")
+            } header: {
+                Text(String(
+                    localized: "Photo Format sheet: This Lens Saves", defaultValue: "This Lens Saves", bundle: .module,
+                    comment: "Section header on the Photo Format sheet of a lens that can't save RAW, above the one file format that lens saves (for example HEIF). The list can't be changed there."))
+            } footer: {
+                Text(String(
+                    localized: "Photo Format sheet: choices are for the other lenses",
+                    defaultValue: "This lens saves one processed file. The formats you choose in Settings are for the other lenses.",
+                    table: "Honesty", bundle: .module,
+                    comment: "Footer on the Photo Format sheet of a lens that can't save RAW: that lens always saves its one processed file, and the format choices apply to the lenses that save RAW. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release."))
+            }
+            Section {
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.showsProcessedMarker }, set: { settings.setShowsProcessedMarker($0) }),
+                    title: Text(SettingsText.showProcessedMarker),
+                    explanation: Text(
+                        "Shows Processed on the camera when a lens can't save RAW.", tableName: "Honesty", bundle: .module,
+                        comment: "Explains the Show Processed Marker switch. \"Processed\" is the marker's text on the camera; use the same word as its translation. RAW is a file format name. Must not claim more than the English."))
+            }
+            if openSettingsAt != nil {
+                Section {
+                    settingsLink(.formats) {
+                        Text(String(
+                            localized: "Photo Format sheet: Formats for Other Lenses", defaultValue: "Formats for Other Lenses",
+                            bundle: .module,
+                            comment: "Button on the Photo Format sheet of a lens that can't save RAW: closes the sheet and opens Settings at Formats, where the formats of the other lenses are chosen."))
+                    }
+                }
+            }
+        }
+        .navigationTitle(Text("Formats", bundle: .module, comment: "Settings row and screen title: the file formats each photo is saved in."))
     }
 
     /// A row that closes the sheet and then opens Settings at a page, drawn like a navigation

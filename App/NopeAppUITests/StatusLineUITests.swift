@@ -71,7 +71,9 @@ extension NopeAppUITests {
 
     /// Audits the open Photo Format sheet: every check, then contrast on every element except a
     /// disabled one (the RAW row on a device without RAW), which WCAG 1.4.3 exempts as an
-    /// inactive control. Contrast is checked on iPhone only, as in the other sheet tests: the
+    /// inactive control, and except a row cut by the window's edge, which the audit measures at
+    /// its clipped edge (or reports with no element); such rows are measured whole after
+    /// scrolling, as in `auditVisibleElements`. Contrast is checked on iPhone only, as in the other sheet tests: the
     /// iPad popover is measured against the camera behind it.
     ///
     /// After scrolling, clipped-text findings are skipped too: on the iPhone Simulator the audit
@@ -90,9 +92,10 @@ extension NopeAppUITests {
         }
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: false)
         guard !isPad else { return }
+        let window = app.windows.firstMatch.frame
         try app.performCompleteAccessibilityAudit(for: .contrast) { issue in
-            guard let element = issue.element else { return false }
-            return !element.isEnabled
+            guard let element = issue.element else { return true }
+            return !element.isEnabled || !window.contains(element.frame)
         }
     }
 
@@ -199,8 +202,8 @@ extension NopeAppUITests {
 
     // MARK: - Processed marker (3.2)
 
-    /// The marker shows before the shot and opens the processing note, then the formats, the
-    /// switch and All Photo Settings; it stays in clean view.
+    /// The marker shows before the shot and opens the processing note, then the lens's one file,
+    /// the switch and Formats for Other Lenses; it stays in clean view.
     @MainActor
     func testProcessedMarkerAndNote() throws {
         let app = launch("noRAW")
@@ -219,8 +222,10 @@ extension NopeAppUITests {
         let marker = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Show Processed Marker")).firstMatch
         let swipes = scrollSheet(app, to: marker)
         XCTAssertEqual(marker.value as? String, "1")
-        XCTAssertTrue(app.buttons["All Photo Settings"].exists)
-        try auditFormatSheet(app, afterScrolling: swipes > 0)
+        let formats = app.buttons["Formats for Other Lenses"]
+        let more = scrollSheet(app, to: formats)
+        XCTAssertTrue(formats.exists)
+        try auditFormatSheet(app, afterScrolling: swipes + more > 0)
         app.buttons["Done"].tap()
         // Clean view keeps the marker.
         hideControls(app)
@@ -254,22 +259,37 @@ extension NopeAppUITests {
         try audit(app)
     }
 
-    /// A lens without RAW on a device with RAW: the marker, and "Not on this lens" under RAW.
+    /// A lens without RAW on a device with RAW: the marker, and a read-only sheet (owner decision
+    /// of 2026-11-18) that names the one file the lens saves, says the format choices are for the
+    /// other lenses, and offers no format to tick; audited at the default and largest text sizes,
+    /// right to left and in night mode.
     @MainActor
     func testProcessedMarkerOnALensWithoutRAW() throws {
-        let app = launch("allow")
-        continuePastFirstRun(app)
-        let status = formatStatus(app)
-        XCTAssertTrue(waitForStatusValue(status, "single-frame RAW, RAW"))
-        let telephoto = app.buttons["Telephoto"]
-        XCTAssertTrue(telephoto.waitForExistence(timeout: 5))
-        telephoto.tap()
-        XCTAssertTrue(waitForStatusValue(status, Self.processedValue))
-        openFormatSheet(app)
-        let caption = app.staticTexts["Not on this lens"]
-        scrollSheet(app, to: caption)
-        XCTAssertTrue(caption.exists)
-        try auditFormatSheet(app, afterScrolling: true)
+        for arguments in [[], Self.largestTextSize, Self.rightToLeft, Self.statusNightMode] {
+            let app = launch("allow", extraArguments: arguments)
+            continuePastFirstRun(app)
+            let status = formatStatus(app)
+            XCTAssertTrue(waitForStatusValue(status, "single-frame RAW, RAW"))
+            let telephoto = app.buttons["Telephoto"]
+            XCTAssertTrue(telephoto.waitForExistence(timeout: 5))
+            telephoto.tap()
+            XCTAssertTrue(waitForStatusValue(status, Self.processedValue))
+            openFormatSheet(app)
+            for name in ["RAW (DNG)", "HEIF", "JPEG"] {
+                XCTAssertFalse(app.buttons[name].exists, "\(name) can be ticked on a lens without RAW")
+            }
+            let file = app.staticTexts["formatSheet.lensFile"]
+            let swipes = scrollSheet(app, to: file)
+            XCTAssertEqual(file.label, "HEIF")
+            XCTAssertTrue(element(app, containing: "This Lens Saves").exists)
+            XCTAssertTrue(element(app, containing: "are for the other lenses").exists)
+            try auditFormatSheet(app, afterScrolling: swipes > 0, checksDynamicType: arguments == Self.largestTextSize)
+            let formats = app.buttons["Formats for Other Lenses"]
+            let more = scrollSheet(app, to: formats)
+            XCTAssertTrue(formats.exists)
+            try auditFormatSheet(app, afterScrolling: swipes + more > 0, checksDynamicType: arguments == Self.largestTextSize)
+            app.terminate()
+        }
     }
 
     /// The marker and its note at the largest text size, right to left and in night mode.
@@ -294,7 +314,7 @@ extension NopeAppUITests {
     }
 
     /// Look and All Photo Settings close the sheet and open Settings at HEIF and JPEG Copies and
-    /// at the Photos group.
+    /// at the Photos group; on a lens without RAW, Formats for Other Lenses opens Formats.
     @MainActor
     func testFormatSheetOpensSettings() throws {
         let app = launch("aids")
@@ -316,6 +336,16 @@ extension NopeAppUITests {
         all.tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
         XCTAssertTrue(element(app, containing: "Formats").waitForExistence(timeout: 5))
+        app.terminate()
+
+        let processed = launch("noRAW")
+        openFormatSheet(processed)
+        let formats = processed.buttons["Formats for Other Lenses"]
+        scrollSheet(processed, to: formats)
+        formats.tap()
+        XCTAssertTrue(processed.navigationBars["Formats"].waitForExistence(timeout: 10))
+        XCTAssertTrue(processed.buttons["RAW (DNG)"].exists)
+        try audit(processed, checksDynamicType: false, checksContrast: !isPad)
     }
 
     // MARK: - Warnings and capture feedback (3.3, 3.7)
