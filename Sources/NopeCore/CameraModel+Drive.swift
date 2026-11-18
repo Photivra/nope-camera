@@ -15,7 +15,7 @@ extension CameraModel {
     }
 
     /// Whether the shutter's photos can fire the flash. Not in Burst (docs/design/BURST.md,
-    /// 3.1: "No flash in Burst, for one photo or many"), not with a bracket set in Pro Tools
+    /// 3.1: "No flash in Burst, for one photo or many"), not with a bracket on
     /// (`AVCapturePhotoBracketSettings` takes no flash; ``CaptureRequest/flashMode``), and not
     /// with the astro helper on, whose frames are taken without it as a burst's are
     /// (`takeFrames`).
