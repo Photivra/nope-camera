@@ -210,7 +210,8 @@ struct AVFoundationCaptureBackendTests {
         #expect(photo.dimensions == PhotoDimensions(width: 4032, height: 3024))
         #expect(photo.exposureDuration == 1.0 / 30.0)
         #expect(photo.iso == 400)
-        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))])
+        // The plan names the camera it was made for, which the hardware checks (issue #96).
+        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))?.forCamera("tele")])
     }
 
     @Test func captureNeedsAMatchingRunningSession() async throws {
@@ -270,7 +271,7 @@ struct AVFoundationCaptureBackendTests {
         try await backend.startSession(request)
         let photo = try await backend.capturePhoto(request)
         #expect(photo.format == .processedFallback(.heif))
-        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))])
+        #expect(await hardware.plans == [CapturePolicy.photoSettings(for: .processedFallback(.heif))?.forCamera("wide")])
         await #expect(throws: CaptureError.notRunning) {
             try await backend.capturePhoto(CaptureRequest(lens: wide))
         }

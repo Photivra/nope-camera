@@ -473,7 +473,7 @@ enum PresetText {
         case .cameraNotReady:
             String(localized: "The camera isn't on, so the lens and camera values didn't change.", bundle: .module, comment: "Shown after applying a settings preset before the camera is allowed or started.")
         case .cameraBusy:
-            String(localized: "The camera is taking photos. Try again when it's done.", bundle: .module, comment: "Shown when a settings preset can't be applied during a countdown, burst, series or astro run.")
+            String(localized: "The camera is taking photos. Try again when it's done.", bundle: .module, comment: "Shown when a settings preset can't be applied, and VoiceOver hint of a dimmed lens button, during a countdown, burst, series or astro run.")
         case .unreadable:
             String(localized: "This preset can't be read.", bundle: .module, comment: "Shown when a saved settings preset is damaged and can't be applied.")
         }

@@ -81,6 +81,24 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Ultra Wide"].isSelected)
     }
 
+    /// Switch Lens during an interval series (issue #96): Siri says the app is busy and the lens
+    /// didn't change, and the lens in use stays selected.
+    @MainActor
+    func testSwitchingLensesDuringASeriesSaysTheLensDidNotChange() {
+        let app = launch("slowSaving", request: "interval,lens-ultraWide")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertEqual(message.label, "nope. is busy. The lens didn't change.")
+        let brighten = app.buttons["Brighten Screen"]
+        if brighten.waitForExistence(timeout: 5) { brighten.tap() }
+        XCTAssertTrue(app.buttons["Wide"].isSelected)
+        XCTAssertFalse(app.buttons["Ultra Wide"].isSelected)
+        XCTAssertFalse(app.buttons["Ultra Wide"].isEnabled)
+        let stop = app.buttons["Stop"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 5))
+        stop.tap()
+    }
+
     @MainActor
     func testABracketIsTakenOnceInFullAuto() {
         // Manual controls stay off: the bracket is taken once without turning them on.

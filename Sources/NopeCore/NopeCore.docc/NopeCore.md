@@ -41,6 +41,7 @@ Related documentation in the repository:
 - ``HeatLevel``
 - ``CaptureStatus``
 - ``CaptureError``
+- ``LensChangeBlocker``
 
 ### Capabilities
 

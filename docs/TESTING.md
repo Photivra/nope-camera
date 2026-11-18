@@ -1005,11 +1005,13 @@ scripts/run-ui-test-shard.sh 1 "iPhone 18 Pro" DerivedData/Build/Products ui-tes
 XCTest can't speak to Siri or run a shortcut, so Debug builds take
 `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in seconds,
 `burst<count>` for Take Photo with a count, `bracket<count>` for Take Bracket (darkest first;
-`bracket<count>-metered` or `bracket<count>-brightest` for another order), or
-`lens-ultraWide` for Switch Lens. The app sends
+`bracket<count>-metered` or `bracket<count>-brightest` for another order),
+`lens-ultraWide` for Switch Lens, `preset-factory` for Apply Preset or `interval` for Start
+Interval Shooting; several requests separated by commas are sent one after another, and the last
+one's answer is shown (`interval,lens-ultraWide` asks for a lens while a series runs). The app sends
 the request through the same `ShortcutInbox` the intents use and shows what Siri would say
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
-of three, a bracket in full auto, a bracket taken brightest first and a lens switch). The Interval drive mode is covered by
+of three, a bracket in full auto, a bracket taken brightest first, a lens switch, and a lens switch refused during a series). The Interval drive mode is covered by
 `testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
 and right-to-left; a series that stops after a time by `IntervalTimeUITests.swift` (the Stop
 After picker, the hours and minutes, "At most", the check that the interval is shorter than the
@@ -1728,6 +1730,28 @@ need each back lens of each supported iPhone, and gate release 1.0.0 (D4 is opti
   exposed. Decides whether "Taking 3 frames" could count frames; not needed to ship.
 
 Record the device, lens, iOS version and the result of each check here.
+
+### The lens while the camera is busy on a device (issue #96)
+
+The rule (`CameraModel.canChangeLens`) is unit tested with a simulated backend that holds a photo
+in flight (`LensWhileBusyTests`), and the disabled lens controls with UI tests
+(`LensWhileBusyUITests`, `ShortcutUITests`). What only a device shows
+(docs/design/lens-while-busy.md, section 7):
+
+- a 1/60 s photo: the lens row does not blink. A 10 s exposure (manual shutter): the row dims
+  after about half a second and returns when the photo is saved;
+- a lens press during a long exposure, a burst and an interval series: nothing changes, and the
+  photo or series ends normally with one lens;
+- the capture backend's own check (`CapturePolicy.camera(_:matches:)` in
+  `SystemCaptureHardware`): not reachable from the interface any more; a debug build that sends
+  `.selectLens` during a long exposure should end that photo with "camera not running" rather
+  than lose it silently or raise an exception;
+- VoiceOver reads "dimmed" and, during a series, the hint "The camera is taking photos. Try
+  again when it's done."; focus stays on a control that becomes dimmed. Switch Control and Full
+  Keyboard Access skip the dimmed controls. The Large Content Viewer still shows a dimmed lens
+  button;
+- night mode in the dark: the dimmed outline is still visible and clearly weaker than the lens in
+  use.
 
 ### iPhone Duo (foldable) on a device
 

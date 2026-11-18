@@ -61,7 +61,8 @@ signed with Content Credentials when signing is on.
    the first start ends: the first time `state` becomes `.needsPermission`, `.permissionDenied`
    or `.unavailable`, or `sessionStatus` becomes anything other than `.stopped` or `.starting`.
    It never becomes `true` again (see "Launch screen" below).
-5. `.selectLens` reconfigures the backend for another lens. `.capture` builds a `MetadataPlan`
+5. `.selectLens` reconfigures the backend for another lens, only while `canChangeLens` is true
+   (below). `.capture` builds a `MetadataPlan`
    from `saveSettings` and asks the backend for one photo, whose file is written with that
    plan's metadata. `PhotoSaver` then develops, reads back, signs (when a signer exists), reads
    back again, checks and saves it (below). The result is `captureStatus = .saved(photo)` or
@@ -70,6 +71,25 @@ signed with Content Credentials when signing is on.
    multitasking), critical heat (the model stops the camera and restarts it when the device
    cools), and runtime errors (the model restarts the camera).
 7. The interface renders the new state. It holds no rules of its own.
+
+### The lens while the camera is busy (issue #96)
+
+Changing the lens restarts the camera, so it is refused while a photo or a series depends on the
+running session. `CameraModel.lensChangeBlocker` says why (`LensChangeBlocker`):
+`.takingPhoto` while a photo or bracket is taken or saved, `.runningSeries` during a countdown,
+burst, interval series (its waits included) or astro run, and `.comparing` while the compare view
+is open; a series wins over its own photos. `canChangeLens` is true when there is no blocker, and
+it is the one rule for every way of changing the lens: `.selectLens` does nothing while it is
+false, `isBusyForPresets` is its negation (a preset may switch the lens), Siri's Switch Lens
+answers `ShortcutOutcome.lensBusy` ("nope. is busy. The lens didn't change."), and Take Photo or
+Take Bracket with a lens answers `.busy` before switching. `NopeUI` disables every lens control
+but the lens in use (`LensBusy.swift`; docs/design/lens-while-busy.md): at once, drawn dimmed at
+once for a series and after `NopeMotion.busyDimDelay` (0.5 s) for a single photo.
+
+The capture backend checks too: each `PhotoSettingsPlan` names the camera it was made for
+(`deviceID`), and `SystemCaptureHardware` starts a capture only while that camera is attached
+(`CapturePolicy.camera(_:matches:)`), failing with `.notRunning` otherwise. The backend is an
+actor, and a session reconfiguration could otherwise run while a photo waits for the output.
 
 ### The AVFoundation backend
 
@@ -361,7 +381,8 @@ it.
 Take Photo also has a count (1 to 50): more than one takes a burst of exactly that many frames
 with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
 burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
-path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
+path: `SwitchLensIntent` (`.selectLens(_:)`, refused with `.lensBusy` while `canChangeLens` is
+false), `TurnOnLightIntent` and `TurnOffLightIntent`
 (`.setLight(isOn:)`, Q's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
 `StopIntervalIntent` (`.startInterval(_:)` with an optional interval, count and duration in
 minutes; a duration makes the series stop after that time, `IntervalShortcut`; and

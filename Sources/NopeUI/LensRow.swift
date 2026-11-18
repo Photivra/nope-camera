@@ -86,7 +86,8 @@ struct LensButtons: View {
     }
 }
 
-/// One lens button: its magnification (or name), and "No RAW" when it has no Bayer RAW.
+/// One lens button: its magnification (or name), and "No RAW" when it has no Bayer RAW. While the
+/// lens can't be changed (``LensBusyState``), it is disabled unless it is the lens in use.
 struct LensButton: View {
     /// The lens.
     let lens: Lens
@@ -132,7 +133,8 @@ struct LensButton: View {
                 isSelected: isSelected, size: NopeSize.lensItem, isCompact: true, idleFill: .none, labelPadding: NopeSpace.xxs))
         .accessibilityLabel(Text(verbatim: LensName.string(for: lens.kind)))
         .accessibilityValue(title)
-        .accessibilityHint(hint)
+        // Disabled while the lens can't be changed, unless it is the lens in use (issue #96).
+        .lensBusyControl(isSelected: isSelected, hint: lens.supportsBayerRAW ? nil : Self.noRAWHint)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityInputLabels([title, Text(verbatim: LensName.string(for: lens.kind))])
         .accessibilityShowsLargeContentViewer()
@@ -150,11 +152,6 @@ struct LensButton: View {
         }
     }
 
-    /// The reason a lens without RAW says "No RAW", or nothing.
-    private var hint: Text {
-        lens.supportsBayerRAW ? Text(verbatim: "") : Self.noRAWHint
-    }
-
     /// Why a lens says "No RAW".
     static var noRAWHint: Text {
         Text(
@@ -166,7 +163,8 @@ struct LensButton: View {
 
 /// Switches between the front camera and the rear lens last used, as its own round button at the
 /// trailing end of the lens row (the bottom of the column layout), rather than a lens button
-/// (issue #68; docs/design/BUILD-SPEC.md, 3.1).
+/// (issue #68; docs/design/BUILD-SPEC.md, 3.1). Disabled while the lens can't be changed
+/// (``LensBusyState``).
 struct CameraFlipButton: View {
     /// Switches the camera.
     let action: () -> Void
@@ -190,6 +188,8 @@ struct CameraFlipButton: View {
             .font(.title3)
         }
         .buttonStyle(NopeIconButtonStyle())
+        // Disabled while the lens can't be changed (issue #96).
+        .lensBusyControl()
     }
 }
 
@@ -247,7 +247,8 @@ struct QuickButton: View {
 
 /// One full-width row per lens, the front camera included, for the scrolling layout at
 /// accessibility text sizes (docs/design/BUILD-SPEC.md, 3.12): the lens's name over its
-/// magnification, the selected lens filled white. A lens without RAW says "No RAW".
+/// magnification, the selected lens filled white. A lens without RAW says "No RAW". While the
+/// lens can't be changed (``LensBusyState``), every row but the lens in use is disabled.
 struct LensRows: View {
     /// The lenses, in display order.
     let lenses: [Lens]
@@ -283,10 +284,11 @@ struct LensRows: View {
                 }
                 .buttonStyle(NopeTileStyle(isOn: isSelected, minHeight: NopeSize.scrollingRowButton))
                 // Named as the lens buttons are: the lens's name, with the magnification as the
-                // value and the reason for "No RAW" as the hint.
+                // value and the reason for "No RAW" as the hint. Disabled while the lens can't be
+                // changed, unless it is the lens in use; no row is added or removed (issue #96).
                 .accessibilityLabel(Text(verbatim: LensName.string(for: lens.kind)))
                 .accessibilityValue(value(of: lens) ?? Text(verbatim: ""))
-                .accessibilityHint(detail(of: lens) == nil ? Text(verbatim: "") : LensButton.noRAWHint)
+                .lensBusyControl(isSelected: isSelected, hint: detail(of: lens) == nil ? nil : LensButton.noRAWHint)
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
                 .accessibilityInputLabels([Text(verbatim: LensName.string(for: lens.kind))])
             }

@@ -295,6 +295,12 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// changed.
     case busyWithEarlierRequest
 
+    /// A lens change was asked for while the lens can't be changed
+    /// (``CameraModel/canChangeLens``): a photo, countdown, burst, interval series or astro run
+    /// is in progress, or the compare view is open. Say the app is busy and the lens didn't
+    /// change.
+    case lensBusy
+
     /// The device has no lens of the kind asked for. Say so; nothing was taken or changed.
     case lensUnavailable
 

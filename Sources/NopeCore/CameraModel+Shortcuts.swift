@@ -94,17 +94,21 @@ extension CameraModel {
         return await outcomeAfterCountdown(since: before, inbox: inbox)
     }
 
-    /// Waits for the camera and switches to the lens a request asks for, if any.
+    /// Waits for the camera and switches to the lens a request asks for, if any, unless the
+    /// lens can't be changed now (``canChangeLens``).
     ///
     /// - Parameters:
     ///   - lensKind: The kind of lens, or `nil` to keep the lens in use.
     ///   - inbox: The inbox, for its waits and timeouts.
-    /// - Returns: The outcome that ends the request when the camera can't be used or has no such
-    ///   lens, otherwise `nil`.
+    /// - Returns: The outcome that ends the request when the camera can't be used, has no such
+    ///   lens, or is busy and would have to switch (``ShortcutOutcome/busy``), otherwise `nil`.
     private func prepareCamera(lensKind: Lens.Kind?, inbox: ShortcutInbox) async -> ShortcutOutcome? {
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         guard let kind = lensKind, selectedLens?.kind != kind else { return nil }
         guard let lens = capabilities?.lenses.first(where: { $0.kind == kind }) else { return .lensUnavailable }
+        // Checked before switching: a switch would restart the camera under a photo or a series
+        // that is already running, and the request is refused anyway (issue #96).
+        guard canChangeLens else { return .busy }
         await send(.selectLens(lens.id))
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         return nil
@@ -167,7 +171,8 @@ extension CameraModel {
         return await outcomeAfterCountdown(since: before, inbox: inbox)
     }
 
-    /// Switches to a lens of the kind asked for, as a lens button does.
+    /// Switches to a lens of the kind asked for, as a lens button does, unless the lens can't be
+    /// changed now (``canChangeLens``).
     ///
     /// - Parameters:
     ///   - kind: The kind of lens.
@@ -177,8 +182,8 @@ extension CameraModel {
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         guard selectedLens?.kind != kind else { return .lensSelected(kind) }
         guard let lens = capabilities?.lenses.first(where: { $0.kind == kind }) else { return .lensUnavailable }
-        // Switching restarts the camera, which would end a burst or a series part-way.
-        guard !isTakingPhoto, !isRunningSeries else { return .busy }
+        // Switching restarts the camera, which would end a burst or a series part-way (issue #96).
+        guard canChangeLens else { return .lensBusy }
         await send(.selectLens(lens.id))
         if let problem = await cameraProblem(inbox: inbox) { return .cameraUnavailable(problem) }
         return .lensSelected(kind)
@@ -281,17 +286,6 @@ extension CameraModel {
         guard !isTakingPhoto, !isRunningSeries else { return .busy }
         settings.setPhotoSize(size, for: lens)
         return .photoSizeSet
-    }
-
-    /// Whether a countdown, a burst, an interval series or an astro run is in progress, so a
-    /// request mustn't start another.
-    private var isRunningSeries: Bool {
-        drive.isBusy || manual.intervalProgress != nil || astro.isRunning
-    }
-
-    /// Whether a photo is being taken or saved.
-    private var isTakingPhoto: Bool {
-        captureStatus == .capturing || captureStatus == .saving
     }
 
     /// Waits for the camera to finish starting, at most ``ShortcutInbox/startTimeoutSeconds``,

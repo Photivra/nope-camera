@@ -2357,7 +2357,7 @@
       "extractionState" : "manual"
     },
     "The camera is taking photos. Try again when it's done." : {
-      "comment" : "Shown when a settings preset can't be applied during a countdown, burst, series or astro run.",
+      "comment" : "Shown when a settings preset can't be applied, and VoiceOver hint of a dimmed lens button, during a countdown, burst, series or astro run.",
       "extractionState" : "manual"
     },
     "The camera isn't on, so the lens and camera values didn't change." : {
