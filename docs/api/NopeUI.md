@@ -3434,6 +3434,78 @@ case split
 
 Both, split by the divider.
 
+## `ContentCredentialsSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSignature.swift`
+
+```swift
+@MainActor struct ContentCredentialsSection
+```
+
+Content Credentials (`docs/design/BUILD-SPEC.md`, 3.15, group 7): the signature sentence with
+its symbol; for a signed photo, what the signature shows, each file's manifest (claim
+generator, the manifest's own words, its SHA-256 behind a disclosure row) and how to check a
+file; for an unsigned photo, the reason.
+
+## `ContentCredentialsSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSignature.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `ContentCredentialsSection/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSignature.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details.
+
+## `ContentCredentialsSection/explanation(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSignature.swift`
+
+```swift
+@MainActor static func explanation(of signature: SignatureStatus) -> Text
+```
+
+What the signature shows, or why there is none.
+
+- Parameter signature: The photo's signature status.
+- Returns: The sentence, from `Honesty.xcstrings`.
+
+## `ContentCredentialsSection/init(details:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSignature.swift`
+
+```swift
+@MainActor init(details: PhotoDetails)
+```
+
+Creates the group.
+
+- Parameter details: The details.
+
+## `ContentCredentialsSection/manifestWords(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSignature.swift`
+
+```swift
+@MainActor static func manifestWords(_ words: String) -> AttributedString
+```
+
+The manifest's own words in quotation marks, marked as English for the speech voice: they
+are part of the file and aren't translated.
+
+- Parameter words: The manifest's action description.
+- Returns: The text.
+
 ## `ControlDial`
 
 internal, declared in `Sources/NopeUI/ControlDial.swift`
@@ -3962,6 +4034,60 @@ A size's name.
 - Parameter size: The size.
 - Returns: Its localized name.
 
+## `CountLabel`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor struct CountLabel
+```
+
+A disclosure row's label: its title and, trailing, its count.
+
+## `CountLabel/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The label, read as "Left Out, 5".
+
+## `CountLabel/count`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let count: Int
+```
+
+The count.
+
+## `CountLabel/init(title:count:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor init(title: Text, count: Int)
+```
+
+Creates the label.
+
+- Parameters:
+  - title: The title.
+  - count: The count.
+
+## `CountLabel/title`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The title.
+
 ## `CountdownNumber`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -4015,8 +4141,9 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor struct DetailRow
 ```
 
-A row with a title on the leading side and a value on the trailing side that wraps under it
-at large text sizes.
+A row with a title on the leading side and a value on the trailing side, with an optional
+note under the value ("Not in the files", megapixels); the value and note go under the title
+when they don't fit beside it.
 
 ## `DetailRow/body`
 
@@ -4026,14 +4153,14 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor var body: some View { get }
 ```
 
-The row.
+The row, read as one element: title, value, note.
 
-## `DetailRow/init(title:value:)`
+## `DetailRow/init(title:value:note:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor init(title: Text, value: Text)
+@MainActor init(title: Text, value: Text, note: Text? = nil)
 ```
 
 Creates a row.
@@ -4041,6 +4168,17 @@ Creates a row.
 - Parameters:
   - title: The title.
   - value: The value.
+  - note: A note under the value, or `nil`.
+
+## `DetailRow/note`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let note: Text?
+```
+
+A note under the value, or `nil`.
 
 ## `DetailRow/title`
 
@@ -4980,6 +5118,156 @@ The app target sets it so it can keep reading the system's setting for
 ``systemColorScheme``. `nil` (the default) makes the camera screen ask with
 `preferredColorScheme(_:)`.
 
+## `EveryTagPage`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor struct EveryTagPage
+```
+
+One file's tags, blocks and properties, grouped by where they live in the file, each group
+closed at first, with search by name. Identifying values read "Hidden" until Show Hidden
+Values in their group.
+
+## `EveryTagPage/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The page.
+
+## `EveryTagPage/file`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor let file: PhotoDetails.File
+```
+
+The file.
+
+## `EveryTagPage/init(file:key:revealed:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor init(file: PhotoDetails.File, key: String, revealed: Binding<Set<String>>)
+```
+
+Creates the page.
+
+- Parameters:
+  - file: The file.
+  - key: The prefix of this page's keys in `revealed`.
+  - revealed: The values the person chose to see.
+
+## `EveryTagPage/key`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor let key: String
+```
+
+The prefix of this page's keys in ``revealed``.
+
+## `EveryTagPage/matching(_:query:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor static func matching(_ entries: [PhotoDetails.TagEntry], query: String) -> [PhotoDetails.TagEntry]
+```
+
+The entries whose names contain the search text, ignoring case; all without search text.
+
+- Parameters:
+  - entries: The entries.
+  - query: The search text.
+- Returns: The matching entries.
+
+## `EveryTagPage/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor static func name(of place: PhotoDetails.TagEntry.Place) -> Text
+```
+
+A group's name. The standards' names (TIFF, EXIF, GPS, DNG, XMP) aren't translated.
+
+- Parameter place: The group.
+- Returns: The name.
+
+## `EveryTagPage/revealed`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@Binding @MainActor var revealed: Set<String> { get nonmutating set }
+```
+
+The identifying values the person chose to see.
+
+## `EveryTagSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor struct EveryTagSection
+```
+
+Every Tag (`docs/design/BUILD-SPEC.md`, 3.15, group 8): one row for each file with how many
+tags, blocks and properties it holds, each opening that file's page.
+
+## `EveryTagSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `EveryTagSection/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details.
+
+## `EveryTagSection/init(details:revealed:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor init(details: PhotoDetails, revealed: Binding<Set<String>>)
+```
+
+Creates the group.
+
+- Parameters:
+  - details: The details.
+  - revealed: The values the person chose to see.
+
+## `EveryTagSection/revealed`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@Binding @MainActor var revealed: Set<String> { get nonmutating set }
+```
+
+The identifying values the person chose to see.
+
 ## `ExplainedToggle`
 
 internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
@@ -5052,6 +5340,63 @@ internal, declared in `Sources/NopeUI/ExplainedToggle.swift`
 ```
 
 The setting's name, also the switch's Voice Control name.
+
+## `ExposureSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor struct ExposureSection
+```
+
+Exposure (`docs/design/BUILD-SPEC.md`, 3.15, group 1): the exposure as the files record it,
+with the less-asked values behind More Exposure Details. When the files hold no exposure, the
+shutter and ISO the camera reported, each marked "Not in the files".
+
+## `ExposureSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `ExposureSection/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details.
+
+## `ExposureSection/init(details:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor init(details: PhotoDetails)
+```
+
+Creates the group.
+
+- Parameter details: The details.
+
+## `ExposureSection/millimeters(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func millimeters(_ value: Double) -> String
+```
+
+A length in millimeters, such as "6.86 mm".
+
+- Parameter value: The length in millimeters.
+- Returns: The text.
 
 ## `FailureAction`
 
@@ -5300,61 +5645,75 @@ static var title: Text { get }
 
 The title of the setting and tray item: "Fast Shutter".
 
-## `FileDetailsRows`
+## `FilesSection`
 
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
 
 ```swift
-@MainActor struct FileDetailsRows
+@MainActor struct FilesSection
 ```
 
-One file's rows: its format and size, then its pixel size, bit depth and, for a DNG, the
-color filter pattern, levels and lens corrections.
+Files (group 4): one row for each file, with its size, pixels, bit depth and, for a developed
+copy, color space and quality; then how a RAW and a copy were added to Photos.
 
-## `FileDetailsRows/body`
+## `FilesSection/body`
 
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
 
 ```swift
 @MainActor var body: some View { get }
 ```
 
-The rows, as one element per file for VoiceOver.
+The group.
 
-## `FileDetailsRows/file`
+## `FilesSection/details`
 
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor let file: PhotoDetails.File
-```
-
-The file.
-
-## `FileDetailsRows/init(file:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
 
 ```swift
-@MainActor init(file: PhotoDetails.File)
+@MainActor let details: PhotoDetails
 ```
 
-Creates the rows.
+The details.
+
+## `FilesSection/facts(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func facts(of file: PhotoDetails.File) -> Text?
+```
+
+A file's pixels, bit depth and, for a developed copy, color space and quality; for a RAW,
+"lossless" when its compression keeps every value.
 
 - Parameter file: The file.
+- Returns: The text, or `nil` without a pixel size.
 
-## `FileDetailsRows/levels(_:)`
+## `FilesSection/init(details:)`
 
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
 
 ```swift
-@MainActor static func levels(_ values: [Double]) -> String
+@MainActor init(details: PhotoDetails)
 ```
 
-Level values as a list, such as "528, 528, 528, 528".
+Creates the group.
 
-- Parameter values: The values.
-- Returns: The list, in the current language.
+- Parameter details: The details.
+
+## `FilesSection/pairing(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func pairing(_ pairing: PhotoDetails.PhotosPairing) -> Text
+```
+
+How a RAW and a copy were added to Photos.
+
+- Parameter pairing: The pairing.
+- Returns: The sentence, from `Honesty.xcstrings`.
 
 ## `FirstRunView`
 
@@ -6450,6 +6809,104 @@ let style: GridStyle
 
 The style.
 
+## `HiddenValueRow`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor struct HiddenValueRow
+```
+
+A row whose identifying value reads "Hidden" until the person taps Show Value, as in Compare.
+
+## `HiddenValueRow/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row, then the Show Value button while hidden.
+
+## `HiddenValueRow/init(title:value:note:isHidden:showLocation:reveal:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor init(title: Text, value: Text, note: Text?, isHidden: Bool, showLocation: Bool = false, reveal: @escaping () -> Void)
+```
+
+Creates the row.
+
+- Parameters:
+  - title: The title.
+  - value: The value.
+  - note: A note under the value, or `nil`.
+  - isHidden: Whether the value is hidden.
+  - showLocation: Whether the value is the location.
+  - reveal: Shows the value.
+
+## `HiddenValueRow/isHidden`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let isHidden: Bool
+```
+
+Whether the value is hidden.
+
+## `HiddenValueRow/note`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let note: Text?
+```
+
+A note under the value, or `nil`.
+
+## `HiddenValueRow/reveal`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let reveal: () -> Void
+```
+
+Shows the value.
+
+## `HiddenValueRow/showLocation`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let showLocation: Bool
+```
+
+Whether the value is the location, so Voice Control also answers to "Show Location".
+
+## `HiddenValueRow/title`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The title.
+
+## `HiddenValueRow/value`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let value: Text
+```
+
+The value, shown once revealed.
+
 ## `HintLabel`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -7421,6 +7878,61 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 
 The selected lens's identifier.
 
+## `LensSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor struct LensSection
+```
+
+Lens and Camera (group 2): the names the files hold; with none, the lens that was selected,
+marked "Not in the files". Left out when there is neither.
+
+## `LensSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `LensSection/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details.
+
+## `LensSection/init(details:lens:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor init(details: PhotoDetails, lens: Lens?)
+```
+
+Creates the group.
+
+- Parameters:
+  - details: The details.
+  - lens: The lens, or `nil`.
+
+## `LensSection/lens`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor let lens: Lens?
+```
+
+The lens the photo was taken with, or `nil`.
+
 ## `LevelOverlay`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
@@ -8380,6 +8892,112 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 ```
 
 Whether Pro Tools is shown; the camera screen presents it.
+
+## `MetadataItemsSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor struct MetadataItemsSection
+```
+
+Details in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 6): the location first, hidden
+until the person asks; then In the Files (open), each optional detail the files hold with its
+value; Left Out, with the reason beside each item; Always Saved, the locked items; and whether
+the Standard File Tags were written.
+
+Privacy: the location is an identifying value. It reads "Hidden" until Show Value, and what
+was revealed lives in the sheet's state only, forgotten when it closes.
+
+## `MetadataItemsSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `MetadataItemsSection/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details.
+
+## `MetadataItemsSection/inTheFiles`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor static var inTheFiles: Text { get }
+```
+
+"In the files", for a detail the files hold.
+
+## `MetadataItemsSection/init(details:revealed:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor init(details: PhotoDetails, revealed: Binding<Set<String>>)
+```
+
+Creates the group.
+
+- Parameters:
+  - details: The details.
+  - revealed: The values the person chose to see.
+
+## `MetadataItemsSection/locationKey`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor static let locationKey: String
+```
+
+The key of the location in ``revealed``.
+
+## `MetadataItemsSection/revealed`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@Binding @MainActor var revealed: Set<String> { get nonmutating set }
+```
+
+The identifying values the person chose to see.
+
+## `MetadataItemsSection/text(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor static func text(of value: PhotoDetails.ItemValue) -> Text
+```
+
+An item value as text: the text, the date and time, or the coordinates and altitude.
+
+- Parameter value: The value.
+- Returns: The text.
+
+## `MetadataItemsSection/value(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+@MainActor static func value(of receipt: PhotoDetails.ItemReceipt) -> Text
+```
+
+A written item's value: its text, date or place, or what stands for it.
+
+- Parameter receipt: The written item.
+- Returns: The text.
 
 ## `ModeCard`
 
@@ -11900,6 +12518,37 @@ One rectangle per in-focus cell.
 
 - Parameter rect: The picture's rectangle.
 
+## `PhotoDetailsCover`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor struct PhotoDetailsCover
+```
+
+Covers the sheet while the app isn't the active app, so the app switcher's snapshot holds no
+value (`docs/design/BUILD-SPEC.md`, 3.15).
+
+## `PhotoDetailsCover/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+An opaque background.
+
+## `PhotoDetailsCover/init()`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the cover.
+
 ## `PhotoDetailsSections`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -11908,7 +12557,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor struct PhotoDetailsSections
 ```
 
-The sections of the photo details.
+The groups of the photo details, in the fixed order of `docs/design/BUILD-SPEC.md`, 3.15.
 
 ## `PhotoDetailsSections/body`
 
@@ -11918,7 +12567,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor var body: some View { get }
 ```
 
-The sections.
+The groups.
 
 ## `PhotoDetailsSections/details`
 
@@ -11930,17 +12579,31 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 The details shown.
 
-## `PhotoDetailsSections/init(details:)`
+## `PhotoDetailsSections/init(photo:details:lens:revealed:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor init(details: PhotoDetails)
+@MainActor init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, revealed: Binding<Set<String>>)
 ```
 
 Creates the sections.
 
-- Parameter details: The details shown.
+- Parameters:
+  - photo: The photo.
+  - details: The details shown.
+  - lens: The lens, or `nil`.
+  - revealed: The values the person chose to see.
+
+## `PhotoDetailsSections/lens`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let lens: Lens?
+```
+
+The lens the photo was taken with, or `nil`.
 
 ## `PhotoDetailsSections/milliseconds(_:)`
 
@@ -11954,6 +12617,16 @@ A duration as milliseconds, such as "112 ms", in the current language.
 
 - Parameter duration: The duration.
 - Returns: The text.
+
+## `PhotoDetailsSections/photo`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let photo: SavedPhoto
+```
+
+The photo.
 
 ## `PhotoDetailsSections/processing(_:)`
 
@@ -11981,6 +12654,16 @@ Why an optional item isn't in the files.
 - Parameter state: What happened to the item.
 - Returns: The reason, from `Honesty.xcstrings`.
 
+## `PhotoDetailsSections/revealed`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@Binding @MainActor var revealed: Set<String> { get nonmutating set }
+```
+
+The identifying values the person chose to see.
+
 ## `PhotoDetailsSections/signatureStyle(_:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -11989,7 +12672,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor static func signatureStyle(_ signature: SignatureStatus) -> AnyShapeStyle
 ```
 
-The color of the signature row's symbol: teal for a verified fact, the secondary text
+The color of the signature line's symbol: teal for a verified fact, the secondary text
 color for plain information, amber for a warning.
 
 - Parameter signature: The photo's signature status.
@@ -12003,7 +12686,7 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor static func signatureSymbol(_ signature: SignatureStatus) -> String
 ```
 
-The symbol of the signature row: the seal when signed; the info symbol when signing is
+The symbol of the signature line: the seal when signed; the info symbol when signing is
 off in Settings, which is the person's choice and not a problem (`docs/design/BUILD-SPEC.md`,
 3.9); the warning triangle when a photo couldn't be signed.
 
@@ -12018,16 +12701,21 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor struct PhotoDetailsSheet
 ```
 
-"What's in This Photo": the facts read back from a photo the app just saved (issue #53),
-opened from the last-photo thumbnail.
+"What's in This Photo": what the app can say about a photo it saved in this session, read
+back from the saved files (issue #53; `docs/design/BUILD-SPEC.md`, 3.15), opened from Photo
+Details.
 
-A native list with one section per topic, each with a heading VoiceOver can jump between:
-the files, the RAW clipping, the exposure as written, the processing, the signature, the details kept and left
-out, everything the read-back found, and the timings. Every value comes from
-`SavedPhoto.details`; a value the file doesn't hold isn't shown.
+A native list in a fixed order: a summary card, then Exposure, Lens and Camera, RAW Sensor
+Data, Files, Processing, Details in This Photo, Content Credentials, Every Tag and Timing, each
+with a heading VoiceOver can jump between. Long lists are behind system disclosure rows; each
+file's full tag list is a page of its own. Every value comes from `SavedPhoto.details`; a value
+the app doesn't hold has no row.
 
-Privacy: on screen only. Nothing is logged, stored or copied, and the text can't be selected
-(no clipboard access).
+Privacy: on screen only. Nothing is logged, stored or copied, the text can't be selected (no
+clipboard access) and there is no share action. Identifying values (the location, maker
+notes, IDs) read "Hidden" until the person asks; what was revealed is forgotten when the sheet
+closes, and the contents are covered while the scene isn't active, so the app switcher's
+snapshot holds no value.
 
 ## `PhotoDetailsSheet/body`
 
@@ -12037,14 +12725,14 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 @MainActor var body: some View { get }
 ```
 
-The list, with a Done button.
+The list, with a Done button, covered while the app isn't active.
 
-## `PhotoDetailsSheet/init(photos:openPhoto:)`
+## `PhotoDetailsSheet/init(photos:openPhoto:lenses:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor init(photos: [SavedPhoto], openPhoto: (() -> Void)?)
+@MainActor init(photos: [SavedPhoto], openPhoto: (() -> Void)?, lenses: [Lens] = [])
 ```
 
 Creates the sheet.
@@ -12052,6 +12740,17 @@ Creates the sheet.
 - Parameters:
   - photos: The photos of the last press of the shutter.
   - openPhoto: Opens Photos, or `nil`.
+  - lenses: The device's lenses, or none.
+
+## `PhotoDetailsSheet/lenses`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The device's lenses, to name the lens a photo was taken with when the files don't.
 
 ## `PhotoDetailsSheet/openPhoto`
 
@@ -12072,6 +12771,134 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 ```
 
 The photos of the last press of the shutter: one, or a bracket's frames.
+
+## `PhotoDetailsText`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+enum PhotoDetailsText
+```
+
+Words and formats shared by the groups of What's in This Photo.
+
+## `PhotoDetailsText/asWritten`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+static var asWritten: Text { get }
+```
+
+"As written in the files.", the footer of the Exposure and Lens and Camera groups.
+
+## `PhotoDetailsText/hidden`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+static var hidden: Text { get }
+```
+
+"Hidden", for an identifying value not yet shown (the Compare string).
+
+## `PhotoDetailsText/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+static func name(of lens: Lens) -> String
+```
+
+A lens's short name: its zoom factor, such as "1×", or its kind ("Front") without one.
+
+- Parameter lens: The lens.
+- Returns: The name.
+
+## `PhotoDetailsText/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+static func name(of metering: PhotoDetails.MeteringValue) -> String
+```
+
+The name of an EXIF metering mode: the app's Center and Spot, or the EXIF term.
+
+- Parameter metering: The value.
+- Returns: The name, or the code as a number.
+
+## `PhotoDetailsText/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+static func name(of mode: PhotoDetails.ExposureModeValue) -> String
+```
+
+The name of an EXIF exposure mode: the app's Auto and Manual, or the EXIF term.
+
+- Parameter mode: The value.
+- Returns: The name, or the code as a number.
+
+## `PhotoDetailsText/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+static func name(of program: PhotoDetails.ExposureProgramValue) -> String
+```
+
+The EXIF term for an exposure program.
+
+- Parameter program: The value.
+- Returns: The name, or the code as a number.
+
+## `PhotoDetailsText/notInFiles`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+static var notInFiles: Text { get }
+```
+
+"Not in the files", the note under a value the files don't hold.
+
+## `PhotoDetailsText/numbers(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+static func numbers(_ values: [Double]) -> String
+```
+
+Numbers as a list, such as "528, 528, 528, 528".
+
+- Parameter values: The values.
+- Returns: The list, in the current language.
+
+## `PhotoDetailsText/pixels(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+static func pixels(of file: PhotoDetails.File) -> String?
+```
+
+A file's size in pixels, such as "4032 × 3024 pixels", or `nil` without one.
+
+- Parameter file: The file.
+- Returns: The text.
+
+## `PhotoDetailsText/showValue`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsPrivacy.swift`
+
+```swift
+static var showValue: Text { get }
+```
+
+"Show Value" (the Compare string).
 
 ## `PhotoSizeSettingsView`
 
@@ -13459,6 +14286,101 @@ kept inside the picture's edges.
   - maximum: The zoom limit.
 - Returns: The new zoom.
 
+## `PhotoSummaryCard`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor struct PhotoSummaryCard
+```
+
+The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0):
+the formats, the lens, the pixel size and total size, then four lines with symbols: what kind
+of photo it is, the signature, how many optional details the files hold, and whether they hold
+a location. One section with one row, read by VoiceOver as one element.
+
+## `PhotoSummaryCard/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `PhotoSummaryCard/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+Its details.
+
+## `PhotoSummaryCard/detailsCount(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func detailsCount(_ count: Int) -> Text
+```
+
+How many optional details the files hold, the location not counted.
+
+- Parameter count: The count.
+- Returns: The sentence, from `Honesty.xcstrings`, with its plural rule.
+
+## `PhotoSummaryCard/init(photo:details:lens:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?)
+```
+
+Creates the card.
+
+- Parameters:
+  - photo: The photo.
+  - details: Its details.
+  - lens: The lens, or `nil`.
+
+## `PhotoSummaryCard/kind(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func kind(of details: PhotoDetails) -> Text
+```
+
+The kind of a photo with RAW: one frame of sensor data, and the copies developed from it.
+A photo saved without its RAW (copies only) says how the copies were made.
+
+- Parameter details: The details.
+- Returns: The sentence, from `Honesty.xcstrings`.
+
+## `PhotoSummaryCard/lens`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let lens: Lens?
+```
+
+The lens it was taken with, or `nil`.
+
+## `PhotoSummaryCard/photo`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let photo: SavedPhoto
+```
+
+The photo.
+
 ## `PresetNameScreen`
 
 internal, declared in `Sources/NopeUI/PresetsScreen.swift`
@@ -14177,6 +15099,63 @@ internal, declared in `Sources/NopeUI/ProcessingNote.swift`
 ```
 
 The look of the HEIF and JPEG copies developed from a RAW.
+
+## `ProcessingSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor struct ProcessingSection
+```
+
+Processing (group 5): what was done to each file's picture and by whom; for a processed
+fallback, the lens's distortion correction and what the app did.
+
+## `ProcessingSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `ProcessingSection/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+The details.
+
+## `ProcessingSection/init(details:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor init(details: PhotoDetails)
+```
+
+Creates the group.
+
+- Parameter details: The details.
+
+## `ProcessingSection/look(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@ViewBuilder @MainActor static func look(of processing: PhotoDetails.Processing) -> some View
+
+```
+
+What a developed copy's look does, or nothing for other files.
+
+- Parameter processing: The processing.
+- Returns: The sentence, from `Honesty.xcstrings`.
 
 ## `QuickButton`
 
@@ -15793,103 +16772,6 @@ internal, declared in `Sources/NopeUI/QuickPanel.swift`
 
 The tiles, in display order.
 
-## `RAWClippingSection`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor struct RAWClippingSection
-```
-
-The clipping counted from the RAW sensor data when the photo was taken (issue #53): the share
-of photosites that are clipped highlights and clipped shadows, then each color's, with the
-definition under them; or why it wasn't measured.
-
-## `RAWClippingSection/body`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The section.
-
-## `RAWClippingSection/init(result:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor init(result: RAWClippingResult)
-```
-
-Creates the section.
-
-- Parameter result: The clipping, or why it wasn't measured.
-
-## `RAWClippingSection/name(of:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor static func name(of color: CFAColor) -> Text
-```
-
-The name of a color of the color filter.
-
-- Parameter color: The color.
-- Returns: The name.
-
-## `RAWClippingSection/percent(_:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor static func percent(_ share: Double) -> String
-```
-
-A share as a percentage with up to two significant digits, such as "0.4%" or "0.0012%",
-so a small share never reads as 0; exactly 0 is "0%".
-
-- Parameter share: The share, 0 to 1.
-- Returns: The percentage, in the current language.
-
-## `RAWClippingSection/reason(_:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor static func reason(_ failure: RAWClippingFailure) -> Text
-```
-
-Why the clipping wasn't measured, in plain words.
-
-- Parameter failure: The reason.
-- Returns: The text, from `Honesty.xcstrings`.
-
-## `RAWClippingSection/result`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor let result: RAWClippingResult
-```
-
-The clipping, or why it wasn't measured.
-
-## `RAWClippingSection/share(_:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
-
-```swift
-@MainActor static func share(_ share: Double) -> Text
-```
-
-A share of photosites, such as "0.4% of photosites".
-
-- Parameter share: The share, 0 to 1.
-- Returns: The text.
-
 ## `ReadoutLabel`
 
 internal, declared in `Sources/NopeUI/ManualControlsView.swift`
@@ -16430,6 +17312,141 @@ func resolve(in environment: EnvironmentValues) -> AnyShapeStyle
 The style for the environment.
 
 - Parameter environment: The view's environment.
+
+## `SensorSection`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor struct SensorSection
+```
+
+RAW Sensor Data (group 3): the RAW file's size, bit depth, color filter, clipping and lens
+corrections, with the levels, structure and each color's clipping behind More Sensor Details.
+Shown only for a photo with RAW.
+
+## `SensorSection/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The group.
+
+## `SensorSection/clipping`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor let clipping: RAWClippingResult?
+```
+
+The clipping counted at capture, or why it wasn't; `nil` when unknown.
+
+## `SensorSection/crop(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func crop(_ structure: PhotoDetails.RAWStructure) -> Text
+```
+
+The default crop, such as "4032 × 3024 at 0, 0".
+
+- Parameter structure: The DNG's structure, with a crop size of two numbers.
+- Returns: The text.
+
+## `SensorSection/file`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor let file: PhotoDetails.File
+```
+
+The RAW file.
+
+## `SensorSection/init(file:clipping:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor init(file: PhotoDetails.File, clipping: RAWClippingResult?)
+```
+
+Creates the group.
+
+- Parameters:
+  - file: The RAW file.
+  - clipping: The clipping, or `nil`.
+
+## `SensorSection/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func name(of color: CFAColor) -> Text
+```
+
+The name of a color of the color filter.
+
+- Parameter color: The color.
+- Returns: The name.
+
+## `SensorSection/name(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func name(of compression: PhotoDetails.RAWCompression) -> Text
+```
+
+A RAW compression's name, or its code.
+
+- Parameter compression: The compression.
+- Returns: The text.
+
+## `SensorSection/percent(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func percent(_ share: Double) -> String
+```
+
+A share as a percentage with up to two significant digits, such as "0.4%" or "0.0012%",
+so a small share never reads as 0; exactly 0 is "0%".
+
+- Parameter share: The share, 0 to 1.
+- Returns: The percentage, in the current language.
+
+## `SensorSection/reason(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func reason(_ failure: RAWClippingFailure) -> Text
+```
+
+Why the clipping wasn't measured, in plain words.
+
+- Parameter failure: The reason.
+- Returns: The text, from `Honesty.xcstrings`.
+
+## `SensorSection/share(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsGroups.swift`
+
+```swift
+@MainActor static func share(_ share: Double) -> Text
+```
+
+A share of photosites, such as "0.4% of photosites".
+
+- Parameter share: The share, 0 to 1.
+- Returns: The text.
 
 ## `SeriesScreen`
 
@@ -19982,6 +20999,188 @@ let spacing: CGFloat
 ```
 
 The space between the symbol and the text.
+
+## `SymbolLine`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor struct SymbolLine
+```
+
+A line of words led by a symbol that VoiceOver skips: the words carry the state. An
+`HStack` on the first baseline rather than a `Label`, whose wrapped text the accessibility
+audit reported as clipped inside a list row.
+
+## `SymbolLine/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The line.
+
+## `SymbolLine/init(text:symbol:style:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor init(text: Text, symbol: String, style: AnyShapeStyle)
+```
+
+Creates the line.
+
+- Parameters:
+  - text: The words.
+  - symbol: The SF Symbol name.
+  - style: The symbol's color.
+
+## `SymbolLine/style`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let style: AnyShapeStyle
+```
+
+The symbol's color.
+
+## `SymbolLine/symbol`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let symbol: String
+```
+
+The SF Symbol name.
+
+## `SymbolLine/text`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let text: Text
+```
+
+The words.
+
+## `TagNumberContent`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor struct TagNumberContent
+```
+
+The tag number as VoiceOver custom content (the More Content rotor), so it doesn't slow the
+list; nothing for a block or an XMP property.
+
+## `TagNumberContent/body(content:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The view with the custom content.
+
+- Parameter content: The view.
+
+## `TagNumberContent/init(number:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor init(number: String?)
+```
+
+Creates the modifier.
+
+- Parameter number: The tag number, or `nil`.
+
+## `TagNumberContent/number`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor let number: String?
+```
+
+The tag number, such as `0x829A`, or `nil`.
+
+## `TagRow`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor struct TagRow
+```
+
+One tag, block or property: its name, its value and, in a footnote, its tag number and what
+controls it.
+
+## `TagRow/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The row, read as "ExposureTime, 0.008, Exposure Settings", with the tag number as custom
+content.
+
+## `TagRow/control(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor static func control(_ control: PhotoDetails.TagEntry.Control) -> Text
+```
+
+What controls an entry: its setting, "Always saved", or the signature.
+
+- Parameter control: The control.
+- Returns: The text.
+
+## `TagRow/entry`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor let entry: PhotoDetails.TagEntry
+```
+
+The entry.
+
+## `TagRow/init(entry:isHidden:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor init(entry: PhotoDetails.TagEntry, isHidden: Bool)
+```
+
+Creates the row.
+
+- Parameters:
+  - entry: The entry.
+  - isHidden: Whether its value is hidden.
+
+## `TagRow/isHidden`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
+
+```swift
+@MainActor let isHidden: Bool
+```
+
+Whether its value is hidden.
 
 ## `ThumbnailSlot`
 

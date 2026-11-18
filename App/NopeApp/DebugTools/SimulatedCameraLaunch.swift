@@ -162,11 +162,17 @@ enum SimulatedCameraLaunch {
 
     /// An emptied settings store for a UI test launch, or `nil` without a scenario, so UI tests
     /// always start from the default settings and never change the real ones. With
-    /// ``signingArgument``, signing is turned on in it.
+    /// ``signingArgument``, signing is turned on in it; with `-NopeSimulatedSaveSettings <base64 json>`
+    /// (``SimulatedFileTags/saveSettingsArgument``), the save settings are that JSON.
     @MainActor static func settingsStore() -> UserDefaults? {
         let arguments = ProcessInfo.processInfo.arguments
         guard arguments.contains(argument), let store = UserDefaults(suiteName: settingsSuiteName) else { return nil }
         store.removePersistentDomain(forName: settingsSuiteName)
+        if let index = arguments.firstIndex(of: SimulatedFileTags.saveSettingsArgument), index + 1 < arguments.count {
+            // Base64, so the arguments domain reads it as a plain string: JSON text there made it
+            // ignore the other arguments of the launch, such as the text size.
+            store.set(Data(base64Encoded: arguments[index + 1]), forKey: SimulatedFileTags.saveSettingsKey)
+        }
         if arguments.contains(signingArgument) { NopeSettings(defaults: store).setSignsPhotos(true) }
         return store
     }
@@ -220,7 +226,9 @@ enum SimulatedCameraLaunch {
         return PhotoSaver(
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
-            reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
+            reader: SimulatedReadBack(
+                addsUnexpectedTag: scenario == .metadataRejected,
+                fullTags: SimulatedFileTags.fromLaunchArguments(appVersion: appVersion)),
             library: SimulatedPhotoLibrary(
                 allowsAdding: scenario != .photosDenied, addSeconds: [.slowSaving, .astro, .burst].contains(scenario) ? 0.5 : 0,
                 successfulAdds: scenario == .firstSaveOnly ? 1 : nil),

@@ -35,6 +35,322 @@
         }
       }
     },
+    "%@ at %@" : {
+      "comment" : "In the photo details: the DNG default crop, its size then its origin, such as 4032 × 3024 at 0, 0.",
+      "extractionState" : "manual"
+    },
+    "%@ MP" : {
+      "comment" : "In the photo details, under a size in pixels: the number of megapixels, such as 12 MP. MP means megapixels.",
+      "extractionState" : "manual"
+    },
+    "%@ · %@" : {
+      "comment" : "Every Tag page of the photo details: a tag's number, then the setting that controls it, such as 0x829A · Exposure Settings. Keep the separator.",
+      "extractionState" : "manual"
+    },
+    "%@ · %lld-bit" : {
+      "comment" : "In the photo details, under a file: its pixels and bit depth, such as 4032 × 3024 pixels · 10-bit.",
+      "extractionState" : "manual"
+    },
+    "%@ · %lld-bit · %@ · %@" : {
+      "comment" : "In the photo details, under a HEIF or JPEG copy: its pixels, bit depth, color space and compression quality, such as 4032 × 3024 pixels · 10-bit · Display P3 · High Quality. The last placeholder is the name of the compression choice in Settings.",
+      "extractionState" : "manual"
+    },
+    "%@ · %lld-bit · lossless" : {
+      "comment" : "In the photo details, under a RAW file: its pixels, bit depth and that its compression is lossless, such as 4032 × 3024 pixels · 12-bit · lossless.",
+      "extractionState" : "manual"
+    },
+    "%@, altitude %@" : {
+      "comment" : "In the photo details, the location the files hold, after Show Value: the latitude and longitude in degrees, then the altitude, such as 45.5231°, -122.6765°, altitude 312 m.",
+      "extractionState" : "manual"
+    },
+    "35 mm Equivalent" : {
+      "comment" : "Row in the photo details: the focal length a 35 mm film camera would need for the same field of view, in millimeters, as written in the file.",
+      "extractionState" : "manual"
+    },
+    "Action program" : {
+      "comment" : "In the photo details: the EXIF exposure program Action program, biased toward a fast shutter.",
+      "extractionState" : "manual"
+    },
+    "Active Area" : {
+      "comment" : "Row in the photo details: the DNG ActiveArea, the part of the sensor with image data, as four numbers (top, left, bottom, right).",
+      "extractionState" : "manual"
+    },
+    "Always saved" : {
+      "comment" : "Every Tag page of the photo details: every file of this format holds the tag; no setting controls it.",
+      "extractionState" : "manual"
+    },
+    "As-Shot Neutral" : {
+      "comment" : "Row in the photo details: the DNG AsShotNeutral, the white balance at capture, as one number per color.",
+      "extractionState" : "manual"
+    },
+    "Auto bracket" : {
+      "comment" : "In the photo details: the EXIF exposure mode Auto bracket, the camera took a bracket of exposures.",
+      "extractionState" : "manual"
+    },
+    "Average" : {
+      "comment" : "In the photo details: the EXIF metering mode Average.",
+      "extractionState" : "manual"
+    },
+    "Baseline Exposure" : {
+      "comment" : "Row in the photo details: the DNG BaselineExposure, in EV, that raw editors apply by default.",
+      "extractionState" : "manual"
+    },
+    "Bit Depth" : {
+      "comment" : "Row in the photo details: the bits stored for each sample of the RAW, such as 12.",
+      "extractionState" : "manual"
+    },
+    "Black Level" : {
+      "comment" : "Row in the photo details: the RAW file's black level values, as numbers.",
+      "extractionState" : "manual"
+    },
+    "Color Filter Pattern" : {
+      "comment" : "Row in the photo details: the RAW sensor's color filter pattern, as letters such as RGGB (R red, G green, B blue). Keep the letters unchanged.",
+      "extractionState" : "manual"
+    },
+    "Compression" : {
+      "comment" : "Row in the photo details: how the RAW data is compressed.",
+      "extractionState" : "manual"
+    },
+    "Creative program" : {
+      "comment" : "In the photo details: the EXIF exposure program Creative program, biased toward depth of field.",
+      "extractionState" : "manual"
+    },
+    "Default Crop" : {
+      "comment" : "Row in the photo details: the DNG default crop, its size and origin.",
+      "extractionState" : "manual"
+    },
+    "DNG Version" : {
+      "comment" : "Row in the photo details: the version of the DNG specification the RAW file follows. DNG is a file format name.",
+      "extractionState" : "manual"
+    },
+    "Every Tag" : {
+      "comment" : "Heading in the photo details: every metadata tag, block and property of each saved file.",
+      "extractionState" : "manual"
+    },
+    "EXIF metering: Other" : {
+      "comment" : "In the photo details: the EXIF metering mode Other (code 255).",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        }
+      }
+    },
+    "EXIF metering: Unknown" : {
+      "comment" : "In the photo details: the EXIF metering mode Unknown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown"
+          }
+        }
+      }
+    },
+    "EXIF program: Aperture priority" : {
+      "comment" : "In the photo details: the EXIF exposure program Aperture priority.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aperture priority"
+          }
+        }
+      }
+    },
+    "EXIF program: Manual" : {
+      "comment" : "In the photo details: the EXIF exposure program Manual.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Manual"
+          }
+        }
+      }
+    },
+    "EXIF program: Shutter priority" : {
+      "comment" : "In the photo details: the EXIF exposure program Shutter priority.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shutter priority"
+          }
+        }
+      }
+    },
+    "File Structure" : {
+      "comment" : "Group on the Every Tag page of the photo details: the file's container blocks (HEIF boxes, JPEG segments).",
+      "extractionState" : "manual"
+    },
+    "Landscape mode" : {
+      "comment" : "In the photo details: the EXIF exposure program Landscape mode.",
+      "extractionState" : "manual"
+    },
+    "Largest Aperture" : {
+      "comment" : "Row in the photo details: the lens's widest aperture, as an f-number, as written in the file.",
+      "extractionState" : "manual"
+    },
+    "Lens and Camera" : {
+      "comment" : "Heading in the photo details: the lens and camera names.",
+      "extractionState" : "manual"
+    },
+    "Lens Corrections" : {
+      "comment" : "Row in the photo details: whether the RAW file holds lens correction instructions.",
+      "extractionState" : "manual"
+    },
+    "Lens Maker" : {
+      "comment" : "Row in the photo details: the maker of the lens, as written in the file.",
+      "extractionState" : "manual"
+    },
+    "Lossless JPEG" : {
+      "comment" : "In the photo details: the RAW data is compressed with lossless JPEG (DNG compression 7). JPEG is a format name.",
+      "extractionState" : "manual"
+    },
+    "Lossy JPEG" : {
+      "comment" : "In the photo details: the RAW data is compressed with lossy JPEG (DNG compression 34892). JPEG is a format name.",
+      "extractionState" : "manual"
+    },
+    "More Exposure Details" : {
+      "comment" : "Disclosure row in the photo details: opens the less-asked exposure values (exposure mode, program, metering, brightness, largest aperture, subject area).",
+      "extractionState" : "manual"
+    },
+    "More Sensor Details" : {
+      "comment" : "Disclosure row in the photo details: opens each color's clipping, the black and white levels and the RAW file's structure.",
+      "extractionState" : "manual"
+    },
+    "Multi-spot" : {
+      "comment" : "In the photo details: the EXIF metering mode Multi-spot.",
+      "extractionState" : "manual"
+    },
+    "Normal program" : {
+      "comment" : "In the photo details: the EXIF exposure program Normal program, the camera's automatic exposure.",
+      "extractionState" : "manual"
+    },
+    "Not defined" : {
+      "comment" : "In the photo details: the EXIF exposure program Not defined.",
+      "extractionState" : "manual"
+    },
+    "Partial" : {
+      "comment" : "In the photo details: the EXIF metering mode Partial.",
+      "extractionState" : "manual"
+    },
+    "Pattern" : {
+      "comment" : "In the photo details: the EXIF metering mode Pattern, which measures many zones of the frame.",
+      "extractionState" : "manual"
+    },
+    "Photo details: Camera" : {
+      "comment" : "Row in the photo details: the camera's maker and model, as written in the file.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Camera"
+          }
+        }
+      }
+    },
+    "Photo details: Exposure" : {
+      "comment" : "Heading in the photo details: the shutter speed, ISO, aperture and other exposure values.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exposure"
+          }
+        }
+      }
+    },
+    "Photo details: Lens" : {
+      "comment" : "Row in the photo details: the lens the photo was taken with.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lens"
+          }
+        }
+      }
+    },
+    "Photo details: Program" : {
+      "comment" : "Row in the photo details: the EXIF exposure program the camera used, such as Normal program.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Program"
+          }
+        }
+      }
+    },
+    "Photo details: Size" : {
+      "comment" : "Row in the photo details: the RAW image's size in pixels, with its megapixels under it.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Size"
+          }
+        }
+      }
+    },
+    "Portrait mode" : {
+      "comment" : "In the photo details: the EXIF exposure program Portrait mode.",
+      "extractionState" : "manual"
+    },
+    "RAW Sensor Data" : {
+      "comment" : "Heading in the photo details: facts about the RAW file's sensor data. RAW is a file format name.",
+      "extractionState" : "manual"
+    },
+    "Scene Brightness" : {
+      "comment" : "Row in the photo details: the brightness of the scene the camera measured, in EV, as written in the file.",
+      "extractionState" : "manual"
+    },
+    "Show Hidden Values" : {
+      "comment" : "Button at the top of a group on the Every Tag page of the photo details: shows the group's identifying values, such as the location, until the sheet closes.",
+      "extractionState" : "manual"
+    },
+    "Show Location" : {
+      "comment" : "Voice Control name of the Show Value button of the location in the photo details.",
+      "extractionState" : "manual"
+    },
+    "Show Value, %@" : {
+      "comment" : "VoiceOver label of a Show Value button in the photo details. The placeholder is the row's title, such as Location.",
+      "extractionState" : "manual"
+    },
+    "Subject Area" : {
+      "comment" : "Row in the photo details: where the subject is in the picture, as two to four numbers in pixels, as written in the file.",
+      "extractionState" : "manual"
+    },
+    "Tag number" : {
+      "comment" : "VoiceOver More Content label on the Every Tag page: the tag's number, such as 0x829A.",
+      "extractionState" : "manual"
+    },
+    "Uncompressed" : {
+      "comment" : "In the photo details: the RAW data isn't compressed (TIFF compression 1).",
+      "extractionState" : "manual"
+    },
+    "Values shown." : {
+      "comment" : "VoiceOver announcement after Show Hidden Values on the Every Tag page: the hidden values of the group are now shown.",
+      "extractionState" : "manual"
+    },
+    "White Level" : {
+      "comment" : "Row in the photo details: the RAW file's white level values, as numbers.",
+      "extractionState" : "manual"
+    },
     "Photo Not Saved" : {
       "comment" : "Warning chip in the Last Photo viewer when a photo taken while the viewer was open couldn't be saved. Tapping it closes the viewer, where the camera says what went wrong.",
       "extractionState" : "manual"
@@ -282,14 +598,6 @@
       "comment" : "Live readout line: the exposure compensation set, then how far the metered exposure is from the camera's target, both in EV.",
       "extractionState" : "manual"
     },
-    "Bit depth: %lld" : {
-      "comment" : "In the photo details: a file's bit depth, the number of bits stored for each sample, such as 16.",
-      "extractionState" : "manual"
-    },
-    "Black level: %@" : {
-      "comment" : "In the photo details: the RAW file's black level values, as numbers.",
-      "extractionState" : "manual"
-    },
     "Blue" : {
       "comment" : "In the photo details: the blue photosites of the RAW sensor's color filter.",
       "extractionState" : "manual"
@@ -358,10 +666,6 @@
       "comment" : "Row in the photo details: the share of the RAW's photosites recorded at or near the black level (no signal).",
       "extractionState" : "manual"
     },
-    "Clipping in the RAW" : {
-      "comment" : "Heading in the photo details: how much of the RAW sensor data is clipped (recorded as full white or as black). RAW is a file format name.",
-      "extractionState" : "manual"
-    },
     "Close Exposure" : {
       "comment" : "Button that closes the exposure compensation dial on the camera.",
       "extractionState" : "manual"
@@ -376,10 +680,6 @@
     },
     "Cloudy" : {
       "comment" : "White balance preset for an overcast sky.",
-      "extractionState" : "manual"
-    },
-    "Color filter pattern: %@" : {
-      "comment" : "In the photo details: the RAW sensor's color filter pattern, as letters such as RGGB (R red, G green, B blue). Keep the letters unchanged.",
       "extractionState" : "manual"
     },
     "Color Space" : {
@@ -564,10 +864,6 @@
     },
     "Exposure and Focus Lock" : {
       "comment" : "VoiceOver and Voice Control name of the lock pill on the camera, shown while exposure or focus is locked.",
-      "extractionState" : "manual"
-    },
-    "Exposure as Written" : {
-      "comment" : "Heading in the photo details: the shutter speed, ISO, aperture and other exposure values exactly as the saved file records them.",
       "extractionState" : "manual"
     },
     "Exposure Compensation" : {
@@ -2258,10 +2554,6 @@
     },
     "White Balance / Tint" : {
       "comment" : "Live readout line: the white balance temperature in kelvin and the tint, then how white balance is controlled now (Auto or Locked).",
-      "extractionState" : "manual"
-    },
-    "White level: %@" : {
-      "comment" : "In the photo details: the RAW file's white level values, as numbers.",
       "extractionState" : "manual"
     },
     "Whole Frame" : {

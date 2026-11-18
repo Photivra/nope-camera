@@ -512,6 +512,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 |---|---|
 | `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the format status into the "Processed" marker; full auto shows only the default controls (no Settings button on the stacked camera); the camera flip; the format status's sheet, read-only on a lens without RAW; Q, the quick menu (closes on the shutter and on Q; Settings opens from its foot); signing off is stated after each photo without a warning chip; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
 | `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; a tap opens the Last Photo viewer, whose Photo Details opens "What's in This Photo", which lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail opens the viewer and not another app, and its Open in Photos brings the Photos app to the front; with `manual` and a bracket, each frame is its own page of the viewer |
+| `manual`, `noRAW`, `signingFails` with `-NopeSimulatedSaveSettings` and `-NopeSimulatedFileTags` | What's in This Photo in the 1.0.0 design (`PhotoDetailsUITests.swift`, `docs/design/BUILD-SPEC.md` 3.15): the summary's four lines; with the default settings the simulated camera's 1/60 s and ISO 100 and the lens marked "Not in the files"; the group headings in order; Files with "lossless", Display P3 and "One photo: the RAW with its HEIF"; each disclosure row opens and closes (In the Files open at first); the processed fallback's warning, distortion and "didn't change this file's picture" lines and no RAW Sensor Data; the three signature states; the location "Hidden" until Show Value, hidden again after reopening, "nothing to write" and "Off in Settings"; the Every Tag page (groups, a tag's value and setting, search, Show Hidden Values); the value hidden again after the app leaves the screen and returns; audits at the default and largest text sizes, right to left, in night mode (no non-red pixel), sideways and on iPad. `-NopeSimulatedSaveSettings <base64>` (debug builds) writes the save settings JSON, Base64-encoded so the arguments domain still reads the launch's other arguments, into the emptied UI test settings store; `-NopeSimulatedFileTags full` (or `fullNoLocation`) makes the simulated read-back return realistic tags, each only where the current settings' allowlist allows it |
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
@@ -1555,7 +1556,19 @@ can only be checked on hardware. On each device available (record the model and 
   keeps correction on even when the app turns it off: record it, so the note's wording for that
   lens can be changed by a reviewed pull request.
 - **What's in This Photo:** for a processed fallback photo, the Processing section shows the
-  same distortion line as the note; a RAW photo shows none.
+  same distortion line as the note; a RAW photo shows none. For a RAW + HEIF photo with every
+  detail on and with every detail off, compare each value of the 1.0.0 groups with
+  `exiftool -a -G1 -s` of the files exported from Photos as originals: the exposure values
+  (`FocalLengthIn35mmFormat`, `ExposureMode`, `ExposureProgram`, `MeteringMode`,
+  `BrightnessValue`, `MaxApertureValue`, `SubjectArea`), the lens and camera names, the DNG's
+  `ActiveArea`, `DefaultCropOrigin`, `DefaultCropSize`, `Compression`, `DNGVersion`,
+  `BaselineExposure` and `AsShotNeutral`, the date and location values, and that each Every Tag
+  page lists exactly the file's tags; with Exposure Settings off, the shutter and ISO marked
+  "Not in the files" match the camera's readout for that photo; with a RAW, a HEIF and a JPEG,
+  Photos shows the pairing the Files group states. With a location shown after Show Value, open
+  the app switcher: the sheet's snapshot is covered and shows no value (a UI test can't query the
+  app while its scene is inactive; it checks that the value is hidden again on return). Check VoiceOver, Voice Control and Switch
+  Control on the flows in `docs/design/ACCESSIBILITY.md` ("What's in This Photo").
 
 ### Viewfinder overlays on a device
 

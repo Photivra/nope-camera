@@ -185,7 +185,11 @@ public struct PhotoSaver: Sendable {
                 files: finished, plan: plan, look: settings.developedLook, signature: status, timings: timings,
                 rawClipping: photo.rawClipping,
                 // RAW never has the camera's distortion correction (`AVCaptureDevice.h`).
-                distortionCorrection: photo.format.isBayerRAW ? nil : distortionCorrection))
+                distortionCorrection: photo.format.isBayerRAW ? nil : distortionCorrection,
+                options: settings.fileOptions, pairing: settings.rawPairing,
+                // Privacy: the shutter, ISO and lens the camera reported stay in memory with the
+                // details for the session only (docs/PRIVACY.md, "Last photo and its details").
+                capture: PhotoDetails.CaptureReport(photo)))
         let savedFiles = finished.map(\.file)
         let preview = makesPreview ? previewer.flatMap { maker in quickest(of: savedFiles).flatMap(maker.preview(of:)) } : nil
         return (saved, savedFiles, preview)

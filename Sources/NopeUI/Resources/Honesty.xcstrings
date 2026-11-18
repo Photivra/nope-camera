@@ -9,6 +9,54 @@
       "comment" : "Explains why the locked details are always saved. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "%lld optional details in the files" : {
+      "comment" : "Summary line in the photo details: how many of the optional details (date, camera, lens and so on) the saved files hold. The location is not counted: it has its own line. Draft wording for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld optional detail in the files"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld optional details in the files"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld tags, blocks and properties in this file, as nope. read them back before saving it. Names are the standards' own." : {
+      "comment" : "Top of a file's Every Tag page in the photo details: how many metadata items the file holds. Tag, block and property names are not translated. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tag, block or property in this file, as nope. read it back before saving it. Names are the standards' own."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tags, blocks and properties in this file, as nope. read them back before saving it. Names are the standards' own."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A screen-size preview, not the full photo." : {
       "comment" : "Hint in the Last Photo viewer while the photo is zoomed in: what is shown is a screen-size preview held in memory, not the saved file. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
@@ -45,6 +93,10 @@
       "comment" : "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name.",
       "extractionState" : "manual"
     },
+    "As written in the files." : {
+      "comment" : "Footer of the Exposure and the Lens and Camera groups in the photo details: the values are exactly what the saved files hold. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Black and White Levels" : {
       "comment" : "Locked metadata item. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -71,6 +123,10 @@
     },
     "Color Profile (HEIF and JPEG)" : {
       "comment" : "Locked metadata item. HEIF and JPEG are file format names. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Content Credentials" : {
+      "comment" : "Heading in the photo details: the photo's Content Credentials signature. Content Credentials is the name of the C2PA standard's signatures. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Counted on the RAW sensor data when the photo was taken, over every photosite of the active area. Clipped highlights are within 0.5% of the white level or above it; clipped shadows are within 0.5% of the black level or below it, where 0.5% is of the range between the two levels." : {
@@ -104,12 +160,8 @@
         }
       }
     },
-    "Details Kept" : {
-      "comment" : "Heading in the photo details: the metadata items the saved files hold.",
-      "extractionState" : "manual"
-    },
-    "Details Left Out" : {
-      "comment" : "Heading in the photo details: the optional metadata items the saved files don't hold, each with the reason.",
+    "Details in This Photo" : {
+      "comment" : "Heading in the photo details: which metadata details the saved files hold and which they don't. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Developed by nope. from the RAW, Flat look" : {
@@ -156,12 +208,20 @@
       "comment" : "Claim 9 in docs/research/privacy-claims.md (peer-reviewed). Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "Every tag, block and property nope. read back from each file before saving it, with its value." : {
+      "comment" : "Footer of Every Tag in the photo details. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Exact Model for RAW Editors" : {
       "comment" : "Metadata item: the exact device model, used by RAW editing apps to pick a color profile. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "Exposure Settings" : {
       "comment" : "Metadata item: shutter speed, ISO, aperture and focal length. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Exposure Settings is off, so the files don't hold the exposure. These are the values the camera reported for this photo. nope. keeps them only until it closes." : {
+      "comment" : "Footer of the Exposure group in the photo details when the files hold no exposure: the shutter and ISO shown are what the camera reported, kept in memory until the app closes. Exposure Settings is the name of the setting. Keep nope. unchanged. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Faces and Autofocus" : {
@@ -200,6 +260,14 @@
       "comment" : "Explains the Red Viewfinder switch, which is always shown and takes effect in night mode. Night Mode is the name of nope.'s switch; use its translation. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "In Photos" : {
+      "comment" : "Row in the photo details: how the files were added to the Photos app. Photos is the system photo library app. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "In the files" : {
+      "comment" : "In the photo details: the saved files hold this detail. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "iOS Connections" : {
       "comment" : "Honesty heading: iOS itself goes online. iOS is a product name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -224,16 +292,16 @@
       "comment" : "What the Location item writes into each photo, and what turning it off costs. Must not claim more than the English.",
       "extractionState" : "manual"
     },
+    "Left Out" : {
+      "comment" : "Disclosure row in the photo details: the optional details the saved files don't hold, each with the reason. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Lens and camera names are off in Settings, so the files don't hold them." : {
+      "comment" : "Footer of the Lens and Camera group in the photo details when the files hold no lens or camera names: the lens shown is the one that was selected. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Lens Correction Instructions" : {
       "comment" : "Metadata item: instructions editors can use to correct lens distortion. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Lens corrections: not stored" : {
-      "comment" : "In the photo details: the RAW file holds no lens correction instructions.",
-      "extractionState" : "manual"
-    },
-    "Lens corrections: stored, not applied" : {
-      "comment" : "In the photo details: the RAW file holds lens correction instructions that editors can use, but nope. didn't apply them to the pixels.",
       "extractionState" : "manual"
     },
     "Lens Make and Model" : {
@@ -264,6 +332,10 @@
       "comment" : "Shown under the Location switch when a restriction, such as Screen Time, doesn't allow location access. Must not claim more than the English.",
       "extractionState" : "manual"
     },
+    "Location is in the files" : {
+      "comment" : "Summary line in the photo details: the saved files hold the location where the photo was taken (GPS). Shown with a warning symbol. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere." : {
       "comment" : "Issue #43; docs/PRIVACY.md, \"Location\". Honesty statement under Location Only If You Turn It On. Details in Each Photo is the name of nope.'s own settings page; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -292,12 +364,20 @@
       "comment" : "Metadata item: the camera maker's private notes in the file. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Manifest SHA-256: %@" : {
-      "comment" : "In the photo details: the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.",
+    "Manifest SHA-256" : {
+      "comment" : "Disclosure row in the photo details: opens the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.",
+      "extractionState" : "manual"
+    },
+    "Manifest SHA-256, %@" : {
+      "comment" : "Voice Control name of the Manifest SHA-256 row of one file in the photo details. The placeholder is the file's format, such as RAW (DNG). SHA-256 is a standard name; keep it unchanged.",
       "extractionState" : "manual"
     },
     "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings." : {
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "No contrast curve, and no noise reduction, sharpening or local tone mapping." : {
+      "comment" : "In the photo details, under a copy developed with the Flat look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "No contrast curve: closest to the sensor, so it looks flat and low in contrast." : {
@@ -308,8 +388,16 @@
       "comment" : "Honesty heading: the app collects no data. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "No location in the files" : {
+      "comment" : "Summary line in the photo details: the saved files hold no location. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "No Network" : {
       "comment" : "Honesty heading: the app never goes online. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "No optional details in the files" : {
+      "comment" : "Summary line in the photo details: the saved files hold none of the optional details (date, camera, lens and so on). Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "No RAW" : {
@@ -322,6 +410,10 @@
     },
     "nope. contains no networking code and makes no network connections." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "nope. didn't change this file's picture." : {
+      "comment" : "In the photo details, for a file the phone's camera processed (a lens without RAW): nope. didn't change its picture. Keep nope. unchanged. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "nope. keeps previews in memory only and has released this one. The photo is saved in Photos." : {
@@ -348,8 +440,8 @@
       "comment" : "Compare view: this item of nope.'s file is its Content Credentials signature. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },
-    "Not in the files: exposure settings are off in Settings." : {
-      "comment" : "Shown in the photo details when the files hold no exposure settings, because the person turned that metadata item off.",
+    "Not in the files" : {
+      "comment" : "In the photo details, under a value the saved files don't hold: it is what the camera reported or the lens that was selected, kept by nope. in memory. Must stay true if those values stop being kept. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Not measured: nope. can't read how this camera lays out its RAW samples." : {
@@ -382,6 +474,10 @@
     },
     "Not Signed" : {
       "comment" : "Warning chip on the camera: photos are saved without a Content Credentials signature. Honesty wording: never imply photos are signed. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Not stored" : {
+      "comment" : "In the photo details: the RAW file holds no lens correction instructions.",
       "extractionState" : "manual"
     },
     "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve, and no noise reduction, sharpening or local tone mapping." : {
@@ -443,8 +539,20 @@
       "comment" : "Explains the master switch. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "One overall tone curve, and no noise reduction, sharpening or local tone mapping." : {
+      "comment" : "In the photo details, under a copy developed with the Standard look: what the look does. The same claims as the processing note. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "One overall tone curve, so the photo looks normal." : {
       "comment" : "Explains the Standard look: a single global tone curve, nothing local. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "One photo: the RAW with its %@" : {
+      "comment" : "In the photo details: the RAW and its copy (the placeholder is its format, such as HEIF) were added to Photos as one photo. States what nope. asked Photos to do. RAW is a file format name. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "One photo: the RAW with its %@. The %@ is a photo of its own." : {
+      "comment" : "In the photo details: the RAW and one copy (first placeholder, such as HEIF) were added to Photos as one photo, and the other copy (second placeholder, such as JPEG) as a photo of its own. States what nope. asked Photos to do. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Only for photos taken since nope. opened: nope. can't read your photo library, and these details aren't stored." : {
@@ -466,6 +574,18 @@
     "Other Details" : {
       "comment" : "Section header on the Details in Each Photo page, above the eleven optional details other than Location. Replaces the In Each Photo header. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
+    },
+    "Photo details: In the Files" : {
+      "comment" : "Disclosure row in the photo details: the optional details the saved files hold, each with its value. Draft wording for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In the Files"
+          }
+        }
+      }
     },
     "Photo Format" : {
       "comment" : "VoiceOver and Voice Control name of the chip at the top of the camera that says what the next photo will be. Tapping it explains the format and lists the formats. Honesty wording: a fluent human must review every translation before release.",
@@ -526,8 +646,16 @@
         }
       }
     },
-    "Read Back from the Files" : {
-      "comment" : "Heading in the photo details: every metadata tag, block and property nope. read back from each saved file before saving it. Keep nope. unchanged if it appears.",
+    "RAW: one frame of sensor data" : {
+      "comment" : "Summary line in the photo details: the photo is a RAW file, one frame of the sensor's data. It must not be read as 'no processing': it says only what the file is. RAW is a file format name. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "RAW: one frame of sensor data, and %@ copies developed by nope." : {
+      "comment" : "Summary line in the photo details: a RAW file, one frame of the sensor's data, and copies (the placeholder lists their formats, such as HEIF and JPEG) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "RAW: one frame of sensor data, and a %@ copy developed by nope." : {
+      "comment" : "Summary line in the photo details: a RAW file, one frame of the sensor's data, and one copy (the placeholder is its format, such as HEIF) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness." : {
@@ -582,6 +710,10 @@
       "comment" : "Compare view, when only the RAW was saved: the RAW is displayed with the system's own RAW decoding, not developed by nope. RAW is a file format name; iOS is a product name.",
       "extractionState" : "manual"
     },
+    "Shown under Exposure" : {
+      "comment" : "In the photo details, the value of the Exposure Settings detail: its values are listed in the Exposure group. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "Shown with the manual controls. It measures the processed live preview, not the RAW." : {
       "comment" : "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English.",
       "extractionState" : "manual"
@@ -602,8 +734,8 @@
       "comment" : "Switch that adds a Content Credentials signature to each photo. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Signature" : {
-      "comment" : "Heading in the photo details: whether the photo carries a Content Credentials signature.",
+    "Sign Each Photo is off in Settings, so these files have no signature." : {
+      "comment" : "In the photo details: the photo isn't signed because the person turned the Sign Each Photo setting off. Not a warning. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Signed" : {
@@ -614,12 +746,28 @@
       "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "Signing was on, but nope. couldn't create the signature for this photo. The files were saved without one. The camera shows Not Signed until a photo is signed again." : {
+      "comment" : "In the photo details: signing was on but failed for this photo, so it was saved unsigned. Not Signed is the warning chip on the camera. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Signing was on, but the signed file didn't pass nope.'s check, so the file that passed was saved without a signature. The camera shows Not Signed until a photo is signed again." : {
+      "comment" : "In the photo details: a signed file failed the read-back check, so the unsigned file, which passed, was saved instead. Not Signed is the warning chip on the camera. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Signing was on, but this version of the app can't sign photos. The files were saved without a signature." : {
+      "comment" : "In the photo details: signing was on, but this build of the app has no signer, so the photo was saved unsigned. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "single-frame RAW" : {
       "comment" : "Spoken format name in the viewfinder description. RAW is a file format name.",
       "extractionState" : "manual"
     },
     "Standard File Tags" : {
       "comment" : "Switch: files carry the fixed tags the photo file standard (Exif) asks for, such as version numbers and the color space.",
+      "extractionState" : "manual"
+    },
+    "Stored, not applied" : {
+      "comment" : "In the photo details: the RAW file holds lens correction instructions that editors can use, but nope. didn't apply them to the pixels.",
       "extractionState" : "manual"
     },
     "Sub-Second Time" : {
@@ -658,6 +806,10 @@
       "comment" : "Honesty heading: the camera sensor's unique noise fingerprint. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "The signature lets anyone check that a file hasn't changed since nope. saved it. It doesn't show who took the photo or on which device." : {
+      "comment" : "In the photo details, under a signed photo: what the Content Credentials signature shows and doesn't show. Keep nope. unchanged. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "This Build and the Source" : {
       "comment" : "Honesty heading: whether the installed app matches the public source code. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -676,6 +828,14 @@
     },
     "Time Zone" : {
       "comment" : "Metadata item. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "To change what the next photos hold, open Details in Each Photo in Settings. The files of this photo stay as they are." : {
+      "comment" : "Footer of Details in This Photo in the photo details. Details in Each Photo is the name of the Settings page. Draft wording for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker reports the file as valid and the signer as untrusted." : {
+      "comment" : "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
     "Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none." : {

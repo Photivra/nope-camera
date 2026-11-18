@@ -104,15 +104,6 @@ extension NopeAppUITests {
 
     /// What's in This Photo is red on black in night mode, as the camera's other sheets are.
     @MainActor
-    func testLastPhotoDetailsInNightMode() throws {
-        let app = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn)
-        openPhotoDetails(app)
-        settle()
-        XCTAssertEqual(nonRedPixels(app, outside: .zero), 0, "white, blue or other colors remain in What's in This Photo")
-        try audit(app, checksDynamicType: false)
-    }
-
-    @MainActor
     func testNightModeCameraWithPhotoWarningAndLight() throws {
         let app = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))

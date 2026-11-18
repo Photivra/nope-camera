@@ -44,6 +44,20 @@ public struct PhotoDetails: Equatable, Sendable {
         /// `ExposureTime` or `jpeg:APP1:Exif`), in file order. A tag without a catalog name is
         /// shown by its directory and number, such as `primary 0xC7FF`.
         public let contents: [String]
+        /// Every tag, block and XMP property the read-back found, once each, with its value, the
+        /// setting that controls it and its place in the file, for the Every Tag page. Built as
+        /// ``MetadataComparison`` builds its items, so a repeated tag is listed once and a
+        /// repeated block once with its count.
+        public let entries: [TagEntry]
+        /// A DNG's structure: active area, default crop, compression, DNG version, baseline
+        /// exposure and as-shot neutral; `nil` for HEIF and JPEG.
+        public let rawStructure: RAWStructure?
+        /// The color space a HEIF or JPEG copy was developed in (``DevelopedFileOptions``);
+        /// `nil` for the DNG and for a processed fallback, whose color the camera chose.
+        public let colorSpace: OutputColorSpace?
+        /// The compression quality a HEIF or JPEG copy was encoded with
+        /// (``DevelopedFileOptions``); `nil` for the DNG and for a processed fallback.
+        public let quality: CompressionQuality?
 
         /// Creates a file's details.
         ///
@@ -60,10 +74,16 @@ public struct PhotoDetails: Equatable, Sendable {
         ///   - processing: The processing.
         ///   - contentCredentials: The manifest summary.
         ///   - contents: The names of everything found.
+        ///   - entries: Everything found, with values. Defaults to none.
+        ///   - rawStructure: A DNG's structure, or `nil`.
+        ///   - colorSpace: A developed copy's color space, or `nil`.
+        ///   - quality: A developed copy's compression quality, or `nil`.
         public init(
             format: PhotoFormat, byteCount: Int, pixelWidth: Int?, pixelHeight: Int?, bitDepth: Int?,
             colorFilterPattern: String?, blackLevels: [Double], whiteLevels: [Double], storesLensCorrections: Bool,
-            processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String]
+            processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String],
+            entries: [TagEntry] = [], rawStructure: RAWStructure? = nil, colorSpace: OutputColorSpace? = nil,
+            quality: CompressionQuality? = nil
         ) {
             self.format = format
             self.byteCount = byteCount
@@ -77,6 +97,32 @@ public struct PhotoDetails: Equatable, Sendable {
             self.processing = processing
             self.contentCredentials = contentCredentials
             self.contents = contents
+            self.entries = entries
+            self.rawStructure = rawStructure
+            self.colorSpace = colorSpace
+            self.quality = quality
+        }
+
+        /// The image's size in megapixels, as cameras state it: whole megapixels from 10 up
+        /// (4032 × 3024 is 12 MP), one decimal below (1920 × 1440 is 2.8 MP); `nil` without a
+        /// pixel size.
+        public var megapixels: Double? {
+            guard let pixelWidth, let pixelHeight else { return nil }
+            let exact = Double(pixelWidth * pixelHeight) / 1_000_000
+            return exact >= 10 ? exact.rounded() : (exact * 10).rounded() / 10
+        }
+
+        /// The places that hold entries, in ``TagEntry/Place`` order.
+        public var places: [TagEntry.Place] {
+            TagEntry.Place.allCases.filter { place in entries.contains { $0.place == place } }
+        }
+
+        /// The entries in one place, in file order.
+        ///
+        /// - Parameter place: The place.
+        /// - Returns: The entries.
+        public func entries(in place: TagEntry.Place) -> [TagEntry] {
+            entries.filter { $0.place == place }
         }
     }
 
@@ -106,6 +152,23 @@ public struct PhotoDetails: Equatable, Sendable {
         public let whiteBalance: WhiteBalanceSetting?
         /// Whether the flash fired: bit 0 of the EXIF `Flash` tag (EXIF 3.0, tag `0x9209`).
         public let flashFired: Bool?
+        /// `FocalLengthIn35mmFilm`: the focal length a 35 mm camera would need for the same
+        /// field of view, in millimeters.
+        public let equivalentFocalLength: Double?
+        /// `ExposureMode`: automatic, manual or auto bracket.
+        public let exposureMode: ExposureModeValue?
+        /// `ExposureProgram`: the program the camera used.
+        public let program: ExposureProgramValue?
+        /// `MeteringMode`: how the camera measured the scene.
+        public let metering: MeteringValue?
+        /// `BrightnessValue`: the scene's brightness, in EV (APEX).
+        public let brightness: Double?
+        /// The lens's largest aperture as an f-number, from `MaxApertureValue` (an APEX value
+        /// `A`, so the f-number is 2^(A/2); EXIF 3.0, 4.6.5).
+        public let largestAperture: Double?
+        /// `SubjectArea`: the subject's place in the picture, as two to four numbers (a point,
+        /// a circle or a rectangle, in pixels); empty when the file doesn't say.
+        public let subjectArea: [Double]
 
         /// Creates the exposure details.
         ///
@@ -117,9 +180,18 @@ public struct PhotoDetails: Equatable, Sendable {
         ///   - exposureBias: The exposure bias in EV.
         ///   - whiteBalance: The white balance setting.
         ///   - flashFired: Whether the flash fired. Defaults to `nil` (not recorded).
+        ///   - equivalentFocalLength: The 35 mm equivalent focal length in millimeters, or `nil`.
+        ///   - exposureMode: The exposure mode, or `nil`.
+        ///   - program: The exposure program, or `nil`.
+        ///   - metering: The metering mode, or `nil`.
+        ///   - brightness: The brightness in EV, or `nil`.
+        ///   - largestAperture: The lens's largest aperture as an f-number, or `nil`.
+        ///   - subjectArea: The subject area, or none.
         public init(
             exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?,
-            whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil
+            whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil, equivalentFocalLength: Double? = nil,
+            exposureMode: ExposureModeValue? = nil, program: ExposureProgramValue? = nil, metering: MeteringValue? = nil,
+            brightness: Double? = nil, largestAperture: Double? = nil, subjectArea: [Double] = []
         ) {
             self.exposureTime = exposureTime
             self.iso = iso
@@ -128,6 +200,19 @@ public struct PhotoDetails: Equatable, Sendable {
             self.exposureBias = exposureBias
             self.whiteBalance = whiteBalance
             self.flashFired = flashFired
+            self.equivalentFocalLength = equivalentFocalLength
+            self.exposureMode = exposureMode
+            self.program = program
+            self.metering = metering
+            self.brightness = brightness
+            self.largestAperture = largestAperture
+            self.subjectArea = subjectArea
+        }
+
+        /// Whether any of the details behind More Exposure Details is recorded.
+        public var hasMoreDetails: Bool {
+            exposureMode != nil || program != nil || metering != nil || brightness != nil || largestAperture != nil
+                || !subjectArea.isEmpty
         }
     }
 
@@ -158,16 +243,27 @@ public struct PhotoDetails: Equatable, Sendable {
         public let item: MetadataItem
         /// What happened to it.
         public let state: State
+        /// The item's value as the files hold it, for a written item whose value can be read:
+        /// the date, the location, a name or a version. `nil` for an item that wasn't written,
+        /// and for one with no readable value (maker notes, lens corrections) or whose values
+        /// are shown elsewhere (exposure settings).
+        public let value: ItemValue?
 
         /// Creates a receipt line.
         ///
         /// - Parameters:
         ///   - item: The item.
         ///   - state: What happened to it.
-        public init(item: MetadataItem, state: State) {
+        ///   - value: Its value as written, or `nil`. Defaults to `nil`.
+        public init(item: MetadataItem, state: State, value: ItemValue? = nil) {
             self.item = item
             self.state = state
+            self.value = value
         }
+
+        /// Whether the value identifies the person or the device, so an interface hides it
+        /// until asked: the location and the maker notes, as in ``MetadataComparison``.
+        public var isIdentifying: Bool { item == .location || item == .makerNotes }
     }
 
     /// Each saved file, in the order it was built (RAW first).
@@ -190,6 +286,15 @@ public struct PhotoDetails: Equatable, Sendable {
     /// distortion correction on that lens, as the camera reported it (issue #80); `nil` for a
     /// photo with RAW, whose files never have the correction (``DistortionCorrection``).
     public let distortionCorrection: DistortionCorrection?
+    /// The lens and camera names the files hold, or `nil` when they hold none.
+    public let lensAndCamera: LensAndCamera?
+    /// What the camera reported for this photo (shutter, ISO and lens), kept in memory with the
+    /// details for the session, or `nil` for details made outside ``PhotoSaver``.
+    public let capture: CaptureReport?
+    /// How a RAW and a copy were added to Photos as one asset, or `nil` when there was no pair.
+    public let inPhotos: PhotosPairing?
+    /// Whether the files were written with the Standard File Tags (``MetadataSettings/writesStandardFileTags``).
+    public let writesStandardFileTags: Bool
 
     /// Creates details.
     ///
@@ -203,10 +308,15 @@ public struct PhotoDetails: Equatable, Sendable {
     ///   - rawClipping: The RAW clipping, or `nil`.
     ///   - distortionCorrection: The lens's distortion correction for a processed fallback, or
     ///     `nil`.
+    ///   - lensAndCamera: The lens and camera names in the files, or `nil`.
+    ///   - capture: What the camera reported, or `nil`.
+    ///   - inPhotos: How a RAW and a copy were paired in Photos, or `nil`.
+    ///   - writesStandardFileTags: Whether the Standard File Tags were written. Defaults to `true`.
     public init(
         files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem],
         signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil,
-        distortionCorrection: DistortionCorrection? = nil
+        distortionCorrection: DistortionCorrection? = nil, lensAndCamera: LensAndCamera? = nil,
+        capture: CaptureReport? = nil, inPhotos: PhotosPairing? = nil, writesStandardFileTags: Bool = true
     ) {
         self.rawClipping = rawClipping
         self.distortionCorrection = distortionCorrection
@@ -216,6 +326,10 @@ public struct PhotoDetails: Equatable, Sendable {
         self.lockedItems = lockedItems
         self.signature = signature
         self.timings = timings
+        self.lensAndCamera = lensAndCamera
+        self.capture = capture
+        self.inPhotos = inPhotos
+        self.writesStandardFileTags = writesStandardFileTags
     }
 
     /// The optional items that were written.
@@ -223,6 +337,37 @@ public struct PhotoDetails: Equatable, Sendable {
 
     /// The optional items that were removed or had nothing to write.
     public var leftOutItems: [ItemReceipt] { items.filter { $0.state != .written } }
+
+    /// The written optional items with their values.
+    public var writtenReceipts: [ItemReceipt] { items.filter { $0.state == .written } }
+
+    /// How many optional details the files hold, not counting the location, which has its own
+    /// line in the summary.
+    public var optionalDetailCount: Int { writtenItems.filter { $0 != .location }.count }
+
+    /// What happened to the location: written, removed or nothing to write.
+    public var location: ItemReceipt? { items.first { $0.item == .location } }
+
+    /// Whether the files hold a location (GPS tags).
+    public var holdsLocation: Bool { location?.state == .written }
+
+    /// The shutter and ISO the camera reported, shown marked "Not in the files" when the files
+    /// hold no exposure (Exposure Settings off); `nil` when the files hold the exposure or the
+    /// camera reported neither (`docs/design/BUILD-SPEC.md`, 3.15, P2).
+    public var exposureNotInFiles: CaptureReport? {
+        guard exposure == nil, let capture, capture.exposureDuration != nil || capture.iso != nil else { return nil }
+        return capture
+    }
+
+    /// The lens the photo was taken with, shown marked "Not in the files" when the files hold
+    /// no lens name; `nil` when they hold one or the lens isn't known.
+    public var lensNotInFiles: Lens.ID? {
+        guard lensAndCamera?.lensModel == nil else { return nil }
+        return capture?.lensID
+    }
+
+    /// Whether the photo has a RAW file, so the RAW Sensor Data group applies.
+    public var rawFile: File? { files.first { $0.format == .raw } }
 }
 
 extension PhotoDetails {
@@ -284,6 +429,71 @@ extension PhotoDetails {
         static let contentCredentials: UInt16 = 0xCD41
         /// `MakerNote`.
         static let makerNote: UInt16 = 0x927C
+        /// `FocalLengthIn35mmFilm`.
+        static let equivalentFocalLength: UInt16 = 0xA405
+        /// `ExposureMode`.
+        static let exposureMode: UInt16 = 0xA402
+        /// `ExposureProgram`.
+        static let exposureProgram: UInt16 = 0x8822
+        /// `MeteringMode`.
+        static let meteringMode: UInt16 = 0x9207
+        /// `BrightnessValue`.
+        static let brightness: UInt16 = 0x9203
+        /// `MaxApertureValue`.
+        static let maxAperture: UInt16 = 0x9205
+        /// `SubjectArea`.
+        static let subjectArea: UInt16 = 0x9214
+        /// `Compression`.
+        static let compression: UInt16 = 0x0103
+        /// `DNGVersion`, the first DNG tag: IFD0 tags from here up are DNG's (DNG 1.7, chapter 4).
+        static let dngVersion: UInt16 = 0xC612
+        /// `DefaultCropOrigin`.
+        static let defaultCropOrigin: UInt16 = 0xC61F
+        /// `DefaultCropSize`.
+        static let defaultCropSize: UInt16 = 0xC620
+        /// `AsShotNeutral`.
+        static let asShotNeutral: UInt16 = 0xC628
+        /// `BaselineExposure`.
+        static let baselineExposure: UInt16 = 0xC62A
+        /// `ActiveArea`.
+        static let activeArea: UInt16 = 0xC68D
+        /// `Make`.
+        static let make: UInt16 = 0x010F
+        /// `Model`.
+        static let model: UInt16 = 0x0110
+        /// `DateTime`.
+        static let dateTime: UInt16 = 0x0132
+        /// `Software`.
+        static let software: UInt16 = 0x0131
+        /// `Artist`.
+        static let artist: UInt16 = 0x013B
+        /// `Copyright`.
+        static let copyright: UInt16 = 0x8298
+        /// `DateTimeOriginal`.
+        static let dateTimeOriginal: UInt16 = 0x9003
+        /// `OffsetTimeOriginal`, then `OffsetTime`.
+        static let offsetTimes: [UInt16] = [0x9011, 0x9010]
+        /// `SubSecTimeOriginal`, then `SubSecTime`.
+        static let subSecondTimes: [UInt16] = [0x9291, 0x9290]
+        /// `LensMake`.
+        static let lensMake: UInt16 = 0xA433
+        /// `LensModel`.
+        static let lensModel: UInt16 = 0xA434
+        /// `UniqueCameraModel`.
+        static let uniqueCameraModel: UInt16 = 0xC614
+        /// GPS `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`, `GPSLongitude`,
+        /// `GPSAltitudeRef` and `GPSAltitude` (EXIF 3.0, 4.6.6).
+        static let gpsLatitudeRef: UInt16 = 0x0001
+        /// `GPSLatitude`.
+        static let gpsLatitude: UInt16 = 0x0002
+        /// `GPSLongitudeRef`.
+        static let gpsLongitudeRef: UInt16 = 0x0003
+        /// `GPSLongitude`.
+        static let gpsLongitude: UInt16 = 0x0004
+        /// `GPSAltitudeRef`.
+        static let gpsAltitudeRef: UInt16 = 0x0005
+        /// `GPSAltitude`.
+        static let gpsAltitude: UInt16 = 0x0006
     }
 
     /// The color names of TIFF/EP's `CFAPattern` codes: 0 red, 1 green, 2 blue, 3 cyan,
@@ -301,21 +511,30 @@ extension PhotoDetails {
     ///   - rawClipping: The clipping counted at capture time, or `nil`.
     ///   - distortionCorrection: The lens's distortion correction for a processed fallback, or
     ///     `nil`.
+    ///   - options: The options the HEIF and JPEG copies were developed with.
+    ///   - pairing: Which copy the person pairs with the RAW in Photos.
+    ///   - capture: What the camera reported, or `nil`.
     /// - Returns: The details.
     static func build(
         files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus,
-        timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil
+        timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil,
+        options: DevelopedFileOptions = DevelopedFileOptions(), pairing: RAWPairing = .heif,
+        capture: CaptureReport? = nil
     ) -> PhotoDetails {
         let inventories = files.map(\.readBack.file.inventory)
         let formats = Set(files.map(\.file.format))
         return PhotoDetails(
-            files: files.map { fileDetails($0, look: look) },
+            files: files.map { fileDetails($0, look: look, options: options) },
             exposure: inventories.lazy.compactMap(exposure(in:)).first,
             items: MetadataItem.allCases.map { item in
-                ItemReceipt(item: item, state: state(of: item, settings: plan.settings, inventories: inventories))
+                let state = state(of: item, settings: plan.settings, inventories: inventories)
+                return ItemReceipt(
+                    item: item, state: state, value: state == .written ? value(of: item, in: inventories) : nil)
             },
             lockedItems: lockedItems(for: formats), signature: signature, timings: timings, rawClipping: rawClipping,
-            distortionCorrection: distortionCorrection)
+            distortionCorrection: distortionCorrection, lensAndCamera: lensAndCamera(in: inventories),
+            capture: capture, inPhotos: PhotosPairing(files: files.map(\.file), pairing: pairing),
+            writesStandardFileTags: plan.settings.writesStandardFileTags)
     }
 
     /// One file's details.
@@ -323,8 +542,11 @@ extension PhotoDetails {
     /// - Parameters:
     ///   - checked: The file and its read-back.
     ///   - look: The developed look.
+    ///   - options: The options developed copies were made with.
     /// - Returns: The details.
-    static func fileDetails(_ checked: CheckedFile, look: DevelopedLook) -> File {
+    static func fileDetails(
+        _ checked: CheckedFile, look: DevelopedLook, options: DevelopedFileOptions = DevelopedFileOptions()
+    ) -> File {
         let file = checked.file
         let inventory = checked.readBack.file.inventory
         let image = checked.readBack.image
@@ -332,6 +554,7 @@ extension PhotoDetails {
         let width = isRAW ? integer(Tag.imageWidth, in: inventory) : image?.pixelWidth ?? integer(Tag.pixelXDimension, in: inventory, directory: .exif)
         let height = isRAW ? integer(Tag.imageLength, in: inventory) : image?.pixelHeight ?? integer(Tag.pixelYDimension, in: inventory, directory: .exif)
         let processing: Processing = isRAW ? .none : file.isProcessedByDevice ? .byDevice : .developed(look)
+        let isDeveloped = !isRAW && !file.isProcessedByDevice
         return File(
             format: file.format, byteCount: file.data.count, pixelWidth: width, pixelHeight: height,
             bitDepth: isRAW ? integer(Tag.bitsPerSample, in: inventory) : image?.depth,
@@ -339,7 +562,10 @@ extension PhotoDetails {
             blackLevels: isRAW ? values(Tag.blackLevel, in: inventory) : [],
             whiteLevels: isRAW ? values(Tag.whiteLevel, in: inventory) : [],
             storesLensCorrections: isRAW && inventory.tags.contains { $0.directory == .primary && Tag.opcodeLists.contains($0.tag) },
-            processing: processing, contentCredentials: file.contentCredentials, contents: contents(of: inventory))
+            processing: processing, contentCredentials: file.contentCredentials, contents: contents(of: inventory),
+            entries: entries(of: inventory), rawStructure: isRAW ? rawStructure(in: inventory) : nil,
+            colorSpace: isDeveloped ? options.colorSpace : nil,
+            quality: isDeveloped ? options.quality(for: file.format) : nil)
     }
 
     /// The values of a tag in a directory, or none if the file doesn't have it.
@@ -404,9 +630,19 @@ extension PhotoDetails {
         let exposure = Exposure(
             exposureTime: exif(Tag.exposureTime), iso: exif(Tag.iso), fNumber: exif(Tag.fNumber),
             focalLength: exif(Tag.focalLength), exposureBias: exif(Tag.exposureBias), whiteBalance: whiteBalance,
-            flashFired: exif(Tag.flash).map { Int($0) & 1 == 1 })
-        let isEmpty = [exposure.exposureTime, exposure.iso, exposure.fNumber, exposure.focalLength, exposure.exposureBias]
-            .allSatisfy { $0 == nil } && whiteBalance == nil && exposure.flashFired == nil
+            flashFired: exif(Tag.flash).map { Int($0) & 1 == 1 },
+            equivalentFocalLength: exif(Tag.equivalentFocalLength),
+            exposureMode: exif(Tag.exposureMode).map { ExposureModeValue(code: Int($0)) },
+            program: exif(Tag.exposureProgram).map { ExposureProgramValue(code: Int($0)) },
+            metering: exif(Tag.meteringMode).map { MeteringValue(code: Int($0)) },
+            brightness: exif(Tag.brightness),
+            // APEX aperture value A is the f-number N with A = 2 log2(N) (EXIF 3.0, 4.6.5).
+            largestAperture: exif(Tag.maxAperture).map { pow(2, $0 / 2) },
+            subjectArea: values(Tag.subjectArea, in: inventory, directory: .exif))
+        let isEmpty = [
+            exposure.exposureTime, exposure.iso, exposure.fNumber, exposure.focalLength, exposure.exposureBias,
+            exposure.equivalentFocalLength,
+        ].allSatisfy { $0 == nil } && whiteBalance == nil && exposure.flashFired == nil && !exposure.hasMoreDetails
         return isEmpty ? nil : exposure
     }
 

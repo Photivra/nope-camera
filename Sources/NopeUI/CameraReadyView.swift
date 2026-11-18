@@ -236,7 +236,9 @@ struct CameraReadyView: View {
         // glass, the audit reported the list's rows as low contrast and as not following Dynamic
         // Type at the largest size, and a swipe outside the small popover didn't scroll it.
         .sheet(isPresented: $showsPhotoDetails) {
-            PhotoDetailsSheet(photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } })
+            PhotoDetailsSheet(
+                photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } },
+                lenses: model.capabilities?.lenses ?? [])
                 // Red on black in night mode, as every other sheet of the camera.
                 .nightModeStyle(isNightMode)
                 .presentationBackground(.background)
