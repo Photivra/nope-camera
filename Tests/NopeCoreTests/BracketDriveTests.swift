@@ -103,7 +103,7 @@ actor ProgressRecordingLibrary: PhotoLibrary {
 
 /// Holds a model for a library created before it.
 @MainActor
-final class ModelBox {
+final class BracketModelBox {
     var model: CameraModel?
 }
 
@@ -170,7 +170,7 @@ struct CameraModelBracketTests {
     }
 
     @Test func progressIsPublishedWhileSaving() async throws {
-        let box = ModelBox()
+        let box = BracketModelBox()
         let library = ProgressRecordingLibrary { box.model?.bracketProgress }
         let backend = ScriptedManualBackend(lenses: [Fixtures.wide])
         let recorded = CameraModel(
