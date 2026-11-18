@@ -2133,6 +2133,29 @@ Whether photos are being taken or saved: a photo, a bracket, a burst or astro fr
 aren't paused. When the app leaves the foreground then, it asks iOS for time to finish
 saving them (``BackgroundTimeRequesting``); a paused astro run has saved every frame taken.
 
+## `CameraModel/isFirstStart`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isFirstStart: Bool { get set }
+```
+
+Whether the camera is still on its first start since the model was created: `true` from
+creation until the first time the state or the camera's status says how the start went,
+then `false` for good.
+
+It ends when ``state`` becomes ``CameraState/needsPermission``,
+``CameraState/permissionDenied`` or ``CameraState/unavailable``, or when ``sessionStatus``
+becomes anything other than ``SessionStatus/stopped`` or ``SessionStatus/starting``
+(running, failed, interrupted, paused for heat, no picture). A later start (a return from
+the background, a lens change, a restart of the camera) never makes it `true` again.
+
+An interface shows the launch screen's mark for as long as it is `true`, so the first
+frames match the launch screen (docs/design/LAUNCH-SCREEN.md, 6.3); after it, the usual
+starting indicator. It is in `NopeCore` so the app, the Lock Screen camera and any other
+interface read the first start the same way.
+
 ## `CameraModel/isInForeground`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Photivra Nope Camera, launch mark: the app icon's frame, "n" and period without the ground, at 96 x 96 pt. The three paths are the paths of App/NopeApp/AppIcon.icon/Assets (frame.svg, n.svg, period.svg), unchanged, on their 1024-unit grid. No font. See docs/design/LAUNCH-SCREEN.md. -->
+<!-- Photivra Nope Camera, launch mark: the app icon's frame, "n" and period without the ground, at 96 x 96 pt. The three paths are the paths of App/NopeApp/AppIcon.icon/Assets (frame.svg, n.svg, period.svg), unchanged, on their 1024-unit grid. No font. The period is the icon's sRGB #40C8E0 written as its Display P3 value, #6AC5DD: Xcode's asset compiler reads SVG colors as Display P3 and stores the launch image in sRGB, so #40C8E0 here was drawn as sRGB #00CBE4 (measured on the Simulator, 2026-11-18), and #6AC5DD is drawn as #40C8E0. See docs/design/LAUNCH-SCREEN.md. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="96" height="96">
 <path fill="#EDEDEE" d="M96 192H320V256H160V416H96Z M928 192H704V256H864V416H928Z M96 768H320V704H160V544H96Z M928 768H704V704H864V544H928Z"/>
 <path fill="#EDEDEE" d="M352 288H416V324.0608A168 168 0 0 1 688 456V640H624V456A104 104 0 0 0 416 456V640H352Z"/>
-<path fill="#40C8E0" d="M824 576A48 48 0 1 1 728 576A48 48 0 1 1 824 576Z"/>
+<path fill="#6AC5DD" d="M824 576A48 48 0 1 1 728 576A48 48 0 1 1 824 576Z"/>
 </svg>

@@ -1,6 +1,6 @@
 # Launch screen
 
-Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0; not yet part of the plan or of the screen counts in [README.md](README.md). It becomes part of the plan when the decisions in section 11 are made.
+Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for release 1.0.0; accepted by the owner the same day with all eight recommendations of section 11 (option B, built on A). Built for 1.0.0; the Simulator results of section 9 are in [docs/TESTING.md](../TESTING.md), "Launch screen".
 
 For the implementer of release 1.0.0. The drawings are in [launch.html](launch.html); each figure named below is `screens/launch-<name>.html` with a PNG beside it. The mark's artwork is [launch-mark.svg](launch-mark.svg). Tokens are in [tokens.md](tokens.md), the rest of the build in [BUILD-SPEC.md](BUILD-SPEC.md).
 
@@ -154,6 +154,8 @@ No strings change.
 | --- | --- |
 | `App/NopeApp/Assets.xcassets/LaunchMark.imageset/` (new) | `LaunchMark.svg`, a copy of [launch-mark.svg](launch-mark.svg), and `Contents.json` |
 | `App/NopeApp-Info.plist` | Two more keys in `UILaunchScreen` |
+
+Built: Xcode's asset compiler reads an SVG's colors as Display P3, so with `#40C8E0` in the file the launch screen's period was `#00CBE4` (measured on the Simulator). `launch-mark.svg` therefore writes the period as `#6AC5DD`, the Display P3 value of the icon's sRGB `#40C8E0`, and the launch screen shows `#40C8E0`; the paths are unchanged.
 
 `LaunchMark.imageset/Contents.json`: one universal image, rendered as the original, with no appearance variants:
 

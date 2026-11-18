@@ -4,10 +4,15 @@ import SwiftUI
 /// A message in the middle of the picture when the camera isn't running (docs/design/BUILD-SPEC.md,
 /// 3.7, figure `camera-paused`), on solid black so it stays readable over any scene. Every pause
 /// uses the same place: another app or a call, split view, cooling down, could not start, no
-/// picture, and the spinner while the camera starts. Nothing while the camera runs.
+/// picture, and the spinner while the camera starts. Nothing while the camera runs. No spinner
+/// during the camera's first start, while ``StartIndicator`` stands in its place
+/// (docs/design/LAUNCH-SCREEN.md, 6.3).
 struct SessionStatusView: View {
     /// The camera's status.
     let status: SessionStatus
+
+    /// Whether ``StartIndicator`` is shown, so the spinner isn't.
+    @Environment(\.showsStartIndicator) private var showsStartIndicator
 
     /// Creates the status message.
     ///
@@ -37,7 +42,7 @@ struct SessionStatusView: View {
             .nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.small))
             .accessibilityElement(children: .combine)
             .padding(NopeSpace.m)
-        } else if status == .starting {
+        } else if status == .starting, !showsStartIndicator {
             ProgressView {
                 Text("Starting the camera…", bundle: .module, comment: "Shown briefly while the app checks camera access.")
             }
@@ -75,4 +80,10 @@ struct SessionStatusView: View {
             Text("The camera isn't sending a picture.", bundle: .module, comment: "Shown over the viewfinder when the camera runs but every picture it delivers is blank, even after the app restarted the camera.")
         }
     }
+}
+
+extension EnvironmentValues {
+    /// Whether the camera screen shows ``StartIndicator`` for the camera's first start, so
+    /// ``SessionStatusView`` draws no spinner under it. Set by ``CameraScreen``.
+    @Entry var showsStartIndicator = false
 }

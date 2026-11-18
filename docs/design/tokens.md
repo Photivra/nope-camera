@@ -53,6 +53,7 @@ Replacing 0.3.0 literals: 8 → 12, 10 → 12, 12 → 12, 20 → 24. System shee
 | `scrollingPicture` | 280 | Picture height in the scrolling layout (unchanged) |
 | `panelMaxWidth` | 372 | Q panel width in the column layout and sideways |
 | `focusSquare` | 60 | Focus square (unchanged) |
+| `startMark` | 96 | The launch screen's mark and the same mark in the app's first frames ([LAUNCH-SCREEN.md](LAUNCH-SCREEN.md)) |
 
 ## Type: `enum NopeFont` (`Font`)
 
@@ -87,6 +88,9 @@ Forms, sheets, menus and alerts use the system styles unchanged.
 | `night` | `Color(red: 1, green: 0, blue: 0)` | `#FF0000` | Night mode foreground |
 | `nightOutline` | `Color(red: 0.70, green: 0.125, blue: 0.10)` | `#B3201A` | Night mode outline of an off control (3.1:1) |
 | `peaking` | `Color(red: 1, green: 0.2, blue: 0.85)` | `#FF33D9` | Focus peaking only |
+| `launchBackground` | `Color(red: 0, green: 0, blue: 0)` | `#000000` | The launch screen and the camera's background, in every appearance |
+| `mark` | `Color(red: 0.929, green: 0.929, blue: 0.933)` | `#EDEDEE` | The launch mark's frame and "n", the icon's color |
+| `markPeriod` | `Color(red: 0.251, green: 0.784, blue: 0.878)` | `#40C8E0` | The launch mark's period, the icon's color; not a status |
 
 Rules: one meaning for each color; never color alone; no yellow; brand color reaches system controls only through `tint`. Night mode keeps the existing `NightModeStyle` (everything multiplied by pure red); `night` and `nightOutline` are for the custom-drawn parts.
 

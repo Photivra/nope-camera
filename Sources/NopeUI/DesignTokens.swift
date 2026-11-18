@@ -149,6 +149,10 @@ enum NopeSize {
     /// 60 points: the focus square (unchanged from 0.3.0).
     static let focusSquare: CGFloat = 60
 
+    /// 96 points: the side of the launch screen's mark and of the same mark in the app's first
+    /// frames (``StartIndicator``), on every device (docs/design/LAUNCH-SCREEN.md, 5).
+    static let startMark: CGFloat = 96
+
     /// 64 points: Q and Last Photo in the scrolling layout's pinned shutter row
     /// (docs/design/BUILD-SPEC.md, 3.12). Not in tokens.md; named here so the layout needs no
     /// literal.
@@ -177,7 +181,7 @@ enum NopeSize {
             ("driveWord", driveWord), ("pill", pill), ("tileMin", tileMin), ("readout", readout),
             ("statusRow", statusRow), ("lensRow", lensRow), ("driveRow", driveRow),
             ("shutterRowMin", shutterRowMin), ("column", column), ("scrollingPicture", scrollingPicture),
-            ("panelMaxWidth", panelMaxWidth), ("focusSquare", focusSquare),
+            ("panelMaxWidth", panelMaxWidth), ("focusSquare", focusSquare), ("startMark", startMark),
         ]
     }
 
@@ -348,6 +352,20 @@ enum NopeColor {
     /// A bright magenta (`#FF33D9`, 6.7:1 on black): focus peaking only.
     static var peaking: Color { Color(.sRGB, red: 1, green: 0.2, blue: 0.85) }
 
+    /// Black (`#000000`): the launch screen's color, `LaunchBackground` in the app's asset
+    /// catalog, and the camera screen's background, so the app's first frame is the launch
+    /// screen in the light and the dark appearance (docs/design/LAUNCH-SCREEN.md, 6.1).
+    static var launchBackground: Color { Color(.sRGB, red: 0, green: 0, blue: 0) }
+
+    /// The app icon's `#EDEDEE`: the frame and the "n" of the launch mark (``StartMark``). Fixed,
+    /// like the launch image, which can't follow Increase Contrast.
+    static var mark: Color { Color(.sRGB, red: 0xED / 255, green: 0xED / 255, blue: 0xEE / 255) }
+
+    /// The app icon's `#40C8E0`: the period of the launch mark. Fixed: the system teal of
+    /// ``fact`` changes with Increase Contrast, and the launch image can't. The icon's color,
+    /// not a verified fact.
+    static var markPeriod: Color { Color(.sRGB, red: 0x40 / 255, green: 0xC8 / 255, blue: 0xE0 / 255) }
+
     /// Every color token whose name is a row of docs/design/tokens.md, for the tests and the
     /// gallery. The colors this file adds are in ``additional``.
     static var all: [(name: String, color: Color)] {
@@ -355,6 +373,7 @@ enum NopeColor {
             ("fact", fact), ("warning", warning), ("controlFill", controlFill), ("selectedFill", selectedFill),
             ("label", label), ("labelSecondary", labelSecondary), ("stripIdle", stripIdle),
             ("destructive", destructive), ("night", night), ("nightOutline", nightOutline), ("peaking", peaking),
+            ("launchBackground", launchBackground), ("mark", mark), ("markPeriod", markPeriod),
         ]
     }
 

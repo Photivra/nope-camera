@@ -25,8 +25,13 @@ enum SimulatedCameraLaunch {
     /// - Parameters:
     ///   - isInBackground: Whether the app is in the background now.
     ///   - backend: The launch's backend; anything but the simulated one is left alone.
+    ///
+    /// The `slowStart` scenario's held start (``HeldStartBackend``) is released the first time
+    /// the app goes to the background.
     @MainActor static func followScenePhase(_ isInBackground: Bool, backend: any CaptureBackend) {
-        guard let simulated = backend as? SimulatedCaptureBackend,
+        let held = backend as? HeldStartBackend
+        if isInBackground, let held { Task { await held.release() } }
+        guard let simulated = (backend as? SimulatedCaptureBackend) ?? held?.simulated,
             let event = backgroundEvent(isInBackground: isInBackground, interruptedForBackground: &interruptedForBackground)
         else { return }
         simulated.emit(event)
@@ -105,6 +110,10 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; the comparison shot's second photo, with the phone's
         /// processing, always fails (issue #55).
         case comparisonFails
+        /// Access already allowed; the camera stays starting until the app first goes to the
+        /// background (``HeldStartBackend``), so the UI tests see the first start's indicator
+        /// for as long as they need (docs/design/LAUNCH-SCREEN.md, 6.3). No picture.
+        case slowStart
         /// Access declined.
         case denied
         /// Access allowed, but no camera.
@@ -280,7 +289,7 @@ enum SimulatedCameraLaunch {
         whiteBalance: WhiteBalance(temperature: 5200), isAdjustingFocus: true)
 
     /// The simulated backend for the scenario in the launch arguments, or `nil` without one.
-    static func backend() -> SimulatedCaptureBackend? {
+    static func backend() -> (any CaptureBackend)? {
         guard let scenario else { return nil }
         let capabilities = DeviceCapabilities(lenses: lenses)
         switch scenario {
@@ -322,11 +331,80 @@ enum SimulatedCameraLaunch {
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: aidLenses), reading: tooCloseReading,
                 // More than the readings in a row the close-up detector needs (eight, two seconds).
                 readingCount: 12)
+        case .slowStart:
+            return HeldStartBackend(simulated: SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities))
         case .denied:
             return SimulatedCaptureBackend(permission: .denied)
         case .noCamera:
             return SimulatedCaptureBackend(permission: .authorized)
         }
+    }
+}
+
+/// The `slowStart` scenario's backend: a ``SimulatedCaptureBackend`` whose camera stays starting
+/// until ``release()``, as a slow camera would, for the UI tests of the first start's indicator.
+/// It has no preview, so the picture stays black, as a camera's preview is before its first
+/// frame, and no manual controls, light or live aids.
+actor HeldStartBackend: CaptureBackend {
+    /// The simulated backend that answers everything else.
+    nonisolated let simulated: SimulatedCaptureBackend
+
+    /// Whether ``release()`` has been called.
+    private var isReleased = false
+
+    /// The starts waiting for ``release()``.
+    private var waiting: [CheckedContinuation<Void, Never>] = []
+
+    /// Creates the backend.
+    ///
+    /// - Parameter simulated: The simulated backend that answers everything else.
+    init(simulated: SimulatedCaptureBackend) {
+        self.simulated = simulated
+    }
+
+    /// The simulated backend's events.
+    nonisolated var events: AsyncStream<CaptureEvent> { simulated.events }
+
+    /// No preview: the picture stays black.
+    nonisolated var previewSource: (any CameraPreviewSource)? { nil }
+
+    /// Lets every start waiting, and every later one, go on.
+    func release() {
+        isReleased = true
+        for start in waiting { start.resume() }
+        waiting = []
+    }
+
+    /// The simulated backend's permission.
+    func currentPermission() async -> CameraPermission { await simulated.currentPermission() }
+
+    /// The simulated backend's answer, without a prompt.
+    func requestPermission() async -> CameraPermission { await simulated.requestPermission() }
+
+    /// The simulated backend's capabilities.
+    func deviceCapabilities() async -> DeviceCapabilities { await simulated.deviceCapabilities() }
+
+    /// Waits for ``release()``, then starts the simulated camera.
+    ///
+    /// - Parameter request: The lens and format.
+    /// - Throws: What the simulated backend throws.
+    func startSession(_ request: CaptureRequest) async throws(CaptureError) {
+        if !isReleased {
+            await withCheckedContinuation { waiting.append($0) }
+        }
+        try await simulated.startSession(request)
+    }
+
+    /// Stops the simulated camera.
+    func stopSession() async { await simulated.stopSession() }
+
+    /// Takes a simulated photo.
+    ///
+    /// - Parameter request: The lens and format.
+    /// - Returns: The simulated photo.
+    /// - Throws: What the simulated backend throws.
+    func capturePhoto(_ request: CaptureRequest) async throws(CaptureError) -> CapturedPhoto {
+        try await simulated.capturePhoto(request)
     }
 }
 #endif

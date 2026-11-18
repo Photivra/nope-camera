@@ -4212,6 +4212,17 @@ var seriesScreenKeeper: SeriesScreenKeeper? { get set }
 Keeps the screen awake and dimmed during an interval series (issue #48), or `nil` when
 the app gives none, as in previews: then the screen is left alone.
 
+## `EnvironmentValues/showsStartIndicator`
+
+internal, declared in `Sources/NopeUI/SessionStatusView.swift`
+
+```swift
+var showsStartIndicator: Bool { get set }
+```
+
+Whether the camera screen shows ``StartIndicator`` for the camera's first start, so
+``SessionStatusView`` draws no spinner under it. Set by ``CameraScreen``.
+
 ## `EnvironmentValues/systemColorScheme`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -8750,6 +8761,41 @@ static var labelSecondary: Color { get }
 A 69% gray (`#B0B0B0`, 9.7:1 on black, 5.8:1 on ``controlFill``): secondary text on the
 camera. The mockups draw it as `#AEAEB2`.
 
+## `NopeColor/launchBackground`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var launchBackground: Color { get }
+```
+
+Black (`#000000`): the launch screen's color, `LaunchBackground` in the app's asset
+catalog, and the camera screen's background, so the app's first frame is the launch
+screen in the light and the dark appearance (docs/design/LAUNCH-SCREEN.md, 6.1).
+
+## `NopeColor/mark`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var mark: Color { get }
+```
+
+The app icon's `#EDEDEE`: the frame and the "n" of the launch mark (``StartMark``). Fixed,
+like the launch image, which can't follow Increase Contrast.
+
+## `NopeColor/markPeriod`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var markPeriod: Color { get }
+```
+
+The app icon's `#40C8E0`: the period of the launch mark. Fixed: the system teal of
+``fact`` changes with Increase Contrast, and the launch image can't. The icon's color,
+not a verified fact.
+
 ## `NopeColor/night`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -10297,6 +10343,17 @@ static let shutterRowMin: CGFloat
 
 88 points: the smallest height of the shutter row; it takes the remaining height
 (101 points on a 402 × 874-point screen).
+
+## `NopeSize/startMark`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let startMark: CGFloat
+```
+
+96 points: the side of the launch screen's mark and of the same mark in the app's first
+frames (``StartIndicator``), on every device (docs/design/LAUNCH-SCREEN.md, 5).
 
 ## `NopeSize/statusRow`
 
@@ -14134,7 +14191,9 @@ internal, declared in `Sources/NopeUI/SessionStatusView.swift`
 A message in the middle of the picture when the camera isn't running (docs/design/BUILD-SPEC.md,
 3.7, figure `camera-paused`), on solid black so it stays readable over any scene. Every pause
 uses the same place: another app or a call, split view, cooling down, could not start, no
-picture, and the spinner while the camera starts. Nothing while the camera runs.
+picture, and the spinner while the camera starts. Nothing while the camera runs. No spinner
+during the camera's first start, while ``StartIndicator`` stands in its place
+(docs/design/LAUNCH-SCREEN.md, 6.3).
 
 ## `SessionStatusView/body`
 
@@ -16743,6 +16802,230 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The picture with its overlays.
 
+## `StartIndicator`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor struct StartIndicator
+```
+
+The camera's first start (docs/design/LAUNCH-SCREEN.md, 6.3): the launch screen's mark at the
+same point, until the picture arrives.
+
+``CameraScreen`` shows it over the whole screen while `CameraModel.isFirstStart` is `true`
+and fades it out with ``NopeMotion/fade`` when the first start ends, so the app's first
+frames are the launch screen and the mark is part of the first screen, as Apple's Human
+Interface Guidelines ("Launching") ask of a launch screen with a mark.
+
+The mark is ``NopeSize/startMark`` square with its center at the center of the window, not of
+the safe area or the picture, where the launch screen draws its image
+(`UIImageRespectsSafeAreaInsets` off). While the camera is ready and starting, "Starting the
+camera…" is centered under it, its top edge ``wordsTop`` under the mark's center, on a plate of
+``NopeMaterial/solid`` that can't be seen on the black picture and keeps the words readable over
+the scrolling layout's rows. Before the camera state is known there are no words and no plate:
+that frame is the launch screen again. It turns with
+``SwiftUICore/EnvironmentValues/cameraUprightRotation`` about the mark's center, so it is
+upright on an iPhone held sideways, as the launch screen was. It takes no touches, and
+VoiceOver reads it as one element, "Starting the camera…".
+
+## `StartIndicator/body`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The mark at the window's center, with the words under it.
+
+## `StartIndicator/init(showsWords:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor init(showsWords: Bool)
+```
+
+Creates the indicator.
+
+- Parameter showsWords: Whether "Starting the camera…" is shown under the mark.
+
+## `StartIndicator/showsWords`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor let showsWords: Bool
+```
+
+Whether the words are shown under the mark: while the camera is ready and its session
+starts, not before the camera state is known.
+
+## `StartIndicator/wordsTop`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor static let wordsTop: CGFloat
+```
+
+The distance from the mark's center to the top edge of the words: 40 points.
+
+## `StartMark`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor struct StartMark
+```
+
+The launch screen's mark: the app icon's frame, "n" and period without the icon's ground
+(docs/design/LAUNCH-SCREEN.md, 5 and 6.3).
+
+The shapes are the three filled paths of `App/NopeApp/AppIcon.icon/Assets` (frame.svg, n.svg
+and period.svg), on their 1024-unit grid, which are also the paths of the launch image
+(`LaunchMark.svg`, a copy of docs/design/launch-mark.svg); `scripts/check-launch-screen.sh`
+checks the files agree. They are the outlines of the icon's 8-unit square-cap strokes on its
+128-unit grid (docs/design/icon.html), so the mark drawn here and the launch image cover the
+same pixels. Shapes, not text: no font (AGENTS.md, "Name and wordmark").
+
+The colors are fixed, as the launch image's are: ``NopeColor/mark`` and
+``NopeColor/markPeriod``, not ``NopeColor/label`` or ``NopeColor/fact``, which is the system
+teal and changes with Increase Contrast. In night mode both are white, so `NightModeStyle`'s
+multiply turns the whole mark the night red; the teal would multiply to a red too dark to
+see. Hidden from VoiceOver: ``StartIndicator`` carries the label.
+
+## `StartMark/body`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The frame and "n" in ``NopeColor/mark`` and the period in ``NopeColor/markPeriod``, or all
+white in night mode.
+
+## `StartMark/init()`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the mark. It reads night mode from the environment.
+
+## `StartMarkShape`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+struct StartMarkShape
+```
+
+One of the three shapes of ``StartMark``, scaled from the icon's 1024-unit grid to the rect
+it is drawn in (``NopeSize/startMark`` square).
+
+## `StartMarkShape/Part`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+enum Part
+```
+
+The icon's layers.
+
+## `StartMarkShape/Part/frame`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+case frame
+```
+
+The four corners of the picture frame (frame.svg).
+
+## `StartMarkShape/Part/letter`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+case letter
+```
+
+The "n" (n.svg).
+
+## `StartMarkShape/Part/period`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+case period
+```
+
+The period (period.svg).
+
+## `StartMarkShape/gridPath(_:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static func gridPath(_ part: Part) -> Path
+```
+
+A layer's path on the 1024-unit grid, as written in its SVG file.
+
+- Parameter part: The layer.
+- Returns: The path, in grid units.
+
+## `StartMarkShape/gridSide`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static let gridSide: CGFloat
+```
+
+The side of the icon's grid that the paths use: 1024 units.
+
+## `StartMarkShape/init(part:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+init(part: Part)
+```
+
+Creates the shape of one layer.
+
+- Parameter part: The layer to draw.
+
+## `StartMarkShape/part`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+let part: Part
+```
+
+The layer this shape draws.
+
+## `StartMarkShape/path(in:)`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+func path(in rect: CGRect) -> Path
+```
+
+The shape in the rect, scaled uniformly from the 1024-unit grid.
+
+- Parameter rect: The rect to draw in, normally a ``NopeSize/startMark`` square.
+- Returns: The path.
+
 ## `StatePill`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -17694,6 +17977,16 @@ internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
 ```
 
 The width the content wraps at while sideways, or `nil` for its natural width.
+
+## `VerticalAlignment/startMarkCenter`
+
+internal, declared in `Sources/NopeUI/StartIndicator.swift`
+
+```swift
+static let startMarkCenter: VerticalAlignment
+```
+
+The center of the start mark, which ``StartIndicator`` puts at the window's center.
 
 ## `View/adaptivePresentation(isPresented:prefersSheet:switchesToSheet:content:)`
 
