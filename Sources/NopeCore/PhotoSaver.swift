@@ -17,8 +17,9 @@ import Foundation
 /// 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
 ///    file as one asset (``PhotoLibraryAsset/assets(for:pairing:)``, with the person's
 ///    ``SaveSettings/rawPairing``).
-/// 5. Make the last-photo thumbnail (``PhotoThumbnailing``) and the "What's in this photo"
-///    details (``PhotoDetails``) from the saved files, in memory.
+/// 5. Make the last-photo thumbnail (``PhotoThumbnailing``), the compressed screen-size preview
+///    for ``SessionPhotos`` (``PhotoPreviewing``), and the "What's in this photo" details (``PhotoDetails``) from the
+///    saved files, in memory.
 public struct PhotoSaver: Sendable {
     /// Develops HEIF and JPEG from the RAW.
     private let developer: any PhotoDeveloping
@@ -30,6 +31,9 @@ public struct PhotoSaver: Sendable {
     private let library: any PhotoLibrary
     /// Makes the last-photo thumbnail, or `nil` for none.
     private let thumbnailer: (any PhotoThumbnailing)?
+    /// Makes and decodes the compressed screen-size preview for ``SessionPhotos``, or `nil` for
+    /// none. ``CameraModel`` gives it to its ``SessionPhotos`` to decode with.
+    let previewer: (any PhotoPreviewing)?
     /// Reads the monotonic clock, for the timings in the details.
     private let now: @Sendable () -> ContinuousClock.Instant
 
@@ -45,10 +49,13 @@ public struct PhotoSaver: Sendable {
     ///   - library: Adds files to Photos.
     ///   - appVersion: The app's version, such as `0.2.0`.
     ///   - thumbnailer: Makes the last-photo thumbnail, or `nil` for none.
+    ///   - previewer: Makes the compressed screen-size preview the Last Photo viewer shows
+    ///     (``SessionPhotos``), or `nil` for none.
     ///   - now: Reads the clock for the timings. Tests pass a scripted one.
     public init(
         developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading,
         library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil,
+        previewer: (any PhotoPreviewing)? = nil,
         now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
     ) {
         self.developer = developer
@@ -57,6 +64,7 @@ public struct PhotoSaver: Sendable {
         self.library = library
         self.appVersion = appVersion
         self.thumbnailer = thumbnailer
+        self.previewer = previewer
         self.now = now
     }
 
@@ -90,8 +98,33 @@ public struct PhotoSaver: Sendable {
         distortionCorrection: DistortionCorrection? = nil
     ) async throws(CaptureError) -> SavedPhoto {
         try await saveReturningFiles(
-            photo, settings: settings, captureDuration: captureDuration, distortionCorrection: distortionCorrection
+            photo, settings: settings, captureDuration: captureDuration, distortionCorrection: distortionCorrection,
+            makesPreview: false
         ).saved
+    }
+
+    /// Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and
+    /// also returns its compressed preview for ``SessionPhotos``. ``CameraModel`` saves
+    /// every photo this way; the files are dropped here.
+    ///
+    /// Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+    ///
+    /// - Parameters:
+    ///   - photo: The captured photo, with its metadata already built for the plan.
+    ///   - settings: The formats and metadata choices.
+    ///   - captureDuration: How long the camera took to return the photo, or `nil`.
+    ///   - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    ///     `nil`.
+    /// - Returns: What was saved, and its preview (`nil` without a previewer or when the file
+    ///   can't be decoded).
+    /// - Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
+    func saveWithPreview(
+        _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil,
+        distortionCorrection: DistortionCorrection? = nil
+    ) async throws(CaptureError) -> (saved: SavedPhoto, preview: PhotoPreview?) {
+        let result = try await saveReturningFiles(
+            photo, settings: settings, captureDuration: captureDuration, distortionCorrection: distortionCorrection)
+        return (result.saved, result.preview)
     }
 
     /// Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and also returns the
@@ -106,12 +139,16 @@ public struct PhotoSaver: Sendable {
     ///   - captureDuration: How long the camera took to return the photo, or `nil`.
     ///   - distortionCorrection: For a processed fallback, the lens's distortion correction, or
     ///     `nil`.
-    /// - Returns: What was saved, and the saved files in the order they were built.
+    ///   - makesPreview: Whether to make the preview; `false` saves the work when the caller
+    ///     keeps none.
+    /// - Returns: What was saved, the saved files in the order they were built, and the
+    ///   compressed preview for ``SessionPhotos`` (`nil` when not asked for, without a
+    ///   previewer, or when the file can't be decoded).
     /// - Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
     func saveReturningFiles(
         _ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?,
-        distortionCorrection: DistortionCorrection? = nil
-    ) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile]) {
+        distortionCorrection: DistortionCorrection? = nil, makesPreview: Bool = true
+    ) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile], preview: PhotoPreview?) {
         let plan = plan(for: settings.metadata)
         var timings = SaveTimings(capture: captureDuration)
         let files = try await buildFiles(for: photo, settings: settings, plan: plan, timings: &timings)
@@ -149,18 +186,28 @@ public struct PhotoSaver: Sendable {
                 rawClipping: photo.rawClipping,
                 // RAW never has the camera's distortion correction (`AVCaptureDevice.h`).
                 distortionCorrection: photo.format.isBayerRAW ? nil : distortionCorrection))
-        return (saved, finished.map(\.file))
+        let savedFiles = finished.map(\.file)
+        let preview = makesPreview ? previewer.flatMap { maker in quickest(of: savedFiles).flatMap(maker.preview(of:)) } : nil
+        return (saved, savedFiles, preview)
     }
 
-    /// The last-photo thumbnail, from the file that is quickest to read: the HEIF or JPEG when
-    /// there is one, otherwise the DNG.
+    /// The last-photo thumbnail, from the file that is quickest to read.
     ///
     /// - Parameter files: The saved files.
     /// - Returns: The thumbnail, or `nil` without a thumbnailer or when the file can't be read.
     private func thumbnail(of files: [PhotoFile]) -> PhotoThumbnail? {
         guard let thumbnailer else { return nil }
-        let source = files.first { $0.format != .raw } ?? files.first
-        return source.flatMap(thumbnailer.thumbnail(of:))
+        return quickest(of: files).flatMap(thumbnailer.thumbnail(of:))
+    }
+
+    /// The saved file that is quickest to read: the HEIF or JPEG when there is one, otherwise
+    /// the DNG. The thumbnail and the preview are made from it, in memory; the files are not
+    /// kept (AGENTS.md, "Photos never linger").
+    ///
+    /// - Parameter files: The saved files.
+    /// - Returns: The file, or `nil` when there are none.
+    private func quickest(of files: [PhotoFile]) -> PhotoFile? {
+        files.first { $0.format != .raw } ?? files.first
     }
 
     /// Reads a file back and checks it against its allowlist (AGENTS.md, "Fail closed").

@@ -195,6 +195,14 @@ struct NopeApp: App {
         .task { await refreshDeviceStatus(on: UIDevice.batteryLevelDidChangeNotification) }
         .task { await refreshDeviceStatus(on: UIDevice.batteryStateDidChangeNotification) }
         .task { await refreshDeviceStatus(on: .NSProcessInfoPowerStateDidChange) }
+        // The Last Photo viewer's previews are the first thing to let go when memory is low;
+        // leaving the foreground releases them too (docs/PRIVACY.md, "Last photo and its
+        // details").
+        .task {
+            for await _ in NotificationCenter.default.notifications(named: UIApplication.didReceiveMemoryWarningNotification) {
+                await model.send(.releasePhotoPreviews)
+            }
+        }
         // The compare view's pictures (issue #55); set once, as for the location below.
         .task { if model.comparison.renderer == nil { model.comparison.renderer = Self.makeComparisonRenderer() } }
         // The person's save settings (formats, metadata, signing) apply from the next photo.
@@ -335,7 +343,8 @@ struct NopeApp: App {
             signer: ContentCredentialsSigner(
                 keyProvider: platformKeyProvider(), generator: ClaimGenerator(version: version)),
             reader: ImageIOReadBack(), library: PhotoKitLibrary(),
-            appVersion: version, thumbnailer: ImageIOThumbnailer())
+            appVersion: version, thumbnailer: ImageIOThumbnailer(),
+            previewer: ImageIOPreviewer())
     }
 
     /// Decodes both photos of the comparison shot for the compare view (issue #55): ImageIO, in

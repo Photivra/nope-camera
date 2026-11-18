@@ -61,7 +61,28 @@ for any user-facing claim comes from
   quits. A bracket's frame also carries its place in the bracket (the frame's number, its planned
   exposure, the bracket's offsets and order; `SavedPhoto.bracket`), held in memory with the photo
   until the app quits and written to no file, so the metadata allowlist is unchanged. The app can't
-  reopen older photos (add-only access). Tapping the thumbnail opens the
+  reopen older photos (add-only access).
+- **Last Photo viewer previews:** for a viewer that shows this session's photos inside the
+  app (`docs/design/BUILD-SPEC.md`, 3.14; not built yet), each save also makes a screen-size preview from the
+  same file as the thumbnail, in memory (`ImageIOPreviewer`, no cache): decoded upright at most
+  3072 pixels on its longest side, drawn into a new 8-bit sRGB image, and compressed as a JPEG
+  with the system encoder. The preview carries nothing from the photo's metadata (no location,
+  date, device or Content Credentials); the encoder writes only the picture's size, the sRGB
+  profile and EXIF `ColorSpace` and pixel dimensions. `CameraModel.sessionPhotos`
+  (`SessionPhotos`) keeps it with the photo's saved record, the lens and the time the shutter
+  took it, under these rules:
+  - never written to disk, logged or copied, and never read from Photos (add-only access);
+  - only the newest 20 photos keep a preview; when a 21st is saved, the oldest of them loses its
+    preview, and only its thumbnail remains;
+  - at most 100 photo records are kept; a 101st drops the oldest record;
+  - every preview is released when the app goes to the background (and
+    `CameraModel.isViewerOpen` becomes false) and when the system reports low memory; a photo whose save finishes while the app is in the
+    background gets none;
+  - pixels are decoded from a preview only on request (`SessionPhotos.picture(of:maximumPixelSize:)`),
+    and `SessionPhotos` keeps no decoded pixels;
+  - the records (formats, signature, thumbnail, details, lens and time) follow the rule above
+    for the thumbnail and details: in memory until the app quits.
+  The Lock Screen camera (the capture extension) makes no previews. Tapping the thumbnail opens the
   Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
   Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the

@@ -1185,7 +1185,14 @@ and one on 27, the oldest and newest supported versions (issue #78):
   leaving the app during a burst saves every photo and the Live Activity counts them; with
   VoiceOver, a double tap takes one photo, a double tap and hold a burst, and the action Start
   Burst one with no hold; with Voice Control ("Tap Start Burst", "Tap Stop Burst") and Switch
-  Control a burst starts and stops with no hold; record the heat level after three bursts of 50;
+  Control a burst starts and stops with no hold; record the heat level after three bursts of 50; memory stays flat
+  once 20 frames hold Last Photo previews (`SessionPhotos`);
+- Last Photo previews (`SessionPhotos`, `ImageIOPreviewer`): on the oldest and newest supported
+  iPhone and an iPad, for RAW, RAW + HEIF and HEIF, record the time the preview adds to each
+  save (Instruments, Time Profiler), the size of a 3072-pixel preview at JPEG quality 0.9 and
+  whether it shows artifacts when zoomed in, and the app's memory with 20 previews held and
+  with the viewer open (three decoded pages); after going to the background and back, and with
+  Xcode's Simulate Memory Warning, every preview is released;
 - storage and battery warnings (issue #44): see "Low storage" below; at 3% battery or less,
   unplugged, "Battery Low" shows (not at 4%) and is announced, and it goes away when the device
   is plugged in; Low Power Mode changes the explanation;

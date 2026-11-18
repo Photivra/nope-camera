@@ -229,6 +229,100 @@ let typeIdentifier: String
 
 The uniform type identifier passed to `CGImageDestinationCreateWithData`.
 
+## `ImageIOPreviewer`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+struct ImageIOPreviewer
+```
+
+Makes and decodes the Last Photo viewer's compressed previews with ImageIO, in memory
+(`PhotoPreview`; docs/design/BUILD-SPEC.md, 3.14).
+
+A preview is the saved file decoded at a reduced size, upright, and drawn into a new 8-bit
+sRGB image (`ImageIOThumbnailer.drawnImage(of:maximumPixelSize:)`), then encoded as a JPEG
+with the system encoder. The JPEG carries nothing from the photo (no GPS, TIFF, dates,
+device or Content Credentials) and no embedded thumbnail; the encoder writes only what
+describes the image itself: its size, the sRGB profile, and EXIF `ColorSpace` and pixel
+dimensions (checked in `ThumbnailTests`). Decoding draws it into an sRGB RGBA bitmap, at a smaller size when asked.
+
+Privacy: nothing is cached or written to disk (`kCGImageSourceShouldCache` is off, and the
+destination writes to memory); the bytes stay in memory (AGENTS.md, "Photos never linger").
+
+## `ImageIOPreviewer/decode(_:maximumPixelSize:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+func decode(_ preview: PhotoPreview, maximumPixelSize: Int?) -> PhotoThumbnail?
+```
+
+Decodes a preview into sRGB RGBA pixels.
+
+- Parameters:
+  - preview: The preview.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size.
+- Returns: The pixels, or `nil` if the data can't be decoded.
+
+## `ImageIOPreviewer/init(maximumPixelSize:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+init(maximumPixelSize: Int = SessionPhotos.previewMaximumPixelSize)
+```
+
+Creates a previewer.
+
+- Parameter maximumPixelSize: The longest side of a preview, in pixels.
+
+## `ImageIOPreviewer/jpegType`
+
+internal, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+static let jpegType: String
+```
+
+The JPEG type identifier, `public.jpeg` (Uniform Type Identifiers, `UTType.jpeg`).
+
+## `ImageIOPreviewer/maximumPixelSize`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+let maximumPixelSize: Int
+```
+
+The longest side of a preview, in pixels.
+
+## `ImageIOPreviewer/preview(of:)`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+func preview(of file: PhotoFile) -> PhotoPreview?
+```
+
+Makes a compressed preview of a saved file.
+
+- Parameter file: A saved DNG, HEIF or JPEG.
+- Returns: The preview, or `nil` if ImageIO can't decode the file or encode the JPEG.
+
+## `ImageIOPreviewer/quality`
+
+public, declared in `Sources/NopeDevelop/ImageIOPreviewer.swift`
+
+```swift
+static let quality: Double
+```
+
+The JPEG quality, from 0 to 1: 0.9 (`kCGImageDestinationLossyCompressionQuality`). An
+assumption that it shows no visible artifacts at the viewer's zoom; to be checked on a
+device with the size it gives (docs/TESTING.md).
+
 ## `ImageIOReadBack`
 
 public, declared in `Sources/NopeDevelop/ImageIOReadBack.swift`
@@ -341,6 +435,24 @@ static let defaultMaximumPixelSize: Int
 
 The longest side of the thumbnail, in pixels: the 52-point slot at 3× scale.
 
+## `ImageIOThumbnailer/drawnImage(of:maximumPixelSize:)`
+
+internal, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+static func drawnImage(of data: Data, maximumPixelSize: Int) -> CGImage?
+```
+
+Decodes an image at a reduced size, upright, and draws it into an 8-bit sRGB RGBA bitmap,
+without caching. The drawn image is a new image with none of the file's properties, in a
+form ImageIO's JPEG encoder takes: encoding the decoded image of a 10-bit HEIF directly
+failed (`ThumbnailTests`, iOS 27.2 Simulator), and the drawn one encodes.
+
+- Parameters:
+  - data: A DNG, HEIF or JPEG file's bytes.
+  - maximumPixelSize: The longest side, in pixels.
+- Returns: The image, or `nil` if ImageIO can't decode the data.
+
 ## `ImageIOThumbnailer/init(maximumPixelSize:)`
 
 public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
@@ -363,6 +475,23 @@ let maximumPixelSize: Int
 
 The longest side of the thumbnail, in pixels.
 
+## `ImageIOThumbnailer/pixels(of:maximumPixelSize:)`
+
+internal, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
+
+```swift
+static func pixels(of data: Data, maximumPixelSize: Int) -> PhotoThumbnail?
+```
+
+Decodes an image at a reduced size into the layout `PhotoThumbnail` describes. The
+bitmap context owns its memory, and the pixels are copied out through the image it makes,
+so no pointer is handled here.
+
+- Parameters:
+  - data: A DNG, HEIF or JPEG file's bytes.
+  - maximumPixelSize: The longest side, in pixels.
+- Returns: The pixels, or `nil` if ImageIO can't decode the data.
+
 ## `ImageIOThumbnailer/thumbnail(of:)`
 
 public, declared in `Sources/NopeDevelop/ImageIOThumbnailer.swift`
@@ -372,9 +501,6 @@ func thumbnail(of file: PhotoFile) -> PhotoThumbnail?
 ```
 
 Makes a thumbnail.
-
-The thumbnail is drawn into a bitmap context that owns its memory, and the pixels are
-copied out through the image it makes, so no pointer is handled here.
 
 - Parameter file: A saved DNG, HEIF or JPEG.
 - Returns: The thumbnail, upright, or `nil` if ImageIO can't decode the file.

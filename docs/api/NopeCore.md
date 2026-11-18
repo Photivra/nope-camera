@@ -2088,6 +2088,18 @@ case manual(ManualControlIntent)
 Change a manual or pro control: see ``ManualControlIntent``. Ignored while manual
 controls are off, except ``ManualControlIntent/setEnabled(_:)``.
 
+## `CameraIntent/releasePhotoPreviews`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case releasePhotoPreviews
+```
+
+Release every preview in ``CameraModel/sessionPhotos`` now, keeping the photos' records.
+Send it when the system says memory is low (`UIApplication.didReceiveMemoryWarningNotification`).
+Leaving the foreground releases them too, without this intent.
+
 ## `CameraIntent/requestPermission`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -2134,7 +2146,8 @@ case setInForeground(Bool)
 The app came back to the foreground (`true`) or went to the background (`false`). Send it
 whenever the scene phase changes to or from the background (issue #64).
 
-Leaving cancels the self-timer, because the camera stops and can't take its photo. With
+Leaving closes the Last Photo viewer and releases the previews in
+``CameraModel/sessionPhotos`` (docs/PRIVACY.md), and cancels the self-timer, because the camera stops and can't take its photo. With
 the astro helper on, leaving pauses its frames instead (``AstroModel/isPaused``), or, during
 its start delay, starts the run paused; coming back with the camera running counts the
 start delay down again and continues the run.
@@ -2155,6 +2168,23 @@ lens's size changes, the camera is reconfigured; a size a lens doesn't offer
 (``Lens/photoSizeChoices``) is ignored.
 
 - Parameter sizes: The chosen size for each lens.
+
+## `CameraIntent/setViewerOpen(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case setViewerOpen(Bool)
+```
+
+The Last Photo viewer opened (`true`) or closed (`false`): ``CameraModel/isViewerOpen``.
+Send it when the viewer is shown and when it is dismissed. While it is open, a hardware
+shutter press closes it and takes no photo (docs/design/BUILD-SPEC.md, 3.14, decision V1).
+The interface's Take Photo command (the Space key) does the same by sending
+`setViewerOpen(false)` instead of ``capture`` while the viewer is open; ``capture`` itself
+still takes a photo, as Siri, Shortcuts and the Apple Watch app do.
+
+- Parameter isOpen: Whether the viewer is open now.
 
 ## `CameraIntent/start`
 
@@ -2666,7 +2696,19 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 Whether the app should take the hardware shutter buttons (the volume buttons and the
 Camera Control): while the camera runs. At other times they keep their system behavior,
 as Apple asks of apps that can't respond to them (AVKit, `AVCaptureEventInteraction`,
-"isEnabled"). Not while the compare view is open (issue #55).
+"isEnabled"). Not while the compare view is open (issue #55). While the Last Photo viewer
+is open (``isViewerOpen``) a press closes it and takes no photo.
+
+## `CameraModel/hardwarePressClosedViewer`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var hardwarePressClosedViewer: Bool
+```
+
+Whether the press of a hardware shutter button that is down now closed the viewer, so
+its release takes no photo.
 
 ## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:currentDate:)`
 
@@ -2820,6 +2862,36 @@ Chooses Single when a lens change turned the bracket off, so the drive strip nev
 a self-timer the person didn't choose.
 
 - Parameter hadBracket: Whether a bracket was on before the lens changed.
+
+## `CameraModel/isViewerOpen`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var isViewerOpen: Bool { get set }
+```
+
+Whether the Last Photo viewer is open, as the interface last said with
+``CameraIntent/setViewerOpen(_:)``. While it is open, a hardware shutter press closes it
+and takes no photo (decision V1); the model sets it to `false` then, and when the app
+leaves the foreground (decision V7). An interface presents the viewer while it is `true`.
+Siri, Shortcuts, the Apple Watch app and a running series still take photos.
+
+## `CameraModel/keepInSession(_:lens:takenAt:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date)
+```
+
+Adds a saved photo and its preview to ``sessionPhotos``. A preview made after the app
+left the foreground is released at once, so none outlasts the visit.
+
+- Parameters:
+  - result: The saved photo and its preview.
+  - lens: The lens it was taken with.
+  - takenAt: When the shutter took it.
 
 ## `CameraModel/light`
 
@@ -3056,12 +3128,12 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The handle the app turns into the live viewfinder, or `nil` when there is no video.
 
-## `CameraModel/saveComparing(_:started:request:settings:backend:)`
+## `CameraModel/saveComparing(_:started:takenAt:request:settings:backend:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
 
 ```swift
-@MainActor func saveComparing(_ photo: CapturedPhoto, started: ContinuousClock.Instant, request: CaptureRequest, settings: SaveSettings, backend: any ComparisonCaptureBackend) async
+@MainActor func saveComparing(_ photo: CapturedPhoto, started: ContinuousClock.Instant, takenAt: Date, request: CaptureRequest, settings: SaveSettings, backend: any ComparisonCaptureBackend) async
 ```
 
 Takes the phone's version right after the app's photo, saves the app's photo as usual, and
@@ -3078,6 +3150,7 @@ photo to Photos.
 - Parameters:
   - photo: the app's photo, just taken.
   - started: When the app's photo was started.
+  - takenAt: When the shutter took the app's photo, by the device's clock.
   - request: the app's request, which the phone's version repeats.
   - settings: The settings the app's photo is saved with.
   - backend: The backend that takes the phone's version.
@@ -3178,6 +3251,19 @@ may switch the lens, start the self-timer, take a photo and add it to Photos.
     setting to the camera, as it does for its own settings screen.
   - presets: The person's settings presets, for ``ShortcutRequest/applyPreset(_:)``, or
     `nil` when the interface has none; such a request then says the preset can't be found.
+
+## `CameraModel/sessionPhotos`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let sessionPhotos: SessionPhotos
+```
+
+This session's saved photos with their compressed previews: the pages of the Last Photo
+viewer (docs/design/BUILD-SPEC.md, 3.14). Every save adds to it; leaving the foreground
+and ``CameraIntent/releasePhotoPreviews`` release the previews (docs/PRIVACY.md, "Last
+photo and its details").
 
 ## `CameraModel/sessionStatus`
 
@@ -3379,6 +3465,16 @@ A photo cut short by a pause is taken again after it.
 - Returns: Whether the photo was taken and saved. `false` ends the series: it was stopped,
   the camera stopped for good, or the photo failed for another reason (the camera says
   why).
+
+## `CameraModel/wallClock`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var wallClock: @Sendable () -> Date
+```
+
+Reads the device's clock for ``SessionPhoto/takenAt``. Tests replace it.
 
 ## `CameraModel/watchStatus`
 
@@ -18209,6 +18305,62 @@ Writes the options to a store.
 
 - Parameter defaults: The store to write.
 
+## `PendingFrame`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+struct PendingFrame
+```
+
+A burst or series frame whose save is running, with what ``CameraModel/sessionPhotos`` keeps
+about it.
+
+## `PendingFrame/init(save:lens:takenAt:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+init(save: Task<Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError>, Never>, lens: Lens, takenAt: Date)
+```
+
+Creates a pending frame.
+
+- Parameters:
+  - save: The running save.
+  - lens: The lens the frame was taken with.
+  - takenAt: When the shutter took the frame.
+
+## `PendingFrame/lens`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+let lens: Lens
+```
+
+The lens the frame was taken with.
+
+## `PendingFrame/save`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+let save: Task<Result<(saved: SavedPhoto, preview: PhotoPreview?), CaptureError>, Never>
+```
+
+The save, which returns the saved photo and its preview, or the error.
+
+## `PendingFrame/takenAt`
+
+internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+let takenAt: Date
+```
+
+When the shutter took the frame.
+
 ## `PendingShortcut`
 
 internal, declared in `Sources/NopeCore/ShortcutInbox.swift`
@@ -20081,6 +20233,126 @@ never writes it, but EXIF 3.0 makes it mandatory in a GPS directory, so the writ
 it: ImageIO on the iOS 27.2 Simulator didn't for HEIF or JPEG; whether AVFoundation does
 for a DNG is a device check (docs/PRIVACY.md, "Location").
 
+## `PhotoPreview`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+struct PhotoPreview
+```
+
+A screen-size picture of a saved photo, kept compressed in memory for the Last Photo viewer
+(docs/design/BUILD-SPEC.md, 3.14 and section 6, item 15).
+
+It holds only pixels, encoded as a JPEG with the system encoder: nothing from the photo's
+metadata (no location, date or device) and no Content Credentials; only what the encoder
+writes to describe the picture itself (its size and color space). A viewer decodes it with
+``SessionPhotos/picture(of:maximumPixelSize:)`` only for the page shown and its neighbors.
+
+Privacy: it lives in memory only, never on disk, in a log or in a copy, and ``SessionPhotos``
+releases it in the background and under memory pressure (AGENTS.md, "Photos never linger";
+docs/PRIVACY.md, "Last photo and its details").
+
+## `PhotoPreview/data`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+let data: Data
+```
+
+The compressed picture, upright, in the sRGB color space.
+
+## `PhotoPreview/height`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+let height: Int
+```
+
+The decoded height, in pixels.
+
+## `PhotoPreview/init(width:height:data:)`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+init?(width: Int, height: Int, data: Data)
+```
+
+Creates a preview, or `nil` if a size is not positive or there is no data.
+
+- Parameters:
+  - width: The decoded width, in pixels.
+  - height: The decoded height, in pixels.
+  - data: The compressed picture.
+
+## `PhotoPreview/longestSide`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+var longestSide: Int { get }
+```
+
+The longest side, in pixels.
+
+## `PhotoPreview/width`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+let width: Int
+```
+
+The decoded width, in pixels: the most a viewer can zoom to without enlarging pixels.
+
+## `PhotoPreviewing`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+protocol PhotoPreviewing : Sendable
+```
+
+Makes and decodes ``PhotoPreview`` values, in memory.
+
+`NopeDevelop` implements it with ImageIO (`ImageIOPreviewer`). ``PhotoSaver`` makes one
+preview per saved photo, after it is in Photos, from the file that is quickest to read: the
+HEIF or JPEG when there is one, otherwise the DNG.
+
+## `PhotoPreviewing/decode(_:maximumPixelSize:)`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+func decode(_ preview: PhotoPreview, maximumPixelSize: Int?) -> PhotoThumbnail?
+```
+
+Decodes a preview into pixels.
+
+- Parameters:
+  - preview: The preview.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size. A smaller size, such as the size the screen shows it at, decodes
+    faster and uses less memory.
+- Returns: The pixels, or `nil` if the data can't be decoded.
+
+## `PhotoPreviewing/preview(of:)`
+
+public, declared in `Sources/NopeCore/PhotoPreview.swift`
+
+```swift
+func preview(of file: PhotoFile) -> PhotoPreview?
+```
+
+Makes a compressed preview of a saved file.
+
+- Parameter file: A file that was just saved.
+- Returns: The preview, upright, at most ``SessionPhotos/previewMaximumPixelSize`` on its
+  longest side, or `nil` if the file can't be read. A missing preview never fails the save.
+
 ## `PhotoSaver`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
@@ -20106,8 +20378,9 @@ The order is fixed, and each step is a protocol so the whole pipeline is tested 
 4. Add the files to Photos with add-only access (``PhotoLibrary``), a RAW and its processed
    file as one asset (``PhotoLibraryAsset/assets(for:pairing:)``, with the person's
    ``SaveSettings/rawPairing``).
-5. Make the last-photo thumbnail (``PhotoThumbnailing``) and the "What's in this photo"
-   details (``PhotoDetails``) from the saved files, in memory.
+5. Make the last-photo thumbnail (``PhotoThumbnailing``), the compressed screen-size preview
+   for ``SessionPhotos`` (``PhotoPreviewing``), and the "What's in this photo" details (``PhotoDetails``) from the
+   saved files, in memory.
 
 ## `PhotoSaver/appVersion`
 
@@ -20119,12 +20392,12 @@ let appVersion: String
 
 The app's version, written with its name when ``MetadataItem/appNameAndVersion`` is on.
 
-## `PhotoSaver/init(developer:signer:reader:library:appVersion:thumbnailer:now:)`
+## `PhotoSaver/init(developer:signer:reader:library:appVersion:thumbnailer:previewer:now:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
+init(developer: any PhotoDeveloping, signer: (any PhotoSigning)?, reader: any MetadataReading, library: any PhotoLibrary, appVersion: String, thumbnailer: (any PhotoThumbnailing)? = nil, previewer: (any PhotoPreviewing)? = nil, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
 ```
 
 Creates a pipeline.
@@ -20136,6 +20409,8 @@ Creates a pipeline.
   - library: Adds files to Photos.
   - appVersion: The app's version, such as `0.2.0`.
   - thumbnailer: Makes the last-photo thumbnail, or `nil` for none.
+  - previewer: Makes the compressed screen-size preview the Last Photo viewer shows
+    (``SessionPhotos``), or `nil` for none.
   - now: Reads the clock for the timings. Tests pass a scripted one.
 
 ## `PhotoSaver/plan(for:)`
@@ -20150,6 +20425,17 @@ The metadata plan for a set of choices, with this app's version.
 
 - Parameter settings: The person's metadata choices.
 - Returns: The plan.
+
+## `PhotoSaver/previewer`
+
+internal, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+let previewer: (any PhotoPreviewing)?
+```
+
+Makes and decodes the compressed screen-size preview for ``SessionPhotos``, or `nil` for
+none. ``CameraModel`` gives it to its ``SessionPhotos`` to decode with.
 
 ## `PhotoSaver/save(_:settings:captureDuration:distortionCorrection:)`
 
@@ -20177,12 +20463,12 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
-## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:distortionCorrection:)`
+## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:distortionCorrection:makesPreview:)`
 
 internal, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
+func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?, distortionCorrection: DistortionCorrection? = nil, makesPreview: Bool = true) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile], preview: PhotoPreview?)
 ```
 
 Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and also returns the
@@ -20197,7 +20483,35 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - captureDuration: How long the camera took to return the photo, or `nil`.
   - distortionCorrection: For a processed fallback, the lens's distortion correction, or
     `nil`.
-- Returns: What was saved, and the saved files in the order they were built.
+  - makesPreview: Whether to make the preview; `false` saves the work when the caller
+    keeps none.
+- Returns: What was saved, the saved files in the order they were built, and the
+  compressed preview for ``SessionPhotos`` (`nil` when not asked for, without a
+  previewer, or when the file can't be decoded).
+- Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
+
+## `PhotoSaver/saveWithPreview(_:settings:captureDuration:distortionCorrection:)`
+
+internal, declared in `Sources/NopeCore/PhotoSaver.swift`
+
+```swift
+func saveWithPreview(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> (saved: SavedPhoto, preview: PhotoPreview?)
+```
+
+Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and
+also returns its compressed preview for ``SessionPhotos``. ``CameraModel`` saves
+every photo this way; the files are dropped here.
+
+Side effects: may show the add-only Photos prompt; adds the photo to Photos.
+
+- Parameters:
+  - photo: The captured photo, with its metadata already built for the plan.
+  - settings: The formats and metadata choices.
+  - captureDuration: How long the camera took to return the photo, or `nil`.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    `nil`.
+- Returns: What was saved, and its preview (`nil` without a previewer or when the file
+  can't be decoded).
 - Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
 
 ## `PhotoShortcut`
@@ -21893,6 +22207,332 @@ back otherwise.
 - Parameters:
   - isSeriesRunning: Whether an interval series runs on the camera screen.
   - isInForeground: Whether the app is in the foreground.
+
+## `SessionPhoto`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+struct SessionPhoto
+```
+
+One photo saved in this session: one page of the Last Photo viewer (docs/design/BUILD-SPEC.md,
+3.14; each frame of a bracket or burst is its own photo, decision V12).
+
+Privacy: everything here lives in memory only. It is never written to disk, logged or
+copied, and the app has add-only Photos access, so nothing comes from the library
+(AGENTS.md, "Photos never linger"; docs/PRIVACY.md, "Last photo and its details").
+
+## `SessionPhoto/id`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let id: Int
+```
+
+The photo's place in this session's saves: 1 for the first, counting up. Never reused,
+also after older photos are dropped, so a viewer can keep its page.
+
+## `SessionPhoto/init(id:photo:lens:takenAt:preview:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+init(id: Int, photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?)
+```
+
+Creates a record.
+
+- Parameters:
+  - id: The photo's place in this session's saves.
+  - photo: What was saved.
+  - lens: The lens, or `nil`.
+  - takenAt: When the shutter took it.
+  - preview: The compressed preview, or `nil`.
+
+## `SessionPhoto/lens`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let lens: Lens?
+```
+
+The lens the photo was taken with, for the caption, or `nil` if unknown.
+
+## `SessionPhoto/photo`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let photo: SavedPhoto
+```
+
+What was saved: the formats, the signature, the thumbnail and the details.
+
+## `SessionPhoto/photoLongestSide`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var photoLongestSide: Int? { get }
+```
+
+The longest side of the largest saved file, in pixels, as the read-back reported it, or
+`nil` when unknown.
+
+## `SessionPhoto/preview`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var preview: PhotoPreview? { get }
+```
+
+The compressed screen-size preview, or `nil` when there is none: the app made none (no
+previewer, or the file couldn't be read), or ``SessionPhotos`` released it. A viewer then
+shows its fallback with ``SavedPhoto/thumbnail``.
+
+## `SessionPhoto/previewIsSmallerThanPhoto`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+var previewIsSmallerThanPhoto: Bool { get }
+```
+
+Whether the preview has fewer pixels than the saved photo, so a viewer zoomed in says it
+shows a preview (BUILD-SPEC.md, 3.14, decision V5). `false` without a preview, and when
+the saved size isn't known.
+
+## `SessionPhoto/takenAt`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+let takenAt: Date
+```
+
+When the shutter took the photo, by the device's clock, for the caption. For a bracket,
+every frame has the time of the press. In memory only; it is not the photo's date tag.
+
+## `SessionPhotos`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor final class SessionPhotos
+```
+
+This session's saved photos, oldest first, with their compressed previews: the pages of the
+Last Photo viewer (``CameraModel/sessionPhotos``; docs/design/BUILD-SPEC.md, 3.14 and
+section 6, item 15).
+
+The model adds every photo it saves: a single photo, each frame of a bracket or burst, each
+astro or interval frame, and the app's photo of a comparison shot.
+
+The rules (AGENTS.md, "Photos never linger" and "Battery"; docs/PRIVACY.md):
+- A preview is made in memory from the saved file before its bytes are released, never read
+  back from Photos, and never written to disk, logged or copied. It is pixels only, at most
+  ``previewMaximumPixelSize`` on its longest side, JPEG-compressed.
+- Only the newest ``maximumPreviews`` photos keep a preview (decision V6); adding a photo
+  releases the preview of the one that falls out. Older photos keep their record, which shows
+  the fallback.
+- At most ``maximumCount`` records are kept; adding one drops the oldest.
+- Every preview is released when the app leaves the foreground (decision V7) and when the
+  system reports low memory (``CameraIntent/releasePhotoPreviews``).
+- Decoded pixels are not kept here: ``picture(of:maximumPixelSize:)`` decodes on request, and
+  a viewer keeps decoded pictures only for the page shown and its two neighbors.
+- The records (``SessionPhoto/photo`` with the 156-pixel thumbnail and the details, the lens
+  and the time) stay in memory until the app quits, as the thumbnail and Photo Details always
+  have.
+
+## `SessionPhotos/add(_:lens:takenAt:preview:)`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func add(_ photo: SavedPhoto, lens: Lens?, takenAt: Date, preview: PhotoPreview?)
+```
+
+Adds a saved photo as the newest, drops the oldest records beyond the count limit, and
+releases the previews of photos older than the newest ``previewLimit``.
+
+- Parameters:
+  - photo: What was saved.
+  - lens: The lens it was taken with.
+  - takenAt: When the shutter took it.
+  - preview: Its compressed preview, or `nil`.
+
+## `SessionPhotos/countLimit`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor let countLimit: Int
+```
+
+The most records kept; ``maximumCount`` unless a test sets another.
+
+## `SessionPhotos/decoder`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor let decoder: (any PhotoPreviewing)?
+```
+
+Decodes previews, or `nil` when this model makes none.
+
+## `SessionPhotos/init(decoder:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor convenience init(decoder: (any PhotoPreviewing)?)
+```
+
+Creates an empty list with the standard limits, ``maximumCount`` and
+``maximumPreviews``.
+
+- Parameter decoder: Decodes previews, or `nil` when this model makes none.
+
+## `SessionPhotos/init(decoder:countLimit:previewLimit:)`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor init(decoder: (any PhotoPreviewing)?, countLimit: Int, previewLimit: Int)
+```
+
+Creates an empty list.
+
+- Parameters:
+  - decoder: Decodes previews, or `nil`.
+  - countLimit: The most records kept; at least 1.
+  - previewLimit: How many of the newest photos keep a preview.
+
+## `SessionPhotos/maximumCount`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+nonisolated static let maximumCount: Int
+```
+
+How many records are kept: 100. A long interval or astro series can save hundreds of
+photos; each record holds a 156-pixel thumbnail (about 73 KB) and the photo's details, so
+they are bounded too. The oldest go first.
+
+## `SessionPhotos/maximumPreviews`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+nonisolated static let maximumPreviews: Int
+```
+
+How many of the newest photos keep a preview: 20 (decision V6).
+
+## `SessionPhotos/newest`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var newest: SessionPhoto? { get }
+```
+
+The newest photo, or `nil` before the first save.
+
+## `SessionPhotos/photo(id:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func photo(id: Int) -> SessionPhoto?
+```
+
+The photo with an identifier, or `nil` if it was dropped.
+
+- Parameter id: A ``SessionPhoto/id``.
+
+## `SessionPhotos/photos`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var photos: [SessionPhoto] { get set }
+```
+
+The photos, oldest first. The last one is the newest.
+
+## `SessionPhotos/picture(of:maximumPixelSize:)`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func picture(of id: Int, maximumPixelSize: Int? = nil) async -> PhotoThumbnail?
+```
+
+Decodes a photo's preview, off the main actor. Nothing is kept: the caller holds the
+pixels only while it shows them (the page shown and its neighbors).
+
+- Parameters:
+  - id: The photo's ``SessionPhoto/id``.
+  - maximumPixelSize: The longest side to decode to, in pixels, or `nil` for the
+    preview's own size.
+- Returns: The pixels, or `nil` when the photo or its preview is gone, or it can't be
+  decoded.
+
+## `SessionPhotos/previewBytes`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor var previewBytes: Int { get }
+```
+
+The compressed bytes of the previews held now.
+
+## `SessionPhotos/previewLimit`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor let previewLimit: Int
+```
+
+How many of the newest photos keep a preview; ``maximumPreviews`` unless a test sets
+another.
+
+## `SessionPhotos/previewMaximumPixelSize`
+
+public, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+nonisolated static let previewMaximumPixelSize: Int
+```
+
+The longest side of a preview, in pixels: 3072.
+
+The viewer zooms from fit to the preview's own pixels, and at least 2 × fit (decision V5).
+A 4:3 photo fitted on an iPhone is about 1600 to 1760 pixels on its long side (iPhone 18
+Pro: 1206 × 2622 pixels; Pro Max: 1320 × 2868), so 3072 reaches 1.75 to 1.9 × fit in the
+preview's own pixels. On a 13-inch iPad (2752 × 2064 pixels) it is a little more than fit.
+The photos the app takes are 4032 pixels wide; the full size would cost about 49 MB per
+decoded page, against 28 MB here. Screen sizes: Apple, "Human Interface Guidelines,
+Layout, Specifications".
+
+## `SessionPhotos/releasePreviews()`
+
+internal, declared in `Sources/NopeCore/SessionPhotos.swift`
+
+```swift
+@MainActor func releasePreviews()
+```
+
+Releases every preview, keeping the records.
 
 ## `SessionStatus`
 

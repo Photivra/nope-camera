@@ -111,6 +111,26 @@ public final class CameraModel {
     /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
     public let comparison: ComparisonModel
 
+    /// This session's saved photos with their compressed previews: the pages of the Last Photo
+    /// viewer (docs/design/BUILD-SPEC.md, 3.14). Every save adds to it; leaving the foreground
+    /// and ``CameraIntent/releasePhotoPreviews`` release the previews (docs/PRIVACY.md, "Last
+    /// photo and its details").
+    public let sessionPhotos: SessionPhotos
+
+    /// Whether the Last Photo viewer is open, as the interface last said with
+    /// ``CameraIntent/setViewerOpen(_:)``. While it is open, a hardware shutter press closes it
+    /// and takes no photo (decision V1); the model sets it to `false` then, and when the app
+    /// leaves the foreground (decision V7). An interface presents the viewer while it is `true`.
+    /// Siri, Shortcuts, the Apple Watch app and a running series still take photos.
+    public internal(set) var isViewerOpen = false
+
+    /// Whether the press of a hardware shutter button that is down now closed the viewer, so
+    /// its release takes no photo.
+    @ObservationIgnored var hardwarePressClosedViewer = false
+
+    /// Reads the device's clock for ``SessionPhoto/takenAt``. Tests replace it.
+    @ObservationIgnored var wallClock: @Sendable () -> Date = { Date() }
+
     /// The person's photo size for each lens (``CameraIntent/setPhotoSizes(_:)``), applied when
     /// the camera starts with a lens. Empty by default: every lens at its default size.
     public private(set) var photoSizes: [Lens.ID: PhotoDimensions] = [:]
@@ -169,6 +189,7 @@ public final class CameraModel {
         live = LiveViewModel(backend: backend as? any LiveViewBackend)
         light = LightModel(backend: backend as? any LightCaptureBackend)
         comparison = ComparisonModel(backend: backend as? any ComparisonCaptureBackend)
+        sessionPhotos = SessionPhotos(decoder: saver?.previewer)
     }
 
     /// The handle the app turns into the live viewfinder, or `nil` when there is no video.
@@ -251,6 +272,16 @@ public final class CameraModel {
             await setPhotoSizes(sizes)
         case .setInForeground(let isInForeground):
             setInForeground(isInForeground)
+            // Privacy: the previews don't outlast the visit, and the viewer closes
+            // (docs/PRIVACY.md; BUILD-SPEC.md, decision V7).
+            if !isInForeground {
+                isViewerOpen = false
+                sessionPhotos.releasePreviews()
+            }
+        case .releasePhotoPreviews:
+            sessionPhotos.releasePreviews()
+        case .setViewerOpen(let isOpen):
+            isViewerOpen = isOpen
         }
     }
 
@@ -479,12 +510,15 @@ public final class CameraModel {
         let comparisonBackend = comparisonBackendForNextPhoto
         do {
             let start = now()
+            let takenAt = wallClock()
             let photo = try await backend.capturePhoto(request)
             if let comparisonBackend {
-                await saveComparing(photo, started: start, request: request, settings: settings, backend: comparisonBackend)
+                await saveComparing(
+                    photo, started: start, takenAt: takenAt, request: request, settings: settings,
+                    backend: comparisonBackend)
                 return
             }
-            await save(photo, settings: settings, captureDuration: now() - start)
+            await save(photo, lens: lens, takenAt: takenAt, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             await recoverFromBlankPicture(request, settings: settings)
         } catch {
@@ -498,19 +532,24 @@ public final class CameraModel {
     ///
     /// - Parameters:
     ///   - photo: The captured photo.
+    ///   - lens: The lens it was taken with, for ``sessionPhotos``.
+    ///   - takenAt: When the shutter took it, for ``sessionPhotos``.
     ///   - settings: The settings the photo was taken with.
     ///   - captureDuration: How long the camera took to return the photo.
-    private func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration) async {
+    private func save(
+        _ photo: CapturedPhoto, lens: Lens, takenAt: Date, settings: SaveSettings, captureDuration: Duration
+    ) async {
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
             return
         }
         captureStatus = .saving
         do {
-            captureStatus = .saved(
-                try await saver.save(
-                    photo, settings: settings, captureDuration: captureDuration,
-                    distortionCorrection: distortionCorrection(of: photo)))
+            let result = try await saver.saveWithPreview(
+                photo, settings: settings, captureDuration: captureDuration,
+                distortionCorrection: distortionCorrection(of: photo))
+            keepInSession(result, lens: lens, takenAt: takenAt)
+            captureStatus = .saved(result.saved)
         } catch {
             captureStatus = .failed(error)
         }
@@ -539,8 +578,9 @@ public final class CameraModel {
         }
         do {
             let start = now()
+            let takenAt = wallClock()
             let photo = try await backend.capturePhoto(request)
-            await save(photo, settings: settings, captureDuration: now() - start)
+            await save(photo, lens: request.lens, takenAt: takenAt, settings: settings, captureDuration: now() - start)
         } catch .blankPicture {
             sessionStatus = .noPicture
             captureStatus = .failed(.blankPicture)
@@ -571,6 +611,7 @@ public final class CameraModel {
         bracketProgress = BracketProgress(taken: 0, saved: 0, total: total)
         defer { bracketProgress = nil }
         let photos: [CapturedPhoto]
+        let takenAt = wallClock()
         do {
             photos = try await backend.captureBracket(request, frames: frames.map(\.frame))
         } catch {
@@ -586,13 +627,14 @@ public final class CameraModel {
         var saved: [SavedPhoto] = []
         for (photo, frame) in zip(photos, frames) {
             do {
-                let photoSaved = try await saver.save(
+                let result = try await saver.saveWithPreview(
                     photo, settings: settings, distortionCorrection: distortionCorrection(of: photo))
                 // Privacy: the place is a session value; it is never written to the files.
-                saved.append(
-                    photoSaved.placed(
-                        in: BracketPlace(
-                            type: .exposure, frame: frame, count: total, offsets: bracket.offsets, order: bracket.order)))
+                let placed = result.saved.placed(
+                    in: BracketPlace(
+                        type: .exposure, frame: frame, count: total, offsets: bracket.offsets, order: bracket.order))
+                keepInSession((saved: placed, preview: result.preview), lens: request.lens, takenAt: takenAt)
+                saved.append(placed)
                 bracketProgress = BracketProgress(taken: photos.count, saved: saved.count, total: total)
             } catch {
                 failedBracket = BracketProgress(taken: photos.count, saved: saved.count, total: total)
@@ -601,5 +643,16 @@ public final class CameraModel {
             }
         }
         captureStatus = .savedBracket(saved)
+    }
+
+    /// Adds a saved photo and its preview to ``sessionPhotos``. A preview made after the app
+    /// left the foreground is released at once, so none outlasts the visit.
+    ///
+    /// - Parameters:
+    ///   - result: The saved photo and its preview.
+    ///   - lens: The lens it was taken with.
+    ///   - takenAt: When the shutter took it.
+    func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date) {
+        sessionPhotos.add(result.saved, lens: lens, takenAt: takenAt, preview: isInForeground ? result.preview : nil)
     }
 }
