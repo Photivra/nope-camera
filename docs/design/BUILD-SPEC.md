@@ -6,6 +6,8 @@ This document says what to build, in which files, and how to tell it is done. Th
 
 Proposed and not yet part of this plan: bracketing on the drive strip for 1.0.0 and focus bracketing for 1.1.0, specified in [BRACKETING.md](BRACKETING.md). Until its decisions are made, sections 3.4 and 3.5 stand as written.
 
+Also proposed and not yet part of this plan: the launch screen, specified in [LAUNCH-SCREEN.md](LAUNCH-SCREEN.md). It adds an asset catalog and Info.plist keys to the app target and changes the first frames of `CameraScreen` (3.8).
+
 ## 1. Ground rules
 
 - **Scope.** 1.0.0 changes the interface of features that exist. Add no capability. If a step seems to need one, stop and flag it. One exception, by the owner's decision of 2026-11-18: the Last Photo viewer (3.14).
