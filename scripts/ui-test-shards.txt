@@ -42,6 +42,8 @@
 4 1 NopeAppUITests/testCleanViewHidesControlsButKeepsTheShutter 34 50
 2 2 NopeAppUITests/testCleanViewHidesManualControlsButton 34e 36e
 2 3 NopeAppUITests/testCleanViewKeepsTheNoRAWWarning 24 30
+1 1 NopeAppUITests/testCloseUpAndFarFocusLeaveWhileFocusIsSetByHand 318e 318e
+2 2 NopeAppUITests/testCloseUpLeavesWhileFocusIsSetByHandAtTheLargestTextSize 116e 116e
 1 2 NopeAppUITests/testCloseUpMagnifierAndFastShutterPills 42 45
 4 2 NopeAppUITests/testColumnLayoutOrder 78e 78e
 1 3 NopeAppUITests/testCompareViewAtTheLargestTextSizeAndRightToLeft 85 127
@@ -81,6 +83,8 @@
 2 2 NopeAppUITests/testFirstRunDarkAndLight 42e 42e
 1 3 NopeAppUITests/testFirstRunLargestTextAndRightToLeft 42e 43e
 3 3 NopeAppUITests/testFirstRunStatementsThenTheCameraPrompt 26 28
+3 3 NopeAppUITests/testFlashLeavesInBurst 258e 258e
+4 2 NopeAppUITests/testFlashLeavesInBurstAtTheLargestTextSize 66e 66e
 1 3 NopeAppUITests/testFlashMenuPillAndLensesWithoutALight 47 55
 2 3 NopeAppUITests/testFocusAidsAtTheLargestTextSize 29 24
 2 1 NopeAppUITests/testFocusAidsRightToLeft 42 31

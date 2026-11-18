@@ -60,7 +60,9 @@ intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
 compensation, Close-Up, Far Focus, Focus on Faces, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
-intents that work with manual controls off; see the DocC article for what to show. Run
+intents that work with manual controls off; see the DocC article for what to show. Show Close-Up
+and Far Focus only while `manual.autoFocusIsInUse` (they limit autofocus only), and the flash
+only while `shutterUsesFlash` (no flash in Burst, with a bracket or with Astro). Run
 `manual.observeReadings()` in a second `.task` so the
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
 a warning that changes what the photo is.

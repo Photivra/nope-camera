@@ -227,12 +227,15 @@ enum QuickControls {
     }
 
     /// Close-Up: limits autofocus to near subjects, so it doesn't jump to the background
-    /// (issue #51). Shown where the lens supports it, or while it is on.
+    /// (issue #51). Shown where the lens supports it, or while it is on, and only while the lens
+    /// autofocuses: with focus set by hand or locked it does nothing, so it is left out and
+    /// comes back with its value when focus returns to Auto (issue #91).
     ///
     /// - Parameter context: The model and settings.
     static func closeUp(_ context: CameraControlContext) -> QuickControlItem? {
         let manual = context.model.manual
-        guard manual.capabilities.supportsNearFocusLimit || manual.nearFocusLimit else { return nil }
+        guard manual.autoFocusIsInUse, manual.capabilities.supportsNearFocusLimit || manual.nearFocusLimit
+        else { return nil }
         return QuickControlItem(
             id: "closeUp", title: CloseUpText.title, systemImage: "camera.macro",
             kind: .toggle(isOn: manual.nearFocusLimit) { context.send(.auto(.setNearFocusLimit($0))) })
@@ -240,12 +243,14 @@ enum QuickControls {
 
     /// Far Focus: limits autofocus to far subjects, so it doesn't catch a near branch or a window
     /// (issue #57). An advanced option: shown with manual controls on where the lens supports
-    /// it, or while it is on.
+    /// it, or while it is on, and only while the lens autofocuses, as Close-Up (issue #91).
     ///
     /// - Parameter context: The model and settings.
     static func farFocus(_ context: CameraControlContext) -> QuickControlItem? {
         let manual = context.model.manual
-        guard (manual.isEnabled && manual.capabilities.supportsFarFocusLimit) || manual.farFocusLimit else { return nil }
+        guard manual.autoFocusIsInUse,
+            (manual.isEnabled && manual.capabilities.supportsFarFocusLimit) || manual.farFocusLimit
+        else { return nil }
         return QuickControlItem(
             id: "farFocus", title: FarFocusText.title, systemImage: "mountain.2",
             kind: .toggle(isOn: manual.farFocusLimit) { context.send(.auto(.setFarFocusLimit($0))) })
@@ -282,13 +287,14 @@ enum QuickControls {
     }
 
     /// Flash: Off, Auto or On (issue #38). Shown only on a lens with a flash, with the modes the
-    /// lens supports. The menu names each mode in full ("Flash Auto"); the tile's value is the
-    /// short word.
+    /// lens supports, and only where the shutter fires it: not in Burst, with a bracket or with
+    /// Astro (`CameraModel.shutterUsesFlash`, issue #92). The menu names each mode in full
+    /// ("Flash Auto"); the tile's value is the short word.
     ///
     /// - Parameter context: The model and settings.
     static func flash(_ context: CameraControlContext) -> QuickControlItem? {
         let light = context.model.light
-        guard light.supportsFlash else { return nil }
+        guard light.supportsFlash, context.model.shutterUsesFlash else { return nil }
         let settings = context.settings
         return QuickControlItem(
             id: "flash",

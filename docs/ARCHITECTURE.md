@@ -265,7 +265,9 @@ applies at 20% unplugged. `NopeUI` shows them as `CameraWarnings` chips and anno
 or the torch is on), and `AVFoundationCaptureBackend` applies it to that photo's settings only
 (`CapturePolicy.photoSettings(_:flashMode:)`), so the session's configuration and prepared
 settings never depend on it. Brackets never use it (`AVCapturePhotoBracketSettings` doesn't
-support it). The torch goes through `LightCaptureBackend.setTorch(level:)`, which
+support it), and neither do bursts and astro frames. `CameraModel.shutterUsesFlash` says whether
+the shutter's photos can fire it, and `CameraModel.flashModeForShutter` is the mode they use, so
+an interface shows the flash only where it fires (issue #92). The torch goes through `LightCaptureBackend.setTorch(level:)`, which
 `SystemCaptureHardware` implements with `setTorchModeOn(level:)`; it turns the torch off before
 a camera leaves the session and reports `CaptureEvent.torchUnavailable` when `isTorchAvailable`
 turns false. The model turns it off on interruptions, heat pauses and lenses without a torch,
