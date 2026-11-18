@@ -251,7 +251,7 @@ struct NopeIconButtonStyle: ButtonStyle {
 }
 
 /// A capsule button with a symbol and words (docs/design/tokens.md, "Capsule", "Toggle" and
-/// "Destructive"). It replaces `SelectableCapsuleStyle`.
+/// "Destructive").
 ///
 /// - Secondary: Manual Controls, card buttons, Auto on a dial, Try Again.
 /// - Selectable (`isSelected`): filled white with a black label when on; Manual Controls,
@@ -459,8 +459,7 @@ struct NopeTileLabel: View {
     }
 }
 
-/// A pill: a small capsule for a changed setting (docs/design/tokens.md, "Pill"). It replaces
-/// `pillShape()`.
+/// A pill: a small capsule for a changed setting (docs/design/tokens.md, "Pill").
 ///
 /// It is ``NopeSize/pill`` (28 points) high with a 44-point target, in ``NopeFont/pill``, with
 /// ``NopeSpace/xxs`` between symbol and text. Over the picture (the column layout, a sideways

@@ -295,13 +295,9 @@ struct NopeButtonStylesTests {
         #expect(!NopePillStyle().isOnPicture)
     }
 
-    @Test func deprecatedValuesForwardToTheTokens() {
-        #expect(CameraStyle.cornerRadius == NopeRadius.small)
-        #expect(CameraStyle.minimumTarget == NopeSize.minTarget)
-        #expect(CameraStyle.targetSpacing == NopeSize.targetGap)
+    @Test func cameraColorsForwardToTheTokens() {
         #expect(CameraStyle.fact.color == NopeColor.fact)
         #expect(CameraStyle.warning.color == NopeColor.warning)
-        #expect(SelectableCapsuleStyle(isSelected: true).horizontalPadding == SelectableCapsuleStyle.legacyHorizontalPadding)
     }
 
     @Test func galleryCanBeCreated() {

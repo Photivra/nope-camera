@@ -10,11 +10,8 @@ import SwiftUI
 /// alone (AGENTS.md, "Vision settings"). In night mode both teal and amber become the night
 /// red (``NightStyle``); the symbols and words still tell them apart.
 ///
-/// The values come from the design tokens (`DesignTokens.swift`, docs/design/tokens.md). The
-/// sizes here are deprecated in release 1.0.0 and are kept only until every view uses the tokens
-/// (docs/design/BUILD-SPEC.md, section 8): use ``NopeRadius``, ``NopeSize`` and ``NopeSpace``
-/// in new code. They aren't marked `@available(*, deprecated)`, because the package treats
-/// warnings as errors and the views that still use them would stop compiling.
+/// The values come from the design tokens (`DesignTokens.swift`, docs/design/tokens.md); sizes
+/// and spacing are ``NopeRadius``, ``NopeSize`` and ``NopeSpace``.
 enum CameraStyle {
     /// A verified fact, such as the seal on a single-frame RAW: ``NopeColor/fact``, shown as the
     /// night red in night mode.
@@ -27,128 +24,6 @@ enum CameraStyle {
     /// Secondary text, such as an explanation under a setting: the system's secondary style,
     /// and in night mode the full night red, because a dimmer red falls below 4.5:1 contrast.
     static var secondaryText: SecondaryText { SecondaryText() }
-
-    /// The corner radius of chips, pills and banners, in points: ``NopeRadius/small`` (12; it
-    /// was 10 before release 1.0.0, which tokens.md maps to 12).
-    ///
-    /// Deprecated: use ``NopeRadius/small`` or ``NopeRadius/large``.
-    static var cornerRadius: CGFloat { NopeRadius.small }
-
-    /// The minimum size of every touch target, in points (AGENTS.md, "Touch targets").
-    ///
-    /// Deprecated: use ``NopeSize/minTarget``.
-    static var minimumTarget: CGFloat { NopeSize.minTarget }
-
-    /// The space between neighboring touch targets, in points (issue #68, "Point budget").
-    ///
-    /// Deprecated: use ``NopeSize/targetGap`` between targets, or ``NopeSpace/xs`` for spacing.
-    static var targetSpacing: CGFloat { NopeSize.targetGap }
-}
-
-/// A dark backing for anything drawn over the picture: a system material darkened so text and
-/// icons keep their contrast over a white or yellow scene, and solid black with Reduce
-/// Transparency or Increase Contrast (issue #68, "Contrast"). It draws ``NopeMaterial/backing``.
-///
-/// Deprecated: use `nopeBackground(.backing, in:)`.
-struct DarkBacking<S: Shape>: ViewModifier {
-    /// The backing's shape.
-    let shape: S
-
-    /// Creates the backing.
-    ///
-    /// - Parameter shape: The backing's shape.
-    init(shape: S) {
-        self.shape = shape
-    }
-
-    /// Puts the backing behind the content. The camera screen is audited over a black viewfinder
-    /// in the Simulator; the white and yellow frames are a device check (docs/TESTING.md).
-    ///
-    /// - Parameter content: The content.
-    func body(content: Content) -> some View {
-        content.nopeBackground(.backing, in: shape)
-    }
-}
-
-extension View {
-    /// Puts a dark backing behind a control drawn over the picture.
-    ///
-    /// Deprecated: use `nopeBackground(.backing, in: shape)`.
-    ///
-    /// - Parameter shape: The backing's shape; a rounded rectangle by default.
-    func darkBacking<S: Shape>(_ shape: S) -> some View {
-        modifier(DarkBacking(shape: shape))
-    }
-
-    /// Puts a rounded dark backing behind a control drawn over the picture.
-    ///
-    /// Deprecated: use `nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))`.
-    func darkBacking() -> some View {
-        modifier(DarkBacking(shape: RoundedRectangle(cornerRadius: CameraStyle.cornerRadius)))
-    }
-}
-
-/// A capsule button that is filled white with bold black text when selected, and plain white on
-/// a dark fill otherwise, as the camera's lens and readout buttons are (issue #68, "Colors").
-///
-/// Deprecated: use ``NopeCapsuleStyle``. Until each view moves to it, this style keeps its 0.3.0
-/// look (44 points high, the inherited font, 10 points of padding, 50% opacity when disabled),
-/// with its colors and pressed state taken from the tokens, so the layouts that use it don't change before their chunk rebuilds
-/// them (docs/design/BUILD-SPEC.md, section 8).
-struct SelectableCapsuleStyle: ButtonStyle {
-    /// Whether the button shows the selected item.
-    let isSelected: Bool
-
-    /// The space on each side of the label, in points.
-    let horizontalPadding: CGFloat
-
-    /// Whether the button is enabled.
-    @Environment(\.isEnabled) private var isEnabled
-
-    /// Whether night mode is on: the dark fill is darker there (``NopeColor/controlFillNight``),
-    /// because night mode's red multiply turns white text on the 20% gray into red on dark red at
-    /// only about 4.6:1, which the audit reported for small readout text; on an 8% gray it is
-    /// about 5.1:1.
-    @Environment(\.isNightMode) private var isNightMode
-
-    /// The 0.3.0 padding on each side of the label, in points, kept so the rows that use this
-    /// style keep their width until they move to ``NopeCapsuleStyle``.
-    static let legacyHorizontalPadding: CGFloat = 10
-
-    /// The 0.3.0 opacity of a disabled button, 50%, kept until the views move to
-    /// ``NopeCapsuleStyle``: at the token's 40% (``NopeMotion/disabledOpacity``) the accessibility
-    /// audit reports disabled capsule text as "Contrast nearly passed", which the audits of the
-    /// screens that use this style don't expect yet.
-    static let legacyDisabledOpacity: Double = 0.5
-
-    /// Creates the style.
-    ///
-    /// - Parameters:
-    ///   - isSelected: Whether the button shows the selected item.
-    ///   - horizontalPadding: The space on each side of the label, in points; smaller for the
-    ///     manual readouts, so seven fit in a row.
-    init(isSelected: Bool, horizontalPadding: CGFloat = legacyHorizontalPadding) {
-        self.isSelected = isSelected
-        self.horizontalPadding = horizontalPadding
-    }
-
-    /// The styled button.
-    ///
-    /// - Parameter configuration: The button's label and press state.
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .fontWeight(isSelected ? .bold : .regular)
-            .foregroundStyle(isSelected ? NopeColor.selectedLabel : NopeColor.label)
-            .padding(.horizontal, horizontalPadding)
-            .frame(minWidth: NopeSize.minTarget, minHeight: NopeSize.minTarget)
-            .background(
-                isSelected ? NopeColor.selectedFill : (isNightMode ? NopeColor.controlFillNight : NopeColor.controlFill),
-                in: .capsule)
-            .opacity(isEnabled ? NopeMotion.opacity(isPressed: configuration.isPressed, isEnabled: true) : Self.legacyDisabledOpacity)
-            .contentShape(.capsule)
-            .contentShape(.hoverEffect, .capsule)
-            .hoverEffect(.highlight)
-    }
 }
 
 /// Presents content as a popover in a regular-width window (iPad) and as a sheet otherwise

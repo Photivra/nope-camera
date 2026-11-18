@@ -414,41 +414,6 @@ enum QuickControlsText {
     }
 }
 
-/// The 0.3.0 tray's name, kept as a thin wrapper while the camera layout moves to
-/// ``QuickPanel`` (docs/design/BUILD-SPEC.md, section 8): it shows the tiles in the panel's
-/// backing, without the foot. Deprecated: use ``QuickPanel``; chunk Z removes it.
-struct QuickControlsTray: View {
-    /// The items, in display order.
-    let items: [QuickControlItem]
-
-    /// Unused; kept so earlier call sites compile. The tiles always wrap into rows.
-    let wraps: Bool
-
-    /// Closes the tray.
-    let close: () -> Void
-
-    /// Creates the tray.
-    ///
-    /// - Parameters:
-    ///   - items: The items, in display order.
-    ///   - wraps: Unused; the tiles always wrap into rows.
-    ///   - close: Closes the tray.
-    init(items: [QuickControlItem], wraps: Bool = false, close: @escaping () -> Void) {
-        self.items = items
-        self.wraps = wraps
-        self.close = close
-    }
-
-    /// The tiles on the panel's backing.
-    var body: some View {
-        QuickTiles(items: items, close: close)
-            .padding(NopeSpace.m)
-            .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.large))
-            .accessibilityElement(children: .contain)
-            .accessibilityLabel(QuickControlsText.title)
-    }
-}
-
 /// The words and symbols for flash modes.
 enum FlashText {
     /// A flash mode's name, as in the Flash menu.

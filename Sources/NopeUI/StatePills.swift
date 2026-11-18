@@ -471,19 +471,3 @@ extension EnvironmentValues {
     /// camera layout sets it.
     @Entry var isStatusOnPicture = false
 }
-
-extension View {
-    /// The look of a state pill outside a button: the pill font in white on a dark capsule
-    /// (``NopeSize/pill`` high), inside a touch target at least 44 points on each side.
-    ///
-    /// Deprecated: buttons use ``NopePillStyle``, which replaces it (docs/design/tokens.md,
-    /// "Button types"); it remains for the views that still use it.
-    func pillShape() -> some View {
-        font(NopeFont.pill)
-            .foregroundStyle(NopeColor.label)
-            .padding(.horizontal, NopeSpace.s)
-            .frame(minHeight: NopeSize.pill)
-            .background(NopeColor.controlFill, in: .capsule)
-            .nopeHitTarget()
-    }
-}
