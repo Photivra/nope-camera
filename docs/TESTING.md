@@ -411,6 +411,52 @@ other finding fails the test:
   place it scrolled it to);
 - a Dynamic Type finding on text in the bottom fifth of the window: the audit enlarges the text
   past the edge and can't measure it (the same text styles are measured higher up elsewhere);
+- the rules added with the 1.0.0 interface, each reviewed in the release code review (issue #79):
+  - a "Text clipped" finding on an element in the bottom fifth of the list or popover that
+    scrolls it. The finding's full text is "Text of this element may be clipped at larger
+    Dynamic Type sizes": as for the Dynamic Type check above, the audit enlarges the text where
+    it is and pushes a row at the lower edge past it. On HEIF and JPEG Copies scrolled to its
+    end, the audit reported Restore Defaults and the footer under it in three audits in a row,
+    on iPhone and in the iPad popover and night-mode sheet, while screenshots taken with each
+    finding show both rows whole. A finding higher up fails;
+  - a "Text clipped" finding with no element: it can't be placed or measured. The audit
+    reported it on the Accessibility page, whose last row is at the lower edge (the recording
+    shows every text whole), and on Details in Each Photo with the location notice at the
+    largest text size;
+  - on iPad, "Potentially inaccessible text" with no element while a popover is open. The
+    audit reads the screen's text and reports text it can't match to an element; beside a
+    popover it read the camera screen's text that the popover's edge cuts ("ff" and "e. in
+    the Settings app." of "Camera Access Is Off" beside the Formats page, "Tint" of the live
+    readout beside Viewfinder Overlays, in the failing runs' recordings). The Settings list
+    with its search field passed the same check where no text was cut;
+  - a contrast finding on a disabled control (the RAW row while it is the only format, the
+    button gallery's disabled states, at the tokens' 40% opacity): WCAG 2.2, 1.4.3, exempts
+    inactive user interface components from the contrast minimum;
+  - in the scrolling camera layout, a contrast finding on a row partly under the pinned Q and
+    shutter row (it runs from above the pinned row into it): the audit measures the part the
+    pinned row covers. The pinned row's own buttons, and every row wholly above it, are checked;
+  - in the button gallery's and the Photo Format sheet's contrast passes, a finding on a
+    control cut by the window's edge, and in the sheet's pass one with no element: the same
+    two rules as the first item of this list, in helpers that run the contrast check alone.
+  - on the Photo Format sheet after it was scrolled, every "Text clipped" finding: the audit
+    reported the Show Processed Marker explanation on iPhone and the switch's title in the iPad
+    popover (184.5 points wide beside the switch at the default size) as text that may be
+    clipped at larger sizes, while screenshots show both whole, the title also at the largest
+    text size, where it wraps onto three lines;
+  - on iPad, the Dynamic Type check of the Photo Format popover after it was scrolled, an open
+    finding: at the largest text size the audit reported the Show Processed Marker switch's
+    title, scrolled to the popover's top edge, as "Dynamic Type font sizes are unsupported",
+    while the failing run's screenshot shows the title at the largest size. The same rows pass
+    the check on iPhone (`testProcessedMarkerOnALensWithoutRAW`). At that size the popover (420
+    points wide) shows about three words a line; whether the sheet should replace it at
+    accessibility text sizes on iPad, as it does in night mode, is an open design question.
+  Two rules of the integration were removed: clipped text of any element in the iPad popover
+  after a scroll, and HEIF and JPEG Copies audited at its top only. The Restore Defaults row
+  they covered was reported while it was below the fold: a row of a lazy list that isn't laid
+  out yet reports a placeholder frame inside the list and reads as hittable, so the tests now
+  scroll a Settings page to its end by what the screen shows
+  (`scrollToTheEndOfTheSettingsPage`), and `auditSettingsScreens` audits the Copies page at its
+  end too;
 - the Settings screens at the default text size and right-to-left skip the Dynamic Type check:
   the iOS 27.2 Simulator reported system form section headers and footers as "partially
   unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
@@ -532,6 +578,11 @@ with `-NSDoubleLocalizedStrings YES` (Apple's double-length pseudo-language: eve
 shown twice), in `testQuickMenuLongLanguage` on the phone and `testDoubleLengthText` on the
 watch, each also right to left. These stand in for long and right-to-left languages while the
 app ships in English only (issue #86).
+Settings has no search field in Night Mode (owner decision, 2026-11-18): iOS draws the field
+as gray glass outside the app's views, where the red filter can't reach it, and
+`testNightModeSettingsScreensPassAccessibilityAudits` found 879 sampled pixels that weren't red
+or black with it. `testSettingsRedesignInNightMode` checks that the field is absent in Night
+Mode and returns, with the Night Mode row still in view, when Night Mode is turned off.
 Every new screen and state adds an audit.
 
 ## Documentation
@@ -554,8 +605,8 @@ the local toolchain). Jobs:
 |---|---|
 | `unit-tests` | Coverage gate tests, the tag dumper's TIFF walker test, NopeKit unit tests on the iOS 27.2 Simulator (they also write and upload the file compatibility fixtures), the coverage gate |
 | `ui-build` | Builds the app and the UI tests once (`build-for-testing`) and uploads the test run and the apps |
-| `ui-tests 1/3` … `3/3` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
-| `ui-tests-ipad 1/2`, `2/2` | The same tests in two shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
+| `ui-tests 1/4` … `4/4` | The UI tests with accessibility audits on the iPhone 18 Pro Simulator, one shard per job (`test-without-building`) |
+| `ui-tests-ipad 1/3` … `3/3` | The same tests in three shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
 | `ui-tests-watch 1/1` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
@@ -575,25 +626,25 @@ on-device checks below.
 
 ### UI test shards
 
-By the listed times the UI suite takes about 225 minutes of test time on the iPhone Simulator
-and 234 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
-Mac, so CI limits are sized from runner times, never from local ones). CI runs it in three
-iPhone shards and two iPad shards, each its own job:
+By the listed times the UI suite takes about 234 minutes of test time on the iPhone Simulator
+and 241 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+Mac, so CI limits are sized from runner times, never from local ones). CI runs it in four
+iPhone shards and three iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/3`, `2/3`, `3/3` | 75 minutes each | 82 minutes | 100 minutes |
-| `ui-tests-ipad 1/2`, `2/2` | 117 minutes each | 124 minutes | 130 minutes |
+| `ui-tests 1/4` … `4/4` | 59 minutes each | 66 minutes | 100 minutes |
+| `ui-tests-ipad 1/3` … `3/3` | 80 minutes each | 87 minutes | 130 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
 
 The 1.0.0 interface added about 75 UI tests, listed with estimates (twice their local time),
-so the listed times are higher than the runner will measure for some of them; with these
-estimates the iPad shards leave less than the planned room under their limit, and a third iPad
-shard (and a fourth iPhone shard) should be weighed once the runner has measured the new tests.
+so the listed times are higher than the runner will measure for some of them. With three
+iPhone and two iPad shards those estimates put an iPad shard at 124 of its 130 minutes with
+setup, so 1.0.0 runs a fourth iPhone shard and a third iPad shard; the limits are unchanged.
 The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
 runtime disk images on the runner") and for one second run of unfinished tests after an
 infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
-larger jobs, 6 jobs per build boot a Simulator instead of 17, and the runner's Simulator
+larger jobs, 8 jobs per build boot a Simulator instead of 17, and the runner's Simulator
 failures start in the minutes after a job's first use of the Simulator.
 
 `scripts/ui-test-shards.txt` lists every UI test with its iPhone shard, its iPad shard and its
@@ -831,7 +882,7 @@ job, the tests that have no result yet (the finished ones are passed to `xcodebu
 run per job at most, and no workflow-level rerun, so no passed job or test is repeated. The
 first run's result bundle is kept and uploaded as `…-interrupted.xcresult`.
 
-The job summary on GitHub names the classification ("ui-tests 2/3: Passed", "Test failure" or
+The job summary on GitHub names the classification ("ui-tests 2/4: Passed", "Test failure" or
 "Infrastructure failure"), says whether a second run happened, and lists the tests that failed
 or were cut short.
 

@@ -9476,7 +9476,8 @@ internal, declared in `Sources/NopeCore/Light.swift`
 @MainActor func sessionDidStart() async
 ```
 
-Turns the torch back on after a start, if the person wants it and the lens has one.
+Records that the camera runs, after a start or after an interruption ended, and turns the
+torch on if the person asked for it meanwhile and the lens has one.
 
 Side effect: may switch the torch on.
 
@@ -9756,7 +9757,18 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 case notAllSigned
 ```
 
-At least one saved photo isn't signed.
+At least one saved photo isn't signed, although signing was on or couldn't be offered.
+
+## `LiveActivityContent/Signing/off`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case off
+```
+
+No saved photo is signed, because the person has signing turned off
+(``SignatureStatus/UnsignedReason/turnedOff``): the person's choice, not a problem.
 
 ## `LiveActivityContent/canStop`
 
@@ -10241,6 +10253,17 @@ case signed
 ```
 
 "Signed.": every saved photo is signed.
+
+## `LiveActivitySigningLine/signingOff`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case signingOff
+```
+
+"Not signed: signing is off in Settings.": signing is off by the person's choice, so the
+line states it without pointing to a problem.
 
 ## `LiveActivityStatusLine`
 

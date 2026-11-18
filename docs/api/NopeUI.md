@@ -338,17 +338,29 @@ The content with the feedback attached.
 
 - Parameter content: The camera.
 
-## `AstroFeedback/init(astro:)`
+## `AstroFeedback/init(astro:isNightModeOn:)`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 ```swift
-@MainActor init(astro: AstroModel)
+@MainActor init(astro: AstroModel, isNightModeOn: Bool)
 ```
 
 Creates the feedback.
 
-- Parameter astro: The astro helper.
+- Parameters:
+  - astro: The astro helper.
+  - isNightModeOn: Whether night mode is on.
+
+## `AstroFeedback/isNightModeOn`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor let isNightModeOn: Bool
+```
+
+Whether night mode is on, so the announcement names it only then.
 
 ## `AstroRun`
 
@@ -558,16 +570,20 @@ internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 "Astro".
 
-## `AstroText/turnedOn`
+## `AstroText/turnedOn(isNightModeOn:)`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 ```swift
-@MainActor static var turnedOn: String { get }
+@MainActor static func turnedOn(isNightModeOn: Bool) -> String
 ```
 
-What VoiceOver hears when Astro comes on, from the drive strip, Siri or a preset: it also
-turns on the manual controls and night mode (docs/design/BUILD-SPEC.md, section 4).
+What VoiceOver hears when Astro comes on. From the drive strip it also turns on the
+manual controls and night mode (docs/design/BUILD-SPEC.md, section 4); from a preset it
+turns on the manual controls only, so night mode is named only while it is on.
+
+- Parameter isNightModeOn: Whether night mode is on.
+- Returns: The announcement.
 
 ## `AutoExposureDial`
 
@@ -3846,6 +3862,17 @@ otherwise the four drive modes.
 - Parameter offersAstro: Whether Astro is offered.
 - Returns: The words, in display order.
 
+## `DriveWord/opensSettingsHint`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor static var opensSettingsHint: Text { get }
+```
+
+The VoiceOver hint of the selected Interval or Astro word: choosing it again opens its
+settings.
+
 ## `DriveWord/selected(mode:isAstroOn:)`
 
 internal, declared in `Sources/NopeUI/DriveStrip.swift`
@@ -6015,9 +6042,8 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 ```
 
 The interval and photo count of interval shooting (issue #48), with Start or Stop: one
-section, shown in Interval Settings (``IntervalSheet``). Pro Tools shows it too until its
-Interval section is removed (docs/design/BUILD-SPEC.md, 3.4); the drive strip and its card are
-then the one home of Interval.
+section, shown in Interval Settings (``IntervalSheet``). The drive strip and its card are the
+one home of Interval; Pro Tools has no Interval section (docs/design/BUILD-SPEC.md, 3.4).
 
 A series works in full auto and with manual controls on; `NopeCore` holds the series
 (`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
@@ -7889,8 +7915,7 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func exposureLeft(_ seconds: Double) -> Text
 ```
 
-"13 s left": the exposure time of the frames still to take. Not in the catalog yet (figure
-drive-astro-running).
+"13 s left": the exposure time of the frames still to take (figure drive-astro-running).
 
 - Parameter seconds: The exposure time left, in seconds.
 
@@ -7902,7 +7927,7 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func firstFrame(in seconds: Int) -> Text
 ```
 
-"First frame in 8s". Not in the catalog yet (figure drive-astro-countdown).
+"First frame in 8s" (figure drive-astro-countdown).
 
 - Parameter seconds: The seconds left.
 
@@ -7948,7 +7973,7 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func nextPhoto(in seconds: Int) -> Text
 ```
 
-"Next photo in 6s". Not in the catalog yet (BUILD-SPEC.md, figure drive-interval-running).
+"Next photo in 6s" (BUILD-SPEC.md, figure drive-interval-running).
 
 - Parameter seconds: The seconds left.
 
@@ -15580,6 +15605,68 @@ The words of a search, split at white space.
 - Parameter query: The search text.
 - Returns: Its words; none for empty or blank text.
 
+## `SettingsSearchField`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor struct SettingsSearchField
+```
+
+The Settings search field, left out in Night Mode.
+
+iOS draws the search field as gray glass outside the app's views, where night mode's red
+filter (``NightModeStyle``) can't reach it, so Settings has no search field while Night Mode
+is on (owner decision of 2026-11-18). Every row stays reachable from the list, and the field
+returns when Night Mode is turned off.
+
+## `SettingsSearchField/body(content:)`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the search field in the navigation bar's drawer unless it is left out.
+
+- Parameter content: The Settings list or the search results.
+
+## `SettingsSearchField/init(text:isHidden:)`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor init(text: Binding<String>, isHidden: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - text: The search text.
+  - isHidden: Whether the field is left out, as in Night Mode.
+
+## `SettingsSearchField/isHidden`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor let isHidden: Bool
+```
+
+Whether the field is left out: Night Mode is on.
+
+## `SettingsSearchField/text`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@Binding @MainActor var text: String { get nonmutating set }
+```
+
+The search text.
+
 ## `SettingsSearchResults`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -17639,18 +17726,20 @@ Announces storage and battery warnings (``ResourceWarningAnnouncements``).
 
 - Parameter model: The camera model.
 
-## `View/astroFeedback(_:)`
+## `View/astroFeedback(_:isNightModeOn:)`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 ```swift
-@MainActor func astroFeedback(_ astro: AstroModel) -> some View
+@MainActor func astroFeedback(_ astro: AstroModel, isNightModeOn: Bool) -> some View
 
 ```
 
 Adds the astro helper's announcements (``AstroFeedback``).
 
-- Parameter astro: The astro helper.
+- Parameters:
+  - astro: The astro helper.
+  - isNightModeOn: Whether night mode is on.
 
 ## `View/comparisonCover(_:isNightMode:)`
 
@@ -18071,7 +18160,7 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
 vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
-swipe. Every one of them also has a button: the lock button, the Hide Controls tray item and
+swipe. Every one of them also has a button: the lock button, Hide Controls in the quick menu and
 Show Controls (issue #68, "Gestures always have a button").
 
 ## `ViewfinderTouches/allowsDrags`
