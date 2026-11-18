@@ -1,6 +1,6 @@
 # Navigation map
 
-Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md), and the Last Photo viewer decided on 2026-11-18.
+Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md), and the Last Photo viewer and the Photo Details redesign of 2026-11-18.
 
 Every option, where it lives, the path to it from the camera, and the number of taps in 0.3.0 and in this design. A dash means the option did not exist in 0.3.0.
 

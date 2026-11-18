@@ -1,6 +1,6 @@
 # Accessibility and Siri specification
 
-Design version: 1.0.0, direction B · Reach (2026-11-17; the Last Photo viewer added 2026-11-18).
+Design version: 1.0.0, direction B · Reach (2026-11-17; the Last Photo viewer and What's in This Photo added 2026-11-18).
 
 What each screen of the design must do for VoiceOver, Voice Control, Switch Control, the keyboard, text size, motion, transparency and contrast, and which actions Siri and Shortcuts offer. The baseline is `AGENTS.md` (Accessibility), Apple's Human Interface Guidelines and WCAG 2.2 AA. The mockups are in this folder; the build steps are in [BUILD-SPEC.md](BUILD-SPEC.md).
 
@@ -89,7 +89,7 @@ Labels and values are the same. The Manual Controls button shows A or M and the 
 - Voice Control names are the row titles. "Focus on Faces" is the name of the switch and of the Shortcuts action.
 - Sheets open with focus on the title. Done is the first toolbar item for the keyboard and closes with Escape.
 - Formats and the processing note: the opening statement is read first. The processing note sentences are plain static text in reading order.
-- What's in This Photo: each section is a heading. Locked items read "Always kept". The signature row reads its sentence; with signing off by choice it has no warning symbol.
+- What's in This Photo has its own section below.
 - Presets: each preset is a button ("Astro, preset. Double tap to apply."). The More menu has the label "More for Astro" and the actions Rename and Delete; both are also VoiceOver custom actions on the row. Delete asks for confirmation; Cancel is the default.
 - Settings search: the system search field. Each result reads the setting and its page, in whole localized names: "Location, in Privacy, Details in Each Photo"; in right-to-left languages the order follows the language. A pointer to a camera control reads its name and the place in words, "Manual Controls. On the camera, beside the lenses.", and has no button trait, because it does not navigate; the camera symbol is decorative. Result headers (On the Camera, In Settings) are headings. No result: the system's "No Results" text is read.
 - Honesty and Accessibility: headings and paragraphs in order.
@@ -162,6 +162,60 @@ Names match the visible words: "Close", "Photo Details", "Open in Photos", "New 
 ### Siri and Shortcuts
 
 No action is added. Take Photo from Siri or Apple Watch works while the viewer is open, and its answer is unchanged. No action opens the viewer in 1.0.0.
+
+## What's in This Photo
+
+Figures and the organization are in [photo-details.html](photo-details.html); the build steps are in BUILD-SPEC.md, section 3.15. A system list in a sheet: every row is a system row, and nothing needs a gesture.
+
+### VoiceOver
+
+Opening moves focus to the title. Done or the two-finger scrub closes the sheet and returns focus to Photo Details in the viewer, or to Last Photo when it was opened from there. Order:
+
+| # | Element | Read as | Traits, actions |
+| --- | --- | --- | --- |
+| 1 | Title | "What's in This Photo" | Heading |
+| 2 | Done | "Done" | Button |
+| 3 | Photo picker, for a bracket only | "Photo, Photo 2 of 3" | The system picker |
+| 4 | Summary | One element, read top to bottom: "RAW (DNG) and HEIF. 1×, 2:41 PM. 4032 × 3024 pixels, 26.9 MB. RAW: one frame of sensor data, and a HEIF copy developed by nope. Saved and signed. 7 optional details in the files. Location is in the files." | Static text. The symbols are hidden; the words carry the state |
+| 5 | Each group header | "Exposure", "Lens and Camera", "RAW Sensor Data", "Files", "Processing", "Details in This Photo", "Content Credentials", "Every Tag" | Heading |
+| 6 | A value row | Title, then value, then the note: "Shutter, 1/125 s"; "Shutter, 1/125 s, Not in the files"; "Size, 4032 × 3024 pixels, 12 megapixels" | One element for each row |
+| 7 | A disclosure row | "More Exposure Details, collapsed"; "Left Out, 5, collapsed"; "In the Files, 7, expanded" | Button; the system's Collapsed and Expanded. Its rows follow it directly when open |
+| 8 | A file row in Files | "RAW (DNG), 24.1 MB, 4032 × 3024 pixels, 12-bit, lossless" | One element |
+| 9 | Location, hidden | "Location, Hidden, In the files" | Static text with the action Show Value; the Show Value button follows as its own element, labelled "Show Value, Location" |
+| 10 | Location, shown | "Location, 45.5231° north, 122.6765° west, altitude 312 meters, In the files" | The system reads the formatted coordinates |
+| 11 | Signature line | "Saved and signed.", or the other save sentences | Static text. No extra word for the symbol: the sentence says it |
+| 12 | A manifest | "RAW (DNG). Claim generator: Photivra Nope Camera 1.0.0." and the manifest's words | One element. The manifest's words are in English in every language and are marked as English for the speech voice |
+| 13 | Manifest SHA-256 | "Manifest SHA-256, collapsed"; open, the hash is one element read in groups of four characters | Button |
+| 14 | A file under Every Tag | "RAW (DNG), 94, button" | Opens the page |
+| 15 | Timing | "Timing, collapsed" | Button |
+| 16 | Footer, then Open in Photos | The sentence; "Open in Photos, button" | |
+
+- Footers ("As written in the files.", the Exposure Settings sentence) are read after their group's last row.
+- The headings rotor moves between the eight groups; the summary is reached from the title with one swipe. No custom rotor is added on the sheet.
+- A change made by a disclosure row announces nothing extra; focus stays on the row.
+- Every Tag page: the title (the file's format) is a heading; then the search field; the count sentence; then each group, a disclosure row with the heading trait, so the headings rotor moves between TIFF, EXIF, GPS, DNG, XMP, File Structure and Content Credentials. A tag reads its name, its value and the setting: "ExposureTime, 0.008, Exposure Settings". The tag number is custom content (More Content rotor: "Tag number, 0x829A"), so it does not slow the list. Names are spelled by the system's rules for mixed-case words; no phonetic respelling is added. A hidden value reads "Hidden"; Show Hidden Values is the first row of its group and announces "Values shown." once.
+- Search results announce the system's count. No result reads the system's "No Results".
+
+### Voice Control
+
+Names are the visible words: "Done", "More Exposure Details", "More Sensor Details", "In the Files", "Left Out", "Always Saved", "Manifest SHA-256" (two on a photo with two files: the system numbers them, and each also answers to "Manifest SHA-256, RAW" or "Manifest SHA-256, HEIF" through `accessibilityInputLabels`), "Timing", "Open in Photos", "Show Value" (input labels "Show Value" and "Show Location"), "Show Hidden Values", "Search", "Back". File rows under Every Tag answer to their format: "RAW", "HEIF", "JPEG".
+
+### Switch Control and Full Keyboard Access
+
+- Tab order is the reading order. Space or Return opens and closes a disclosure row, activates Show Value and opens a file's page. Escape closes the page's search first, then goes back, then closes the sheet.
+- Each group is a scanning group; rows without an action are skipped by scanning.
+
+### Text size
+
+- Up to the largest non-accessibility size a value sits beside its title while both fit (`ViewThatFits`), otherwise under it. At accessibility sizes every value is under its title (`sheet-photo-details-largest`), the summary's caption is under the formats, and nothing is truncated: tag names and the hash break anywhere.
+- Closed disclosure rows keep the sheet short at the largest size, and it is moved through by heading.
+
+### Motion, transparency, contrast, night mode
+
+- Disclosure rows use the system's animation, which is a fade with Reduce Motion.
+- Color is never the only sign: teal comes with the seal and "signed", amber with the triangle and its sentence. Secondary text is the system's secondary label on the system's grouped background; the audit checks its contrast.
+- Night mode: red on black (`sheet-photo-details-night`); the three signature states differ by symbol and sentence.
+- The sheet's contents are covered while the app is not active, so a revealed location is not in the app switcher.
 
 ## System surfaces
 

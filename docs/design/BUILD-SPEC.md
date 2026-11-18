@@ -1,6 +1,6 @@
 # Build specification: direction B · Reach
 
-Design version: 1.0.0 (2026-11-17; section 3.14 added 2026-11-18). For the implementer of release 1.0.0 (issue 74, with issues 76, 77 and 80). Includes the Settings structure and the device coverage accepted on 2026-11-17; the decisions are recorded in [SETTINGS-PLAN.md](SETTINGS-PLAN.md).
+Design version: 1.0.0 (2026-11-17; sections 3.14 and 3.15 added 2026-11-18). For the implementer of release 1.0.0 (issue 74, with issues 76, 77 and 80). Includes the Settings structure and the device coverage accepted on 2026-11-17; the decisions are recorded in [SETTINGS-PLAN.md](SETTINGS-PLAN.md).
 
 This document says what to build, in which files, and how to tell it is done. The drawings are the mockups in this folder ([overview.html](overview.html)); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md), accessibility in [ACCESSIBILITY.md](ACCESSIBILITY.md), paths in [navigation.md](navigation.md).
 
@@ -212,12 +212,12 @@ AC: the explanation precedes the system prompt; audits pass in light, dark, larg
 
 ### 3.9 Sheets
 
-Figures: `sheet-photo-details`, `sheet-photo-details-processed`, `sheet-interval`, `sheet-astro`, `sheet-presets`, `sheet-presets-applied`, `sheet-preset-save`, `sheet-preset-delete`, `sheet-compare`.
+Figures: `sheet-interval`, `sheet-astro`, `sheet-presets`, `sheet-presets-applied`, `sheet-preset-save`, `sheet-preset-delete`, `sheet-compare`.
 
-Files: `PhotoDetailsSheet.swift`, `PresetsScreen.swift`, `ComparisonScreen.swift`.
+Files: `PresetsScreen.swift`, `ComparisonScreen.swift`.
 
 Change:
-- `PhotoDetailsSheet`: with signing off in Settings, the Signature row uses the info symbol, not the warning triangle. Processing gains the per-lens distortion line when the core reports it. Everything else stays.
+- `PhotoDetailsSheet`: redesigned; see 3.15.
 - `PresetsScreen`: each saved preset row gets a trailing `Menu` ("More for NAME": Rename, Delete), and the same two as swipe and VoiceOver actions. Rename pushes the existing Rename Preset page, without its Delete button. Remove the Rename or Delete page. Delete presents a `confirmationDialog`: title "Delete “NAME”?", message "Deleting a preset doesn't change your current settings.", buttons Delete Preset (destructive) and Cancel.
 - `ComparisonScreen`: tokens and button types only.
 
@@ -354,7 +354,7 @@ Changes to existing files:
 
 - `CaptureFeedback.swift` (`ThumbnailSlot`): the tap opens the viewer. Remove the `contextMenu`; keep Open in Photos and Photo Details as accessibility actions. The comment about the Large Content Viewer and the long press no longer applies.
 - `CameraReadyView.swift`: present the cover; pass the session's photos; the Photo Details sheet is presented from the viewer for the photo shown (it is still presented from the camera for the accessibility action).
-- `PhotoDetailsSheet.swift`: take the photo to show first, so the sheet opens on the viewer's photo. No other change.
+- `PhotoDetailsSheet.swift`: take the photo to show first, so the sheet opens on the viewer's photo. Its redesign is 3.15.
 - `CameraEnvironment.swift`, `docs/BUILDING-AN-INTERFACE.md`, `docs/PRIVACY.md`, `docs/ARCHITECTURE.md`, `docs/TESTING.md`: the text that says a tap opens Photos.
 
 Behavior:
@@ -399,6 +399,88 @@ UI tests, in a new `PhotoViewerUITests.swift` (an extension of `NopeAppUITests`)
 | `testLockScreenViewerHasNoOpenInPhotos` | The capture extension |
 
 Update the tests that expect a tap to open Photos or that use the long-press menu (`docs/TESTING.md`, the Last Photo rows), and add the new tests to `scripts/ui-test-shards.txt`. By hand: the fold pair `duo-fold-viewer`; the hardware buttons on a device; VoiceOver, Voice Control and Switch Control on the flows in ACCESSIBILITY.md.
+
+### 3.15 What's in This Photo (owner request, 2026-11-18)
+
+Figures: every `sheet-photo-details*` figure ([photo-details.html](photo-details.html)); `viewer-details`, `ipad-photo-details`, `duo-inner-photo-details`, `duo-fold-photo-details`. This section replaces the `PhotoDetailsSheet` line of 3.9.
+
+The owner asked for as much as the app can say about the photo and its metadata, organized cleanly. The sheet keeps its title, What's in This Photo, and its two ways in: Photo Details in the Last Photo viewer, and the Photo Details action on Last Photo. It shows only values the app already holds in memory for a photo of this session: the read-back of each saved file (`SavedPhoto.metadata`, `SavedPhoto.details`), the settings the photo was saved with, and what the camera reported. It reads nothing from Photos, writes nothing to disk, logs nothing, and has no copy or share action (`AGENTS.md`: no clipboard access; the text stays unselectable, as today).
+
+Rules for every row:
+
+- A value is shown only when the app holds it. A missing value has no row; nothing is estimated.
+- A value is as written in the files unless its row says "Not in the files". Only three values can say that: the shutter and ISO the camera reported, when the files hold no exposure, and the lens that was selected, when the files hold no lens name.
+- Enumerated EXIF values use the app's own word where the app has a control for the same thing (Auto, Manual, the metering names), otherwise the EXIF standard's term; a code the core does not name shows the number.
+- An identifying value (`MetadataComparison.Entry.isIdentifying`: location, maker notes, IDs and serial numbers) with a readable value reads "Hidden" until the person asks, as in Compare. What was revealed is forgotten when the sheet closes. The sheet's contents are hidden while the scene is not active, as in `ComparisonScreen`, so the app switcher's snapshot holds no value.
+- Numbers, dates, sizes and lists use the system formatters. Specification names (tags, blocks, properties) and the manifest's own words are not translated.
+
+Order of groups, fixed for every photo. A group with nothing to show is left out only where the table says so.
+
+| # | Group (header) | Rows shown at once | Behind a disclosure row | Data |
+| --- | --- | --- | --- | --- |
+| 0 | Summary (no header) | Formats, as a list ("RAW (DNG) and HEIF"); lens and time; pixel size and total size; then four lines with symbols: kind, signature, optional details, location | none | `SavedPhoto.formats`; the session's lens and time (section 6, item 15), left out when the session has none; `files[].pixelWidth`, `pixelHeight`, the sum of `byteCount`; `files[].processing`; `signature`; the count of `items` in state `written`, without location; the location item's state |
+| 1 | Exposure | Shutter, ISO, Aperture, Focal Length, 35 mm Equivalent, Exposure Compensation, White Balance, Flash. Footer "As written in the files." | More Exposure Details: Exposure Mode, Program, Metering, Scene Brightness, Largest Aperture, Subject Area | `PhotoDetails.exposure`, extended (item 16). With no exposure in the files: Shutter and ISO from the capture, each "Not in the files", and the footer of section 4; with neither, the existing sentence "The files don't record the exposure." |
+| 2 | Lens and Camera | Lens, Lens Maker, Camera. Footer "As written in the files." | none | `LensModel`, `LensMake`, `Make` and `Model` from the read-back (item 16). With none: Lens, from the session, "Not in the files", and the footer of section 4. Left out when there is neither |
+| 3 | RAW Sensor Data | Size (with megapixels), Bit Depth, Color Filter Pattern, Clipped Highlights, Clipped Shadows, Lens Corrections | More Sensor Details: Red, Green, Blue (clipping); Black Level, White Level, Active Area, Default Crop, Compression, DNG Version, Baseline Exposure, As-Shot Neutral; then the existing clipping definition | The RAW file of `files`, `rawClipping`, and DNG tags from the read-back (item 16). Left out for a photo without RAW. When clipping was not measured, the existing reason replaces the two rows |
+| 4 | Files | One row for each file: format and size; under them pixels, bit depth and, for a developed copy, color space and quality. In Photos, when a RAW and a copy were saved | none | `files`; `DevelopedFileOptions` and `RAWPairing` of the save (item 17). Color space and quality are left out for the processed fallback and until item 17 exists |
+| 5 | Processing | One row for each file with the existing sentence; a developed copy adds what its look does. A processed fallback: the warning line, the distortion line (`ProcessingNote.distortion`), and what the app did | none | `files[].processing`, `distortionCorrection` |
+| 6 | Details in This Photo | Location; In the Files (open), each written item with its value; Standard File Tags. The footer of section 4 | Left Out: each item with "Off in Settings" or "On, but there was nothing to write". Always Saved: the locked items, "Always kept" | `items`, `lockedItems`; the values from the read-back (item 16); `MetadataSettings.writesStandardFileTags` (item 17) |
+| 7 | Content Credentials | The signature sentence with its symbol (`signatureSymbol`, `signatureStyle`, unchanged). Signed: what the signature shows; for each file the claim generator and the manifest's words; how to check. Not signed: the reason | Manifest SHA-256, for each file | `signature`, `files[].contentCredentials` |
+| 8 | Every Tag | One row for each file, with its count; opens the page below | the page | `files[].entries` (item 16); until then `files[].contents`, names only |
+| 9 | (no header) | Timing | The five steps, as today | `timings` |
+
+After the groups: the existing footer "Only for photos taken since nope. opened…", then Open in Photos (left out when `openPhoto` is `nil`). The bracket picker stays above the summary.
+
+The Every Tag page (one file): title, the file's format name; the system search field, which filters by name and opens the groups that match; one disclosure row for each place that has entries, closed at first, with its count: TIFF, EXIF, GPS, DNG, XMP, File Structure, Content Credentials. TIFF is IFD0 below tag `0xC612`; DNG is IFD0 from `0xC612` up, without the manifest tag; File Structure is the container blocks. A row is the name in the monospaced body font, the value (`ComparisonText.describe`: the text, the numbers, "Count: n", or "Present, no readable value"), and a footnote with the tag number and the setting that controls it, "Always saved", or "nope.'s Content Credentials signature." A group with hidden values starts with one Show Hidden Values row.
+
+Component tree. `PhotoDetailsSheet.swift` keeps the sheet and is split, because it grows:
+
+| Component | File | Notes |
+| --- | --- | --- |
+| `PhotoDetailsSheet` | `PhotoDetailsSheet.swift` (kept) | `NavigationStack`, `List`, Done, the bracket picker, Open in Photos, the footer. Holds the revealed identifiers (`@State`), cleared on dismissal. Hides its contents while the scene is not active |
+| `PhotoDetailsSections` | same (kept, rewritten) | The ten groups in order |
+| `PhotoSummaryCard` | new `PhotoDetailsSummary.swift` | One `Section` with one row; a `VStack` with `NopeSpace.xs` between lines. Head: formats in `.title3.weight(.semibold)`, caption in `.subheadline.monospacedDigit()` secondary; `ViewThatFits` puts the caption under the formats when they do not fit. Lines: `Label` with the symbol in `CameraStyle.fact`, `CameraStyle.warning` or secondary. Symbols: `camera` (kind), `exclamationmark.triangle.fill` (processed, location in the files, failed signature), `checkmark.seal.fill`, `info.circle`, `list.bullet`, `location.slash`. One accessibility element |
+| `DetailRow` | `PhotoDetailsSheet.swift` (kept) | Gains an optional note under the value ("Not in the files", megapixels), in `.footnote` |
+| `ExposureSection`, `LensSection`, `SensorSection`, `FilesSection`, `ProcessingSection` | new `PhotoDetailsGroups.swift` | `DisclosureGroup` for More Exposure Details and More Sensor Details. `RAWClippingSection`'s rows and reasons move into `SensorSection`; its strings are kept |
+| `MetadataItemsSection` | new `PhotoDetailsPrivacy.swift` | Location row (`HiddenValueRow`), three `DisclosureGroup`s (In the Files open, the others closed), Standard File Tags |
+| `HiddenValueRow` | same | Title, "Hidden" or the value, and a borderless Show Value button of `NopeSize.minTarget` height; reuses the Compare strings "Hidden" and "Show Value" |
+| `ContentCredentialsSection` | new `PhotoDetailsSignature.swift` | The existing row and manifest block; the hash moves into a `DisclosureGroup` |
+| `EveryTagSection`, `EveryTagPage` | new `PhotoDetailsTags.swift` | `NavigationLink` for each file; the page is a `List` with `searchable` and a `DisclosureGroup` for each place |
+
+Core additions this design needs are section 6, items 16 and 17. `NopeUI` decodes nothing: names of EXIF values, the grouping of tags and the megapixel figure come from `NopeCore`.
+
+Presentation: a sheet with the large detent in a compact-width window; a centered sheet in a regular-width window (3.11, unchanged), also over the viewer. The Every Tag page is pushed inside the sheet. Sheets rotate with an iPhone held sideways (`sheet-photo-details-sideways`). Night mode: `.nightModeStyle`, red on black, no exception.
+
+Tokens: `NopeSpace.xxs`, `xs`, `m`; `NopeSize.minTarget`; `CameraStyle.fact`, `warning`, `secondaryText`. System list metrics otherwise. No literal values.
+
+AC:
+
+- The summary is the first element. Its four lines are true for the photo shown: the kind line names a processed fallback with the warning symbol; the signature line is the save sentence; the details line counts the optional items written, location not included; the location line says "Location is in the files" with the warning symbol only when the files hold GPS tags.
+- No row shows a value the app does not hold. With Remove All Optional Details on, Exposure shows at most Shutter and ISO, each "Not in the files", and Lens and Camera at most Lens.
+- Teal appears only with "Saved and signed."; amber only with a processed fallback, a location in the files or a failed signature, each with its symbol and words. Signing off by choice has the information symbol and no amber.
+- A location value is never on screen until Show Value (or Show Hidden Values) is activated; it is hidden again the next time the sheet opens; it is not in the snapshot taken when the app leaves the screen.
+- Every disclosure row opens and closes with a tap, Space, and the VoiceOver double tap, and announces Collapsed or Expanded. In the Files is open at first; the others are closed.
+- Every Tag lists exactly the entries of the file's read-back: the count on the row equals the rows of the page. Search filters by name and is cleared by Cancel.
+- Nothing is selectable or copyable; no share action exists.
+- At the largest text size no text is truncated; each value is under its title. Right to left, rows mirror and numbers keep their direction. In night mode no pixel is non-red.
+- The sheet opens on the photo the viewer shows; Done and Escape return to it.
+
+UI tests, in `PhotoDetailsUITests.swift` (an extension of `NopeAppUITests`; the existing photo details tests move here), each with `performAccessibilityAudit()` through the existing helpers:
+
+| Test | Covers |
+| --- | --- |
+| `testDetailsSummaryForDefaultPhoto` | RAW only, signing off, all optional removed: the four lines; Not in the files on Shutter, ISO and Lens |
+| `testDetailsGroupsInOrder` | RAW and HEIF with details kept: the headers in order; Files has two rows and In Photos |
+| `testDetailsDisclosureRows` | Each disclosure row opens and closes; In the Files starts open |
+| `testDetailsProcessedPhoto` | `noRAW`: the warning lines, the distortion line, no RAW Sensor Data |
+| `testDetailsSignatureStates` | Signed, signing off, `signingFails`: symbol, sentence and reason; the hash behind its row |
+| `testDetailsLocationHiddenUntilShown` | Simulated location: Hidden, Show Value, hidden again after reopening; location off; on with nothing to write |
+| `testDetailsEveryTagPage` | The page for each format: groups and counts, a tag's value, Show Hidden Values, search |
+| `testDetailsHiddenInAppSwitcher` | The scene made inactive: the contents are covered |
+| `testDetailsLargestText`, `testDetailsRightToLeft`, `testDetailsNightModeIsAllRed`, `testDetailsSideways` | The audits at the largest size (with `auditScrollingScreen`), right to left, night mode (`nonRedPixels` equal to 0) and sideways |
+| `testDetailsOnIPad` (iPad shard) | The centered sheet over the viewer; the pushed page |
+
+Unit tests (100% coverage) for everything added to `NopeCore` by items 16 and 17: every decoded value and its fallback to the number, the grouping of entries, the megapixel figure, the "Not in the files" cases, and each item's value text. By hand: VoiceOver, Voice Control and Switch Control on the flows in ACCESSIBILITY.md; the values against an exiftool dump of the same photo on a device (`docs/TESTING.md`).
 
 ## 4. New and changed strings
 
@@ -460,6 +542,34 @@ Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. A
 | Photo Not Saved | Viewer | Warning chip; closes the viewer to show the failure |
 | Shows the photo. | Last Photo, VoiceOver hint | |
 | Zoomed in. | Viewer, VoiceOver value | Zoom In, Zoom Out, Hide Controls and Show Controls exist |
+| Exposure; Lens and Camera; RAW Sensor Data; Details in This Photo; Content Credentials; Every Tag | What's in This Photo, headers (3.15) | "Files", "Processing" and "Timing" exist. "Exposure as Written", "Clipping in the RAW", "Signature", "Details Kept", "Details Left Out" and "Read Back from the Files" are removed. Details in This Photo and Content Credentials: Honesty |
+| %@ · %@ (lens, time); %@ · %@ (pixels, size) | Summary | Whole formats; the parts are formatted by the system |
+| RAW: one frame of sensor data; RAW: one frame of sensor data, and a %@ copy developed by nope.; RAW: one frame of sensor data, and %@ copies developed by nope. | Summary, kind line (Honesty) | Draft. The placeholder is a format name or a list of two |
+| No optional details in the files; %lld optional details in the files | Summary (Honesty) | Draft; plural rule. Location is not counted: it has its own line |
+| No location in the files; Location is in the files | Summary (Honesty) | Draft |
+| Not in the files | Under a value the files do not hold (Honesty) | Draft |
+| Exposure Settings is off, so the files don't hold the exposure. These are the values the camera reported for this photo. nope. keeps them only until it closes. | Exposure footer (Honesty) | Draft; replaces "Not in the files: exposure settings are off in Settings." when the capture's values are shown |
+| Lens and camera names are off in Settings, so the files don't hold them. | Lens and Camera footer (Honesty) | Draft |
+| As written in the files. | Exposure and Lens and Camera footers (Honesty) | Draft |
+| 35 mm Equivalent; More Exposure Details; Exposure Mode; Program; Scene Brightness; Largest Aperture; Subject Area | Exposure | "Metering" exists. The EXIF terms for program and metering values (for example "Normal program", "Pattern") are new keys, one each |
+| Lens; Lens Maker; Camera | Lens and Camera | |
+| Size; %@ MP; Bit Depth; Color Filter Pattern; Lens Corrections; Stored, not applied; Not stored; More Sensor Details; Black Level; White Level; Active Area; Default Crop; %@ at %@; Compression; Lossless JPEG; DNG Version; Baseline Exposure; As-Shot Neutral | RAW Sensor Data | Titles and values as separate keys; the joined forms "Bit depth: %lld", "Color filter pattern: %@", "Black level: %@", "White level: %@" and the two "Lens corrections: …" strings are removed. "Clipped Highlights", "Clipped Shadows" and the color names exist |
+| %@ · %lld-bit · lossless; %@ · %lld-bit · %@ · %@ quality; %@ · %lld-bit | Files, under a format | Pixels, bit depth, color space, quality. Whole formats |
+| In Photos; One photo: the RAW with its %@; One photo: the RAW with its %@. The %@ is a photo of its own. | Files (Honesty) | Draft. States what the app asked Photos to do |
+| One overall tone curve, and no noise reduction, sharpening or local tone mapping.; No contrast curve, and no noise reduction, sharpening or local tone mapping. | Processing, under a developed copy (Honesty) | Draft; the same claims as the processing note |
+| nope. didn't change this file's picture. | Processing, processed fallback (Honesty) | Draft |
+| In the Files; Left Out; Always Saved; In the files; Shown under Exposure | Details in This Photo (Honesty) | "Off in Settings", "On, but there was nothing to write", "Always kept", "Hidden" and "Show Value" exist |
+| To change what the next photos hold, open Details in Each Photo in Settings. The files of this photo stay as they are. | Details in This Photo footer (Honesty) | Draft |
+| %@, altitude %@ | Location, after Show Value | Coordinates and altitude formatted by the system |
+| The signature lets anyone check that a file hasn't changed since nope. saved it. It doesn't show who took the photo or on which device. | Content Credentials (Honesty) | Draft |
+| To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker reports the file as valid and the signer as untrusted. | Content Credentials (Honesty) | Draft |
+| Sign Each Photo is off in Settings, so these files have no signature. | Content Credentials (Honesty) | Draft |
+| Signing was on, but nope. couldn't create the signature for this photo. The files were saved without one. The camera shows Not Signed until a photo is signed again. | Content Credentials (Honesty) | Draft. Variants for the other reasons (`unavailable`, `signedFileFailedCheck`) follow the same pattern and their existing save sentences |
+| Claim generator: %@ %@; Manifest SHA-256 | Content Credentials (Honesty) | The first exists. The second becomes a row title; "Manifest SHA-256: %@" is removed |
+| Every tag, block and property nope. read back from each file before saving it, with its value. | Every Tag footer (Honesty) | Draft |
+| %lld tags, blocks and properties in this file, as nope. read them back before saving it. Names are the standards' own. | Every Tag page (Honesty) | Draft; plural rule |
+| TIFF; EXIF; GPS; DNG; XMP; File Structure; Show Hidden Values; Always saved | Every Tag page | Names of standards are not translated. "Count: %lld", "Present, no readable value" and "nope.'s Content Credentials signature." exist |
+| Show Value, %@ | VoiceOver label of a Show Value button | The placeholder is the row's title |
 
 Remove: "Choose Details"; "In Each Photo" (the header); "File Options"; "Face Detection" and the action strings that use it; every "On by default." and "Off by default." sentence in Settings; the 0.3.0 explanations replaced above; the Interval Shooting section strings of Pro Tools once nothing uses them; "Golden Ratio", "Golden Spiral", "Turn Spiral" and its value (issue 76); "Quick Controls"; "No RAW on This Lens" once nothing uses it; "Rename or Delete"; "Turn Off Manual Controls", "Back to Single Photo", "Turn Off Astro" when their pills go.
 
@@ -470,6 +580,7 @@ These are drafts. None ships until reviewed in every language (`AGENTS.md`, Loca
 - the first-run signing statement; the Sign Each Photo explanation; the three processing-note sentences; the Honesty entries Signing Is Your Choice and Lenses Without RAW;
 - from the Settings decisions of 2026-11-17: the explanations of Mirror Front Camera, Focus on Faces, Show Processed Marker, Night Mode, Red Viewfinder and Live Activity; the Standard File Tags sentence; the Night Mode entry on the Accessibility page; the Honesty entries Faces and Autofocus and Location Only If You Turn It On; the names Details in Each Photo, HEIF and JPEG Copies and Focus on Faces;
 - from the Last Photo viewer (3.14): Signed and Not signed on its status line, the preview hint, and the Preview Not Kept title and sentence. The hint must stay true for the preview size the data specification chooses, and is shown only when the preview has fewer pixels than the saved photo;
+- from What's in This Photo (3.15): every string marked Honesty in section 4 under that screen. Four need particular care. "RAW: one frame of sensor data" must not be read as "no processing"; it says only what the file is. "Not in the files" and the two footers must stay true if the capture's values stop being kept. "One photo: the RAW with its HEIF" states what the app asked Photos to do, which the device check in `docs/PRIVACY.md` confirms. The sentence about a checker reporting the file as valid and the signer as untrusted follows `docs/PRIVACY.md` (Content Credentials) and c2patool 0.28.6; it must be checked against the checker people are most likely to use before it ships, and it names no product;
 - to check against the real-device tag dump (issue 79) before it is kept as written: the Always Saved footer, "None of them identify you or link your photos."
 
 The processing note must not name specific processing steps the phone applies unless they are verified; the draft says only that the phone processes the file and that the app cannot turn it off. Focus on Faces must not be described as turning face detection off: the switch decides only whether the app's autofocus and auto exposure follow faces.
@@ -490,6 +601,9 @@ The processing note must not name specific processing steps the phone applies un
 | 13 | Device checks with no code change planned: what the Lock Screen camera offers while locked; each `duo-fold-*` pair and the half-open posture; the watch countdown in Always On; iPhone sideways at the largest text size. Record the results in docs/TESTING.md; a difference from the drawings is a finding for the owner, not a reason to add layout code in 1.0.0 | Needs devices | 3.10 to 3.13 |
 | 14 | Night Mode turned on while the Settings popover is open on iPad: the popover keeps the system material, not black, until it is closed (today's behavior, drawn in `ipad-settings-night-on`). Closing and reopening Settings by itself would be a behavior change | `CameraStyle.swift` (`AdaptivePresentation`) | Owner decision if the red-on-material state is not acceptable |
 | 15 | The Last Photo viewer's data (owner decision, 2026-11-18): the list of this session's photos with the lens and time of each; a screen-size preview for each, in memory only, released in the background and under memory pressure; how many are kept; whether the viewer is open, so the hardware shutter can close it | `NopeCore`, `NopeDevelop` (`ImageIOThumbnailer`), the app target's capture events. Specified separately | 3.14 |
+| 16 | What's in This Photo: values the read-back already holds but `PhotoDetails` does not expose. (a) `PhotoDetails.File.entries`: every tag, block and XMP property with its value, the setting that controls it, whether it identifies, and its place (TIFF, EXIF, GPS, DNG, XMP, file structure, signature), built as `MetadataComparison.items(in:)` builds them. (b) `PhotoDetails.Exposure` gains the 35 mm equivalent, exposure mode, program, metering, brightness, largest aperture and subject area, with named cases and the raw number for an unknown code. (c) A lens and camera value (lens model, lens make, make, model). (d) For the RAW file: megapixels, active area, default crop, compression, DNG version, baseline exposure, as-shot neutral. (e) For each written item, its value as text (the date parsed and formatted by the interface from a `Date`; the location as coordinates) | `NopeCore/PhotoDetails.swift`, with unit tests to 100%. No new reading: the data is `SavedPhoto.metadata`. Scope: presentation of existing data, so 1.0.0 if the owner agrees (section 7, P1) | 3.15, groups 1, 2, 3, 6 and 8. Without it the sheet shows today's values in the new order, and Every Tag lists names only |
+| 17 | What's in This Photo: values the save knows and does not pass on. (a) The developed copies' color space, quality and size (`DevelopedFileOptions`) and the pairing (`RAWPairing`). (b) Whether Standard File Tags were written (`MetadataSettings`). (c) The shutter and ISO the camera reported (`CapturedPhoto.exposureDuration`, `iso`), kept with the details in memory for the session | `NopeCore/PhotoSaver.swift`, `PhotoDetails.swift`; `docs/PRIVACY.md` (Last photo and its details) must list (c). Scope: 1.0.0 if the owner agrees (P1, P2) | 3.15, groups 1, 4 and 6 |
+| 18 | Not in 1.0.0, new capability: the bytes of tags the reader does not decode (EXIF version, component configuration, maker notes, the lens correction lists) and of tags with more than 16 values, which needs a change to the fail-closed reader (`TIFFReader`); the name of the color profile; which processing switches the device offered and the app turned off for this photo (`ProcessingSwitches`); focus distance, white balance in kelvin, drive mode and bracket step; a check of the signature by the app; the manifest's other fields (instance ID, certificate serial number). File names are not available to an app with add-only access | `NopeCore`, `NopeCapture`, `NopeSigning` | Nothing drawn. Rows for these read "Present, no readable value" or do not exist |
 | 10 | Deployment targets (issue 78) | Project settings | none; do first if `#available` fallbacks in `CameraStyle.swift` are to be removed with the token work |
 | 11 | App icon assets and the `TRADEMARKS.md` entry | Brand asset; owner decision on the period color | icon.html |
 | 12 | A check that fails on literal spacing or radius values (issue 74) | Script or test under `scripts/` | tokens.md |
@@ -543,6 +657,23 @@ Last Photo viewer, still needing the owner. Each has a recommendation, and the d
 | V12 | A bracket or a burst | Every saved photo is its own page | One page for each press of the shutter |
 | V13 | The draft wording (section 5) | After the Honesty review | |
 
+What's in This Photo (3.15), needing the owner. Each has a recommendation, and the drawings show it:
+
+| # | Point | Recommendation | Other choice |
+| --- | --- | --- | --- |
+| P1 | Scope of 1.0.0. The new values are already in memory (the read-back), but showing them needs additions to `PhotoDetails` in the core (section 6, items 16 and 17) | In 1.0.0: it is the presentation of existing data, with unit tests, and no new reading, capture or storage | Interface only in 1.0.0: the new order, the summary and the disclosure rows with today's values; the rest in 1.1.0 |
+| P2 | With Exposure Settings off (the default), the files hold no exposure. The app knows the shutter and ISO the camera reported | Show the two, each marked "Not in the files", with the footer that says they are kept only until the app closes. `docs/PRIVACY.md` gains one line | Show only the sentence that the files hold no exposure |
+| P3 | The lens and the time in the summary come from the session, not the file, and show even when the files hold neither | Show them, as the viewer's caption does; Details in This Photo says whether the files hold the date | Leave them out of the sheet unless the files hold them |
+| P4 | A location in the files, in the summary | "Location is in the files" with the warning triangle, as the camera's Location On chip | Plain text with a location symbol |
+| P5 | Identifying values | Hidden until Show Value, forgotten when the sheet closes, never in the app switcher | Shown at once; or never shown |
+| P6 | Every Tag | A page for each file, its groups closed at first, with search | Everything inline on the sheet in nested disclosure rows; no search |
+| P7 | Copy or share of values | None: the app has no clipboard access and no share action, and the text is not selectable | A Share action for the list would be a new capability and needs a privacy review |
+| P8 | How to check a signed file | One sentence that names no product and says what a checker reports | No guidance; or name a tool, which the Honesty review would have to keep current |
+| P9 | The title | Keep What's in This Photo; the button stays Photo Details | Title it Photo Details, so the button and the title match |
+| P10 | The order | Summary, Exposure, Lens and Camera, RAW Sensor Data, Files, Processing, Details in This Photo, Content Credentials, Every Tag, Timing | Privacy and the signature before the exposure |
+| P11 | Timing | Kept, as one closed row at the end | Removed from the sheet |
+| P12 | The draft wording (section 5) | After the Honesty review | |
+
 ## 8. Implementation order
 
 Chunks are sized to be built in parallel after chunk 0. No two parallel chunks edit the same file. Three kinds of file are shared by nature and each has one owner: the string catalogs (chunk S), the UI test shard list `scripts/ui-test-shards.txt` and `docs/api` (chunk Z), and `CameraReadyView.swift` (chunk A).
@@ -560,6 +691,7 @@ Chunks are sized to be built in parallel after chunk 0. No two parallel chunks e
 | G · Settings and sheets | 0, C | `SettingsScreen.swift`, new `SettingsSearch.swift` (the index, keywords, camera pointers and the page and row identifiers), `PresetsScreen.swift`, `PrivacySettingsView.swift` (Details in Each Photo), `OverlaySettingsView.swift` (with the new Focus Peaking Q item builder), new `CopiesSettingsView.swift` (merges and deletes `LookSettingsView.swift` and `FileOptionsSettingsView.swift`), `PhotoSizeSettingsView.swift`, `AccessibilitySettingsView.swift`, `HonestyScreen.swift`, `AboutScreen.swift`, `ExplainedToggle.swift`, `PhotoDetailsSheet.swift`, `ComparisonScreen.swift` | 3.9, 3.10 |
 | H · System and watch | 0 | `App/Shared/SeriesActivity.swift`, `App/NopeControls/*.swift`, `App/NopeWatch/*.swift` (not catalogs) | 3.13. These targets need the token values: add `DesignTokens.swift` to their target membership, or keep a copy checked by a test; choose one and say which |
 | V · Last Photo viewer | A, E, G, and section 6 item 15 | New `PhotoViewer.swift`, new `PhotoViewerUITests.swift`; small edits to `CaptureFeedback.swift`, `CameraReadyView.swift`, `PhotoDetailsSheet.swift` | 3.14 |
+| P · What's in This Photo | G, V, and section 6 items 16 and 17 | `PhotoDetailsSheet.swift`; new `PhotoDetailsSummary.swift`, `PhotoDetailsGroups.swift`, `PhotoDetailsPrivacy.swift`, `PhotoDetailsSignature.swift`, `PhotoDetailsTags.swift`, `PhotoDetailsUITests.swift`; `NopeCore/PhotoDetails.swift` and `PhotoSaver.swift` with their tests | 3.15 |
 | Z · Integration | A–H | `App/NopeAppUITests/*`, `App/NopeWatchUITests/*`, `scripts/ui-test-shards.txt`, `docs/api`, `docs/ARCHITECTURE.md`, `docs/BUILDING-AN-INTERFACE.md`, `CHANGELOG.md`, catalog removals, deletion of the deprecated wrappers | Each chunk writes its UI tests in a new file named after it (`QuickMenuUITests.swift`, `DriveStripUITests.swift`, …) as an extension of `NopeAppUITests`; Z updates the tests in existing files, assigns shards, regenerates the API docs and removes dead strings |
 
 Notes:
