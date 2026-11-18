@@ -70,6 +70,9 @@ struct CameraReadyView: View {
     /// Tells the app that a sheet opened or closed, so it can rotate.
     @Environment(\.cameraPresentsSheet) private var presentsSheet
 
+    /// Whether the app offers Keep Screen On, for the Battery Low warning's explanation.
+    @Environment(\.offersKeepScreenOn) private var offersKeepScreenOn
+
     /// Whether a sheet, popover or full-screen cover opened here is over the camera.
     private var presentsOwnSheet: Bool {
         showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings
@@ -171,6 +174,7 @@ struct CameraReadyView: View {
     /// The registries' context.
     private var context: CameraControlContext {
         var context = CameraControlContext(model: model, settings: settings)
+        context.offersKeepScreenOn = offersKeepScreenOn
         context.showsExposureDial = $showsExposureDial
         context.presets = presets
         context.showsPresets = $showsPresets
@@ -304,6 +308,8 @@ struct CameraReadyView: View {
             }
         }
         .onChange(of: presentsOwnSheet) { _, isPresenting in presentsSheet(isPresenting) }
+        // Keep Screen On is used only while no sheet is over the camera (SeriesScreen).
+        .preference(key: CameraCoveredPreference.self, value: presentsOwnSheet)
         .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil

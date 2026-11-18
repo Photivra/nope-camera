@@ -83,6 +83,12 @@ public final class NopeSettings {
     /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
     public private(set) var tintsViewfinderInNightMode: Bool
 
+    /// Whether the screen stays on while the camera is showing (Keep Screen On, issue #97). Off
+    /// by default. ``SeriesScreenKeeper`` applies it with ``KeepScreenOnRule``: the screen dims
+    /// after a while without a touch or a photo, and the phone's Auto-Lock applies again after
+    /// ``KeepScreenOnRule/limit``. The Lock Screen camera doesn't use it.
+    public private(set) var keepsScreenOn: Bool
+
     /// Whether a Live Activity shows a series and its saving on the Lock Screen and in the
     /// Dynamic Island (issue #64). Off by default.
     public private(set) var showsLiveActivity: Bool
@@ -131,6 +137,8 @@ public final class NopeSettings {
             ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
         isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
+        // A missing value is the default, off; so is a preset saved before the setting existed.
+        keepsScreenOn = defaults.bool(forKey: Key.keepsScreenOn)
         // A missing value is the default, off: leaving Astro restores night mode.
         keepsNightModeAfterAstro = defaults.bool(forKey: Key.keepsNightModeAfterAstro)
         isNightModeFromAstro = defaults.bool(forKey: Key.isNightModeFromAstro)
@@ -434,6 +442,14 @@ public final class NopeSettings {
         defaults.set(isOn, forKey: Key.tintsViewfinderInNightMode)
     }
 
+    /// Turns Keep Screen On on or off, and saves the change.
+    ///
+    /// - Parameter isOn: Whether the screen stays on while the camera is showing.
+    public func setKeepsScreenOn(_ isOn: Bool) {
+        keepsScreenOn = isOn
+        defaults.set(isOn, forKey: Key.keepsScreenOn)
+    }
+
     /// Turns the Live Activity on or off, and saves the change.
     ///
     /// - Parameter isOn: Whether a Live Activity shows a series and its saving.
@@ -462,6 +478,7 @@ public final class NopeSettings {
             update(\.torchLevel, from: stored),
             update(\.isNightModeOn, from: stored),
             update(\.tintsViewfinderInNightMode, from: stored),
+            update(\.keepsScreenOn, from: stored),
             update(\.keepsNightModeAfterAstro, from: stored),
             update(\.isNightModeFromAstro, from: stored),
             update(\.showsLiveActivity, from: stored),
@@ -562,6 +579,8 @@ public final class NopeSettings {
         static let isNightModeOn = "NopeSettings.isNightModeOn"
         /// Whether night mode tints the viewfinder, a Boolean.
         static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
+        /// Whether the screen stays on while the camera is showing, a Boolean.
+        static let keepsScreenOn = "NopeSettings.keepsScreenOn"
         /// Whether night mode stays on after the astro helper ends, a Boolean.
         static let keepsNightModeAfterAstro = "NopeSettings.keepsNightModeAfterAstro"
         /// Whether the astro helper turned night mode on, a Boolean. Not a setting, so outside

@@ -106,7 +106,7 @@ Every setting and Q control was checked against this. Only Fast Shutter changes.
 | Mirror Front Camera | The front camera | Yes, in its name | None |
 | Live Activity | While a series runs | Yes | None |
 | HEIF and JPEG Copies | While a HEIF or JPEG copy is saved | Yes: "Not Saved" on the row and the first line of the page | None |
-| Night Mode | The app's own screens | Yes: "nope. doesn't change the screen's brightness." | None |
+| Night Mode | The app's own screens | Yes: "Night Mode doesn't change the screen's brightness." | None |
 | Exposure (Q) | Manual Controls off | The tile is left out with Manual Controls on; the EV readout takes its place | None |
 | Far Focus, Close-Up (Q) | Autofocus | The tiles are shown where the lens can limit focus (Far Focus only with Manual Controls on) | None here; section 7 |
 | Flash (Q) | A lens with a flash; never a burst or a bracket | The tile is left out on a lens without a flash | None here; section 7 |

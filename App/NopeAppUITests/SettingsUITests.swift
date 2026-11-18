@@ -12,12 +12,12 @@ import XCTest
 extension NopeAppUITests {
     /// The identifiers of the Settings list's rows, in order, as the "denied" scenario on the
     /// Simulator shows them: no lens is known, so Photo Size and Show Processed Marker are left
-    /// out, and the Simulator offers no Live Activity.
+    /// out, and the Simulator offers no Live Activity. Keep Screen On is always shown in the app.
     static let settingsRootRows = [
         "settings.presets", "settings.formats", "settings.copies", "settings.mirrorFrontCamera",
         "settings.details", "settings.signEachPhoto", "settings.fastShutter", "settings.focusOnFaces",
         "settings.startInCleanView", "settings.overlays", "settings.nightMode", "settings.redViewfinder",
-        "settings.accessibility", "settings.honesty", "settings.about",
+        "settings.keepScreenOn", "settings.accessibility", "settings.honesty", "settings.about",
     ]
 
     /// Opens Settings: from the Settings button where there is one, otherwise from Q.
@@ -341,14 +341,16 @@ extension NopeAppUITests {
         XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        // No search field in Night Mode: iOS draws it as gray glass that the red filter can't
-        // reach (owner decision of 2026-11-18). It returns when Night Mode is turned off, and
-        // the Night Mode row, whose switch was just used, stays in view.
+        // Night Mode has the app's own red search field (issue #88) instead of the system's,
+        // which iOS draws as gray glass. Turning Night Mode off brings the system field back,
+        // and the Night Mode row, whose switch was just used, stays in view.
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.searchFields.firstMatch.exists, "Settings has no search field in Night Mode")
+        XCTAssertFalse(systemSearchField(app).exists, "no system search field in Night Mode")
+        XCTAssertTrue(nightSearchField(app).exists, "the red search field in Night Mode")
         let nightMode = settingsElement(app, "settings.nightMode")
         flipSwitch(nightMode)
-        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5), "search returns when Night Mode is off")
+        XCTAssertTrue(systemSearchField(app).waitForExistence(timeout: 5), "the system field returns when Night Mode is off")
+        XCTAssertFalse(nightSearchField(app).exists)
         settle()
         XCTAssertTrue(nightMode.exists && nightMode.isHittable, "the Night Mode row stays in view")
         searchSettings(app, for: "manual")

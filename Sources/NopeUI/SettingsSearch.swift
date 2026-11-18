@@ -134,6 +134,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case keepNightModeAfterAstro = "settings.keepNightModeAfterAstro"
     /// The Red Viewfinder switch.
     case redViewfinder = "settings.redViewfinder"
+    /// The Keep Screen On switch.
+    case keepScreenOn = "settings.keepScreenOn"
     /// The Live Activity switch.
     case liveActivity = "settings.liveActivity"
 
@@ -178,7 +180,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         switch self {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
             .details, .signEachPhoto, .fastShutter, .focusOnFaces, .startInCleanView, .overlays, .showProcessedMarker,
-            .nightMode, .keepNightModeAfterAstro, .redViewfinder, .liveActivity, .accessibility, .honesty, .about:
+            .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .liveActivity, .accessibility, .honesty,
+            .about:
             nil
         case .factoryDefaults, .saveCurrentSettings: .presets
         case .pairedWithRAW: .formats
@@ -215,7 +218,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .camera, .fastShutter, .focusOnFaces: .camera
         case .screen, .startInCleanView, .overlays, .overlaysGrid, .overlaysGridStyle, .overlaysLevel,
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
-            .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .liveActivity:
+            .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .liveActivity:
             .screen
         case .more, .accessibility, .honesty, .about, .license, .noticesAndTrademarks: .more
         case .presets, .factoryDefaults, .saveCurrentSettings: nil
@@ -494,6 +497,8 @@ enum SettingsText {
     static let keepNightModeAfterAstro = LocalizedStringResource("Keep Night Mode After Astro", bundle: bundle, comment: "Switch and its Voice Control name: night mode stays on after leaving Astro, the night sky drive mode, instead of going back off. Night Mode and Astro are names of nope.'s features; use their translations.")
     /// "Red Viewfinder".
     static let redViewfinder = LocalizedStringResource("Red Viewfinder", bundle: bundle, comment: "Switch: in night mode, the live camera picture on screen is shown in red too.")
+    /// "Keep Screen On".
+    static let keepScreenOn = LocalizedStringResource("Keep Screen On", bundle: bundle, comment: "Switch and its Voice Control name: while the camera is showing, the screen doesn't lock by itself for up to 30 minutes after the last touch or photo. Draft wording for the Honesty review.")
     /// "Live Activity".
     static let liveActivity = LocalizedStringResource("Live Activity", bundle: bundle, comment: "Switch and its Voice Control name: shows interval shooting, astro frames, a burst or the self-timer on the Lock Screen and in the Dynamic Island. Live Activity is the name of the iOS feature: use its name in the language's iOS.")
     /// "Accessibility".
@@ -565,6 +570,7 @@ enum SettingsText {
         case .nightMode: nightMode
         case .keepNightModeAfterAstro: keepNightModeAfterAstro
         case .redViewfinder: redViewfinder
+        case .keepScreenOn: keepScreenOn
         case .liveActivity: liveActivity
         case .accessibility: accessibility
         case .honesty: honesty
@@ -615,6 +621,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Keep Night Mode After Astro", defaultValue: "red, dark, night sky, stars", bundle: bundle, comment: "Settings search keywords for Keep Night Mode After Astro, separated by commas. Not shown on screen.")
         case .startInCleanView:
             LocalizedStringResource("Search keywords: Start in Clean View", defaultValue: "hide controls, minimal", bundle: bundle, comment: "Settings search keywords for Start in Clean View, separated by commas. Not shown on screen.")
+        case .keepScreenOn:
+            LocalizedStringResource("Search keywords: Keep Screen On", defaultValue: "awake, auto-lock, sleep, lock, dim, tripod, battery", bundle: bundle, comment: "Settings search keywords for Keep Screen On, separated by commas. Not shown on screen: list the words people in your language would type to keep the screen from locking or sleeping. Auto-Lock is the name of the iOS setting: use its name in the language's iOS.")
         case .liveActivity:
             LocalizedStringResource("Search keywords: Live Activity", defaultValue: "Lock Screen, Dynamic Island", bundle: bundle, comment: "Settings search keywords for Live Activity, separated by commas. Not shown on screen. Lock Screen and Dynamic Island are iOS names: use the names iOS shows in this language.")
         case .showProcessedMarker:
@@ -816,6 +824,9 @@ enum SettingsSearch {
         /// Whether the device offers Astro (`CameraModel/deviceOffersAstro`), so the Keep Night
         /// Mode After Astro switch applies.
         var offersAstro = false
+        /// Whether Keep Screen On is offered: not in the Lock Screen camera, which leaves the
+        /// screen to iOS (``SwiftUICore/EnvironmentValues/offersKeepScreenOn``).
+        var offersKeepScreenOn = true
 
         /// Creates the availability.
         ///
@@ -827,10 +838,11 @@ enum SettingsSearch {
         ///   - offersProcessedMarker: Whether a lens has no Bayer RAW.
         ///   - offersLiveActivity: Whether the Live Activity switch is offered.
         ///   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
+        ///   - offersKeepScreenOn: Whether Keep Screen On is offered.
         init(
             hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true,
             offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false,
-            offersAstro: Bool = false
+            offersAstro: Bool = false, offersKeepScreenOn: Bool = true
         ) {
             self.hasPresets = hasPresets
             self.offersPhotoSize = offersPhotoSize
@@ -839,6 +851,7 @@ enum SettingsSearch {
             self.offersProcessedMarker = offersProcessedMarker
             self.offersLiveActivity = offersLiveActivity
             self.offersAstro = offersAstro
+            self.offersKeepScreenOn = offersKeepScreenOn
         }
 
         /// Whether the item exists here.
@@ -854,6 +867,7 @@ enum SettingsSearch {
             case .showProcessedMarker: offersProcessedMarker
             case .liveActivity: offersLiveActivity
             case .keepNightModeAfterAstro: offersAstro
+            case .keepScreenOn: offersKeepScreenOn
             default: true
             }
         }
@@ -1003,6 +1017,10 @@ struct SettingsSearchResults: View {
         let (pointers, settings) = SettingsSearch.results(for: query, availability: availability)
         if pointers.isEmpty && settings.isEmpty {
             ContentUnavailableView.search(text: query)
+                // Its own background, so the sheet's, which night mode's red can't reach, doesn't
+                // show through in Night Mode (issue #88).
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.background)
         } else {
             Form {
                 if !pointers.isEmpty {

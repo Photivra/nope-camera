@@ -97,7 +97,8 @@ buttons, haptics and spoken feedback (issue #68, "Settings").
 
 It lists only what is built; none of these have a switch yet, so the screen shows facts and
 no control that does nothing. Settings for them (issue #37) add rows here. The Night Mode
-entry says how to dim the screen, which nope. never does itself.
+entries say how to dim the screen, which Night Mode never does itself, and that the system
+keyboard and menus aren't red.
 
 ## `AccessibilitySettingsView/body`
 
@@ -1559,6 +1560,17 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 The camera model.
 
+## `CameraControlContext/offersKeepScreenOn`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+@MainActor var offersKeepScreenOn: Bool
+```
+
+Whether the app offers Keep Screen On (not the Lock Screen camera), so the Battery Low
+warning can say that the setting isn't used. The camera screen sets it.
+
 ## `CameraControlContext/presets`
 
 internal, declared in `Sources/NopeUI/StatePills.swift`
@@ -1623,6 +1635,51 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 ```
 
 Whether the presets sheet is open, for the Presets tray item. The camera screen sets it.
+
+## `CameraCoveredPreference`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+struct CameraCoveredPreference
+```
+
+Whether a sheet, popover or full-screen cover opened by the ready camera is over it, passed up
+to ``SeriesScreen``: Keep Screen On is used only while the camera screen is in front.
+
+## `CameraCoveredPreference/defaultValue`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+static let defaultValue: Bool
+```
+
+No cover.
+
+## `CameraCoveredPreference/init()`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+init()
+```
+
+Creates the key. It holds no state.
+
+## `CameraCoveredPreference/reduce(value:nextValue:)`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+static func reduce(value: inout Bool, nextValue: () -> Bool)
+```
+
+Any cover.
+
+- Parameters:
+  - value: The value so far.
+  - nextValue: The next view's value.
 
 ## `CameraFlipButton`
 
@@ -5122,6 +5179,18 @@ mode letter, for the button's state: set by the button styles from
 hierarchical `.secondary` style would instead fade the primary color, which the
 accessibility audit reported as low contrast on a selected tile.
 
+## `EnvironmentValues/offersKeepScreenOn`
+
+public, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+var offersKeepScreenOn: Bool { get set }
+```
+
+Whether Settings offers Keep Screen On (issue #97): `true` where the app gives a
+`SeriesScreenKeeper`. `false` by default, as in the Lock Screen camera, which leaves the
+screen to iOS, and in previews.
+
 ## `EnvironmentValues/offersLiveActivity`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
@@ -5180,8 +5249,9 @@ public, declared in `Sources/NopeUI/SeriesScreen.swift`
 var seriesScreenKeeper: SeriesScreenKeeper? { get set }
 ```
 
-Keeps the screen awake and dimmed during an interval series (issue #48), or `nil` when
-the app gives none, as in previews: then the screen is left alone.
+Keeps the screen awake and dimmed during an interval series (issue #48) and for Keep
+Screen On (issue #97), or `nil` when the app gives none, as in the Lock Screen camera and
+previews: then the screen is left alone.
 
 ## `EnvironmentValues/showsStartIndicator`
 
@@ -5234,7 +5304,8 @@ internal, declared in `Sources/NopeUI/PhotoDetailsTags.swift`
 ```
 
 One file's tags, blocks and properties, grouped by where they live in the file, each group
-closed at first, with search by name. Identifying values read "Hidden" until Show Hidden
+closed at first, with search by name (the system field, or ``NightSearchField`` in Night
+Mode). Identifying values read "Hidden" until Show Hidden
 Values in their group.
 
 ## `EveryTagPage/body`
@@ -10514,6 +10585,207 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Creates the modifier. It holds no state.
 
+## `NightSearchButtonStyle`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor struct NightSearchButtonStyle
+```
+
+The press state of Clear Text and Cancel: 70% opacity, as every custom button
+(``NopeMotion/pressedOpacity``).
+
+## `NightSearchButtonStyle/init()`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NightSearchButtonStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The label, dimmed while pressed.
+
+- Parameter configuration: The button's label and state.
+
+## `NightSearchField`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor struct NightSearchField
+```
+
+The app's own search field, drawn in Night Mode in place of the system's
+(`docs/design/night-search-field.md`; issues #88 and #98).
+
+iOS draws the system search field as gray glass outside the app's views, where night mode's
+red filter (``NightModeStyle``) can't reach it. This field is a plain text field inside the
+app's views, so the filter covers it like every other row: a capsule at least
+``NopeSize/minTarget`` high, black, with a 1-point outline in the outline red at rest and a
+2-point outline in the full red and the cursor while it has focus. It draws in white and
+grays, which the filter shows as reds; place it under ``NightModeStyle``.
+
+It holds no search logic: it edits a text binding, and the screen that shows it decides what
+the text finds. Outside Night Mode a screen keeps the system field (``NightSearchable``).
+
+- Clear Text, a red disc with a black cross, shows while there is text; it empties the field
+  and keeps the keyboard.
+- Cancel shows while the field has focus or holds text, beside the field, or under it at
+  accessibility text sizes; it empties the field and closes the keyboard. Escape on a
+  hardware keyboard and the VoiceOver escape gesture do the same.
+- Return (the key reads Search) closes the keyboard and keeps the text.
+- Autocorrection, suggestions and capitalization are off, so the system keyboard's bar,
+  which isn't red, holds less (decision 6). The keyboard itself is the system's dark one.
+
+## `NightSearchField/accessibilityName`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor let accessibilityName: Text
+```
+
+The field's VoiceOver and Voice Control name, such as "Search Settings".
+
+## `NightSearchField/body`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The field with Cancel beside or under it.
+
+## `NightSearchField/init(text:prompt:accessibilityName:)`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor init(text: Binding<String>, prompt: Text, accessibilityName: Text)
+```
+
+Creates the field.
+
+- Parameters:
+  - text: The search text.
+  - prompt: The placeholder.
+  - accessibilityName: The field's VoiceOver and Voice Control name.
+
+## `NightSearchField/prompt`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor let prompt: Text
+```
+
+The placeholder, "Search".
+
+## `NightSearchField/text`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@Binding @MainActor var text: String { get nonmutating set }
+```
+
+The search text.
+
+## `NightSearchable`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor struct NightSearchable
+```
+
+A screen's search: the system field (`searchable`) outside Night Mode, and
+``NightSearchField`` under the navigation bar in it (issues #88 and #98). The text is the
+same binding in both, so switching Night Mode keeps the search; the keyboard closes, because
+the field that had focus goes away.
+
+## `NightSearchable/accessibilityName`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor let accessibilityName: Text
+```
+
+The night field's VoiceOver and Voice Control name.
+
+## `NightSearchable/body(content:)`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content with the field for the mode.
+
+- Parameter content: The screen's list.
+
+## `NightSearchable/init(text:accessibilityName:placement:)`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor init(text: Binding<String>, accessibilityName: Text, placement: SearchFieldPlacement)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - text: The search text.
+  - accessibilityName: The night field's VoiceOver and Voice Control name.
+  - placement: The system field's placement.
+
+## `NightSearchable/placement`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor let placement: SearchFieldPlacement
+```
+
+The system field's placement.
+
+## `NightSearchable/prompt`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor static var prompt: Text { get }
+```
+
+"Search": the night field's placeholder, and its name where the page's system field has
+no name of its own (Every Tag).
+
+## `NightSearchable/text`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@Binding @MainActor var text: String { get nonmutating set }
+```
+
+The search text.
+
 ## `NightStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -10901,6 +11173,18 @@ static var night: Color { get }
 ```
 
 Pure sRGB red (`#FF0000`, 5.25:1 on black): night mode's one color.
+
+## `NopeColor/nightBackground`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var nightBackground: Color { get }
+```
+
+Black (`#000000`): night mode's background, behind and inside the Night Mode search field
+(docs/design/night-search-field.md), which stays black under the red multiply. Not in
+tokens.md.
 
 ## `NopeColor/nightOutline`
 
@@ -12333,6 +12617,18 @@ static let driveWord: CGFloat
 ```
 
 32 points: the visible height of a drive word; its target is 44.
+
+## `NopeSize/focusOutline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let focusOutline: CGFloat
+```
+
+2 points: the outline of the Night Mode search field while it has focus
+(docs/design/night-search-field.md, section 2), drawn inward so nothing moves. Not in
+tokens.md.
 
 ## `NopeSize/focusSquare`
 
@@ -18173,11 +18469,14 @@ internal, declared in `Sources/NopeUI/SeriesScreen.swift`
 ```
 
 The camera screen's ties to its own lifetime: the screen stays awake and dimmed while an
-interval series runs (`SeriesScreenKeeper`), and a countdown or burst stops when the camera
-screen goes away (AGENTS.md, "Battery").
+interval series runs, and while Keep Screen On is used (`SeriesScreenKeeper`), and a
+countdown or burst stops when the camera screen goes away (AGENTS.md, "Battery").
 
 While the screen is dimmed, a "Brighten Screen" button covers it: any tap brightens the
-screen while the series continues, and VoiceOver hears the change.
+screen and does nothing else, and VoiceOver hears the change. The modifier tells the keeper
+the conditions of Keep Screen On (`docs/design/keep-screen-on.md`, section 3) and each change
+the person makes or photo taken (`CameraModel.activityCount`); the app reports touches and
+VoiceOver focus changes itself.
 
 ## `SeriesScreen/body(content:)`
 
@@ -18192,29 +18491,20 @@ The content with the dimming button over it.
 
 - Parameter content: The camera screen.
 
-## `SeriesScreen/init(model:isNightMode:)`
+## `SeriesScreen/init(model:settings:showsSettings:)`
 
 internal, declared in `Sources/NopeUI/SeriesScreen.swift`
 
 ```swift
-@MainActor init(model: CameraModel, isNightMode: Bool)
+@MainActor init(model: CameraModel, settings: NopeSettings, showsSettings: Bool)
 ```
 
 Creates the modifier.
 
 - Parameters:
   - model: The camera model.
-  - isNightMode: Whether night mode is on.
-
-## `SeriesScreen/isNightMode`
-
-internal, declared in `Sources/NopeUI/SeriesScreen.swift`
-
-```swift
-@MainActor let isNightMode: Bool
-```
-
-Whether night mode is on, so the Brighten Screen button is red on black too.
+  - settings: The person's settings.
+  - showsSettings: Whether Settings is open over the camera.
 
 ## `SeriesScreen/model`
 
@@ -18225,6 +18515,27 @@ internal, declared in `Sources/NopeUI/SeriesScreen.swift`
 ```
 
 The camera model.
+
+## `SeriesScreen/settings`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The person's settings: night mode, so the Brighten Screen button is red on black too,
+and Keep Screen On.
+
+## `SeriesScreen/showsSettings`
+
+internal, declared in `Sources/NopeUI/SeriesScreen.swift`
+
+```swift
+@MainActor let showsSettings: Bool
+```
+
+Whether the camera screen opened Settings over the camera.
 
 ## `SessionStatusView`
 
@@ -18825,6 +19136,16 @@ case keepNightModeAfterAstro
 
 The Keep Night Mode After Astro switch.
 
+## `SettingsID/keepScreenOn`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case keepScreenOn
+```
+
+The Keep Screen On switch.
+
 ## `SettingsID/license`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -19334,7 +19655,8 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 - Privacy: Details in Each Photo, Sign Each Photo;
 - Camera: Fast Shutter, Focus on Faces;
 - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
-  Night Mode After Astro (where the device offers Astro), Red Viewfinder, Live Activity;
+  Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
+  in the Lock Screen camera), Live Activity;
 - More: Accessibility, Honesty, About and Licenses.
 
 A row is shown or not by the device only; no row appears or disappears when a setting
@@ -19516,12 +19838,12 @@ var hasPresets: Bool
 
 Whether presets exist (not in the Lock Screen camera).
 
-## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:)`
+## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:offersKeepScreenOn:)`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
 
 ```swift
-init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false)
+init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false, offersKeepScreenOn: Bool = true)
 ```
 
 Creates the availability.
@@ -19534,6 +19856,7 @@ Creates the availability.
   - offersProcessedMarker: Whether a lens has no Bayer RAW.
   - offersLiveActivity: Whether the Live Activity switch is offered.
   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
+  - offersKeepScreenOn: Whether Keep Screen On is offered.
 
 ## `SettingsSearch/Availability/offers(_:)`
 
@@ -19558,6 +19881,17 @@ var offersAstro: Bool
 
 Whether the device offers Astro (`CameraModel/deviceOffersAstro`), so the Keep Night
 Mode After Astro switch applies.
+
+## `SettingsSearch/Availability/offersKeepScreenOn`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersKeepScreenOn: Bool
+```
+
+Whether Keep Screen On is offered: not in the Lock Screen camera, which leaves the
+screen to iOS (``SwiftUICore/EnvironmentValues/offersKeepScreenOn``).
 
 ## `SettingsSearch/Availability/offersLiveActivity`
 
@@ -19740,12 +20074,13 @@ internal, declared in `Sources/NopeUI/SettingsScreen.swift`
 @MainActor struct SettingsSearchField
 ```
 
-The Settings search field, left out in Night Mode.
+The Settings search field: the system's in the navigation bar's drawer, and the app's own
+red field in Night Mode (``NightSearchField``; issue #88).
 
-iOS draws the search field as gray glass outside the app's views, where night mode's red
-filter (``NightModeStyle``) can't reach it, so Settings has no search field while Night Mode
-is on (owner decision of 2026-11-18). Every row stays reachable from the list, and the field
-returns when Night Mode is turned off.
+iOS draws its search field as gray glass outside the app's views, where night mode's red
+filter (``NightModeStyle``) can't reach it, so Night Mode shows the red field in its place,
+under the title, with the VoiceOver name "Search Settings". Both edit the same text, so the
+search is kept when Night Mode changes.
 
 ## `SettingsSearchField/body(content:)`
 
@@ -19756,33 +20091,21 @@ internal, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```
 
-The content, with the search field in the navigation bar's drawer unless it is left out.
+The content with the search field for the mode.
 
 - Parameter content: The Settings list or the search results.
 
-## `SettingsSearchField/init(text:isHidden:)`
+## `SettingsSearchField/init(text:)`
 
 internal, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```swift
-@MainActor init(text: Binding<String>, isHidden: Bool)
+@MainActor init(text: Binding<String>)
 ```
 
 Creates the modifier.
 
-- Parameters:
-  - text: The search text.
-  - isHidden: Whether the field is left out, as in Night Mode.
-
-## `SettingsSearchField/isHidden`
-
-internal, declared in `Sources/NopeUI/SettingsScreen.swift`
-
-```swift
-@MainActor let isHidden: Bool
-```
-
-Whether the field is left out: Night Mode is on.
+- Parameter text: The search text.
 
 ## `SettingsSearchField/text`
 
@@ -20101,6 +20424,16 @@ static let keepReadout: LocalizedStringResource
 ```
 
 "Keep Readout in Clean View".
+
+## `SettingsText/keepScreenOn`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let keepScreenOn: LocalizedStringResource
+```
+
+"Keep Screen On".
 
 ## `SettingsText/keywords(of:)`
 
@@ -22626,6 +22959,23 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 Draws a switch's or slider's filled track in night mode's dark red
 (``NightStyle/trackTint``), so its knob or thumb stays visible on it.
 
+## `View/nightSearchable(text:accessibilityName:placement:)`
+
+internal, declared in `Sources/NopeUI/NightSearchField.swift`
+
+```swift
+@MainActor func nightSearchable(text: Binding<String>, accessibilityName: Text, placement: SearchFieldPlacement = .automatic) -> some View
+
+```
+
+Search with the system field, or with the red ``NightSearchField`` in Night Mode
+(``NightSearchable``).
+
+- Parameters:
+  - text: The search text.
+  - accessibilityName: The night field's VoiceOver and Voice Control name.
+  - placement: The system field's placement; automatic by default.
+
 ## `View/nopeBackground(_:in:)`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -22697,21 +23047,22 @@ system's light or dark setting for other screens, and dark in night mode.
   - appearance: The screen's appearance.
   - isNightMode: Whether night mode is on.
 
-## `View/seriesScreen(_:isNightMode:)`
+## `View/seriesScreen(_:settings:showsSettings:)`
 
 internal, declared in `Sources/NopeUI/SeriesScreen.swift`
 
 ```swift
-@MainActor func seriesScreen(_ model: CameraModel, isNightMode: Bool) -> some View
+@MainActor func seriesScreen(_ model: CameraModel, settings: NopeSettings, showsSettings: Bool) -> some View
 
 ```
 
-Keeps the screen awake and dimmed during an interval series, and stops a countdown or
-burst when the camera screen goes away (``SeriesScreen``).
+Keeps the screen awake and dimmed during an interval series and for Keep Screen On, and
+stops a countdown or burst when the camera screen goes away (``SeriesScreen``).
 
 - Parameters:
   - model: The camera model.
-  - isNightMode: Whether night mode is on.
+  - settings: The person's settings.
+  - showsSettings: Whether Settings is open over the camera.
 
 ## `View/settingsContainerRow(_:)`
 

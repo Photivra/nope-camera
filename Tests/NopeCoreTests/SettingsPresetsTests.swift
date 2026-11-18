@@ -25,6 +25,7 @@ struct SettingsPresetsTests {
         "torchLevel": { $0.setTorchLevel(0.75) },
         "isNightModeOn": { $0.setNightMode(true) },
         "tintsViewfinderInNightMode": { $0.setTintsViewfinderInNightMode(true) },
+        "keepsScreenOn": { $0.setKeepsScreenOn(true) },
         "keepsNightModeAfterAstro": { $0.setKeepsNightModeAfterAstro(true) },
         "followsFaces": { $0.setFollowsFaces(true) },
         "showsProcessedMarker": { $0.setShowsProcessedMarker(false) },

@@ -169,6 +169,18 @@ struct SettingsSearchTests {
         #expect(SettingsID.keepNightModeAfterAstro.scrollTarget == .keepNightModeAfterAstro)
     }
 
+    @Test func keepScreenOnIsFoundByItsKeywords() {
+        for word in ["awake", "auto-lock", "sleep", "lock", "dim", "tripod", "battery"] {
+            #expect(SettingsSearch.settings(matching: word, availability: .init()).contains(.keepScreenOn), "\(word)")
+        }
+        #expect(SettingsID.keepScreenOn.group == .screen)
+        #expect(SettingsID.keepScreenOn.navigationPath.isEmpty)
+        #expect(SettingsID.keepScreenOn.scrollTarget == .keepScreenOn)
+        #expect(SettingsSearch.place(of: .keepScreenOn) == "Screen")
+        // Not in the Lock Screen camera.
+        #expect(!SettingsSearch.Availability(offersKeepScreenOn: false).offers(.keepScreenOn))
+    }
+
     @Test func everyRowIsFoundByItsOwnTitle() {
         let all = SettingsSearch.Availability(
             hasPresets: true, offersPhotoSize: true, hasFrontCamera: true, offersLocation: true,
@@ -182,11 +194,11 @@ struct SettingsSearchTests {
     @Test func itemsTheDeviceDoesNotShowAreNotFound() {
         let none = SettingsSearch.Availability(
             hasPresets: false, offersPhotoSize: false, hasFrontCamera: false, offersLocation: false,
-            offersProcessedMarker: false, offersLiveActivity: false, offersAstro: false)
+            offersProcessedMarker: false, offersLiveActivity: false, offersAstro: false, offersKeepScreenOn: false)
         for (query, id) in [
             ("Presets", SettingsID.presets), ("Photo Size", .photoSize), ("Mirror", .mirrorFrontCamera),
             ("gps", .detailsLocation), ("Processed", .showProcessedMarker), ("Live Activity", .liveActivity),
-            ("Keep Night Mode", .keepNightModeAfterAstro),
+            ("Keep Night Mode", .keepNightModeAfterAstro), ("Keep Screen On", .keepScreenOn), ("auto-lock", .keepScreenOn),
         ] {
             #expect(!SettingsSearch.settings(matching: query, availability: none).contains(id), "\(id)")
         }

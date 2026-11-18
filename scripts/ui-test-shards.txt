@@ -103,6 +103,7 @@
 2 1 NopeAppUITests/testDriveCardsSideways 26e 26e
 3 1 NopeAppUITests/testDriveStripSelectsEachMode 43e 44e
 3 3 NopeAppUITests/testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize 30 27
+4 2 NopeAppUITests/testEveryTagNightSearchField 126e 108e
 3 3 NopeAppUITests/testExposureCompensationInFullAuto 37 38
 1 2 NopeAppUITests/testExposureModesAndFixedAperture 50 59
 4 2 NopeAppUITests/testFaceDetectionIsOffByDefaultAndCanBeTurnedOn 37 41
@@ -153,6 +154,14 @@
 4 3 NopeAppUITests/testIntervalWordOpensSettings 21e 21e
 4 2 NopeAppUITests/testKeepNightModeAfterAstroSetting 178e 136e
 1 3 NopeAppUITests/testKeepNightModeAfterAstroSettingAtTheLargestTextSizeAndRightToLeft 194e 288e
+4 3 NopeAppUITests/testKeepScreenOffDoesNotDim 32e 32e
+1 2 NopeAppUITests/testKeepScreenOnDimsAndBrightens 46e 48e
+2 2 NopeAppUITests/testKeepScreenOnInNightMode 46e 46e
+3 3 NopeAppUITests/testKeepScreenOnNotUsedUnderASheet 54e 50e
+3 3 NopeAppUITests/testKeepScreenOnNotUsedWhileBatteryLowShows 68e 66e
+1 3 NopeAppUITests/testKeepScreenOnPresetRoundTrip 190e 168e
+4 2 NopeAppUITests/testKeepScreenOnRow 142e 192e
+2 1 NopeAppUITests/testKeepScreenOnRowAtTheLargestTextSizeAndRightToLeft 128e 126e
 4 2 NopeAppUITests/testLandscapeAtTheLargestTextSize 20 25
 4 3 NopeAppUITests/testLandscapeKeepsTheLayoutAndTurnsTheIcons 48 59
 1 2 NopeAppUITests/testLargestTextSize 23 32
@@ -197,6 +206,12 @@
 3 3 NopeAppUITests/testNightModeSettingsScreensAtTheLargestTextSize 508e 398e
 3 2 NopeAppUITests/testNightModeSettingsScreensPassAccessibilityAudits 239e 233e
 3 2 NopeAppUITests/testNightModeSettingsScreensRightToLeft 215 214e
+1 3 NopeAppUITests/testNightSearchAtLargestTextSize 64e 64e
+3 3 NopeAppUITests/testNightSearchCancelAndClear 90e 102e
+2 2 NopeAppUITests/testNightSearchFieldIsRed 94e 94e
+2 2 NopeAppUITests/testNightSearchFindsByKeyword 64e 46e
+3 1 NopeAppUITests/testNightSearchKeptWhenNightModeChanges 132e 120e
+4 1 NopeAppUITests/testNightSearchRightToLeft 44e 68e
 4 1 NopeAppUITests/testNoPhotoSizeRowWhenEveryLensHasRAW 18 15
 1 2 NopeAppUITests/testNoPillRepeatsManualControlsOrTheDriveStrip 56e 57e
 2 2 NopeAppUITests/testNotSignedOnlyWhenSigningFailed 51e 52e
@@ -240,6 +255,7 @@
 3 1 NopeAppUITests/testSaveStatesAtTheLargestTextSize 19 21
 1 1 NopeAppUITests/testSelfTimerAtTheLargestTextSizeAndRightToLeft 49 47
 2 3 NopeAppUITests/testSelfTimerCountsDownAndCanBeCancelled 47 49
+1 1 NopeAppUITests/testSeriesDoesNotDimAScreenAlreadyDark 72e 66e
 2 1 NopeAppUITests/testSettingsAndPresetsFollowTheLightSetting 64 56
 2 3 NopeAppUITests/testSettingsAtTheLargestTextSize 509e 447e
 1 2 NopeAppUITests/testSettingsAtTheLargestTextSizeInTheLightSetting 511e 456e
@@ -253,6 +269,7 @@
 1 3 NopeAppUITests/testSettingsScreensPassAccessibilityAudits 221e 219e
 4 2 NopeAppUITests/testSettingsScreensPassAccessibilityAuditsInTheLightSetting 222e 220e
 3 3 NopeAppUITests/testSettingsSearchFindsEveryRootRowByName 86e 90e
+4 1 NopeAppUITests/testSettingsSearchFindsKeepScreenOn 60e 58e
 1 3 NopeAppUITests/testSettingsSearchFindsLevelByTap 38e 40e
 4 3 NopeAppUITests/testSettingsSearchFindsLocationByKeyword 41e 41e
 3 1 NopeAppUITests/testSettingsSearchNoResults 38e 38e

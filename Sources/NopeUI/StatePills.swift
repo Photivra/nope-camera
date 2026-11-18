@@ -29,6 +29,10 @@ struct CameraControlContext {
     /// screen sets it; a constant `false` elsewhere.
     var showsIntervalSettings: Binding<Bool> = .constant(false)
 
+    /// Whether the app offers Keep Screen On (not the Lock Screen camera), so the Battery Low
+    /// warning can say that the setting isn't used. The camera screen sets it.
+    var offersKeepScreenOn = false
+
     /// Creates a context.
     ///
     /// - Parameters:

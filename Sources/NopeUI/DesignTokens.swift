@@ -173,6 +173,11 @@ enum NopeSize {
     /// night mode, and of cards and dials (docs/design/design-system.html). Not in tokens.md.
     static let outline: CGFloat = 1
 
+    /// 2 points: the outline of the Night Mode search field while it has focus
+    /// (docs/design/night-search-field.md, section 2), drawn inward so nothing moves. Not in
+    /// tokens.md.
+    static let focusOutline: CGFloat = 2
+
     /// 1.5 points: the amber outline of a warning chip and the failure banner
     /// (docs/design/design-system.html). Not in tokens.md.
     static let warningOutline: CGFloat = 1.5
@@ -199,7 +204,7 @@ enum NopeSize {
             ("shutterRing", shutterRing), ("shutterDisc", shutterDisc), ("shutterDiscHeld", shutterDiscHeld),
             ("capsuleLarge", capsuleLarge), ("lensItemMinWidth", lensItemMinWidth),
             ("scrollingRowButton", scrollingRowButton), ("pictureStackMaxWidth", pictureStackMaxWidth),
-            ("outline", outline), ("warningOutline", warningOutline),
+            ("outline", outline), ("warningOutline", warningOutline), ("focusOutline", focusOutline),
         ]
     }
 }
@@ -349,6 +354,11 @@ enum NopeColor {
     /// 0.3.0 audit reported for small text. Not in tokens.md (design-system.html, `--fill`).
     static var controlFillNight: Color { Color(white: 0.08) }
 
+    /// Black (`#000000`): night mode's background, behind and inside the Night Mode search field
+    /// (docs/design/night-search-field.md), which stays black under the red multiply. Not in
+    /// tokens.md.
+    static var nightBackground: Color { Color(.sRGB, red: 0, green: 0, blue: 0) }
+
     /// Black: the label on ``selectedFill``.
     static var selectedLabel: Color { .black }
 
@@ -389,6 +399,7 @@ enum NopeColor {
         [
             ("nightOutlineUnderMultiply", nightOutlineUnderMultiply), ("controlFillNight", controlFillNight),
             ("selectedLabel", selectedLabel), ("selectedLabelSecondary", selectedLabelSecondary),
+            ("nightBackground", nightBackground),
         ]
     }
 }

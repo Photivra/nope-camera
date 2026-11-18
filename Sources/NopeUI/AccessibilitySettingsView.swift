@@ -5,7 +5,8 @@ import SwiftUI
 ///
 /// It lists only what is built; none of these have a switch yet, so the screen shows facts and
 /// no control that does nothing. Settings for them (issue #37) add rows here. The Night Mode
-/// entry says how to dim the screen, which nope. never does itself.
+/// entries say how to dim the screen, which Night Mode never does itself, and that the system
+/// keyboard and menus aren't red.
 struct AccessibilitySettingsView: View {
     /// Creates the screen.
     init() {}
@@ -54,9 +55,14 @@ struct AccessibilitySettingsView: View {
                 row(
                     systemImage: "sun.min",
                     Text(
-                        "nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings.",
+                        "Night Mode doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings.",
                         bundle: .module,
-                        comment: "Accessibility screen, Night Mode: how to dim the screen. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS."))
+                        comment: "Accessibility screen, Night Mode: how to dim the screen. Night Mode is the name of nope.'s switch; use its translation. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS. Draft wording for the Honesty review."))
+                row(
+                    systemImage: "keyboard",
+                    Text(
+                        "The keyboard and menus are drawn by iOS and are not red.", bundle: .module,
+                        comment: "Accessibility screen, Night Mode: the system keyboard, which opens for search, and system menus keep the dark appearance; nope. can't draw them in red. Draft wording for the Honesty review."))
             } header: {
                 Text(SettingsText.nightMode)
             }

@@ -29,6 +29,14 @@
       "comment" : "Detail of the Fast burst speed in the Burst menu. It makes no claim about a rate.",
       "extractionState" : "manual"
     },
+    "Battery at %@. Charge the device soon to keep taking photos. Keep Screen On is not used now." : {
+      "comment" : "Explanation of the Battery Low warning on the camera while the Keep Screen On switch is on: the screen may lock by itself again until the battery is charged. The value is the battery charge as a percentage, such as 3%, formatted by the system. Keep Screen On is the name of nope.'s switch. Draft wording for the Honesty review (issue #97).",
+      "extractionState" : "manual"
+    },
+    "Battery at %@. Low Power Mode is on. Keep Screen On is not used now." : {
+      "comment" : "Explanation of the Battery Low warning on the camera while Low Power Mode is on and the Keep Screen On switch is on: the screen may lock by itself again until the battery is charged. The value is the battery charge as a percentage, such as 3%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting; Keep Screen On is the name of nope.'s switch. Draft wording for the Honesty review (issue #97).",
+      "extractionState" : "manual"
+    },
     "Bracket card: Cancel" : {
       "comment" : "Button on the bracket card while the start delay counts down: stops the countdown; no photo is taken.",
       "extractionState" : "manual",
@@ -121,6 +129,14 @@
       "comment" : "VoiceOver value of the shutter in burst mode at the Slow speed: up to 2 photos a second while the shutter is held.",
       "extractionState" : "manual"
     },
+    "Cancel" : {
+      "comment" : "Button beside the Night Mode search field: ends the search and closes the keyboard. Use the word iOS shows beside its own search fields (issue #88).",
+      "extractionState" : "manual"
+    },
+    "Clear text" : {
+      "comment" : "VoiceOver and Voice Control name of the button in the Night Mode search field that empties it. Use the name iOS gives the same button in its search fields (issue #88).",
+      "extractionState" : "manual"
+    },
     "Close" : {
       "comment" : "Button in the Last Photo viewer that closes the viewer and returns to the camera. Drawn as an X where Last Photo is.",
       "extractionState" : "manual"
@@ -177,12 +193,20 @@
       "comment" : "Burst card on the camera, before a burst: what the shutter does in burst mode.",
       "extractionState" : "manual"
     },
+    "Keep Screen On" : {
+      "comment" : "Switch and its Voice Control name: while the camera is showing, the screen doesn't lock by itself for up to 30 minutes after the last touch or photo. Draft wording for the Honesty review (issue #97).",
+      "extractionState" : "manual"
+    },
     "Metered First" : {
       "comment" : "Choice of the bracket's Order: the frame at the metered exposure first, then darker and brighter ones, outward.",
       "extractionState" : "manual"
     },
     "New Photo" : {
       "comment" : "Button in the Last Photo viewer that goes to a photo taken while the viewer was open, for example from Apple Watch or Siri.",
+      "extractionState" : "manual"
+    },
+    "Night Mode doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings." : {
+      "comment" : "Accessibility screen, Night Mode: how to dim the screen. Night Mode is the name of nope.'s switch; use its translation. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS. Draft wording for the Honesty review (issue #97).",
       "extractionState" : "manual"
     },
     "No photos were taken: the camera wasn't ready for the bracket. Try again." : {
@@ -515,6 +539,10 @@
       "comment" : "Row in the photo details: the brightness of the scene the camera measured, in EV, as written in the file.",
       "extractionState" : "manual"
     },
+    "Search" : {
+      "comment" : "Placeholder of the Night Mode search field, and its VoiceOver name on the Every Tag page. Use the word iOS shows in its own search fields (issues #88 and #98).",
+      "extractionState" : "manual"
+    },
     "Search keywords: Burst" : {
       "comment" : "Settings search keywords for the camera's burst, separated by commas. Not shown on screen: holding the shutter takes photos continuously, at a speed chosen from the Burst word.",
       "extractionState" : "manual",
@@ -526,6 +554,22 @@
           }
         }
       }
+    },
+    "Search keywords: Keep Screen On" : {
+      "comment" : "Settings search keywords for Keep Screen On, separated by commas. Not shown on screen: list the words people in your language would type to keep the screen from locking or sleeping. Auto-Lock is the name of the iOS setting: use its name in the language's iOS.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "awake, auto-lock, sleep, lock, dim, tripod, battery"
+          }
+        }
+      }
+    },
+    "Search Settings" : {
+      "comment" : "VoiceOver and Voice Control name of the search field on the Settings screen in Night Mode (issue #88).",
+      "extractionState" : "manual"
     },
     "Show Hidden Values" : {
       "comment" : "Button at the top of a group on the Every Tag page of the photo details: shows the group's identifying values, such as the location, until the sheet closes.",
@@ -577,6 +621,10 @@
     },
     "The Frames" : {
       "comment" : "Section header in Bracket Settings: the frames one press takes, each with its exposure.",
+      "extractionState" : "manual"
+    },
+    "The keyboard and menus are drawn by iOS and are not red." : {
+      "comment" : "Accessibility screen, Night Mode: the system keyboard, which opens for search, and system menus keep the dark appearance; nope. can't draw them in red. Draft wording for the Honesty review (issue #88).",
       "extractionState" : "manual"
     },
     "This Frame" : {
@@ -875,7 +923,7 @@
       "extractionState" : "manual"
     },
     "Brighten Screen" : {
-      "comment" : "VoiceOver and Voice Control name of the button that covers the dimmed screen during interval shooting; it restores the brightness.",
+      "comment" : "VoiceOver and Voice Control name of the button that covers the dimmed screen during interval shooting or with Keep Screen On; it restores the brightness.",
       "extractionState" : "manual"
     },
     "Brighter" : {
@@ -1672,9 +1720,6 @@
       "comment" : "Value of the Presets tile in the Quick Menu and of the Presets row in Settings: the person has saved no presets (Factory Defaults is still there). Keep it short: it sits in a small tile under the name Presets, so \"None\" alone is enough where that reads naturally.",
       "extractionState" : "manual"
     },
-    "nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings." : {
-      "comment" : "Accessibility screen, Night Mode: how to dim the screen. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS."
-    },
     "nope. is free software: you can redistribute it and modify it under the terms of this license." : {
       "comment" : "Plain summary of the GPL. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
@@ -2007,11 +2052,11 @@
       "comment" : "Settings section header above the switches for what the camera screen shows: clean view, overlays, the Processed marker, night mode, Red Viewfinder and the Live Activity."
     },
     "Screen brightness restored." : {
-      "comment" : "Announced to VoiceOver when the app puts the screen's brightness back, after interval shooting or a tap.",
+      "comment" : "Announced to VoiceOver when the app puts the screen's brightness back, after interval shooting, Keep Screen On's dimming or a tap.",
       "extractionState" : "manual"
     },
     "Screen dimmed to save battery. Tap to brighten it." : {
-      "comment" : "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts and the app dims the screen to save battery.",
+      "comment" : "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts, or after a while without a touch with Keep Screen On, and the app dims the screen to save battery.",
       "extractionState" : "manual"
     },
     "Search keywords: Astro" : {

@@ -133,6 +133,12 @@ struct HonestyScreen: View {
                     "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Don't describe the switch as turning face detection off. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Keep Screen On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review."),
+                text: Text(
+                    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims to 10% after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review."))
         } header: {
             Text("What iOS May Still Do", tableName: "Honesty", bundle: .module, comment: "Honesty section header: things iOS does that the app can't change. iOS is a product name.")
         }

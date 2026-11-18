@@ -597,11 +597,25 @@ with `-NSDoubleLocalizedStrings YES` (Apple's double-length pseudo-language: eve
 shown twice), in `testQuickMenuLongLanguage` on the phone and `testDoubleLengthText` on the
 watch, each also right to left. These stand in for long and right-to-left languages while the
 app ships in English only (issue #86).
-Settings has no search field in Night Mode (owner decision, 2026-11-18): iOS draws the field
-as gray glass outside the app's views, where the red filter can't reach it, and
-`testNightModeSettingsScreensPassAccessibilityAudits` found 879 sampled pixels that weren't red
-or black with it. `testSettingsRedesignInNightMode` checks that the field is absent in Night
-Mode and returns, with the Night Mode row still in view, when Night Mode is turned off.
+In Night Mode, Settings and the Every Tag page show the app's own red search field instead of
+the system's (issues #88 and #98): iOS draws the system field as gray glass outside the app's
+views, where the red filter can't reach it, and `testNightModeSettingsScreensPassAccessibilityAudits`
+found 879 sampled pixels that weren't red or black with it. `NightSearchUITests.swift` checks
+that the red field has no non-red pixel at rest, with results and with no result (keyboard
+closed), and outside the keyboard's frame while the keyboard is open; that it finds rows by name
+and keyword, clears and cancels; that a search is kept when Night Mode changes from outside
+Settings (`-NopeSimulatedNightModeSwitch <seconds>[,<seconds>…]`, debug builds, switches Night
+Mode as Siri or Control Center do); and the audits at the largest text size and right to left.
+`testSettingsRedesignInNightMode` checks that the system field returns, with the Night Mode row
+still in view, when Night Mode is turned off.
+
+Keep Screen On (issue #97) is tested with shorter times and a known brightness:
+`-NopeKeepScreenOnSeconds <dim>,<lowPowerDim>,<limit>` and `-NopeSimulatedBrightness <0…1>`
+(debug builds, `SimulatedScreen`). `KeepScreenOnUITests.swift` checks the row, the dimming and
+the Brighten Screen cover, that nothing dims under a sheet or while Battery Low shows, search,
+a preset round trip, and that a series doesn't dim a screen already at 10% or darker (issue
+#99). XCTest can't read the idle timer; `KeepScreenOnTests` covers it with a fake screen and
+clock.
 Every new screen and state adds an audit.
 
 ## Documentation
@@ -1777,6 +1791,21 @@ in flight (`LensWhileBusyTests`), and the disabled lens controls with UI tests
   button;
 - night mode in the dark: the dimmed outline is still visible and clearly weaker than the lens in
   use.
+
+### Keep Screen On and the Night Mode search field on a device (issues #88, #97, #98, #99)
+
+Not yet checked on a device. Before the wording ships, run the device checks of
+`docs/design/keep-screen-on.md`, section 11 (the idle timer back on after the limit, Auto-Lock
+set to Never, Auto-Brightness while dimmed, the brightness restored after each way out, touches
+everywhere on the camera screen, Low Power Mode, the Lock Screen camera left alone, VoiceOver with
+the cover, energy with Instruments for the Honesty page, 10% in daylight and in the dark), and of
+`docs/design/night-search-field.md`, section 9 (the field, cursor and selection red; what the
+dark keyboard's bar still shows with autocorrection off; selection handles, the magnifier and the
+edit menu; dictation, a hardware keyboard and Escape; the two fields' heights when Night Mode
+changes and the iPad popover becoming the sheet; VoiceOver with both fields; the largest text size
+on the smallest iPhone). Also: a series (interval or Astro) with the screen already at 10% or
+darker shows no Brighten Screen cover (issue #99), and Every Tag in What's in This Photo shows the
+red field in Night Mode (issue #98).
 
 ### iPhone Duo (foldable) on a device
 

@@ -24,8 +24,8 @@ struct NopeApp: App {
     @State private var model = CameraModel(
         backend: Self.backend, saver: Self.makeSaver(), deviceStatusReader: Self.makeDeviceStatusReader())
 
-    /// Keeps the screen awake and dimmed during an interval series.
-    @State private var screenKeeper = SeriesScreenKeeper(screen: SystemScreen())
+    /// Keeps the screen awake and dimmed during an interval series and for Keep Screen On.
+    @State private var screenKeeper = Self.makeScreenKeeper()
 
     /// The person's settings, stored on the device only.
     @State private var settings = Self.sharedSettings
@@ -179,6 +179,10 @@ struct NopeApp: App {
             Task { await model.send(.drive(.hardwareButton(phase))) }
         }
         .environment(\.seriesScreenKeeper, screenKeeper)
+        // Keep Screen On (issue #97): offered here, where the app has a keeper, and told about
+        // touches and VoiceOver focus changes.
+        .environment(\.offersKeepScreenOn, true)
+        .reportsScreenActivity(to: screenKeeper)
         // The Live Activity follows the camera model while the camera screen is shown; its Stop
         // button stops the interval series here (StopSeriesIntent runs in the app).
         .environment(\.offersLiveActivity, ActivityAuthorizationInfo().areActivitiesEnabled)
@@ -201,6 +205,9 @@ struct NopeApp: App {
         #if DEBUG
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
         .task { await SimulatedShortcut.run(with: Self.shortcuts) }
+        // UI tests only: `-NopeSimulatedNightModeSwitch <seconds>` switches Night Mode from outside
+        // the screens, as Siri or Control Center do.
+        .task { await SimulatedNightModeSwitch.run(settings: settings) }
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
@@ -281,6 +288,18 @@ struct NopeApp: App {
         for await _ in NotificationCenter.default.notifications(named: name) {
             model.deviceStatus.refresh()
         }
+    }
+
+    /// The screen keeper: the system's screen and Keep Screen On's standard times, or in Debug
+    /// builds launched by the UI tests, a starting brightness and shorter times
+    /// (``SimulatedScreen``).
+    @MainActor private static func makeScreenKeeper() -> SeriesScreenKeeper {
+        #if DEBUG
+        return SeriesScreenKeeper(
+            screen: SimulatedScreen.screen() ?? SystemScreen(), rule: SimulatedScreen.rule() ?? .standard)
+        #else
+        return SeriesScreenKeeper(screen: SystemScreen())
+        #endif
     }
 
     /// The storage and battery reader: fixed values for a UI test in Debug builds, otherwise

@@ -17,7 +17,8 @@ extension EnvironmentValues {
 /// - Privacy: Details in Each Photo, Sign Each Photo;
 /// - Camera: Fast Shutter, Focus on Faces;
 /// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
-///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Live Activity;
+///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
+///   in the Lock Screen camera), Live Activity;
 /// - More: Accessibility, Honesty, About and Licenses.
 ///
 /// A row is shown or not by the device only; no row appears or disappears when a setting
@@ -72,6 +73,9 @@ public struct SettingsScreen: View {
 
     /// Whether to offer the Live Activity switch.
     @Environment(\.offersLiveActivity) private var offersLiveActivity
+
+    /// Whether to offer Keep Screen On: not in the Lock Screen camera.
+    @Environment(\.offersKeepScreenOn) private var offersKeepScreenOn
 
     /// Creates the settings screen.
     ///
@@ -139,7 +143,8 @@ public struct SettingsScreen: View {
             offersLocation: location != nil,
             offersProcessedMarker: !deviceSupportsBayerRAW || lenses.contains { !$0.supportsBayerRAW },
             offersLiveActivity: offersLiveActivity,
-            offersAstro: camera?.deviceOffersAstro ?? false)
+            offersAstro: camera?.deviceOffersAstro ?? false,
+            offersKeepScreenOn: offersKeepScreenOn)
     }
 
     /// The list or the search results, in the navigation stack.
@@ -147,9 +152,9 @@ public struct SettingsScreen: View {
         @Bindable var navigation = navigation
         NavigationStack(path: $navigation.path) {
             Group {
-                // No search in Night Mode (see ``SettingsSearchField``), so a search left in the
-                // field never replaces the list there.
-                if settings.isNightModeOn || SettingsSearch.words(of: navigation.searchText).isEmpty {
+                // The same search in both modes: the system field, or the red field in Night Mode
+                // (``SettingsSearchField``).
+                if SettingsSearch.words(of: navigation.searchText).isEmpty {
                     list
                 } else {
                     SettingsSearchResults(query: navigation.searchText, availability: availability) { id in
@@ -159,13 +164,15 @@ public struct SettingsScreen: View {
             }
             .navigationTitle(Text("Settings", bundle: .module, comment: "Title of the settings screen, and the camera button that opens it."))
             .navigationBarTitleDisplayMode(.inline)
-            .modifier(SettingsSearchField(text: $navigation.searchText, isHidden: settings.isNightModeOn))
+            .modifier(SettingsSearchField(text: $navigation.searchText))
             .onChange(of: settings.isNightModeOn) { _, _ in
-                // The list is built again with or without the search field. Any search ends, and
-                // on the Settings list the Night Mode row, whose switch was just used, is
-                // scrolled back into view.
-                navigation.searchText = ""
-                if navigation.path.isEmpty { navigation.scrollTarget = .nightMode }
+                // The field changes between the system's and the red one. A search in progress
+                // is kept, with its results (decision 7); the keyboard closes with the field that
+                // had focus. Without a search, on the Settings list, the Night Mode row, whose
+                // switch was just used, is scrolled back into view.
+                guard navigation.path.isEmpty, SettingsSearch.words(of: navigation.searchText).isEmpty else { return }
+                // After this update, so the list built with the other field takes the target.
+                Task { @MainActor in navigation.scrollTarget = .nightMode }
             }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -313,7 +320,8 @@ public struct SettingsScreen: View {
     }
 
     /// What the camera screen shows: clean view, overlays, the Processed marker, night mode,
-    /// whether night mode stays on after Astro, Red Viewfinder and the Live Activity. Red
+    /// whether night mode stays on after Astro, Red Viewfinder, Keep Screen On and the Live
+    /// Activity. Red
     /// Viewfinder is always shown, so it can be set before going out in the dark.
     private var screenSection: some View {
         Section {
@@ -338,9 +346,9 @@ public struct SettingsScreen: View {
                 isOn: Binding(get: { settings.isNightModeOn }, set: { settings.setNightMode($0) }),
                 title: Text(SettingsText.nightMode),
                 explanation: Text(
-                    "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness.",
+                    "Red on black, to keep your eyes used to the dark. Night Mode doesn't change the screen's brightness.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Explains the Night Mode switch. Keep \"nope.\" unchanged. Must not claim more than the English."))
+                    comment: "Explains the Night Mode switch. Night Mode is the name of nope.'s switch; use its translation. Must not claim more than the English: Keep Screen On and interval shooting may dim the screen, Night Mode doesn't. Draft wording for the Honesty review."))
             .settingsRow(.nightMode)
             if availability.offersAstro {
                 ExplainedToggle(
@@ -361,6 +369,16 @@ public struct SettingsScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Explains the Red Viewfinder switch, which is always shown and applies while Night Mode is on. Night Mode is the name of nope.'s switch; use its translation. Must not claim more than the English."))
             .settingsRow(.redViewfinder)
+            if availability.offersKeepScreenOn {
+                ExplainedToggle(
+                    isOn: Binding(get: { settings.keepsScreenOn }, set: { settings.setKeepsScreenOn($0) }),
+                    title: Text(SettingsText.keepScreenOn),
+                    explanation: Text(
+                        "While the camera is showing, the screen stays on for 30 minutes after your last touch or photo, and dims after 2 minutes. Uses more battery. Not used while Battery Low shows.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Explains the Keep Screen On switch. Battery Low is the camera's warning; use its translation. Must not claim more than the English: the screen dims sooner in Low Power Mode, and after 30 minutes the phone's Auto-Lock applies again. Draft wording for the Honesty review."))
+                .settingsRow(.keepScreenOn)
+            }
             if offersLiveActivity {
                 ExplainedToggle(
                     isOn: Binding(get: { settings.showsLiveActivity }, set: { settings.setShowsLiveActivity($0) }),
@@ -388,38 +406,32 @@ public struct SettingsScreen: View {
     }
 }
 
-/// The Settings search field, left out in Night Mode.
+/// The Settings search field: the system's in the navigation bar's drawer, and the app's own
+/// red field in Night Mode (``NightSearchField``; issue #88).
 ///
-/// iOS draws the search field as gray glass outside the app's views, where night mode's red
-/// filter (``NightModeStyle``) can't reach it, so Settings has no search field while Night Mode
-/// is on (owner decision of 2026-11-18). Every row stays reachable from the list, and the field
-/// returns when Night Mode is turned off.
+/// iOS draws its search field as gray glass outside the app's views, where night mode's red
+/// filter (``NightModeStyle``) can't reach it, so Night Mode shows the red field in its place,
+/// under the title, with the VoiceOver name "Search Settings". Both edit the same text, so the
+/// search is kept when Night Mode changes.
 struct SettingsSearchField: ViewModifier {
     /// The search text.
     @Binding var text: String
 
-    /// Whether the field is left out: Night Mode is on.
-    let isHidden: Bool
-
     /// Creates the modifier.
     ///
-    /// - Parameters:
-    ///   - text: The search text.
-    ///   - isHidden: Whether the field is left out, as in Night Mode.
-    init(text: Binding<String>, isHidden: Bool) {
+    /// - Parameter text: The search text.
+    init(text: Binding<String>) {
         _text = text
-        self.isHidden = isHidden
     }
 
-    /// The content, with the search field in the navigation bar's drawer unless it is left out.
+    /// The content with the search field for the mode.
     ///
     /// - Parameter content: The Settings list or the search results.
     func body(content: Content) -> some View {
-        if isHidden {
-            content
-        } else {
-            content.searchable(text: $text, placement: .navigationBarDrawer(displayMode: .always))
-        }
+        content.nightSearchable(
+            text: $text,
+            accessibilityName: Text("Search Settings", bundle: .module, comment: "VoiceOver and Voice Control name of the search field on the Settings screen in Night Mode."),
+            placement: .navigationBarDrawer(displayMode: .always))
     }
 }
 

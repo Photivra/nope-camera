@@ -117,6 +117,11 @@ public final class CameraModel {
     /// photo and its details").
     public let sessionPhotos: SessionPhotos
 
+    /// Counts the person's actions (``CameraIntent/isActivity``) and the photos saved, however
+    /// they were taken. An interface watches it to tell ``SeriesScreenKeeper/noteActivity()``,
+    /// so Keep Screen On counts from the latest one (issue #97). Only its changes matter.
+    public private(set) var activityCount = 0
+
     /// The photos the latest press of the shutter saved, in the order saved: one photo, or a
     /// bracket's, burst's or astro run's frames. It also holds the frames saved before a
     /// bracket, burst or run stopped on an error, which ``captureStatus`` then reports only as
@@ -252,6 +257,7 @@ public final class CameraModel {
     /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
     /// (``pressShutter()``).
     public func send(_ intent: CameraIntent) async {
+        if intent.isActivity { activityCount += 1 }
         switch intent {
         case .start:
             await resolve(await backend.currentPermission())
@@ -699,6 +705,7 @@ public final class CameraModel {
     ///   - takenAt: When the shutter took it.
     func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date) {
         lastPressPhotos.append(result.saved)
+        activityCount += 1
         sessionPhotos.add(result.saved, lens: lens, takenAt: takenAt, preview: isInForeground ? result.preview : nil)
     }
 }
