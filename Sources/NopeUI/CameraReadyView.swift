@@ -764,17 +764,11 @@ struct CameraReadyView: View {
         .padding(rotation.isSideways ? 0 : NopeSpace.xs)
     }
 
-    /// The running or chosen mode's card: the self-timer or burst, the interval series and the
-    /// astro helper. Until the mode cards of the 1.0.0 design land (BUILD-SPEC.md, 3.5, chunk
-    /// D), these are today's progress rows, moved from the picture's upper edge to its lower one.
-    @ViewBuilder private var modeCards: some View {
-        if let progress = model.manual.intervalProgress {
-            IntervalProgressView(progress: progress) {
-                Task { await model.send(.manual(.stopInterval)) }
-            }
-        }
-        DriveProgressView(model: model)
-        AstroPanel(model: model, showsControls: showsControls) { showsAstroSettings = true }
+    /// The running or chosen mode's card (BUILD-SPEC.md, 3.5, ``ModeCards``).
+    private var modeCards: some View {
+        ModeCards(
+            model: model, showsControls: showsControls, openIntervalSettings: { showsIntervalSettings = true },
+            openAstroSettings: { showsAstroSettings = true })
     }
 
     /// The width text blocks wrap at while the iPhone is on its side: the picture's height,

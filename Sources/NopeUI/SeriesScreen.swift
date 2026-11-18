@@ -109,25 +109,25 @@ struct BrightenScreenButton: View {
                 .accessibilityHidden(true)
                 .ignoresSafeArea()
             Button(action: action) {
-                VStack(spacing: CameraStyle.targetSpacing) {
-                    Label {
-                        Text("Screen dimmed to save battery. Tap to brighten it.", bundle: .module, comment: "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts and the app dims the screen to save battery.")
-                            .fixedSize(horizontal: false, vertical: true)
-                    } icon: {
-                        Image(systemName: "sun.min")
-                    }
+                // The sentence, as the design shows it (docs/design/drive.html, "Interval, screen
+                // dimmed"), and the button's name under it, so the name Voice Control and
+                // VoiceOver use is on screen too (WCAG 2.5.3, label in name).
+                VStack(spacing: NopeSpace.xxs) {
+                    Text("Screen dimmed to save battery. Tap to brighten it.", bundle: .module, comment: "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts and the app dims the screen to save battery.")
+                        .fixedSize(horizontal: false, vertical: true)
                     Text("Brighten Screen", bundle: .module, comment: "VoiceOver and Voice Control name of the button that covers the dimmed screen during interval shooting; it restores the brightness.")
-                        .bold()
+                        .font(NopeFont.status)
                 }
                 .font(.body)
-                .foregroundStyle(.white)
-                .padding()
-                .frame(minHeight: CameraStyle.minimumTarget)
-                .background(.black, in: .rect(cornerRadius: CameraStyle.cornerRadius))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(NopeColor.label)
+                .padding(NopeSpace.m)
+                .frame(minHeight: NopeSize.minTarget)
+                .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.large))
                 .contentShape(.rect)
             }
             .buttonStyle(.plain)
-            .padding()
+            .padding(NopeSpace.m)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text("Brighten Screen", bundle: .module, comment: "VoiceOver and Voice Control name of the button that covers the dimmed screen during interval shooting; it restores the brightness."))
             .accessibilityValue(Text("Screen dimmed to save battery. Tap to brighten it.", bundle: .module, comment: "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts and the app dims the screen to save battery."))
