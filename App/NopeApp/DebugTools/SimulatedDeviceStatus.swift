@@ -16,9 +16,9 @@ enum SimulatedDeviceStatus: String {
     case lowStorage
     /// Room for no more photos.
     case fullStorage
-    /// 15% battery, unplugged.
+    /// 2% battery, unplugged.
     case lowBattery
-    /// 15% battery, unplugged, with Low Power Mode on.
+    /// 2% battery, unplugged, with Low Power Mode on.
     case lowBatteryLowPower
 
     /// The state in the launch arguments, or `nil` without one.
@@ -51,8 +51,8 @@ enum SimulatedDeviceStatus: String {
         func battery() -> BatteryReading? {
             switch status {
             case .lowStorage, .fullStorage: BatteryReading(level: 1, isCharging: true, isLowPowerMode: false)
-            case .lowBattery: BatteryReading(level: 0.15, isCharging: false, isLowPowerMode: false)
-            case .lowBatteryLowPower: BatteryReading(level: 0.15, isCharging: false, isLowPowerMode: true)
+            case .lowBattery: BatteryReading(level: 0.02, isCharging: false, isLowPowerMode: false)
+            case .lowBatteryLowPower: BatteryReading(level: 0.02, isCharging: false, isLowPowerMode: true)
             }
         }
     }

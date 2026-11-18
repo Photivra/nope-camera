@@ -25,7 +25,8 @@ extension CameraWarnings {
         }
     }
 
-    /// "Battery Low" at 20% or less while the device isn't plugged in (issue #44).
+    /// "Battery Low" at 3% or less while the device isn't plugged in (issue #44,
+    /// ``DeviceStatus/lowBatteryLevel``).
     ///
     /// - Parameters:
     ///   - context: The model and settings.
@@ -35,8 +36,8 @@ extension CameraWarnings {
         let percent = (Double(warning.percent) / 100).formatted(.percent)
         let explanation =
             warning.isLowPowerMode
-            ? Text("Battery at \(percent). Low Power Mode is on.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 15%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.")
-            : Text("Battery at \(percent). Charge the device soon to keep taking photos.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 15%, formatted by the system.")
+            ? Text("Battery at \(percent). Low Power Mode is on.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 3%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.")
+            : Text("Battery at \(percent). Charge the device soon to keep taking photos.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 3%, formatted by the system.")
         return CameraWarning(
             id: "battery",
             title: Text("Battery Low", bundle: .module, comment: "Warning chip on the camera: the battery is low and the device isn't charging."),

@@ -540,19 +540,27 @@ struct DriveTests {
         let reader = FakeStatusReader(bytes: nil)
         let status = DeviceStatus(reader: reader)
         #expect(status.batteryWarning == nil)
+        #expect(DeviceStatus.lowBatteryLevel == 0.03)
         for battery in [
             BatteryReading(level: nil, isCharging: false, isLowPowerMode: false),
-            BatteryReading(level: 0.15, isCharging: true, isLowPowerMode: false),
-            BatteryReading(level: 0.21, isCharging: false, isLowPowerMode: false),
+            // Charging never warns, however low.
+            BatteryReading(level: 0.03, isCharging: true, isLowPowerMode: false),
+            BatteryReading(level: 0.01, isCharging: true, isLowPowerMode: true),
+            // Just above the threshold, and the old 20% threshold.
+            BatteryReading(level: 0.031, isCharging: false, isLowPowerMode: false),
+            BatteryReading(level: 0.2, isCharging: false, isLowPowerMode: true),
         ] {
             reader.batteryReading = battery
             status.refresh()
             #expect(status.battery == battery)
             #expect(status.batteryWarning == nil)
         }
-        reader.batteryReading = BatteryReading(level: 0.2, isCharging: false, isLowPowerMode: true)
+        reader.batteryReading = BatteryReading(level: 0.03, isCharging: false, isLowPowerMode: true)
         status.refresh()
-        #expect(status.batteryWarning == BatteryWarning(percent: 20, isLowPowerMode: true))
+        #expect(status.batteryWarning == BatteryWarning(percent: 3, isLowPowerMode: true))
+        reader.batteryReading = BatteryReading(level: 0.02, isCharging: false, isLowPowerMode: false)
+        status.refresh()
+        #expect(status.batteryWarning == BatteryWarning(percent: 2, isLowPowerMode: false))
         #expect(DeviceStatus(reader: nil).batteryWarning == nil)
     }
 

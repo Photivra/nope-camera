@@ -143,10 +143,11 @@ public final class DeviceStatus {
     /// Below this many photos, the storage warning shows.
     public static let lowStoragePhotoCount = 25
 
-    /// At or below this charge, unplugged, the battery warning shows: 20%, where iOS itself
-    /// first warns and offers Low Power Mode (Apple Support, "Use Low Power Mode to save
-    /// battery life on your iPhone").
-    public static let lowBatteryLevel = 0.2
+    /// At or below this charge, unplugged, the battery warning shows: 3%, when the device is
+    /// about to run out. iOS itself already warns and offers Low Power Mode at 20% (Apple
+    /// Support, "Use Low Power Mode to save battery life on your iPhone"), so the camera warns
+    /// only when the battery is nearly empty. An astro run stops earlier, at ``AstroModel/stopBatteryLevel``.
+    public static let lowBatteryLevel = 0.03
 
     /// The bytes free for important data, or `nil` when unknown.
     public private(set) var availableStorageBytes: Int64?

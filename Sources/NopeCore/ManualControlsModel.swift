@@ -78,7 +78,9 @@ public final class ManualControlsModel {
 
     /// Whether the camera should say "Hold it steady or use a tripod": in full auto when the
     /// light is too low for a handheld-safe shutter, and with manual controls when the shutter
-    /// chosen or in use is slower than that.
+    /// chosen or in use is slower than that. It follows only readings taken in the current mode
+    /// and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
+    /// to the astro helper's own guidance while that is on.
     public internal(set) var showsSteadyHint = false
 
     /// Whether the subject seems closer than the lens can focus, so an interface may suggest
@@ -362,16 +364,19 @@ public final class ManualControlsModel {
     // MARK: - Rules
 
     /// Turns manual controls on or off. Off returns everything to automatic; a running interval
-    /// series continues, with full-auto photos from then on.
+    /// series continues, with full-auto photos from then on. Either way the fast shutter rule
+    /// and the steady hint start again from new readings (``resetReadingAids()``).
     ///
     /// - Parameter enabled: Whether manual controls are on.
     private func setEnabled(_ enabled: Bool) async {
         guard enabled != isEnabled else { return }
         isEnabled = enabled
+        let wasLimited = longestAutoShutter != nil
+        resetReadingAids()
         defer { updateSteadyHint() }
         guard !enabled else {
             // Full auto's limit doesn't apply to manual controls; P is the camera's own exposure.
-            if longestAutoShutter != nil { await applyCurrentControls() }
+            if wasLimited { await applyCurrentControls() }
             return
         }
         bracket = nil

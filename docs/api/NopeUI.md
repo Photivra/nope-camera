@@ -1740,7 +1740,8 @@ internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
 @MainActor static func battery(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
 ```
 
-"Battery Low" at 20% or less while the device isn't plugged in (issue #44).
+"Battery Low" at 3% or less while the device isn't plugged in (issue #44,
+``DeviceStatus/lowBatteryLevel``).
 
 - Parameters:
   - context: The model and settings.

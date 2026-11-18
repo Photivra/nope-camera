@@ -896,6 +896,38 @@ The longest shutter full auto allows for a reading.
 - Returns: The first limit the scene is bright enough for, or `nil` to lift the limit
   (too dark, or a lens without an ISO range or shutter limits).
 
+## `AutoShutter/predatesLimit(_:limit:)`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static func predatesLimit(_ reading: ExposureReading, limit: Double?) -> Bool
+```
+
+Whether a full-auto reading was taken before the camera applied the limit in use, so it
+says nothing about the scene under that limit.
+
+- Parameters:
+  - reading: The reading.
+  - limit: The limit in use, in seconds, or `nil` when it is lifted.
+- Returns: `true` when the reading's shutter is longer than the limit by more than
+  ``predatesLimitMargin``; `false` when the limit is lifted.
+
+## `AutoShutter/predatesLimitMargin`
+
+internal, declared in `Sources/NopeCore/AutoControls.swift`
+
+```swift
+static let predatesLimitMargin: Double
+```
+
+How much longer than full auto's limit a reading's shutter may be and still count as
+taken under that limit: a quarter stop. Auto exposure keeps the shutter within
+`AVCaptureDevice.activeMaxExposureDuration`, so a reading clearly longer than the limit
+was taken before the camera applied it (after a manual or astro exposure, or on the
+previous lens). The margin allows for a reported shutter rounded to the sensor's timing;
+its size is an assumption, checked on the device (docs/TESTING.md).
+
 ## `AutoShutter/returnMargin`
 
 internal, declared in `Sources/NopeCore/AutoControls.swift`
@@ -2562,6 +2594,19 @@ automatic and turns the astro helper off.
 - Parameters:
   - isOn: Whether manual controls are on.
   - settings: The person's settings, where the option is stored.
+
+## `CameraModel/showsSteadyHint`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var showsSteadyHint: Bool { get }
+```
+
+Whether the camera should say "Hold it steady or use a tripod.":
+``ManualControlsModel/showsSteadyHint``, except while the astro helper is on. Its long exposures are meant for a tripod, and its
+own guidance already says "Use a tripod.", so the hint would only repeat it (the Astro
+screens in docs/design draw no hint). Interfaces show the hint from this property.
 
 ## `CameraModel/startTimer(seconds:shot:)`
 
@@ -6274,9 +6319,10 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 @MainActor static let lowBatteryLevel: Double
 ```
 
-At or below this charge, unplugged, the battery warning shows: 20%, where iOS itself
-first warns and offers Low Power Mode (Apple Support, "Use Low Power Mode to save
-battery life on your iPhone").
+At or below this charge, unplugged, the battery warning shows: 3%, when the device is
+about to run out. iOS itself already warns and offers Low Power Mode at 20% (Apple
+Support, "Use Low Power Mode to save battery life on your iPhone"), so the camera warns
+only when the battery is nearly empty. An astro run stops earlier, at ``AstroModel/stopBatteryLevel``.
 
 ## `DeviceStatus/lowStoragePhotoCount`
 
@@ -12332,6 +12378,20 @@ Clears what belonged to the previous lens: the tapped point, the close-up state 
 hint, and starts the new lens at its fastest fast-shutter limit until it reports a
 reading.
 
+## `ManualControlsModel/resetReadingAids()`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor func resetReadingAids()
+```
+
+Starts the fast shutter rule and the steady hint again from the lens's fastest limit,
+forgetting the last reading: after a lens change, and when manual controls turn on or off
+(Astro too), the readings taken before belong to another exposure. Without this, a limit
+lifted before Manual stayed lifted after it, and the hint stayed until enough new
+readings brought the limit back past the half-stop ``AutoShutter/returnMargin``.
+
 ## `ManualControlsModel/scale(for:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -12464,7 +12524,9 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 
 Whether the camera should say "Hold it steady or use a tripod": in full auto when the
 light is too low for a handheld-safe shutter, and with manual controls when the shutter
-chosen or in use is slower than that.
+chosen or in use is slower than that. It follows only readings taken in the current mode
+and lens. Interfaces show the hint from ``CameraModel/showsSteadyHint``, which leaves it
+to the astro helper's own guidance while that is on.
 
 ## `ManualControlsModel/startReadings()`
 
@@ -12541,7 +12603,8 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 
 Decides whether to show "Hold it steady or use a tripod".
 
-- Full auto: when the fast shutter limit had to be lifted past the handheld rule.
+- Full auto: when the fast shutter limit had to be lifted past the handheld rule, after a
+  reading in full auto.
 - Manual controls: when the person's shutter, or the camera's while it is Auto, is slower
   than the handheld rule. The app changes nothing; it only says so.
 

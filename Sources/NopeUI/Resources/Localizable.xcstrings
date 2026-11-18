@@ -219,11 +219,11 @@
       "comment" : "Explains the Focus on Faces switch. It decides only whether nope.'s autofocus and auto exposure follow faces; don't describe it as turning face detection off."
     },
     "Battery at %@. Charge the device soon to keep taking photos." : {
-      "comment" : "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 15%, formatted by the system.",
+      "comment" : "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 3%, formatted by the system.",
       "extractionState" : "manual"
     },
     "Battery at %@. Low Power Mode is on." : {
-      "comment" : "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 15%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.",
+      "comment" : "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 3%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.",
       "extractionState" : "manual"
     },
     "Battery Low" : {

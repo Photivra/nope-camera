@@ -409,7 +409,7 @@ struct CameraHints: View {
 
     /// The hints that apply, or nothing.
     var body: some View {
-        if model.manual.showsSteadyHint {
+        if model.showsSteadyHint {
             HintLabel(
                 systemImage: "hand.raised",
                 text: String(
