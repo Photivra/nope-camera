@@ -120,8 +120,16 @@ struct LensButton: View {
                         .font(NopeFont.readoutMode)
                 }
             }
+            // At least 40 points wide with 4 points each side (docs/design/tokens.md,
+            // "lensItem"; the design's lenses). With the compact capsule's 12 points each side
+            // "0.5×" was 53 points wide; turned upright while the iPhone is sideways, that width
+            // became the lens group's height, past the 44-point row, and the group touched the
+            // picture's lower edge.
+            .frame(minWidth: NopeSize.lensItemMinWidth - 2 * NopeSpace.xxs)
         }
-        .buttonStyle(NopeCapsuleStyle(isSelected: isSelected, size: NopeSize.lensItem, isCompact: true, idleFill: .none))
+        .buttonStyle(
+            NopeCapsuleStyle(
+                isSelected: isSelected, size: NopeSize.lensItem, isCompact: true, idleFill: .none, labelPadding: NopeSpace.xxs))
         .accessibilityLabel(Text(verbatim: LensName.string(for: lens.kind)))
         .accessibilityValue(title)
         .accessibilityHint(hint)
@@ -264,7 +272,8 @@ struct LensRows: View {
 
     /// The rows.
     var body: some View {
-        VStack(spacing: NopeSpace.xs) {
+        // 12 points apart, as every row of the scrolling layout (docs/design/screens/ax-camera).
+        VStack(spacing: NopeSpace.s) {
             ForEach(lenses) { lens in
                 let isSelected = lens.id == selectedID
                 Button {

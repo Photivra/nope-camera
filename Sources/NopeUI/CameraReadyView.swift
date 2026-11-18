@@ -79,6 +79,9 @@ struct CameraReadyView: View {
     /// The height of the lens row and drive strip, measured.
     @State private var bandsHeight: CGFloat = 0
 
+    /// The height of the stacked layout's status line, measured.
+    @State private var statusLineHeight: CGFloat = CameraLayout.topBarHeight
+
     /// The manual control whose dial is open, or `nil`.
     @State private var openControl: ManualControl?
 
@@ -310,13 +313,19 @@ struct CameraReadyView: View {
     // MARK: - Arrangements
 
     /// Status line, picture with the rows, shutter row (iPhone).
+    ///
+    /// When the picture and the rows fit one above the other, the shutter row takes the height
+    /// that is left, with the shutter centered in it (docs/design/tokens.md, `shutterRowMin`:
+    /// 101 points on a 402 × 874 point screen); otherwise it keeps its smallest height and the
+    /// rows overlay the picture.
     private var stacked: some View {
         VStack(spacing: 0) {
             statusLine
                 .frame(minHeight: CameraLayout.topBarHeight)
                 .padding(.horizontal, NopeSpace.m)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { statusLineHeight = $0 }
             StackedMiddle(
-                bandsHeight: bandsHeight,
+                width: size.width, bandsOverlayPicture: bandsOverlayPicture,
                 picture: { pictureArea(isColumn: false) },
                 dial: {
                     // Sideways, the bottom stack sits on the picture's lower edge as seen
@@ -336,9 +345,30 @@ struct CameraReadyView: View {
                 // Q's panel covers the lens row and the drive strip, never the shutter row.
                 .overlay(alignment: .bottom) { quickMenu(rotation.isSideways ? .sideways : .stacked) }
             shutterRow(quickSize: NopeSize.quick)
-                .frame(minHeight: CameraLayout.shutterRowHeight)
+                .frame(minHeight: CameraLayout.shutterRowHeight, maxHeight: bandsOverlayPicture ? nil : .infinity)
                 .padding(.horizontal, NopeSpace.xl)
         }
+    }
+
+    /// The space between the status line and the shutter row at its smallest height, in the
+    /// stacked layout.
+    private var stackedMiddleSpace: CGSize {
+        CGSize(width: size.width, height: max(size.height - statusLineHeight - CameraLayout.shutterRowHeight, 0))
+    }
+
+    /// Whether the lens row and drive strip overlay the bottom of the picture in the stacked
+    /// layout (``CameraLayout/bandsOverlayPicture(in:bandsHeight:)``).
+    private var bandsOverlayPicture: Bool {
+        CameraLayout.bandsOverlayPicture(in: stackedMiddleSpace, bandsHeight: bandsHeight)
+    }
+
+    /// How far the lens row and drive strip reach up over the picture in the stacked layout, in
+    /// points: zero when they are below it. While the iPhone is sideways, the turned status and
+    /// bottom stack run along the picture's side edges and stop this far above its lower edge, so
+    /// they never run under the rows (a 4.7-inch iPhone).
+    private var rowsOverPicture: CGFloat {
+        guard layout == .stacked else { return 0 }
+        return CameraLayout.rowsOverPicture(in: stackedMiddleSpace, bandsHeight: bandsHeight)
     }
 
     /// The rows in a scroll view, with a shorter picture (accessibility text sizes).
@@ -478,16 +508,26 @@ struct CameraReadyView: View {
 
     /// The status line of the stacked layout: format status leading, pills trailing. While the
     /// iPhone is on its side its content moves onto the picture's upper edge, and the line
-    /// stays as a margin so the picture doesn't move.
+    /// stays as a margin of the same height, hidden, so the picture doesn't move. (An empty
+    /// `Color.clear` there took a share of the free height: the picture moved down 41 points on
+    /// a 440 × 956 point iPhone, leaving the shutter 6 points below the drive strip, and on a
+    /// 4.7-inch iPhone the picture shrank to 210 × 279 points.)
     @ViewBuilder private var statusLine: some View {
         if rotation.isSideways {
-            Color.clear
+            statusLineContent
+                .hidden()
+                .accessibilityHidden(true)
         } else {
-            HStack(spacing: NopeSpace.xs) {
-                formatChip
-                Spacer(minLength: 0)
-                StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
-            }
+            statusLineContent
+        }
+    }
+
+    /// The status line's content: format status leading, pills trailing.
+    private var statusLineContent: some View {
+        HStack(spacing: NopeSpace.xs) {
+            formatChip
+            Spacer(minLength: 0)
+            StatePillRow(pills: showsControls ? StatePills.current(context) : StatePills.cleanView(context))
         }
     }
 
@@ -512,6 +552,10 @@ struct CameraReadyView: View {
         if showsControls {
             VStack(spacing: 0) {
                 lensRow
+                    // The lens row's controls keep the design's gap from the picture above and the
+                    // drive strip below (CameraLayout.lensRowInset) even when they grow taller
+                    // than the row, rather than reaching its edges.
+                    .padding(.vertical, CameraLayout.lensRowInset)
                     .frame(minHeight: NopeSize.lensRow)
                     .padding(.horizontal, NopeSpace.m)
                 driveStrip(rotation.isSideways ? .symbols : .words)
@@ -717,6 +761,7 @@ struct CameraReadyView: View {
                 }
                 .uprightUnit(sidewaysWidth: rotation.isSideways ? sidewaysBannerWidth : nil)
                 .padding(NopeSpace.xs)
+                .padding(.bottom, isColumn ? 0 : sidewaysRowsInset)
                 // The status is on the picture here, so it gets the dark backing.
                 .environment(\.isStatusOnPicture, true)
             }
@@ -735,6 +780,7 @@ struct CameraReadyView: View {
                     pictureBottomStack
                         .uprightUnit(sidewaysWidth: sidewaysBannerWidth)
                         .padding(NopeSpace.xs)
+                        .padding(.bottom, sidewaysRowsInset)
                 }
             }
     }
@@ -785,8 +831,14 @@ struct CameraReadyView: View {
     /// less margins, so a turned block fits across the picture.
     private var sidewaysBannerWidth: CGFloat? {
         guard rotation.isSideways else { return nil }
-        let pictureHeight = min(CameraLayout.pictureHeight(forWidth: size.width), size.height)
+        let pictureHeight = min(CameraLayout.pictureHeight(forWidth: size.width), size.height) - sidewaysRowsInset
         return max(pictureHeight - 4 * NopeSpace.xs, NopeSize.minTarget * 4)
+    }
+
+    /// While the iPhone is sideways, how far above the picture's lower edge the turned status and
+    /// bottom stack stop: the part of the picture under the rows (``rowsOverPicture``).
+    private var sidewaysRowsInset: CGFloat {
+        rotation.isSideways ? rowsOverPicture : 0
     }
 
     /// Where the top-of-picture overlay sits: the top leading corner in portrait, or the edge
@@ -1021,8 +1073,12 @@ struct CameraReadyView: View {
 /// iPhones, the iPhone Duo's outer display). The bottom stack sits over the bottom of the
 /// picture, above the rows.
 struct StackedMiddle<Picture: View, Dial: View, Bands: View>: View {
-    /// The measured height of the bands.
-    let bandsHeight: CGFloat
+    /// The width of the picture, in points: the screen's.
+    let width: CGFloat
+
+    /// Whether the bands overlay the bottom of the picture
+    /// (``CameraLayout/bandsOverlayPicture(in:bandsHeight:)``).
+    let bandsOverlayPicture: Bool
 
     /// The picture with its overlays.
     let picture: Picture
@@ -1033,52 +1089,49 @@ struct StackedMiddle<Picture: View, Dial: View, Bands: View>: View {
     /// The lens row and the drive strip.
     let bands: Bands
 
-    /// The space between the status line and the shutter row.
-    @State private var space = CGSize.zero
-
     /// Creates the middle.
     ///
     /// - Parameters:
-    ///   - bandsHeight: The measured height of the bands.
+    ///   - width: The width of the picture, in points.
+    ///   - bandsOverlayPicture: Whether the bands overlay the bottom of the picture.
     ///   - picture: The picture with its overlays.
     ///   - dial: The bottom stack, or nothing.
     ///   - bands: The lens row and the drive strip.
     init(
-        bandsHeight: CGFloat, @ViewBuilder picture: () -> Picture, @ViewBuilder dial: () -> Dial,
-        @ViewBuilder bands: () -> Bands
+        width: CGFloat, bandsOverlayPicture: Bool, @ViewBuilder picture: () -> Picture,
+        @ViewBuilder dial: () -> Dial, @ViewBuilder bands: () -> Bands
     ) {
-        self.bandsHeight = bandsHeight
+        self.width = width
+        self.bandsOverlayPicture = bandsOverlayPicture
         self.picture = picture()
         self.dial = dial()
         self.bands = bands()
     }
 
-    /// The picture and the rows.
+    /// The picture and the rows: over the picture, taking the height the shutter row leaves;
+    /// or below it, at their own height, so the shutter row takes the rest.
     var body: some View {
-        Group {
-            if CameraLayout.bandsOverlayPicture(in: space, bandsHeight: bandsHeight) {
-                ZStack(alignment: .bottom) {
-                    picture
-                        .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    VStack(spacing: 0) {
-                        dial
-                        bands
-                            .nopeBackground(.rowOverlay, in: Rectangle())
-                    }
-                }
-            } else {
+        if bandsOverlayPicture {
+            ZStack(alignment: .bottom) {
+                picture
+                    .aspectRatio(1 / CameraLayout.photoAspectRatio, contentMode: .fit)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 VStack(spacing: 0) {
-                    picture
-                        .frame(width: space.width, height: CameraLayout.pictureHeight(forWidth: space.width))
-                        .overlay(alignment: .bottom) { dial }
+                    dial
                     bands
-                    Spacer(minLength: 0)
+                        .nopeBackground(.rowOverlay, in: Rectangle())
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            VStack(spacing: 0) {
+                picture
+                    .frame(width: width, height: CameraLayout.pictureHeight(forWidth: width))
+                    .overlay(alignment: .bottom) { dial }
+                bands
+            }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { space = $0 }
     }
 }
 

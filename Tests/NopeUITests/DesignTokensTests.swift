@@ -289,6 +289,8 @@ struct NopeButtonStylesTests {
         #expect(capsule.idleFill == .control)
         #expect(capsule.horizontalPadding == NopeSpace.m)
         #expect(NopeCapsuleStyle(isCompact: true).horizontalPadding == NopeSpace.s)
+        // A lens: 4 points each side, as in the design's lens group.
+        #expect(NopeCapsuleStyle(isCompact: true, labelPadding: NopeSpace.xxs).horizontalPadding == NopeSpace.xxs)
         #expect(NopeTileStyle(isOn: true).minHeight == NopeSize.tileMin)
         #expect(NopeTileStyle(isOn: true).alignment == .leading)
         #expect(!NopePillStyle().isSelected)

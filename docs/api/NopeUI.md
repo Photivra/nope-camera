@@ -1096,6 +1096,21 @@ the camera uses ``column`` beside the picture and turns nothing upright by itsel
   - vertical: The vertical size class.
 - Returns: `true` when both are regular.
 
+## `CameraLayout/lensRowInset`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static var lensRowInset: CGFloat { get }
+```
+
+The space above and below the lens row's controls, in points: half of what the 56-point
+row (``NopeSize/lensRow``) leaves around a 44-point control (``NopeSize/minTarget``), so
+6 points between the picture's lower edge and the lens row, and between the lens row and
+the drive strip, as in the design (docs/design/screens/camera-auto: picture to 639, lens
+group 645 to 689, strip from 695). The row grows rather than lose this gap when its
+controls are taller, as with larger text.
+
 ## `CameraLayout/photoAspectRatio`
 
 internal, declared in `Sources/NopeUI/CameraLayout.swift`
@@ -1133,6 +1148,24 @@ The height of the whole portrait 4:3 picture at a width.
 
 - Parameter width: The picture's width, in points.
 - Returns: The height, in points.
+
+## `CameraLayout/rowsOverPicture(in:bandsHeight:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func rowsOverPicture(in space: CGSize, bandsHeight: CGFloat) -> CGFloat
+```
+
+How far the lens row and drive strip reach up over the picture when they overlay it, in
+points; zero when they are below it. The picture is as wide as the space, or shorter
+when the space is too short for the whole picture, and the rows sit at the space's
+bottom.
+
+- Parameters:
+  - space: The space between the status line and the shutter row.
+  - bandsHeight: The height of the lens row and drive strip together.
+- Returns: The height of the picture under the rows, in points.
 
 ## `CameraLayout/scrolling`
 
@@ -8568,12 +8601,12 @@ internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
 
 What the button is filled with when it isn't selected.
 
-## `NopeCapsuleStyle/init(isSelected:role:size:isCompact:idleFill:)`
+## `NopeCapsuleStyle/init(isSelected:role:size:isCompact:idleFill:labelPadding:)`
 
 internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
 
 ```swift
-@MainActor init(isSelected: Bool = false, role: ButtonRole? = nil, size: CGFloat = NopeSize.capsule, isCompact: Bool = false, idleFill: NopeIdleFill = .control)
+@MainActor init(isSelected: Bool = false, role: ButtonRole? = nil, size: CGFloat = NopeSize.capsule, isCompact: Bool = false, idleFill: NopeIdleFill = .control, labelPadding: CGFloat? = nil)
 ```
 
 Creates the style.
@@ -8589,6 +8622,9 @@ Creates the style.
   - idleFill: What the button is filled with when not selected: ``NopeIdleFill/control`` on
     the black rows, ``NopeIdleFill/tile`` in panels and dials, ``NopeIdleFill/none`` for
     drive words.
+  - labelPadding: The space on each side of the label, in points, or `nil` for
+    ``NopeSpace/m`` (``NopeSpace/s`` when compact). A lens uses ``NopeSpace/xxs``
+    (docs/design/screens/camera-auto: 4 points each side, at least 40 wide).
 
 ## `NopeCapsuleStyle/isCompact`
 
@@ -8609,6 +8645,16 @@ internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
 ```
 
 Whether the button is selected or on.
+
+## `NopeCapsuleStyle/labelPadding`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let labelPadding: CGFloat?
+```
+
+The space on each side of the label set by the caller, or `nil` for the style's own.
 
 ## `NopeCapsuleStyle/makeBody(configuration:)`
 
@@ -16688,15 +16734,16 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The lens row and the drive strip.
 
-## `StackedMiddle/bandsHeight`
+## `StackedMiddle/bandsOverlayPicture`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor let bandsHeight: CGFloat
+@MainActor let bandsOverlayPicture: Bool
 ```
 
-The measured height of the bands.
+Whether the bands overlay the bottom of the picture
+(``CameraLayout/bandsOverlayPicture(in:bandsHeight:)``).
 
 ## `StackedMiddle/body`
 
@@ -16706,7 +16753,8 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor var body: some View { get }
 ```
 
-The picture and the rows.
+The picture and the rows: over the picture, taking the height the shutter row leaves;
+or below it, at their own height, so the shutter row takes the rest.
 
 ## `StackedMiddle/dial`
 
@@ -16718,18 +16766,19 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 The bottom stack (hints, dial, mode card, readouts), or nothing.
 
-## `StackedMiddle/init(bandsHeight:picture:dial:bands:)`
+## `StackedMiddle/init(width:bandsOverlayPicture:picture:dial:bands:)`
 
 internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 
 ```swift
-@MainActor init(bandsHeight: CGFloat, @ViewBuilder picture: () -> Picture, @ViewBuilder dial: () -> Dial, @ViewBuilder bands: () -> Bands)
+@MainActor init(width: CGFloat, bandsOverlayPicture: Bool, @ViewBuilder picture: () -> Picture, @ViewBuilder dial: () -> Dial, @ViewBuilder bands: () -> Bands)
 ```
 
 Creates the middle.
 
 - Parameters:
-  - bandsHeight: The measured height of the bands.
+  - width: The width of the picture, in points.
+  - bandsOverlayPicture: Whether the bands overlay the bottom of the picture.
   - picture: The picture with its overlays.
   - dial: The bottom stack, or nothing.
   - bands: The lens row and the drive strip.
@@ -16743,6 +16792,16 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 The picture with its overlays.
+
+## `StackedMiddle/width`
+
+internal, declared in `Sources/NopeUI/CameraReadyView.swift`
+
+```swift
+@MainActor let width: CGFloat
+```
+
+The width of the picture, in points: the screen's.
 
 ## `StatePill`
 
