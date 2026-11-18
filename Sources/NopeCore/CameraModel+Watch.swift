@@ -82,7 +82,7 @@ extension WatchResult {
         case .savedSeveral(let allSigned): self = .savedSeveral(allSigned: allSigned)
         case .notSaved, .lensUnavailable, .lensSelected, .lightOn, .lightOff, .noLight, .lightUnavailable,
             .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
-            .bracketUnavailable,
+            .bracketUnavailable, .focusBracketUnavailable, .focusBracketStopped,
             .focusRangeSet,
             .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable:
             self = .notSaved

@@ -51,6 +51,10 @@ public enum CameraIntent: Equatable, Sendable {
     /// Turn the astro helper on or off, choose its frames, or stop a run: see ``AstroIntent``.
     case astro(AstroIntent)
 
+    /// Turn Bracket on or off, choose its type, set up or stop a focus bracket: see
+    /// ``BracketIntent``.
+    case bracket(BracketIntent)
+
     /// Turn the comparison shot on or off, or close the compare view: see ``ComparisonIntent``.
     case comparison(ComparisonIntent)
 

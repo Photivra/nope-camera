@@ -66,8 +66,12 @@ struct ViewfinderOverlays: View {
     /// What the live analysis must measure now.
     private var needs: LiveAnalysisNeeds {
         guard model.live.isSupported, model.sessionStatus == .running else { return [] }
-        return LiveAnalysisNeeds.needed(
+        var needs = LiveAnalysisNeeds.needed(
             for: options, manualControlsShown: model.manual.isEnabled, isCleanView: model.isCleanView)
+        // Focus peaking shows while an end of a focus bracket's range is set, whatever its
+        // switch says (docs/design/BRACKETING.md, section 5).
+        if model.bracketing.rangeEditing != nil { needs.insert(.focusPeaking) }
+        return needs
     }
 
     /// Whether the live readout is shown: on, supported, and not in clean view unless pinned.

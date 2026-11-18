@@ -9,7 +9,7 @@ extension CameraModel {
     /// longer (``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
     public var canPressShutter: Bool {
         if drive.burstProgress?.isSaving == true { return false }
-        if drive.isBusy || astro.isRunning || manual.intervalProgress != nil { return true }
+        if drive.isBusy || astro.isRunning || manual.intervalProgress != nil || bracketing.isRunning { return true }
         let startsNoSeries = drive.mode == .interval && intervalBlocker == .intervalNotShorterThanTime
         return canCapture && !startsNoSeries
     }
@@ -24,7 +24,7 @@ extension CameraModel {
     /// docs/design/SETTING-SCOPE.md, 6). The person's choice (``LightModel/flashMode``) is kept
     /// and is used again in the other modes.
     public var shutterUsesFlash: Bool {
-        drive.mode != .burst && manual.bracket == nil && !astro.isOn
+        drive.mode != .burst && manual.bracket == nil && !bracketing.isFocusOn && !astro.isOn
     }
 
     /// The flash mode the shutter's next photo uses: ``LightModel/flashModeForCapture`` while
@@ -85,6 +85,11 @@ extension CameraModel {
         }
         if drive.burstProgress != nil {
             drive.requestBurstStop()
+            return
+        }
+        // The focus bracket: the shutter starts it, and stops it after the current frame.
+        if bracketing.isRunning || isFocusBracketOn {
+            await pressFocusBracketShutter()
             return
         }
         // A series started from Pro Tools, Siri or this mode: the shutter stops it, as it stops
@@ -157,7 +162,7 @@ extension CameraModel {
         // then (``isBurstShutter``), but a press it reported just before the series began must
         // still stop it when it comes up.
         guard isBurstShutter else {
-            let stopsASeries = manual.intervalProgress != nil || astro.isRunning
+            let stopsASeries = manual.intervalProgress != nil || astro.isRunning || bracketing.isRunning
             if !isOnScreen || stopsASeries, phase == .released { await pressShutter() }
             return
         }

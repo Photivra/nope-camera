@@ -33,8 +33,14 @@ enum DriveText {
         if drive.burstProgress != nil {
             return Text("Taking a burst. Press to stop.", bundle: .module, comment: "VoiceOver value of the shutter while a burst runs: pressing the shutter stops it.")
         }
+        if model.bracketing.isRunning {
+            return FocusBracketText.shutterRunning
+        }
         if model.isBracketOn, let bracket = model.manual.bracket {
             return BracketText.shutterValue(bracket)
+        }
+        if model.isFocusBracketOn {
+            return FocusBracketText.shutterValue(model.bracketing.focus)
         }
         switch drive.mode {
         case .single: return nil
@@ -750,8 +756,12 @@ struct ModeCards: View {
         }
         // A saved bracket's card shows until the next action: another photo, a change to the
         // bracket, the mode, the lens or Astro.
-        .onChange(of: model.captureStatus) { _, status in savedBracket = BracketCardState.saved(from: status) }
+        .onChange(of: model.captureStatus) { _, status in
+            savedBracket = BracketCardState.saved(from: status, focusRun: model.bracketing.lastRun)
+        }
         .onChange(of: model.manual.bracket) { savedBracket = nil }
+        .onChange(of: model.bracketing.focus) { savedBracket = nil }
+        .onChange(of: model.bracketing.isFocusOn) { savedBracket = nil }
         .onChange(of: model.drive.mode) { savedBracket = nil }
         .onChange(of: model.selectedLensID) { savedBracket = nil }
         .onChange(of: model.astro.isOn) { savedBracket = nil }
@@ -835,7 +845,7 @@ struct ModeCards: View {
                 stopButton(ModeCardText.stopFrames) { send(.astro(.stop)) }
             }
         case .bracket(let bracket):
-            BracketCard(state: bracket, openSettings: openBracketSettings) { send(.drive(.cancelTimer)) }
+            BracketCard(state: bracket, openSettings: openBracketSettings, send: send) { send(.drive(.cancelTimer)) }
         }
     }
 

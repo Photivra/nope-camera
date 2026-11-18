@@ -47,6 +47,14 @@ actor FakeHardware: CaptureHardware {
 
     func setReadingsEnabled(_ enabled: Bool) async { readingSwitches.append(enabled) }
 
+    private(set) var focusPositions: [Double] = []
+
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        focusPositions.append(lensPosition)
+        if let applyError { throw applyError }
+        return lensPosition - 0.01
+    }
+
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
         async throws(CaptureError) -> [HardwarePhoto]
     {
@@ -345,6 +353,18 @@ struct ManualCaptureBackendTests {
         #expect(await hardware.appliedControls == [.automatic])
         await hardware.setApplyError(.configurationFailed)
         await #expect(throws: CaptureError.configurationFailed) { try await running.applyControls(.automatic) }
+    }
+
+    @Test func focusForABracketNeedsARunningSessionAndReportsTheLensPosition() async throws {
+        let hardware = FakeHardware(cameras: [Self.manualCamera])
+        let backend = AVFoundationCaptureBackendTests.makeBackend(hardware)
+        await #expect(throws: CaptureError.notRunning) { _ = try await backend.setFocus(lensPosition: 0.5) }
+        let (running, _) = try await started(hardware)
+        let reported = try await running.setFocus(lensPosition: 0.5)
+        #expect(abs(reported - 0.49) < 1e-9)
+        #expect(await hardware.focusPositions == [0.5])
+        await hardware.setApplyError(.configurationFailed)
+        await #expect(throws: CaptureError.configurationFailed) { _ = try await running.setFocus(lensPosition: 0.2) }
     }
 
     @Test func readingsPassThrough() async {

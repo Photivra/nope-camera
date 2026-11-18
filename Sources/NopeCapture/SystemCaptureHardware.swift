@@ -189,6 +189,35 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         try result.get()
     }
 
+    /// Locks focus at a lens position on `queue` and waits for the system's handler, which runs
+    /// when the position has been applied (AVCaptureDevice.h,
+    /// `setFocusModeLocked(lensPosition:completionHandler:)`); then reads `lensPosition` back on
+    /// `queue`. Guarded by `isLockingFocusWithCustomLensPositionSupported`.
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        let result: Result<Double, CaptureError> = await withCheckedContinuation { continuation in
+            queue.async {
+                guard let device = self.currentInput?.device else {
+                    continuation.resume(returning: .failure(.notRunning))
+                    return
+                }
+                guard device.isLockingFocusWithCustomLensPositionSupported, (try? device.lockForConfiguration()) != nil
+                else {
+                    continuation.resume(returning: .failure(.configurationFailed))
+                    return
+                }
+                device.setFocusModeLocked(lensPosition: Float(min(max(lensPosition, 0), 1))) { _ in
+                    // The handler runs on an arbitrary queue; the device is read on `queue`.
+                    self.queue.async {
+                        let reported = self.currentInput?.device.lensPosition ?? Float(lensPosition)
+                        continuation.resume(returning: .success(Double(reported)))
+                    }
+                }
+                device.unlockForConfiguration()
+            }
+        }
+        return try result.get()
+    }
+
     /// Starts or stops the readings, on `queue`.
     func setReadingsEnabled(_ enabled: Bool) async {
         await perform {

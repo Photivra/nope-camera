@@ -114,6 +114,15 @@ public struct PhotoShortcut: Equatable, Sendable {
     }
 }
 
+/// The range of a focus bracket asked for from Siri or Shortcuts.
+public enum FocusBracketRange: String, CaseIterable, Equatable, Sendable {
+    /// The range set in the app (``BracketModel/focus``).
+    case asSet
+
+    /// The whole range, 0 to 1.
+    case wholeRange
+}
+
 /// The parameters of a "Take Bracket" request: the frames, the step between them, their order,
 /// the delay and the lens.
 ///
@@ -131,9 +140,23 @@ public struct BracketShortcut: Equatable, Sendable {
     /// The kind of lens to use, or `nil` for the lens already selected.
     public let lensKind: Lens.Kind?
 
+    /// The kind of bracket: ``BracketType/exposure`` by default. A focus bracket uses
+    /// ``focusFrameCount`` and ``focusRange``; the step and order are an exposure bracket's.
+    public let type: BracketType
+
+    /// A focus bracket's frames, one of ``FocusBracketSettings/frameCounts``.
+    public let focusFrameCount: Int
+
+    /// A focus bracket's range: as set in the app, or the whole range.
+    public let focusRange: FocusBracketRange
+
     /// Creates a request.
     ///
     /// - Parameters:
+    ///   - type: The kind of bracket; ``BracketType/exposure`` by default.
+    ///   - focusFrameCount: A focus bracket's frames, moved to the nearest of
+    ///     ``FocusBracketSettings/frameCounts``; 10 by default.
+    ///   - focusRange: A focus bracket's range; as set in the app by default.
     ///   - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
     ///   - step: The exposure difference between neighboring frames in EV (stops), moved to the
     ///     nearest of ``BracketSettings/steps``.
@@ -141,9 +164,13 @@ public struct BracketShortcut: Equatable, Sendable {
     ///   - delaySeconds: The delay in seconds, kept within 0 to ``PhotoShortcut/maximumDelaySeconds``.
     ///   - lensKind: The kind of lens, or `nil` for the lens already selected.
     public init(
-        frameCount: Int, step: Double, order: BracketOrder = .darkestFirst, delaySeconds: Int = 0,
-        lensKind: Lens.Kind? = nil
+        type: BracketType = .exposure, focusFrameCount: Int = FocusBracketSettings.defaultFrameCount,
+        focusRange: FocusBracketRange = .asSet, frameCount: Int, step: Double, order: BracketOrder = .darkestFirst,
+        delaySeconds: Int = 0, lensKind: Lens.Kind? = nil
     ) {
+        self.type = type
+        self.focusFrameCount = FocusBracketSettings.offeredFrameCount(nearestTo: focusFrameCount)
+        self.focusRange = focusRange
         bracket = BracketSettings(
             frameCount: Self.nearest(frameCount, in: BracketSettings.frameCounts),
             step: Self.nearest(step, in: BracketSettings.steps), order: order)
@@ -354,6 +381,14 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// The lens in use can't take the bracket asked for: it has no manual exposure, or takes
     /// fewer frames in one bracket. Say so; nothing was taken.
     case bracketUnavailable
+
+    /// The lens in use can't take a focus bracket: its focus can't be set. Say so; nothing was
+    /// taken.
+    case focusBracketUnavailable
+
+    /// A focus bracket stopped before its last frame (stopped, storage, battery or the camera).
+    /// Say how many photos were saved, of how many.
+    case focusBracketStopped(saved: Int, total: Int)
 
     /// The camera can't take a photo now. Say why, from the reason.
     case cameraUnavailable(CameraUnavailability)

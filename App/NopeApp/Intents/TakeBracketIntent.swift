@@ -28,11 +28,32 @@ struct TakeBracketIntent: AppIntent {
     static let openAppWhenRun = true
 
     /// The number of frames.
+    /// Exposure (the default) or Focus.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Type", comment: "A setting of nope.'s Take Bracket action: the kind of bracket, exposure or focus."),
+        default: .exposure)
+    var type: BracketTypeChoice
+
     @Parameter(
         title: LocalizedStringResource(
             "Frames", comment: "A setting of nope.'s Take Bracket action: how many photos the bracket takes."),
         default: .three)
     var frames: BracketFrameChoice
+
+    /// A focus bracket's frames, moved to the nearest the app offers (3 to 50).
+    @Parameter(
+        title: LocalizedStringResource(
+            "Focus Frames", comment: "A setting of nope.'s Take Bracket action with the type Focus: how many photos the focus bracket takes."),
+        default: 10, inclusiveRange: (3, 50))
+    var focusFrames: Int
+
+    /// A focus bracket's range: as set in the app, or the whole range.
+    @Parameter(
+        title: LocalizedStringResource(
+            "Range", comment: "A setting of nope.'s Take Bracket action with the type Focus: which focus positions the bracket covers."),
+        default: .asSet)
+    var range: FocusRangeChoiceEntity
 
     /// The exposure difference between neighboring frames.
     @Parameter(
@@ -66,10 +87,22 @@ struct TakeBracketIntent: AppIntent {
 
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
-        Summary("Take a bracket of \(\.$frames), \(\.$step) apart") {
-            \.$order
-            \.$delay
-            \.$lens
+        Switch(\.$type) {
+            Case(.focus) {
+                Summary("Take a \(\.$type) bracket of \(\.$focusFrames) photos") {
+                    \.$range
+                    \.$delay
+                    \.$lens
+                }
+            }
+            DefaultCase {
+                Summary("Take a bracket of \(\.$frames), \(\.$step) apart") {
+                    \.$type
+                    \.$order
+                    \.$delay
+                    \.$lens
+                }
+            }
         }
     }
 
@@ -79,7 +112,7 @@ struct TakeBracketIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let request = BracketShortcut(
-            frameCount: frames.count, step: step.stops, order: order.order, delaySeconds: delay.timer?.seconds ?? 0,
+            type: type.type, focusFrameCount: focusFrames, focusRange: range.range, frameCount: frames.count, step: step.stops, order: order.order, delaySeconds: delay.timer?.seconds ?? 0,
             lensKind: lens?.kind)
         let outcome = await inbox.submit(.takeBracket(request))
         return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
@@ -189,6 +222,56 @@ enum BracketOrderChoice: String, AppEnum {
         case .darkestFirst: .darkestFirst
         case .meteredFirst: .meteredFirst
         case .brightestFirst: .brightestFirst
+        }
+    }
+}
+
+/// The Type setting of Take Bracket.
+enum BracketTypeChoice: String, AppEnum {
+    case exposure
+    case focus
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource(
+            "Type", comment: "A setting of nope.'s Take Bracket action: the kind of bracket, exposure or focus."))
+
+    static let caseDisplayRepresentations: [BracketTypeChoice: DisplayRepresentation] = [
+        .exposure: DisplayRepresentation(
+            title: LocalizedStringResource("Exposure", comment: "A choice of the Type setting of nope.'s Take Bracket action: photos at different exposures.")),
+        .focus: DisplayRepresentation(
+            title: LocalizedStringResource("Focus", comment: "A choice of the Type setting of nope.'s Take Bracket action: photos at different focus positions, for stacking in other software.")),
+    ]
+
+    /// The type in `NopeCore`.
+    var type: BracketType {
+        switch self {
+        case .exposure: .exposure
+        case .focus: .focus
+        }
+    }
+}
+
+/// The Range setting of Take Bracket with the type Focus.
+enum FocusRangeChoiceEntity: String, AppEnum {
+    case asSet
+    case wholeRange
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(
+        name: LocalizedStringResource(
+            "Range", comment: "A setting of nope.'s Take Bracket action with the type Focus: which focus positions the bracket covers."))
+
+    static let caseDisplayRepresentations: [FocusRangeChoiceEntity: DisplayRepresentation] = [
+        .asSet: DisplayRepresentation(
+            title: LocalizedStringResource("As Set in nope.", comment: "A choice of the Range setting of nope.'s Take Bracket action: the focus range set in the app. Keep \"nope.\" unchanged.")),
+        .wholeRange: DisplayRepresentation(
+            title: LocalizedStringResource("Whole Range", comment: "A choice of the Range setting of nope.'s Take Bracket action: every focus position from the closest to the farthest.")),
+    ]
+
+    /// The range in `NopeCore`.
+    var range: FocusBracketRange {
+        switch self {
+        case .asSet: .asSet
+        case .wholeRange: .wholeRange
         }
     }
 }

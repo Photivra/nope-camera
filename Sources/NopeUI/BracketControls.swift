@@ -145,8 +145,9 @@ enum BracketText {
     ///
     /// - Parameter place: The photo's place in its bracket.
     static func chip(_ place: BracketPlace) -> String {
-        String(
-            localized: "Exposure bracket · frame \(place.frame.number) of \(place.count) · \(offset(place.frame.offset))", bundle: .module,
+        if let focus = place.focus { return FocusBracketText.chip(focus, count: place.count) }
+        return String(
+            localized: "Exposure bracket · frame \(place.number) of \(place.count) · \(offset(place.frame?.offset ?? 0))", bundle: .module,
             comment: "Chip on a photo in the Last Photo viewer: the photo is one frame of an exposure bracket. The numbers are the frame and the count of frames; the last value is the frame's exposure offset, such as \"0 EV\".")
     }
 
@@ -154,8 +155,9 @@ enum BracketText {
     ///
     /// - Parameter place: The photo's place in its bracket.
     static func chipSpoken(_ place: BracketPlace) -> String {
-        String(
-            localized: "Exposure bracket, frame \(place.frame.number) of \(place.count), \(offset(place.frame.offset)).", bundle: .module,
+        if let focus = place.focus { return FocusBracketText.chipSpoken(focus, count: place.count) }
+        return String(
+            localized: "Exposure bracket, frame \(place.number) of \(place.count), \(offset(place.frame?.offset ?? 0)).", bundle: .module,
             comment: "VoiceOver, part of a photo's label in the Last Photo viewer: the photo is one frame of an exposure bracket. The numbers are the frame and the count of frames; the last value is its exposure offset, such as \"0 EV\".")
     }
 
@@ -189,12 +191,65 @@ enum BracketCardState: Equatable {
     /// The bracket was saved: "3 photos saved", until the next action.
     case saved(count: Int, offsets: [Double])
 
+    /// A focus bracket is on and nothing runs: "Focus bracket: 12 frames", the track, Nearest
+    /// and Farthest.
+    case focusIdle(FocusBracketSettings)
+
+    /// An end of the focus range is being set on the picture: the dial, with the value shown.
+    case focusRange(FocusRangeEditing, value: Double)
+
+    /// The focus bracket's start delay counts down: "Bracket in 3s" and Cancel.
+    case focusCountdown(remaining: Int, FocusBracketSettings)
+
+    /// A focus bracket runs: "Frame 4 of 12", the focus reported, the track and Stop Bracket.
+    case focusRunning(FocusBracketProgress, positions: [Double])
+
+    /// A focus bracket is paused: "Paused: 4 of 12 frames" and Stop Bracket.
+    case focusPaused(FocusBracketProgress)
+
+    /// A focus bracket ended: the photos saved, why it stopped, and where the focus is.
+    case focusEnded(FocusBracketResult)
+
     /// Whether the card shows something that runs, and so stays in clean view.
     var isRunning: Bool {
         switch self {
-        case .countdown, .taking, .saving: true
-        case .idle, .saved: false
+        case .countdown, .taking, .saving, .focusCountdown, .focusRunning, .focusPaused, .focusRange: true
+        case .idle, .saved, .focusIdle, .focusEnded: false
         }
+    }
+
+    /// Whether the card is one of a focus bracket's.
+    var isFocus: Bool {
+        switch self {
+        case .focusIdle, .focusRange, .focusCountdown, .focusRunning, .focusPaused, .focusEnded: true
+        case .idle, .countdown, .taking, .saving, .saved: false
+        }
+    }
+
+    /// The focus bracket's card, or `nil` when no focus bracket is on, runs or is being set up.
+    ///
+    /// - Parameters:
+    ///   - bracketing: The focus bracket's state.
+    ///   - isOn: Whether the focus bracket is on (``CameraModel/isFocusBracketOn``).
+    ///   - rangeValue: The value of the range end being set, or `nil`.
+    ///   - countdownRemaining: The countdown's seconds left, or `nil`.
+    ///   - ended: The end card of the last focus bracket, until the next action, or `nil`.
+    ///   - showsControls: Whether the controls are shown (not clean view).
+    /// - Returns: The card, or `nil`.
+    @MainActor
+    static func focus(
+        _ bracketing: BracketModel, isOn: Bool, rangeValue: Double?, countdownRemaining: Int?,
+        ended: BracketCardState?, showsControls: Bool
+    ) -> BracketCardState? {
+        if let progress = bracketing.progress {
+            guard !progress.isPaused else { return .focusPaused(progress) }
+            return .focusRunning(progress, positions: bracketing.running?.positions ?? [])
+        }
+        guard isOn else { return nil }
+        if let editing = bracketing.rangeEditing { return .focusRange(editing, value: rangeValue ?? editing.value) }
+        if let countdownRemaining { return .focusCountdown(remaining: countdownRemaining, bracketing.focus) }
+        guard showsControls else { return nil }
+        return ended ?? .focusIdle(bracketing.focus)
     }
 
     /// The card for the camera's state, or `nil` for none.
@@ -227,7 +282,13 @@ enum BracketCardState: Equatable {
     /// - Returns: The card, or `nil`.
     @MainActor
     static func current(_ model: CameraModel, saved: BracketCardState?, showsControls: Bool) -> BracketCardState? {
-        resolve(
+        if model.bracketing.isRunning || model.isFocusBracketOn {
+            return focus(
+                model.bracketing, isOn: model.isFocusBracketOn, rangeValue: model.focusRangeValue,
+                countdownRemaining: model.drive.countdown.remainingSeconds, ended: saved?.isFocus == true ? saved : nil,
+                showsControls: showsControls)
+        }
+        return resolve(
             bracket: model.isBracketOn ? model.manual.bracket : nil, startDelay: model.bracketStartDelay,
             countdownRemaining: model.drive.countdown.remainingSeconds, progress: model.bracketProgress, saved: saved,
             showsControls: showsControls)
@@ -235,9 +296,12 @@ enum BracketCardState: Equatable {
 
     /// The saved card for a capture result, or `nil` when it isn't a bracket's.
     ///
-    /// - Parameter status: A capture status.
-    static func saved(from status: CaptureStatus) -> BracketCardState? {
+    /// - Parameters:
+    ///   - status: A capture status.
+    ///   - focusRun: How the last focus bracket ended, for a focus bracket's photos.
+    static func saved(from status: CaptureStatus, focusRun: FocusBracketResult? = nil) -> BracketCardState? {
         guard case .savedBracket(let photos) = status, let place = photos.first?.bracket else { return nil }
+        guard place.type == .exposure else { return focusRun.map(BracketCardState.focusEnded) }
         return .saved(count: photos.count, offsets: place.offsets)
     }
 }
@@ -255,15 +319,23 @@ struct BracketCard: View {
     /// Cancels the start delay.
     let cancel: () -> Void
 
+    /// Sends an intent to the camera, for the focus bracket's buttons.
+    let send: (CameraIntent) -> Void
+
     /// Creates the card.
     ///
     /// - Parameters:
     ///   - state: The card's state.
     ///   - openSettings: Opens Bracket Settings.
+    ///   - send: Sends an intent, for the focus bracket's buttons.
     ///   - cancel: Cancels the start delay.
-    init(state: BracketCardState, openSettings: @escaping () -> Void, cancel: @escaping () -> Void) {
+    init(
+        state: BracketCardState, openSettings: @escaping () -> Void, send: @escaping (CameraIntent) -> Void = { _ in },
+        cancel: @escaping () -> Void
+    ) {
         self.state = state
         self.openSettings = openSettings
+        self.send = send
         self.cancel = cancel
     }
 
@@ -292,6 +364,17 @@ struct BracketCard: View {
             ) { EmptyView() }
         case .saved(let count, let offsets):
             ModeCard(title: BracketText.saved(count), detail: Text(verbatim: BracketText.offsets(offsets))) { EmptyView() }
+        case .focusCountdown(let remaining, let settings):
+            ModeCard(title: BracketText.bracketIn(remaining), detail: Text(verbatim: FocusBracketText.countdownDetail(settings))) {
+                Button(action: cancel) {
+                    BracketText.cancel
+                        .lineLimit(1)
+                        .fixedSize()
+                }
+                .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
+            }
+        case .focusIdle, .focusRange, .focusRunning, .focusPaused, .focusEnded:
+            FocusBracketCard(state: state, send: send, openSettings: openSettings)
         }
     }
 }
@@ -319,6 +402,19 @@ struct BracketFeedback: ViewModifier {
                 if isTaking, let total = model.bracketProgress?.total {
                     AccessibilityNotification.Announcement(BracketText.taking(total)).post()
                 }
+            }
+            // A focus bracket: "Frame 4 of 12" at each frame, at low priority so it doesn't
+            // interrupt VoiceOver, and the end sentence.
+            .onChange(of: model.bracketing.progress?.taken) {
+                guard let progress = model.bracketing.progress, !progress.isPaused else { return }
+                var frame = AttributedString(FocusBracketText.frame(progress.frameNumber, of: progress.total))
+                frame.accessibilitySpeechAnnouncementPriority = .low
+                AccessibilityNotification.Announcement(frame).post()
+            }
+            .onChange(of: model.bracketing.lastRun) { _, result in
+                guard let result else { return }
+                let sentence = [FocusBracketText.endTitle(result), FocusBracketText.endDetail(result)].joined(separator: ". ")
+                AccessibilityNotification.Announcement(sentence).post()
             }
     }
 }
@@ -366,8 +462,76 @@ struct BracketSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                // Release 1.1.0 adds the Type control above this section; nothing is drawn
-                // for it now (docs/design/BRACKETING.md, decision 4).
+                typeSection
+                if model.bracketing.type == .focus {
+                    FocusBracketSections(model: model) { end in
+                        // The sheet closes, and the end is set on the picture.
+                        dismiss()
+                        let model = model
+                        Task { await model.send(.bracket(.beginSettingRange(end))) }
+                    }
+                } else {
+                    exposureSections
+                }
+                // Done is a row of the form, not a bar button, as in Pro Tools: the audit can't
+                // measure the contrast of the glass bar button.
+                Section {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Done", bundle: .module, comment: "Button that closes a sheet, such as Settings or Pro Tools.")
+                    }
+                }
+            }
+            .navigationTitle(BracketText.settings)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    /// The text size: the Type control becomes a two-row picker at accessibility sizes.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// Type: Exposure or Focus. Dimmed, with its sentence, where the lens can take only one.
+    private var typeSection: some View {
+        Section {
+            let selection = Binding(
+                get: { model.bracketing.type },
+                set: { type in
+                    let model = model
+                    Task { await model.send(.bracket(.setType(type))) }
+                })
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    Picker(selection: selection) { typeChoices } label: { typeLabel }
+                        .pickerStyle(.inline)
+                } else {
+                    Picker(selection: selection) { typeChoices } label: { typeLabel }
+                        .pickerStyle(.segmented)
+                }
+            }
+            .disabled(!(model.canFocusBracket && model.canExposureBracket))
+        } footer: {
+            if !model.canFocusBracket {
+                Text("Focus bracketing needs a lens whose focus can be set. This lens’s focus can’t.", bundle: .module, comment: "Under the Type control in Bracket Settings, on a lens whose focus can't be set by the app.")
+            }
+        }
+    }
+
+    /// The Type control's label.
+    private var typeLabel: Text {
+        Text("Type", bundle: .module, comment: "Control in Bracket Settings, and a setting of the Take Bracket action: the kind of bracket, exposure or focus.")
+    }
+
+    /// The Type control's choices.
+    private var typeChoices: some View {
+        ForEach(BracketType.allCases, id: \.self) { type in
+            Text(verbatim: FocusBracketText.name(type)).tag(type)
+        }
+    }
+
+    /// The exposure bracket's sections (release 1.0.0's sheet).
+    @ViewBuilder
+    private var exposureSections: some View {
                 Section {
                     framesPicker
                     stepPicker
@@ -392,19 +556,6 @@ struct BracketSheet: View {
                 Section {
                     BracketText.honesty
                 }
-                // Done is a row of the form, not a bar button, as in Pro Tools: the audit can't
-                // measure the contrast of the glass bar button.
-                Section {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Text("Done", bundle: .module, comment: "Button that closes a sheet, such as Settings or Pro Tools.")
-                    }
-                }
-            }
-            .navigationTitle(BracketText.settings)
-            .navigationBarTitleDisplayMode(.inline)
-        }
     }
 
     /// Frames: 3, 5 or 7, as the lens allows.
@@ -609,23 +760,37 @@ struct BracketDetailsSection: View {
         Section {
             DetailRow(
                 title: Text(String(localized: "Bracket details: Type", defaultValue: "Type", bundle: .module, comment: "Row in the photo details of a bracket's frame: the kind of bracket.")),
-                value: Text(String(localized: "Bracket details: Exposure", defaultValue: "Exposure", bundle: .module, comment: "Value of the Type row in the photo details: an exposure bracket, frames at different exposures.")))
+                value: place.focus == nil
+                    ? Text(String(localized: "Bracket details: Exposure", defaultValue: "Exposure", bundle: .module, comment: "Value of the Type row in the photo details: an exposure bracket, frames at different exposures."))
+                    : Text(verbatim: FocusBracketText.name(.focus)))
             DetailRow(
                 title: Text("This Frame", bundle: .module, comment: "Row in the photo details of a bracket's frame: which frame of the bracket this photo is."),
-                value: Text("\(place.frame.number) of \(place.count)", bundle: .module, comment: "Value of This Frame in the photo details: the frame's number, of how many frames."))
-            DetailRow(
-                title: Text("Planned Exposure", bundle: .module, comment: "Row in the photo details of a bracket's frame: the exposure the app asked the camera for."),
-                value: Text(verbatim: "\(BracketText.offset(place.frame.offset))\n\(ControlText.shutter(place.frame.frame.exposureDuration)) · ISO \(ControlText.value(place.frame.frame.iso, of: .iso))"))
-            DetailRow(
-                title: Text("The Bracket", bundle: .module, comment: "Row in the photo details of a bracket's frame: every frame's exposure offset, and their order."),
-                value: Text(verbatim: "\(BracketText.offsets(place.offsets))\n\(BracketText.name(place.order))"))
+                value: Text("\(place.number) of \(place.count)", bundle: .module, comment: "Value of This Frame in the photo details: the frame's number, of how many frames."))
+            if let focus = place.focus {
+                FocusBracketDetailRows(place: focus)
+            }
+            if let frame = place.frame, let order = place.order {
+                DetailRow(
+                    title: Text("Planned Exposure", bundle: .module, comment: "Row in the photo details of a bracket's frame: the exposure the app asked the camera for."),
+                    value: Text(verbatim: "\(BracketText.offset(frame.offset))\n\(ControlText.shutter(frame.frame.exposureDuration)) · ISO \(ControlText.value(frame.frame.iso, of: .iso))"))
+                DetailRow(
+                    title: Text("The Bracket", bundle: .module, comment: "Row in the photo details of a bracket's frame: every frame's exposure offset, and their order."),
+                    value: Text(verbatim: "\(BracketText.offsets(place.offsets))\n\(BracketText.name(order))"))
+            }
         } header: {
             Text(verbatim: BracketText.word)
         } footer: {
-            Text(
-                "Kept by nope. until it closes, to group the frames here. Not written to the files; in Photos each frame is a separate photo.",
-                tableName: "Honesty", bundle: .module,
-                comment: "Footer of the Bracket group in the photo details. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the values are in memory only.")
+            if place.focus != nil {
+                Text(
+                    "Focus is a position on this lens’s own scale from 0 to 1, not a distance. Kept by nope. until it closes; not written to the files.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Footer of the Bracket group in the photo details of a focus bracket's frame. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is known, and the values are in memory only.")
+            } else {
+                Text(
+                    "Kept by nope. until it closes, to group the frames here. Not written to the files; in Photos each frame is a separate photo.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Footer of the Bracket group in the photo details. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the values are in memory only.")
+            }
         }
     }
 }

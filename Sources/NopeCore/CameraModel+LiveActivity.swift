@@ -6,7 +6,7 @@ extension CameraModel {
     /// aren't paused. When the app leaves the foreground then, it asks iOS for time to finish
     /// saving them (``BackgroundTimeRequesting``); a paused astro run has saved every frame taken.
     public var isFinishingPhotos: Bool {
-        guard !astro.isPaused else { return false }
+        guard !astro.isPaused, bracketing.progress?.isPaused != true else { return false }
         return captureStatus == .capturing || captureStatus == .saving || drive.burstProgress != nil || astro.isRunning
     }
 
@@ -36,6 +36,11 @@ extension CameraModel {
             return LiveActivityContent(
                 kind: .astro, phase: isInForeground && !astro.isPaused ? .running : .paused, taken: progress.taken,
                 total: astro.frameCount, saved: progress.saved)
+        }
+        if let progress = bracketing.progress {
+            return LiveActivityContent(
+                kind: .focusBracket, phase: isInForeground && !progress.isPaused ? .running : .paused,
+                taken: progress.taken, total: progress.total, saved: progress.saved)
         }
         if let progress = drive.burstProgress {
             return LiveActivityContent(
@@ -82,6 +87,8 @@ extension CameraModel {
             apply(drive.lastBurst, finishesWhenStopped: true, to: &outcome)
         case .timer:
             applyTimerResult(to: &outcome)
+        case .focusBracket:
+            applyFocusBracketResult(to: &outcome)
         }
         return outcome
     }
@@ -106,6 +113,20 @@ extension CameraModel {
         case .stopped: outcome.phase = finishesWhenStopped ? .finished : .stopped
         case .storageFull, .cameraStopped, .batteryLow: outcome.phase = .stopped
         }
+    }
+
+    /// Fills in how a focus bracket ended: finished when every frame was saved, failed when a
+    /// frame couldn't be taken or saved, otherwise stopped.
+    ///
+    /// - Parameter outcome: The content to fill in.
+    private func applyFocusBracketResult(to outcome: inout LiveActivityContent) {
+        guard let result = bracketing.lastRun else {
+            outcome.phase = .stopped
+            return
+        }
+        outcome.saved = result.saved
+        outcome.signing = signingOfSavedPhotos
+        outcome.phase = result.end == .failed ? .failed : result.isFinished ? .finished : .stopped
     }
 
     /// Fills in how the self-timer's photo ended.

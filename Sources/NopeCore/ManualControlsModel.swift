@@ -67,6 +67,11 @@ public final class ManualControlsModel {
     /// The running interval series.
     private var intervalTask: Task<Void, Never>?
 
+    /// Whether the camera's controls are held by a focus bracket, which sets focus, exposure and
+    /// white balance itself while it runs or while an end of its range is set. Changes to the
+    /// settings are kept, and applied when the hold ends.
+    var holdsControls = false
+
     // MARK: Automatic aids (ManualControlsModel+Auto.swift)
 
     /// Where autofocus and auto exposure are aimed after a tap, and whether they are locked
@@ -536,7 +541,9 @@ public final class ManualControlsModel {
     ///
     /// - Parameter previous: The settings to restore when the camera refuses.
     func apply(restoringOnFailure previous: ManualSettings) async {
-        guard let backend, let lens else { return }
+        // A focus bracket sets the camera itself while it runs or its range is set; the settings
+        // still change and are applied when it ends (`CameraModel+FocusBracket.swift`).
+        guard !holdsControls, let backend, let lens else { return }
         do {
             try await backend.applyControls(DeviceControls(settings: settings, lens: lens, assist: assist))
         } catch .configurationFailed {

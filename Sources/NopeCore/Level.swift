@@ -198,14 +198,14 @@ extension CameraModel {
     /// Whether the level's tap is held back now (docs/design/level-haptic.md, section 4): while
     /// a photo is being taken (a bracket and a long exposure included), during a burst or a
     /// self-timer countdown, for the whole of an interval series (running or paused), while Astro
-    /// runs, and whenever the camera isn't running.
+    /// or a focus bracket runs (paused included), and whenever the camera isn't running.
     ///
     /// The Taptic Engine moves the device, so a tap is kept away from exposures and series; with
     /// the camera not running there is no live picture to level. An interface also holds the tap
     /// back while a sheet covers the camera or the app isn't active, which the model can't see.
     public var holdsBackLevelTap: Bool {
         captureStatus == .capturing || drive.isBusy || manual.intervalProgress != nil || astro.isRunning
-            || sessionStatus != .running
+            || bracketing.isRunning || sessionStatus != .running
     }
 }
 

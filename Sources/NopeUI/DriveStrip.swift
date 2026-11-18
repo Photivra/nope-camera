@@ -224,13 +224,14 @@ struct DriveStrip: View {
     private var words: [DriveWord] {
         DriveWord.offered(
             offersAstro: model.canUseAstro || model.astro.isOn,
-            offersBracket: !model.manual.bracketFrameCounts.isEmpty || model.isBracketOn)
+            offersBracket: model.offersBracket)
     }
 
     /// Whether a countdown, burst, bracket, interval series or astro run is going, so only the
     /// selected word stays enabled.
     private var isBusy: Bool {
         model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil || model.bracketProgress != nil
+            || model.bracketing.isRunning
     }
 
     /// The strip.
@@ -423,16 +424,13 @@ struct DriveStrip: View {
             }
             if model.astro.isOn { await model.setAstro(false, settings: settings) }
             if word == .bracket {
-                // The session's last bracket, with its start delay (read before the bracket
-                // changes the mode).
-                guard let bracket = model.bracketToTurnOn else { return }
-                let mode = model.bracketDriveMode
-                await model.send(.manual(.setBracket(bracket)))
-                await model.send(.drive(.setMode(mode)))
+                // The session's type: the last exposure bracket with its start delay, or the
+                // focus bracket.
+                await model.send(.bracket(.setOn(true)))
                 return
             }
             // Another word turns the bracket off first (docs/design/BRACKETING.md, section 3).
-            if model.manual.bracket != nil { await model.send(.manual(.setBracket(nil))) }
+            if model.isBracketOn { await model.send(.bracket(.setOn(false))) }
             if let mode = word.mode(timerDelay: delay) { await model.send(.drive(.setMode(mode))) }
         }
     }

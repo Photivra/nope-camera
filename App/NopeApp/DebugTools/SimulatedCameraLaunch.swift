@@ -107,6 +107,9 @@ enum SimulatedCameraLaunch {
         /// As `manual`, and each save takes half a second, so the astro helper's frames run long
         /// enough for the UI tests to see and stop them.
         case astro
+        /// As `astro`, and the simulated lens stops 0.05 short of each focus position, so a
+        /// focus bracket's end card counts the frames not at their planned focus.
+        case focusShort
         /// As `manual`, in light so low (ISO 3200 at 1/4 s) that the brightest frames of a wide
         /// bracket are beyond the wide lens's limits, so Bracket Settings marks them.
         case dimManual
@@ -233,7 +236,7 @@ enum SimulatedCameraLaunch {
                 addsUnexpectedTag: scenario == .metadataRejected,
                 fullTags: SimulatedFileTags.fromLaunchArguments(appVersion: appVersion)),
             library: SimulatedPhotoLibrary(
-                allowsAdding: scenario != .photosDenied, addSeconds: [.slowSaving, .astro, .burst].contains(scenario) ? 0.5 : 0,
+                allowsAdding: scenario != .photosDenied, addSeconds: [.slowSaving, .astro, .focusShort, .burst].contains(scenario) ? 0.5 : 0,
                 successfulAdds: [.firstSaveOnly, .manualFirstSaveOnly].contains(scenario) ? 1 : nil),
             appVersion: appVersion, thumbnailer: SimulatedThumbnailer(),
             // The Lock Screen camera's pipeline makes no previews (`NopeCaptureExtension`).
@@ -353,6 +356,9 @@ enum SimulatedCameraLaunch {
         case .manual, .astro, .manualFirstSaveOnly:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
+        case .focusShort:
+            return SimulatedCaptureBackend(
+                permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses), focusShortfall: 0.05)
         case .dimManual:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses), reading: dimManualReading)

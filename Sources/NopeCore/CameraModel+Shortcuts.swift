@@ -156,6 +156,7 @@ extension CameraModel {
     /// - Returns: How it ended.
     private func takeBracket(_ request: BracketShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
         if let problem = await prepareCamera(lensKind: request.lensKind, inbox: inbox) { return problem }
+        if request.type == .focus { return await takeFocusBracket(request, inbox: inbox) }
         let bracket = request.bracket
         guard manual.canBracket(bracket) else { return .bracketUnavailable }
         guard canCapture, !isRunningSeries else { return .busy }
@@ -169,6 +170,39 @@ extension CameraModel {
         }
         startTimer(seconds: request.delaySeconds) { [weak self] in await self?.capture(onceBracket: bracket) }
         return await outcomeAfterCountdown(since: before, inbox: inbox)
+    }
+
+    /// Takes one focus bracket for a request, at once or after the self-timer, through the same
+    /// path as the shutter (``takeFocusBracket(_:)``), with the request's frames and range. The
+    /// focus bracket set in the app stays as it is.
+    ///
+    /// - Parameters:
+    ///   - request: The request's frames, range and delay.
+    ///   - inbox: The inbox, for its waits and timeouts.
+    /// - Returns: How it ended.
+    private func takeFocusBracket(_ request: BracketShortcut, inbox: ShortcutInbox) async -> ShortcutOutcome {
+        guard canFocusBracket else { return .focusBracketUnavailable }
+        guard canCapture, !isRunningSeries else { return .busy }
+        let asSet = bracketing.focus.with(frameCount: request.focusFrameCount)
+        let settings = request.focusRange == .wholeRange ? asSet.with(nearest: 0, farthest: 1) : asSet
+        let before = captureStatus
+        if request.delaySeconds == 0 {
+            await takeFocusBracket(settings)
+        } else {
+            startTimer(seconds: request.delaySeconds) { [weak self] in await self?.takeFocusBracket(settings) }
+            let counted = await outcomeAfterCountdown(since: before, inbox: inbox)
+            guard bracketing.lastRun != nil else { return counted }
+        }
+        return focusBracketOutcome
+    }
+
+    /// The outcome of the last focus bracket: stopped with its count when it ended early, as
+    /// its capture status says otherwise.
+    private var focusBracketOutcome: ShortcutOutcome {
+        if let run = bracketing.lastRun, !run.isFinished, run.end != .failed {
+            return .focusBracketStopped(saved: run.saved, total: run.total)
+        }
+        return outcome(of: captureStatus)
     }
 
     /// Switches to a lens of the kind asked for, as a lens button does, unless the lens can't be
