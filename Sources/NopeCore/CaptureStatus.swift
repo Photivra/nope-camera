@@ -22,7 +22,8 @@ public enum CaptureStatus: Equatable, Sendable {
     case saved(SavedPhoto)
 
     /// An exposure bracket was taken and every frame was saved as its own photo: separate
-    /// single-frame photos, nothing merged, darkest first.
+    /// single-frame photos, nothing merged, in the bracket's order (``BracketOrder``). Each
+    /// photo carries its place in the bracket (``SavedPhoto/bracket``).
     ///
     /// Say how many photos were saved, and whether all of them are signed; when one isn't,
     /// say why, as for ``saved(_:)``. Announce it to VoiceOver.

@@ -221,8 +221,9 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         for _ in 0..<max(readingCount, 0) { readingsContinuation.yield(reading) }
     }
 
-    /// Returns one placeholder photo per frame, with the frame's ISO and duration, or throws
-    /// ``captureError``.
+    /// Returns one placeholder photo per frame, in the order asked for, with the frame's ISO and
+    /// duration, or throws ``captureError``. The order is the bracket's order
+    /// (``BracketSettings/order``), so the UI tests can check it.
     ///
     /// - Parameters:
     ///   - request: The lens and format of the photos.

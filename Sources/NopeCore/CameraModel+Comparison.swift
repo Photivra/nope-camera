@@ -9,7 +9,7 @@ extension CameraModel {
     /// apart." while it is `true`.
     public var comparisonAppliesToNextPhoto: Bool {
         comparison.isOn && drive.mode != .burst && drive.mode != .interval && !astro.isOn && manual.intervalProgress == nil
-            && manual.bracketFrames() == nil
+            && manual.bracketPlan == nil
     }
 
     /// The backend that takes the phone's version when the next photo is a comparison shot,

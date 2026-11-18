@@ -90,14 +90,17 @@ struct BytesReader: MetadataReading {
 /// Records what is added, or throws.
 actor FakeLibrary: PhotoLibrary {
     let error: CaptureError?
+    /// How many adds succeed before `error` is thrown.
+    let failsAfter: Int
     private(set) var added: [[PhotoLibraryAsset]] = []
 
-    init(error: CaptureError? = nil) {
+    init(error: CaptureError? = nil, failsAfter: Int = 0) {
         self.error = error
+        self.failsAfter = failsAfter
     }
 
     func add(_ assets: [PhotoLibraryAsset]) async throws(CaptureError) {
-        if let error { throw error }
+        if let error, added.count >= failsAfter { throw error }
         added.append(assets)
     }
 }

@@ -24,7 +24,27 @@ public final class CameraModel {
     public private(set) var sessionStatus: SessionStatus = .stopped
 
     /// The state of the most recent capture.
-    public internal(set) var captureStatus: CaptureStatus = .idle
+    public internal(set) var captureStatus: CaptureStatus = .idle {
+        didSet {
+            // A new photo, burst or bracket starts afresh.
+            if captureStatus == .capturing { failedBracket = nil }
+        }
+    }
+
+    /// The exposure bracket being taken and saved, or `nil` when none is (docs/design/BRACKETING.md,
+    /// section 4, "The card and the shutter").
+    public internal(set) var bracketProgress: BracketProgress?
+
+    /// How far the last bracket got when one of its frames couldn't be saved, or `nil`. It goes
+    /// with ``captureStatus`` ``CaptureStatus/failed(_:)``: an interface says how many photos were
+    /// saved before the error ("Bracket stopped: 2 of 3 photos saved."). Cleared when the next
+    /// capture starts.
+    public internal(set) var failedBracket: BracketProgress?
+
+    /// The start delay of the bracket, or `nil` for none: the self-timer's delay chosen while a
+    /// bracket was on (``bracketDriveMode``). Kept for the session, so choosing Bracket again
+    /// keeps it.
+    public internal(set) var bracketStartDelay: SelfTimerDelay?
 
     /// The formats and metadata choices used for the next photo. A Settings screen changes them
     /// through ``SaveSettings`` and ``MetadataSettings``, whose methods hold the rules.
@@ -183,6 +203,7 @@ public final class CameraModel {
             if case .startInterval = intent, intervalBlocker != nil { return }
             await manual.handle(intent) { [weak self] in await self?.takeIntervalPhoto() ?? false }
             await manualControlsDidChange(after: intent)
+            bracketDidChange(after: intent)
         case .setCleanView(let isOn):
             isCleanView = isOn
         case .drive(let intent):
@@ -352,8 +373,10 @@ public final class CameraModel {
     /// - Parameter id: The lens to switch to.
     private func selectLens(_ id: Lens.ID) async {
         guard id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
+        let hadBracket = manual.bracket != nil
         selectedLensID = id
         await startSession()
+        lensDidChange(hadBracket: hadBracket)
         await astroLensDidChange()
     }
 
@@ -382,13 +405,15 @@ public final class CameraModel {
         }
     }
 
-    /// Takes one photo with the selected lens, if the camera can capture now.
+    /// Takes one photo with the selected lens, if the camera can capture now, or the exposure
+    /// bracket (``ManualControlsModel/bracket``) when one is on. A photo of an interval series is
+    /// always a single photo (docs/design/BRACKETING.md, decision 3).
     ///
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
     /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
     ///
     /// - Parameter onceBracket: A bracket to take this time only, through the same bracket path
-    ///   as the one in Pro Tools, without changing ``ManualControlsModel/bracket`` (a Siri or
+    ///   as the shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or
     ///   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
     ///   first that ``ManualControlsModel/bracketFrames(once:)`` can plan it.
     func capture(onceBracket: BracketSettings? = nil) async {
@@ -400,9 +425,11 @@ public final class CameraModel {
         plan.location = location?.location(isOn: settings.metadata.isOn(.location))
         plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
         let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
-        let frames = onceBracket.map(manual.bracketFrames(once:)) ?? manual.bracketFrames()
-        if let frames, let bracketBackend = backend as? any ManualCaptureBackend {
-            await captureBracket(request, frames: frames, backend: bracketBackend, settings: settings)
+        let bracket = onceBracket ?? (manual.intervalProgress == nil ? manual.bracket : nil)
+        if let bracket, let frames = manual.bracketPlan(once: bracket),
+            let bracketBackend = backend as? any ManualCaptureBackend
+        {
+            await captureBracket(request, bracket: bracket, frames: frames, backend: bracketBackend, settings: settings)
             return
         }
         let comparisonBackend = comparisonBackendForNextPhoto
@@ -479,33 +506,56 @@ public final class CameraModel {
     }
 
     /// Takes an exposure bracket and saves each frame as its own photo: separate single-frame
-    /// photos, nothing merged. Saving stops at the first frame that fails, and a failed or
-    /// blank bracket isn't retried; the person can press the shutter again.
+    /// photos, nothing merged, in the bracket's order. Saving stops at the first frame that
+    /// fails, and ``failedBracket`` then says how many were saved; a failed or blank bracket
+    /// isn't retried, and the person can press the shutter again. ``bracketProgress`` follows the
+    /// request and each save. Each saved photo carries its ``BracketPlace``, kept in memory only.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     ///
     /// - Parameters:
     ///   - request: The lens, format and metadata plan.
-    ///   - frames: Each frame's ISO and exposure duration.
+    ///   - bracket: The bracket.
+    ///   - frames: Each frame's plan, in the order taken.
     ///   - backend: The backend, which supports brackets.
     ///   - settings: The settings the photos are taken with.
     private func captureBracket(
-        _ request: CaptureRequest, frames: [BracketFrame], backend: any ManualCaptureBackend, settings: SaveSettings
+        _ request: CaptureRequest, bracket: BracketSettings, frames: [BracketFramePlan],
+        backend: any ManualCaptureBackend, settings: SaveSettings
     ) async {
+        let total = frames.count
+        bracketProgress = BracketProgress(taken: 0, saved: 0, total: total)
+        defer { bracketProgress = nil }
+        let photos: [CapturedPhoto]
         do {
-            let photos = try await backend.captureBracket(request, frames: frames)
-            guard let saver else {
-                captureStatus = .failed(.savingUnavailable)
-                return
-            }
-            captureStatus = .saving
-            var saved: [SavedPhoto] = []
-            for photo in photos {
-                saved.append(try await saver.save(photo, settings: settings, distortionCorrection: distortionCorrection(of: photo)))
-            }
-            captureStatus = .savedBracket(saved)
+            photos = try await backend.captureBracket(request, frames: frames.map(\.frame))
         } catch {
             captureStatus = .failed(error)
+            return
         }
+        guard let saver else {
+            captureStatus = .failed(.savingUnavailable)
+            return
+        }
+        captureStatus = .saving
+        bracketProgress = BracketProgress(taken: photos.count, saved: 0, total: total)
+        var saved: [SavedPhoto] = []
+        for (photo, frame) in zip(photos, frames) {
+            do {
+                let photoSaved = try await saver.save(
+                    photo, settings: settings, distortionCorrection: distortionCorrection(of: photo))
+                // Privacy: the place is a session value; it is never written to the files.
+                saved.append(
+                    photoSaved.placed(
+                        in: BracketPlace(
+                            type: .exposure, frame: frame, count: total, offsets: bracket.offsets, order: bracket.order)))
+                bracketProgress = BracketProgress(taken: photos.count, saved: saved.count, total: total)
+            } catch {
+                failedBracket = BracketProgress(taken: photos.count, saved: saved.count, total: total)
+                captureStatus = .failed(error)
+                return
+            }
+        }
+        captureStatus = .savedBracket(saved)
     }
 }

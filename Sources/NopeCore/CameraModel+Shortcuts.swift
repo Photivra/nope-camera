@@ -143,8 +143,8 @@ extension CameraModel {
 
     /// Takes one exposure bracket for a request: waits for the camera, switches the lens if
     /// asked, then takes the bracket at once or after the self-timer, through the same bracket
-    /// path as the shutter (`capture(onceBracket:)`). The bracket chosen in Pro Tools, and every
-    /// other setting, stays as it is.
+    /// path as the shutter (`capture(onceBracket:)`). The bracket chosen on the drive strip, and
+    /// every other setting, stays as it is.
     ///
     /// - Parameters:
     ///   - request: The request's frames, step, delay and lens.

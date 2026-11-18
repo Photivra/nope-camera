@@ -58,7 +58,9 @@ extension CameraModel {
     /// - Parameter intent: The intent.
     func handle(_ intent: DriveIntent) async {
         switch intent {
-        case .setMode(let mode): drive.setMode(mode)
+        case .setMode(let mode):
+            drive.setMode(mode)
+            await driveModeDidChange()
         case .startTimer(let seconds): startTimer(seconds: seconds)
         case .cancelTimer: drive.countdown.cancel()
         case .stopBurst: drive.requestBurstStop()
