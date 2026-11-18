@@ -519,7 +519,12 @@ CPU core busy); after it, it passed 3 times in a row with the whole UI suite.
 timeout only has to be longer than any CI runner can take (with 5 seconds, `waitsUntilReady`
 failed intermittently while the other tests kept every thread busy).
 
-Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`.
+Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeftWritingDirection YES`
+(Apple's right-to-left pseudo-language: English text in a mirrored layout). Long text is tested
+with `-NSDoubleLocalizedStrings YES` (Apple's double-length pseudo-language: every string is
+shown twice), in `testQuickMenuLongLanguage` on the phone and `testDoubleLengthText` on the
+watch, each also right to left. These stand in for long and right-to-left languages while the
+app ships in English only (issue #86).
 Every new screen and state adds an audit.
 
 ## Documentation
@@ -825,7 +830,7 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   and settings), says it can be undone in Presets, and Presets shows Undo; with a preset that has
   Location on and access declined, it says some settings couldn't be applied; the light stays
   off.
-- Check in each of the 11 languages that Siri accepts the localized phrases.
+- Check in each language that ships (English only in 1.0.0) that Siri accepts the phrases.
 
 ### Live Activity on a device
 

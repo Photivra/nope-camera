@@ -1,1 +1,0 @@
-raw,dng,privacidade,metadados,exif,c2pa,assinatura,foto,sem rastreio,offline,código aberto,natural

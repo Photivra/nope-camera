@@ -2,7 +2,7 @@ import XCTest
 
 /// UI tests for Q, the quick menu (docs/design/BUILD-SPEC.md, 3.6): the panel of tiles, its
 /// menus and foot, and the list at accessibility text sizes, with accessibility audits at the
-/// default and largest text sizes, right to left, in night mode and in a long language.
+/// default and largest text sizes, right to left, in night mode and with double-length text.
 extension NopeAppUITests {
     /// The tiles' identifiers in display order (``QuickControls/builders``).
     static let quickTileOrder = [
@@ -15,6 +15,11 @@ extension NopeAppUITests {
 
     /// The launch arguments that turn night mode on.
     static let quickNightModeOn = ["-NopeSettings.isNightModeOn", "YES"]
+
+    /// The launch arguments for Apple's double-length pseudo-language: every localized string is
+    /// shown twice ("Grid Grid"), which stands in for a long language while the app ships in
+    /// English only. Xcode's App Language option "Double-Length Pseudolanguage" sets the same.
+    static let quickDoubleLength = ["-NSDoubleLocalizedStrings", "YES"]
 
     /// The Q button, by its identifier, or by its name where the layout doesn't set one.
     @MainActor
@@ -247,28 +252,22 @@ extension NopeAppUITests {
 
     @MainActor
     func testQuickMenuLongLanguage() throws {
-        // The longest launch languages at the largest size below the accessibility sizes, where
-        // the tiles are at their widest: names and values wrap between words, nothing is cut,
-        // and the column count drops rather than breaking a word.
-        for language in ["de", "nl", "it", "fr", "es", "pt-BR"] {
-            let app = launch(
-                "aids",
-                extraArguments: [
-                    "-AppleLanguages", "(\(language))", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXXXL",
-                ])
+        // The app ships in English only, so long text is tested with Apple's double-length
+        // pseudo-language (every string twice, as Xcode's App Language option sets it), at the
+        // largest size below the accessibility sizes, where the tiles are at their widest:
+        // names and values wrap between words, nothing is cut, and the column count drops
+        // rather than breaking a word. The second run adds right-to-left layout.
+        let extraLarge = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXXXL"]
+        for (name, rightToLeft) in [("double length", false), ("double length, right to left", true)] {
+            let direction = rightToLeft ? Self.rightToLeft : []
+            let app = launch("aids", extraArguments: Self.quickDoubleLength + direction + extraLarge)
             openQuickMenu(app)
-            let shown = shownQuickTiles(app)
-            XCTAssertEqual(shown, Self.quickTileOrder.filter(shown.contains), language)
-            attachQuickScreenshot("Q, \(language), extra large text")
-            if language == "de" {
-                // German compound names are hyphenated by the system where they wrap ("Kurze
-                // Verschluss-zeit"); the audit reports that as clipped text without an element.
-                // Contrast is still checked below; the screenshot shows nothing cut.
-                try audit(app, checksContrast: false)
-                try auditContrastOnly(app)
-            } else {
-                try audit(app)
-            }
+            let shown = shownQuickTiles(app, rightToLeft: rightToLeft)
+            XCTAssertEqual(shown, Self.quickTileOrder.filter(shown.contains), name)
+            // The pseudo-language is on: the tile's name is the English name twice.
+            XCTAssertEqual(quickTile(app, "grid").label, "Grid Grid", name)
+            attachQuickScreenshot("Q, \(name), extra large text")
+            try audit(app)
         }
     }
 }
