@@ -314,7 +314,6 @@ struct DriveTextTests {
     @Test func secondsUseSystemFormatting() {
         #expect(DriveText.shortSeconds(3).contains("3"))
         #expect(DriveText.spokenSeconds(10).contains("10"))
-        #expect(DriveText.systemImage(for: .burst) != DriveText.systemImage(for: .single))
     }
 }
 

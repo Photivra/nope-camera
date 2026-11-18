@@ -138,8 +138,6 @@ enum StatePills {
         closeUp,
         farFocus,
         magnifier,
-        drive,
-        astro,
         compare,
     ]
 
