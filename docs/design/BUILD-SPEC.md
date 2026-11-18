@@ -491,6 +491,59 @@ UI tests, in `PhotoDetailsUITests.swift` (an extension of `NopeAppUITests`; the 
 
 Unit tests (100% coverage) for everything added to `NopeCore` by items 16 and 17: every decoded value and its fallback to the number, the grouping of entries, the megapixel figure, the "Not in the files" cases, and each item's value text. By hand: VoiceOver, Voice Control and Switch Control on the flows in ACCESSIBILITY.md; the values against an exiftool dump of the same photo on a device (`docs/TESTING.md`).
 
+### 3.16 Fast Shutter: where it is used (owner request, 2026-11-18)
+
+Figures: every `scope-*` figure ([setting-scope.html](setting-scope.html)). The reasons, the wording and the open decisions are in [SETTING-SCOPE.md](SETTING-SCOPE.md). This section adds to 3.10; where they differ on the Fast Shutter row or page, this section is right. The wording is a draft (section 5).
+
+Fast Shutter is used only while Manual Controls are off (`ManualControlsModel.assist`). The Settings list and the Fast Shutter page say so. Nothing in `NopeCore` or `NopeCapture` changes, and what Fast Shutter does is unchanged.
+
+Files: `SettingsScreen.swift` (`SettingsValueLabel`, `pageRow`, `cameraSection`; chunk G); `FocusAids.swift` (`FastShutterSettingsView`; chunk F); `Honesty.xcstrings` and `App/Shared/Localizable.xcstrings` (chunk S); `App/NopeApp/Intents/FocusAndSizeIntents.swift` (one string; chunk C); `SettingsUITests.swift`. No change to `QuickControls.swift`, `StatePills.swift` or `SettingsSearch.swift` (keywords aside, SETTING-SCOPE.md decision 7).
+
+Change:
+- `SettingsValueLabel` gains `note: Text? = nil`. With a note the label is a `VStack(alignment: .leading, spacing: NopeSpace.xxs)`: the existing title and value (side by side or stacked, `ViewThatFits`, unchanged), then the note in `.font(.footnote)` and `CameraStyle.secondaryText`, with `fixedSize(horizontal: false, vertical: true)`. The note is as wide as the label, under both the title and the value. Without a note nothing changes.
+- The label stays one accessibility element (`.accessibilityElement(children: .combine)`), so VoiceOver reads the title, the value, then the note. No hint is added. With a note, add `.accessibilityInputLabels([title])` so Voice Control keeps the name "Fast Shutter".
+- `pageRow(_:value:note:)`: `note` defaults to `nil`. `cameraSection` passes the note for `.fastShutter` only. The note is the same whatever the choice and whether Manual Controls are on or off. The row's identifier (`settings.fastShutter`) is unchanged; the note has none of its own.
+- `FastShutterSettingsView`, sections in order:
+  1. only while Manual Controls are on: one row, `Label` with `info.circle` in `CameraStyle.secondaryText` and the sentence of the table; identifier `settings.fastShutter.notUsedNow`. Whether Manual Controls are on is read from the source the tile and the pill use (`CameraModel.manual.isEnabled`; `NopeSettings.showsManualControls` where the page has no model). `SettingsScreen` passes it in; the view takes no model;
+  2. the inline `Picker`, unchanged and always enabled;
+  3. two rows of text, `.font(.footnote)`, in place of today's one. Rows, not a footer, as today, so they follow the text size.
+- `SetFastShutterIntent.description`: the sentence of the table. Its title, parameter, choices and answer are unchanged.
+- Remove the string "In full auto, the camera prefers the fastest shutter…" from the catalog.
+
+Strings. All in `Honesty.xcstrings` (`tableName: "Honesty"`) except the last, which is in the app's catalog. Each translator comment says that Manual Controls is the name of nope.'s button and takes its translation, and "Must not claim more than the English."
+
+| String | Where |
+| --- | --- |
+| Used only while Manual Controls are off. | The Fast Shutter row, its note |
+| Used only while Manual Controls are off. The camera keeps the shutter at least as fast as your choice while there is enough light, and uses a higher ISO to do it. In low light the shutter can be slower. Standard aims for a speed you can hold by hand. | The Fast Shutter page, first paragraph |
+| With Manual Controls on, this choice is not used. A shutter you set is used as set. A shutter on Auto is chosen by the camera. | The page, second paragraph. "Auto" is the word on a manual readout; use its translation |
+| Manual Controls are on, so this choice is not used now. | The page, top row while Manual Controls are on |
+| Chooses how fast a shutter nope. prefers while Manual Controls are off, to avoid blur. | Shortcuts, the description of Set Fast Shutter. Keep "nope." unchanged |
+
+Tokens: `NopeSpace.xxs`; `CameraStyle.secondaryText`. System list metrics and text styles otherwise. No literal values. No amber and no teal: the note is neither a warning nor a verified fact.
+
+AC:
+- The Fast Shutter row shows its title, its value and the note, with each of the three choices, and with Manual Controls off and on. The note's text is the same in all six cases.
+- Changing the choice, or any switch on the root, does not change the number of rows on the root (3.10). The Fast Shutter row is the only root row with a note.
+- VoiceOver reads the row as title, value, note, "button": "Fast Shutter, Standard, Used only while Manual Controls are off. Button." Voice Control's "Tap Fast Shutter" opens the page.
+- The value "Freeze Fast Motion (1/1000 s)" sits under the title when it does not fit beside it, with the note under the value. Nothing is truncated at the default size or the largest size, in any launch language.
+- The page has the top row exactly while Manual Controls are on. With it shown, every choice can still be selected, and the root row's value follows.
+- With Manual Controls on and a choice other than Standard, Q has no Fast Shutter tile and the status line has no Fast Shutter pill (as today). With Manual Controls off both are there.
+- In night mode no pixel of the row or the page is non-red.
+
+UI tests, in `SettingsUITests.swift`, each with `performAccessibilityAudit()` through the existing helpers. `auditSettingsScreens` already visits the root and the Fast Shutter page in light, dark and night mode, at the largest text size and right to left; it now also runs once with `-NopeSettings.showsManualControls YES`.
+
+| Test | Covers |
+| --- | --- |
+| `testFastShutterRowSaysWhereItIsUsed` | The row `settings.fastShutter`: its label begins with the title, holds the value and ends with the note, for each choice (`-NopeSettings.fastShutter`), with Manual Controls off and on |
+| `testFastShutterPageExplainsWhereItIsUsed` | Manual Controls off: the two paragraphs; no `settings.fastShutter.notUsedNow` |
+| `testFastShutterPageWithManualControlsOn` | `-NopeSettings.showsManualControls YES`: the top row exists and comes before the choices; choosing Freeze Motion changes the root row's value; the row count of the root is unchanged |
+| `testFastShutterNoteLargestTextAndRightToLeft` | The root and the page at the largest size (`auditScrollingScreen`) and right to left; no truncated text |
+| `testFastShutterNoteNightModeIsAllRed` | The Camera group and the page in night mode, `nonRedPixels` equal to 0 |
+| `testFastShutterLeavesCameraWithManualControlsOn` (`QuickMenuUITests.swift`) | `-NopeSettings.fastShutter freezeMotion`: tile and pill with Manual Controls off; neither with Manual Controls on. Extends the existing checks if they already cover it |
+
+No unit test is added: no code outside `NopeUI` and one intent string changes. By hand: VoiceOver and Voice Control on the row and the page; the Shortcuts description in the Shortcuts app.
+
 ## 4. New and changed strings
 
 Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. All need a translator comment; 1.0.0 ships in English only (issue #86).
@@ -594,6 +647,7 @@ These are drafts. None ships until reviewed in every language (`AGENTS.md`, Loca
 - from the Last Photo viewer (3.14): Signed and Not signed on its status line, the preview hint, and the Preview Not Kept title and sentence. The hint must stay true for the preview size the data specification chooses, and is shown only when the preview has fewer pixels than the saved photo;
 - from What's in This Photo (3.15): every string marked Honesty in section 4 under that screen. Four need particular care. "RAW: one frame of sensor data" must not be read as "no processing"; it says only what the file is. "Not in the files" and the two footers must stay true if the capture's values stop being kept. "One photo: the RAW with its HEIF" states what the app asked Photos to do, which the device check in `docs/PRIVACY.md` confirms. The sentence about a checker reporting the file as valid and the signer as untrusted follows `docs/PRIVACY.md` (Content Credentials) and c2patool 0.28.6; it must be checked against the checker people are most likely to use before it ships, and it names no product;
 - from bracketing ([BRACKETING.md](BRACKETING.md), section 7): "A bracket never fires the flash.", the Bracket group footer and the limited-frame sentences;
+- from Fast Shutter (3.16): the note, the two paragraphs of the page, the line shown while Manual Controls are on, and the Shortcuts description. "Used only" must stay true: if Fast Shutter ever applies with Manual Controls on, these change in the same release;
 - to check against the real-device tag dump (issue 79) before it is kept as written: the Always Saved footer, "None of them identify you or link your photos."
 
 The processing note must not name specific processing steps the phone applies unless they are verified; the draft says only that the phone processes the file and that the app cannot turn it off. Focus on Faces must not be described as turning face detection off: the switch decides only whether the app's autofocus and auto exposure follow faces.

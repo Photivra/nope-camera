@@ -315,6 +315,10 @@ Rule: on the Settings list an explanation is one sentence, two where issue 80 or
 | Live Activity | Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent. |
 | Standard File Tags | Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone. |
 
+Where a setting applies ([SETTING-SCOPE.md](SETTING-SCOPE.md), section 6). A setting that is used only in some state of the camera says so on the list, in words that name the control that decides the state. A switch: its explanation begins with the condition (Red Viewfinder). A row that opens a page: a note of one sentence under the title and value, in the explanations' footnote size and secondary color (Fast Shutter: "Used only while Manual Controls are off."). A page whose choices are not in use now: one line at the top says so, and every control stays enabled (HEIF and JPEG Copies, Fast Shutter). A control on the camera or in Q: no note; it is shown only where it works. A note never changes with the state and is never a reason to add or remove a row.
+
+Length at the largest text size, measured on the drawing `settings-largest` (402 pt wide, the whole list): 4,263 pt with the Fast Shutter note, 77 pt more than the 4,186 pt before it. Not measured on a device.
+
 ### 3.8 Accessibility of the proposed structure
 
 - No row is added or removed while a switch is changed, so focus never moves by itself.

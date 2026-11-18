@@ -178,8 +178,8 @@ struct SetFastShutterIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Chooses how fast a shutter nope.'s full auto prefers, to avoid blur.",
-            comment: "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged."))
+            "Chooses how fast a shutter nope. prefers while Manual Controls are off, to avoid blur.",
+            comment: "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English."))
 
     /// The choice.
     @Parameter(

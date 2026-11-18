@@ -2004,12 +2004,10 @@ final class NopeAppUITests: XCTestCase {
         for arguments in [[String](), Self.largestTextSize] {
             let app = launch("aids", extraArguments: arguments)
             openSettings(app)
-            let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Fast Shutter")).firstMatch
-            var swipes = 0
-            while !(row.exists && row.isHittable) && swipes < 8 {
-                app.swipeUp()
-                swipes += 1
-            }
+            // Scrolled inside the list: with the row's note (3.16) the row can start below the
+            // fold of the iPad popover, where a swipe over the window doesn't reach.
+            let row = settingsElement(app, "settings.fastShutter")
+            XCTAssertTrue(row.label.hasPrefix("Fast Shutter"), row.label)
             row.tap()
             let freeze = app.buttons["Freeze Motion (1/500 s)"]
             XCTAssertTrue(freeze.waitForExistence(timeout: 10))

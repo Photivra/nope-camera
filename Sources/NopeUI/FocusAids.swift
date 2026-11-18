@@ -542,6 +542,16 @@ enum FastShutterText {
     static var title: Text {
         Text("Fast Shutter", bundle: .module, comment: "Setting and quick control: how fast a shutter full auto prefers, to avoid blur.")
     }
+
+    /// Where the choice is used, the note under the Settings row and the start of the page:
+    /// "Used only while Manual Controls are off." (`docs/design/SETTING-SCOPE.md`). With manual
+    /// controls on, no shutter limit is sent (`ManualControlsModel.assist`), so the choice
+    /// is stored but not used.
+    static var scopeNote: Text {
+        Text(
+            "Used only while Manual Controls are off.", tableName: "Honesty", bundle: .module,
+            comment: "Note under the Fast Shutter row in Settings: the choice is used only while nope.'s Manual Controls are off. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English.")
+    }
 }
 
 /// The name of the near focus limit.
@@ -570,20 +580,43 @@ enum MagnifierText {
 
 /// The Fast Shutter setting (issue #56): an inline picker of the choices with the explanation,
 /// as the Look screen does, opened from the Camera section of Settings.
+///
+/// The choice is used only while Manual Controls are off (`docs/design/BUILD-SPEC.md`, 3.16).
+/// While they are on, a line above the choices says the choice is not used now; the choices stay
+/// enabled, because the choice is stored and used again once Manual Controls are off.
 struct FastShutterSettingsView: View {
     /// The person's settings.
     let settings: NopeSettings
 
+    /// Whether Manual Controls are on now, so the choice is not used: the camera's own state
+    /// (`ManualControlsModel.isEnabled`, which Astro also turns on), or the stored option
+    /// (`NopeSettings.showsManualControls`) where there is no camera.
+    let manualControlsAreOn: Bool
+
     /// Creates the screen.
     ///
-    /// - Parameter settings: The person's settings.
-    init(settings: NopeSettings) {
+    /// - Parameters:
+    ///   - settings: The person's settings.
+    ///   - manualControlsAreOn: Whether Manual Controls are on now.
+    init(settings: NopeSettings, manualControlsAreOn: Bool) {
         self.settings = settings
+        self.manualControlsAreOn = manualControlsAreOn
     }
 
-    /// The picker and the explanation.
+    /// The line while Manual Controls are on, the picker and the explanation.
     var body: some View {
         Form {
+            if manualControlsAreOn {
+                Section {
+                    // A plain text row, as on HEIF and JPEG Copies: with the info symbol of the
+                    // drawing (a Label), the audit reported the sentence as clipped, though it
+                    // showed in full (iPhone 18 Pro Simulator, iOS 27.2).
+                    Text(
+                        "Manual Controls are on, so this choice is not used now.", tableName: "Honesty", bundle: .module,
+                        comment: "First row of the Fast Shutter page in Settings while nope.'s Manual Controls are on: the choice is kept, but not used until Manual Controls are off. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English.")
+                        .accessibilityIdentifier("settings.fastShutter.notUsedNow")
+                }
+            }
             Section {
                 Picker(selection: Binding(get: { settings.fastShutter }, set: { settings.setFastShutter($0) })) {
                     ForEach(FastShutter.allCases, id: \.self) { choice in
@@ -594,11 +627,17 @@ struct FastShutterSettingsView: View {
                 }
                 .pickerStyle(.inline)
             }
-            // A row rather than a section footer, as on the Look screen, so it follows Dynamic Type.
+            // Rows rather than a section footer, as on the Look screen, so they follow Dynamic Type.
             Section {
                 Text(
-                    "In full auto, the camera prefers the fastest shutter that still exposes well, so photos blur less. Standard aims for a speed you can hold by hand. Manual controls are never changed.",
-                    bundle: .module, comment: "Explains the Fast Shutter setting.")
+                    "Used only while Manual Controls are off. The camera keeps the shutter at least as fast as your choice while there is enough light, and uses a higher ISO to do it. In low light the shutter can be slower. Standard aims for a speed you can hold by hand.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "First paragraph of the Fast Shutter page in Settings. Manual Controls is the name of nope.'s button; use its translation. Standard is the name of the first choice. ISO is a standard name. Must not claim more than the English: nope. sets a limit for the camera's auto exposure, which is lifted when there isn't enough light.")
+                    .font(.footnote)
+                Text(
+                    "With Manual Controls on, this choice is not used. A shutter you set is used as set. A shutter on Auto is chosen by the camera.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Second paragraph of the Fast Shutter page in Settings. Manual Controls is the name of nope.'s button; use its translation. \"Auto\" is the word on a manual readout; use its translation. Must not claim more than the English.")
                     .font(.footnote)
             }
         }
@@ -610,7 +649,7 @@ struct FastShutterSettingsView: View {
     /// - Parameter settings: The settings.
     static func link(settings: NopeSettings) -> some View {
         NavigationLink {
-            FastShutterSettingsView(settings: settings)
+            FastShutterSettingsView(settings: settings, manualControlsAreOn: settings.showsManualControls)
         } label: {
             LabeledContent {
                 FastShutterText.name(settings.fastShutter)

@@ -507,6 +507,10 @@
       "comment" : "Button that returns every manual control to automatic in one tap.",
       "extractionState" : "manual"
     },
+    "All controls on Auto" : {
+      "comment" : "VoiceOver announcement after All Auto returned every manual control to Auto. Manual Controls stay on, so don't say \"full auto\". \"Auto\" is the word on a manual readout; use its translation.",
+      "extractionState" : "manual"
+    },
     "All Photo Settings" : {
       "comment" : "Button on the Photo Format sheet: closes the sheet and opens Settings at the Photos group (formats, HEIF and JPEG copies, photo size).",
       "extractionState" : "manual"
@@ -1049,10 +1053,6 @@
       "comment" : "Name of the front (selfie) camera.",
       "extractionState" : "manual"
     },
-    "Full auto" : {
-      "comment" : "Announced after All Auto returned every control to automatic.",
-      "extractionState" : "manual"
-    },
     "Full Size" : {
       "comment" : "Copy size choice: the same width and height as the RAW.",
       "extractionState" : "manual"
@@ -1143,10 +1143,6 @@
     },
     "Hold the camera steady or use a tripod. Two photos are taken, a moment apart." : {
       "comment" : "Hint on the camera while the comparison shot is on: nope. takes its photo and then one with the phone's processing.",
-      "extractionState" : "manual"
-    },
-    "In full auto, the camera prefers the fastest shutter that still exposes well, so photos blur less. Standard aims for a speed you can hold by hand. Manual controls are never changed." : {
-      "comment" : "Explains the Fast Shutter setting.",
       "extractionState" : "manual"
     },
     "In Q" : {
@@ -1839,6 +1835,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "landscape, infinity"
+          }
+        }
+      }
+    },
+    "Search keywords: Fast Shutter" : {
+      "comment" : "Settings search keywords for the Fast Shutter setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "blur, motion, freeze, action, sports"
           }
         }
       }

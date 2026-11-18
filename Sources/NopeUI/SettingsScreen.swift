@@ -197,19 +197,24 @@ public struct SettingsScreen: View {
         .modifier(SettingsScrollTarget(navigation: navigation, page: nil))
     }
 
-    /// A row that opens a page, with its value beside or under its title.
+    /// A row that opens a page, with its value beside or under its title, and a note under
+    /// both where the setting is used only in some state of the camera (3.16).
     ///
     /// - Parameters:
     ///   - page: The page.
     ///   - value: The row's value, or `nil` for a row without one.
-    private func pageRow(_ page: SettingsPage, value: Text?) -> some View {
+    ///   - note: Where the setting is used, or `nil`. Shown only on a row with a value.
+    private func pageRow(_ page: SettingsPage, value: Text?, note: Text? = nil) -> some View {
         NavigationLink(value: page) {
             if let value {
-                SettingsValueLabel(title: Text(SettingsText.title(of: page.id)), value: value)
+                SettingsValueLabel(title: Text(SettingsText.title(of: page.id)), value: value, note: note)
             } else {
                 Text(SettingsText.title(of: page.id))
             }
         }
+        // On the link too, the element Voice Control acts on: with a note, its name stays the
+        // title alone. A row without a note keeps the system's input labels.
+        .accessibilityInputLabels([Text(SettingsText.title(of: page.id))], isEnabled: note != nil)
         .settingsRow(page.id)
     }
 
@@ -232,7 +237,10 @@ public struct SettingsScreen: View {
         case .details:
             PrivacySettingsView(settings: settings, location: location)
         case .fastShutter:
-            FastShutterSettingsView(settings: settings)
+            // The camera's own state, which Astro also turns on; the stored option where there
+            // is no camera.
+            FastShutterSettingsView(
+                settings: settings, manualControlsAreOn: camera?.manual.isEnabled ?? settings.showsManualControls)
         case .overlays:
             OverlaySettingsView(settings: settings)
         case .accessibility:
@@ -291,7 +299,7 @@ public struct SettingsScreen: View {
     /// Fast Shutter and Focus on Faces: how the camera focuses and exposes.
     private var cameraSection: some View {
         Section {
-            pageRow(.fastShutter, value: FastShutterText.name(settings.fastShutter))
+            pageRow(.fastShutter, value: FastShutterText.name(settings.fastShutter), note: FastShutterText.scopeNote)
             ExplainedToggle(
                 isOn: Binding(get: { settings.followsFaces }, set: { settings.setFollowsFaces($0) }),
                 title: Text(SettingsText.focusOnFaces),
@@ -418,6 +426,13 @@ struct SettingsSearchField: ViewModifier {
 /// A Settings row's title with its value: beside the title when both fit on one line, under it
 /// otherwise, at every text size (`docs/design/BUILD-SPEC.md`, 3.10, "Values wrap"). Neither is
 /// ever truncated. VoiceOver reads the title, then the value.
+///
+/// A row whose setting is used only in some state of the camera has a note too, such as Fast
+/// Shutter's "Used only while Manual Controls are off." (`docs/design/BUILD-SPEC.md`, 3.16;
+/// `docs/design/SETTING-SCOPE.md`). The note is a line of its own under the title and the
+/// value, as wide as the row, in the explanations' footnote size and secondary color. VoiceOver
+/// reads it after the value, as part of the label, and Voice Control keeps the title as the
+/// row's name.
 struct SettingsValueLabel: View {
     /// The row's title.
     let title: Text
@@ -425,18 +440,43 @@ struct SettingsValueLabel: View {
     /// The row's value.
     let value: Text
 
+    /// Where the setting is used, or `nil` for a row without a note.
+    let note: Text?
+
     /// Creates the label.
     ///
     /// - Parameters:
     ///   - title: The row's title.
     ///   - value: The row's value.
-    init(title: Text, value: Text) {
+    ///   - note: Where the setting is used, shown under the title and the value, or `nil`.
+    init(title: Text, value: Text, note: Text? = nil) {
         self.title = title
         self.value = value
+        self.note = note
+    }
+
+    /// The title and value, then the note, if any.
+    var body: some View {
+        if let note {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
+                titleAndValue
+                note
+                    .font(.footnote)
+                    .foregroundStyle(CameraStyle.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            // Voice Control answers to the title alone, not to the longer label with the note.
+            .accessibilityInputLabels([title])
+        } else {
+            titleAndValue
+                .accessibilityElement(children: .combine)
+        }
     }
 
     /// The title and value, side by side or stacked.
-    var body: some View {
+    private var titleAndValue: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .firstTextBaseline, spacing: NopeSpace.xs) {
                 title
@@ -454,6 +494,5 @@ struct SettingsValueLabel: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
         }
-        .accessibilityElement(children: .combine)
     }
 }
