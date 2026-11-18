@@ -86,10 +86,14 @@ extension NopeAppUITests {
         XCTAssertTrue(result.label.contains("Details in Each Photo"), result.label)
         result.tap()
         XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
-        // A pointer to the camera, and Keep Screen On by a keyword, as with the system field.
+        // Going back shows the same search: its text and results (section 3).
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
-        typeInNightSearch(app, "manual\n")
+        XCTAssertEqual(nightSearchField(app).value as? String, "gps")
+        XCTAssertTrue(result.waitForExistence(timeout: 5), "the results are kept on going back")
+        // A pointer to the camera, and Keep Screen On by a keyword, as with the system field.
+        app.buttons["nightSearchField.clear"].tap()
+        nightSearchField(app).typeText("manual\n")
         XCTAssertTrue(
             app.descendants(matching: .any).matching(identifier: "settings.search.camera.manualControls").firstMatch.waitForExistence(timeout: 5))
         app.buttons["nightSearchField.clear"].tap()

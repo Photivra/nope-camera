@@ -317,6 +317,15 @@ final class SettingsNavigation {
     /// - Parameter id: The item.
     func open(_ id: SettingsID) {
         searchText = ""
+        openSearchResult(id)
+    }
+
+    /// Shows a search result: pushes its page and asks for its row to be scrolled into view.
+    /// The search stays, so going back shows the same text and results
+    /// (`docs/design/night-search-field.md`, section 3, "Choose a result").
+    ///
+    /// - Parameter id: The result's item.
+    func openSearchResult(_ id: SettingsID) {
         path = id.navigationPath
         scrollTarget = id.scrollTarget
     }

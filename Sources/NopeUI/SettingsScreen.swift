@@ -165,7 +165,7 @@ public struct SettingsScreen: View {
                     list
                 } else {
                     SettingsSearchResults(query: navigation.searchText, availability: availability) { id in
-                        navigation.open(id)
+                        navigation.openSearchResult(id)
                     }
                 }
             }

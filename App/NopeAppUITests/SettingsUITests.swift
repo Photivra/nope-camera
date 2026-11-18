@@ -197,6 +197,12 @@ extension NopeAppUITests {
         result.tap()
         XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "settings.details.location").firstMatch.waitForExistence(timeout: 5))
+        // Going back shows the same search: its text and results
+        // (docs/design/night-search-field.md, section 3).
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertTrue(result.waitForExistence(timeout: 5), "the results are kept on going back")
+        XCTAssertEqual(app.searchFields.firstMatch.value as? String, "gps")
     }
 
     @MainActor

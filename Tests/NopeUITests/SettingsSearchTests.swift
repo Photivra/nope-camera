@@ -72,7 +72,15 @@ struct SettingsSearchTests {
         #expect(navigation.path == [.details])
         #expect(navigation.scrollTarget == .detailsLocation)
         #expect(navigation.searchText.isEmpty)
+        // A search result keeps the search, for going back to it.
+        navigation.path = []
+        navigation.searchText = "gps"
+        navigation.openSearchResult(.detailsLocation)
+        #expect(navigation.path == [.details])
+        #expect(navigation.scrollTarget == .detailsLocation)
+        #expect(navigation.searchText == "gps")
         navigation.reset()
+        #expect(navigation.searchText.isEmpty)
         #expect(navigation.path.isEmpty)
         #expect(navigation.scrollTarget == nil)
     }
