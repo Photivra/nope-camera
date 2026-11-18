@@ -75,7 +75,7 @@ final class NopeAppUITests: XCTestCase {
     /// It polls the window's frame directly instead of using an `XCTWaiter` expectation: a
     /// predicate that queries the app from inside the waiter stalled the test runner on CI.
     @MainActor
-    private func rotate(_ app: XCUIApplication, to orientation: UIDeviceOrientation, file: StaticString = #filePath, line: UInt = #line) {
+    func rotate(_ app: XCUIApplication, to orientation: UIDeviceOrientation, file: StaticString = #filePath, line: UInt = #line) {
         XCUIDevice.shared.orientation = orientation
         if isPad {
             let window = app.windows.firstMatch
@@ -110,7 +110,7 @@ final class NopeAppUITests: XCTestCase {
     /// Waits for the last-photo thumbnail and returns whether its VoiceOver value contains the
     /// text, such as "Saved and signed.".
     @MainActor
-    private func lastPhoto(_ app: XCUIApplication, says text: String, timeout: TimeInterval = 10) -> Bool {
+    func lastPhoto(_ app: XCUIApplication, says text: String, timeout: TimeInterval = 10) -> Bool {
         let thumbnail = app.descendants(matching: .any)["Last Photo"]
         let predicate = NSPredicate(format: "value CONTAINS %@", text)
         return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: thumbnail)], timeout: timeout)
@@ -2202,7 +2202,8 @@ final class NopeAppUITests: XCTestCase {
 
     // MARK: - Last photo and its details (issues #36, #53)
 
-    /// Takes a photo and opens its details from the thumbnail's long-press menu.
+    /// Takes a photo and opens its details from the Last Photo viewer (docs/design/BUILD-SPEC.md,
+    /// 3.14): a tap on the thumbnail opens the viewer, whose Photo Details opens the sheet.
     @MainActor
     func openPhotoDetails(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let shutter = app.buttons["Take Photo"]
@@ -2211,9 +2212,8 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(lastPhoto(app, says: "Saved"), file: file, line: line)
         let thumbnail = app.buttons["Last Photo"]
         XCTAssertTrue(thumbnail.waitForExistence(timeout: 5), file: file, line: line)
-        thumbnail.press(forDuration: 1.2)
+        thumbnail.tap()
         let details = app.buttons["Photo Details"]
-        // The context menu opens after the press; on the CI runner it took longer than 5 seconds.
         XCTAssertTrue(details.waitForExistence(timeout: 15), file: file, line: line)
         XCTAssertTrue(app.buttons["Open in Photos"].exists, file: file, line: line)
         details.tap()
@@ -2245,7 +2245,11 @@ final class NopeAppUITests: XCTestCase {
         // First launch: every optional detail is left out, each with its reason.
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Off in Settings")))
         try audit(app, afterScrolling: true, checksDynamicType: false)
+        // Done returns to the viewer, and Close to the camera.
         app.buttons["Done"].tap()
+        let close = app.buttons["Close"]
+        XCTAssertTrue(close.waitForExistence(timeout: 5))
+        close.tap()
         XCTAssertTrue(app.buttons["Last Photo"].waitForExistence(timeout: 5))
     }
 
@@ -2267,7 +2271,8 @@ final class NopeAppUITests: XCTestCase {
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
     }
 
-    /// A bracket's details show one frame at a time, chosen with the Photo picker.
+    /// Each frame of a bracket is its own page of the Last Photo viewer (decision V12), and Photo
+    /// Details shows the frame shown.
     @MainActor
     func testBracketDetailsChooseEachFrame() throws {
         let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
@@ -2278,29 +2283,36 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Bracket Settings"].waitForExistence(timeout: 5))
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(lastPhoto(app, says: "photos saved and signed.", timeout: 30))
-        app.buttons["Last Photo"].press(forDuration: 1.2)
+        app.buttons["Last Photo"].tap()
+        let photo = app.descendants(matching: .any)["ViewerPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        XCTAssertEqual(photo.label, "Photo 3 of 3")
+        photo.swipeRight()
+        XCTAssertTrue(XCTWaiter().wait(
+            for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == 'Photo 2 of 3'"), object: photo)],
+            timeout: 5) == .completed)
         let details = app.buttons["Photo Details"]
-        XCTAssertTrue(details.waitForExistence(timeout: 15))
+        XCTAssertTrue(details.waitForExistence(timeout: 5))
         details.tap()
-        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.tap()
-        let second = app.buttons["Photo 2 of 3"]
-        XCTAssertTrue(second.waitForExistence(timeout: 5))
-        second.tap()
-        XCTAssertTrue(element(app, containing: "Photo 2 of 3").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["What's in This Photo"].waitForExistence(timeout: 5))
+        // One frame: the sheet shows the photo shown, so it has no frame picker.
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch.exists)
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
     }
 
-    /// Tapping the thumbnail opens the Photos app (issue #36).
+    /// Tapping the thumbnail opens the Last Photo viewer, not another app (BUILD-SPEC.md,
+    /// 3.14); the viewer's Open in Photos opens the Photos app (issue #36).
     @MainActor
-    func testTappingTheLastPhotoOpensPhotos() throws {
+    func testTappingTheLastPhotoOpensTheViewer() throws {
         let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(lastPhoto(app, says: "Saved and signed."))
         try audit(app)
         app.buttons["Last Photo"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["ViewerPhoto"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.state, .runningForeground)
+        app.buttons["Open in Photos"].tap()
         let photos = XCUIApplication(bundleIdentifier: "com.apple.mobileslideshow")
         XCTAssertTrue(photos.wait(for: .runningForeground, timeout: 15))
         app.activate()

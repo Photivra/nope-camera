@@ -1441,7 +1441,8 @@ Menu commands appear in the iPadOS menu bar and in the keyboard shortcuts overla
 Command), so the shortcut can be discovered there. Return is not a shortcut: a bare Return
 key command, in the menu or on the shutter button, didn't fire in the iOS 27.2 Simulator's
 UI tests, so only Space is offered until a device check shows otherwise. The command sends `CameraIntent.capture`, which the model
-ignores when a photo can't be taken, and it is disabled whenever the shutter is.
+ignores when a photo can't be taken, and it is disabled whenever the shutter is. While the
+Last Photo viewer is open it closes the viewer instead and takes no photo (decision V1).
 
 Full Keyboard Access keeps the Space bar for the focused control: a key command without
 `wantsPriorityOverSystemBehavior` yields to system behavior (UIKit, `UIKeyCommand`).
@@ -4909,9 +4910,10 @@ public, declared in `Sources/NopeUI/CameraEnvironment.swift`
 var openPhotosApp: CameraAction? { get set }
 ```
 
-Opens the Photos app, for the last-photo thumbnail (issue #36). `nil` makes a tap on the
-thumbnail show the photo's details instead, and hides Open in Photos. The app target sets
-it; it runs only when the person taps.
+Opens the Photos app, for Open in Photos in the Last Photo viewer and among Last Photo's
+VoiceOver actions (issue #36; docs/design/BUILD-SPEC.md, 3.14). A tap on Last Photo opens
+the viewer, not Photos. `nil` hides Open in Photos, as in the Lock Screen camera. The app
+target sets it; it runs only when the person taps.
 
 ## `EnvironmentValues/openSettingsAt`
 
@@ -11410,7 +11412,7 @@ internal, declared in `Sources/NopeUI/DesignTokens.swift`
 static let thumbnail: CGFloat
 ```
 
-52 points: Last Photo.
+52 points: Last Photo, and Close in the Last Photo viewer, in its place.
 
 ## `NopeSize/tileMin`
 
@@ -11421,6 +11423,17 @@ static let tileMin: CGFloat
 ```
 
 56 points: the smallest height of a tile; it grows when the name wraps.
+
+## `NopeSize/viewerFallback`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let viewerFallback: CGFloat
+```
+
+160 points: the largest side of the thumbnail in the Last Photo viewer when the preview is
+released (docs/design/BUILD-SPEC.md, 3.14).
 
 ## `NopeSize/warningOutline`
 
@@ -12171,6 +12184,1280 @@ A size's name: its megapixels and its width and height in pixels.
 
 - Parameter size: The size.
 - Returns: For example "12 MP (4032 × 3024)".
+
+## `PhotoViewerActions`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerActions
+```
+
+Close, Photo Details and Open in Photos. Open in Photos is left out where the app can't open
+Photos (the Lock Screen camera).
+
+## `PhotoViewerActions/Arrangement`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+enum Arrangement
+```
+
+Where the actions are drawn.
+
+## `PhotoViewerActions/Arrangement/column`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+case column
+```
+
+Symbol buttons with their names below, then Close, centered in the column.
+
+## `PhotoViewerActions/Arrangement/scrolling`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+case scrolling
+```
+
+Three full-width rows (accessibility text sizes).
+
+## `PhotoViewerActions/Arrangement/stacked`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+case stacked
+```
+
+Close leading where Last Photo is, the two actions trailing (iPhone in portrait).
+
+## `PhotoViewerActions/arrangement`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let arrangement: Arrangement
+```
+
+Where the actions are drawn.
+
+## `PhotoViewerActions/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The actions.
+
+## `PhotoViewerActions/close`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the viewer.
+
+## `PhotoViewerActions/init(arrangement:openPhoto:showDetails:close:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(arrangement: Arrangement, openPhoto: (() -> Void)?, showDetails: @escaping () -> Void, close: @escaping () -> Void)
+```
+
+Creates the actions.
+
+- Parameters:
+  - arrangement: Where the actions are drawn.
+  - openPhoto: Opens Photos, or `nil` to leave Open in Photos out.
+  - showDetails: Opens Photo Details for the photo shown.
+  - close: Closes the viewer.
+
+## `PhotoViewerActions/openPhoto`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let openPhoto: (() -> Void)?
+```
+
+Opens Photos, or `nil`.
+
+## `PhotoViewerActions/showDetails`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let showDetails: () -> Void
+```
+
+Opens Photo Details for the photo shown.
+
+## `PhotoViewerCaption`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerCaption
+```
+
+The caption of the photo shown: the position, the lens and the time.
+
+## `PhotoViewerCaption/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The caption.
+
+## `PhotoViewerCaption/init(text:isOnPicture:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(text: String, isOnPicture: Bool)
+```
+
+Creates the caption.
+
+- Parameters:
+  - text: The caption.
+  - isOnPicture: Whether it is drawn over the picture, on the backing.
+
+## `PhotoViewerCaption/isOnPicture`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let isOnPicture: Bool
+```
+
+Whether it is drawn over the picture, on the backing (column arrangement).
+
+## `PhotoViewerCaption/text`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let text: String
+```
+
+The caption.
+
+## `PhotoViewerCover`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerCover
+```
+
+Presents the Last Photo viewer over the camera while `CameraModel.isViewerOpen` is `true`
+(BUILD-SPEC.md, 3.14), modeled on ``ComparisonCover``: a full-screen cover in every window, red
+on black in night mode, the photo included (decision V4).
+
+The cover itself appears without the system's slide; ``PhotoViewerScreen`` draws the opening
+and closing with the design's fallback motion (``NopeMotion/panel`` for the frame,
+``NopeMotion/fade`` with Reduce Motion, opacity only) and its own swipe down. The system zoom
+transition (`navigationTransition(.zoom)`) was tried first: its swipe down also closed a
+zoomed photo, which the design rules out, and SwiftUI has no way to stop it while zoomed.
+
+The model closes the viewer too: a hardware shutter press while it is open (decision V1) and
+leaving the foreground (V7). Closing posts a screen change, and `didClose` returns focus to
+Last Photo.
+
+## `PhotoViewerCover/body(content:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The camera with the cover.
+
+- Parameter content: The camera.
+
+## `PhotoViewerCover/didClose`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let didClose: () -> Void
+```
+
+Called when the viewer has closed.
+
+## `PhotoViewerCover/init(model:isNightMode:didClose:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(model: CameraModel, isNightMode: Bool, didClose: @escaping () -> Void)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - model: The camera model.
+  - isNightMode: Whether night mode is on.
+  - didClose: Called when the viewer has closed.
+
+## `PhotoViewerCover/isNightMode`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether night mode is on, so the viewer is red too, the photo included (decision V4).
+
+## `PhotoViewerCover/model`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `PhotoViewerFacts`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor enum PhotoViewerFacts
+```
+
+The rules of the Last Photo viewer that don't draw anything: the caption, the status, the
+position, the zoom limit and the fallback's size. Plain data in and out, so they are tested
+without a screen (`PhotoViewerTests`).
+
+## `PhotoViewerFacts/Signature`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+enum Signature
+```
+
+What the status line says about the signature (decision V11).
+
+## `PhotoViewerFacts/Signature/failed`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+case failed
+```
+
+Signing was on and a file couldn't be signed: the amber triangle and "Not signed".
+
+## `PhotoViewerFacts/Signature/off`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+case off
+```
+
+Signing is off by the person's choice: "Not signed" in secondary text, no symbol.
+
+## `PhotoViewerFacts/Signature/signed`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+case signed
+```
+
+Every file is signed: the teal seal and "Signed".
+
+## `PhotoViewerFacts/caption(of:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func caption(of photo: SessionPhoto, in photos: [SessionPhoto]) -> String
+```
+
+The caption: the position (with more than one photo), the lens and the time, such as
+"3 of 5 · 1× · 2:41 PM". Each part is a whole, separately localized fact.
+
+- Parameters:
+  - photo: The photo shown.
+  - photos: The session's photos, oldest first.
+- Returns: The caption.
+
+## `PhotoViewerFacts/decodedIDs(around:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func decodedIDs(around shownID: Int?, in photos: [SessionPhoto]) -> [Int]
+```
+
+The photos whose pictures are decoded: the one shown and its two neighbors.
+
+- Parameters:
+  - shownID: The photo shown.
+  - photos: The session's photos, oldest first.
+- Returns: Their identifiers, the shown one first.
+
+## `PhotoViewerFacts/fallbackSide(thumbnailLongestSide:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func fallbackSide(thumbnailLongestSide: Int) -> CGFloat
+```
+
+The largest side of the fallback's thumbnail, in points: ``NopeSize/viewerFallback``, and
+never above twice the thumbnail's own pixel size, so it is never stretched to the screen.
+
+- Parameter thumbnailLongestSide: The thumbnail's longest side, in pixels.
+- Returns: The side, in points.
+
+## `PhotoViewerFacts/fittedSize(of:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func fittedSize(of pixelSize: CGSize, in space: CGSize) -> CGSize
+```
+
+The size a picture fills when fitted into a space, keeping its shape.
+
+- Parameters:
+  - pixelSize: The picture's size, in pixels (only its shape matters).
+  - space: The space, in points.
+- Returns: The fitted size, in points.
+
+## `PhotoViewerFacts/formatNames(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func formatNames(of photo: SavedPhoto) -> String
+```
+
+The saved formats' names, such as "RAW + HEIF". Format names aren't translated.
+
+- Parameter photo: The saved photo.
+- Returns: The names joined with plus signs.
+
+## `PhotoViewerFacts/id(movingBy:from:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func id(movingBy offset: Int, from shownID: Int?, in photos: [SessionPhoto]) -> Int?
+```
+
+The identifier of the photo an offset away from the one shown, or `nil` past either end.
+
+- Parameters:
+  - offset: How many photos later (positive) or earlier (negative).
+  - shownID: The photo shown.
+  - photos: The session's photos, oldest first.
+- Returns: The identifier, or `nil`.
+
+## `PhotoViewerFacts/label(of:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func label(of id: Int?, in photos: [SessionPhoto]) -> String
+```
+
+The photo's VoiceOver label: "Photo", or "Photo 3 of 5" with more than one photo.
+
+- Parameters:
+  - id: The photo shown.
+  - photos: The session's photos, oldest first.
+- Returns: The label.
+
+## `PhotoViewerFacts/lensLabel(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func lensLabel(_ lens: Lens?) -> String?
+```
+
+The lens's visible label, as the lens row shows it: "1×", or its name when it has no
+magnification; `nil` when the lens isn't known.
+
+- Parameter lens: The lens the photo was taken with.
+- Returns: The label, or `nil`.
+
+## `PhotoViewerFacts/maximumZoom(preview:in:displayScale:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func maximumZoom(preview: CGSize, in space: CGSize, displayScale: CGFloat) -> CGFloat
+```
+
+The most a preview zooms: to its own pixels, and at least 2 × fit (decision V5).
+
+- Parameters:
+  - preview: The preview's size, in pixels.
+  - space: The page's size, in points.
+  - displayScale: The screen's pixels per point.
+- Returns: The limit, as a multiple of fit; at least 2.
+
+## `PhotoViewerFacts/minimumMaximumZoom`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+nonisolated static let minimumMaximumZoom: CGFloat
+```
+
+The zoom limit never goes below 2 × fit (decision V5).
+
+## `PhotoViewerFacts/position(of:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func position(of id: Int?, in photos: [SessionPhoto]) -> (number: Int, count: Int)?
+```
+
+The photo's place among the session's photos, counted from 1, or `nil` when it isn't one
+of them.
+
+- Parameters:
+  - id: The photo's `SessionPhoto.id`.
+  - photos: The session's photos, oldest first.
+- Returns: The place and the count.
+
+## `PhotoViewerFacts/positionText(number:count:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func positionText(number: Int, count: Int) -> String?
+```
+
+"3 of 5", shown only when there is more than one photo.
+
+- Parameters:
+  - number: The photo's place, from 1.
+  - count: How many photos there are.
+- Returns: The text, or `nil` for a single photo.
+
+## `PhotoViewerFacts/showsNewPhoto(shownID:newestID:lastSeenNewestID:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func showsNewPhoto(shownID: Int?, newestID: Int?, lastSeenNewestID: Int?) -> Bool
+```
+
+Whether New Photo shows: a photo newer than any shown since the viewer opened has
+arrived, and the newest isn't the one shown (decision V2).
+
+- Parameters:
+  - shownID: The photo shown.
+  - newestID: The newest photo.
+  - lastSeenNewestID: The newest photo when the viewer opened, or the newest shown since.
+- Returns: Whether to offer New Photo.
+
+## `PhotoViewerFacts/signature(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func signature(of photo: SavedPhoto) -> Signature
+```
+
+The signature status of a saved photo, by the rule of the Last Photo thumbnail's badge
+(``ThumbnailSlot/badge(for:)``).
+
+- Parameter photo: The saved photo.
+- Returns: Signed, failed, or off by choice.
+
+## `PhotoViewerFacts/spokenValue(of:isZoomed:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func spokenValue(of photo: SessionPhoto, isZoomed: Bool) -> String
+```
+
+The photo's VoiceOver value: the formats, the save sentence, the lens and the time, then,
+while zoomed, that it is zoomed and is a preview; for a released preview, the fallback's
+title and sentence (docs/design/ACCESSIBILITY.md, "Last Photo viewer", VoiceOver).
+
+- Parameters:
+  - photo: The photo shown.
+  - isZoomed: Whether it is zoomed in.
+- Returns: The value, sentences joined with spaces.
+
+## `PhotoViewerFacts/time(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func time(_ date: Date) -> String
+```
+
+The time the photo was taken, in the system's short time style, such as "2:41 PM".
+
+- Parameter date: When the shutter took the photo.
+- Returns: The time.
+
+## `PhotoViewerFallback`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerFallback
+```
+
+A photo whose preview was released: the small thumbnail, never stretched to the screen, and
+why (BUILD-SPEC.md, 3.14; the wording is an Honesty draft). No zoom.
+
+## `PhotoViewerFallback/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The fallback.
+
+## `PhotoViewerFallback/init(thumbnail:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(thumbnail: PhotoThumbnail?)
+```
+
+Creates the fallback.
+
+- Parameter thumbnail: The saved photo's thumbnail, or `nil`.
+
+## `PhotoViewerFallback/thumbnail`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let thumbnail: PhotoThumbnail?
+```
+
+The saved photo's thumbnail, or `nil` for a photo symbol.
+
+## `PhotoViewerHint`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerHint
+```
+
+The preview hint on the photo's lower edge while it is zoomed in, in the look of the camera's
+hints. Its words are part of the photo's VoiceOver value.
+
+## `PhotoViewerHint/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hint.
+
+## `PhotoViewerHint/init()`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the hint. It holds no state.
+
+## `PhotoViewerPage`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerPage
+```
+
+One photo: its preview fitted and centered, with double tap, pinch and drag; or the fallback
+once the preview is released. The picture isn't mirrored right to left and is excluded from
+Smart Invert.
+
+## `PhotoViewerPage/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The page.
+
+## `PhotoViewerPage/init(photo:picture:zoom:maximumZoom:toggleControls:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(photo: SessionPhoto, picture: Image?, zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat, toggleControls: @escaping () -> Void)
+```
+
+Creates a page.
+
+- Parameters:
+  - photo: The photo.
+  - picture: Its decoded picture, or `nil`.
+  - zoom: The zoom; a constant fit for pages not shown.
+  - maximumZoom: The zoom limit.
+  - toggleControls: Hides or shows the controls.
+
+## `PhotoViewerPage/maximumZoom`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let maximumZoom: CGFloat
+```
+
+The zoom limit.
+
+## `PhotoViewerPage/photo`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let photo: SessionPhoto
+```
+
+The photo.
+
+## `PhotoViewerPage/picture`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let picture: Image?
+```
+
+Its decoded picture, or `nil` while it is decoded or after its preview is released.
+
+## `PhotoViewerPage/toggleControls`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let toggleControls: () -> Void
+```
+
+Hides or shows the controls.
+
+## `PhotoViewerPage/zoom`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@Binding @MainActor var zoom: PhotoViewerZoom { get nonmutating set }
+```
+
+The zoom; a constant fit for pages not shown.
+
+## `PhotoViewerPager`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerPager
+```
+
+The pages: one per photo, oldest first, in the layout direction, with ``NopeSpace/m`` between
+them. A swipe moves one page; the first and last spring back. While the photo is zoomed in the
+pages don't scroll, so a drag moves the photo instead. With Reduce Motion the pages crossfade
+in place instead of sliding.
+
+## `PhotoViewerPager/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The pages.
+
+## `PhotoViewerPager/init(photos:shownID:pictures:zoom:maximumZoom:pageSize:toggleControls:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(photos: [SessionPhoto], shownID: Binding<Int?>, pictures: [Int : Image], zoom: Binding<PhotoViewerZoom>, maximumZoom: CGFloat, pageSize: CGSize, toggleControls: @escaping () -> Void)
+```
+
+Creates the pages.
+
+- Parameters:
+  - photos: The session's photos, oldest first.
+  - shownID: The photo shown.
+  - pictures: The decoded pictures.
+  - zoom: The zoom of the photo shown.
+  - maximumZoom: The zoom limit of the photo shown.
+  - pageSize: The page's size, in points.
+  - toggleControls: Hides or shows the controls.
+
+## `PhotoViewerPager/maximumZoom`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let maximumZoom: CGFloat
+```
+
+The zoom limit of the photo shown.
+
+## `PhotoViewerPager/pageSize`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let pageSize: CGSize
+```
+
+The page's size.
+
+## `PhotoViewerPager/photos`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let photos: [SessionPhoto]
+```
+
+The session's photos, oldest first.
+
+## `PhotoViewerPager/pictures`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let pictures: [Int : Image]
+```
+
+The decoded pictures.
+
+## `PhotoViewerPager/shownID`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@Binding @MainActor var shownID: Int? { get nonmutating set }
+```
+
+The photo shown.
+
+## `PhotoViewerPager/toggleControls`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let toggleControls: () -> Void
+```
+
+Hides or shows the controls.
+
+## `PhotoViewerPager/zoom`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@Binding @MainActor var zoom: PhotoViewerZoom { get nonmutating set }
+```
+
+The zoom of the photo shown.
+
+## `PhotoViewerScreen`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerScreen
+```
+
+The Last Photo viewer: this session's photos, one page each, oldest first, opening on the
+newest, with the status, the caption, Close, Photo Details and Open in Photos.
+
+It chooses its arrangement with the camera's rule (``CameraLayout/arrangement(for:isAccessibilitySize:isRegularSize:)``):
+stacked on an iPhone in portrait, the trailing column in wider windows, and full-width rows at
+accessibility text sizes. It holds the page shown, whether the controls are hidden, and the
+newest photo seen, for New Photo.
+
+## `PhotoViewerScreen/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The viewer.
+
+## `PhotoViewerScreen/close`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the viewer.
+
+## `PhotoViewerScreen/init(model:openPhoto:close:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(model: CameraModel, openPhoto: (() -> Void)?, close: @escaping () -> Void)
+```
+
+Creates the viewer, on the newest photo.
+
+- Parameters:
+  - model: The camera model.
+  - openPhoto: Opens Photos, or `nil`.
+  - close: Closes the viewer.
+
+## `PhotoViewerScreen/model`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model, whose session photos are shown.
+
+## `PhotoViewerScreen/openPhoto`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let openPhoto: (() -> Void)?
+```
+
+Opens Photos, or `nil` in the Lock Screen camera.
+
+## `PhotoViewerScreen/openingScale`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static let openingScale: CGFloat
+```
+
+The scale the viewer grows from as it opens, and shrinks to as it closes, without Reduce
+Motion: a short zoom from the camera's place, about the system zoom transition's feel.
+
+## `PhotoViewerStatus`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor struct PhotoViewerStatus
+```
+
+The status line of the photo shown (decision V11): the saved formats leading, with the amber
+Processed marker for a lens without RAW; Signed with the teal seal, Not signed with the amber
+triangle when signing failed, or Not signed in secondary text when signing is off, trailing.
+Only facts read back from the saved photo. Its words are part of the photo's VoiceOver value,
+so it isn't a separate element.
+
+## `PhotoViewerStatus/body`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The status.
+
+## `PhotoViewerStatus/init(photo:isOnPicture:isStackedLines:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor init(photo: SavedPhoto?, isOnPicture: Bool, isStackedLines: Bool = false)
+```
+
+Creates the status line.
+
+- Parameters:
+  - photo: The saved photo, or `nil`.
+  - isOnPicture: Whether it is drawn over the picture, on the backing.
+  - isStackedLines: Whether the facts are lines one above the other.
+
+## `PhotoViewerStatus/isOnPicture`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let isOnPicture: Bool
+```
+
+Whether it is drawn over the picture, on the backing (column arrangement).
+
+## `PhotoViewerStatus/isStackedLines`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let isStackedLines: Bool
+```
+
+Whether the formats and the signature are lines one above the other (accessibility text
+sizes).
+
+## `PhotoViewerStatus/photo`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor let photo: SavedPhoto?
+```
+
+The saved photo, or `nil` for none.
+
+## `PhotoViewerText`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+enum PhotoViewerText
+```
+
+The viewer's words. The claims about the preview and the signature are honesty wording, in
+`Honesty.xcstrings`, and are drafts until reviewed (BUILD-SPEC.md, section 5).
+
+## `PhotoViewerText/close`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var close: Text { get }
+```
+
+"Close".
+
+## `PhotoViewerText/hideControls`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var hideControls: Text { get }
+```
+
+"Hide Controls".
+
+## `PhotoViewerText/lastPhotoHint`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var lastPhotoHint: Text { get }
+```
+
+"Shows the photo."
+
+## `PhotoViewerText/newPhoto`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var newPhoto: Text { get }
+```
+
+"New Photo".
+
+## `PhotoViewerText/notSigned`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var notSigned: Text { get }
+```
+
+"Not signed".
+
+## `PhotoViewerText/openInPhotos`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var openInPhotos: Text { get }
+```
+
+"Open in Photos".
+
+## `PhotoViewerText/photoDetails`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var photoDetails: Text { get }
+```
+
+"Photo Details".
+
+## `PhotoViewerText/photoNotSaved`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var photoNotSaved: Text { get }
+```
+
+"Photo Not Saved".
+
+## `PhotoViewerText/previewHint`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var previewHint: String { get }
+```
+
+"A screen-size preview, not the full photo."
+
+## `PhotoViewerText/previewNotKeptSentence`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var previewNotKeptSentence: String { get }
+```
+
+"nope. keeps previews in memory only and has released this one. The photo is saved in
+Photos."
+
+## `PhotoViewerText/previewNotKeptTitle`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var previewNotKeptTitle: String { get }
+```
+
+"Preview Not Kept".
+
+## `PhotoViewerText/processed`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var processed: String { get }
+```
+
+"Processed", the word of the format status for a lens without RAW (``FormatChip``).
+
+## `PhotoViewerText/processedSpoken`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var processedSpoken: String { get }
+```
+
+"Processed: no RAW on this lens", as the format status says it to VoiceOver.
+
+## `PhotoViewerText/showControls`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var showControls: Text { get }
+```
+
+"Show Controls".
+
+## `PhotoViewerText/signed`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var signed: Text { get }
+```
+
+"Signed".
+
+## `PhotoViewerText/zoomIn`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var zoomIn: Text { get }
+```
+
+"Zoom In".
+
+## `PhotoViewerText/zoomOut`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var zoomOut: Text { get }
+```
+
+"Zoom Out".
+
+## `PhotoViewerText/zoomedIn`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static var zoomedIn: String { get }
+```
+
+"Zoomed in."
+
+## `PhotoViewerZoom`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+struct PhotoViewerZoom
+```
+
+The zoom of the photo shown: a scale from fit and an offset, kept inside the picture's edges.
+
+## `PhotoViewerZoom/clamped(page:fitted:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+func clamped(page: CGSize, fitted: CGSize) -> PhotoViewerZoom
+```
+
+The zoom with its offset kept so the scaled picture covers the page where it is larger,
+and centered where it is smaller.
+
+- Parameters:
+  - page: The page's size, in points.
+  - fitted: The picture's fitted size, in points.
+- Returns: The clamped zoom.
+
+## `PhotoViewerZoom/fit`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+static let fit: PhotoViewerZoom
+```
+
+The photo at fit.
+
+## `PhotoViewerZoom/init(scale:offset:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+init(scale: CGFloat = 1, offset: CGSize = .zero)
+```
+
+Creates a zoom.
+
+- Parameters:
+  - scale: The scale, 1 at fit.
+  - offset: How far the scaled picture is moved from the center, in points.
+
+## `PhotoViewerZoom/isZoomed`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+var isZoomed: Bool { get }
+```
+
+Whether the photo is zoomed in.
+
+## `PhotoViewerZoom/offset`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+var offset: CGSize
+```
+
+How far the scaled picture is moved from the center, in points.
+
+## `PhotoViewerZoom/panned(by:from:page:fitted:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+func panned(by translation: CGSize, from start: CGSize, page: CGSize, fitted: CGSize) -> PhotoViewerZoom
+```
+
+The zoom moved by a drag, kept inside the picture's edges: at an edge a drag does nothing.
+
+- Parameters:
+  - translation: The drag, in points.
+  - start: The offset when the drag began.
+  - page: The page's size, in points.
+  - fitted: The picture's fitted size, in points.
+- Returns: The new zoom.
+
+## `PhotoViewerZoom/scale`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+var scale: CGFloat
+```
+
+The scale, 1 at fit.
+
+## `PhotoViewerZoom/zoomed(to:around:page:fitted:maximum:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+func zoomed(to newScale: CGFloat, around point: CGPoint, page: CGSize, fitted: CGSize, maximum: CGFloat) -> PhotoViewerZoom
+```
+
+The zoom at a new scale, keeping the point under a finger or the double tap in place, and
+kept inside the picture's edges.
+
+- Parameters:
+  - newScale: The new scale; kept between 1 and `maximum`.
+  - point: The point to keep in place, in the page's coordinates.
+  - page: The page's size, in points.
+  - fitted: The picture's fitted size, in points.
+  - maximum: The zoom limit.
+- Returns: The new zoom.
 
 ## `PresetNameScreen`
 
@@ -18712,9 +19999,10 @@ and 3.7): that isn't a warning, and its value still says "Saved. Not signed: sig
 Settings."
 
 With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
-without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
-Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
-Control offer both, Open in Photos and Photo Details.
+without one, a photo symbol. With ``openViewer`` it is a button: a tap opens the Last Photo
+viewer (docs/design/BUILD-SPEC.md, 3.14). VoiceOver and Voice Control also offer Open in Photos
+and Photo Details as actions, so both are one action away without opening the viewer; there
+is no touch-and-hold menu (decision V3).
 
 ## `ThumbnailSlot/Badge`
 
@@ -18781,12 +20069,12 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 The photo's thumbnail, or `nil` to show a photo symbol.
 
-## `ThumbnailSlot/init(photos:image:isBusy:openPhoto:showDetails:)`
+## `ThumbnailSlot/init(photos:image:isBusy:openViewer:openPhoto:showDetails:)`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 ```swift
-@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil)
+@MainActor init(photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openViewer: (() -> Void)? = nil, openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil)
 ```
 
 Creates the slot.
@@ -18795,6 +20083,7 @@ Creates the slot.
   - photos: The photos saved by the last press of the shutter, or `nil` before the first.
   - image: The photo's thumbnail, or `nil` to show a photo symbol.
   - isBusy: Whether a photo is being taken or saved now.
+  - openViewer: Opens the Last Photo viewer, or `nil` for none.
   - openPhoto: Opens Photos, or `nil` when the app can't.
   - showDetails: Shows the photo's details, or `nil` for none.
 
@@ -18817,6 +20106,16 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 ```
 
 Opens Photos, or `nil` when the app can't.
+
+## `ThumbnailSlot/openViewer`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor let openViewer: (() -> Void)?
+```
+
+Opens the Last Photo viewer, or `nil` for none.
 
 ## `ThumbnailSlot/photos`
 
@@ -19248,6 +20547,22 @@ internal, declared in `Sources/NopeUI/DesignTokens.swift`
 
 Makes the view's hit target at least ``NopeSize/minTarget`` (44 points) in each direction,
 with the whole frame tappable, without changing how large it is drawn.
+
+## `View/photoViewerCover(_:isNightMode:didClose:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor func photoViewerCover(_ model: CameraModel, isNightMode: Bool, didClose: @escaping () -> Void) -> some View
+
+```
+
+Presents the Last Photo viewer while the model says it is open (``PhotoViewerCover``).
+
+- Parameters:
+  - model: The camera model.
+  - isNightMode: Whether night mode is on.
+  - didClose: Called when the viewer has closed, to return focus to Last Photo.
 
 ## `View/screenAppearance(_:isNightMode:)`
 

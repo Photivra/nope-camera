@@ -48,8 +48,8 @@ for any user-facing claim comes from
   Credentials").
 - **Last photo and its details:** after each save, the last-photo thumbnail beside the shutter
   is made from the saved HEIF or JPEG (or the DNG when only RAW is saved) with ImageIO, in memory
-  (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from the
-  thumbnail's long-press menu or its VoiceOver action) lists what the read-back found in each
+  (`ImageIOThumbnailer`, no cache). "What's in This Photo" (issue #53, opened from Photo
+  Details in the Last Photo viewer or the thumbnail's VoiceOver action) lists what the read-back found in each
   saved file (pixel size, bit depth, file size, the DNG's color filter pattern, black and white
   levels and whether it stores lens correction instructions; the share of clipped highlights and
   shadows counted from the RAW sensor buffer at capture time (counts only, `RAWClipping`; the
@@ -62,8 +62,8 @@ for any user-facing claim comes from
   exposure, the bracket's offsets and order; `SavedPhoto.bracket`), held in memory with the photo
   until the app quits and written to no file, so the metadata allowlist is unchanged. The app can't
   reopen older photos (add-only access).
-- **Last Photo viewer previews:** for a viewer that shows this session's photos inside the
-  app (`docs/design/BUILD-SPEC.md`, 3.14; not built yet), each save also makes a screen-size preview from the
+- **Last Photo viewer previews:** for the viewer that shows this session's photos inside the
+  app (`docs/design/BUILD-SPEC.md`, 3.14; `PhotoViewer.swift`), each save also makes a screen-size preview from the
   same file as the thumbnail, in memory (`ImageIOPreviewer`, no cache): decoded upright at most
   3072 pixels on its longest side, drawn into a new 8-bit sRGB image, and compressed as a JPEG
   with the system encoder. The preview carries nothing from the photo's metadata (no location,
@@ -82,9 +82,15 @@ for any user-facing claim comes from
     and `SessionPhotos` keeps no decoded pixels;
   - the records (formats, signature, thumbnail, details, lens and time) follow the rule above
     for the thumbnail and details: in memory until the app quits.
-  The Lock Screen camera (the capture extension) makes no previews. Tapping the thumbnail opens the
-  Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
-  Photos and makes no network request.
+  The viewer decodes pictures only for the page shown and its two neighbors, and lets them go
+  when the page changes or a preview is released. Its contents are hidden while the app isn't
+  the active app, so the app switcher's snapshot shows no photo, and it closes when the app goes
+  to the background. It writes nothing to disk and logs nothing.
+  The Lock Screen camera (the capture extension) makes no previews, so its viewer shows each
+  photo's thumbnail with "Preview Not Kept". Tapping the thumbnail opens the viewer; the viewer's
+  Open in Photos opens the Photos app with its `photos-redirect://` URL, only when the person
+  taps (not in the Lock Screen camera); it reads nothing from Photos and makes no network
+  request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the
   HEIF and JPEG look and file options, front camera mirroring, manual controls) are stored in
   `UserDefaults` on the device. They are never synced or sent. The name and copyright fields of

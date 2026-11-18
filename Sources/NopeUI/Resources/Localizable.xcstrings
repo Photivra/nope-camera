@@ -1,6 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%lld of %lld" : {
+      "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo.",
+      "extractionState" : "manual"
+    },
+    "Close" : {
+      "comment" : "Button in the Last Photo viewer that closes the viewer and returns to the camera. Drawn as an X where Last Photo is.",
+      "extractionState" : "manual"
+    },
+    "New Photo" : {
+      "comment" : "Button in the Last Photo viewer that goes to a photo taken while the viewer was open, for example from Apple Watch or Siri.",
+      "extractionState" : "manual"
+    },
     "Photo Format sheet: Formats for Other Lenses" : {
       "comment" : "Button on the Photo Format sheet of a lens that can't save RAW: closes the sheet and opens Settings at Formats, where the formats of the other lenses are chosen.",
       "localizations" : {
@@ -22,6 +34,42 @@
           }
         }
       }
+    },
+    "Photo Not Saved" : {
+      "comment" : "Warning chip in the Last Photo viewer when a photo taken while the viewer was open couldn't be saved. Tapping it closes the viewer, where the camera says what went wrong.",
+      "extractionState" : "manual"
+    },
+    "Shows the photo." : {
+      "comment" : "VoiceOver hint of Last Photo, the small picture beside the shutter: double tap opens the Last Photo viewer.",
+      "extractionState" : "manual"
+    },
+    "Viewer: photo" : {
+      "comment" : "VoiceOver and Voice Control name of the photo in the Last Photo viewer when there is one photo.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo"
+          }
+        }
+      }
+    },
+    "Viewer: photo position" : {
+      "comment" : "VoiceOver label of the photo in the Last Photo viewer when there are several: its position among the photos taken since nope. opened, such as Photo 3 of 5.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo %lld of %lld"
+          }
+        }
+      }
+    },
+    "Zoomed in." : {
+      "comment" : "Part of the VoiceOver value of the photo in the Last Photo viewer while it is zoomed in.",
+      "extractionState" : "manual"
     },
     "“%@” applied." : {
       "comment" : "Shown after a saved settings preset was applied. The placeholder is the preset's name, in the language's quotation marks.",

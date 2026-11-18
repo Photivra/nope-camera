@@ -739,9 +739,19 @@ never for offset tags), and `ImageIOReadBack` reports ImageIO's pixel size and b
 (`ImageProperties`). `PhotoDetails` turns these into plain facts; it estimates nothing, so a
 value the file doesn't hold is left out. `PhotoSaver` and `CameraModel` time each step with an
 injected monotonic clock (`ContinuousClock`), so tests use a scripted one. The camera screen
-shows the thumbnail in the last-photo slot: a tap opens Photos through
-`EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
-and accessibility actions offer Open in Photos and Photo Details.
+shows the thumbnail in the last-photo slot: a tap opens the Last Photo viewer, and its
+accessibility actions offer Open in Photos (through `EnvironmentValues.openPhotosApp`) and Photo
+Details.
+
+**Last Photo viewer (docs/design/BUILD-SPEC.md, 3.14).** `PhotoViewer.swift` presents
+`PhotoViewerScreen` in a full-screen cover while `CameraModel.isViewerOpen` is true: the
+thumbnail sends `CameraIntent.setViewerOpen(true)`, and closing sends `false`. The model closes
+it too, on a hardware shutter press (which then takes no photo) and in the background. The
+screen pages through `CameraModel.sessionPhotos`, oldest first, opening on the newest, and
+decodes previews with `SessionPhotos.picture(of:maximumPixelSize:)` only for the page shown and
+its neighbors. Its rules that draw nothing (the caption, the VoiceOver value, New Photo, the zoom
+limit and arithmetic, the fallback's size) are in `PhotoViewerFacts` and `PhotoViewerZoom`, with
+unit tests. Photo Details opens the existing `PhotoDetailsSheet` for the photo shown.
 
 **RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
 has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
