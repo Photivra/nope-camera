@@ -230,7 +230,7 @@ enum BracketCardState: Equatable {
     ///
     /// - Parameters:
     ///   - bracketing: The focus bracket's state.
-    ///   - isOn: Whether the focus bracket is on (``CameraModel/isFocusBracketOn``).
+    ///   - isOn: Whether the focus bracket is on (`CameraModel.isFocusBracketOn`).
     ///   - rangeValue: The value of the range end being set, or `nil`.
     ///   - countdownRemaining: The countdown's seconds left, or `nil`.
     ///   - ended: The end card of the last focus bracket, until the next action, or `nil`.
@@ -519,7 +519,7 @@ struct BracketSheet: View {
 
     /// The Type control's label.
     private var typeLabel: Text {
-        Text("Type", bundle: .module, comment: "Control in Bracket Settings, and a setting of the Take Bracket action: the kind of bracket, exposure or focus.")
+        Text(String(localized: "Bracket Settings: Type", defaultValue: "Type", bundle: .module, comment: "Control in Bracket Settings: the kind of bracket, exposure or focus."))
     }
 
     /// The Type control's choices.

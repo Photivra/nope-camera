@@ -1,6 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "As Set in nope." : {
+      "comment" : "A choice of the Range setting of nope.'s Take Bracket action: the focus range set in the app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
     "Brightest First" : {
       "comment" : "A choice of the Order setting of nope.'s Take Bracket action: the brightest photo first.",
       "extractionState" : "manual"
@@ -9,12 +13,52 @@
       "comment" : "A choice of the Order setting of nope.'s Take Bracket action: the darkest photo first.",
       "extractionState" : "manual"
     },
+    "Exposure" : {
+      "comment" : "A choice of the Type setting of nope.'s Take Bracket action: photos at different exposures.",
+      "extractionState" : "manual"
+    },
+    "Focus" : {
+      "comment" : "A choice of the Type setting of nope.'s Take Bracket action: photos at different focus positions, for stacking in other software.",
+      "extractionState" : "manual"
+    },
+    "Focus Bracket" : {
+      "comment" : "Title on nope.'s Live Activity: a series of single photos, each at the next focus position.",
+      "extractionState" : "manual"
+    },
+    "Focus Frames" : {
+      "comment" : "A setting of nope.'s Take Bracket action with the type Focus: how many photos the focus bracket takes.",
+      "extractionState" : "manual"
+    },
     "Metered First" : {
       "comment" : "A choice of the Order setting of nope.'s Take Bracket action: the photo at the metered exposure first, then darker and brighter ones.",
       "extractionState" : "manual"
     },
     "Order" : {
       "comment" : "A setting of nope.'s Take Bracket action: the order in which the photos are taken.",
+      "extractionState" : "manual"
+    },
+    "Range" : {
+      "comment" : "A setting of nope.'s Take Bracket action with the type Focus: which focus positions the bracket covers.",
+      "extractionState" : "manual"
+    },
+    "Take a ${type} bracket of ${focusFrames} photos" : {
+      "comment" : "How nope.'s Take Bracket action reads in the Shortcuts editor with the type Focus. ${type} is the type, \"Focus\"; ${focusFrames} is a number of photos. Keep both placeholders unchanged.",
+      "extractionState" : "manual"
+    },
+    "The focus bracket stopped: %lld of %lld photos saved." : {
+      "comment" : "Siri's answer when a focus bracket ended before its last frame. The first number is the photos saved, the second the frames asked for.",
+      "extractionState" : "manual"
+    },
+    "This lens's focus can't be set, so it can't take a focus bracket." : {
+      "comment" : "Siri's answer when the lens in use can't take a focus bracket: the app can't set its focus.",
+      "extractionState" : "manual"
+    },
+    "Type" : {
+      "comment" : "A setting of nope.'s Take Bracket action: the kind of bracket, exposure or focus.",
+      "extractionState" : "manual"
+    },
+    "Whole Range" : {
+      "comment" : "A choice of the Range setting of nope.'s Take Bracket action: every focus position from the closest to the farthest.",
       "extractionState" : "manual"
     },
     "“%@” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it." : {

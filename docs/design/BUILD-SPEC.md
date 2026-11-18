@@ -4,7 +4,7 @@ Design version: 1.0.0 (2026-11-17; sections 3.14 and 3.15 added 2026-11-18). For
 
 This document says what to build, in which files, and how to tell it is done. The drawings are the mockups in this folder ([overview.html](overview.html)); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md), accessibility in [ACCESSIBILITY.md](ACCESSIBILITY.md), paths in [navigation.md](navigation.md).
 
-Bracketing on the drive strip is part of this plan (owner decision, 2026-11-18, all nineteen recommendations of [BRACKETING.md](BRACKETING.md), section 10): its section 7 is the build specification for 1.0.0, and sections 3.4, 3.5, 3.14, 3.15, 4, 6 and 7 below take its changes. Focus bracketing (its section 8) is for 1.1.0 and is not built in 1.0.0.
+Bracketing on the drive strip is part of this plan (owner decision, 2026-11-18, all nineteen recommendations of [BRACKETING.md](BRACKETING.md), section 10): its section 7 is the build specification for 1.0.0, and sections 3.4, 3.5, 3.14, 3.15, 4, 6 and 7 below take its changes. Focus bracketing (its section 8) was planned for 1.1.0 and is built in 1.0.0 (owner decision, 2026-11-18, issue #90); its device checks gate the release.
 
 Also proposed and not yet part of this plan: the launch screen, specified in [LAUNCH-SCREEN.md](LAUNCH-SCREEN.md). It adds an asset catalog and Info.plist keys to the app target and changes the first frames of `CameraScreen` (3.8).
 
@@ -709,7 +709,7 @@ Still needing the owner:
 
 Made on 2026-11-18: Burst as continuous shooting, all thirteen recommendations of [BURST.md](BURST.md) section 7. A tap takes one photo and holding the shutter takes photos until release; Start Burst for a burst without holding; Fast and Slow (up to 2 a second) for the session, with Slow hidden where Fast measures under about 3 a second; no deeper saving buffer until measured; at most 50 photos; the rate shown is measured from the burst; focus and exposure follow what is set; the count, a light tap and the system sound for each photo, no blink; no new burst while the last is saving; Apple Watch, Siri and Shortcuts, Interval and Astro unchanged; the speed is not remembered.
 
-Made on 2026-11-18: bracketing ([BRACKETING.md](BRACKETING.md), section 10, all nineteen recommendations): Bracket is a sixth word of the drive strip, in full auto and with Manual Controls on; Burst and Interval turn it off and an interval series no longer takes a bracket; focus bracketing waits for 1.1.0 and its device checks; the frames are grouped in the viewer and in What's in This Photo from session values only.
+Made on 2026-11-18: bracketing ([BRACKETING.md](BRACKETING.md), section 10, all nineteen recommendations): Bracket is a sixth word of the drive strip, in full auto and with Manual Controls on; Burst and Interval turn it off and an interval series no longer takes a bracket; focus bracketing waits for 1.1.0 and its device checks (later the same day, moved to 1.0.0, issue #90); the frames are grouped in the viewer and in What's in This Photo from session values only.
 
 Made on 2026-11-18: a tap on Last Photo shows the photo full screen inside the app, with Open in Photos and Photo Details, for this session's photos (3.14).
 

@@ -1345,6 +1345,386 @@ reached: the planning multiplies and clamps floating-point values, so a reached 
 differ by a rounding error. A hundredth of a stop is far below any step the app offers
 (the smallest is 1/3 EV).
 
+## `BracketIntent`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum BracketIntent
+```
+
+A request about bracketing, sent as ``CameraIntent/bracket(_:)``.
+
+## `BracketIntent/beginSettingRange(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case beginSettingRange(FocusRangeEnd)
+```
+
+Start setting an end of the focus range on the picture: the lens moves to that end's
+position, and the camera's automatic controls hold until the setting ends.
+
+## `BracketIntent/finishSettingRange(keeps:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case finishSettingRange(keeps: Bool)
+```
+
+End setting the range: `true` keeps the value as that end (Set), `false` leaves the range
+as it was (Cancel). Focus returns to what it was before.
+
+## `BracketIntent/focusRange(at:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case focusRange(at: FramePoint)
+```
+
+Focus once at a point of the picture while setting an end of the range; the value then
+follows the lens.
+
+## `BracketIntent/setFocus(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setFocus(FocusBracketSettings)
+```
+
+Choose the focus bracket's settings. Ignored while it runs.
+
+## `BracketIntent/setFocusStartDelay(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setFocusStartDelay(SelfTimerDelay?)
+```
+
+Choose the focus bracket's start delay, or `nil` for none. Ignored while it runs.
+
+## `BracketIntent/setOn(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setOn(Bool)
+```
+
+Turn Bracket on with the session's type (``BracketModel/type``), or off. On a lens that
+can take only one type, that type is turned on.
+
+## `BracketIntent/setRangeValue(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setRangeValue(Double)
+```
+
+Move the lens to a position while setting an end of the range, from 0 to 1, rounded to
+hundredths.
+
+## `BracketIntent/setType(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case setType(BracketType)
+```
+
+Choose the type. With Bracket on, the other type is turned off and this one on. Focus is
+ignored on a lens whose focus can't be set, Exposure on one that can't take an exposure
+bracket.
+
+## `BracketIntent/stop`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case stop
+```
+
+Stop a running focus bracket after the current frame, or its countdown.
+
+## `BracketIntent/useWholeRange`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case useWholeRange
+```
+
+Set the focus range back to the whole range, 0 to 1.
+
+## `BracketModel`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor final class BracketModel
+```
+
+Bracketing beyond the exposure bracket that ``ManualControlsModel/bracket`` holds: the chosen
+type, the focus bracket's settings and its progress (docs/design/BRACKETING.md, section 8).
+
+``CameraModel`` owns one as ``CameraModel/bracketing``; an interface reads it and sends
+``BracketIntent`` values. Nothing here is stored between launches, except through a preset.
+
+## `BracketModel/beginRun(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func beginRun(_ settings: FocusBracketSettings)
+```
+
+Marks a run as started.
+
+- Parameter settings: The bracket being taken.
+
+## `BracketModel/endRun(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func endRun(_ result: FocusBracketResult)
+```
+
+Marks the run as ended.
+
+- Parameter result: How it ended.
+
+## `BracketModel/focus`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var focus: FocusBracketSettings { get set }
+```
+
+The focus bracket's settings, for the session.
+
+## `BracketModel/focusStartDelay`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var focusStartDelay: SelfTimerDelay? { get set }
+```
+
+The focus bracket's start delay, or `nil` for none. 3 seconds at first (decision 7).
+
+## `BracketModel/init()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the model: Exposure, the standard focus bracket, off.
+
+## `BracketModel/isFocusOn`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var isFocusOn: Bool { get set }
+```
+
+Whether the focus bracket is on: a press of the shutter takes it.
+
+## `BracketModel/isRunning`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var isRunning: Bool { get }
+```
+
+Whether a focus bracket is running (or paused).
+
+## `BracketModel/isStopRequested`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var isStopRequested: Bool { get set }
+```
+
+Whether the person asked the running bracket to stop.
+
+## `BracketModel/lastRun`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var lastRun: FocusBracketResult? { get set }
+```
+
+How the last focus bracket ended, or `nil`. Cleared when the next one starts.
+
+## `BracketModel/progress`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var progress: FocusBracketProgress? { get set }
+```
+
+The running focus bracket, or `nil`. The countdown before it is ``DriveModel/countdown``.
+
+## `BracketModel/rangeEditing`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var rangeEditing: FocusRangeEditing? { get set }
+```
+
+The end of the focus range being set on the picture, or `nil`.
+
+## `BracketModel/recordPosition(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func recordPosition(_ position: Double)
+```
+
+Records the position the lens reported for the frame being taken.
+
+- Parameter position: The reported position.
+
+## `BracketModel/recordSaved()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func recordSaved()
+```
+
+Counts a frame saved.
+
+## `BracketModel/recordTaken()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func recordTaken()
+```
+
+Counts a frame taken.
+
+## `BracketModel/requestStop()`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func requestStop()
+```
+
+Asks the running bracket to stop after the current frame.
+
+## `BracketModel/running`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var running: FocusBracketSettings? { get set }
+```
+
+The settings of the running focus bracket, or `nil` when none runs. They may differ from
+``focus``: Take Bracket can ask for other frames or the whole range.
+
+## `BracketModel/setFocus(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setFocus(_ settings: FocusBracketSettings)
+```
+
+Records the focus settings.
+
+- Parameter settings: The settings.
+
+## `BracketModel/setFocusOn(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setFocusOn(_ isOn: Bool)
+```
+
+Records the focus bracket as on or off.
+
+- Parameter isOn: Whether it is on.
+
+## `BracketModel/setFocusStartDelay(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setFocusStartDelay(_ delay: SelfTimerDelay?)
+```
+
+Records the start delay.
+
+- Parameter delay: The delay, or `nil`.
+
+## `BracketModel/setPaused(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setPaused(_ isPaused: Bool)
+```
+
+Records the series as paused or not.
+
+- Parameter isPaused: Whether it is paused.
+
+## `BracketModel/setRangeEditing(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setRangeEditing(_ editing: FocusRangeEditing?)
+```
+
+Records the range being set, or `nil`.
+
+- Parameter editing: The state.
+
+## `BracketModel/setType(_:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor func setType(_ type: BracketType)
+```
+
+Records the type.
+
+- Parameter type: The type.
+
+## `BracketModel/type`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+@MainActor var type: BracketType { get set }
+```
+
+The type Bracket turns on, and the type Bracket Settings shows. Exposure at first.
+
 ## `BracketOrder`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -1409,7 +1789,7 @@ struct BracketPlace
 ```
 
 A saved photo's place in its bracket (``SavedPhoto/bracket``), for the Last Photo viewer and
-"What's in This Photo" (docs/design/BRACKETING.md, section 4, "The result").
+"What's in This Photo" (docs/design/BRACKETING.md, sections 4 and 5, "The result").
 
 Privacy: these are the session's values, held in memory with the saved photo until the app
 closes. They are never written to a file, so the metadata allowlist doesn't change.
@@ -1424,15 +1804,41 @@ let count: Int
 
 The frames in the bracket.
 
+## `BracketPlace/focus`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let focus: FocusFramePlace?
+```
+
+For a focus bracket, this frame's planned and reported focus. `nil` for an exposure
+bracket.
+
 ## `BracketPlace/frame`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-let frame: BracketFramePlan
+let frame: BracketFramePlan?
 ```
 
-This frame: its number, the offsets asked for and reached, and its planned exposure.
+For an exposure bracket, this frame: the offsets asked for and reached, and its planned
+exposure. `nil` for a focus bracket.
+
+## `BracketPlace/init(focus:count:)`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+init(focus: FocusFramePlace, count: Int)
+```
+
+Creates a focus bracket's place.
+
+- Parameters:
+  - focus: This frame's planned and reported focus.
+  - count: The frames in the bracket.
 
 ## `BracketPlace/init(type:frame:count:offsets:order:)`
 
@@ -1442,14 +1848,24 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 init(type: BracketType, frame: BracketFramePlan, count: Int, offsets: [Double], order: BracketOrder)
 ```
 
-Creates a place.
+Creates an exposure bracket's place.
 
 - Parameters:
-  - type: The kind of bracket.
+  - type: The kind of bracket, ``BracketType/exposure``.
   - frame: This frame's plan.
   - count: The frames in the bracket.
   - offsets: Every frame's offset asked for, in the order taken.
   - order: The order of the frames.
+
+## `BracketPlace/number`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+let number: Int
+```
+
+The frame's place in the order taken, from 1.
 
 ## `BracketPlace/offsets`
 
@@ -1459,17 +1875,18 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 let offsets: [Double]
 ```
 
-Every frame's offset asked for, in EV, in the order taken.
+For an exposure bracket, every frame's offset asked for, in EV, in the order taken. Empty
+for a focus bracket.
 
 ## `BracketPlace/order`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
 
 ```swift
-let order: BracketOrder
+let order: BracketOrder?
 ```
 
-The order of the frames.
+For an exposure bracket, the order of the frames. `nil` for a focus bracket.
 
 ## `BracketPlace/type`
 
@@ -1719,17 +2136,41 @@ let delaySeconds: Int
 
 The delay before the bracket, in seconds, from 0 to ``PhotoShortcut/maximumDelaySeconds``.
 
-## `BracketShortcut/init(frameCount:step:order:delaySeconds:lensKind:)`
+## `BracketShortcut/focusFrameCount`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-init(frameCount: Int, step: Double, order: BracketOrder = .darkestFirst, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
+let focusFrameCount: Int
+```
+
+A focus bracket's frames, one of ``FocusBracketSettings/frameCounts``.
+
+## `BracketShortcut/focusRange`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let focusRange: FocusBracketRange
+```
+
+A focus bracket's range: as set in the app, or the whole range.
+
+## `BracketShortcut/init(type:focusFrameCount:focusRange:frameCount:step:order:delaySeconds:lensKind:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+init(type: BracketType = .exposure, focusFrameCount: Int = FocusBracketSettings.defaultFrameCount, focusRange: FocusBracketRange = .asSet, frameCount: Int, step: Double, order: BracketOrder = .darkestFirst, delaySeconds: Int = 0, lensKind: Lens.Kind? = nil)
 ```
 
 Creates a request.
 
 - Parameters:
+  - type: The kind of bracket; ``BracketType/exposure`` by default.
+  - focusFrameCount: A focus bracket's frames, moved to the nearest of
+    ``FocusBracketSettings/frameCounts``; 10 by default.
+  - focusRange: A focus bracket's range; as set in the app by default.
   - frameCount: The number of frames, moved to the nearest of ``BracketSettings/frameCounts``.
   - step: The exposure difference between neighboring frames in EV (stops), moved to the
     nearest of ``BracketSettings/steps``.
@@ -1762,6 +2203,17 @@ The value in a list closest to a value: the first of two equally close ones.
   - values: The values offered; not empty.
 - Returns: The closest.
 
+## `BracketShortcut/type`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+let type: BracketType
+```
+
+The kind of bracket: ``BracketType/exposure`` by default. A focus bracket uses
+``focusFrameCount`` and ``focusRange``; the step and order are an exposure bracket's.
+
 ## `BracketType`
 
 public, declared in `Sources/NopeCore/Bracketing.swift`
@@ -1770,9 +2222,8 @@ public, declared in `Sources/NopeCore/Bracketing.swift`
 enum BracketType
 ```
 
-The kind of a bracket. Release 1.0.0 takes exposure brackets only; the type is named on the
-card and in a photo's details so that nothing changes when another kind arrives
-(docs/design/BRACKETING.md, decision 5).
+The kind of a bracket (docs/design/BRACKETING.md, sections 4 and 5). The type is named on
+the card and in a photo's details.
 
 ## `BracketType/exposure`
 
@@ -1783,6 +2234,16 @@ case exposure
 ```
 
 Frames at different exposures.
+
+## `BracketType/focus`
+
+public, declared in `Sources/NopeCore/Bracketing.swift`
+
+```swift
+case focus
+```
+
+Frames at different focus positions, for stacking in other software.
 
 ## `BurstEnd`
 
@@ -2220,6 +2681,17 @@ Use an aid that works in full auto too: tap to focus and expose, the focus and e
 lock, exposure compensation, Close-Up, the fast shutter rule and the focus magnifier. See
 ``AutoControlIntent``.
 
+## `CameraIntent/bracket(_:)`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+case bracket(BracketIntent)
+```
+
+Turn Bracket on or off, choose its type, set up or stop a focus bracket: see
+``BracketIntent``.
+
 ## `CameraIntent/capture`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -2598,6 +3070,17 @@ The bracket an interface turns on when the person chooses Bracket: the session's
 ``ManualControlsModel/lastBracket``, with as many frames as the selected lens can take,
 or `nil` when the lens can't bracket.
 
+## `CameraModel/bracketing`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor let bracketing: BracketModel
+```
+
+The bracket type and the focus bracket (``BracketModel``; docs/design/BRACKETING.md,
+section 8). The exposure bracket itself is ``ManualControlsModel/bracket``.
+
 ## `CameraModel/burstSpeed`
 
 public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -2669,6 +3152,27 @@ burst, interval series or astro run is in progress, and the compare view isn't o
 The one rule for every way of changing the lens: ``CameraIntent/selectLens(_:)`` does
 nothing while it is false, Siri and Shortcuts refuse a lens change, and presets aren't
 applied (``isBusyForPresets``). An interface disables its lens controls while it is false.
+
+## `CameraModel/canExposureBracket`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var canExposureBracket: Bool { get }
+```
+
+Whether the selected lens can take an exposure bracket.
+
+## `CameraModel/canFocusBracket`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var canFocusBracket: Bool { get }
+```
+
+Whether the selected lens can take a focus bracket: its focus can be locked at a lens
+position, and the camera has manual controls.
 
 ## `CameraModel/canPressShutter`
 
@@ -2899,6 +3403,40 @@ The flash mode the shutter's next photo uses: ``LightModel/flashModeForCapture``
 the shutter can fire the flash (``shutterUsesFlash``), otherwise ``FlashMode/off``. What
 an interface shows as the flash in use, such as the Flash pill.
 
+## `CameraModel/focusBracketStorageBytes`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var focusBracketStorageBytes: Int64? { get }
+```
+
+The most bytes the focus bracket's files can take, for "Storage, at Most"
+(``PhotoSizeEstimate``, an upper bound), or `nil` before the camera is ready.
+
+## `CameraModel/focusRangeValue`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var focusRangeValue: Double? { get }
+```
+
+The value of the range end being set on the picture, or `nil` when none is: the value
+chosen with the slider, or after a tap on the picture the position the lens reports.
+
+## `CameraModel/focusSettleSeconds`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor static let focusSettleSeconds: Double
+```
+
+The wait after the system reports a focus move applied, before the photo: 0.1 seconds.
+An assumption until the device check D7 (docs/design/BRACKETING.md, section 9) measures
+whether a photo taken at once after the handler is sharp where expected.
+
 ## `CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`
 
 public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2932,6 +3470,18 @@ Handles one astro intent.
 Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
 ISO, and turns the light off; turning it off may turn manual controls off, and night mode
 if ``setAstro(_:settings:)`` turned it on.
+
+## `CameraModel/handle(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor func handle(_ intent: BracketIntent) async
+```
+
+Handles one bracket intent.
+
+- Parameter intent: The intent.
 
 ## `CameraModel/handle(_:)`
 
@@ -2981,7 +3531,7 @@ public, declared in `Sources/NopeCore/Level.swift`
 Whether the level's tap is held back now (docs/design/level-haptic.md, section 4): while
 a photo is being taken (a bracket and a long exposure included), during a burst or a
 self-timer countdown, for the whole of an interval series (running or paused), while Astro
-runs, and whenever the camera isn't running.
+or a focus bracket runs (paused included), and whenever the camera isn't running.
 
 The Taptic Engine moves the device, so a tap is kept away from exposures and series; with
 the camera not running there is no live picture to level. An interface also holds the tap
@@ -3120,6 +3670,16 @@ frames match the launch screen (docs/design/LAUNCH-SCREEN.md, 6.3); after it, th
 starting indicator. It is in `NopeCore` so the app, the Lock Screen camera and any other
 interface read the first start the same way.
 
+## `CameraModel/isFocusBracketOn`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var isFocusBracketOn: Bool { get }
+```
+
+Whether a press of the shutter takes the focus bracket (and the astro helper is off).
+
 ## `CameraModel/isInForeground`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -3150,7 +3710,8 @@ internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
 @MainActor var isRunningSeries: Bool { get }
 ```
 
-Whether a countdown, a burst, an interval series or an astro run is in progress.
+Whether a countdown, a burst, an interval series, an astro run or a focus bracket is in
+progress.
 
 ## `CameraModel/isTakingPhoto`
 
@@ -3356,6 +3917,16 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Applies the backend's events until its stream ends. Run it for as long as the camera
 screen is visible, for example in a SwiftUI `.task`.
 
+## `CameraModel/offersBracket`
+
+public, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor var offersBracket: Bool { get }
+```
+
+Whether the drive strip offers Bracket: the lens can take either type, or a bracket is on.
+
 ## `CameraModel/outcome(of:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
@@ -3449,6 +4020,17 @@ internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
 
 The shutter while the helper is on: stops a countdown or a run, or starts the self-timer
 and then the run.
+
+## `CameraModel/pressFocusBracketShutter()`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@MainActor func pressFocusBracketShutter() async
+```
+
+The shutter while the focus bracket is on or runs: stops a running bracket after its
+current frame, cancels the start delay, or starts the start delay and then the bracket.
 
 ## `CameraModel/pressShutter()`
 
@@ -3792,6 +4374,24 @@ Side effects: may show the add-only Photos prompt; adds each photo to Photos.
     started burst, 1 for a press that reports no phases, or the count a Siri or Shortcuts
     request asked for (issue #62).
   - start: Who begins the burst.
+
+## `CameraModel/takeFocusBracket(_:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+@discardableResult @MainActor func takeFocusBracket(_ settings: FocusBracketSettings) async -> Bool
+```
+
+Takes a focus bracket now: for each position, lock focus there and wait for the system's
+handler, read back the position, take one photo, save it, go on.
+
+Side effects: may show the add-only Photos prompt; adds each photo to Photos; sets the
+camera's focus, exposure and white balance while it runs and restores them afterwards.
+
+- Parameter settings: The bracket.
+- Returns: Whether the bracket began: `false` when no photo can be taken, the lens's focus
+  can't be set or there is no save pipeline.
 
 ## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:pausesWithCamera:minimumInterval:)`
 
@@ -4187,6 +4787,16 @@ case focus
 
 ``CameraSetup/focus``.
 
+## `CameraSetup/CodingKeys/focusBracket`
+
+internal, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+case focusBracket
+```
+
+``CameraSetup/focusBracket``.
+
 ## `CameraSetup/CodingKeys/intervalCount`
 
 internal, declared in `Sources/NopeCore/CameraSetup.swift`
@@ -4512,6 +5122,16 @@ var focus: Double?
 ```
 
 The relative focus position from 0 to 1, or `nil` for autofocus.
+
+## `CameraSetup/focusBracket`
+
+public, declared in `Sources/NopeCore/CameraSetup.swift`
+
+```swift
+var focusBracket: FocusBracketSettings?
+```
+
+The focus bracket, or `nil` when it is off. Absent in presets of earlier versions.
 
 ## `CameraSetup/init()`
 
@@ -8596,6 +9216,752 @@ case on
 The flash fires for every photo, unless the device is too hot for it (the system then
 takes the photo without it).
 
+## `FocusAfterBracket`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum FocusAfterBracket
+```
+
+Where the focus is after a focus bracket.
+
+## `FocusAfterBracket/automatic`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case automatic
+```
+
+Back to automatic focus.
+
+## `FocusAfterBracket/returned(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case returned(Double)
+```
+
+Back to the position set by hand before the bracket.
+
+## `FocusAfterBracket/stays(_:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case stays(Double)
+```
+
+It stays at the last frame's position (Return Focus When Done off).
+
+## `FocusBracketOrder`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum FocusBracketOrder
+```
+
+The order in which a focus bracket's frames are taken (docs/design/BRACKETING.md, section 5).
+
+## `FocusBracketOrder/farthestFirst`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case farthestFirst
+```
+
+From the farthest focus position to the nearest.
+
+## `FocusBracketOrder/nearestFirst`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case nearestFirst
+```
+
+From the nearest focus position to the farthest. The default.
+
+## `FocusBracketOutcome`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+struct FocusBracketOutcome
+```
+
+What a focus bracket's frame loop returns.
+
+## `FocusBracketOutcome/end`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var end: BurstEnd
+```
+
+Why the loop ended, when no frame failed.
+
+## `FocusBracketOutcome/failure`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var failure: CaptureError?
+```
+
+The error of the frame that failed, or `nil`.
+
+## `FocusBracketOutcome/lastPosition`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var lastPosition: Double?
+```
+
+The last frame's reported position, or `nil` when no frame was saved.
+
+## `FocusBracketOutcome/offPlan`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var offPlan: Int
+```
+
+The frames whose reported focus was off their plan.
+
+## `FocusBracketOutcome/saved`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+var saved: [SavedPhoto]
+```
+
+The photos saved, in the order taken.
+
+## `FocusBracketProgress`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusBracketProgress
+```
+
+How far a focus bracket has got (``BracketModel/progress``).
+
+## `FocusBracketProgress/frameNumber`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var frameNumber: Int { get }
+```
+
+The number of the frame being taken now (or next, while paused), from 1, never more than
+``total``.
+
+## `FocusBracketProgress/init(taken:saved:total:position:isPaused:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(taken: Int, saved: Int, total: Int, position: Double? = nil, isPaused: Bool = false)
+```
+
+Creates a progress value.
+
+- Parameters:
+  - taken: The frames taken.
+  - saved: The frames saved.
+  - total: The frames in the bracket.
+  - position: The last reported position, or `nil`.
+  - isPaused: Whether the series is paused.
+
+## `FocusBracketProgress/isPaused`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let isPaused: Bool
+```
+
+Whether the series is paused: the app left the foreground, or the camera is paused.
+
+## `FocusBracketProgress/position`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let position: Double?
+```
+
+The lens position the lens last reported, or `nil` before the first move.
+
+## `FocusBracketProgress/saved`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let saved: Int
+```
+
+The frames saved so far.
+
+## `FocusBracketProgress/taken`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let taken: Int
+```
+
+The frames taken so far.
+
+## `FocusBracketProgress/total`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let total: Int
+```
+
+The frames in the bracket.
+
+## `FocusBracketProgress/with(taken:saved:position:isPaused:)`
+
+internal, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+func with(taken: Int? = nil, saved: Int? = nil, position: Double? = nil, isPaused: Bool? = nil) -> FocusBracketProgress
+```
+
+A copy with other values.
+
+## `FocusBracketRange`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+enum FocusBracketRange
+```
+
+The range of a focus bracket asked for from Siri or Shortcuts.
+
+## `FocusBracketRange/asSet`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case asSet
+```
+
+The range set in the app (``BracketModel/focus``).
+
+## `FocusBracketRange/wholeRange`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case wholeRange
+```
+
+The whole range, 0 to 1.
+
+## `FocusBracketResult`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusBracketResult
+```
+
+How the last focus bracket ended (``BracketModel/lastRun``).
+
+## `FocusBracketResult/end`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let end: BurstEnd
+```
+
+Why it ended: ``BurstEnd/limitReached`` when every frame was taken.
+
+## `FocusBracketResult/focusAfter`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let focusAfter: FocusAfterBracket
+```
+
+Where the focus is now.
+
+## `FocusBracketResult/init(end:saved:total:offPlan:focusAfter:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(end: BurstEnd, saved: Int, total: Int, offPlan: Int, focusAfter: FocusAfterBracket)
+```
+
+Creates a result.
+
+- Parameters:
+  - end: Why it ended.
+  - saved: The photos saved.
+  - total: The frames in the bracket.
+  - offPlan: The frames not at their planned focus.
+  - focusAfter: Where the focus is now.
+
+## `FocusBracketResult/isFinished`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var isFinished: Bool { get }
+```
+
+Whether every frame was taken and saved.
+
+## `FocusBracketResult/offPlan`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let offPlan: Int
+```
+
+The frames whose reported focus was more than ``FocusFramePlace/tolerance`` from the plan.
+
+## `FocusBracketResult/saved`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let saved: Int
+```
+
+The photos saved.
+
+## `FocusBracketResult/total`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let total: Int
+```
+
+The frames in the bracket.
+
+## `FocusBracketRun`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+struct FocusBracketRun
+```
+
+A focus bracket being taken: its settings and what each frame is taken with.
+
+## `FocusBracketRun/backend`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let backend: any ManualCaptureBackend
+```
+
+The camera.
+
+## `FocusBracketRun/bytesPerPhoto`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let bytesPerPhoto: Int64
+```
+
+The estimated size of one frame's files.
+
+## `FocusBracketRun/controls(at:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+func controls(at position: Double) -> DeviceControls
+```
+
+The controls for a frame: the held exposure and white balance, focus at a position, no
+point of interest and no automatic aids.
+
+- Parameter position: The lens position.
+- Returns: The controls.
+
+## `FocusBracketRun/lens`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let lens: Lens
+```
+
+The lens.
+
+## `FocusBracketRun/locked`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let locked: ManualSettings
+```
+
+The exposure and white balance held for every frame.
+
+## `FocusBracketRun/request`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let request: CaptureRequest
+```
+
+Each frame's request: the lens, the metadata plan, no flash.
+
+## `FocusBracketRun/save`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let save: SaveSettings
+```
+
+The settings the frames are saved with.
+
+## `FocusBracketRun/saver`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let saver: PhotoSaver
+```
+
+The save pipeline.
+
+## `FocusBracketRun/settings`
+
+internal, declared in `Sources/NopeCore/CameraModel+FocusBracket.swift`
+
+```swift
+let settings: FocusBracketSettings
+```
+
+The bracket.
+
+## `FocusBracketSettings`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusBracketSettings
+```
+
+The settings of a focus bracket: a series of separate single-frame photos, each at the next
+focus position, for stacking in other software (docs/design/BRACKETING.md, section 5).
+
+Positions are on the lens's own relative scale (`AVCaptureDevice.lensPosition`): 0 is the
+closest the lens focuses and 1 the farthest. Apple documents that a position "does not
+correspond to an exact physical distance", so the app never turns one into a distance.
+
+## `FocusBracketSettings/defaultFrameCount`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let defaultFrameCount: Int
+```
+
+The frame count a focus bracket starts with.
+
+## `FocusBracketSettings/farthest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let farthest: Double
+```
+
+The farthest focus position, from 0 to 1, never below ``nearest``.
+
+## `FocusBracketSettings/frameCount`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let frameCount: Int
+```
+
+The number of frames, one of ``frameCounts``.
+
+## `FocusBracketSettings/frameCounts`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let frameCounts: [Int]
+```
+
+The frame counts the app offers. 50 is the most one burst takes
+(``DriveModel/maximumBurstFrames``; decision 12).
+
+## `FocusBracketSettings/init(nearest:farthest:frameCount:order:returnsFocus:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(nearest: Double, farthest: Double, frameCount: Int, order: FocusBracketOrder = .nearestFirst, returnsFocus: Bool = true)
+```
+
+Creates focus bracket settings. Each position is moved into 0…1; a nearest position
+beyond the farthest swaps the two (docs/design/BRACKETING.md, section 5); a frame count
+that isn't offered becomes the nearest one that is.
+
+- Parameters:
+  - nearest: The nearest focus position, from 0 to 1.
+  - farthest: The farthest focus position, from 0 to 1.
+  - frameCount: The number of frames.
+  - order: The order of the frames.
+  - returnsFocus: Whether the focus returns to what it was when the bracket ends.
+
+## `FocusBracketSettings/isAvailable(on:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static func isAvailable(on lens: Lens) -> Bool
+```
+
+Whether a lens can take a focus bracket: its focus can be locked at a lens position
+(`AVCaptureDevice.isLockingFocusWithCustomLensPositionSupported`).
+
+- Parameter lens: A lens.
+- Returns: `true` when the lens supports manual focus.
+
+## `FocusBracketSettings/isWholeRange`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var isWholeRange: Bool { get }
+```
+
+Whether the settings span the whole range, 0 to 1.
+
+## `FocusBracketSettings/nearest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let nearest: Double
+```
+
+The nearest focus position, from 0 to 1, never above ``farthest``.
+
+## `FocusBracketSettings/offeredFrameCount(nearestTo:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static func offeredFrameCount(nearestTo count: Int) -> Int
+```
+
+The offered frame count nearest to a number; the smaller of two equally near.
+
+- Parameter count: Any number of frames.
+- Returns: One of ``frameCounts``.
+
+## `FocusBracketSettings/order`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let order: FocusBracketOrder
+```
+
+The order of the frames.
+
+## `FocusBracketSettings/positions`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var positions: [Double] { get }
+```
+
+Each frame's lens position, evenly spaced from ``nearest`` to ``farthest``, in the order
+taken. The last position is exactly the end, with no rounding error.
+
+## `FocusBracketSettings/returnsFocus`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let returnsFocus: Bool
+```
+
+Whether the focus returns to what it was before the bracket (automatic focus, or the
+position set by hand) when the bracket ends. Otherwise it stays at the last frame's.
+
+## `FocusBracketSettings/standard`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let standard: FocusBracketSettings
+```
+
+The focus bracket an interface offers first: the whole range, 10 frames, nearest first,
+focus returned when done.
+
+## `FocusBracketSettings/step`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var step: Double { get }
+```
+
+The step between neighboring frames on the lens's scale:
+(farthest − nearest) ÷ (frames − 1).
+
+## `FocusBracketSettings/with(nearest:farthest:frameCount:order:returnsFocus:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+func with(nearest: Double? = nil, farthest: Double? = nil, frameCount: Int? = nil, order: FocusBracketOrder? = nil, returnsFocus: Bool? = nil) -> FocusBracketSettings
+```
+
+A copy with other values.
+
+- Parameters:
+  - nearest: The nearest position, or `nil` to keep it.
+  - farthest: The farthest position, or `nil` to keep it.
+  - frameCount: The number of frames, or `nil` to keep it.
+  - order: The order, or `nil` to keep it.
+  - returnsFocus: Whether focus returns when done, or `nil` to keep it.
+- Returns: The new settings.
+
+## `FocusFramePlace`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusFramePlace
+```
+
+A saved photo's place in a focus bracket (``BracketPlace/focus``): the position planned for
+it and the one the lens reported when the photo was taken.
+
+Privacy: session values, in memory only; no file holds them.
+
+## `FocusFramePlace/init(number:plannedPosition:reportedPosition:positions:order:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(number: Int, plannedPosition: Double, reportedPosition: Double, positions: [Double], order: FocusBracketOrder)
+```
+
+Creates a place.
+
+- Parameters:
+  - number: The frame's place in the order, from 1.
+  - plannedPosition: The position asked for.
+  - reportedPosition: The position the lens reported.
+  - positions: Every frame's planned position, in the order taken.
+  - order: The order of the frames.
+
+## `FocusFramePlace/isOffPlan`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+var isOffPlan: Bool { get }
+```
+
+Whether the lens reported a position further from the plan than ``tolerance``. The frame
+is still saved (decision 14); an interface shows both values.
+
+## `FocusFramePlace/number`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let number: Int
+```
+
+The frame's place in the order taken, from 1.
+
+## `FocusFramePlace/order`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let order: FocusBracketOrder
+```
+
+The order of the frames.
+
+## `FocusFramePlace/plannedPosition`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let plannedPosition: Double
+```
+
+The lens position the app asked for.
+
+## `FocusFramePlace/positions`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let positions: [Double]
+```
+
+Every frame's planned position, in the order taken.
+
+## `FocusFramePlace/reportedPosition`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let reportedPosition: Double
+```
+
+The lens position the lens reported after the move.
+
+## `FocusFramePlace/tolerance`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+static let tolerance: Double
+```
+
+How far, on the lens's 0 to 1 scale, the reported position may differ from the planned
+one and still count as at its plan: 0.02. An assumption until the device check D6
+(docs/design/BRACKETING.md, section 9) measures how closely a lens reaches a position.
+
 ## `FocusModeReading`
 
 public, declared in `Sources/NopeCore/CameraStats.swift`
@@ -8778,6 +10144,93 @@ case unlimited
 ```
 
 No limit: autofocus searches the whole range, the default.
+
+## `FocusRangeEditing`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+struct FocusRangeEditing
+```
+
+An end of the focus range being set on the picture (``BracketModel/rangeEditing``).
+
+## `FocusRangeEditing/end`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let end: FocusRangeEnd
+```
+
+Which end is being set.
+
+## `FocusRangeEditing/followsLens`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let followsLens: Bool
+```
+
+Whether a tap on the picture focused there, so the value follows the lens's reported
+position (``CameraModel/focusRangeValue``).
+
+## `FocusRangeEditing/init(end:value:followsLens:)`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+init(end: FocusRangeEnd, value: Double, followsLens: Bool = false)
+```
+
+Creates the state.
+
+- Parameters:
+  - end: Which end is being set.
+  - value: The chosen position.
+  - followsLens: Whether the value follows the lens.
+
+## `FocusRangeEditing/value`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+let value: Double
+```
+
+The position chosen with the slider or the buttons, from 0 to 1.
+
+## `FocusRangeEnd`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+enum FocusRangeEnd
+```
+
+An end of the focus range (docs/design/BRACKETING.md, section 5, "Setting the range on the
+picture").
+
+## `FocusRangeEnd/farthest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case farthest
+```
+
+Farthest Focus.
+
+## `FocusRangeEnd/nearest`
+
+public, declared in `Sources/NopeCore/BracketModel.swift`
+
+```swift
+case nearest
+```
+
+Nearest Focus.
 
 ## `FocusRangeReading`
 
@@ -11608,6 +13061,16 @@ case burst
 
 A burst (issue #46).
 
+## `LiveActivityContent/Kind/focusBracket`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case focusBracket
+```
+
+A focus bracket's frames (issue #90). Its start delay shows as the self-timer's.
+
 ## `LiveActivityContent/Kind/interval`
 
 public, declared in `Sources/NopeCore/LiveActivity.swift`
@@ -13631,6 +15094,21 @@ measured while the camera screen isn't in use (AGENTS.md, "Battery").
 
 - Parameter enabled: Whether to send readings.
 
+## `ManualCaptureBackend/setFocus(lensPosition:)`
+
+public, declared in `Sources/NopeCore/ManualCaptureBackend.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+A backend whose focus can't be locked at a position: every request fails with
+``CaptureError/configurationFailed``, so no focus bracket frame is taken.
+
+- Parameter lensPosition: The position asked for.
+- Returns: Never returns.
+- Throws: ``CaptureError/configurationFailed``, always.
+
 ## `ManualControl`
 
 public, declared in `Sources/NopeCore/ManualControl.swift`
@@ -14266,6 +15744,18 @@ planned around the camera's reading), so they always apply.
   - intent: The intent.
   - capture: Takes one photo of an interval series the way the shutter does, waiting
     while the series is paused, and returns whether the photo was taken and saved.
+
+## `ManualControlsModel/holdsControls`
+
+internal, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var holdsControls: Bool { get set }
+```
+
+Whether the camera's controls are held by a focus bracket, which sets focus, exposure and
+white balance itself while it runs or while an end of its range is set. Changes to the
+settings are kept, and applied when the hold ends.
 
 ## `ManualControlsModel/init(backend:sleep:currentDate:)`
 
@@ -26200,6 +27690,28 @@ case cancelled
 
 The countdown was cancelled on the device, so no photo was taken. Say so.
 
+## `ShortcutOutcome/focusBracketStopped(saved:total:)`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusBracketStopped(saved: Int, total: Int)
+```
+
+A focus bracket stopped before its last frame (stopped, storage, battery or the camera).
+Say how many photos were saved, of how many.
+
+## `ShortcutOutcome/focusBracketUnavailable`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case focusBracketUnavailable
+```
+
+The lens in use can't take a focus bracket: its focus can't be set. Say so; nothing was
+taken.
+
 ## `ShortcutOutcome/focusRangeSet(_:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -26921,6 +28433,18 @@ Ends ``events`` and ``exposureReadings``, so ``CameraModel/observeEvents()`` and
 ``ManualControlsModel/observeReadings()`` return once they have applied everything sent
 so far. Also ends ``frameAnalyses`` and ``statsReadings``.
 
+## `SimulatedCaptureBackend/focusShortfall`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let focusShortfall: Double
+```
+
+How far short of a focus position the simulated lens stops, on the 0 to 1 scale
+(``setFocus(lensPosition:)``): 0 reaches every position, so tests can also cover a lens
+whose reported focus differs from the plan.
+
 ## `SimulatedCaptureBackend/frameAnalyses`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -26931,12 +28455,12 @@ let frameAnalyses: AsyncStream<FrameAnalysis>
 
 The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:captureSeconds:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:captureSeconds:focusShortfall:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil, captureSeconds: Double = 0)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil, captureSeconds: Double = 0, focusShortfall: Double = 0)
 ```
 
 Creates a simulated backend.
@@ -26957,6 +28481,8 @@ Creates a simulated backend.
   - comparisonError: The error taking the comparison shot's second photo throws, or
     `nil` to succeed.
   - captureSeconds: How long taking a photo takes, in seconds. Defaults to 0.
+  - focusShortfall: How far short of each focus position the simulated lens stops, from 0;
+    0 by default.
 
 ## `SimulatedCaptureBackend/permission`
 
@@ -27140,6 +28666,21 @@ func setExposureReadingsEnabled(_ enabled: Bool) async
 Sends ``reading``, ``readingCount`` times, when readings are turned on.
 
 - Parameter enabled: Whether readings are on.
+
+## `SimulatedCaptureBackend/setFocus(lensPosition:)`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Reports the position asked for, less ``focusShortfall``, within 0 to 1. There is no lens
+to move.
+
+- Parameter lensPosition: The position asked for.
+- Returns: The simulated lens's position.
+- Throws: ``captureError``.
 
 ## `SimulatedCaptureBackend/setFrameAnalysis(_:)`
 

@@ -156,7 +156,7 @@ struct LiveActivityTests {
             isNightMode: true)
         let decoded = try JSONDecoder().decode(Content.self, from: JSONEncoder().encode(content))
         #expect(decoded == content)
-        #expect(Content.Kind.allCases.count == 4)
+        #expect(Content.Kind.allCases.count == 5)
         #expect(Content.Phase.allCases.count == 8)
         #expect(Content.Signing.allCases.count == 3)
     }

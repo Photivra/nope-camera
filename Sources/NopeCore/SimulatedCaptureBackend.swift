@@ -115,6 +115,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///   - comparisonError: The error taking the comparison shot's second photo throws, or
     ///     `nil` to succeed.
     ///   - captureSeconds: How long taking a photo takes, in seconds. Defaults to 0.
+    ///   - focusShortfall: How far short of each focus position the simulated lens stops, from 0;
+    ///     0 by default.
     public init(
         permission: CameraPermission,
         permissionAfterRequest: CameraPermission? = nil,

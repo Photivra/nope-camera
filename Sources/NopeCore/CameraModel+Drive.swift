@@ -79,17 +79,18 @@ extension CameraModel {
             pressAstroShutter()
             return
         }
+        // The focus bracket: the shutter starts it, cancels its countdown, and stops it after
+        // the current frame, also while it is paused or counts down to continue.
+        if bracketing.isRunning || isFocusBracketOn {
+            await pressFocusBracketShutter()
+            return
+        }
         if drive.countdown.isRunning {
             drive.countdown.cancel()
             return
         }
         if drive.burstProgress != nil {
             drive.requestBurstStop()
-            return
-        }
-        // The focus bracket: the shutter starts it, and stops it after the current frame.
-        if bracketing.isRunning || isFocusBracketOn {
-            await pressFocusBracketShutter()
             return
         }
         // A series started from Pro Tools, Siri or this mode: the shutter stops it, as it stops

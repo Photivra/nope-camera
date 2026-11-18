@@ -676,12 +676,12 @@ internal, declared in `Sources/NopeUI/BracketControls.swift`
 
 Cancels the start delay.
 
-## `BracketCard/init(state:openSettings:cancel:)`
+## `BracketCard/init(state:openSettings:send:cancel:)`
 
 internal, declared in `Sources/NopeUI/BracketControls.swift`
 
 ```swift
-@MainActor init(state: BracketCardState, openSettings: @escaping () -> Void, cancel: @escaping () -> Void)
+@MainActor init(state: BracketCardState, openSettings: @escaping () -> Void, send: @escaping (CameraIntent) -> Void = { _ in }, cancel: @escaping () -> Void)
 ```
 
 Creates the card.
@@ -689,6 +689,7 @@ Creates the card.
 - Parameters:
   - state: The card's state.
   - openSettings: Opens Bracket Settings.
+  - send: Sends an intent, for the focus bracket's buttons.
   - cancel: Cancels the start delay.
 
 ## `BracketCard/openSettings`
@@ -700,6 +701,16 @@ internal, declared in `Sources/NopeUI/BracketControls.swift`
 ```
 
 Opens Bracket Settings.
+
+## `BracketCard/send`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let send: (CameraIntent) -> Void
+```
+
+Sends an intent to the camera, for the focus bracket's buttons.
 
 ## `BracketCard/state`
 
@@ -749,6 +760,86 @@ The card for the camera model's state, or `nil`.
   - showsControls: Whether the controls are shown.
 - Returns: The card, or `nil`.
 
+## `BracketCardState/focus(_:isOn:rangeValue:countdownRemaining:ended:showsControls:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor static func focus(_ bracketing: BracketModel, isOn: Bool, rangeValue: Double?, countdownRemaining: Int?, ended: BracketCardState?, showsControls: Bool) -> BracketCardState?
+```
+
+The focus bracket's card, or `nil` when no focus bracket is on, runs or is being set up.
+
+- Parameters:
+  - bracketing: The focus bracket's state.
+  - isOn: Whether the focus bracket is on (`CameraModel.isFocusBracketOn`).
+  - rangeValue: The value of the range end being set, or `nil`.
+  - countdownRemaining: The countdown's seconds left, or `nil`.
+  - ended: The end card of the last focus bracket, until the next action, or `nil`.
+  - showsControls: Whether the controls are shown (not clean view).
+- Returns: The card, or `nil`.
+
+## `BracketCardState/focusCountdown(remaining:_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case focusCountdown(remaining: Int, FocusBracketSettings)
+```
+
+The focus bracket's start delay counts down: "Bracket in 3s" and Cancel.
+
+## `BracketCardState/focusEnded(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case focusEnded(FocusBracketResult)
+```
+
+A focus bracket ended: the photos saved, why it stopped, and where the focus is.
+
+## `BracketCardState/focusIdle(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case focusIdle(FocusBracketSettings)
+```
+
+A focus bracket is on and nothing runs: "Focus bracket: 12 frames", the track, Nearest
+and Farthest.
+
+## `BracketCardState/focusPaused(_:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case focusPaused(FocusBracketProgress)
+```
+
+A focus bracket is paused: "Paused: 4 of 12 frames" and Stop Bracket.
+
+## `BracketCardState/focusRange(_:value:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case focusRange(FocusRangeEditing, value: Double)
+```
+
+An end of the focus range is being set on the picture: the dial, with the value shown.
+
+## `BracketCardState/focusRunning(_:positions:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+case focusRunning(FocusBracketProgress, positions: [Double])
+```
+
+A focus bracket runs: "Frame 4 of 12", the focus reported, the track and Stop Bracket.
+
 ## `BracketCardState/idle(_:startDelay:)`
 
 internal, declared in `Sources/NopeUI/BracketControls.swift`
@@ -759,6 +850,16 @@ case idle(BracketSettings, startDelay: SelfTimerDelay?)
 
 A bracket is on and nothing runs: "Exposure bracket: 3 frames, 1 EV apart". The whole
 card is the button Bracket Settings.
+
+## `BracketCardState/isFocus`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+var isFocus: Bool { get }
+```
+
+Whether the card is one of a focus bracket's.
 
 ## `BracketCardState/isRunning`
 
@@ -799,17 +900,19 @@ case saved(count: Int, offsets: [Double])
 
 The bracket was saved: "3 photos saved", until the next action.
 
-## `BracketCardState/saved(from:)`
+## `BracketCardState/saved(from:focusRun:)`
 
 internal, declared in `Sources/NopeUI/BracketControls.swift`
 
 ```swift
-static func saved(from status: CaptureStatus) -> BracketCardState?
+static func saved(from status: CaptureStatus, focusRun: FocusBracketResult? = nil) -> BracketCardState?
 ```
 
 The saved card for a capture result, or `nil` when it isn't a bracket's.
 
-- Parameter status: A capture status.
+- Parameters:
+  - status: A capture status.
+  - focusRun: How the last focus bracket ended, for a focus bracket's photos.
 
 ## `BracketCardState/saving(_:)`
 
@@ -5936,6 +6039,451 @@ The SF Symbol for a flash mode.
 
 - Parameter mode: The flash mode.
 
+## `FocusBracketCard`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor struct FocusBracketCard
+```
+
+The focus bracket's cards on the picture's lower edge (docs/design/BRACKETING.md, section 5,
+"Running"; figures `bracket-focus-*`): idle, the range dial, running, paused and the end. The
+countdown uses the exposure bracket's countdown card with the focus detail.
+
+## `FocusBracketCard/body`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `FocusBracketCard/init(state:send:openSettings:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor init(state: BracketCardState, send: @escaping (CameraIntent) -> Void, openSettings: @escaping () -> Void)
+```
+
+Creates the card.
+
+- Parameters:
+  - state: The card's state.
+  - send: Sends an intent.
+  - openSettings: Opens Bracket Settings.
+
+## `FocusBracketCard/openSettings`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let openSettings: () -> Void
+```
+
+Opens Bracket Settings.
+
+## `FocusBracketCard/send`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let send: (CameraIntent) -> Void
+```
+
+Sends an intent to the camera.
+
+## `FocusBracketCard/state`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let state: BracketCardState
+```
+
+The card's state: one of the focus cases of ``BracketCardState``.
+
+## `FocusBracketDetailRows`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor struct FocusBracketDetailRows
+```
+
+The focus rows of the Bracket group of What's in This Photo (figure `bracket-focus-details`):
+Focus as the lens reported it, Planned Focus and The Bracket.
+
+## `FocusBracketDetailRows/body`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The rows.
+
+## `FocusBracketDetailRows/init(place:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor init(place: FocusFramePlace)
+```
+
+Creates the rows.
+
+- Parameter place: The place.
+
+## `FocusBracketDetailRows/place`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let place: FocusFramePlace
+```
+
+The photo's place in its focus bracket.
+
+## `FocusBracketSections`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor struct FocusBracketSections
+```
+
+The focus sections of Bracket Settings (figure `bracket-focus-settings`): the range, Frames,
+Focus Step and Order, Start Delay and Return Focus When Done, Storage, at Most, and the
+advice and Honesty sentences. Closest Focus of This Lens is not shown: it appears only for a
+lens confirmed by device check D5, and none is yet (docs/design/BRACKETING.md, decision 11).
+
+## `FocusBracketSections/body`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The sections.
+
+## `FocusBracketSections/init(model:setOnThePicture:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor init(model: CameraModel, setOnThePicture: @escaping (FocusRangeEnd) -> Void)
+```
+
+Creates the sections.
+
+- Parameters:
+  - model: The camera model.
+  - setOnThePicture: Closes the sheet and opens the dial for an end.
+
+## `FocusBracketSections/model`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `FocusBracketSections/setOnThePicture`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let setOnThePicture: (FocusRangeEnd) -> Void
+```
+
+Closes the sheet and starts setting an end of the range on the picture.
+
+## `FocusBracketText`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor enum FocusBracketText
+```
+
+The words of focus bracketing (docs/design/BRACKETING.md, section 8, "Strings"). Focus is
+always a position on the lens's own scale from 0 to 1, shown to two decimals; never a
+distance, a depth of field, a time or a rate.
+
+## `FocusBracketText/after(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func after(_ focus: FocusAfterBracket) -> String
+```
+
+Where the focus is after a bracket.
+
+- Parameter focus: Where it is.
+
+## `FocusBracketText/button(_:value:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func button(_ end: FocusRangeEnd, value: Double) -> Text
+```
+
+"Nearest: 0.12" or "Farthest: 0.80": a card button's visible text.
+
+- Parameters:
+  - end: The end.
+  - value: Its position.
+
+## `FocusBracketText/chip(_:count:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func chip(_ place: FocusFramePlace, count: Int) -> String
+```
+
+"Focus bracket · frame 4 of 12 · focus 0.31": the viewer's chip.
+
+- Parameters:
+  - place: The photo's place in its bracket.
+  - count: The frames in the bracket.
+
+## `FocusBracketText/chipSpoken(_:count:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func chipSpoken(_ place: FocusFramePlace, count: Int) -> String
+```
+
+"Focus bracket, frame 4 of 12, focus 0.31.": the chip as part of a page's VoiceOver label.
+
+- Parameters:
+  - place: The photo's place in its bracket.
+  - count: The frames in the bracket.
+
+## `FocusBracketText/continues`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static var continues: Text { get }
+```
+
+"Continues when the camera is back".
+
+## `FocusBracketText/countdownDetail(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func countdownDetail(_ settings: FocusBracketSettings) -> String
+```
+
+"12 frames, focus 0.12 to 0.80": the countdown card's detail.
+
+- Parameter settings: The bracket.
+
+## `FocusBracketText/endDetail(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func endDetail(_ result: FocusBracketResult) -> String
+```
+
+The end card's detail: the reason, where the focus is, and the frames off their plan.
+
+- Parameter result: How it ended.
+
+## `FocusBracketText/endTitle(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func endTitle(_ result: FocusBracketResult) -> String
+```
+
+The end card's title: "12 photos saved", or "Bracket stopped: 4 of 12 photos saved".
+
+- Parameter result: How it ended.
+
+## `FocusBracketText/focus(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func focus(_ position: Double) -> String
+```
+
+"Focus 0.31": the focus the lens reports.
+
+- Parameter position: The position.
+
+## `FocusBracketText/frame(_:of:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func frame(_ number: Int, of total: Int) -> String
+```
+
+"Frame 4 of 12": the running card's title, and the announcement at each frame.
+
+- Parameters:
+  - number: The frame being taken.
+  - total: The frames in the bracket.
+
+## `FocusBracketText/hint(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func hint(_ end: FocusRangeEnd) -> Text
+```
+
+The dial's hint.
+
+- Parameter end: The end being set.
+
+## `FocusBracketText/name(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func name(_ type: BracketType) -> String
+```
+
+A type's name: "Exposure" or "Focus".
+
+- Parameter type: The type.
+
+## `FocusBracketText/paused(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func paused(_ progress: FocusBracketProgress) -> String
+```
+
+"Paused: 4 of 12 frames".
+
+- Parameter progress: The bracket's progress.
+
+## `FocusBracketText/position(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func position(_ position: Double) -> String
+```
+
+A lens position to two decimals, such as "0.31".
+
+- Parameter position: The position, from 0 to 1.
+
+## `FocusBracketText/range(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func range(_ settings: FocusBracketSettings) -> String
+```
+
+"Focus 0.12 to 0.80, nearest first": the idle card's detail.
+
+- Parameter settings: The bracket.
+
+## `FocusBracketText/reason(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func reason(_ end: BurstEnd) -> String?
+```
+
+Why the app stopped the bracket, or `nil` when the person did or it finished.
+
+- Parameter end: Why it ended.
+
+## `FocusBracketText/set(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func set(_ end: FocusRangeEnd) -> Text
+```
+
+The dial's Set button.
+
+- Parameter end: The end being set.
+
+## `FocusBracketText/shutterRunning`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static var shutterRunning: Text { get }
+```
+
+The shutter's VoiceOver value while a focus bracket runs.
+
+## `FocusBracketText/shutterValue(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func shutterValue(_ settings: FocusBracketSettings) -> Text
+```
+
+"Bracket, focus, 12 frames": the shutter's VoiceOver value.
+
+- Parameter settings: The bracket.
+
+## `FocusBracketText/stop`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static var stop: Text { get }
+```
+
+"Stop Bracket".
+
+## `FocusBracketText/summary(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func summary(_ settings: FocusBracketSettings) -> String
+```
+
+"Focus bracket: 12 frames": the idle card's title.
+
+- Parameter settings: The bracket.
+
+## `FocusBracketText/title(_:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static func title(_ end: FocusRangeEnd) -> Text
+```
+
+An end of the range's name: "Nearest Focus" or "Farthest Focus".
+
+- Parameter end: The end.
+
 ## `FocusLockButton`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -6122,6 +6670,83 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 The map of in-focus cells.
 
+## `FocusRangeDial`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor struct FocusRangeDial
+```
+
+The dial for an end of the range (figure `bracket-focus-set-nearest`): the title and value,
+Decrease, a slider, Increase, the hint, Cancel and Set. A tap on the picture focuses there
+once and the value follows the lens; Focus Peaking shows meanwhile. Escape cancels.
+
+## `FocusRangeDial/body`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The dial.
+
+## `FocusRangeDial/editing`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let editing: FocusRangeEditing
+```
+
+The end being set.
+
+## `FocusRangeDial/init(editing:value:send:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor init(editing: FocusRangeEditing, value: Double, send: @escaping (CameraIntent) -> Void)
+```
+
+Creates the dial.
+
+- Parameters:
+  - editing: The end being set.
+  - value: The value shown.
+  - send: Sends an intent.
+
+## `FocusRangeDial/send`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let send: (CameraIntent) -> Void
+```
+
+Sends an intent.
+
+## `FocusRangeDial/step`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor static let step: Double
+```
+
+The step of the buttons and of VoiceOver's adjustable action: 0.01.
+
+## `FocusRangeDial/value`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let value: Double
+```
+
+The value shown (`CameraModel.focusRangeValue`).
+
 ## `FocusSquareLayer`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -6271,6 +6896,63 @@ static var unlock: Text { get }
 ```
 
 "Unlock Focus and Exposure".
+
+## `FocusTrack`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor struct FocusTrack
+```
+
+The focus track: a line from the lens's closest focus (leading) to far (trailing), with a mark
+for each frame. Marks taken are filled and marks to come are outlined, so the count never
+depends on color; the frame being taken has a ring. Custom drawing, hidden from VoiceOver:
+the card's words carry it (docs/design/BRACKETING.md, section 6).
+
+## `FocusTrack/body`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The track and its two end labels.
+
+## `FocusTrack/init(positions:taken:)`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor init(positions: [Double], taken: Int? = nil)
+```
+
+Creates the track.
+
+- Parameters:
+  - positions: Each frame's position.
+  - taken: The frames taken, or `nil`.
+
+## `FocusTrack/positions`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let positions: [Double]
+```
+
+Each frame's position, in the order taken.
+
+## `FocusTrack/taken`
+
+internal, declared in `Sources/NopeUI/FocusBracketControls.swift`
+
+```swift
+@MainActor let taken: Int?
+```
+
+The frames taken, or `nil` before the bracket runs (every mark is then drawn plain).
 
 ## `FormatChip`
 
@@ -14012,7 +14694,8 @@ internal, declared in `Sources/NopeUI/PhotoViewer.swift`
 
 The frames of the bracket a photo belongs to, in the order taken, or the photo alone
 when it isn't a bracket's frame: the session's records next to it with the same bracket,
-the same press of the shutter (`SessionPhoto.takenAt`) and consecutive frame numbers.
+the same press of the shutter (`SessionPhoto.takenAt`; for a focus bracket, the same
+planned positions) and consecutive frame numbers.
 A frame that wasn't saved leaves the frames before it as the bracket.
 
 - Parameters:

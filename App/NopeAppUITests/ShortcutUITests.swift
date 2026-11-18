@@ -129,6 +129,23 @@ final class ShortcutUITests: XCTestCase {
         XCTAssertTrue(bracket.label.contains("+1, 0, -1 EV") || bracket.label.contains("+1, 0, −1 EV"), bracket.label)
     }
 
+    /// Take Bracket with the type Focus takes one focus bracket over the whole range and leaves
+    /// the drive strip's bracket as it was.
+    @MainActor
+    func testAFocusBracketIsTakenOnce() {
+        let app = launch("manual", request: "focus3-whole")
+        let message = result(app)
+        XCTAssertTrue(message.waitForExistence(timeout: 30))
+        XCTAssertTrue(message.label.hasPrefix("Photos saved"), message.label)
+        XCTAssertFalse(app.buttons["Bracket Settings"].exists, "the drive strip's bracket was turned on")
+        let thumbnail = app.buttons["Last Photo"]
+        XCTAssertTrue(thumbnail.waitForExistence(timeout: 10))
+        thumbnail.tap()
+        let photo = app.descendants(matching: .any)["ViewerPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        XCTAssertTrue(photo.label.contains("Focus bracket, frame 3 of 3, focus 1.00."), photo.label)
+    }
+
     @MainActor
     func testApplyPresetSaysWhatChangedAndCanBeUndone() throws {
         // Apply Preset with Factory Defaults, through the same path as the Presets list.

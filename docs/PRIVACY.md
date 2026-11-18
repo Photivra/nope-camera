@@ -67,8 +67,10 @@ for any user-facing claim comes from
   when the sheet closes, and the sheet's contents are covered while the app isn't active, so the
   app switcher's snapshot holds none of them.
   A bracket's frame also carries its place in the bracket (the frame's number, its planned
-  exposure, the bracket's offsets and order; `SavedPhoto.bracket`), held in memory with the photo
-  until the app quits and written to no file, so the metadata allowlist is unchanged. The app can't
+  exposure, the bracket's offsets and order; for a focus bracket, the planned lens position, the
+  position the lens reported, every frame's planned position and the order; `SavedPhoto.bracket`),
+  held in memory with the photo until the app quits and written to no file, so the metadata
+  allowlist is unchanged. The app can't
   reopen older photos (add-only access).
 - **Last Photo viewer previews:** for the viewer that shows this session's photos inside the
   app (`docs/design/BUILD-SPEC.md`, 3.14; `PhotoViewer.swift`), each save also makes a screen-size preview from the

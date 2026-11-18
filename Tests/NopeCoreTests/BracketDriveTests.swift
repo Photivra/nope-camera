@@ -141,8 +141,8 @@ struct CameraModelBracketTests {
             return
         }
         #expect(photos.count == 3)
-        #expect(photos.compactMap(\.bracket?.frame.number) == [1, 2, 3])
-        #expect(photos.compactMap(\.bracket?.frame.offset) == [0, -1, 1])
+        #expect(photos.compactMap(\.bracket?.number) == [1, 2, 3])
+        #expect(photos.compactMap(\.bracket?.frame?.offset) == [0, -1, 1])
         #expect(photos.allSatisfy { $0.bracket?.count == 3 && $0.bracket?.offsets == [0, -1, 1] })
         #expect(photos.allSatisfy { $0.bracket?.order == .meteredFirst && $0.bracket?.type == .exposure })
         #expect(model.bracketProgress == nil)
@@ -200,7 +200,7 @@ struct CameraModelBracketTests {
         #expect(model.captureStatus == .failed(.saveFailed))
         #expect(model.failedBracket == BracketProgress(taken: 3, saved: 2, total: 3))
         // Last Photo shows the newest frame saved, which the viewer opens on.
-        #expect(model.lastPressPhotos.compactMap(\.bracket?.frame.number) == [1, 2])
+        #expect(model.lastPressPhotos.compactMap(\.bracket?.number) == [1, 2])
         #expect(model.lastPressPhotos.last == model.sessionPhotos.newest?.photo)
         // The next capture starts afresh.
         await model.send(.manual(.setBracket(nil)))

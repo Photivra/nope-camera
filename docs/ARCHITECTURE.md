@@ -176,6 +176,15 @@ when the camera opens and when the option changes.
   wide lens when the lens stays at its nearest position while autofocus searches; the app never
   switches lenses itself. The **magnifier** scales the preview view only.
 - **Focus peaking** is part of the live frame analysis (below, "Viewfinder overlays").
+- **Focus bracketing** (issue #90) is a series of single photos, not a system bracket: for each
+  frame `CameraModel+FocusBracket.swift` locks focus at the planned lens position with
+  `ManualCaptureBackend.setFocus(lensPosition:)` (AVFoundation: `setFocusModeLocked(lensPosition:
+  completionHandler:)`, returning the `lensPosition` read after the handler), waits
+  `CameraModel.focusSettleSeconds`, takes one photo with `capturePhoto` and saves it through the
+  same pipeline as any photo. Exposure and white balance are held at the first frame's values
+  (`ManualControlsModel.holdsControls` keeps the model's own controls from reaching the camera
+  meanwhile) and restored at the end. `BracketModel` (`CameraModel.bracketing`) holds the type,
+  the focus settings and the progress; the run pauses and stops by the astro run's rules.
 - **Bracketing** uses `AVCapturePhotoBracketSettings` with
   `AVCaptureManualExposureBracketedStillImageSettings`; each frame is a separate single-frame
   photo, and each is saved through the same pipeline as a single photo

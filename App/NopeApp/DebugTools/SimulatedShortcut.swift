@@ -13,7 +13,8 @@ import SwiftUI
 /// Launch with `-NopeSimulatedShortcut <request>`: a number for Take Photo with that delay in
 /// seconds (0 for none), `burst<count>` for Take Photo with a count, `bracket<count>` for Take
 /// Bracket with that many frames one stop apart, darkest first (`bracket<count>-metered` or
-/// `bracket<count>-brightest` for another order), `lens-ultraWide` for Switch Lens,
+/// `bracket<count>-brightest` for another order), `focus<count>` for Take Bracket with the type Focus
+/// (`focus<count>-whole` for the whole range), `lens-ultraWide` for Switch Lens,
 /// `preset-factory` for Apply Preset with Factory Defaults, or `interval` for Start Interval
 /// Shooting with the interval and count already chosen. Several requests separated by commas
 /// are sent one after another, each once the one before has ended; the last one's answer is
@@ -40,6 +41,13 @@ enum SimulatedShortcut {
         if let seconds = Int(value) { return .takePhoto(PhotoShortcut(delaySeconds: seconds)) }
         if value.hasPrefix("burst"), let count = Int(value.dropFirst("burst".count)) {
             return .takePhoto(PhotoShortcut(count: count))
+        }
+        // `focus5-whole`: Take Bracket with the type Focus, 5 frames, the whole range.
+        if value.hasPrefix("focus") {
+            let parts = value.dropFirst("focus".count).split(separator: "-")
+            guard let count = parts.first.flatMap({ Int($0) }) else { return nil }
+            let range: FocusBracketRange = parts.dropFirst().first == "whole" ? .wholeRange : .asSet
+            return .takeBracket(BracketShortcut(type: .focus, focusFrameCount: count, focusRange: range, frameCount: 3, step: 1))
         }
         if value.hasPrefix("bracket") {
             let parts = value.dropFirst("bracket".count).split(separator: "-")

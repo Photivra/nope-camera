@@ -73,7 +73,7 @@ public struct FocusBracketSettings: Codable, Equatable, Hashable, Sendable {
     /// - Parameter count: Any number of frames.
     /// - Returns: One of ``frameCounts``.
     public static func offeredFrameCount(nearestTo count: Int) -> Int {
-        frameCounts.min { abs($0 - count) < abs($1 - count) } ?? defaultFrameCount
+        frameCounts.reduce(frameCounts[0]) { best, offered in abs(offered - count) < abs(best - count) ? offered : best }
     }
 
     /// The step between neighboring frames on the lens's scale:

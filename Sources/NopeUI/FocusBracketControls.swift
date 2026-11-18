@@ -148,7 +148,8 @@ enum FocusBracketText {
     static func endTitle(_ result: FocusBracketResult) -> String {
         guard result.isFinished else {
             return String(
-                localized: "Bracket stopped: \(result.saved) of \(result.total) photos saved", bundle: .module,
+                localized: "Focus bracket stopped: %lld of %lld photos saved",
+                defaultValue: "Bracket stopped: \(result.saved) of \(result.total) photos saved", bundle: .module,
                 comment: "Focus bracket card when the series ended before its last frame. The first number is the photos saved, the second the frames in the bracket.")
         }
         return String(localized: "\(result.saved) photos saved", bundle: .module, comment: "Card on the camera after an exposure bracket or a burst: how many separate photos were saved to the photo library.")
@@ -195,14 +196,18 @@ enum FocusBracketText {
 
     /// "Focus bracket · frame 4 of 12 · focus 0.31": the viewer's chip.
     ///
-    /// - Parameter place: The photo's place in its bracket.
+    /// - Parameters:
+    ///   - place: The photo's place in its bracket.
+    ///   - count: The frames in the bracket.
     static func chip(_ place: FocusFramePlace, count: Int) -> String {
         String(localized: "Focus bracket · frame \(place.number) of \(count) · focus \(position(place.reportedPosition))", bundle: .module, comment: "Chip on a photo in the Last Photo viewer: the photo is one frame of a focus bracket. The numbers are the frame and the count of frames; the last value is the focus position the lens reported, from 0 to 1.")
     }
 
     /// "Focus bracket, frame 4 of 12, focus 0.31.": the chip as part of a page's VoiceOver label.
     ///
-    /// - Parameter place: The photo's place in its bracket.
+    /// - Parameters:
+    ///   - place: The photo's place in its bracket.
+    ///   - count: The frames in the bracket.
     static func chipSpoken(_ place: FocusFramePlace, count: Int) -> String {
         String(localized: "Focus bracket, frame \(place.number) of \(count), focus \(position(place.reportedPosition)).", bundle: .module, comment: "VoiceOver, part of a photo's label in the Last Photo viewer: the photo is one frame of a focus bracket. The numbers are the frame and the count of frames; the last value is the focus position the lens reported, from 0 to 1.")
     }
@@ -456,7 +461,7 @@ struct FocusRangeDial: View {
     /// The end being set.
     let editing: FocusRangeEditing
 
-    /// The value shown (``CameraModel/focusRangeValue``).
+    /// The value shown (`CameraModel.focusRangeValue`).
     let value: Double
 
     /// Sends an intent.

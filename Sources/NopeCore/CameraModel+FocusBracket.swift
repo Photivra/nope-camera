@@ -188,17 +188,16 @@ extension CameraModel {
     ///
     /// - Parameter position: The position, from 0 to 1.
     private func moveLens(to position: Double) async {
-        guard let focusBackend = backend as? any ManualCaptureBackend else { return }
-        _ = try? await focusBackend.setFocus(lensPosition: position)
+        // Only reached where the lens can take a focus bracket, so the backend is a manual one.
+        _ = try? await (backend as? any ManualCaptureBackend)?.setFocus(lensPosition: position)
     }
 
     // MARK: Taking the bracket
 
     /// The shutter while the focus bracket is on or runs: stops a running bracket after its
-    /// current frame, or starts the start delay and then the bracket. A countdown is cancelled
-    /// by ``pressShutter()`` before this is reached.
+    /// current frame, cancels the start delay, or starts the start delay and then the bracket.
     func pressFocusBracketShutter() async {
-        if bracketing.isRunning {
+        if bracketing.isRunning || drive.countdown.isRunning {
             stopFocusBracket()
             return
         }

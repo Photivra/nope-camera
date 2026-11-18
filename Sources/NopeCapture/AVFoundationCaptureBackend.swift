@@ -140,8 +140,8 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     ///
     /// - Parameter lensPosition: The position, from 0 to 1.
     /// - Returns: The reported position.
-    /// - Throws: ``CaptureError/notRunning`` if the camera isn't running, or
-    ///   ``CaptureError/configurationFailed`` if its focus can't be locked at a position.
+    /// - Throws: `CaptureError.notRunning` if the camera isn't running, or
+    ///   `CaptureError.configurationFailed` if its focus can't be locked at a position.
     public func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
         guard activeConfiguration != nil else { throw .notRunning }
         return try await hardware.setFocus(lensPosition: lensPosition)

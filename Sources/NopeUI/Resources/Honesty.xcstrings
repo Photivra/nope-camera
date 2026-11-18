@@ -196,6 +196,10 @@
       "comment" : "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.",
       "extractionState" : "manual"
     },
+    "Each frame is a separate single-frame photo. Nothing is merged. Stack them in other software." : {
+      "comment" : "Explains focus bracketing in Bracket Settings. Must not claim more than the English: the photos are never combined by the app.",
+      "extractionState" : "manual"
+    },
     "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it." : {
       "comment" : "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -206,6 +210,10 @@
     },
     "Enhanced Visual Search" : {
       "comment" : "Honesty heading. Apple's setting name: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Even steps on this lens’s own focus scale, from 0 (its closest focus) to 1 (far). iPhone doesn’t report focus as a distance, so nope. shows none." : {
+      "comment" : "Footer under Focus Step in Bracket Settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is shown or known.",
       "extractionState" : "manual"
     },
     "Every camera sensor leaves a faint, unique noise pattern. With enough of your photos, forensic tools can match them to the same camera. No app can fully remove it." : {
@@ -234,6 +242,10 @@
     },
     "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone." : {
       "comment" : "Explains the Standard File Tags switch. No default note. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Focus is a position on this lens’s own scale from 0 to 1, not a distance. Kept by nope. until it closes; not written to the files." : {
+      "comment" : "Footer of the Bracket group in the photo details of a focus bracket's frame. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is known, and the values are in memory only.",
       "extractionState" : "manual"
     },
     "HEIF with some device processing" : {
