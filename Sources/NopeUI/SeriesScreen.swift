@@ -73,10 +73,10 @@ struct SeriesScreen: ViewModifier {
         self.showsSettings = showsSettings
     }
 
-    /// Whether an interval series, the astro helper's frames (issue #60) or a focus bracket run: a run
-    /// of long or many frames outlasts the auto-lock.
+    /// Whether an interval series, the astro helper's frames (issue #60) or a focus bracket run
+    /// (`CameraModel.keepsScreenForSeries`): a run of long or many frames outlasts the auto-lock.
     private var isSeriesRunning: Bool {
-        model.manual.intervalProgress != nil || model.astro.isRunning || model.bracketing.isRunning
+        model.keepsScreenForSeries
     }
 
     /// Keep Screen On's conditions now.

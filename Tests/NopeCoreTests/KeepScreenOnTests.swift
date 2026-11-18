@@ -409,7 +409,8 @@ struct KeepScreenOnTests {
         for intent in lifecycle { #expect(!intent.isActivity, "\(intent)") }
         let actions: [CameraIntent] = [
             .selectLens("wide"), .capture, .manual(.allAuto), .setCleanView(false), .drive(.cancelTimer),
-            .auto(.setFollowsFaces(true)), .light(.setTorch(false)), .astro(.stop), .comparison(.close), .setViewerOpen(true),
+            .auto(.setFollowsFaces(true)), .light(.setTorch(false)), .astro(.stop), .bracket(.setOn(false)),
+            .comparison(.close), .setViewerOpen(true),
         ]
         for intent in actions { #expect(intent.isActivity, "\(intent)") }
     }

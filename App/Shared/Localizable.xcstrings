@@ -45,6 +45,22 @@
       "comment" : "How nope.'s Take Bracket action reads in the Shortcuts editor with the type Focus. ${type} is the type, \"Focus\"; ${focusFrames} is a number of photos. Keep both placeholders unchanged.",
       "extractionState" : "manual"
     },
+    "Take a focus bracket of %lld photos in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes a focus bracket after a delay. The first number is how many photos, from 3 to 50; the second is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a focus bracket of %lld photos with %@ in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes a focus bracket with a lens after a delay. The first number is how many photos, from 3 to 50; the placeholder is a camera, such as \"the telephoto camera\"; the last number is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a focus bracket of %lld photos with %@?" : {
+      "comment" : "Question Siri asks before nope. takes a focus bracket with a lens. The number is how many photos, from 3 to 50; the placeholder is a camera, such as \"the telephoto camera\".",
+      "extractionState" : "manual"
+    },
+    "Take a focus bracket of %lld photos?" : {
+      "comment" : "Question Siri asks before nope. takes a focus bracket: photos at different focus positions. The number is how many photos, from 3 to 50.",
+      "extractionState" : "manual"
+    },
     "The focus bracket stopped: %lld of %lld photos saved." : {
       "comment" : "Siri's answer when a focus bracket ended before its last frame. The first number is the photos saved, the second the frames asked for.",
       "extractionState" : "manual"

@@ -64,24 +64,56 @@ enum AssistantQuestions {
     /// - Parameter bracket: The request.
     /// - Returns: The question.
     static func takeBracket(_ bracket: BracketShortcut) -> AssistantQuestion {
-        let count = bracket.bracket.frameCount
         let delay = bracket.delaySeconds
         let camera = bracket.lensKind.map(cameraPhrase)
-        let question: LocalizedStringResource =
-            switch (delay > 0, camera) {
-            case (false, nil):
-                LocalizedStringResource("Take a bracket of \(count) photos?", comment: "Question Siri asks before nope. takes an exposure bracket. The number is how many photos: 3, 5 or 7.")
-            case (true, nil):
-                LocalizedStringResource("Take a bracket of \(count) photos in \(delay) seconds?", comment: "Question Siri asks before nope. takes an exposure bracket after a delay. The first number is how many photos: 3, 5 or 7; the second is the delay in seconds.")
-            case (false, let camera?):
-                LocalizedStringResource("Take a bracket of \(count) photos with \(camera)?", comment: "Question Siri asks before nope. takes an exposure bracket with a lens. The number is how many photos: 3, 5 or 7; the placeholder is a camera, such as \"the telephoto camera\".")
-            case (true, let camera?):
-                LocalizedStringResource("Take a bracket of \(count) photos with \(camera) in \(delay) seconds?", comment: "Question Siri asks before nope. takes an exposure bracket with a lens after a delay. The first number is how many photos: 3, 5 or 7; the placeholder is a camera, such as \"the telephoto camera\"; the last number is the delay in seconds.")
-            }
+        let question =
+            bracket.type == .focus
+            ? focusBracketQuestion(count: bracket.focusFrameCount, delay: delay, camera: camera)
+            : exposureBracketQuestion(count: bracket.bracket.frameCount, delay: delay, camera: camera)
         return AssistantQuestion(
             question: question,
             button: LocalizedStringResource(
                 "Take Bracket", comment: "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app."))
+    }
+
+    /// The question before an exposure bracket.
+    ///
+    /// - Parameters:
+    ///   - count: The frames: 3, 5 or 7.
+    ///   - delay: The delay in seconds; 0 for none.
+    ///   - camera: The camera as a noun phrase, or `nil` for the lens in use.
+    /// - Returns: The question.
+    private static func exposureBracketQuestion(count: Int, delay: Int, camera: String?) -> LocalizedStringResource {
+        switch (delay > 0, camera) {
+        case (false, nil):
+            LocalizedStringResource("Take a bracket of \(count) photos?", comment: "Question Siri asks before nope. takes an exposure bracket. The number is how many photos: 3, 5 or 7.")
+        case (true, nil):
+            LocalizedStringResource("Take a bracket of \(count) photos in \(delay) seconds?", comment: "Question Siri asks before nope. takes an exposure bracket after a delay. The first number is how many photos: 3, 5 or 7; the second is the delay in seconds.")
+        case (false, let camera?):
+            LocalizedStringResource("Take a bracket of \(count) photos with \(camera)?", comment: "Question Siri asks before nope. takes an exposure bracket with a lens. The number is how many photos: 3, 5 or 7; the placeholder is a camera, such as \"the telephoto camera\".")
+        case (true, let camera?):
+            LocalizedStringResource("Take a bracket of \(count) photos with \(camera) in \(delay) seconds?", comment: "Question Siri asks before nope. takes an exposure bracket with a lens after a delay. The first number is how many photos: 3, 5 or 7; the placeholder is a camera, such as \"the telephoto camera\"; the last number is the delay in seconds.")
+        }
+    }
+
+    /// The question before a focus bracket (issue #90), Take Bracket with the type Focus.
+    ///
+    /// - Parameters:
+    ///   - count: The frames, from 3 to 50.
+    ///   - delay: The delay in seconds; 0 for none.
+    ///   - camera: The camera as a noun phrase, or `nil` for the lens in use.
+    /// - Returns: The question.
+    private static func focusBracketQuestion(count: Int, delay: Int, camera: String?) -> LocalizedStringResource {
+        switch (delay > 0, camera) {
+        case (false, nil):
+            LocalizedStringResource("Take a focus bracket of \(count) photos?", comment: "Question Siri asks before nope. takes a focus bracket: photos at different focus positions. The number is how many photos, from 3 to 50.")
+        case (true, nil):
+            LocalizedStringResource("Take a focus bracket of \(count) photos in \(delay) seconds?", comment: "Question Siri asks before nope. takes a focus bracket after a delay. The first number is how many photos, from 3 to 50; the second is the delay in seconds.")
+        case (false, let camera?):
+            LocalizedStringResource("Take a focus bracket of \(count) photos with \(camera)?", comment: "Question Siri asks before nope. takes a focus bracket with a lens. The number is how many photos, from 3 to 50; the placeholder is a camera, such as \"the telephoto camera\".")
+        case (true, let camera?):
+            LocalizedStringResource("Take a focus bracket of \(count) photos with \(camera) in \(delay) seconds?", comment: "Question Siri asks before nope. takes a focus bracket with a lens after a delay. The first number is how many photos, from 3 to 50; the placeholder is a camera, such as \"the telephoto camera\"; the last number is the delay in seconds.")
+        }
     }
 
     /// Start Interval Shooting. The values shown are those the request gives; a value it leaves

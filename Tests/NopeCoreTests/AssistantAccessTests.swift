@@ -523,6 +523,7 @@ struct AssistantAccessTests {
     @Test func photosSavedCountsOnlySavedPhotos() {
         #expect(ShortcutOutcome.saved(isSigned: true).photosSaved == 1)
         #expect(ShortcutOutcome.savedSeveral(count: 5, allSigned: false).photosSaved == 5)
+        #expect(ShortcutOutcome.focusBracketStopped(saved: 4, total: 10).photosSaved == 4)
         #expect(ShortcutOutcome.cancelled.photosSaved == 0)
         #expect(ShortcutOutcome.intervalStarted.photosSaved == 0)
         #expect(ShortcutOutcome.notSaved(.notRunning).photosSaved == 0)

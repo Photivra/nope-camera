@@ -102,7 +102,8 @@ extension CameraIntent {
     public var isActivity: Bool {
         switch self {
         case .start, .requestPermission, .setPhotoSizes, .setInForeground, .releasePhotoPreviews: false
-        case .selectLens, .capture, .manual, .setCleanView, .drive, .auto, .light, .astro, .comparison, .setViewerOpen:
+        case .selectLens, .capture, .manual, .setCleanView, .drive, .auto, .light, .astro, .bracket, .comparison,
+            .setViewerOpen:
             true
         }
     }

@@ -210,7 +210,9 @@ struct CameraModelFocusBracketTests {
     }
 
     @Test func theRunHoldsTheLensTheLevelAndTheShutter() async {
-        let (model, backend) = await makeModel()
+        // Two rear lenses, so a pinch could switch lenses before and after the run.
+        let (model, backend) = await makeModel(lenses: [ManualFixtures.wide, FocusFixtures.tele])
+        #expect(model.pinchSwitchesLenses(setting: .switchLenses))
         let seen = SeenDuringCapture()
         await backend.setOnCapture { _ in
             await seen.record(model)
@@ -224,6 +226,41 @@ struct CameraModelFocusBracketTests {
         #expect(await seen.content?.kind == .focusBracket)
         #expect(await seen.content?.phase == .running)
         #expect(await seen.watchBusy == true)
+        #expect(await seen.pinchSwitchesLenses == false)
+        #expect(await seen.keepsScreenForSeries == true)
+        #expect(model.pinchSwitchesLenses(setting: .switchLenses))
+        #expect(!model.keepsScreenForSeries)
+    }
+
+    /// The screen during a focus bracket follows the one keeper rule for a series: kept awake
+    /// and dimmed with Keep Screen On on or off, the series winning, and a screen already at
+    /// 10% or darker left alone (issue #99).
+    @Test func aFocusBracketKeepsTheScreenAsASeries() async {
+        let keepScreenOn = KeepScreenOnConditions(
+            isSwitchOn: true, isActive: true, isCameraInFront: true, isCameraRunning: true, isBatteryLow: false,
+            isLowPowerMode: false)
+        for (brightness, conditions) in [(0.8, keepScreenOn), (0.8, KeepScreenOnConditions.off), (0.05, keepScreenOn)] {
+            let (model, backend) = await makeModel()
+            let screen = FakeScreen(brightness: brightness)
+            let keeper = SeriesScreenKeeper(screen: screen)
+            keeper.update(isSeriesRunning: model.keepsScreenForSeries, isInForeground: true, keepScreenOn: conditions)
+            #expect(!keeper.isDimmed)
+            let seen = SeenScreen()
+            await backend.setOnCapture { _ in
+                await MainActor.run {
+                    keeper.update(isSeriesRunning: model.keepsScreenForSeries, isInForeground: true, keepScreenOn: conditions)
+                }
+                await seen.record(keeper: keeper, screen: screen)
+                return nil
+            }
+            await model.send(.capture)
+            #expect(await seen.isKeepingAwake == true)
+            #expect(await seen.isDimmed == (brightness > SeriesScreenKeeper.dimmedBrightness))
+            #expect(await seen.brightness == min(brightness, SeriesScreenKeeper.dimmedBrightness))
+            keeper.update(isSeriesRunning: model.keepsScreenForSeries, isInForeground: true, keepScreenOn: conditions)
+            #expect(screen.brightness == brightness)
+            #expect(keeper.isKeepingAwake == conditions.isUsed)
+        }
     }
 
     @Test func returnFocusOffKeepsTheLastPosition() async {
@@ -750,7 +787,8 @@ struct CameraModelFocusBracketTests {
         let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
         let request = BracketShortcut(type: .focus, focusFrameCount: 5, focusRange: .wholeRange, frameCount: 3, step: 1)
         let outcome = await model.perform(.takeBracket(request), inbox: inbox, settings: nil, presets: nil)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: 5, allSigned: false))
+        #expect(outcome.photosSaved == 5)
         #expect(await backend.captures == 5)
         #expect(await backend.log.first(where: { $0.hasPrefix("focus") }) == "focus 0.00")
         // The app's own bracket is unchanged.
@@ -763,7 +801,7 @@ struct CameraModelFocusBracketTests {
         let inbox = ShortcutInbox(sleep: ShortcutTests.neverTimesOut)
         let request = BracketShortcut(type: .focus, focusFrameCount: 3, frameCount: 3, step: 1, delaySeconds: 3)
         let outcome = await model.perform(.takeBracket(request), inbox: inbox, settings: nil, presets: nil)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.log.first(where: { $0.hasPrefix("focus") }) == "focus 0.20")
     }
 
@@ -805,15 +843,33 @@ actor SeenDuringCapture {
     private(set) var isFinishingPhotos: Bool?
     private(set) var content: LiveActivityContent?
     private(set) var watchBusy: Bool?
+    private(set) var pinchSwitchesLenses: Bool?
+    private(set) var keepsScreenForSeries: Bool?
 
     func record(_ model: CameraModel) async {
         let values = await MainActor.run {
             (
                 model.lensChangeBlocker, model.holdsBackLevelTap, model.canPressShutter, model.isFinishingPhotos,
-                model.liveActivityContent(continuing: nil, isInForeground: true, now: Date()), model.isRunningSeries
+                model.liveActivityContent(continuing: nil, isInForeground: true, now: Date()), model.isRunningSeries,
+                model.pinchSwitchesLenses(setting: .switchLenses), model.keepsScreenForSeries
             )
         }
-        (lensBlocker, holdsLevelTap, canPressShutter, isFinishingPhotos, content, watchBusy) = values
+        (
+            lensBlocker, holdsLevelTap, canPressShutter, isFinishingPhotos, content, watchBusy, pinchSwitchesLenses,
+            keepsScreenForSeries
+        ) = values
+    }
+}
+
+/// What a test sees about the screen while a frame is taken.
+actor SeenScreen {
+    private(set) var isKeepingAwake: Bool?
+    private(set) var isDimmed: Bool?
+    private(set) var brightness: Double?
+
+    func record(keeper: SeriesScreenKeeper, screen: FakeScreen) async {
+        let values = await MainActor.run { (keeper.isKeepingAwake, keeper.isDimmed, screen.brightness) }
+        (isKeepingAwake, isDimmed, brightness) = values
     }
 }
 

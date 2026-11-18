@@ -18,8 +18,9 @@ public protocol ScreenControlling: AnyObject {
 /// This is the only place the app turns the idle timer off or changes the brightness. It has two
 /// reasons to keep the screen awake, and a running series wins:
 ///
-/// - **A series** (an interval series or an Astro run in the foreground). The screen mustn't lock,
-///   or the camera stops and the series with it. The screen dims at once and has no time limit;
+/// - **A series** (an interval series, an Astro run or a focus bracket in the foreground,
+///   ``CameraModel/keepsScreenForSeries``). The screen mustn't lock, or the camera stops and the
+///   series with it. The screen dims at once and has no time limit;
 ///   dimming saves battery over a long series (AGENTS.md, "Battery").
 /// - **Keep Screen On** (``KeepScreenOnRule``), while the camera screen is showing and running.
 ///   The screen dims after a while without activity, and the idle timer is turned on again at
@@ -114,8 +115,8 @@ public final class SeriesScreenKeeper {
     /// Screen On is used, and puts both back otherwise.
     ///
     /// - Parameters:
-    ///   - isSeriesRunning: Whether an interval series or an Astro run is going on the camera
-    ///     screen.
+    ///   - isSeriesRunning: Whether an interval series, an Astro run or a focus bracket is going on
+    ///     the camera screen (``CameraModel/keepsScreenForSeries``).
     ///   - isInForeground: Whether the app is in the foreground.
     ///   - keepScreenOn: Keep Screen On's conditions; ``KeepScreenOnConditions/off`` by default.
     public func update(
@@ -228,5 +229,15 @@ public final class SeriesScreenKeeper {
         wakeUpGeneration += 1
         wakeUp?.cancel()
         wakeUp = nil
+    }
+}
+
+extension CameraModel {
+    /// Whether a series that keeps the screen awake and dims it is going
+    /// (``SeriesScreenKeeper``): an interval series (running or paused), an Astro run or a focus
+    /// bracket (issue #90). Each can outlast the auto-lock. A countdown or a burst isn't one; Keep
+    /// Screen On covers those.
+    public var keepsScreenForSeries: Bool {
+        manual.intervalProgress != nil || astro.isRunning || bracketing.isRunning
     }
 }
