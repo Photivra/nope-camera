@@ -258,7 +258,7 @@ Focus bracketing:
 
 | Element | Label, value, hint |
 | --- | --- |
-| Type | A segmented control (Exposure, Focus); at accessibility sizes two rows under the header Type. Dimmed, with its sentence, where the lens takes only one type |
+| Type | A segmented control (Exposure, Focus); at accessibility sizes a row that opens the two choices, as the sheet's other pickers do. Dimmed, with its sentence, where the lens takes only one type |
 | Idle card | "Bracket Settings", button. Value: "Focus bracket: 12 frames, Focus 0.12 to 0.80, nearest first" |
 | Nearest, Farthest (card) | "Nearest Focus", value "0.12"; "Farthest Focus", value "0.80". Buttons |
 | Focus dial | The slider is adjustable in steps of 0.01, with Decrease and Increase buttons; a tap on the picture focuses there once |
@@ -267,7 +267,7 @@ Focus bracketing:
 | Announcements | "Frame 4 of 12" at each frame at low priority, so VoiceOver isn't interrupted; the end sentence |
 | Viewer chip | Part of the page's label: "Focus bracket, frame 4 of 12, focus 0.31." |
 
-- Largest text sizes: the card's buttons stack and the track is left out; the Type control becomes two rows.
+- Largest text sizes: the card's buttons stack and the track is left out; the Type control becomes a row that opens its choices.
 - Right to left: the track runs from the lens's closest focus on the leading edge; positions keep their order.
 - Night mode: red on black; frames taken are filled marks and frames to come outlined, so the count never depends on color.
 - Reduce Motion: the track's marks change without animation.

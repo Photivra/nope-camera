@@ -23,10 +23,13 @@ extension NopeAppUITests {
     /// Chooses Focus in the Type control of the open Bracket Settings.
     @MainActor
     private func chooseFocusType(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        let focus = app.segmentedControls.buttons["Focus"].exists
-            ? app.segmentedControls.buttons["Focus"] : app.buttons.matching(NSPredicate(format: "label == %@", "Focus")).firstMatch
-        XCTAssertTrue(focus.waitForExistence(timeout: 5), "no Focus type", file: file, line: line)
-        focus.tap()
+        let segment = app.segmentedControls.buttons["Focus"]
+        if segment.waitForExistence(timeout: 3) {
+            segment.tap()
+        } else {
+            // At accessibility sizes Type is a row that opens its choices.
+            chooseInBracketSettings(app, "Type", "Focus", file: file, line: line)
+        }
         XCTAssertTrue(element(app, containing: "Focus Range").waitForExistence(timeout: 5), "no focus sections", file: file, line: line)
     }
 
@@ -200,9 +203,18 @@ extension NopeAppUITests {
         word.tap()
         let card = bracketCard(app)
         XCTAssertTrue(card.waitForExistence(timeout: 5))
-        scrollUntilHittable(app, card)
-        card.tap()
-        XCTAssertTrue(app.navigationBars["Bracket Settings"].waitForExistence(timeout: 5))
+        // The scrolling camera can still be settling after the word's tap; try the card again.
+        for _ in 0..<3 where !app.navigationBars["Bracket Settings"].exists {
+            scrollUntilHittable(app, card)
+            card.tap()
+            _ = app.navigationBars["Bracket Settings"].waitForExistence(timeout: 5)
+        }
+        XCTAssertTrue(app.navigationBars["Bracket Settings"].exists)
+        // The Type row, its title over its value, grows with the text (about 44 points high at
+        // the default size).
+        let typeRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Type")).firstMatch
+        XCTAssertTrue(typeRow.waitForExistence(timeout: 5))
+        XCTAssertGreaterThan(typeRow.frame.height, 110, "the Type row doesn't grow")
         chooseFocusType(app)
         try audit(app)
         closeBracketSettings(app)

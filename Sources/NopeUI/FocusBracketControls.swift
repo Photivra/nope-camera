@@ -594,7 +594,8 @@ struct FocusBracketSections: View {
             } label: {
                 Text("Use the Whole Range", bundle: .module, comment: "Button in Bracket Settings: sets the focus bracket's range back to 0 to 1.")
             }
-            .disabled(settings.isWholeRange)
+            // Not disabled with the whole range already set: a dimmed row fails the contrast
+            // check in night mode, and the button then changes nothing.
         } header: {
             Text("Focus Range", bundle: .module, comment: "Section header in Bracket Settings: the nearest and farthest focus of a focus bracket.")
         }

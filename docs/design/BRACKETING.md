@@ -266,7 +266,7 @@ Honesty review: the two Honesty strings above and the limited-frame sentences ar
 
 ## 8. Build specification, 1.0.0: focus bracketing
 
-Figures: `bracket-settings-type` and every `bracket-focus-*` figure. First planned for 1.1.0; the owner moved it to 1.0.0 (2026-11-18, issue #90). The device checks D5 to D13 (section 9) have not been run yet, so the build uses provisional values, each named in the code and labeled an assumption: a reported position counts as at its plan within 0.02 (`FocusFramePlace.tolerance`, check D6), and each photo waits 0.1 seconds after the system reports the move applied (`CameraModel.focusSettleSeconds`, check D7). Closest Focus of This Lens is not shown on any lens until check D5 confirms it for that lens. The checks gate the release, and these values are changed to what they measure.
+Figures: `bracket-settings-type` and every `bracket-focus-*` figure. First planned for 1.1.0; the owner moved it to 1.0.0 (2026-11-18, issue #90). The device checks D5 to D13 (section 9) have not been run yet, so the build uses provisional values, each named in the code and labeled an assumption: a reported position counts as at its plan within 0.02 (`FocusFramePlace.tolerance`, check D6), and each photo waits 0.1 seconds after the system reports the move applied (`CameraModel.focusSettleSeconds`, check D7). Closest Focus of This Lens is not shown on any lens until check D5 confirms it for that lens. The checks gate the release, and these values are changed to what they measure. At the accessibility text sizes the Type control is a row with its value under its title that opens the two choices, in place of the two-row picker of section 6: the system pickers and plain rows there failed the Dynamic Type audit.
 
 ### Core
 

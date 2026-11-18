@@ -1409,6 +1409,48 @@ internal, declared in `Sources/NopeUI/BracketControls.swift`
 
 "Bracket": the drive strip's word.
 
+## `BracketTypeList`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor struct BracketTypeList
+```
+
+The two types as a list, at accessibility sizes: choosing one returns to Bracket Settings.
+
+## `BracketTypeList/body`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The list.
+
+## `BracketTypeList/init(selection:)`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor init(selection: Binding<BracketType>)
+```
+
+Creates the list.
+
+- Parameter selection: The chosen type.
+
+## `BracketTypeList/selection`
+
+internal, declared in `Sources/NopeUI/BracketControls.swift`
+
+```swift
+@MainActor let selection: Binding<BracketType>
+```
+
+The chosen type.
+
 ## `BrightenScreenButton`
 
 internal, declared in `Sources/NopeUI/SeriesScreen.swift`

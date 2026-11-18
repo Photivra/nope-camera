@@ -1757,7 +1757,13 @@ scripted backend (`CameraModelFocusBracketTests.swift`, `FocusBracketSettingsTes
 screens with UI tests (`FocusBracketUITests.swift`). The build uses provisional values that these
 checks replace: a reported position counts as at its plan within 0.02 (`FocusFramePlace.tolerance`)
 and each photo waits 0.1 seconds after the handler (`CameraModel.focusSettleSeconds`). Closest
-Focus of This Lens is not shown until D5 confirms it for a lens. They gate release 1.0.0:
+Focus of This Lens is not shown until D5 confirms it for a lens. At the largest text size the
+accessibility audit reports the texts of Bracket Settings' Type row ("Type", and its value
+"Exposure" or "Focus") as "Dynamic Type font sizes are partially unsupported" or "Text clipped" in
+some runs and not others, on the iPhone and the iPad Simulator, in every form of the row tried,
+while each is one whole line at the largest size's line height; the audit skips those findings
+(`measuredTypeRowLabels`) and `testFocusBracketAtTheLargestTextSize` measures the row instead.
+The device checks gate release 1.0.0:
 
 - **D5** `isLockingFocusWithCustomLensPositionSupported` and `minimumFocusDistance` for each lens,
   and the real closest focus measured with a ruler. Decides which lenses offer Focus and whether

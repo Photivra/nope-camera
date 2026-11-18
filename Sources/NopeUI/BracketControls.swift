@@ -492,7 +492,7 @@ struct BracketSheet: View {
         }
     }
 
-    /// The text size: the Type control becomes a two-row picker at accessibility sizes.
+    /// The text size: at accessibility sizes the Type control is a row that opens its choices.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Type: Exposure or Focus. Dimmed, with its sentence, where the lens can take only one.
@@ -506,19 +506,24 @@ struct BracketSheet: View {
                 })
             Group {
                 if dynamicTypeSize.isAccessibilitySize {
-                    // Two rows; the section header names it, since an inline picker's own label
-                    // doesn't grow with the text size.
-                    Picker(selection: selection) { typeChoices } label: { typeLabel }
-                        .pickerStyle(.inline)
-                        .labelsHidden()
+                    // A row that opens the two choices, with the value under the title, as
+                    // the design draws the largest sizes: a segmented control doesn't grow with
+                    // the text, and a picker row squeezes the title beside a long value.
+                    NavigationLink {
+                        BracketTypeList(selection: selection)
+                    } label: {
+                        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
+                            typeLabel
+                            typeName(selection.wrappedValue)
+                                .foregroundStyle(CameraStyle.secondaryText)
+                        }
+                    }
                 } else {
                     Picker(selection: selection) { typeChoices } label: { typeLabel }
                         .pickerStyle(.segmented)
                 }
             }
             .disabled(!(model.canFocusBracket && model.canExposureBracket))
-        } header: {
-            if dynamicTypeSize.isAccessibilitySize { typeLabel }
         } footer: {
             if !model.canFocusBracket {
                 Text("Focus bracketing needs a lens whose focus can be set. This lens’s focus can’t.", bundle: .module, comment: "Under the Type control in Bracket Settings, on a lens whose focus can't be set by the app.")
@@ -528,7 +533,17 @@ struct BracketSheet: View {
 
     /// The Type control's label.
     private var typeLabel: Text {
-        Text(String(localized: "Bracket Settings: Type", defaultValue: "Type", bundle: .module, comment: "Control in Bracket Settings: the kind of bracket, exposure or focus."))
+        Text("Bracket Settings: Type", bundle: .module, comment: "Control in Bracket Settings: the kind of bracket, exposure or focus.")
+    }
+
+    /// A type's name as a localized text: "Exposure" or "Focus".
+    ///
+    /// - Parameter type: The type.
+    private func typeName(_ type: BracketType) -> Text {
+        switch type {
+        case .exposure: Text("Bracket type: Exposure", bundle: .module, comment: "Choice of the Type control in Bracket Settings, and of the Take Bracket action: frames at different exposures.")
+        case .focus: Text("Bracket type: Focus", bundle: .module, comment: "Choice of the Type control in Bracket Settings, and of the Take Bracket action: frames at different focus positions.")
+        }
     }
 
     /// The Type control's choices.
@@ -640,6 +655,46 @@ struct BracketSheet: View {
     private func setStartDelay(_ delay: SelfTimerDelay?) {
         let model = model
         Task { await model.send(.drive(.setMode(delay.map(DriveMode.timer) ?? .single))) }
+    }
+}
+
+/// The two types as a list, at accessibility sizes: choosing one returns to Bracket Settings.
+struct BracketTypeList: View {
+    /// The chosen type.
+    let selection: Binding<BracketType>
+
+    /// Returns to Bracket Settings.
+    @Environment(\.dismiss) private var dismiss
+
+    /// Creates the list.
+    ///
+    /// - Parameter selection: The chosen type.
+    init(selection: Binding<BracketType>) {
+        self.selection = selection
+    }
+
+    /// The list.
+    var body: some View {
+        Form {
+            ForEach(BracketType.allCases, id: \.self) { type in
+                Button {
+                    selection.wrappedValue = type
+                    dismiss()
+                } label: {
+                    HStack {
+                        Text(verbatim: FocusBracketText.name(type))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if selection.wrappedValue == type {
+                            Image(systemName: "checkmark")
+                                .accessibilityHidden(true)
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+                .accessibilityAddTraits(selection.wrappedValue == type ? .isSelected : [])
+            }
+        }
+        .navigationTitle(Text(String(localized: "Bracket Settings: Type", defaultValue: "Type", bundle: .module, comment: "Control in Bracket Settings: the kind of bracket, exposure or focus.")))
     }
 }
 
