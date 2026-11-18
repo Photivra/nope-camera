@@ -227,7 +227,8 @@ struct DriveStrip: View {
                 ForEach(words) { word in control(for: word, padding: NopeSpace.xs) }
             }
         case .rows:
-            VStack(spacing: NopeSpace.xs) {
+            // 12 points apart, as every row of the scrolling layout (docs/design/screens/ax-camera).
+            VStack(spacing: NopeSpace.s) {
                 ForEach(words) { word in control(for: word, padding: NopeSpace.s) }
             }
         }

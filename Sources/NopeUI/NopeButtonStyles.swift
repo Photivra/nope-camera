@@ -283,6 +283,9 @@ struct NopeCapsuleStyle: ButtonStyle {
     /// What the button is filled with when it isn't selected.
     let idleFill: NopeIdleFill
 
+    /// The space on each side of the label set by the caller, or `nil` for the style's own.
+    let labelPadding: CGFloat?
+
     /// Whether night mode is on.
     @Environment(\.isNightMode) private var isNightMode
 
@@ -302,20 +305,24 @@ struct NopeCapsuleStyle: ButtonStyle {
     ///   - idleFill: What the button is filled with when not selected: ``NopeIdleFill/control`` on
     ///     the black rows, ``NopeIdleFill/tile`` in panels and dials, ``NopeIdleFill/none`` for
     ///     drive words.
+    ///   - labelPadding: The space on each side of the label, in points, or `nil` for
+    ///     ``NopeSpace/m`` (``NopeSpace/s`` when compact). A lens uses ``NopeSpace/xxs``
+    ///     (docs/design/screens/camera-auto: 4 points each side, at least 40 wide).
     init(
         isSelected: Bool = false, role: ButtonRole? = nil, size: CGFloat = NopeSize.capsule,
-        isCompact: Bool = false, idleFill: NopeIdleFill = .control
+        isCompact: Bool = false, idleFill: NopeIdleFill = .control, labelPadding: CGFloat? = nil
     ) {
         self.isSelected = isSelected
         self.role = role
         self.size = size
         self.isCompact = isCompact
         self.idleFill = idleFill
+        self.labelPadding = labelPadding
     }
 
     /// The space on each side of the label, in points.
     var horizontalPadding: CGFloat {
-        isCompact ? NopeSpace.s : NopeSpace.m
+        labelPadding ?? (isCompact ? NopeSpace.s : NopeSpace.m)
     }
 
     /// The styled button.

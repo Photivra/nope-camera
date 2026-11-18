@@ -24,6 +24,10 @@
 4 3 NopeAppUITests/testCameraShellOnTheSmallestScreen 24e 26e
 2 1 NopeAppUITests/testCameraShellRightToLeft 48e 39e
 4 2 NopeAppUITests/testCameraShellSideways 50e 50e
+1 1 NopeAppUITests/testCameraSpacingAtTheLargestTextSize 34e 30e
+2 2 NopeAppUITests/testCameraSpacingOnIPad 2e 110e
+4 3 NopeAppUITests/testCameraSpacingPortrait 70e 1e
+3 3 NopeAppUITests/testCameraSpacingSideways 64e 1e
 4 3 NopeAppUITests/testCaptureFailureIsExplained 24 25
 4 2 NopeAppUITests/testChooseDetailsTextGrowsAtEveryTextSize 300e 320e
 4 1 NopeAppUITests/testCleanViewHidesControlsButKeepsTheShutter 34 50

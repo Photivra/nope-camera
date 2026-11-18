@@ -87,6 +87,31 @@ enum CameraLayout: Equatable {
         space.height < pictureHeight(forWidth: space.width) + bandsHeight
     }
 
+    /// How far the lens row and drive strip reach up over the picture when they overlay it, in
+    /// points; zero when they are below it. The picture is as wide as the space, or shorter
+    /// when the space is too short for the whole picture, and the rows sit at the space's
+    /// bottom.
+    ///
+    /// - Parameters:
+    ///   - space: The space between the status line and the shutter row.
+    ///   - bandsHeight: The height of the lens row and drive strip together.
+    /// - Returns: The height of the picture under the rows, in points.
+    static func rowsOverPicture(in space: CGSize, bandsHeight: CGFloat) -> CGFloat {
+        guard bandsOverlayPicture(in: space, bandsHeight: bandsHeight) else { return 0 }
+        let picture = min(pictureHeight(forWidth: space.width), space.height)
+        return max(picture - (space.height - bandsHeight), 0)
+    }
+
+    /// The space above and below the lens row's controls, in points: half of what the 56-point
+    /// row (``NopeSize/lensRow``) leaves around a 44-point control (``NopeSize/minTarget``), so
+    /// 6 points between the picture's lower edge and the lens row, and between the lens row and
+    /// the drive strip, as in the design (docs/design/screens/camera-auto: picture to 639, lens
+    /// group 645 to 689, strip from 695). The row grows rather than lose this gap when its
+    /// controls are taller, as with larger text.
+    static var lensRowInset: CGFloat {
+        (NopeSize.lensRow - NopeSize.minTarget) / 2
+    }
+
     /// The height of the whole portrait 4:3 picture at a width.
     ///
     /// - Parameter width: The picture's width, in points.

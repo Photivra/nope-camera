@@ -136,6 +136,23 @@ struct CameraLayoutTests {
         #expect(CameraLayout.bandsOverlayPicture(in: small, bandsHeight: 44))
     }
 
+    @Test func rowsOverThePictureOnlyWhereTheyOverlayIt() {
+        // iPhone 16 Pro Max: 440 × 860 pt inside the safe area; the rows fit below the picture.
+        let large = CGSize(width: 440, height: 860 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
+        #expect(CameraLayout.rowsOverPicture(in: large, bandsHeight: 100) == 0)
+        // 4.7-inch iPhone: 375 × 647 pt; the 500-point picture and 100 points of rows share 515.
+        let small = CGSize(width: 375, height: 647 - CameraLayout.topBarHeight - CameraLayout.shutterRowHeight)
+        #expect(CameraLayout.rowsOverPicture(in: small, bandsHeight: 100) == 85)
+        // A space shorter than the picture: the picture fills it, and the rows cover their height.
+        #expect(CameraLayout.rowsOverPicture(in: CGSize(width: 375, height: 300), bandsHeight: 100) == 100)
+    }
+
+    @Test func lensRowKeepsTheDesignGapAroundItsControls() {
+        // docs/design/screens/camera-auto: a 56-point row around 44-point controls.
+        #expect(CameraLayout.lensRowInset == 6)
+        #expect(CameraLayout.lensRowInset * 2 + NopeSize.minTarget == NopeSize.lensRow)
+    }
+
     @Test func pictureFollowsTheWindowShape() {
         #expect(CameraLayout.pictureHeight(forWidth: 300) == 400)
         #expect(CameraLayout.pictureAspectRatio(in: CGSize(width: 300, height: 600)) == 0.75)
