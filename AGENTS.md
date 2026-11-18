@@ -116,7 +116,9 @@ files track the user. The full design is in issue #1.
   - Measure energy with Instruments on real devices before each release. No telemetry.
 - **Siri and Shortcuts.** Every user action is exposed as an App Intent, with App Shortcuts
   phrases localized in every language that ships. Intents call `NopeCore` like any other interface,
-  and hold no business rules of their own.
+  and hold no business rules of their own. Every Siri and Shortcuts action goes through the
+  Assistant Access check (`AssistantAccess`, issue #82); no action reads photos or changes a
+  Privacy setting.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
 ## Accessibility
@@ -237,9 +239,9 @@ files, data, specifications, documentation and tools.
 
 ## Localization
 
-Version 1.0.0 ships in English (`en`, the development language) only (issue #86). Other
-languages come back in later releases; their earlier draft translations are in the git history.
-The app stays ready for them:
+Version 1.0.0 ships in English (`en`, the development language) and Spanish (`es`, with `es-419`
+overrides where Latin American wording differs; issues #86, #87). Other languages come in later
+releases; their earlier draft translations are in the git history. The app stays ready for them:
 - **Every user-facing string** goes in a String Catalog (`Localizable.xcstrings`), with a comment
   that gives translators context. This includes accessibility labels, alerts, permission prompts
   (`InfoPlist.xcstrings`) and the lock-screen and Control Center controls. No hard-coded

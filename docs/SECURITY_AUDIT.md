@@ -164,10 +164,19 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
     `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` (the location switch ships in 0.2.0). No `NSPhotoLibraryUsageDescription` (full library access), no
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
-  - Each string is accurate, says "nope.", and is present in every language that ships (English only in 1.0.0).
+  - Each string is accurate, says "nope.", and is present in every language that ships (English
+    and Spanish, `es` and `es-419`, in 1.0.0; issues #86 and #87).
+  - The items added to 1.0.0 on 2026-11-18 add no usage string: App Intents (#82) need no Siri
+    usage string or entitlement (only SiriKit's `INPreferences.requestSiriAuthorization` does,
+    and the app doesn't call it), and keeping the screen on (#97,
+    `UIApplication.isIdleTimerDisabled`) needs none. Recheck on the build that includes them.
   - No `UIBackgroundModes`, `CFBundleURLTypes` (URL schemes), `CFBundleDocumentTypes`,
     `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`, `NSAppTransportSecurity`
     exceptions, or `NSBonjourServices`.
+  - Issue #82 proposes `nope://` links. They would add `CFBundleURLTypes`, which this check,
+    check 17 and AGENTS.md ("Prevention first") don't allow today. They are built only after the
+    maintainer decides and these rules are updated in the same pull request; otherwise #82 ships
+    without them.
   - `ITSAppUsesNonExemptEncryption` is `NO` (set in the generated Info.plist since
     2026-11-12). Export compliance answer: **No** non-exempt
     encryption (maintainer's decision, 2026-11-12): the app uses the operating system's
@@ -206,6 +215,13 @@ code calls `ProcessInfo.systemUptime` to throttle exposure readings
 | `NSPrivacyAccessedAPICategoryFileTimestamp` | Only if code reads creation or modification dates (for example to clean up temp files) | `C617.1`: timestamps of files in the app container |
 | `NSPrivacyAccessedAPICategorySystemBootTime` | `ProcessInfo.systemUptime` for the exposure readings throttle (declared); any idle timer that uses it or `mach_absolute_time()` | `35F9.1`: measure elapsed time inside the app |
 | `NSPrivacyAccessedAPICategoryActiveKeyboards` | None expected | Not declared |
+
+Items added to 1.0.0 on 2026-11-18 (none built yet): #82 (App Intents, the Assistant Access
+setting and its TipKit tip) is expected to use `UserDefaults` only, already declared with
+`CA92.1` and `1C8F.1` if the setting is shared with the controls extension; #97 (keep the
+screen on) uses the idle timer, which isn't a required-reason API; #87, #88, #90 and #95 add no
+listed API. Rerun the search below on the build that includes them, in the app and each
+extension.
 
 - **Run:**
   - Search Release code for the APIs Apple lists in each category, for example
@@ -371,6 +387,10 @@ MASVS-STORAGE-2, MASVS-PRIVACY-2.
   other key is `NopePresets.saved` (issue #72): JSON of the saved presets, each with the name the
   person typed, a random identifier, the same setting values and the camera values listed in
   `docs/PRIVACY.md`, "Settings presets"; nothing else.
+  Issue #82 (not built yet) adds the Assistant Access and Ask First settings and a count of
+  confirmed assistant requests for its one-time tip (in TipKit's store or `UserDefaults`). That
+  count is the one allowed counter: a number only, kept on the device, removed by Factory
+  Defaults, with no dates or request contents. Issue #97 adds one Boolean.
 
 ### 13. Logging
 
@@ -430,7 +450,10 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds
   and the count to 1 to 50; `IntervalSettings` clamps an interval series; an unknown lens takes
   no photo and changes nothing), and the intents return only whether a photo was saved and
-  signed or what changed, never image data or metadata.
+  signed or what changed, never image data or metadata. Issue #82 (not built yet) adds intents
+  for every existing control: each checks Assistant Access inside `perform()`, its entry-point
+  test lists every intent, App Shortcut, control and link, and the results stay within this
+  rule (format, lens, RAW or processed, saved or not; no file, thumbnail or tag values).
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis
