@@ -31,7 +31,7 @@ struct AccessibilitySettingsView: View {
                 row(
                     systemImage: "timer",
                     Text(
-                        "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it. VoiceOver says each second of the countdown.", bundle: .module,
+                        "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.", bundle: .module,
                         comment: "Accessibility screen: the self-timer and burst. Timer and Burst are the words of the drive strip above the shutter; use their translations. A burst is a rapid run of separate photos. VoiceOver is Apple's screen reader; keep the name unchanged."))
             } header: {
                 Text("Self-Timer and Burst", bundle: .module, comment: "Accessibility screen section header: the self-timer and burst modes of the shutter.")

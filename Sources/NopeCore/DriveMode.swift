@@ -22,18 +22,69 @@ public enum DriveMode: Hashable, Sendable {
     public static let allCases: [DriveMode] = [.single, .timer(.threeSeconds), .timer(.tenSeconds), .burst, .interval]
 }
 
-/// How a hardware shutter button moved: the volume buttons or the Camera Control (issue #37).
+/// How a shutter moved: a hardware shutter button (the volume buttons or the Camera Control,
+/// issue #37), or the on-screen shutter in burst mode (docs/design/BURST.md, 3.1).
 ///
-/// The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`).
-public enum HardwareButtonPhase: Equatable, Sendable {
-    /// The button went down.
+/// The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`);
+/// an interface maps the on-screen shutter's touch to them.
+public enum ShutterPhase: Equatable, Sendable {
+    /// The shutter went down.
     case pressed
 
-    /// The button came up.
+    /// The shutter came up.
     case released
 
-    /// The system cancelled the press.
+    /// The system cancelled the press, or the finger slid off the on-screen shutter.
     case cancelled
+}
+
+/// The earlier name of ``ShutterPhase``, from when only the hardware buttons reported phases.
+@available(*, deprecated, renamed: "ShutterPhase")
+public typealias HardwareButtonPhase = ShutterPhase
+
+/// How fast a burst takes its photos (docs/design/BURST.md, 3.2). The speed is held for the
+/// session and not stored: each launch starts at ``fast``.
+public enum BurstSpeed: CaseIterable, Hashable, Sendable {
+    /// Each photo is requested as soon as the camera is ready for it. No rate is promised: the
+    /// rate is the camera's and the saving's.
+    case fast
+
+    /// The same, with at least ``minimumFrameInterval`` between the starts of two photos: at
+    /// most ``maximumPhotosPerSecond`` a second, and fewer when the camera needs longer.
+    case slow
+
+    /// The least time between the starts of two photos, or `nil` for none.
+    public var minimumFrameInterval: Duration? {
+        switch self {
+        case .fast: nil
+        case .slow: .milliseconds(500)
+        }
+    }
+
+    /// The most photos a second this speed takes, or `nil` when only the camera limits it. Slow
+    /// is worded "up to" this figure: it can take fewer.
+    public var maximumPhotosPerSecond: Int? {
+        switch self {
+        case .fast: nil
+        case .slow: 2
+        }
+    }
+}
+
+/// Who began a burst, so an interface knows how it ends: "Release to stop" for a held shutter,
+/// Stop Burst for the others (docs/design/BURST.md, 4.1).
+public enum BurstStart: Hashable, Sendable {
+    /// A shutter held down: the on-screen shutter or a hardware button. It ends when the
+    /// shutter comes up.
+    case held
+
+    /// Start Burst, which needs no holding (``DriveIntent/startBurst``). It ends with the
+    /// shutter, Stop Burst or a limit.
+    case started
+
+    /// A set number of photos: a Siri or Shortcuts request (issue #62), or one photo for a press
+    /// of the shutter that reports no phases (``CameraIntent/capture``). Always at ``BurstSpeed/fast``.
+    case counted
 }
 
 /// A request about the drive mode, the self-timer or a burst, sent as ``CameraIntent/drive(_:)``.
@@ -57,10 +108,26 @@ public enum DriveIntent: Equatable, Sendable {
     /// A hardware shutter button moved. In burst mode, holding it takes a burst until it comes
     /// up; in the other modes, it acts like the on-screen shutter when it comes up, as the
     /// system Camera app does.
-    case hardwareButton(HardwareButtonPhase)
+    case hardwareButton(ShutterPhase)
+
+    /// The on-screen shutter moved, in burst mode: touching down takes the first photo at once
+    /// and starts a burst, which ends when the shutter comes up, the finger slides off or the
+    /// touch is cancelled (docs/design/BURST.md, 3.1). Ignored in the other modes, where the
+    /// shutter sends ``CameraIntent/capture`` when it comes up.
+    case shutter(ShutterPhase)
+
+    /// Start a burst that needs no holding, in burst mode: it ends with the shutter, Stop Burst
+    /// or a limit. Ignored outside burst mode, with the astro helper on, while a photo can't be
+    /// taken, and while a countdown or burst runs.
+    case startBurst
+
+    /// Choose the burst speed for this session. Ignored while a countdown or burst runs.
+    ///
+    /// - Parameter speed: The speed.
+    case setBurstSpeed(BurstSpeed)
 }
 
-/// The progress of a running burst.
+/// The progress of a running burst, or of an astro run.
 public struct BurstProgress: Equatable, Sendable {
     /// The frames taken so far.
     public let taken: Int
@@ -68,14 +135,31 @@ public struct BurstProgress: Equatable, Sendable {
     /// The frames saved so far. Saving follows taking, so it can be one behind.
     public let saved: Int
 
+    /// Who began the burst. An astro run reports ``BurstStart/started``.
+    public let start: BurstStart
+
+    /// The photos a second over the most recent photos of this burst (``DriveModel/rateWindow``),
+    /// measured from their times, or `nil` before the third photo (docs/design/BURST.md, 3.3).
+    public let rate: Double?
+
+    /// Whether no more photos will be taken and the last ones are being saved. A new burst
+    /// can't start until they are.
+    public let isSaving: Bool
+
     /// Creates a progress value.
     ///
     /// - Parameters:
     ///   - taken: The frames taken so far.
     ///   - saved: The frames saved so far.
-    public init(taken: Int, saved: Int) {
+    ///   - start: Who began the burst.
+    ///   - rate: The measured photos a second, or `nil`.
+    ///   - isSaving: Whether only saving is left.
+    public init(taken: Int, saved: Int, start: BurstStart = .started, rate: Double? = nil, isSaving: Bool = false) {
         self.taken = taken
         self.saved = saved
+        self.start = start
+        self.rate = rate
+        self.isSaving = isSaving
     }
 }
 
@@ -106,7 +190,7 @@ public enum BurstEnd: Equatable, Sendable {
     case failed
 }
 
-/// How the last burst went: why it ended and how many frames were saved.
+/// How the last burst went: why it ended, how many frames were saved, and how fast it ran.
 public struct BurstResult: Equatable, Sendable {
     /// Why it ended.
     public let end: BurstEnd
@@ -114,14 +198,45 @@ public struct BurstResult: Equatable, Sendable {
     /// The frames saved, each its own photo.
     public let saved: Int
 
+    /// The frames taken. Every frame taken is saved unless one failed.
+    public let taken: Int
+
+    /// Who began the burst. An astro run reports ``BurstStart/started``.
+    public let start: BurstStart
+
+    /// The time from the first photo to the last; zero for fewer than two photos.
+    public let duration: Duration
+
+    /// The photos a second over the whole burst: the photos taken less one, divided by
+    /// ``duration``; `nil` under three photos (docs/design/BURST.md, 3.3).
+    public let rate: Double?
+
     /// Creates a result.
     ///
     /// - Parameters:
     ///   - end: Why it ended.
     ///   - saved: The frames saved.
-    public init(end: BurstEnd, saved: Int) {
+    ///   - taken: The frames taken; `saved` when not given.
+    ///   - start: Who began the burst.
+    ///   - duration: The time from the first photo to the last, in the clock's units.
+    ///   - rate: The photos a second, or `nil`.
+    public init(
+        end: BurstEnd, saved: Int, taken: Int? = nil, start: BurstStart = .started, duration: Duration = .zero,
+        rate: Double? = nil
+    ) {
         self.end = end
         self.saved = saved
+        self.taken = taken ?? saved
+        self.start = start
+        self.duration = duration
+        self.rate = rate
+    }
+
+    /// Whether an interface shows a summary of this burst ("12 photos saved", the time and the
+    /// rate) until the next action: a burst of two photos or more that the person ended, not a
+    /// Siri or Shortcuts count and not a failure. A burst of one photo is a photo.
+    public var hasSummary: Bool {
+        end == .stopped && start != .counted && saved >= 2
     }
 }
 
@@ -151,14 +266,74 @@ public final class DriveModel {
     /// How the last burst ended, or `nil` before the first one. Cleared when the next starts.
     public private(set) var lastBurst: BurstResult?
 
-    /// Whether the person asked the running burst to stop.
-    private(set) var isBurstStopRequested = false
+    /// The burst speed chosen for this session: ``BurstSpeed/fast`` at launch, and never stored
+    /// (docs/design/BURST.md, decision 13). ``CameraModel/burstSpeed`` is the speed a burst on
+    /// the selected lens uses.
+    public private(set) var burstSpeed = BurstSpeed.fast
 
-    /// Creates the model in single mode.
+    /// The photos a second measured at Fast in this session's bursts, by lens: the last whole
+    /// burst of three photos or more on each. Not stored. It decides whether Slow is offered
+    /// (``offersSlowBurst(on:)``).
+    private(set) var measuredFastRates: [Lens.ID: Double] = [:]
+
+    /// Whether the person asked the running burst to stop.
+    private var isStopRequestedByPerson = false
+
+    /// Whether a shutter that starts a held burst is down now: the on-screen shutter in burst
+    /// mode or a hardware button. A held burst stops after its first photo once it is up, also
+    /// when it came up before the burst began.
+    private(set) var isShutterHeld = false
+
+    /// Who began the burst that is about to start or runs.
+    private var start = BurstStart.counted
+
+    /// The time of the first photo of the running burst.
+    private var firstPhotoTime: ContinuousClock.Instant?
+
+    /// The times of the most recent photos of the running burst, up to ``rateWindow`` of them,
+    /// oldest first.
+    private var recentPhotoTimes: [ContinuousClock.Instant] = []
+
+    /// Waits a number of seconds: between countdown ticks, and between the photos of a Slow
+    /// burst.
+    let sleep: @Sendable (Double) async throws -> Void
+
+    /// Reads the monotonic clock, to time a burst's photos for its rate.
+    let now: @Sendable () -> ContinuousClock.Instant
+
+    /// How many of the most recent photos the running rate is measured over (docs/design/BURST.md,
+    /// 3.3): enough to smooth one slow save, few enough to follow a change.
+    nonisolated public static let rateWindow = 5
+
+    /// The fewest photos a rate is shown for: with two, one gap would be shown as a rate.
+    nonisolated public static let minimumPhotosForRate = 3
+
+    /// The rate at Fast, in photos a second, below which Slow isn't offered on a lens: about 3 a
+    /// second (owner decision 3, docs/design/BURST.md, 2026-11-18). Below it, Slow at up to 2 a
+    /// second would barely differ from Fast. Measured in this session; no figure is assumed for
+    /// a device.
+    nonisolated public static let slowBurstMinimumFastRate = 3.0
+
+    /// Creates the model in single mode, at the Fast burst speed.
     ///
-    /// - Parameter sleep: Waits a number of seconds between countdown ticks.
-    init(sleep: @escaping @Sendable (Double) async throws -> Void) {
+    /// - Parameters:
+    ///   - sleep: Waits a number of seconds between countdown ticks and between Slow photos.
+    ///   - now: Reads the clock that times a burst's photos.
+    init(
+        sleep: @escaping @Sendable (Double) async throws -> Void,
+        now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }
+    ) {
         countdown = Countdown(sleep: sleep)
+        self.sleep = sleep
+        self.now = now
+    }
+
+    /// Whether the running burst should stop before its next photo: the person asked, or the
+    /// shutter that holds it came up after its first photo.
+    var isBurstStopRequested: Bool {
+        guard let progress = burstProgress else { return false }
+        if isStopRequestedByPerson { return true }
+        return start == .held && !isShutterHeld && progress.taken >= 1
     }
 
     /// Whether a countdown or a burst runs, so the shutter stops it instead of taking a photo.
@@ -174,35 +349,114 @@ public final class DriveModel {
         self.mode = mode
     }
 
+    /// Chooses the burst speed for the session, unless a countdown or burst runs.
+    ///
+    /// - Parameter speed: The speed.
+    func setBurstSpeed(_ speed: BurstSpeed) {
+        guard !isBusy else { return }
+        burstSpeed = speed
+    }
+
+    /// Whether Slow is offered on a lens: unless a burst at Fast on it measured under
+    /// ``slowBurstMinimumFastRate`` in this session.
+    ///
+    /// - Parameter lensID: The lens, or `nil` before the camera is ready.
+    /// - Returns: `false` only when Fast on that lens is known to be slower than the threshold.
+    public func offersSlowBurst(on lensID: Lens.ID?) -> Bool {
+        guard let lensID, let rate = measuredFastRates[lensID] else { return true }
+        return rate >= Self.slowBurstMinimumFastRate
+    }
+
+    /// Keeps the rate a burst at Fast measured on a lens, for ``offersSlowBurst(on:)``.
+    ///
+    /// - Parameters:
+    ///   - rate: The whole burst's photos a second.
+    ///   - lensID: The lens it was taken with.
+    func recordFastRate(_ rate: Double, on lensID: Lens.ID) {
+        measuredFastRates[lensID] = rate
+    }
+
+    /// Records that a shutter that starts a held burst went down or came up.
+    ///
+    /// - Parameter isHeld: Whether it is down.
+    func setShutterHeld(_ isHeld: Bool) {
+        isShutterHeld = isHeld
+    }
+
+    /// Sets who begins the next burst; ``beginBurst()`` uses it.
+    ///
+    /// - Parameter start: Who begins it.
+    func prepareBurst(start: BurstStart) {
+        self.start = start
+    }
+
     /// Marks a burst as started.
     func beginBurst() {
-        isBurstStopRequested = false
+        isStopRequestedByPerson = false
         lastBurst = nil
-        burstProgress = BurstProgress(taken: 0, saved: 0)
+        firstPhotoTime = nil
+        recentPhotoTimes = []
+        burstProgress = BurstProgress(taken: 0, saved: 0, start: start)
     }
 
     /// Asks the running burst to stop after the frame being taken.
     func requestBurstStop() {
         guard burstProgress != nil else { return }
-        isBurstStopRequested = true
+        isStopRequestedByPerson = true
     }
 
-    /// Counts a frame taken.
+    /// Counts a frame taken, at the clock's time now, and updates the running rate.
     func recordTaken() {
-        burstProgress = burstProgress.map { BurstProgress(taken: $0.taken + 1, saved: $0.saved) }
+        guard let progress = burstProgress else { return }
+        let time = now()
+        if firstPhotoTime == nil { firstPhotoTime = time }
+        recentPhotoTimes.append(time)
+        if recentPhotoTimes.count > Self.rateWindow { recentPhotoTimes.removeFirst() }
+        burstProgress = BurstProgress(
+            taken: progress.taken + 1, saved: progress.saved, start: progress.start,
+            rate: Self.rate(photos: recentPhotoTimes.count, first: recentPhotoTimes.first, last: recentPhotoTimes.last))
     }
 
     /// Counts a frame saved.
     func recordSaved() {
-        burstProgress = burstProgress.map { BurstProgress(taken: $0.taken, saved: $0.saved + 1) }
+        burstProgress = burstProgress.map {
+            BurstProgress(taken: $0.taken, saved: $0.saved + 1, start: $0.start, rate: $0.rate, isSaving: $0.isSaving)
+        }
+    }
+
+    /// Marks the burst as taking no more photos: only the last ones are being saved.
+    func beginSaving() {
+        burstProgress = burstProgress.map {
+            BurstProgress(taken: $0.taken, saved: $0.saved, start: $0.start, rate: $0.rate, isSaving: true)
+        }
     }
 
     /// Marks the burst as ended.
     ///
     /// - Parameter end: Why it ended.
     func endBurst(_ end: BurstEnd) {
-        lastBurst = BurstResult(end: end, saved: burstProgress?.saved ?? 0)
+        let taken = burstProgress?.taken ?? 0
+        let last = recentPhotoTimes.last
+        let duration = firstPhotoTime.flatMap { first in last.map { $0 - first } } ?? .zero
+        lastBurst = BurstResult(
+            end: end, saved: burstProgress?.saved ?? 0, taken: taken, start: burstProgress?.start ?? start,
+            duration: duration, rate: Self.rate(photos: taken, first: firstPhotoTime, last: last))
         burstProgress = nil
-        isBurstStopRequested = false
+        isStopRequestedByPerson = false
+    }
+
+    /// Photos a second: the photos less one over the time from the first to the last, or `nil`
+    /// under ``minimumPhotosForRate`` photos or without time between them.
+    ///
+    /// - Parameters:
+    ///   - photos: The photos counted.
+    ///   - first: The first one's time.
+    ///   - last: The last one's time.
+    /// - Returns: The rate, or `nil`.
+    static func rate(photos: Int, first: ContinuousClock.Instant?, last: ContinuousClock.Instant?) -> Double? {
+        guard photos >= minimumPhotosForRate, let first, let last else { return nil }
+        let seconds = (last - first) / .seconds(1)
+        guard seconds > 0 else { return nil }
+        return Double(photos - 1) / seconds
     }
 }

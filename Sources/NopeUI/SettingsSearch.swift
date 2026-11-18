@@ -736,7 +736,8 @@ struct CameraPointer: Identifiable, Equatable {
             CameraPointer(
                 id: "burst",
                 title: LocalizedStringResource("Burst", bundle: bundle, comment: "Drive menu option on the camera: holding the shutter takes a rapid run of separate photos."),
-                keywords: nil, place: .aboveShutter),
+                keywords: LocalizedStringResource("Search keywords: Burst", defaultValue: "continuous, speed", bundle: bundle, comment: "Settings search keywords for the camera's burst, separated by commas. Not shown on screen: holding the shutter takes photos continuously, at a speed chosen from the Burst word."),
+                place: .aboveShutter),
             CameraPointer(
                 id: "interval",
                 title: LocalizedStringResource("Interval Shooting", bundle: bundle, comment: "Section title: a series of photos taken at a fixed interval."),

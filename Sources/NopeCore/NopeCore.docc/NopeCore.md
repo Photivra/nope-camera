@@ -135,7 +135,10 @@ Related documentation in the repository:
 - ``DriveModel``
 - ``DriveMode``
 - ``DriveIntent``
+- ``ShutterPhase``
 - ``HardwareButtonPhase``
+- ``BurstSpeed``
+- ``BurstStart``
 - ``SelfTimerDelay``
 - ``Countdown``
 - ``BurstProgress``

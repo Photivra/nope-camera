@@ -146,7 +146,8 @@ Files: new `DriveStrip.swift`; `DriveControls.swift` (`DriveProgressView`, `Coun
 `DriveStrip`:
 - Five words: Single, Timer, Burst, Interval, Astro. `NopeCapsuleStyle(isSelected:)` at `NopeSize.driveWord`, target 44 pt, `NopeFont.status`. Exactly one is selected.
 - Mapping to existing intents: Single → `DriveMode.single`; Timer → `.timer(delay)`, where `delay` is the last delay chosen in this session, 3 seconds at first; Burst → `.burst`; Interval → `.interval`; Astro → the existing Astro on intent. Choosing any other word while Astro is on turns Astro off first, then sets the mode. Astro is offered only where `canUseAstro` is true or Astro is on; otherwise the strip has four words.
-- Tapping the selected word: Timer opens a `Menu` (3 seconds, 10 seconds); Interval opens `IntervalSheet`; Astro opens `AstroSheet`; Single and Burst do nothing.
+- Tapping the selected word: Timer opens a `Menu` (3 seconds, 10 seconds); Burst opens a `Menu` of speeds (Fast, Slow); Interval opens `IntervalSheet`; Astro opens `AstroSheet`; Single does nothing.
+- Burst: the shutter, the cards, the speed and the accessibility rules are specified in [BURST.md](BURST.md) (accepted 2026-11-18), which replaces the Burst parts of this section.
 - Choosing Interval no longer opens the sheet by itself; the card shows the series and the shutter starts it.
 - Fit: `ViewThatFits` with word padding `NopeSpace.s`, then `NopeSpace.xs`, then a horizontal `ScrollView` that keeps the selected word visible. At the default text size all eleven languages fit at `NopeSpace.xs` (figure `drive-strip-languages`).
 - While the drive is busy the other words are disabled at 0.4 opacity.
@@ -160,7 +161,7 @@ Mode cards (one view, `ModeCard`, in `DriveControls.swift`, used by all modes; `
 | --- | --- | --- | --- |
 | Single | none | none | none |
 | Timer | none; the shutter shows "3" or "10" | Countdown number in the picture; "Photo in 3s" and Cancel Timer | none |
-| Burst | none | "Photos taken: 12" and Stop Burst | The end message as text until the next action |
+| Burst | "Fast burst", "Hold the shutter. A tap takes one photo." and Start Burst | "Photos taken: 12", the measured rate, and "Release to stop" or Stop Burst | "Saving: 9 of 12 photos saved", then the summary until the next action ([BURST.md](BURST.md)) |
 | Interval | "Every 10 seconds, 10 photos"; the whole card is the button Interval Settings | "3 of 10 photos taken", progress bar, Stop | "Paused: 3 of 10 photos taken", Stop |
 | Astro | "Astro frames: 20" and "After 10 seconds · 20 s in all · at most 486 MB"; the whole card is the button Astro Settings | Countdown, then "Frame 7 of 20", progress bar, Stop Frames | "Paused: 7 of 20 frames", Stop Frames |
 
@@ -642,6 +643,8 @@ Still needing the owner:
 5. The spacing scale (4, 8, 12, 16, 24, 32, 48), the radius scale (12, 24, capsule) and the seven button types.
 6. Q with thirteen tiles has five rows and covers about 57% of the picture while it is open on a 402 × 874 pt screen (45% with four rows). Accept, or say which tile should give way.
 7. Section 6, item 14: the Settings popover when Night Mode is turned on inside it.
+
+Made on 2026-11-18: Burst as continuous shooting, all thirteen recommendations of [BURST.md](BURST.md) section 7. A tap takes one photo and holding the shutter takes photos until release; Start Burst for a burst without holding; Fast and Slow (up to 2 a second) for the session, with Slow hidden where Fast measures under about 3 a second; no deeper saving buffer until measured; at most 50 photos; the rate shown is measured from the burst; focus and exposure follow what is set; the count, a light tap and the system sound for each photo, no blink; no new burst while the last is saving; Apple Watch, Siri and Shortcuts, Interval and Astro unchanged; the speed is not remembered.
 
 Made on 2026-11-18: a tap on Last Photo shows the photo full screen inside the app, with Open in Photos and Photo Details, for this session's photos (3.14).
 

@@ -121,8 +121,9 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
 ///
 /// - Choosing a word sets that mode; choosing another word while Astro is on turns Astro off
 ///   first. Choosing Interval only selects it: the shutter starts the series.
-/// - Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Interval and Astro
-///   open their settings; Single and Burst do nothing.
+/// - Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Burst a menu of
+///   its speeds, Fast and Slow (docs/design/BURST.md, 3.2), where the lens offers both;
+///   Interval and Astro open their settings; Single does nothing.
 /// - While a countdown, burst, interval series or astro run is going, the other words are
 ///   disabled.
 /// - It never truncates a word: the words get less padding, then scroll sideways, keeping the
@@ -263,7 +264,8 @@ struct DriveStrip: View {
         }
     }
 
-    /// One word's control: a button, or for the selected Timer, the menu of delays.
+    /// One word's control: a button, or for the selected Timer, the menu of delays, and for the
+    /// selected Burst, the menu of speeds.
     ///
     /// - Parameters:
     ///   - word: The word.
@@ -284,6 +286,24 @@ struct DriveStrip: View {
                     label(for: word)
                 }
                 .accessibilityValue(Text(verbatim: DriveText.spokenSeconds(timerDelay.seconds)))
+            } else if word == .burst, isSelected, model.burstSpeeds.count > 1 {
+                Menu {
+                    Section {
+                        ForEach(model.burstSpeeds, id: \.self) { speed in
+                            // A toggle shows the check on the speed in use; a menu row's second
+                            // text is its subtitle.
+                            Toggle(isOn: Binding(get: { model.burstSpeed == speed }, set: { if $0 { chooseBurstSpeed(speed) } })) {
+                                BurstSpeedText.name(speed)
+                                BurstSpeedText.detail(speed)
+                            }
+                        }
+                    } header: {
+                        BurstSpeedText.menuTitle
+                    }
+                } label: {
+                    label(for: word)
+                }
+                .accessibilityValue(BurstSpeedText.name(model.burstSpeed))
             } else {
                 Button {
                     choose(word)
@@ -321,11 +341,16 @@ struct DriveStrip: View {
         }
     }
 
-    /// The value under a word in the scrolling layout: the delay under Timer, nothing otherwise.
+    /// The value under a word in the scrolling layout: the delay under Timer, the speed under
+    /// the selected Burst, nothing otherwise.
     ///
     /// - Parameter word: The word.
     private func rowValue(for word: DriveWord) -> Text? {
-        word == .timer ? Text(verbatim: DriveText.shortSeconds(timerDelay.seconds)) : nil
+        switch word {
+        case .timer: Text(verbatim: DriveText.shortSeconds(timerDelay.seconds))
+        case .burst where word == selected: BurstSpeedText.name(model.burstSpeed)
+        default: nil
+        }
     }
 
     /// Chooses a word: sets its mode, or for the selected word, opens what it opens.
@@ -353,6 +378,15 @@ struct DriveStrip: View {
             if model.astro.isOn { await model.setAstro(false, settings: settings) }
             if let mode = word.mode(timerDelay: delay) { await model.send(.drive(.setMode(mode))) }
         }
+    }
+
+    /// Chooses the burst speed from the Burst menu, for this session.
+    ///
+    /// - Parameter speed: The speed.
+    private func chooseBurstSpeed(_ speed: BurstSpeed) {
+        guard !isBusy else { return }
+        let model = model
+        Task { await model.send(.drive(.setBurstSpeed(speed))) }
     }
 
     /// Chooses the self-timer's delay from the Timer menu.
@@ -478,5 +512,39 @@ struct DriveModePill: View {
         .frame(minHeight: NopeSize.pill)
         .nopeBackground(.backing, in: Capsule())
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// The words for the burst speeds in the Burst menu (docs/design/BURST.md, 6). No rate is
+/// promised: Fast is "as fast as the camera is ready", and Slow is "up to" its figure.
+@MainActor
+enum BurstSpeedText {
+    /// The menu's title, "Burst Speed".
+    static var menuTitle: Text {
+        Text("Burst Speed", bundle: .module, comment: "Title of the menu of the selected Burst word on the camera: how fast a burst takes its photos.")
+    }
+
+    /// The speed's name: "Fast" or "Slow".
+    ///
+    /// - Parameter speed: The speed.
+    static func name(_ speed: BurstSpeed) -> Text {
+        switch speed {
+        case .fast:
+            Text(String(localized: "Burst speed: Fast", defaultValue: "Fast", bundle: .module, comment: "Burst speed in the menu of the selected Burst word: photos are taken as fast as the camera is ready."))
+        case .slow:
+            Text(String(localized: "Burst speed: Slow", defaultValue: "Slow", bundle: .module, comment: "Burst speed in the menu of the selected Burst word: up to 2 photos a second."))
+        }
+    }
+
+    /// The line under the speed's name in the menu.
+    ///
+    /// - Parameter speed: The speed.
+    static func detail(_ speed: BurstSpeed) -> Text {
+        switch speed {
+        case .fast:
+            Text("As fast as the camera is ready", bundle: .module, comment: "Detail of the Fast burst speed in the Burst menu. It makes no claim about a rate.")
+        case .slow:
+            Text("Up to \(speed.maximumPhotosPerSecond ?? 2) photos a second", bundle: .module, comment: "Detail of the Slow burst speed in the Burst menu. The number is the most photos a second, 2; \"up to\": it can be fewer.")
+        }
     }
 }

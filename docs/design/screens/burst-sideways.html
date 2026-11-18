@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>nope. design: Burst, idle</title>
+<title>nope. design: Burst, iPhone sideways</title>
 <style>
 html{background:#101012}body{margin:0;color:#f2f2f7;font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}.stage{padding:24px;display:inline-block}.note{max-width:640px;padding:0 24px 32px;color:#aeaeb2;font-size:14px}.note b{color:#f2f2f7;display:block;font-size:17px;margin-bottom:4px}.note a{color:inherit}
 
@@ -182,42 +182,64 @@ html{background:#101012}body{margin:0;color:#f2f2f7;font:15px/1.45 -apple-system
 .watch .wb.dis{opacity:.4}.watch .wb.row{position:static;justify-content:space-between;min-height:48px;border-radius:14px}
 .watch .t{color:var(--fact)}.watch .w{color:var(--warn)}
 
+.sidewrap{position:relative;overflow:hidden;border-radius:56px;background:#000}
+.sidewrap>.dev.side{position:absolute;left:0;top:0;transform-origin:0 0;transform:translateY(402px) rotate(-90deg)}
+.side .u{transform:rotate(90deg)}
+.side .vf>svg.scene{inset:auto;left:50%;top:50%;width:536px;height:402px;margin:-201px 0 0 -268px;transform:rotate(90deg)}
+.land .ltop{position:absolute;top:8px;left:8px;right:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.land .lbot{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:400px;display:flex;flex-direction:column;gap:8px}
+
+.shutter.held::after{width:50px;height:50px}
+.bufrow{display:flex;align-items:center;gap:12px}
+.bufrow small{margin:0}
+.pips{display:flex;gap:3px;flex:none}
+.pips i{display:block;width:14px;height:10px;border-radius:3px;border:1.5px solid #fff}
+.pips i.on{background:#fff}
+.night .pips i{border-color:#f00}.night .pips i.on{background:#f00}
+.menu div.two{height:60px}
+.menu .two>span.tx{display:flex;flex-direction:column;gap:1px}
+.menu .two small{font-size:13px;color:var(--sec)}
+.night .menu .two small{color:#f00}
+.voring{position:absolute;border:3px solid #fff;border-radius:16px;box-shadow:0 0 0 2px #000;z-index:14}
+.vocap{position:absolute;z-index:14;border-radius:12px;background:rgba(0,0,0,.92);border:1px solid rgba(255,255,255,.3);padding:12px 16px;font-size:15px;font-weight:500;line-height:1.35}
+.vocap small{display:block;font-size:13px;color:var(--sec);margin-top:4px}
+
 </style>
 </head>
 <body>
-<div class="stage"><div class="dev" style="width:402px;height:874px;border-radius:56px"><div class="island"></div><div class="row top" style="top:59px;height:44px"><div class="stat u"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.6 2.6 5-5.6"/></svg>RAW</div><div class="pills"></div></div><div class="vf" style="top:103px;left:0;width:402px;height:536px"><svg class="scene" viewBox="0 0 402 536" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
-<defs><linearGradient id="sku58" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
-<linearGradient id="lku58" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
-<radialGradient id="snu58" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
-<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku58)"/>
-<circle cx="292" cy="150" r="120" fill="url(#snu58)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
+<div class="stage"><div class="sidewrap" style="width:874px;height:402px"><div class="dev side" style="width:402px;height:874px;border-radius:56px"><div class="island"></div><div class="vf" style="top:103px;left:0;width:402px;height:536px"><svg class="scene" viewBox="-67 80 536 402" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
+<defs><linearGradient id="sku31" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
+<linearGradient id="lku31" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
+<radialGradient id="snu31" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
+<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku31)"/>
+<circle cx="292" cy="150" r="120" fill="url(#snu31)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
 <g fill="#fff" opacity=".45"><ellipse cx="90" cy="92" rx="80" ry="9"/><ellipse cx="150" cy="112" rx="60" ry="6"/><ellipse cx="350" cy="62" rx="70" ry="7"/></g>
 <path d="M-300 268H0L60 214l34 26 52-70 44 52 30-24 58 62 46-44 78 60h300v90H-300z" fill="#8296b4"/>
 <path d="M146 170l-16 24 14-6 8 12 10-10 12 10z" fill="#eef3f8" opacity=".9"/>
 <path d="M-300 300H0L44 262l50 30 62-52 70 58 54-36 60 44 62-30h300v110H-300z" fill="#566b86"/>
 <path d="M-300 322H0l70-20 60 14 90-22 80 20 102-16h300v40H-300z" fill="#2f4553"/>
-<rect x="-300" y="330" width="1002" height="506" fill="url(#lku58)"/>
+<rect x="-300" y="330" width="1002" height="506" fill="url(#lku31)"/>
 <g stroke="#fff" stroke-opacity=".35" stroke-width="1.2" stroke-linecap="round"><path d="M250 352h74M262 366h52M240 384h96M270 404h40M226 428h60"/></g>
 <path d="M-300 470H0c50-22 96-26 150-14 50 11 96 4 140-10 40-12 80-10 112 2h300v388H-300z" fill="#1d2b22"/>
 <g fill="#16221a"><path d="m40 470 14-64 14 64zM30 474l24-40 24 40z"/><path d="m86 478 11-50 11 50zM78 482l19-32 19 32z"/><path d="m346 462 13-58 13 58zM337 466l22-36 22 36z"/></g>
 <g fill="#5d6a66"><ellipse cx="206" cy="492" rx="34" ry="12"/><ellipse cx="250" cy="504" rx="22" ry="8"/></g>
-</svg></div><div class="row lensrow" style="top:639px;height:56px;"><div class="cap"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5h8M17 7.5h3M4 16.5h3M12 16.5h8"/><circle cx="14.5" cy="7.5" r="2.4"/><circle cx="9.5" cy="16.5" r="2.4"/></svg>Auto</div><div class="lenses"><span class=""><i class="u" style="font-style:normal">0.6×</i></span><span class="sel"><i class="u" style="font-style:normal">1×</i></span><span class=""><i class="u" style="font-style:normal">5×</i></span></div><div class="ib u"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 0 1 13.6-3.6M19.5 13a7.6 7.6 0 0 1-13.6 3.6M18.6 3.4v4.2h-4.2M5.4 20.6v-4.2h4.2"/></svg></div></div><div class="row strip" style="top:695px;height:44px;"><span class="">Single</span><span class="">Timer</span><span class="sel">Burst</span><span class="">Interval</span><span class="">Astro</span></div><div class="row shot" style="top:739px;height:101px"><div class="thumb u"><svg class="scene" viewBox="0 0 402 536" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
-<defs><linearGradient id="sku59" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
-<linearGradient id="lku59" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
-<radialGradient id="snu59" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
-<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku59)"/>
-<circle cx="292" cy="150" r="120" fill="url(#snu59)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
+</svg></div><div class="row lensrow" style="top:639px;height:56px;"><div class="ib u" style="font-weight:700;font-size:17px">A</div><div class="lenses"><span class=""><i class="u" style="font-style:normal">0.6×</i></span><span class="sel"><i class="u" style="font-style:normal">1×</i></span><span class=""><i class="u" style="font-style:normal">5×</i></span></div><div class="ib u"><svg class="ic " width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 11a7.6 7.6 0 0 1 13.6-3.6M19.5 13a7.6 7.6 0 0 1-13.6 3.6M18.6 3.4v4.2h-4.2M5.4 20.6v-4.2h4.2"/></svg></div></div><div class="row strip dis" style="top:695px;height:44px;"><span class="" style="padding:0;width:44px;justify-content:center"><i class="u"><svg class="ic " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="3"/></svg></i></span><span class="" style="padding:0;width:44px;justify-content:center"><i class="u"><svg class="ic " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.2 2"/></svg></i></span><span class="sel" style="padding:0;width:44px;justify-content:center"><i class="u"><svg class="ic " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="11" rx="2"/><path d="M4 15V7a2 2 0 0 1 2-2h9"/></svg></i></span><span class="" style="padding:0;width:44px;justify-content:center"><i class="u"><svg class="ic " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13.5" r="7"/><path d="M12 13.5V9.5M10 3.5h4"/></svg></i></span><span class="" style="padding:0;width:44px;justify-content:center"><i class="u"><svg class="ic " width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 1.9 7.1L21 12l-7.1 1.9L12 21l-1.9-7.1L3 12l7.1-1.9z"/></svg></i></span></div><div class="row shot" style="top:739px;height:101px"><div class="thumb u"><svg class="scene" viewBox="0 0 402 536" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Placeholder scene: a mountain lake in daylight">
+<defs><linearGradient id="sku32" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4f86bd"/><stop offset=".55" stop-color="#a9c9e2"/><stop offset="1" stop-color="#f1dcc0"/></linearGradient>
+<linearGradient id="lku32" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9d6dd"/><stop offset=".35" stop-color="#6f95b3"/><stop offset="1" stop-color="#274a66"/></linearGradient>
+<radialGradient id="snu32" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6dc" stop-opacity=".95"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient></defs>
+<rect x="-300" y="-300" width="1002" height="1136" fill="url(#sku32)"/>
+<circle cx="292" cy="150" r="120" fill="url(#snu32)"/><circle cx="292" cy="150" r="17" fill="#fffaf0"/>
 <g fill="#fff" opacity=".45"><ellipse cx="90" cy="92" rx="80" ry="9"/><ellipse cx="150" cy="112" rx="60" ry="6"/><ellipse cx="350" cy="62" rx="70" ry="7"/></g>
 <path d="M-300 268H0L60 214l34 26 52-70 44 52 30-24 58 62 46-44 78 60h300v90H-300z" fill="#8296b4"/>
 <path d="M146 170l-16 24 14-6 8 12 10-10 12 10z" fill="#eef3f8" opacity=".9"/>
 <path d="M-300 300H0L44 262l50 30 62-52 70 58 54-36 60 44 62-30h300v110H-300z" fill="#566b86"/>
 <path d="M-300 322H0l70-20 60 14 90-22 80 20 102-16h300v40H-300z" fill="#2f4553"/>
-<rect x="-300" y="330" width="1002" height="506" fill="url(#lku59)"/>
+<rect x="-300" y="330" width="1002" height="506" fill="url(#lku32)"/>
 <g stroke="#fff" stroke-opacity=".35" stroke-width="1.2" stroke-linecap="round"><path d="M250 352h74M262 366h52M240 384h96M270 404h40M226 428h60"/></g>
 <path d="M-300 470H0c50-22 96-26 150-14 50 11 96 4 140-10 40-12 80-10 112 2h300v388H-300z" fill="#1d2b22"/>
 <g fill="#16221a"><path d="m40 470 14-64 14 64zM30 474l24-40 24 40z"/><path d="m86 478 11-50 11 50zM78 482l19-32 19 32z"/><path d="m346 462 13-58 13 58zM337 466l22-36 22 36z"/></g>
 <g fill="#5d6a66"><ellipse cx="206" cy="492" rx="34" ry="12"/><ellipse cx="250" cy="504" rx="22" ry="8"/></g>
-</svg></div><div class="shutter "></div><div class="qb u">Q</div></div><div class="home"></div></div></div>
-<div class="note"><b>Burst, idle</b>One tap on Burst. Press the shutter to start and again to stop; a hardware button runs the burst while held. A burst takes at most 50 photos. Drawn at 402 × 874 pt. <a href="drive-burst.png">PNG</a> · <a href="../drive.html">Back to the set</a> · <a href="../overview.html">Overview</a></div>
+</svg><div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:grid;place-items:center"><div class="spin"></div></div></div><div class="shutter held"></div><div class="qb u">Q</div></div><div class="home"></div></div><div class="dev land" style="position:absolute;left:103px;top:0;width:536px;height:402px;background:none"><div class="ltop"><div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start"><div class="stat u" style="background:var(--back);border-radius:18px;height:36px;padding:0 12px 0 8px"><svg class="ic " width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m8.2 12.3 2.6 2.6 5-5.6"/></svg>RAW</div></div><div class="pills"><div class="pill u sel"><svg class="ic " width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="11" rx="2"/><path d="M4 15V7a2 2 0 0 1 2-2h9"/></svg>Burst</div></div></div><div class="lbot"><div class="card col"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><b class="num"><bdi>Photos taken: 12</bdi></b><small class=num><bdi>2.6 a second · Release to stop</bdi></small></div></div><div class="bufrow"><div class="pips" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i></div><small class="num"><bdi>Waiting to save: 3 of 8</bdi></small></div></div></div></div></div></div>
+<div class="note"><b>Burst, iPhone sideways</b>The strip shows symbols, the selected mode is named in a pill on the picture, and the card sits on the picture’s lower edge as seen sideways. Drawn at 874 × 402 pt. <a href="burst-sideways.png">PNG</a> · <a href="../burst.html">Back to the set</a> · <a href="../overview.html">Overview</a></div>
 </body>
 </html>

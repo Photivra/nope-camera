@@ -34,7 +34,7 @@ Replacing 0.3.0 literals: 8 → 12, 10 → 12, 12 → 12, 20 → 24. System shee
 | --- | --- | --- |
 | `minTarget` | 44 | Smallest hit target of any control |
 | `targetGap` | 8 | Smallest gap between two targets |
-| `shutter` | 76 | Take Photo (`shutterRing` 4, `shutterDisc` 60) |
+| `shutter` | 76 | Take Photo (`shutterRing` 4, `shutterDisc` 60, `shutterDiscHeld` 50 while held in Burst) |
 | `quick` | 52 | The Q button |
 | `thumbnail` | 52 | Last Photo; Close in the Last Photo viewer |
 | `viewerFallback` | 160 | Largest side of the thumbnail in the viewer when the preview is released |
@@ -115,7 +115,7 @@ Pressed state of every custom button: opacity 0.7 and scale 0.97; opacity only w
 
 ## Haptics
 
-All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level flat `.alignment`; All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes.
+All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level flat `.alignment`; All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes; `burstFrame` `.impact(weight: .light, intensity: 0.6)` for each photo of a burst after the first.
 
 ## Button types
 

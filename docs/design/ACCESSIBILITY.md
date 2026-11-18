@@ -29,15 +29,15 @@ Top to bottom, leading to trailing, in every layout. Containers are named so the
 | 4 | Failure banner | The failure sentence | none | Static text, then its buttons: Try Again or Open Settings, Dismiss. Announced when it appears, with high priority |
 | 5 | Viewfinder | Viewfinder | Lens, format, exposure warnings ("Wide, single-frame RAW") | Actions: Lock Focus and Exposure; Hide Controls or Show Controls. Tap is focus and expose |
 | 6 | Live aids | Histogram; Live Camera Readout; Level | Their readings | Static |
-| 7 | Mode card | Idle: Interval Settings or Astro Settings | The card's sentence | Button. Running: static progress ("Frame 7 of 20"), updated politely, then Stop, Stop Burst, Stop Frames or Cancel Timer |
+| 7 | Mode card | Idle: Interval Settings or Astro Settings; in Burst, the card's text, then Start Burst | The card's sentence | Button. Running: static progress ("Frame 7 of 20"; in Burst "Photos taken: 12. 2.6 a second."), updated politely, then Stop, Stop Burst, Stop Frames or Cancel Timer. Burst: [BURST.md](BURST.md) section 4.2 |
 | 8 | Manual readouts (container "Manual Controls") | Exposure Compensation, ISO, Shutter, Aperture, Focus, White Balance | "Auto, 200" or "Manual, 400" | Adjustable: swipe up or down changes the value without opening the dial. Double tap opens the dial. More Manual Controls is a menu |
 | 9 | Dial | The control's name | Its value | Slider (adjustable), Decrease, Increase, Auto (selected when automatic). White balance adds Tint and Presets |
 | 10 | Manual Controls button | Manual Controls | On or Off | Button, selected trait when on. Voice Control: "Manual Controls", "Auto", "Manual". Large Content Viewer |
 | 11 | Lenses (container "Lens") | Ultra Wide, Wide, Telephoto, Front | "0.6×", plus "No RAW" where it applies | Button, selected trait |
 | 12 | Switch Camera | Switch Camera | none | Button |
-| 13 | Drive strip (container "Drive") | Single Photo, Self-Timer, Burst, Interval Shooting, Astro | Self-Timer: "3 seconds" | Button, selected trait. The selected one has the hint "Double tap for options" when it has options. Voice Control accepts the short word and the long name |
+| 13 | Drive strip (container "Drive") | Single Photo, Self-Timer, Burst, Interval Shooting, Astro | Self-Timer: "3 seconds"; Burst: "Fast" or "Slow" | Button, selected trait. The selected one has the hint "Double tap for options" when it has options. Voice Control accepts the short word and the long name |
 | 14 | Last Photo | Last Photo | "Saved and signed.", or the other save sentences; "Saving…" while busy | Button. Opens the Last Photo viewer; hint "Shows the photo." Actions: Open in Photos, Photo Details |
-| 15 | Shutter | Take Photo | "Self-timer, 3 seconds", "Burst", "Start interval shooting", "Start Astro frames"; "Stop" while running | Button. The volume buttons, the Camera Control and Space do the same |
+| 15 | Shutter | Take Photo | "Self-timer, 3 seconds", "Burst, fast." with the hint "Double tap for one photo. Double tap and hold for a burst." and the action Start Burst, "Start interval shooting", "Start Astro frames"; "Stop" while running | Button. The volume buttons, the Camera Control and Space do the same |
 | 16 | Q | Quick Menu | Open or Closed | Button. Voice Control: "Quick Menu", "Q". Large Content Viewer |
 
 In clean view the order is: format status (only as a warning), Light pill, warnings, Viewfinder, progress, Show Controls, Take Photo.

@@ -10,24 +10,54 @@ struct DriveCardsTests {
     /// The card for a state; every value not given is idle.
     private func card(
         mode: DriveMode = .single, countdown: Int? = nil, burst: BurstProgress? = nil, endedBurst: BurstResult? = nil,
-        interval: IntervalProgress? = nil, isAstroOn: Bool = false, astroRun: AstroRun? = nil,
+        burstSpeed: BurstSpeed = .fast, interval: IntervalProgress? = nil, isAstroOn: Bool = false, astroRun: AstroRun? = nil,
         estimate: AstroEstimate? = nil, showsControls: Bool = true
     ) -> ModeCardState? {
         ModeCardState.resolve(
-            mode: mode, countdownRemaining: countdown, burst: burst, endedBurst: endedBurst, intervalProgress: interval,
+            mode: mode, countdownRemaining: countdown, burst: burst, endedBurst: endedBurst, burstSpeed: burstSpeed,
+            intervalProgress: interval,
             intervalSettings: .standard, isAstroOn: isAstroOn, astroRun: astroRun, astroStartDelay: .tenSeconds,
             astroEstimate: estimate, showsControls: showsControls)
     }
 
-    @Test func singleTimerAndBurstHaveNoIdleCard() {
+    @Test func singleAndTimerHaveNoIdleCard() {
         #expect(card(mode: .single) == nil)
         #expect(card(mode: .timer(.threeSeconds)) == nil)
-        #expect(card(mode: .burst) == nil)
+    }
+
+    @Test func burstIdleCardShowsTheSpeedAndHidesInCleanView() {
+        #expect(card(mode: .burst) == .burstIdle(.fast))
+        #expect(card(mode: .burst, burstSpeed: .slow) == .burstIdle(.slow))
+        #expect(card(mode: .burst, showsControls: false) == nil)
+        #expect(!ModeCardState.burstIdle(.fast).isRunning)
+    }
+
+    @Test func burstCardsResolveRunningThenSavingThenEndedThenIdle() {
+        let running = BurstProgress(taken: 12, saved: 11, start: .held, rate: 2.6)
+        let summary = BurstResult(end: .stopped, saved: 12, start: .held, duration: .seconds(4.2), rate: 2.6)
+        #expect(card(mode: .burst, burst: running, endedBurst: summary) == .burstRunning(running))
+        let saving = BurstProgress(taken: 12, saved: 9, start: .held, isSaving: true)
+        #expect(card(mode: .burst, burst: saving, endedBurst: summary) == .burstSaving(saved: 9, taken: 12))
+        #expect(card(mode: .burst, burst: saving, showsControls: false) == .burstSaving(saved: 9, taken: 12))
+        #expect(ModeCardState.burstSaving(saved: 9, taken: 12).isRunning)
+        #expect(card(mode: .burst, endedBurst: summary) == .burstEnded(summary))
+        #expect(card(mode: .burst, endedBurst: summary, showsControls: false) == nil)
+    }
+
+    @MainActor
+    @Test func aBurstKeepsAnEndCardForASummaryOrAStopByItself() {
+        #expect(ModeCardState.showsEnd(BurstResult(end: .stopped, saved: 12, start: .held)))
+        #expect(ModeCardState.showsEnd(BurstResult(end: .limitReached, saved: 50, start: .counted)))
+        #expect(ModeCardState.showsEnd(BurstResult(end: .storageFull, saved: 0, start: .held)))
+        #expect(!ModeCardState.showsEnd(BurstResult(end: .stopped, saved: 1, start: .held)), "one photo is a photo")
+        #expect(!ModeCardState.showsEnd(BurstResult(end: .countReached, saved: 3, start: .counted)), "Siri says it")
+        #expect(!ModeCardState.showsEnd(BurstResult(end: .failed, saved: 3, start: .held)))
     }
 
     @Test func runningModesShowTheirProgress() {
         #expect(card(mode: .timer(.threeSeconds), countdown: 3) == .timerCountdown(remaining: 3))
-        #expect(card(mode: .burst, burst: BurstProgress(taken: 12, saved: 11)) == .burstRunning(taken: 12))
+        let burst = BurstProgress(taken: 12, saved: 11)
+        #expect(card(mode: .burst, burst: burst) == .burstRunning(burst))
         let progress = IntervalProgress(taken: 3, total: 10)
         #expect(card(mode: .interval, interval: progress) == .intervalRunning(progress))
         // A series started from Siri or a preset shows whatever the mode.
@@ -52,7 +82,7 @@ struct DriveCardsTests {
         #expect(!ModeCardState.astroReady(frameCount: 20, startDelay: .tenSeconds, estimate: nil).isRunning)
         #expect(!ModeCardState.burstEnded(BurstResult(end: .storageFull, saved: 2)).isRunning)
         #expect(ModeCardState.astroCountdown(remaining: 2).isRunning)
-        #expect(ModeCardState.burstRunning(taken: 1).isRunning)
+        #expect(ModeCardState.burstRunning(BurstProgress(taken: 1, saved: 0)).isRunning)
         #expect(ModeCardState.intervalRunning(IntervalProgress(taken: 0, total: 2)).isRunning)
     }
 

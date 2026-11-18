@@ -90,6 +90,9 @@ enum NopeSize {
     /// 60 points: the diameter of the shutter's disc, inside the ring.
     static let shutterDisc: CGFloat = 60
 
+    /// 50 points: the disc while the shutter is held in burst mode (docs/design/BURST.md, 5.3).
+    static let shutterDiscHeld: CGFloat = 50
+
     /// 52 points: the Q button.
     static let quick: CGFloat = 52
 
@@ -189,10 +192,10 @@ enum NopeSize {
     /// row's notes, and those this file adds for values the build specification names.
     static var additional: [(name: String, value: CGFloat)] {
         [
-            ("shutterRing", shutterRing), ("shutterDisc", shutterDisc), ("capsuleLarge", capsuleLarge),
-            ("lensItemMinWidth", lensItemMinWidth), ("scrollingRowButton", scrollingRowButton),
-            ("pictureStackMaxWidth", pictureStackMaxWidth), ("outline", outline),
-            ("warningOutline", warningOutline),
+            ("shutterRing", shutterRing), ("shutterDisc", shutterDisc), ("shutterDiscHeld", shutterDiscHeld),
+            ("capsuleLarge", capsuleLarge), ("lensItemMinWidth", lensItemMinWidth),
+            ("scrollingRowButton", scrollingRowButton), ("pictureStackMaxWidth", pictureStackMaxWidth),
+            ("outline", outline), ("warningOutline", warningOutline),
         ]
     }
 }
@@ -655,4 +658,8 @@ enum NopeHaptic {
 
     /// Manual Controls turned on or off (new in 1.0.0, extending the lens rule).
     static var manualControlsChanged: SensoryFeedback { .selection }
+
+    /// Each photo of a burst after the first: one light tap, beside the count on the card and
+    /// the system's shutter sound (docs/design/BURST.md, 4.3).
+    static var burstFrame: SensoryFeedback { .impact(weight: .light, intensity: 0.6) }
 }

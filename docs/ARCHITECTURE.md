@@ -181,21 +181,44 @@ when the camera opens and when the option changes.
 
 ### Drive modes: single, self-timer, burst
 
-`CameraIntent.capture` is what every shutter sends (the on-screen shutter, the volume buttons,
-the Camera Control, the Space bar); `CameraModel` applies `drive.mode`. Single takes one photo;
-a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds), which takes one photo at
-zero; burst takes frames until it is stopped. While a countdown or burst runs, the same intent
-stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a countdown of any length,
-for Siri and Shortcuts (issue #62). The app maps the hardware buttons' capture event phases to
-`.drive(.hardwareButton(_:))`: a photo on release, as the system Camera app does, or in burst
-mode a burst while the button is held.
+`CameraIntent.capture` is what every shutter sends that reports no phases (an on-screen tap
+outside burst mode, assistive activation, the Space bar); `CameraModel` applies `drive.mode`.
+Single takes one photo; a timer mode starts `drive.countdown` (`Countdown`, 3 or 10 seconds),
+which takes one photo at zero; burst takes one photo (a burst of one). While a countdown or burst
+runs, the same intent stops it (`canPressShutter`). `.drive(.startTimer(seconds:))` starts a
+countdown of any length, for Siri and Shortcuts (issue #62).
+
+Shutters that report how they move send `ShutterPhase` values: the app maps the hardware
+buttons' capture event phases to `.drive(.hardwareButton(_:))`, and the interface sends the
+on-screen shutter's touch as `.drive(.shutter(_:))` in burst mode only (docs/design/BURST.md).
+In burst mode a press requests the first photo at once and starts a burst with
+`BurstStart.held`; coming up, sliding off or a cancelled touch ends it after the photo being
+taken, so a tap gives one photo. Outside burst mode a hardware button takes a photo on release,
+as the system Camera app does. `.drive(.startBurst)` starts a burst that needs no holding
+(`BurstStart.started`), for Start Burst, the VoiceOver action and Voice Control; the shutter,
+`.drive(.stopBurst)` or a hardware release ends it.
 
 A burst is single frames through `capturePhoto`, each saved through the same `PhotoSaver` as any
 photo (allowlist, read-back, a signature per file); nothing is merged. Each frame is saved while
-the next one is taken, so at most two frames are in memory. The burst stops when asked, at
-`DriveModel.maximumBurstFrames`, when the next frame wouldn't fit in storage, when the camera
-stops, or at the first frame that can't be taken or saved; frames already taken are still
-saved. It ends as `CaptureStatus.savedBurst` (or `.failed`) and `drive.lastBurst`.
+the next one is taken, so at most two frames are in memory (no deeper saving buffer: BURST.md,
+decision 4, waits for a device measurement). The speed is `drive.burstSpeed`
+(`.drive(.setBurstSpeed(_:))`, for the session only, Fast at launch): Fast requests each frame as
+soon as the camera is ready; Slow waits until at least `BurstSpeed.minimumFrameInterval` (0.5 s)
+after the previous frame's start, with the drive's injected sleep, and checks again whether to
+stop after the wait. A Siri or Shortcuts count (`BurstStart.counted`) always runs at Fast.
+`CameraModel.burstSpeeds` leaves Slow out on a lens where a Fast burst in this session measured
+under `DriveModel.slowBurstMinimumFastRate` (3 a second), and `CameraModel.burstSpeed` is the
+speed a burst on the selected lens uses.
+
+`drive.burstProgress` carries the count, who began the burst, the rate measured over the last
+`DriveModel.rateWindow` photos from the third on (`rate`), and `isSaving` once the last photo is
+taken and only saving is left; `canPressShutter` is false then, so no new burst starts while the
+last one saves. The burst stops when asked, at `DriveModel.maximumBurstFrames`, when the next
+frame wouldn't fit in storage, when the camera stops, or at the first frame that can't be taken
+or saved; frames already taken are still saved. It ends as `CaptureStatus.savedBurst` (or
+`.failed`) and `drive.lastBurst` (`BurstResult`: the end, the photos taken and saved, the time
+from the first photo to the last and the whole burst's rate; `hasSummary` for a burst of two or
+more that the person ended).
 
 ### Astro helper (issue #60)
 

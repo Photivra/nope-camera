@@ -94,6 +94,10 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; each save takes half a second, so a burst runs long enough
         /// for the UI tests to see and stop it.
         case slowSaving
+        /// As `slowSaving`, and each photo takes 0.4 seconds to take, so a tap on the shutter in
+        /// burst mode ends before a second photo, and holding it takes a burst at a measurable
+        /// rate (docs/design/BURST.md).
+        case burst
         /// As `manual`, and each save takes half a second, so the astro helper's frames run long
         /// enough for the UI tests to see and stop them.
         case astro
@@ -211,7 +215,7 @@ enum SimulatedCameraLaunch {
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
-            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving || scenario == .astro ? 0.5 : 0),
+            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: [.slowSaving, .astro, .burst].contains(scenario) ? 0.5 : 0),
             appVersion: appVersion, thumbnailer: SimulatedThumbnailer())
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
@@ -318,6 +322,8 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, comparisonError: .captureFailed)
         case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
+        case .burst:
+            return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureSeconds: 0.4)
         case .manual, .astro:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))

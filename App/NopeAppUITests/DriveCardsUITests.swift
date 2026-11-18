@@ -121,13 +121,16 @@ extension NopeAppUITests {
         XCTAssertFalse(modeCard(app).exists)
     }
 
-    /// Burst: the count rises and Stop Burst stops it.
+    /// Burst: the idle card offers Start Burst; the count rises and Stop Burst stops it
+    /// (docs/design/BURST.md).
     @MainActor
     func testBurstCardShowsCountAndStops() throws {
         let app = launch("slowSaving")
         driveCardsWord(app, "Burst").tap()
-        XCTAssertFalse(modeCard(app).waitForExistence(timeout: 2), "Burst has no idle card")
-        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(modeCard(app).waitForExistence(timeout: 5), "Burst has an idle card")
+        let start = app.buttons["Start Burst"]
+        XCTAssertTrue(start.exists)
+        start.tap()
         let stop = app.buttons["Stop Burst"]
         XCTAssertTrue(stop.waitForExistence(timeout: 5))
         XCTAssertTrue(element(app, containing: "Photos taken").exists)
