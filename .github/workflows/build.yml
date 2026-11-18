@@ -158,7 +158,7 @@ jobs:
           path: unit-tests.xcresult
           retention-days: 7
 
-  # The UI tests are built once, then run in shards: three on the iPhone Simulator and two on
+  # The UI tests are built once, then run in shards: four on the iPhone Simulator and three on
   # the iPad Simulator, each its own job. scripts/ui-test-shards.txt assigns every test to one
   # shard per device, balanced by test time measured on the runner; repo checks fail when a
   # test is in no shard or in two (docs/TESTING.md, "UI test shards"). A shard job says in its
@@ -204,17 +204,18 @@ jobs:
           retention-days: 1
 
   ui-tests-shard:
-    name: ui-tests ${{ matrix.shard }}/3
+    name: ui-tests ${{ matrix.shard }}/4
     needs: ui-build
     runs-on: xcode-27
-    # About 44 minutes of tests on the runner and 7 of setup; on a runner that has to remount a
-    # Simulator runtime first, scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The
-    # rest is room for one second run of unfinished tests after an infrastructure failure.
+    # About 59 minutes of tests by the listed times (many of them estimates, docs/TESTING.md)
+    # and 7 of setup; on a runner that has to remount a Simulator runtime first,
+    # scripts/wait-for-simulator-runtimes.sh waits up to 12.5 more. The rest is room for one
+    # second run of unfinished tests after an infrastructure failure.
     timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4]
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
@@ -263,16 +264,17 @@ jobs:
   # The source link test is skipped on iPad: there the link isn't found in the Settings popover
   # (docs/TESTING.md).
   ui-tests-ipad-shard:
-    name: ui-tests-ipad ${{ matrix.shard }}/2
+    name: ui-tests-ipad ${{ matrix.shard }}/3
     needs: ui-build
     runs-on: xcode-27
-    # About 69 minutes of tests on the runner and 7 of setup, up to 12.5 more for a runtime
-    # remount, and room for one second run of unfinished tests after an infrastructure failure.
+    # About 80 minutes of tests by the listed times (many of them estimates) and 7 of setup, up
+    # to 12.5 more for a runtime remount, and room for one second run of unfinished tests after
+    # an infrastructure failure.
     timeout-minutes: 130
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     env:
       NOPE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
