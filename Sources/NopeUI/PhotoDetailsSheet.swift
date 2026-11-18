@@ -26,8 +26,13 @@ struct PhotoDetailsSheet: View {
     /// The device's lenses, to name the lens a photo was taken with when the files don't.
     let lenses: [Lens]
 
+    /// This session's records of the photos (``CameraModel/sessionPhotos``), for the lens and
+    /// the time the summary shows (`docs/design/BUILD-SPEC.md`, section 6, item 15). Empty when
+    /// the interface has none.
+    let session: [SessionPhoto]
+
     /// The frame shown, for a bracket.
-    @State private var selection = 0
+    @State private var selection: Int
 
     /// The identifying values the person chose to see. On screen only; forgotten when the sheet
     /// closes or another frame is chosen.
@@ -45,15 +50,27 @@ struct PhotoDetailsSheet: View {
     ///   - photos: The photos of the last press of the shutter.
     ///   - openPhoto: Opens Photos, or `nil`.
     ///   - lenses: The device's lenses, or none.
-    init(photos: [SavedPhoto], openPhoto: (() -> Void)?, lenses: [Lens] = []) {
+    ///   - session: This session's records of the photos, or none.
+    ///   - selection: The index in `photos` of the frame shown first, for a bracket.
+    init(
+        photos: [SavedPhoto], openPhoto: (() -> Void)?, lenses: [Lens] = [], session: [SessionPhoto] = [],
+        selection: Int = 0
+    ) {
         self.photos = photos
         self.openPhoto = openPhoto
         self.lenses = lenses
+        self.session = session
+        _selection = State(initialValue: selection)
     }
 
     /// The photo shown.
     private var photo: SavedPhoto? {
         photos.indices.contains(selection) ? photos[selection] : photos.last
+    }
+
+    /// The session's record of the photo shown, or `nil` when the session has none.
+    private var record: SessionPhoto? {
+        photo.flatMap { shown in session.last { $0.photo == shown } }
     }
 
     /// The list, with a Done button, covered while the app isn't active.
@@ -74,7 +91,8 @@ struct PhotoDetailsSheet: View {
                 }
                 if let photo, let details = photo.details {
                     PhotoDetailsSections(
-                        photo: photo, details: details, lens: lens(of: details), revealed: $revealed)
+                        photo: photo, details: details, lens: record?.lens ?? lens(of: details),
+                        takenAt: record?.takenAt, revealed: $revealed)
                 }
                 if let openPhoto {
                     Section {
@@ -142,6 +160,9 @@ struct PhotoDetailsSections: View {
     /// The lens the photo was taken with, or `nil`.
     let lens: Lens?
 
+    /// When the shutter took the photo, from the session, or `nil`.
+    let takenAt: Date?
+
     /// The identifying values the person chose to see.
     @Binding var revealed: Set<String>
 
@@ -151,17 +172,19 @@ struct PhotoDetailsSections: View {
     ///   - photo: The photo.
     ///   - details: The details shown.
     ///   - lens: The lens, or `nil`.
+    ///   - takenAt: When the shutter took the photo, or `nil`.
     ///   - revealed: The values the person chose to see.
-    init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, revealed: Binding<Set<String>>) {
+    init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, takenAt: Date? = nil, revealed: Binding<Set<String>>) {
         self.photo = photo
         self.details = details
         self.lens = lens
+        self.takenAt = takenAt
         self._revealed = revealed
     }
 
     /// The groups.
     var body: some View {
-        PhotoSummaryCard(photo: photo, details: details, lens: lens)
+        PhotoSummaryCard(photo: photo, details: details, lens: lens, takenAt: takenAt)
         // A bracket's frame: its place in the bracket, from the session's values, right after
         // the summary (BUILD-SPEC.md, 3.15; docs/design/BRACKETING.md, section 4).
         if let place = photo.bracket {

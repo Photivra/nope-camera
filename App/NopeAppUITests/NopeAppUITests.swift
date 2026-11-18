@@ -2252,7 +2252,7 @@ final class NopeAppUITests: XCTestCase {
     }
 
     /// Each frame of a bracket is its own page of the Last Photo viewer (decision V12), and Photo
-    /// Details shows the frame shown.
+    /// Details opens on the frame shown, with the Photo row for the bracket's frames.
     @MainActor
     func testBracketDetailsChooseEachFrame() throws {
         let app = launch("manual", extraArguments: Self.signingOn + Self.manualOn)
@@ -2266,17 +2266,22 @@ final class NopeAppUITests: XCTestCase {
         app.buttons["Last Photo"].tap()
         let photo = app.descendants(matching: .any)["ViewerPhoto"]
         XCTAssertTrue(photo.waitForExistence(timeout: 10))
-        XCTAssertEqual(photo.label, "Photo 3 of 3")
+        // The label adds the frame's chip (docs/design/BRACKETING.md, section 4).
+        XCTAssertTrue(photo.label.hasPrefix("Photo 3 of 3. Exposure bracket, frame 3 of 3"), photo.label)
         photo.swipeRight()
         XCTAssertTrue(XCTWaiter().wait(
-            for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == 'Photo 2 of 3'"), object: photo)],
+            for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label BEGINSWITH 'Photo 2 of 3.'"), object: photo)],
             timeout: 5) == .completed)
         let details = app.buttons["Photo Details"]
         XCTAssertTrue(details.waitForExistence(timeout: 5))
         details.tap()
         XCTAssertTrue(app.navigationBars["What's in This Photo"].waitForExistence(timeout: 5))
-        // One frame: the sheet shows the photo shown, so it has no frame picker.
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch.exists)
+        // The sheet opens on the frame shown, and its Photo row steps through the bracket's
+        // frames (docs/design/BRACKETING.md, section 4, figure `bracket-details`).
+        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo, '")).firstMatch
+        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(picker.label.contains("Photo 2 of 3"), picker.label)
+        XCTAssertTrue(element(app, containing: "This Frame").exists)
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
     }
 

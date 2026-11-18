@@ -105,6 +105,52 @@ enum PhotoViewerFacts {
         return [position, lensLabel(photo.lens), time(photo.takenAt)].compactMap { $0 }.joined(separator: " · ")
     }
 
+    /// The frames of the bracket a photo belongs to, in the order taken, or the photo alone
+    /// when it isn't a bracket's frame: the session's records next to it with the same bracket,
+    /// the same press of the shutter (``SessionPhoto/takenAt``) and consecutive frame numbers.
+    /// A frame that wasn't saved leaves the frames before it as the bracket.
+    ///
+    /// - Parameters:
+    ///   - photo: The photo shown.
+    ///   - photos: The session's photos, oldest first.
+    /// - Returns: The frames, at least the photo itself.
+    static func bracketFrames(of photo: SessionPhoto, in photos: [SessionPhoto]) -> [SessionPhoto] {
+        guard let place = photo.photo.bracket, let index = photos.firstIndex(where: { $0.id == photo.id }) else {
+            return [photo]
+        }
+        /// Whether a record is frame `number` of the same bracket.
+        func isFrame(_ record: SessionPhoto, _ number: Int) -> Bool {
+            guard let other = record.photo.bracket else { return false }
+            return other.frame.number == number && other.count == place.count && other.offsets == place.offsets
+                && other.order == place.order && record.takenAt == photo.takenAt
+        }
+        var first = index
+        while first > photos.startIndex, place.frame.number - (index - first) > 1,
+            isFrame(photos[first - 1], place.frame.number - (index - first) - 1)
+        {
+            first -= 1
+        }
+        var last = index
+        while last + 1 < photos.endIndex, isFrame(photos[last + 1], place.frame.number + (last - index) + 1) {
+            last += 1
+        }
+        return Array(photos[first...last])
+    }
+
+    /// The photo's VoiceOver label (``label(of:in:)``), followed for a bracket's frame by its
+    /// chip's words: "Photo 6 of 7. Exposure bracket, frame 2 of 3, 0 EV." (docs/design/BRACKETING.md,
+    /// section 4, "Viewer chip").
+    ///
+    /// - Parameters:
+    ///   - photo: The photo shown, or `nil`.
+    ///   - photos: The session's photos, oldest first.
+    /// - Returns: The label.
+    static func spokenLabel(of photo: SessionPhoto?, in photos: [SessionPhoto]) -> String {
+        let label = label(of: photo?.id, in: photos)
+        guard let place = photo?.photo.bracket else { return label }
+        return label + ". " + BracketText.chipSpoken(place)
+    }
+
     /// The photo's VoiceOver label: "Photo", or "Photo 3 of 5" with more than one photo.
     ///
     /// - Parameters:
@@ -689,7 +735,13 @@ struct PhotoViewerScreen: View {
         }
         .sheet(isPresented: $showsDetails) {
             if let shown {
-                PhotoDetailsSheet(photos: [shown.photo], openPhoto: openPhoto)
+                // A bracket's frame opens on that frame, with the Photo row stepping through
+                // the bracket's frames (docs/design/BRACKETING.md, section 4, figure
+                // `bracket-details`); any other photo is shown alone.
+                let frames = PhotoViewerFacts.bracketFrames(of: shown, in: photos)
+                PhotoDetailsSheet(
+                    photos: frames.map(\.photo), openPhoto: openPhoto, session: frames,
+                    selection: frames.firstIndex { $0.id == shown.id } ?? 0)
                     .nightModeStyle(isNightMode)
                     .persistentSystemOverlays(isNightMode ? .hidden : .automatic)
                     .presentationBackground(.background)
@@ -817,7 +869,7 @@ struct PhotoViewerScreen: View {
     ) -> some View {
         content()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: PhotoViewerFacts.label(of: shown?.id, in: photos)))
+            .accessibilityLabel(Text(verbatim: PhotoViewerFacts.spokenLabel(of: shown, in: photos)))
             .accessibilityValue(Text(verbatim: shown.map { PhotoViewerFacts.spokenValue(of: $0, isZoomed: zoom.isZoomed) } ?? ""))
             .accessibilityAddTraits(.isImage)
             .accessibilityRemoveTraits(.isButton)
@@ -842,6 +894,13 @@ struct PhotoViewerScreen: View {
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: NopeSpace.xs) {
+                    // A bracket's frame: the chip names the bracket and the frame
+                    // (docs/design/BRACKETING.md, section 4; figure `bracket-viewer`). It hides
+                    // with the other controls; its words are part of the photo's label.
+                    if let place = shown?.photo.bracket {
+                        BracketChip(place: place)
+                            .controlsVisibility(showsControls)
+                    }
                     if zoom.isZoomed, shown?.previewIsSmallerThanPhoto == true {
                         PhotoViewerHint()
                     }

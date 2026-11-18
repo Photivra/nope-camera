@@ -232,6 +232,14 @@ extension NopeAppUITests {
         chooseInBracketSettings(app, "Step", "2 EV")
         closeBracketSettings(app)
         XCTAssertTrue(waitForValue(bracketCard(app), containing: "2 EV apart"))
+        // The viewer's chip on the last frame, and its words in the photo's label.
+        app.buttons["Last Photo"].tap()
+        let photo = app.descendants(matching: .any)["ViewerPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10))
+        let chip = app.descendants(matching: .any)["BracketChip"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        XCTAssertTrue(photo.label.hasPrefix("Photo 3 of 3. Exposure bracket, frame 3 of 3, "), photo.label)
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
     }
 
     /// What's in This Photo has a Bracket group for a bracket's frame, from session values.

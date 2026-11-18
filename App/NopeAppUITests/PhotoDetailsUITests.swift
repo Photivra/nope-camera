@@ -67,6 +67,10 @@ extension NopeAppUITests {
         ] {
             XCTAssertTrue(summary.label.contains(line), "\(line) not in \(summary.label)")
         }
+        // The lens and the time the shutter took it, from the session, as the viewer's caption
+        // (BUILD-SPEC.md, 3.15, group 0; section 6, item 15).
+        XCTAssertNotNil(
+            summary.label.range(of: "1× · [0-9]{1,2}:[0-9]{2}", options: .regularExpression), summary.label)
         // Exposure Settings is off: the camera's shutter and ISO, each "Not in the files".
         let shutter = element(app, containing: "1/60")
         XCTAssertTrue(shutter.waitForExistence(timeout: 5))

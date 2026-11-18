@@ -15,16 +15,22 @@ struct PhotoSummaryCard: View {
     /// The lens it was taken with, or `nil`.
     let lens: Lens?
 
+    /// When the shutter took it, from the session's photo list (``SessionPhoto/takenAt``), or
+    /// `nil` when the session has no record of it.
+    let takenAt: Date?
+
     /// Creates the card.
     ///
     /// - Parameters:
     ///   - photo: The photo.
     ///   - details: Its details.
     ///   - lens: The lens, or `nil`.
-    init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?) {
+    ///   - takenAt: When the shutter took it, or `nil`.
+    init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, takenAt: Date? = nil) {
         self.photo = photo
         self.details = details
         self.lens = lens
+        self.takenAt = takenAt
     }
 
     /// The card.
@@ -76,17 +82,27 @@ struct PhotoSummaryCard: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// The lens, such as "1×", or nothing when it isn't known.
-    ///
-    /// The design's caption is the lens and the time (`docs/design/BUILD-SPEC.md`, 3.15, group 0),
-    /// both from the session's photo list of the Last Photo viewer (section 6, item 15). Until
-    /// that list reaches the sheet, the lens comes from the capture report and no time is shown.
+    /// The lens and the time, such as "1× · 2:41 PM", as the Last Photo viewer's caption shows
+    /// them (`docs/design/BUILD-SPEC.md`, 3.15, group 0, and section 6, item 15; decision P3):
+    /// from the session's photo list, even when the files hold neither. Each part is left out
+    /// when it isn't known, and the caption with both.
     @ViewBuilder private var caption: some View {
-        if let lens {
-            Text(verbatim: PhotoDetailsText.name(of: lens))
+        if let text = Self.caption(lens: lens, takenAt: takenAt) {
+            Text(verbatim: text)
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(CameraStyle.secondaryText)
         }
+    }
+
+    /// The caption's words: the lens and the time, joined as the viewer's caption joins them.
+    ///
+    /// - Parameters:
+    ///   - lens: The lens, or `nil`.
+    ///   - takenAt: When the shutter took the photo, or `nil`.
+    /// - Returns: The caption, or `nil` when neither is known.
+    static func caption(lens: Lens?, takenAt: Date?) -> String? {
+        let parts = [lens.map(PhotoDetailsText.name(of:)), takenAt.map(PhotoViewerFacts.time)].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// The pixel size and the total size of the files, such as "4032 × 3024 pixels · 26.9 MB".

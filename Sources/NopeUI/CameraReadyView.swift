@@ -246,7 +246,7 @@ struct CameraReadyView: View {
         .sheet(isPresented: $showsPhotoDetails) {
             PhotoDetailsSheet(
                 photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } },
-                lenses: model.capabilities?.lenses ?? [])
+                lenses: model.capabilities?.lenses ?? [], session: model.sessionPhotos.photos)
                 // Red on black in night mode, as every other sheet of the camera.
                 .nightModeStyle(isNightMode)
                 .presentationBackground(.background)
