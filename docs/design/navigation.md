@@ -1,6 +1,6 @@
 # Navigation map
 
-Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md).
+Design version: 1.0.0, direction B · Reach (2026-11-17). Planned design for release 1.0.0; the app is built to match it. Includes the Settings structure and the device coverage accepted on 2026-11-17 (SETTINGS-PLAN.md), and the Last Photo viewer decided on 2026-11-18.
 
 Every option, where it lives, the path to it from the camera, and the number of taps in 0.3.0 and in this design. A dash means the option did not exist in 0.3.0.
 
@@ -24,8 +24,9 @@ Every option, where it lives, the path to it from the camera, and the number of 
 | Save HEIF or JPEG copies | Formats sheet | Format status › HEIF | 2 | 2 | Also Settings › Formats. |
 | Look, from the camera | Formats sheet | Format status › Look › value | 3 | 3 | Shown on the sheet while a copy is on. Opens HEIF and JPEG Copies. |
 | Processing note for a lens without RAW | Formats sheet | Processed marker | – | 1 | New disclosure (issue 80). |
-| Last Photo in Photos | Shutter row | Last Photo | 1 | 1 |  |
-| What’s in This Photo | Shutter row | Last Photo (touch and hold) › Photo Details | 2 | 2 | Also a VoiceOver action on Last Photo. |
+| Last Photo, full screen | Shutter row | Last Photo | – | 1 | New (2026-11-18): the viewer, with this session’s photos. |
+| Last Photo in Photos | Last Photo viewer | Last Photo › Open in Photos | 1 | 2 | One tap more: a tap now shows the photo itself. Also a VoiceOver action on Last Photo. |
+| What’s in This Photo | Last Photo viewer | Last Photo › Photo Details | 2 | 2 | Also a VoiceOver action on Last Photo. |
 | Focus and exposure point | Picture | Tap the picture | 1 | 1 |  |
 | Lock focus and exposure | Picture | Touch and hold, or the lock button by the focus square | 1 | 1 |  |
 | Undo a changed setting | Status line | Its pill | 1 | 1 | Light, Flash, locks, Exposure, Fast Shutter, Close-Up, Far Focus, Magnify, Compare. |

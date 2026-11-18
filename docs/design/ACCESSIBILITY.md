@@ -1,6 +1,6 @@
 # Accessibility and Siri specification
 
-Design version: 1.0.0, direction B · Reach (2026-11-17).
+Design version: 1.0.0, direction B · Reach (2026-11-17; the Last Photo viewer added 2026-11-18).
 
 What each screen of the design must do for VoiceOver, Voice Control, Switch Control, the keyboard, text size, motion, transparency and contrast, and which actions Siri and Shortcuts offer. The baseline is `AGENTS.md` (Accessibility), Apple's Human Interface Guidelines and WCAG 2.2 AA. The mockups are in this folder; the build steps are in [BUILD-SPEC.md](BUILD-SPEC.md).
 
@@ -36,7 +36,7 @@ Top to bottom, leading to trailing, in every layout. Containers are named so the
 | 11 | Lenses (container "Lens") | Ultra Wide, Wide, Telephoto, Front | "0.6×", plus "No RAW" where it applies | Button, selected trait |
 | 12 | Switch Camera | Switch Camera | none | Button |
 | 13 | Drive strip (container "Drive") | Single Photo, Self-Timer, Burst, Interval Shooting, Astro | Self-Timer: "3 seconds" | Button, selected trait. The selected one has the hint "Double tap for options" when it has options. Voice Control accepts the short word and the long name |
-| 14 | Last Photo | Last Photo | "Saved and signed.", or the other save sentences; "Saving…" while busy | Button. Actions: Open in Photos, Photo Details |
+| 14 | Last Photo | Last Photo | "Saved and signed.", or the other save sentences; "Saving…" while busy | Button. Opens the Last Photo viewer; hint "Shows the photo." Actions: Open in Photos, Photo Details |
 | 15 | Shutter | Take Photo | "Self-timer, 3 seconds", "Burst", "Start interval shooting", "Start Astro frames"; "Stop" while running | Button. The volume buttons, the Camera Control and Space do the same |
 | 16 | Q | Quick Menu | Open or Closed | Button. Voice Control: "Quick Menu", "Q". Large Content Viewer |
 
@@ -94,6 +94,75 @@ Labels and values are the same. The Manual Controls button shows A or M and the 
 - Settings search: the system search field. Each result reads the setting and its page, in whole localized names: "Location, in Privacy, Details in Each Photo"; in right-to-left languages the order follows the language. A pointer to a camera control reads its name and the place in words, "Manual Controls. On the camera, beside the lenses.", and has no button trait, because it does not navigate; the camera symbol is decorative. Result headers (On the Camera, In Settings) are headings. No result: the system's "No Results" text is read.
 - Honesty and Accessibility: headings and paragraphs in order.
 
+## Last Photo viewer
+
+Figures and rules are in [viewer.html](viewer.html); the build steps are in BUILD-SPEC.md, section 3.14.
+
+### Input
+
+| Input | Result |
+| --- | --- |
+| Tap on the photo | Hides or shows the controls. Nothing hides by itself |
+| Double tap on the photo | Zooms in at that point, to the limit; again, back to fit |
+| Pinch | Zooms between fit and the limit. A pinch in below fit springs back; it does not close the viewer |
+| Drag on a zoomed photo | Moves the photo. At its edge the drag does nothing; it does not change the page |
+| Swipe left or right, not zoomed | The next or the previous photo, in the layout direction. The first and last photo spring back |
+| Swipe down, not zoomed | Closes the viewer; the photo follows the finger and closes on release past a third of the height, otherwise it returns. With Reduce Motion it closes on release without following |
+| Close | Closes the viewer |
+| Escape; VoiceOver two-finger scrub | Closes the sheet if Photo Details is open, otherwise the viewer |
+| Left and Right Arrow | The previous or the next photo |
+| Tab | Photo, Photo Details, Open in Photos, Close; Space or Return activates the focused one |
+| Volume buttons, Camera Control, Space with nothing focused | Recommended (BUILD-SPEC.md, section 7): close the viewer and return to the camera without taking a photo. The next press takes a photo |
+| Take Photo from Apple Watch or Siri, or a running series | The photo is taken. The viewer stays on its photo and shows New Photo |
+
+Zoom returns to fit when the page changes, when the window changes size, and when the viewer closes.
+
+### VoiceOver
+
+Opening moves focus to the photo. Closing returns it to Last Photo and posts a screen change. Order, in every arrangement:
+
+| # | Element | Label | Value | Traits, actions, hint |
+| --- | --- | --- | --- | --- |
+| 1 | Photo | "Photo", or "Photo 3 of 5" | The formats, the save sentence, the lens and the time: "RAW and HEIF. Saved and signed. Wide. 2:41 PM." With "Zoomed in. A screen-size preview, not the full photo." while zoomed. For the fallback: "Preview not kept." and its sentence | Image, adjustable: swipe up or down for the next or the previous photo. Actions: Photo Details; Open in Photos; Zoom In; Zoom Out; Hide Controls or Show Controls. Double tap hides or shows the controls |
+| 2 | Photo Not Saved | Photo Not Saved | none | Button. Closes the viewer. Announced when it appears, as the failure is today |
+| 3 | New Photo | New Photo | none | Button. Goes to the newest photo |
+| 4 | Close | Close | none | Button |
+| 5 | Photo Details | Photo Details | none | Button. Opens What's in This Photo for this photo |
+| 6 | Open in Photos | Open in Photos | none | Button. Not present from the Lock Screen camera |
+
+- The status line and the caption are not separate elements: their content is the photo's value, so one swipe reads everything about the photo. The save sentence is the existing one (`CaptureMessages.message(forSaved:)`), so the viewer, the thumbnail and Siri say the same thing.
+- nope. does not describe what a photo shows. The element has the image trait, so the system's own image descriptions work where a person has them on.
+- A change of page announces the new label and value. A photo that arrives while the viewer is open is announced with its save sentence, as on the camera; the photo's label then reads the new count.
+- With the controls hidden the photo is still the first element, and its action reads Show Controls. Close, Photo Details and Open in Photos are not reachable until the controls are shown; Escape still closes.
+- Last Photo on the camera: label Last Photo, value the save sentence, hint "Shows the photo." Actions Open in Photos and Photo Details stay, so both are one action away without opening the viewer. The touch and hold menu is removed.
+
+### Voice Control
+
+Names match the visible words: "Close", "Photo Details", "Open in Photos", "New Photo", "Photo Not Saved". The photo is "Photo". In the column arrangement the two actions show their names under their symbols, so no input label is needed. "Swipe left", "swipe right", "zoom in" and "zoom out" are the system's commands and work on the photo.
+
+### Switch Control and Full Keyboard Access
+
+- Scanning groups, in order: the photo (its menu offers Next Photo and Previous Photo from the adjustable trait, then the actions above), the items on the photo (Photo Not Saved, New Photo), the actions (Close, Photo Details, Open in Photos; in the column: Photo Details, Open in Photos, Close).
+- Every result of a gesture is reachable from the photo's actions or a button, so no gesture is needed.
+- The focus ring is the system's. On the photo it is drawn inside the photo's edge.
+
+### Text size
+
+- Up to the largest non-accessibility size the two action capsules stay in one row while they fit, then stack, trailing. The status line wraps to two lines, formats first.
+- At accessibility sizes: the facts are lines above the photo (formats, the signature, then position, lens and time), the photo takes the remaining height and never less than 280 pt, and Photo Details, Open in Photos and Close are full-width rows. In a window too short for all of it, the rows scroll under the photo.
+- Close in the stacked and column arrangements is a symbol, so it has a Large Content Viewer label.
+
+### Motion, transparency, contrast, night mode
+
+- Reduce Motion: the viewer fades in and out; pages crossfade in place; zoom changes without animation; the swipe down does not move the photo.
+- Reduce Transparency and Increase Contrast: the backing under the facts in the column arrangement, the hint and New Photo is solid black; Increase Contrast outlines Close and the two actions.
+- Contrast: text and symbols are on black or on the backing, never directly on the photo, so contrast does not depend on the photo.
+- Night mode: red on black, and the photo is drawn in red, like everything outside the live viewfinder. Signed and Not signed differ by their symbol and words. The photo is excluded from Smart Invert.
+
+### Siri and Shortcuts
+
+No action is added. Take Photo from Siri or Apple Watch works while the viewer is open, and its answer is unchanged. No action opens the viewer in 1.0.0.
+
 ## System surfaces
 
 - Live Activity: reads the title, the status, the signing line, then Stop ("Stop. Every photo already taken is saved.").
@@ -132,4 +201,4 @@ Checks against the redesign:
 
 ## Manual pass before release
 
-VoiceOver, Voice Control, Switch Control, Full Keyboard Access and the largest text size, on the flows: first run; a RAW photo; Manual Controls and a dial; Q and a menu tile; Timer; Interval; Astro in night mode; the Processed marker and its note; Settings with search by keyword and a pointer result; Details in Each Photo and HEIF and JPEG Copies at the largest text size; the Settings popover on iPad, in both orientations and in Split View; folding and unfolding an iPhone Duo with Settings open; the watch at 40 mm; Presets with rename and delete.
+VoiceOver, Voice Control, Switch Control, Full Keyboard Access and the largest text size, on the flows: first run; a RAW photo; Manual Controls and a dial; Q and a menu tile; Timer; Interval; Astro in night mode; the Processed marker and its note; Settings with search by keyword and a pointer result; Details in Each Photo and HEIF and JPEG Copies at the largest text size; the Settings popover on iPad, in both orientations and in Split View; folding and unfolding an iPhone Duo with Settings open; the watch at 40 mm; Presets with rename and delete; the Last Photo viewer with three photos (paging, zoom, Photo Details, closing and the return of focus), with a photo taken from the watch while it is open, and on the fallback.

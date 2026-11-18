@@ -1,6 +1,6 @@
 # Design tokens
 
-Design version: 1.0.0, direction B · Reach (2026-11-17).
+Design version: 1.0.0, direction B · Reach (2026-11-17; `viewerFallback` added 2026-11-18).
 
 The tokens of the design, as a list for the build. [design-system.html](design-system.html) shows the same tokens drawn. Each name maps one to one to a Swift constant in a new file, `Sources/NopeUI/DesignTokens.swift`. No view uses a literal spacing, radius, size, color or duration once this file exists; a test or lint check fails on new literals outside the scales (issue 74).
 
@@ -36,7 +36,8 @@ Replacing 0.3.0 literals: 8 → 12, 10 → 12, 12 → 12, 20 → 24. System shee
 | `targetGap` | 8 | Smallest gap between two targets |
 | `shutter` | 76 | Take Photo (`shutterRing` 4, `shutterDisc` 60) |
 | `quick` | 52 | The Q button |
-| `thumbnail` | 52 | Last Photo |
+| `thumbnail` | 52 | Last Photo; Close in the Last Photo viewer |
+| `viewerFallback` | 160 | Largest side of the thumbnail in the viewer when the preview is released |
 | `iconButton` | 44 | Round symbol buttons |
 | `capsule` | 36 | Capsule buttons (`capsuleLarge` 44 in the Q foot) |
 | `lensItem` | 36 high, 40 wide at least | One lens inside the 44 pt lens group |
