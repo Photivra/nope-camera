@@ -15,7 +15,7 @@ struct PhotoSummaryCard: View {
     /// The lens it was taken with, or `nil`.
     let lens: Lens?
 
-    /// When the shutter took it, from the session's photo list (``SessionPhoto/takenAt``), or
+    /// When the shutter took it, from the session's photo list (`SessionPhoto.takenAt`), or
     /// `nil` when the session has no record of it.
     let takenAt: Date?
 

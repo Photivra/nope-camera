@@ -1348,6 +1348,51 @@ Creates the cover.
 
 - Parameter action: Brightens the screen.
 
+## `BurstSpeedText`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor enum BurstSpeedText
+```
+
+The words for the burst speeds in the Burst menu (docs/design/BURST.md, 6). No rate is
+promised: Fast is "as fast as the camera is ready", and Slow is "up to" its figure.
+
+## `BurstSpeedText/detail(_:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor static func detail(_ speed: BurstSpeed) -> Text
+```
+
+The line under the speed's name in the menu.
+
+- Parameter speed: The speed.
+
+## `BurstSpeedText/menuTitle`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor static var menuTitle: Text { get }
+```
+
+The menu's title, "Burst Speed".
+
+## `BurstSpeedText/name(_:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor static func name(_ speed: BurstSpeed) -> Text
+```
+
+The speed's name: "Fast" or "Slow".
+
+- Parameter speed: The speed.
+
 ## `CameraAction`
 
 public, declared in `Sources/NopeUI/CameraEnvironment.swift`
@@ -2437,7 +2482,7 @@ internal, declared in `Sources/NopeUI/ResourceWarnings.swift`
 ```
 
 "Battery Low" at 3% or less while the device isn't plugged in (issue #44,
-``DeviceStatus/lowBatteryLevel``).
+`DeviceStatus.lowBatteryLevel`).
 
 - Parameters:
   - context: The model and settings.
@@ -4411,8 +4456,9 @@ tray and the Astro switch, and with them the Drive and Astro pills.
   first, and while Bracket is on turns the bracket off first. Choosing Interval only selects
   it: the shutter starts the series. Choosing Bracket turns on the session's last bracket
   with its start delay; it doesn't open Bracket Settings by itself.
-- Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Bracket, Interval
-  and Astro open their settings; Single and Burst do nothing.
+- Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Burst a menu of
+  its speeds, Fast and Slow (docs/design/BURST.md, 3.2), where the lens offers both;
+  Bracket, Interval and Astro open their settings; Single does nothing.
 - While a countdown, burst, interval series or astro run is going, the other words are
   disabled.
 - It never truncates a word: the words get less padding, then scroll sideways, keeping the
@@ -4582,6 +4628,18 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 The words for the drive modes, the self-timer and bursts (issues #39 and #46). The modes' own
 names are the drive strip's (`DriveWord`).
 
+## `DriveText/burstValue(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstValue(_ speed: BurstSpeed) -> Text
+```
+
+The shutter's VoiceOver value in burst mode: "Burst, fast." or "Burst, slow."
+
+- Parameter speed: The burst speed.
+
 ## `DriveText/endMessage(_:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -4605,6 +4663,18 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 A number of seconds in the system's short form, such as "3s" or "3 Sek.".
 
 - Parameter seconds: The seconds.
+
+## `DriveText/shutterHint(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func shutterHint(_ model: CameraModel) -> Text?
+```
+
+The shutter's VoiceOver hint in burst mode while nothing runs, or `nil` otherwise.
+
+- Parameter model: The camera model.
 
 ## `DriveText/shutterValue(_:)`
 
@@ -9430,11 +9500,11 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 enum ModeCardState
 ```
 
-What the mode card on the picture's lower edge shows (docs/design/BUILD-SPEC.md, 3.5): one
-case per state that has a card. Single has none, and Timer and Burst have none while idle:
-the shutter shows the delay, and the strip names the mode.
+What the mode card on the picture's lower edge shows (docs/design/BUILD-SPEC.md, 3.5;
+docs/design/BURST.md, 5.3): one case per state that has a card. Single has none, and Timer
+has none while idle: the shutter shows the delay, and the strip names the mode.
 
-It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
+It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
 so which card shows is tested without drawing.
 
 ## `ModeCardState/astroCountdown(remaining:)`
@@ -9487,17 +9557,40 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 case burstEnded(BurstResult)
 ```
 
-A burst stopped by itself: why, as text, until the next action (``DriveText/endMessage(_:)``).
+A burst ended: the summary ("12 photos saved", the time and the rate), or why it stopped
+by itself (``DriveText/endMessage(_:)``), until the next action.
 
-## `ModeCardState/burstRunning(taken:)`
+## `ModeCardState/burstIdle(_:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-case burstRunning(taken: Int)
+case burstIdle(BurstSpeed)
 ```
 
-A burst runs: "Photos taken: 12" and Stop Burst.
+Burst is chosen and nothing runs: the speed, what the shutter does, and Start Burst.
+
+## `ModeCardState/burstRunning(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case burstRunning(BurstProgress)
+```
+
+A burst takes photos: "Photos taken: 12", the measured rate, and "Release to stop" while
+the shutter holds it, or Stop Burst.
+
+## `ModeCardState/burstSaving(saved:taken:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case burstSaving(saved: Int, taken: Int)
+```
+
+A burst took its last photo and the last ones are being saved: "Saving: 9 of 12 photos
+saved" and a bar. The shutter is dimmed until they are.
 
 ## `ModeCardState/current(_:endedBurst:showsControls:savedBracket:)`
 
@@ -9507,11 +9600,11 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor static func current(_ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool, savedBracket: BracketCardState? = nil) -> ModeCardState?
 ```
 
-The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
+The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
 
 - Parameters:
   - model: The camera model.
-  - endedBurst: A burst that stopped by itself and whose message still shows, or `nil`.
+  - endedBurst: A burst whose summary or end message still shows, or `nil`.
   - showsControls: Whether the controls are shown.
   - savedBracket: The card of the last bracket saved, shown until the next action, or `nil`.
 - Returns: The card, or `nil`.
@@ -9549,22 +9642,24 @@ var isRunning: Bool { get }
 Whether the card shows something that runs, and so stays in clean view: stopping never
 depends on bringing the controls back.
 
-## `ModeCardState/resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)`
+## `ModeCardState/resolve(mode:countdownRemaining:burst:endedBurst:burstSpeed:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-static func resolve(mode: DriveMode, countdownRemaining: Int?, burst: BurstProgress?, endedBurst: BurstResult?, intervalProgress: IntervalProgress?, intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?, astroStartDelay: SelfTimerDelay, astroEstimate: AstroEstimate?, showsControls: Bool) -> ModeCardState?
+static func resolve(mode: DriveMode, countdownRemaining: Int?, burst: BurstProgress?, endedBurst: BurstResult?, burstSpeed: BurstSpeed = .fast, intervalProgress: IntervalProgress?, intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?, astroStartDelay: SelfTimerDelay, astroEstimate: AstroEstimate?, showsControls: Bool) -> ModeCardState?
 ```
 
 The card for the camera's state, or `nil` for none. A running series or countdown comes
-first; an idle card shows only while the controls are shown (not in clean view).
+first; an idle card shows only while the controls are shown (not in clean view). In
+burst mode: running, saving, ended (until the next action), idle.
 
 - Parameters:
   - mode: The drive mode.
   - countdownRemaining: The self-timer's seconds left, or `nil` when it isn't counting.
   - burst: The running burst, or `nil`.
-  - endedBurst: A burst that stopped by itself and whose message still shows, or `nil`.
+  - endedBurst: A burst whose summary or end message still shows, or `nil`.
+  - burstSpeed: The speed a burst on the selected lens uses, for the idle card.
   - intervalProgress: The running interval series, or `nil`.
   - intervalSettings: The next interval series.
   - isAstroOn: Whether Astro is on.
@@ -9573,6 +9668,19 @@ first; an idle card shows only while the controls are shown (not in clean view).
   - astroEstimate: What Astro's next run will take, or `nil`.
   - showsControls: Whether the controls are shown (not clean view).
 - Returns: The card, or `nil`.
+
+## `ModeCardState/showsEnd(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func showsEnd(_ result: BurstResult) -> Bool
+```
+
+Whether a burst's end keeps a card until the next action: a summary, or why it stopped
+by itself.
+
+- Parameter result: How the burst ended.
 
 ## `ModeCardState/timerCountdown(remaining:)`
 
@@ -9633,6 +9741,92 @@ shutter for the estimate.
 - Parameters:
   - startDelay: Astro's start delay.
   - estimate: What the run will take.
+
+## `ModeCardText/burstDuration(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstDuration(_ duration: Duration) -> String
+```
+
+A burst's time from its first photo to its last, "4.2 seconds".
+
+- Parameter duration: The time.
+
+## `ModeCardText/burstEndedDetail(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstEndedDetail(_ result: BurstResult) -> String?
+```
+
+The ended card's detail: the time and the rate after a summary or the limit, the photos
+saved after the other stops, or `nil`.
+
+- Parameter result: How the burst ended.
+
+## `ModeCardText/burstIdleDetail`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var burstIdleDetail: Text { get }
+```
+
+"Hold the shutter. A tap takes one photo."
+
+## `ModeCardText/burstIdleTitle(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstIdleTitle(_ speed: BurstSpeed) -> Text
+```
+
+The idle card's title: "Fast burst", or "Slow burst: up to 2 a second".
+
+- Parameter speed: The burst speed.
+
+## `ModeCardText/burstRate(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstRate(_ rate: Double) -> String
+```
+
+A burst's measured rate, "2.6 a second", with one decimal place.
+
+- Parameter rate: Photos a second.
+
+## `ModeCardText/burstRunningDetail(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstRunningDetail(_ progress: BurstProgress) -> String?
+```
+
+The running burst's detail: the rate and "Release to stop" while held, or the rate alone,
+or `nil` before a rate and without a hold.
+
+- Parameter progress: The burst's progress.
+
+## `ModeCardText/burstSaving(saved:taken:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstSaving(saved: Int, taken: Int) -> Text
+```
+
+"Saving: 9 of 12 photos saved".
+
+- Parameters:
+  - saved: The photos saved so far.
+  - taken: The photos the burst took.
 
 ## `ModeCardText/burstTaken(_:)`
 
@@ -9793,6 +9987,20 @@ The words of ``intervalTimeProgress(_:at:)``.
   - now: The current time.
   - width: How the units of the time left are written.
 
+## `ModeCardText/joined(_:_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func joined(_ first: String, _ second: String) -> String
+```
+
+Two parts of a card's detail line, "4.2 seconds · 2.6 a second".
+
+- Parameters:
+  - first: The first part.
+  - second: The second part.
+
 ## `ModeCardText/nextPhoto(in:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -9817,6 +10025,28 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 - Parameter seconds: The seconds left.
 
+## `ModeCardText/photosSaved(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func photosSaved(_ saved: Int) -> String
+```
+
+"12 photos saved".
+
+- Parameter saved: The photos saved, at least 2.
+
+## `ModeCardText/releaseToStop`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var releaseToStop: String { get }
+```
+
+"Release to stop".
+
 ## `ModeCardText/shortDuration(_:)`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -9840,6 +10070,16 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 A duration in words, such as "10 seconds", for the interval card.
 
 - Parameter seconds: The duration, in seconds.
+
+## `ModeCardText/startBurst`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var startBurst: Text { get }
+```
+
+"Start Burst".
 
 ## `ModeCardText/stopBurst`
 
@@ -11145,6 +11385,17 @@ static var allAuto: SensoryFeedback { get }
 
 All Auto returned every manual control to auto.
 
+## `NopeHaptic/burstFrame`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var burstFrame: SensoryFeedback { get }
+```
+
+Each photo of a burst after the first: one light tap, beside the count on the card and
+the system's shutter sound (docs/design/BURST.md, 4.3).
+
 ## `NopeHaptic/countdownSecond`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -12195,6 +12446,16 @@ static let shutterDisc: CGFloat
 
 60 points: the diameter of the shutter's disc, inside the ring.
 
+## `NopeSize/shutterDiscHeld`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterDiscHeld: CGFloat
+```
+
+50 points: the disc while the shutter is held in burst mode (docs/design/BURST.md, 5.3).
+
 ## `NopeSize/shutterRing`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -12805,12 +13066,12 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 The details shown.
 
-## `PhotoDetailsSections/init(photo:details:lens:revealed:)`
+## `PhotoDetailsSections/init(photo:details:lens:takenAt:revealed:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, revealed: Binding<Set<String>>)
+@MainActor init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, takenAt: Date? = nil, revealed: Binding<Set<String>>)
 ```
 
 Creates the sections.
@@ -12819,6 +13080,7 @@ Creates the sections.
   - photo: The photo.
   - details: The details shown.
   - lens: The lens, or `nil`.
+  - takenAt: When the shutter took the photo, or `nil`.
   - revealed: The values the person chose to see.
 
 ## `PhotoDetailsSections/lens`
@@ -12919,6 +13181,16 @@ off in Settings, which is the person's choice and not a problem (`docs/design/BU
 - Parameter signature: The photo's signature status.
 - Returns: An SF Symbol name.
 
+## `PhotoDetailsSections/takenAt`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let takenAt: Date?
+```
+
+When the shutter took the photo, from the session, or `nil`.
+
 ## `PhotoDetailsSheet`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -12953,12 +13225,12 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 The list, with a Done button, covered while the app isn't active.
 
-## `PhotoDetailsSheet/init(photos:openPhoto:lenses:)`
+## `PhotoDetailsSheet/init(photos:openPhoto:lenses:session:selection:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 
 ```swift
-@MainActor init(photos: [SavedPhoto], openPhoto: (() -> Void)?, lenses: [Lens] = [])
+@MainActor init(photos: [SavedPhoto], openPhoto: (() -> Void)?, lenses: [Lens] = [], session: [SessionPhoto] = [], selection: Int = 0)
 ```
 
 Creates the sheet.
@@ -12967,6 +13239,8 @@ Creates the sheet.
   - photos: The photos of the last press of the shutter.
   - openPhoto: Opens Photos, or `nil`.
   - lenses: The device's lenses, or none.
+  - session: This session's records of the photos, or none.
+  - selection: The index in `photos` of the frame shown first, for a bracket.
 
 ## `PhotoDetailsSheet/lenses`
 
@@ -12997,6 +13271,18 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 ```
 
 The photos of the last press of the shutter: one, or a bracket's frames.
+
+## `PhotoDetailsSheet/session`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor let session: [SessionPhoto]
+```
+
+This session's records of the photos (`CameraModel.sessionPhotos`), for the lens and
+the time the summary shows (`docs/design/BUILD-SPEC.md`, section 6, item 15). Empty when
+the interface has none.
 
 ## `PhotoDetailsText`
 
@@ -13237,6 +13523,128 @@ A size's name: its megapixels and its width and height in pixels.
 
 - Parameter size: The size.
 - Returns: For example "12 MP (4032 × 3024)".
+
+## `PhotoSummaryCard`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor struct PhotoSummaryCard
+```
+
+The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0):
+the formats, the lens, the pixel size and total size, then four lines with symbols: what kind
+of photo it is, the signature, how many optional details the files hold, and whether they hold
+a location. One section with one row, read by VoiceOver as one element.
+
+## `PhotoSummaryCard/body`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `PhotoSummaryCard/caption(lens:takenAt:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func caption(lens: Lens?, takenAt: Date?) -> String?
+```
+
+The caption's words: the lens and the time, joined as the viewer's caption joins them.
+
+- Parameters:
+  - lens: The lens, or `nil`.
+  - takenAt: When the shutter took the photo, or `nil`.
+- Returns: The caption, or `nil` when neither is known.
+
+## `PhotoSummaryCard/details`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let details: PhotoDetails
+```
+
+Its details.
+
+## `PhotoSummaryCard/detailsCount(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func detailsCount(_ count: Int) -> Text
+```
+
+How many optional details the files hold, the location not counted.
+
+- Parameter count: The count.
+- Returns: The sentence, from `Honesty.xcstrings`, with its plural rule.
+
+## `PhotoSummaryCard/init(photo:details:lens:takenAt:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?, takenAt: Date? = nil)
+```
+
+Creates the card.
+
+- Parameters:
+  - photo: The photo.
+  - details: Its details.
+  - lens: The lens, or `nil`.
+  - takenAt: When the shutter took it, or `nil`.
+
+## `PhotoSummaryCard/kind(of:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor static func kind(of details: PhotoDetails) -> Text
+```
+
+The kind of a photo with RAW: one frame of sensor data, and the copies developed from it.
+A photo saved without its RAW (copies only) says how the copies were made.
+
+- Parameter details: The details.
+- Returns: The sentence, from `Honesty.xcstrings`.
+
+## `PhotoSummaryCard/lens`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let lens: Lens?
+```
+
+The lens it was taken with, or `nil`.
+
+## `PhotoSummaryCard/photo`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let photo: SavedPhoto
+```
+
+The photo.
+
+## `PhotoSummaryCard/takenAt`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
+
+```swift
+@MainActor let takenAt: Date?
+```
+
+When the shutter took it, from the session's photo list (`SessionPhoto.takenAt`), or
+`nil` when the session has no record of it.
 
 ## `PhotoViewerActions`
 
@@ -13541,6 +13949,24 @@ case signed
 
 Every file is signed: the teal seal and "Signed".
 
+## `PhotoViewerFacts/bracketFrames(of:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func bracketFrames(of photo: SessionPhoto, in photos: [SessionPhoto]) -> [SessionPhoto]
+```
+
+The frames of the bracket a photo belongs to, in the order taken, or the photo alone
+when it isn't a bracket's frame: the session's records next to it with the same bracket,
+the same press of the shutter (`SessionPhoto.takenAt`) and consecutive frame numbers.
+A frame that wasn't saved leaves the frames before it as the bracket.
+
+- Parameters:
+  - photo: The photo shown.
+  - photos: The session's photos, oldest first.
+- Returns: The frames, at least the photo itself.
+
 ## `PhotoViewerFacts/caption(of:in:)`
 
 internal, declared in `Sources/NopeUI/PhotoViewer.swift`
@@ -13746,6 +14172,23 @@ The signature status of a saved photo, by the rule of the Last Photo thumbnail's
 
 - Parameter photo: The saved photo.
 - Returns: Signed, failed, or off by choice.
+
+## `PhotoViewerFacts/spokenLabel(of:in:)`
+
+internal, declared in `Sources/NopeUI/PhotoViewer.swift`
+
+```swift
+@MainActor static func spokenLabel(of photo: SessionPhoto?, in photos: [SessionPhoto]) -> String
+```
+
+The photo's VoiceOver label (``label(of:in:)``), followed for a bracket's frame by its
+chip's words: "Photo 6 of 7. Exposure bracket, frame 2 of 3, 0 EV." (docs/design/BRACKETING.md,
+section 4, "Viewer chip").
+
+- Parameters:
+  - photo: The photo shown, or `nil`.
+  - photos: The session's photos, oldest first.
+- Returns: The label.
 
 ## `PhotoViewerFacts/spokenValue(of:isZoomed:)`
 
@@ -14511,101 +14954,6 @@ kept inside the picture's edges.
   - fitted: The picture's fitted size, in points.
   - maximum: The zoom limit.
 - Returns: The new zoom.
-
-## `PhotoSummaryCard`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor struct PhotoSummaryCard
-```
-
-The summary at the top of What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15, group 0):
-the formats, the lens, the pixel size and total size, then four lines with symbols: what kind
-of photo it is, the signature, how many optional details the files hold, and whether they hold
-a location. One section with one row, read by VoiceOver as one element.
-
-## `PhotoSummaryCard/body`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The card.
-
-## `PhotoSummaryCard/details`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor let details: PhotoDetails
-```
-
-Its details.
-
-## `PhotoSummaryCard/detailsCount(_:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor static func detailsCount(_ count: Int) -> Text
-```
-
-How many optional details the files hold, the location not counted.
-
-- Parameter count: The count.
-- Returns: The sentence, from `Honesty.xcstrings`, with its plural rule.
-
-## `PhotoSummaryCard/init(photo:details:lens:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor init(photo: SavedPhoto, details: PhotoDetails, lens: Lens?)
-```
-
-Creates the card.
-
-- Parameters:
-  - photo: The photo.
-  - details: Its details.
-  - lens: The lens, or `nil`.
-
-## `PhotoSummaryCard/kind(of:)`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor static func kind(of details: PhotoDetails) -> Text
-```
-
-The kind of a photo with RAW: one frame of sensor data, and the copies developed from it.
-A photo saved without its RAW (copies only) says how the copies were made.
-
-- Parameter details: The details.
-- Returns: The sentence, from `Honesty.xcstrings`.
-
-## `PhotoSummaryCard/lens`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor let lens: Lens?
-```
-
-The lens it was taken with, or `nil`.
-
-## `PhotoSummaryCard/photo`
-
-internal, declared in `Sources/NopeUI/PhotoDetailsSummary.swift`
-
-```swift
-@MainActor let photo: SavedPhoto
-```
-
-The photo.
 
 ## `PresetNameScreen`
 
@@ -15731,7 +16079,9 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Close-Up: limits autofocus to near subjects, so it doesn't jump to the background
-(issue #51). Shown where the lens supports it, or while it is on.
+(issue #51). Shown where the lens supports it, or while it is on, and only while the lens
+autofocuses: with focus set by hand or locked it does nothing, so it is left out and
+comes back with its value when focus returns to Auto (issue #91).
 
 - Parameter context: The model and settings.
 
@@ -15784,7 +16134,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 Far Focus: limits autofocus to far subjects, so it doesn't catch a near branch or a window
 (issue #57). An advanced option: shown with manual controls on where the lens supports
-it, or while it is on.
+it, or while it is on, and only while the lens autofocuses, as Close-Up (issue #91).
 
 - Parameter context: The model and settings.
 
@@ -15811,8 +16161,9 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Flash: Off, Auto or On (issue #38). Shown only on a lens with a flash, with the modes the
-lens supports. The menu names each mode in full ("Flash Auto"); the tile's value is the
-short word.
+lens supports, and only where the shutter fires it: not in Burst, with a bracket or with
+Astro (`CameraModel.shutterUsesFlash`, issue #92). The menu names each mode in full
+("Flash Auto"); the tile's value is the short word.
 
 - Parameter context: The model and settings.
 
@@ -20109,6 +20460,12 @@ and idle it shows the delay ("3" or "10") in black; while a series or countdown 
 gives way to a stop square, because a press stops it. Its name stays "Take Photo"; the
 VoiceOver value says the mode (`shutterDriveValue(_:)`).
 
+In burst mode it also reports when it goes down and comes up (`onPressChange`), so holding it
+takes a burst (docs/design/BURST.md, 3.1). The disc shrinks while it is held, without
+animation. The action still runs for assistive activation and for a touch whose press went
+unreported, but not for a touch that already reported its press, so a tap takes one photo,
+not two.
+
 ## `ShutterButton/Face`
 
 internal, declared in `Sources/NopeUI/ShutterButton.swift`
@@ -20189,12 +20546,12 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 What the disc shows.
 
-## `ShutterButton/init(isEnabled:face:action:)`
+## `ShutterButton/init(isEnabled:face:onPressChange:action:)`
 
 internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 ```swift
-@MainActor init(isEnabled: Bool, face: Face = .photo, action: @escaping () -> Void)
+@MainActor init(isEnabled: Bool, face: Face = .photo, onPressChange: ((Bool) -> Void)? = nil, action: @escaping () -> Void)
 ```
 
 Creates the shutter.
@@ -20202,6 +20559,8 @@ Creates the shutter.
 - Parameters:
   - isEnabled: Whether a photo can be taken now.
   - face: What the disc shows; the plain disc by default.
+  - onPressChange: Reports the touch going down and coming up, in burst mode; `nil`
+    otherwise.
   - action: Called when the shutter is pressed.
 
 ## `ShutterButton/isEnabled`
@@ -20214,6 +20573,17 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 Whether a photo can be taken now.
 
+## `ShutterButton/onPressChange`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor let onPressChange: ((Bool) -> Void)?
+```
+
+Called with `true` when a touch goes down on the shutter and `false` when it comes up,
+slides off or is cancelled; `nil` outside burst mode.
+
 ## `ShutterButton/stopSide`
 
 internal, declared in `Sources/NopeUI/ShutterButton.swift`
@@ -20223,6 +20593,85 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 ```
 
 The side of the stop square: half the disc, so the ring still reads as the shutter.
+
+## `ShutterStyle`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor struct ShutterStyle
+```
+
+Draws the shutter's ring and disc, and reports whether it is held (docs/design/BURST.md, 5.3).
+
+## `ShutterStyle/face`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor let face: ShutterButton.Face
+```
+
+What the disc shows.
+
+## `ShutterStyle/init(face:isEnabled:showsHeld:onPressChange:)`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor init(face: ShutterButton.Face, isEnabled: Bool, showsHeld: Bool, onPressChange: @escaping (Bool) -> Void)
+```
+
+Creates the style.
+
+- Parameters:
+  - face: What the disc shows.
+  - isEnabled: Whether a photo can be taken now.
+  - showsHeld: Whether the disc shrinks while held.
+  - onPressChange: Called when the press state changes.
+
+## `ShutterStyle/isEnabled`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor let isEnabled: Bool
+```
+
+Whether a photo can be taken now.
+
+## `ShutterStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The ring and disc over the button's label.
+
+- Parameter configuration: The label and press state.
+
+## `ShutterStyle/onPressChange`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor let onPressChange: (Bool) -> Void
+```
+
+Called when the press state changes.
+
+## `ShutterStyle/showsHeld`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor let showsHeld: Bool
+```
+
+Whether the disc shrinks while held: in burst mode.
 
 ## `SideBySideOrStacked`
 
@@ -20420,6 +20869,7 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 The width of the picture, in points: the screen's.
+
 ## `StartIndicator`
 
 internal, declared in `Sources/NopeUI/StartIndicator.swift`
@@ -20961,8 +21411,9 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor static func closeUp(_ context: CameraControlContext) -> StatePill?
 ```
 
-"Close-Up" while autofocus is limited to near subjects (issue #51); its action turns
-the limit off.
+"Close-Up" while autofocus is limited to near subjects (issue #51); not while focus is
+set by hand or locked, where the limit does nothing (issue #91). Its action turns the
+limit off.
 
 - Parameter context: The model and settings.
 
@@ -21011,8 +21462,8 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor static func farFocus(_ context: CameraControlContext) -> StatePill?
 ```
 
-"Far Focus" while autofocus is limited to far subjects (issue #57); its action turns the
-limit off.
+"Far Focus" while autofocus is limited to far subjects (issue #57); not while focus is
+set by hand or locked (issue #91). Its action turns the limit off.
 
 - Parameter context: The model and settings.
 
@@ -21037,8 +21488,9 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor static func flash(_ context: CameraControlContext) -> StatePill?
 ```
 
-The flash mode while it is Auto or On and applies to the next photo; its action turns
-the flash off.
+The flash mode while it is Auto or On and applies to the next photo; not in Burst, with
+a bracket or with Astro, which never fire it (`CameraModel.flashModeForShutter`, issue
+#92). Its action turns the flash off.
 
 - Parameter context: The model and settings.
 

@@ -26,7 +26,7 @@ extension CameraWarnings {
     }
 
     /// "Battery Low" at 3% or less while the device isn't plugged in (issue #44,
-    /// ``DeviceStatus/lowBatteryLevel``).
+    /// `DeviceStatus.lowBatteryLevel`).
     ///
     /// - Parameters:
     ///   - context: The model and settings.

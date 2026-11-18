@@ -1875,14 +1875,14 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 struct BurstProgress
 ```
 
-The progress of a running burst.
+The progress of a running burst, or of an astro run.
 
-## `BurstProgress/init(taken:saved:)`
+## `BurstProgress/init(taken:saved:start:rate:isSaving:)`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-init(taken: Int, saved: Int)
+init(taken: Int, saved: Int, start: BurstStart = .started, rate: Double? = nil, isSaving: Bool = false)
 ```
 
 Creates a progress value.
@@ -1890,6 +1890,31 @@ Creates a progress value.
 - Parameters:
   - taken: The frames taken so far.
   - saved: The frames saved so far.
+  - start: Who began the burst.
+  - rate: The measured photos a second, or `nil`.
+  - isSaving: Whether only saving is left.
+
+## `BurstProgress/isSaving`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let isSaving: Bool
+```
+
+Whether no more photos will be taken and the last ones are being saved. A new burst
+can't start until they are.
+
+## `BurstProgress/rate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let rate: Double?
+```
+
+The photos a second over the most recent photos of this burst (``DriveModel/rateWindow``),
+measured from their times, or `nil` before the third photo (docs/design/BURST.md, 3.3).
 
 ## `BurstProgress/saved`
 
@@ -1900,6 +1925,16 @@ let saved: Int
 ```
 
 The frames saved so far. Saving follows taking, so it can be one behind.
+
+## `BurstProgress/start`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let start: BurstStart
+```
+
+Who began the burst. An astro run reports ``BurstStart/started``.
 
 ## `BurstProgress/taken`
 
@@ -1919,7 +1954,17 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 struct BurstResult
 ```
 
-How the last burst went: why it ended and how many frames were saved.
+How the last burst went: why it ended, how many frames were saved, and how fast it ran.
+
+## `BurstResult/duration`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let duration: Duration
+```
+
+The time from the first photo to the last; zero for fewer than two photos.
 
 ## `BurstResult/end`
 
@@ -1931,12 +1976,24 @@ let end: BurstEnd
 
 Why it ended.
 
-## `BurstResult/init(end:saved:)`
+## `BurstResult/hasSummary`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-init(end: BurstEnd, saved: Int)
+var hasSummary: Bool { get }
+```
+
+Whether an interface shows a summary of this burst ("12 photos saved", the time and the
+rate) until the next action: a burst of two photos or more that the person ended, not a
+Siri or Shortcuts count and not a failure. A burst of one photo is a photo.
+
+## `BurstResult/init(end:saved:taken:start:duration:rate:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+init(end: BurstEnd, saved: Int, taken: Int? = nil, start: BurstStart = .started, duration: Duration = .zero, rate: Double? = nil)
 ```
 
 Creates a result.
@@ -1944,6 +2001,21 @@ Creates a result.
 - Parameters:
   - end: Why it ended.
   - saved: The frames saved.
+  - taken: The frames taken; `saved` when not given.
+  - start: Who began the burst.
+  - duration: The time from the first photo to the last, in the clock's units.
+  - rate: The photos a second, or `nil`.
+
+## `BurstResult/rate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let rate: Double?
+```
+
+The photos a second over the whole burst: the photos taken less one, divided by
+``duration``; `nil` under three photos (docs/design/BURST.md, 3.3).
 
 ## `BurstResult/saved`
 
@@ -1954,6 +2026,124 @@ let saved: Int
 ```
 
 The frames saved, each its own photo.
+
+## `BurstResult/start`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let start: BurstStart
+```
+
+Who began the burst. An astro run reports ``BurstStart/started``.
+
+## `BurstResult/taken`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+let taken: Int
+```
+
+The frames taken. Every frame taken is saved unless one failed.
+
+## `BurstSpeed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum BurstSpeed
+```
+
+How fast a burst takes its photos (docs/design/BURST.md, 3.2). The speed is held for the
+session and not stored: each launch starts at ``fast``.
+
+## `BurstSpeed/fast`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case fast
+```
+
+Each photo is requested as soon as the camera is ready for it. No rate is promised: the
+rate is the camera's and the saving's.
+
+## `BurstSpeed/maximumPhotosPerSecond`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+var maximumPhotosPerSecond: Int? { get }
+```
+
+The most photos a second this speed takes, or `nil` when only the camera limits it. Slow
+is worded "up to" this figure: it can take fewer.
+
+## `BurstSpeed/minimumFrameInterval`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+var minimumFrameInterval: Duration? { get }
+```
+
+The least time between the starts of two photos, or `nil` for none.
+
+## `BurstSpeed/slow`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case slow
+```
+
+The same, with at least ``minimumFrameInterval`` between the starts of two photos: at
+most ``maximumPhotosPerSecond`` a second, and fewer when the camera needs longer.
+
+## `BurstStart`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum BurstStart
+```
+
+Who began a burst, so an interface knows how it ends: "Release to stop" for a held shutter,
+Stop Burst for the others (docs/design/BURST.md, 4.1).
+
+## `BurstStart/counted`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case counted
+```
+
+A set number of photos: a Siri or Shortcuts request (issue #62), or one photo for a press
+of the shutter that reports no phases (``CameraIntent/capture``). Always at ``BurstSpeed/fast``.
+
+## `BurstStart/held`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case held
+```
+
+A shutter held down: the on-screen shutter or a hardware button. It ends when the
+shutter comes up.
+
+## `BurstStart/started`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case started
+```
+
+Start Burst, which needs no holding (``DriveIntent/startBurst``). It ends with the
+shutter, Stop Burst or a limit.
 
 ## `CFAColor`
 
@@ -2395,6 +2585,28 @@ The bracket an interface turns on when the person chooses Bracket: the session's
 ``ManualControlsModel/lastBracket``, with as many frames as the selected lens can take,
 or `nil` when the lens can't bracket.
 
+## `CameraModel/burstSpeed`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var burstSpeed: BurstSpeed { get }
+```
+
+The speed a burst on the selected lens uses: the session's choice
+(``DriveModel/burstSpeed``) when the lens offers it, otherwise Fast.
+
+## `CameraModel/burstSpeeds`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var burstSpeeds: [BurstSpeed] { get }
+```
+
+The burst speeds offered on the selected lens: Fast, and Slow unless Fast measured under
+``DriveModel/slowBurstMinimumFastRate`` on it in this session.
+
 ## `CameraModel/cameraProblem(inbox:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Shortcuts.swift`
@@ -2454,9 +2666,10 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 ```
 
 Whether the shutter should be enabled: a photo can be taken now, or a countdown, burst,
-interval series or astro run runs, which pressing the shutter stops. In the Interval
-drive mode, not while the interval is as long as the series' time or longer
-(``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
+interval series or astro run runs, which pressing the shutter stops. Not while a burst's
+last photos are being saved: a new burst waits for them (docs/design/BURST.md, decision 9).
+In the Interval drive mode, not while the interval is as long as the series' time or
+longer (``IntervalBlocker/intervalNotShorterThanTime``): the shutter would start nothing.
 
 ## `CameraModel/canUseAstro`
 
@@ -2654,6 +2867,18 @@ pause: the run should pause now, or starts to within ``pauseAfterErrorSeconds``.
 
 - Returns: `true` when the run should pause, so the photo is taken again after the pause.
 
+## `CameraModel/flashModeForShutter`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var flashModeForShutter: FlashMode { get }
+```
+
+The flash mode the shutter's next photo uses: ``LightModel/flashModeForCapture`` while
+the shutter can fire the flash (``shutterUsesFlash``), otherwise ``FlashMode/off``. What
+an interface shows as the flash in use, such as the Flash pill.
+
 ## `CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`
 
 public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2725,7 +2950,6 @@ internal, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the press of a hardware shutter button that is down now closed the viewer, so
 its release takes no photo.
 
-## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:currentDate:)`
 ## `CameraModel/holdsBackLevelTap`
 
 public, declared in `Sources/NopeCore/Level.swift`
@@ -2743,7 +2967,7 @@ The Taptic Engine moves the device, so a tap is kept away from exposures and ser
 the camera not running there is no live picture to level. An interface also holds the tap
 back while a sheet covers the camera or the app isn't active, which the model can't see.
 
-## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:)`
+## `CameraModel/init(backend:saver:sleep:now:deviceStatusReader:currentDate:)`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
 
@@ -2884,18 +3108,27 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
 focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
 
-## `CameraModel/lensDidChange(hadBracket:)`
+## `CameraModel/isRunningSeries`
 
-internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
 
 ```swift
-@MainActor func lensDidChange(hadBracket: Bool)
+@MainActor var isRunningSeries: Bool { get }
 ```
 
-Chooses Single when a lens change turned the bracket off, so the drive strip never shows
-a self-timer the person didn't choose.
+Whether a countdown, a burst, an interval series or an astro run is in progress.
 
-- Parameter hadBracket: Whether a bracket was on before the lens changed.
+## `CameraModel/isTakingPhoto`
+
+internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var isTakingPhoto: Bool { get }
+```
+
+Whether a photo or an exposure bracket is being taken or saved. A bracket counts from its
+request to its last frame's save (``bracketProgress``), in full auto as with Manual
+Controls on.
 
 ## `CameraModel/isViewerOpen`
 
@@ -2927,26 +3160,6 @@ left the foreground is released at once, so none outlasts the visit.
   - lens: The lens it was taken with.
   - takenAt: When the shutter took it.
 
-## `CameraModel/isRunningSeries`
-
-internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
-
-```swift
-@MainActor var isRunningSeries: Bool { get }
-```
-
-Whether a countdown, a burst, an interval series or an astro run is in progress.
-
-## `CameraModel/isTakingPhoto`
-
-internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
-
-```swift
-@MainActor var isTakingPhoto: Bool { get }
-```
-
-Whether a photo or an exposure bracket is being taken or saved.
-
 ## `CameraModel/lensChangeBlocker`
 
 public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
@@ -2959,6 +3172,19 @@ Why the lens can't be changed now, or `nil` when it can (``canChangeLens``).
 
 A series wins over its own photos, so the reason stays ``LensChangeBlocker/runningSeries``
 for the whole series, the photos and the waits between them included.
+
+## `CameraModel/lensDidChange(hadBracket:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Bracket.swift`
+
+```swift
+@MainActor func lensDidChange(hadBracket: Bool)
+```
+
+Chooses Single when a lens change turned the bracket off, so the drive strip never shows
+a self-timer the person didn't choose.
+
+- Parameter hadBracket: Whether a bracket was on before the lens changed.
 
 ## `CameraModel/light`
 
@@ -3427,6 +3653,24 @@ Whether the camera should say "Hold it steady or use a tripod.":
 own guidance already says "Use a tripod.", so the hint would only repeat it (the Astro
 screens in docs/design draw no hint). Interfaces show the hint from this property.
 
+## `CameraModel/shutterUsesFlash`
+
+public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
+
+```swift
+@MainActor var shutterUsesFlash: Bool { get }
+```
+
+Whether the shutter's photos can fire the flash. Not in Burst (docs/design/BURST.md,
+3.1: "No flash in Burst, for one photo or many"), not with a bracket on
+(`AVCapturePhotoBracketSettings` takes no flash; ``CaptureRequest/flashMode``), and not
+with the astro helper on, whose frames are taken without it as a burst's are
+(`takeFrames`).
+
+An interface shows the flash control and its state only while this is `true` (issue #92,
+docs/design/SETTING-SCOPE.md, 6). The person's choice (``LightModel/flashMode``) is kept
+and is used again in the other modes.
+
 ## `CameraModel/startTimer(seconds:shot:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -3464,12 +3708,12 @@ public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 The storage warning for the next photo with the selected lens and formats, or `nil`
 (issue #44). The photo's size is estimated with ``PhotoSizeEstimate``.
 
-## `CameraModel/takeBurst(frames:)`
+## `CameraModel/takeBurst(frames:start:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeBurst(frames: Int = DriveModel.maximumBurstFrames) async
+@MainActor func takeBurst(frames: Int = DriveModel.maximumBurstFrames, start: BurstStart = .counted) async
 ```
 
 Takes a burst: single frames as fast as the camera is ready for them, each saved as its
@@ -3485,17 +3729,25 @@ before that is still saved; nothing is dropped.
 A burst never fires the flash, as brackets don't: the flash can't recharge between rapid
 frames.
 
+A held or started burst runs at the session's speed (``burstSpeed``); a counted one
+always at Fast, so "as fast as the camera allows" in the Siri action stays true. A burst
+at Fast of three photos or more records its rate for the lens, which decides whether Slow
+is offered on it (``DriveModel/offersSlowBurst(on:)``).
+
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
-- Parameter frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for the
-  shutter, or the count a Siri or Shortcuts request asked for (issue #62).
+- Parameters:
+  - frames: The most frames to take: ``DriveModel/maximumBurstFrames`` for a held or
+    started burst, 1 for a press that reports no phases, or the count a Siri or Shortcuts
+    request asked for (issue #62).
+  - start: Who begins the burst.
 
-## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:pausesWithCamera:)`
+## `CameraModel/takeFrames(limit:tracker:stopsOnLowBattery:endAtLimit:pausesWithCamera:minimumInterval:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Drive.swift`
 
 ```swift
-@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false) async
+@MainActor func takeFrames(limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached, pausesWithCamera: Bool = false, minimumInterval: Duration? = nil) async
 ```
 
 Takes up to `limit` single frames back to back, each saved as its own photo while the
@@ -3513,6 +3765,9 @@ location when the Location switch is on, as a single photo does.
     foreground or the camera pauses, and continues afterwards (the astro helper, issue
     #64; see `pauseAstroRun()`). A frame cut short by the pause is taken again, also
     when its error arrives before the pause does (`failureWasAPause()`).
+  - minimumInterval: The least time between the starts of two frames (a Slow burst), or
+    `nil` to take each as soon as the camera is ready. The run waits with the drive's
+    sleep and checks again whether to stop after the wait.
 
 Side effects: may show the add-only Photos prompt; adds each photo to Photos.
 
@@ -7435,12 +7690,24 @@ Stop the countdown without taking a photo.
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-case hardwareButton(HardwareButtonPhase)
+case hardwareButton(ShutterPhase)
 ```
 
 A hardware shutter button moved. In burst mode, holding it takes a burst until it comes
 up; in the other modes, it acts like the on-screen shutter when it comes up, as the
 system Camera app does.
+
+## `DriveIntent/setBurstSpeed(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case setBurstSpeed(BurstSpeed)
+```
+
+Choose the burst speed for this session. Ignored while a countdown or burst runs.
+
+- Parameter speed: The speed.
 
 ## `DriveIntent/setMode(_:)`
 
@@ -7451,6 +7718,31 @@ case setMode(DriveMode)
 ```
 
 Choose what the shutter does. Ignored while a countdown or burst runs.
+
+## `DriveIntent/shutter(_:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case shutter(ShutterPhase)
+```
+
+The on-screen shutter moved, in burst mode: touching down takes the first photo at once
+and starts a burst, which ends when the shutter comes up, the finger slides off or the
+touch is cancelled (docs/design/BURST.md, 3.1). Ignored in the other modes, where the
+shutter sends ``CameraIntent/capture`` when it comes up.
+
+## `DriveIntent/startBurst`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case startBurst
+```
+
+Start a burst that needs no holding, in burst mode: it ends with the shutter, Stop Burst
+or a limit. Ignored outside burst mode, with the astro helper on, while a photo can't be
+taken, and while a countdown or burst runs.
 
 ## `DriveIntent/startTimer(seconds:)`
 
@@ -7574,6 +7866,16 @@ internal, declared in `Sources/NopeCore/AstroHelper.swift`
 
 Marks a burst as started.
 
+## `DriveModel/beginSaving()`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func beginSaving()
+```
+
+Marks the burst as taking no more photos: only the last ones are being saved.
+
 ## `DriveModel/burstProgress`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -7583,6 +7885,18 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 The running burst, or `nil` when none runs.
+
+## `DriveModel/burstSpeed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var burstSpeed: BurstSpeed { get set }
+```
+
+The burst speed chosen for this session: ``BurstSpeed/fast`` at launch, and never stored
+(docs/design/BURST.md, decision 13). ``CameraModel/burstSpeed`` is the speed a burst on
+the selected lens uses.
 
 ## `DriveModel/countdown`
 
@@ -7618,27 +7932,30 @@ Marks the burst as ended.
 
 - Parameter end: Why it ended.
 
-## `DriveModel/init(sleep:)`
+## `DriveModel/init(sleep:now:)`
 
 internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void)
+@MainActor init(sleep: @escaping @Sendable (Double) async throws -> Void, now: @escaping @Sendable () -> ContinuousClock.Instant = { .now })
 ```
 
-Creates the model in single mode.
+Creates the model in single mode, at the Fast burst speed.
 
-- Parameter sleep: Waits a number of seconds between countdown ticks.
+- Parameters:
+  - sleep: Waits a number of seconds between countdown ticks and between Slow photos.
+  - now: Reads the clock that times a burst's photos.
 
 ## `DriveModel/isBurstStopRequested`
 
 internal, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-@MainActor var isBurstStopRequested: Bool { get set }
+@MainActor var isBurstStopRequested: Bool { get }
 ```
 
-Whether the person asked the running burst to stop.
+Whether the running burst should stop before its next photo: the person asked, or the
+shutter that holds it came up after its first photo.
 
 ## `DriveModel/isBusy`
 
@@ -7649,6 +7966,18 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 Whether a countdown or a burst runs, so the shutter stops it instead of taking a photo.
+
+## `DriveModel/isShutterHeld`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var isShutterHeld: Bool { get set }
+```
+
+Whether a shutter that starts a held burst is down now: the on-screen shutter in burst
+mode or a hardware button. A held burst stops after its first photo once it is up, also
+when it came up before the burst began.
 
 ## `DriveModel/isStopRequested`
 
@@ -7682,6 +8011,28 @@ The most frames one burst takes (issue #46, "Limits"). An assumption to be confi
 device: with RAW and HEIF at 12 MP this is under 2 GB, and memory stays bounded at any
 count, because each frame is saved while the next is taken.
 
+## `DriveModel/measuredFastRates`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor var measuredFastRates: [Lens.ID : Double] { get set }
+```
+
+The photos a second measured at Fast in this session's bursts, by lens: the last whole
+burst of three photos or more on each. Not stored. It decides whether Slow is offered
+(``offersSlowBurst(on:)``).
+
+## `DriveModel/minimumPhotosForRate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+nonisolated static let minimumPhotosForRate: Int
+```
+
+The fewest photos a rate is shown for: with two, one gap would be shown as a rate.
+
 ## `DriveModel/mode`
 
 public, declared in `Sources/NopeCore/DriveMode.swift`
@@ -7691,6 +8042,84 @@ public, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 What the shutter does.
+
+## `DriveModel/now`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor let now: @Sendable () -> ContinuousClock.Instant
+```
+
+Reads the monotonic clock, to time a burst's photos for its rate.
+
+## `DriveModel/offersSlowBurst(on:)`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func offersSlowBurst(on lensID: Lens.ID?) -> Bool
+```
+
+Whether Slow is offered on a lens: unless a burst at Fast on it measured under
+``slowBurstMinimumFastRate`` in this session.
+
+- Parameter lensID: The lens, or `nil` before the camera is ready.
+- Returns: `false` only when Fast on that lens is known to be slower than the threshold.
+
+## `DriveModel/prepareBurst(start:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func prepareBurst(start: BurstStart)
+```
+
+Sets who begins the next burst; ``beginBurst()`` uses it.
+
+- Parameter start: Who begins it.
+
+## `DriveModel/rate(photos:first:last:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor static func rate(photos: Int, first: ContinuousClock.Instant?, last: ContinuousClock.Instant?) -> Double?
+```
+
+Photos a second: the photos less one over the time from the first to the last, or `nil`
+under ``minimumPhotosForRate`` photos or without time between them.
+
+- Parameters:
+  - photos: The photos counted.
+  - first: The first one's time.
+  - last: The last one's time.
+- Returns: The rate, or `nil`.
+
+## `DriveModel/rateWindow`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+nonisolated static let rateWindow: Int
+```
+
+How many of the most recent photos the running rate is measured over (docs/design/BURST.md,
+3.3): enough to smooth one slow save, few enough to follow a change.
+
+## `DriveModel/recordFastRate(_:on:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func recordFastRate(_ rate: Double, on lensID: Lens.ID)
+```
+
+Keeps the rate a burst at Fast measured on a lens, for ``offersSlowBurst(on:)``.
+
+- Parameters:
+  - rate: The whole burst's photos a second.
+  - lensID: The lens it was taken with.
 
 ## `DriveModel/recordSaved()`
 
@@ -7710,7 +8139,7 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 @MainActor func recordTaken()
 ```
 
-Counts a frame taken.
+Counts a frame taken, at the clock's time now, and updates the running rate.
 
 ## `DriveModel/requestBurstStop()`
 
@@ -7721,6 +8150,18 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 ```
 
 Asks the running burst to stop after the frame being taken.
+
+## `DriveModel/setBurstSpeed(_:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func setBurstSpeed(_ speed: BurstSpeed)
+```
+
+Chooses the burst speed for the session, unless a countdown or burst runs.
+
+- Parameter speed: The speed.
 
 ## `DriveModel/setMode(_:)`
 
@@ -7733,6 +8174,42 @@ internal, declared in `Sources/NopeCore/DriveMode.swift`
 Changes the mode, unless a countdown or burst runs.
 
 - Parameter mode: The new mode.
+
+## `DriveModel/setShutterHeld(_:)`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor func setShutterHeld(_ isHeld: Bool)
+```
+
+Records that a shutter that starts a held burst went down or came up.
+
+- Parameter isHeld: Whether it is down.
+
+## `DriveModel/sleep`
+
+internal, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+@MainActor let sleep: @Sendable (Double) async throws -> Void
+```
+
+Waits a number of seconds: between countdown ticks, and between the photos of a Slow
+burst.
+
+## `DriveModel/slowBurstMinimumFastRate`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+nonisolated static let slowBurstMinimumFastRate: Double
+```
+
+The rate at Fast, in photos a second, below which Slow isn't offered on a lens: about 3 a
+second (owner decision 3, docs/design/BURST.md, 2026-11-18). Below it, Slow at up to 2 a
+second would barely differ from Fast. Measured in this session; no figure is assumed for
+a device.
 
 ## `ExposureMode`
 
@@ -8913,42 +9390,10 @@ The XMP content type of a `mime` item.
 public, declared in `Sources/NopeCore/DriveMode.swift`
 
 ```swift
-enum HardwareButtonPhase
+typealias HardwareButtonPhase = ShutterPhase
 ```
 
-How a hardware shutter button moved: the volume buttons or the Camera Control (issue #37).
-
-The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`).
-
-## `HardwareButtonPhase/cancelled`
-
-public, declared in `Sources/NopeCore/DriveMode.swift`
-
-```swift
-case cancelled
-```
-
-The system cancelled the press.
-
-## `HardwareButtonPhase/pressed`
-
-public, declared in `Sources/NopeCore/DriveMode.swift`
-
-```swift
-case pressed
-```
-
-The button went down.
-
-## `HardwareButtonPhase/released`
-
-public, declared in `Sources/NopeCore/DriveMode.swift`
-
-```swift
-case released
-```
-
-The button came up.
+The earlier name of ``ShutterPhase``, from when only the hardware buttons reported phases.
 
 ## `HeatLevel`
 
@@ -13397,6 +13842,23 @@ internal, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
 The aids to send with the person's settings. The fast shutter limit is full auto's alone:
 with manual controls on, the person decides.
 
+## `ManualControlsModel/autoFocusIsInUse`
+
+public, declared in `Sources/NopeCore/ManualControlsModel+Auto.swift`
+
+```swift
+@MainActor var autoFocusIsInUse: Bool { get }
+```
+
+Whether the selected lens is autofocusing now: it can autofocus, and focus is neither set
+by hand nor locked in Manual Controls. The same rule ``DeviceControls/init(settings:lens:assist:)``
+follows, so it is `false` exactly when the camera gets no Close-Up or Far Focus limit.
+
+Close-Up and Far Focus (``nearFocusLimit``, ``farFocusLimit``) limit only autofocus
+(`AVCaptureDevice.autoFocusRangeRestriction`), so an interface shows them only while this
+is `true` (issue #91, docs/design/SETTING-SCOPE.md, 6). The person's choice is kept and is
+used again when focus returns to Auto. `false` before the camera is ready.
+
 ## `ManualControlsModel/availability(of:)`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -13784,17 +14246,6 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 Whether the backend offers manual controls at all. When it's `false`, an interface
 shouldn't offer the "Manual controls" option.
 
-## `ManualControlsModel/lastIntervalEnd`
-
-public, declared in `Sources/NopeCore/ManualControlsModel.swift`
-
-```swift
-@MainActor var lastIntervalEnd: IntervalEnd? { get set }
-```
-
-How the last interval series ended, or `nil` before the first one ends. Cleared when the
-next starts.
-
 ## `ManualControlsModel/lastBracket`
 
 public, declared in `Sources/NopeCore/ManualControlsModel.swift`
@@ -13806,6 +14257,17 @@ public, declared in `Sources/NopeCore/ManualControlsModel.swift`
 The bracket chosen last in this session: the one an interface turns on again when the
 person chooses Bracket. ``BracketSettings/standard`` at first. Not stored between launches,
 as the drive mode isn't (AGENTS.md, "Cognitive": no surprise modes).
+
+## `ManualControlsModel/lastIntervalEnd`
+
+public, declared in `Sources/NopeCore/ManualControlsModel.swift`
+
+```swift
+@MainActor var lastIntervalEnd: IntervalEnd? { get set }
+```
+
+How the last interval series ended, or `nil` before the first one ends. Cleared when the
+next starts.
 
 ## `ManualControlsModel/lastReading`
 
@@ -25999,6 +26461,50 @@ case takePhoto(PhotoShortcut)
 
 Take one photo or a burst, after an optional delay, with an optional lens.
 
+## `ShutterPhase`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+enum ShutterPhase
+```
+
+How a shutter moved: a hardware shutter button (the volume buttons or the Camera Control,
+issue #37), or the on-screen shutter in burst mode (docs/design/BURST.md, 3.1).
+
+The app maps the system's capture event phases to these values (AVKit, `AVCaptureEvent`);
+an interface maps the on-screen shutter's touch to them.
+
+## `ShutterPhase/cancelled`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case cancelled
+```
+
+The system cancelled the press, or the finger slid off the on-screen shutter.
+
+## `ShutterPhase/pressed`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case pressed
+```
+
+The shutter went down.
+
+## `ShutterPhase/released`
+
+public, declared in `Sources/NopeCore/DriveMode.swift`
+
+```swift
+case released
+```
+
+The shutter came up.
+
 ## `SignatureStatus`
 
 public, declared in `Sources/NopeCore/SavedPhoto.swift`
@@ -26219,6 +26725,17 @@ Returns a placeholder photo for the request, or throws ``captureError``.
   RAW, ``placeholderPhotoData`` is also the reference RAW image data.
 - Throws: ``captureError``.
 
+## `SimulatedCaptureBackend/captureSeconds`
+
+public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
+
+```swift
+let captureSeconds: Double
+```
+
+How long ``capturePhoto(_:)`` takes, in seconds: zero, or a camera slow enough for a tap
+on the shutter in burst mode to end before a second photo (docs/design/BURST.md, 5.2).
+
 ## `SimulatedCaptureBackend/comparisonError`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
@@ -26314,12 +26831,12 @@ let frameAnalyses: AsyncStream<FrameAnalysis>
 
 The live analyses: ``placeholderAnalysis(for:)`` each time analysis is asked for.
 
-## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:)`
+## `SimulatedCaptureBackend/init(permission:permissionAfterRequest:capabilities:startError:captureError:eventsAfterStart:reading:readingCount:torchAvailable:comparisonError:captureSeconds:)`
 
 public, declared in `Sources/NopeCore/SimulatedCaptureBackend.swift`
 
 ```swift
-init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil)
+init(permission: CameraPermission, permissionAfterRequest: CameraPermission? = nil, capabilities: DeviceCapabilities = .none, startError: CaptureError? = nil, captureError: CaptureError? = nil, eventsAfterStart: [CaptureEvent] = [], reading: ExposureReading = placeholderReading, readingCount: Int = 1, torchAvailable: Bool = true, comparisonError: CaptureError? = nil, captureSeconds: Double = 0)
 ```
 
 Creates a simulated backend.
@@ -26339,6 +26856,7 @@ Creates a simulated backend.
   - torchAvailable: Whether the system allows the torch. Defaults to `true`.
   - comparisonError: The error taking the comparison shot's second photo throws, or
     `nil` to succeed.
+  - captureSeconds: How long taking a photo takes, in seconds. Defaults to 0.
 
 ## `SimulatedCaptureBackend/permission`
 

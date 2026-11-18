@@ -107,7 +107,7 @@ enum PhotoViewerFacts {
 
     /// The frames of the bracket a photo belongs to, in the order taken, or the photo alone
     /// when it isn't a bracket's frame: the session's records next to it with the same bracket,
-    /// the same press of the shutter (``SessionPhoto/takenAt``) and consecutive frame numbers.
+    /// the same press of the shutter (`SessionPhoto.takenAt`) and consecutive frame numbers.
     /// A frame that wasn't saved leaves the frames before it as the bracket.
     ///
     /// - Parameters:

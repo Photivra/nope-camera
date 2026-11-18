@@ -26,7 +26,7 @@ struct PhotoDetailsSheet: View {
     /// The device's lenses, to name the lens a photo was taken with when the files don't.
     let lenses: [Lens]
 
-    /// This session's records of the photos (``CameraModel/sessionPhotos``), for the lens and
+    /// This session's records of the photos (`CameraModel.sessionPhotos`), for the lens and
     /// the time the summary shows (`docs/design/BUILD-SPEC.md`, section 6, item 15). Empty when
     /// the interface has none.
     let session: [SessionPhoto]
