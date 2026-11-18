@@ -92,6 +92,10 @@ public final class NopeSettings {
     /// app passes it to ``CameraModel/manual`` with ``AutoControlIntent/setFollowsFaces(_:)``.
     public private(set) var followsFaces: Bool
 
+    /// What a pinch on the viewfinder does (issue #95): ``PinchAction/switchLenses`` by default.
+    /// The camera screen reads it with ``CameraModel/pinchSwitchesLenses(setting:)``.
+    public private(set) var pinch: PinchAction
+
     /// Whether the camera shows the "Processed" marker before a photo is taken with a lens
     /// without Bayer RAW (issue #80). On by default. Off hides the marker only: the photo is
     /// still the labeled processed fallback, VoiceOver still names its format, and the photo's
@@ -137,6 +141,9 @@ public final class NopeSettings {
         showsLiveActivity = defaults.bool(forKey: Key.showsLiveActivity)
         // A missing value is the default, off.
         followsFaces = defaults.bool(forKey: Key.followsFaces)
+        // A missing value (settings or a preset from before 1.0.0) or an unknown one is the
+        // default, Switch Lenses.
+        pinch = defaults.string(forKey: Key.pinch).flatMap(PinchAction.init(rawValue:)) ?? .switchLenses
         showsProcessedMarker =
             defaults.object(forKey: Key.showsProcessedMarker) == nil || defaults.bool(forKey: Key.showsProcessedMarker)
         // Unreadable sizes fall back to the defaults: every lens at its default size.
@@ -466,6 +473,7 @@ public final class NopeSettings {
             update(\.isNightModeFromAstro, from: stored),
             update(\.showsLiveActivity, from: stored),
             update(\.followsFaces, from: stored),
+            update(\.pinch, from: stored),
             update(\.showsProcessedMarker, from: stored),
             update(\.photoSizes, from: stored),
         ]
@@ -492,6 +500,14 @@ public final class NopeSettings {
     public func setFollowsFaces(_ isOn: Bool) {
         followsFaces = isOn
         defaults.set(isOn, forKey: Key.followsFaces)
+    }
+
+    /// Sets what a pinch on the viewfinder does, and saves the change.
+    ///
+    /// - Parameter action: Switch Lenses or Off.
+    public func setPinch(_ action: PinchAction) {
+        pinch = action
+        defaults.set(action.rawValue, forKey: Key.pinch)
     }
 
     /// Shows or hides the "Processed" marker, and saves the change.
@@ -571,6 +587,8 @@ public final class NopeSettings {
         static let showsLiveActivity = "NopeSettings.showsLiveActivity"
         /// Whether detected faces steer autofocus and auto exposure, a Boolean.
         static let followsFaces = "NopeSettings.followsFaces"
+        /// What a pinch on the viewfinder does, a ``PinchAction`` raw value.
+        static let pinch = "NopeSettings.pinch"
         /// Whether the "Processed" marker is shown, a Boolean.
         static let showsProcessedMarker = "NopeSettings.showsProcessedMarker"
         /// The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
