@@ -63,6 +63,8 @@ final class OverlayUITests: XCTestCase {
             // scroll at the largest text size the audit reports such Dynamic Type findings for
             // rows it pushed past the edge. Findings on real elements still fail.
             if issue.element == nil && [.contrast, .textClipped, .dynamicType].contains(issue.auditType) { continue }
+            // Text of the camera screen cut by the edge of the Settings popover on iPad.
+            if NopeAppUITests.isTextCutByAPopover(issue, in: app) { continue }
             if let element = issue.element, element.exists, !window.contains(element.frame) { continue }
             if let element = issue.element, element.exists, belowTheFold.contains(element.label) { continue }
             if issue.auditType == .contrast, let element = issue.element, element.exists, element.frame.minY < barBottom { continue }

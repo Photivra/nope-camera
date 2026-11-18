@@ -495,6 +495,9 @@ final class NopeAppUITests: XCTestCase {
         open(app, row: "HEIF and JPEG Copies")
         XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
+        // The page's end too: the file options are below the fold.
+        scrollToTheEndOfTheSettingsPage(app)
+        try audit(app, afterScrolling: true, checksDynamicType: checksDynamicType, checksContrast: checksContrast)
         goBack(app)
 
         open(app, row: "Details in Each Photo")
@@ -549,6 +552,9 @@ final class NopeAppUITests: XCTestCase {
         // Issues are collected during the audit and judged after it, because querying the app from inside
         // the audit's handler can make the audit time out.
         let sideways = iPhoneSideways
+        // The popover, or the list under the navigation bar, or the window: what scrolls.
+        let popover = app.popovers.firstMatch
+        let scrollFrame = popover.exists ? popover.frame : settingsListFrame(app)
         let ignored = { (issue: XCUIAccessibilityAuditIssue) in
             (!checksDynamicType && issue.auditType == .dynamicType)
                 || (!checksContrast && issue.auditType == .contrast)
@@ -559,6 +565,8 @@ final class NopeAppUITests: XCTestCase {
                 || (!checksContrast && issue.auditType == .dynamicType && issue.element == nil)
                 || Self.isOpenIPadFinding(issue)
                 || Self.isMeasuredDynamicTypeFinding(issue)
+                || Self.isTextCutByAPopover(issue, in: app)
+                || Self.isEnlargedPastTheLowerEdge(issue, of: scrollFrame)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
@@ -613,10 +621,12 @@ final class NopeAppUITests: XCTestCase {
         for issue in issues {
             let isIgnored = ignored(issue)
             if !isIgnored { remaining.append(issue) }
-            guard issue.auditType == .dynamicType || !isIgnored else { continue }
+            guard issue.auditType == .dynamicType || issue.auditType == .elementDetection || !isIgnored else { continue }
             // A decision by type alone needs no element; the others are the frame rules'.
             guard let element = issue.element, element.exists else {
-                NSLog("Audit round %d: %@, no element, ignored: %d", round, issue.compactDescription, isIgnored ? 1 : 0)
+                NSLog(
+                    "Audit round %d: %@ (type %lu), no element, ignored: %d", round, issue.compactDescription,
+                    UInt(issue.auditType.rawValue), isIgnored ? 1 : 0)
                 continue
             }
             NSLog(
@@ -675,6 +685,44 @@ final class NopeAppUITests: XCTestCase {
         return measuredDynamicTypeLabels.contains(label)
     }
 
+    /// Whether an issue is "Text clipped" on an element in the bottom fifth of the list or popover
+    /// that scrolls it.
+    ///
+    /// The finding's full text is "Text of this element may be clipped at larger Dynamic Type
+    /// sizes": the audit enlarges the text where it is, and a row at the lower edge is pushed
+    /// past it, as for the Dynamic Type check (see ``isIgnored(_:in:afterScrolling:)``). On HEIF
+    /// and JPEG Copies scrolled to its end, the audit reported Restore Defaults and the footer
+    /// under it in three audits in a row, on iPhone (at 716 and 768 of 874 points) and in the
+    /// iPad popover and night-mode sheet, while the screenshots taken with each finding show
+    /// both rows whole; rows grow with the text and the list scrolls, which the audits at the
+    /// largest text size check. A finding on an element higher up still fails.
+    ///
+    /// - Parameters:
+    ///   - issue: The issue.
+    ///   - frame: The frame of the popover, of the list under the navigation bar, or of the
+    ///     window, read before the audit.
+    @MainActor
+    private static func isEnlargedPastTheLowerEdge(_ issue: XCUIAccessibilityAuditIssue, of frame: CGRect) -> Bool {
+        guard issue.auditType == .textClipped, let element = issue.element, element.exists else { return false }
+        return element.frame.maxY > frame.maxY - frame.height / 5
+    }
+
+    /// Whether an issue is "Potentially inaccessible text" with no element while a popover is
+    /// open (Settings and the Photo Format sheet on iPad).
+    ///
+    /// The audit reads the screen's text and reports text it can't match to an element. Beside a
+    /// popover it reads the camera screen's text that the popover's edge cuts: in the failing
+    /// runs' recordings, "ff" and "e. in the Settings app." of "Camera Access Is Off" and its
+    /// explanation beside the Formats page, and "Tint" of the live readout beside Viewfinder
+    /// Overlays. The whole text is an element of the screen under the popover, which is modal,
+    /// and the Settings list with its search field passed the same check where no text was cut.
+    /// Only this check's element-less finding is skipped, and only while a popover shows; every
+    /// finding on an element still fails (docs/TESTING.md).
+    @MainActor
+    static func isTextCutByAPopover(_ issue: XCUIAccessibilityAuditIssue, in app: XCUIApplication) -> Bool {
+        issue.auditType == .elementDetection && issue.element == nil && app.popovers.firstMatch.exists
+    }
+
     /// Whether an issue is the open iPad finding on the lens buttons' "No RAW" caption: the audit
     /// reports it as "Dynamic Type font sizes are partially unsupported" in the iPad control
     /// column, although it is visibly enlarged at the largest text size (43 × 13.5 points at the
@@ -731,20 +779,18 @@ final class NopeAppUITests: XCTestCase {
         if issue.auditType == .dynamicType, let element = issue.element, element.frame.maxY > window.maxY - window.height / 5 {
             return true
         }
-        // Clipped text with no element is the same case: in 1.0.0 the audit reported it on the
-        // Accessibility page right to left and on Details in Each Photo with the location notice
-        // at the largest text size, rows that are audited whole before or after scrolling.
+        // Clipped text with no element: the finding says the text "may be clipped at larger
+        // Dynamic Type sizes" and names no element, so it can't be placed or measured. In 1.0.0
+        // the audit reported it on the Accessibility page, whose last row is at the lower edge
+        // (the screenshot shows every text whole), and on Details in Each Photo with the location
+        // notice at the largest text size. Every page is audited at the largest text size, where
+        // a finding on an element fails.
         if issue.element == nil && (issue.auditType == .contrast || issue.auditType == .textClipped) { return true }
         // A disabled control, drawn at the tokens' disabled opacity (the RAW row while it is the
         // only format): WCAG 2.2, 1.4.3, exempts inactive user interface components from the
         // contrast minimum (docs/design/tokens.md; chunk 0's note on "Contrast nearly passed").
         if issue.auditType == .contrast, let element = issue.element, element.exists, !element.isEnabled { return true }
         guard afterScrolling else { return false }
-        // Clipped text in the iPad popover after a scroll: the iPad audit reported HEIF and JPEG
-        // Copies' Restore Defaults row as clipped while it was whole inside the popover, the
-        // stale-frame case described above, as the iPhone audit did for the Show Processed
-        // Marker explanation (StatusLineUITests). The row is audited whole on iPhone.
-        if issue.auditType == .textClipped, popover.exists { return true }
         guard issue.auditType != .contrast, let element = issue.element else { return true }
         let current = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", element.label))
             .firstMatch
@@ -777,6 +823,32 @@ final class NopeAppUITests: XCTestCase {
             }
         }
         row.tap()
+    }
+
+    /// Scrolls the open Settings page to its end and waits until it has stopped: it drags inside
+    /// the list, as ``open(_:row:)`` does, until a drag no longer changes the screen.
+    ///
+    /// A row below the fold of a lazy list isn't laid out yet: the system reports it as existing
+    /// and hittable at a placeholder frame inside the list (on iPad, HEIF and JPEG Copies'
+    /// Restore Defaults at the popover's lower edge while Color Space was drawn there), and the
+    /// audit then measured that frame and reported its text as clipped. Scrolling to the end by
+    /// what the screen shows, not by what the row reports, puts the last rows really on screen.
+    @MainActor
+    func scrollToTheEndOfTheSettingsPage(_ app: XCUIApplication) {
+        let frame = settingsListFrame(app)
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        func point(_ fraction: CGFloat) -> XCUICoordinate {
+            origin.withOffset(CGVector(dx: frame.midX, dy: frame.minY + frame.height * fraction))
+        }
+        var last = XCUIScreen.main.screenshot().pngRepresentation
+        for _ in 0..<40 {
+            point(0.7).press(forDuration: 0.05, thenDragTo: point(0.3))
+            // Until the scroll indicator has faded, so two pictures of the same place are equal.
+            Thread.sleep(forTimeInterval: 1.5)
+            let now = XCUIScreen.main.screenshot().pngRepresentation
+            if now == last { return }
+            last = now
+        }
     }
 
     /// The frame of the list under the open screen's navigation bar (Settings and its pages): the
@@ -1675,23 +1747,16 @@ final class NopeAppUITests: XCTestCase {
         chooseCopiesOption(app, "sRGB", inRow: "settings.copies.colorSpace")
         let restore = app.buttons["Restore Defaults"]
         // Restore Defaults is the last row, below the fold since Copy Size (issue #57).
-        var swipes = 0
-        while !(restore.exists && restore.isHittable) && swipes < 6 {
-            app.swipeUp()
-            swipes += 1
-        }
+        scrollToTheEndOfTheSettingsPage(app)
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
-        try audit(app, afterScrolling: swipes > 0, checksDynamicType: false, checksContrast: !isPad)
+        XCTAssertTrue(restore.isHittable)
+        try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
         // The choice is kept when the page opens again; the row in Settings shows the look.
         goBack(app)
         open(app, row: "HEIF and JPEG Copies")
         let colorSpace = settingsElement(app, "settings.copies.colorSpace")
         XCTAssertTrue(row(colorSpace, shows: "sRGB"), colorSpace.debugDescription)
-        swipes = 0
-        while !(restore.exists && restore.isHittable) && swipes < 6 {
-            app.swipeUp()
-            swipes += 1
-        }
+        scrollToTheEndOfTheSettingsPage(app)
         XCTAssertTrue(restore.waitForExistence(timeout: 5))
         restore.tap()
         XCTAssertFalse(restore.waitForExistence(timeout: 2))

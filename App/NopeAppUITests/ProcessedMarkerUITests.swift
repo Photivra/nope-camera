@@ -33,18 +33,15 @@ extension NopeAppUITests {
         XCTAssertTrue(note.exists, file: file, line: line)
     }
 
-    /// Swipes up in the open list until the element is on screen, at most eight times.
+    /// Swipes up in the open list until the element is on screen or the list is at its end
+    /// (``scrollSheet(_:to:)``: inside the popover on iPad, and without a cap of eight swipes,
+    /// which ended inside the processing note at the largest text size on iPad).
     ///
     /// - Returns: How many swipes it took.
     @MainActor
     @discardableResult
     private func swipeUntilHittable(_ app: XCUIApplication, _ element: XCUIElement) -> Int {
-        var swipes = 0
-        while !(element.exists && element.isHittable) && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
-        }
-        return swipes
+        scrollSheet(app, to: element)
     }
 
     /// The Show Processed Marker switch in Settings.

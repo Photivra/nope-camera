@@ -46,12 +46,9 @@ extension NopeAppUITests {
         XCTAssertTrue(settingsElement(app, "settings.copies.copySize").exists)
         chooseCopiesOption(app, "Half Size", inRow: "settings.copies.copySize")
         let restore = app.buttons["Restore Defaults"]
-        var swipes = 0
-        while !(restore.exists && restore.isHittable) && swipes < 6 {
-            app.swipeUp()
-            swipes += 1
-        }
+        scrollToTheEndOfTheSettingsPage(app)
         XCTAssertTrue(restore.waitForExistence(timeout: 10))
+        XCTAssertTrue(restore.isHittable)
         try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
     }
 

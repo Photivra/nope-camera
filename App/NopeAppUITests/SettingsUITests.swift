@@ -208,6 +208,10 @@ extension NopeAppUITests {
             field.tap()
             if let text = field.value as? String, !text.isEmpty, text != field.placeholderValue {
                 field.buttons.firstMatch.tap()
+                // In the iPad popover, clearing the field ended the search: the keyboard left,
+                // and typing failed with "Neither element nor any descendant has keyboard
+                // focus". Tapping the field again gives it the focus on both devices.
+                field.tap()
             }
             field.typeText(name)
             let found = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
@@ -230,6 +234,8 @@ extension NopeAppUITests {
         let field = app.searchFields.firstMatch
         field.tap()
         field.buttons.firstMatch.tap()
+        // As in testSettingsSearchFindsEveryRootRowByName: clearing ends the search on iPad.
+        field.tap()
         field.typeText("reset\n")
         XCTAssertTrue(app.buttons["settings.search.settings.presets"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["settings.search.settings.copies.restoreDefaults"].exists)
