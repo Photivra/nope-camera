@@ -658,11 +658,12 @@ final class NopeAppUITests: XCTestCase {
         _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Animations finish")], timeout: 3)
     }
 
-    /// The Choose Details texts the audit reports as "Dynamic Type font sizes are partially
-    /// unsupported" on the iPad runner: the master switch's footer and the header after it.
+    /// The Details in Each Photo texts (Choose Details before 1.0.0) the audit reports as
+    /// "Dynamic Type font sizes are partially unsupported" on the iPad runner: the master switch's
+    /// footer and the header after it, "Location" since 1.0.0 ("In Each Photo" before).
     /// `testChooseDetailsTextGrowsAtEveryTextSize` measures both at all nine text sizes instead.
     static let measuredDynamicTypeLabels = [
-        "On: each photo keeps only what it needs to open. Off: choose each item below.", "In Each Photo",
+        "On: each photo keeps only what it needs to open. Off: choose each item below.", "Location",
     ]
 
     /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``. In
@@ -730,7 +731,10 @@ final class NopeAppUITests: XCTestCase {
         if issue.auditType == .dynamicType, let element = issue.element, element.frame.maxY > window.maxY - window.height / 5 {
             return true
         }
-        if issue.element == nil && issue.auditType == .contrast { return true }
+        // Clipped text with no element is the same case: in 1.0.0 the audit reported it on the
+        // Accessibility page right to left and on Details in Each Photo with the location notice
+        // at the largest text size, rows that are audited whole before or after scrolling.
+        if issue.element == nil && (issue.auditType == .contrast || issue.auditType == .textClipped) { return true }
         // A disabled control, drawn at the tokens' disabled opacity (the RAW row while it is the
         // only format): WCAG 2.2, 1.4.3, exempts inactive user interface components from the
         // contrast minimum (docs/design/tokens.md; chunk 0's note on "Contrast nearly passed").

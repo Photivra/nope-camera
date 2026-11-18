@@ -193,7 +193,7 @@ extension NopeAppUITests {
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)
     }
 
-    /// The Choose Details footer and header, which the audit's Dynamic Type check is not asked
+    /// The Details in Each Photo footer and header (Choose Details before 1.0.0), which the audit's Dynamic Type check is not asked
     /// about (``NopeAppUITests/measuredDynamicTypeLabels``), and the master switch's title are
     /// measured here instead: each is larger at every one of the nine text sizes than at the
     /// size before, in night mode, where Settings is a sheet on iPad too.
@@ -210,12 +210,12 @@ extension NopeAppUITests {
                 "photosDenied",
                 extraArguments: Self.nightModeOn + ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory" + category])
             XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-            app.buttons["Settings"].tap()
-            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
-            open(app, row: "Choose Details")
-            XCTAssertTrue(app.navigationBars["Choose Details"].waitForExistence(timeout: 5))
+            openSettings(app)
+            open(app, row: "Details in Each Photo")
+            XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
             for label in labels {
-                let text = app.staticTexts[label]
+                // "Location" is also the switch's title; the header is the first match, above it.
+                let text = app.staticTexts[label].firstMatch
                 XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
                 // The text's area: a line that wraps gets narrower and taller.
                 let area = text.frame.width * text.frame.height

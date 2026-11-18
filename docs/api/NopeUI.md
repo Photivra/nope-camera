@@ -13560,14 +13560,21 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 struct ReadoutRowLayout
 ```
 
-The readout row's arrangement: the readouts side by side at one equal width (the widest
-readout's ideal width plus ``NopeSpace/xxs``, or more), then More at ``NopeSize/minTarget``,
-filling the width offered. When that doesn't fit, two rows of four equal cells: the first four
-readouts, then the rest and More.
+The readout row's arrangement: the readouts side by side, then More at
+``NopeSize/minTarget``, filling the width offered. The readouts share the width equally; a
+readout whose value needs more than its share (its ideal width plus ``NopeSpace/xxs``) gets
+what it needs and the others share the rest equally, as the design's flexible row does
+(docs/design/screens/drive-astro: "ISO 3200" beside "1 s"). Only when the readouts' needs
+don't fit together do they take two rows of four equal cells: the first four readouts, then
+the rest and More.
+
+A long value on its own, such as the highest ISO that Astro sets ("ISO 12,096"), so keeps the
+one row on a 402-point iPhone: two rows pushed the Astro card up to a third of the picture,
+against the quarter BUILD-SPEC.md, 3.5, allows.
 
 It is a layout rather than `ViewThatFits` over an `HStack` and a `Grid`, so the readouts get
-exactly equal widths, More keeps its own width, and one row is chosen whenever the widest
-value fits (docs/design/screens/camera-manual, a 402-point iPhone).
+exactly equal widths whenever they fit, More keeps its own width, and one row is chosen
+whenever the values fit (docs/design/screens/camera-manual, a 402-point iPhone).
 
 ## `ReadoutRowLayout/Arrangement`
 
@@ -13587,14 +13594,25 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 let cellWidth: CGFloat
 ```
 
-The width of a readout, in points.
+The width of a readout, in points: the equal share of the readouts that need no more
+than it, or the width of every cell in two rows.
 
-## `ReadoutRowLayout/Arrangement/init(isOneRow:cellWidth:rowHeight:size:)`
+## `ReadoutRowLayout/Arrangement/cellWidths`
 
 internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 
 ```swift
-init(isOneRow: Bool, cellWidth: CGFloat, rowHeight: CGFloat, size: CGSize)
+let cellWidths: [CGFloat]
+```
+
+Each readout's width in one row, in points, in order; empty in two rows.
+
+## `ReadoutRowLayout/Arrangement/init(isOneRow:cellWidth:cellWidths:rowHeight:size:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+init(isOneRow: Bool, cellWidth: CGFloat, cellWidths: [CGFloat] = [], rowHeight: CGFloat, size: CGSize)
 ```
 
 Creates an arrangement.
@@ -13602,6 +13620,7 @@ Creates an arrangement.
 - Parameters:
   - isOneRow: Whether everything is in one row.
   - cellWidth: The width of a readout, in points.
+  - cellWidths: Each readout's width in one row, in points; empty in two rows.
   - rowHeight: The height of a row, in points.
   - size: The whole size, in points.
 
@@ -13687,6 +13706,24 @@ Places the readouts and More.
   - proposal: The offered size.
   - subviews: The readouts, then More.
   - cache: Unused.
+
+## `ReadoutRowLayout/sharedWidths(needs:total:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+static func sharedWidths(needs: [CGFloat], total: CGFloat) -> (share: CGFloat, widths: [CGFloat])
+```
+
+The readouts' widths in one row: an equal share of the total, except that a readout that
+needs more than the share gets what it needs and the others share the rest, repeated
+until every readout has at least what it needs.
+
+- Parameters:
+  - needs: Each readout's ideal width plus ``NopeSpace/xxs``, in points; their sum is at
+    most `total`.
+  - total: The width the readouts share, in points.
+- Returns: The share of the readouts that need no more than it, and every readout's width.
 
 ## `ReadoutRowLayout/sizeThatFits(proposal:subviews:cache:)`
 

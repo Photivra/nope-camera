@@ -415,8 +415,9 @@ other finding fails the test:
   the iOS 27.2 Simulator reported system form section headers and footers as "partially
   unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
   included, at the largest accessibility text size;
-- a Dynamic Type finding on the Choose Details footer "On: each photo keeps only what it needs
-  to open. Off: choose each item below." and the header "In Each Photo": the iPad runner's
+- a Dynamic Type finding on the Details in Each Photo footer "On: each photo keeps only what it
+  needs to open. Off: choose each item below." and the header after it, "Location" (in 0.3.0,
+  Choose Details and "In Each Photo"): the iPad runner's
   audit reports them although they grow at every text size, which
   `testChooseDetailsTextGrowsAtEveryTextSize` measures (see "Dynamic Type findings on the iPad
   runner");
@@ -574,17 +575,21 @@ on-device checks below.
 
 ### UI test shards
 
-The UI suite takes about 131 minutes of test time on the iPhone Simulator and 138 on the iPad
-Simulator on the GitHub macOS runner (about twice as long as on a recent Mac, so CI limits are
-sized from runner times, never from local ones). CI runs it in three iPhone shards and two iPad
-shards, each its own job:
+By the listed times the UI suite takes about 225 minutes of test time on the iPhone Simulator
+and 234 on the iPad Simulator on the GitHub macOS runner (about twice as long as on a recent
+Mac, so CI limits are sized from runner times, never from local ones). CI runs it in three
+iPhone shards and two iPad shards, each its own job:
 
 | Job | Tests (listed times) | With about 7 minutes of setup | Limit |
 |---|---|---|---|
-| `ui-tests 1/3`, `2/3`, `3/3` | 44 minutes each | 51 minutes | 100 minutes |
-| `ui-tests-ipad 1/2`, `2/2` | 69 minutes each | 76 minutes | 130 minutes |
+| `ui-tests 1/3`, `2/3`, `3/3` | 75 minutes each | 82 minutes | 100 minutes |
+| `ui-tests-ipad 1/2`, `2/2` | 117 minutes each | 124 minutes | 130 minutes |
 | `ui-tests-watch` | 2 minutes | 13 minutes, with its build | 45 minutes |
 
+The 1.0.0 interface added about 75 UI tests, listed with estimates (twice their local time),
+so the listed times are higher than the runner will measure for some of them; with these
+estimates the iPad shards leave less than the planned room under their limit, and a third iPad
+shard (and a fourth iPhone shard) should be weighed once the runner has measured the new tests.
 The limits leave room for the wait for a runtime remount (up to 12.5 minutes, see "Simulator
 runtime disk images on the runner") and for one second run of unfinished tests after an
 infrastructure failure. Until build 44149517211 there were eight shards per device; with fewer,
