@@ -107,6 +107,8 @@ struct DriveCardsTests {
                 startDelay: .threeSeconds, estimate: AstroEstimate(frameCount: 5, shutter: nil, bytes: 1, framesThatFit: nil)) == nil)
         #expect(ModeCardText.shortDuration(13).contains("13"))
         #expect(ModeCardText.spokenDuration(120) == "2 minutes")
-        #expect(AstroText.turnedOn == "Astro on. Manual controls and night mode are on.")
+        #expect(AstroText.turnedOn(isNightModeOn: true) == "Astro on. Manual controls and night mode are on.")
+        // Night mode is named only while it is on (Astro from a preset doesn't turn it on).
+        #expect(AstroText.turnedOn(isNightModeOn: false) == "Astro on. Manual controls are on.")
     }
 }

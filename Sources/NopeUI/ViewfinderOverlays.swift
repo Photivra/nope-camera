@@ -292,7 +292,7 @@ struct LevelOverlay: View {
         .accessibilityValue(LevelText.description(of: state))
         // VoiceOver reads it; touches go to the viewfinder under it.
         .accessibilityRespondsToUserInteraction(false)
-        .sensoryFeedback(.alignment, trigger: state?.isLevel ?? false) { _, isLevel in isLevel }
+        .sensoryFeedback(NopeHaptic.levelFlat, trigger: state?.isLevel ?? false) { _, isLevel in isLevel }
     }
 
     /// The horizon bar, with short fixed marks on either side to show the tilt against.

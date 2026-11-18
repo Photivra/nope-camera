@@ -41,7 +41,7 @@ struct PhotoSizeSettingsView: View {
                     } label: {
                         Text(verbatim: LensName.string(for: lens.kind))
                     }
-                    // A pushed list, as the other pickers in Settings: a menu's value was reported
+                    // A pushed list, as Paired with RAW in Formats: a menu's value was reported
                     // clipped at large text sizes.
                     .pickerStyle(.navigationLink)
                 }

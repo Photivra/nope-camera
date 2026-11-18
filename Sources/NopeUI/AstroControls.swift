@@ -23,10 +23,18 @@ enum AstroText {
             comment: "Explains the night sky (astro) helper. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the frames are never combined. Honesty wording: a fluent human must review every translation before release.")
     }
 
-    /// What VoiceOver hears when Astro comes on, from the drive strip, Siri or a preset: it also
-    /// turns on the manual controls and night mode (docs/design/BUILD-SPEC.md, section 4).
-    static var turnedOn: String {
-        String(localized: "Astro on. Manual controls and night mode are on.", bundle: .module, comment: "Announced to VoiceOver when Astro is chosen on the drive strip: Astro also turns on the manual controls and night mode.")
+    /// What VoiceOver hears when Astro comes on. From the drive strip it also turns on the
+    /// manual controls and night mode (docs/design/BUILD-SPEC.md, section 4); from a preset it
+    /// turns on the manual controls only, so night mode is named only while it is on.
+    ///
+    /// - Parameter isNightModeOn: Whether night mode is on.
+    /// - Returns: The announcement.
+    static func turnedOn(isNightModeOn: Bool) -> String {
+        if isNightModeOn {
+            String(localized: "Astro on. Manual controls and night mode are on.", bundle: .module, comment: "Announced to VoiceOver when Astro is chosen on the drive strip: Astro also turns on the manual controls and night mode.")
+        } else {
+            String(localized: "Astro on. Manual controls are on.", bundle: .module, comment: "Announced to VoiceOver when Astro comes on while night mode is off, for example from a settings preset: Astro also turns on the manual controls.")
+        }
     }
 
     /// What the shutter does while the helper is on, for VoiceOver, or `nil` while it is off.
@@ -210,11 +218,17 @@ struct AstroFeedback: ViewModifier {
     /// The astro helper.
     let astro: AstroModel
 
+    /// Whether night mode is on, so the announcement names it only then.
+    let isNightModeOn: Bool
+
     /// Creates the feedback.
     ///
-    /// - Parameter astro: The astro helper.
-    init(astro: AstroModel) {
+    /// - Parameters:
+    ///   - astro: The astro helper.
+    ///   - isNightModeOn: Whether night mode is on.
+    init(astro: AstroModel, isNightModeOn: Bool) {
         self.astro = astro
+        self.isNightModeOn = isNightModeOn
     }
 
     /// The content with the feedback attached.
@@ -223,7 +237,7 @@ struct AstroFeedback: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onChange(of: astro.isOn) { _, isOn in
-                if isOn { Self.announce(AstroText.turnedOn) }
+                if isOn { Self.announce(AstroText.turnedOn(isNightModeOn: isNightModeOn)) }
             }
             .onChange(of: astro.isRunning) { _, isRunning in
                 if isRunning {
@@ -246,8 +260,10 @@ struct AstroFeedback: ViewModifier {
 extension View {
     /// Adds the astro helper's announcements (``AstroFeedback``).
     ///
-    /// - Parameter astro: The astro helper.
-    func astroFeedback(_ astro: AstroModel) -> some View {
-        modifier(AstroFeedback(astro: astro))
+    /// - Parameters:
+    ///   - astro: The astro helper.
+    ///   - isNightModeOn: Whether night mode is on.
+    func astroFeedback(_ astro: AstroModel, isNightModeOn: Bool) -> some View {
+        modifier(AstroFeedback(astro: astro, isNightModeOn: isNightModeOn))
     }
 }

@@ -92,6 +92,12 @@ enum DriveWord: CaseIterable, Identifiable, Hashable, Sendable {
         }
     }
 
+    /// The VoiceOver hint of the selected Interval or Astro word: choosing it again opens its
+    /// settings.
+    @MainActor static var opensSettingsHint: Text {
+        Text("Opens its settings.", bundle: .module, comment: "VoiceOver hint on the selected Interval or Astro word of the drive strip above the shutter: activating the word again opens that mode's settings.")
+    }
+
     /// The word as a string, for the VoiceOver announcement of a new mode.
     @MainActor var string: String {
         switch self {
@@ -289,6 +295,9 @@ struct DriveStrip: View {
         .disabled(isBusy && !isSelected)
         .accessibilityLabel(word.title)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        // The selected Interval or Astro opens its settings on a second tap, which nothing on
+        // the word shows (docs/design/ACCESSIBILITY.md, the drive strip).
+        .accessibilityHint(isSelected && (word == .interval || word == .astro) ? DriveWord.opensSettingsHint : Text(verbatim: ""))
         .accessibilityShowsLargeContentViewer {
             Label { word.title } icon: { Image(systemName: word.systemImage) }
         }
@@ -350,6 +359,9 @@ struct DriveStrip: View {
     ///
     /// - Parameter delay: The delay.
     private func chooseTimerDelay(_ delay: SelfTimerDelay) {
+        // The camera keeps its mode while a countdown or a photo is going, so the delay shown
+        // must not change then either.
+        guard !isBusy else { return }
         timerDelay = delay
         let model = model
         Task { await model.send(.drive(.setMode(.timer(delay)))) }

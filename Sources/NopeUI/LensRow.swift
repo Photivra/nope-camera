@@ -226,6 +226,8 @@ struct QuickButton: View {
         }
         .buttonStyle(NopeIconButtonStyle(size: size, isSelected: isOpen))
         .accessibilityLabel(Self.name)
+        // Voice Control: the name, then the letter the button shows (docs/design/ACCESSIBILITY.md).
+        .accessibilityInputLabels([Self.name, Text(verbatim: "Q")])
         .accessibilityIdentifier("quickMenuButton")
         .accessibilityAddTraits(isOpen ? .isSelected : [])
         .accessibilityShowsLargeContentViewer {

@@ -175,7 +175,7 @@ enum FocusText {
 
 /// The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
 /// vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
-/// swipe. Every one of them also has a button: the lock button, the Hide Controls tray item and
+/// swipe. Every one of them also has a button: the lock button, Hide Controls in the quick menu and
 /// Show Controls (issue #68, "Gestures always have a button").
 struct ViewfinderTouches: ViewModifier {
     /// How long a press must last to lock, in seconds: the system's usual long press.

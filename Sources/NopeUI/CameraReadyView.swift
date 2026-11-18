@@ -226,6 +226,8 @@ struct CameraReadyView: View {
         // Type at the largest size, and a swipe outside the small popover didn't scroll it.
         .sheet(isPresented: $showsPhotoDetails) {
             PhotoDetailsSheet(photos: sessionPhotos ?? [], openPhoto: openPhotosApp.map { open in { open() } })
+                // Red on black in night mode, as every other sheet of the camera.
+                .nightModeStyle(isNightMode)
                 .presentationBackground(.background)
                 // Page sized on iPad: in the shorter form sheet the list's last rows sat at the
                 // sheet's lower edge, where the audit measured them against the dimmed camera.
@@ -301,7 +303,7 @@ struct CameraReadyView: View {
         .sensoryFeedback(NopeHaptic.saved, trigger: saveCount)
         .sensoryFeedback(NopeHaptic.notSaved, trigger: failureCount)
         .driveFeedback(model.drive)
-        .astroFeedback(model.astro)
+        .astroFeedback(model.astro, isNightModeOn: isNightMode)
         .announcesResourceWarnings(model)
     }
 

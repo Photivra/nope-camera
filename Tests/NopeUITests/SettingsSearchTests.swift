@@ -102,6 +102,15 @@ struct SettingsSearchTests {
         #expect(found.contains(.details))
     }
 
+    /// The keywords in the string catalog are the ones the code documents: "heic", "jpg" and "mp"
+    /// were missing from the catalog, which is what the app reads.
+    @Test func fileFormatAbbreviationsFindTheirSettings() {
+        #expect(SettingsSearch.settings(matching: "heic", availability: .init()).contains(.formats))
+        #expect(SettingsSearch.settings(matching: "jpg", availability: .init()).contains(.copies))
+        #expect(SettingsSearch.settings(matching: "mp", availability: .init(offersPhotoSize: true)).contains(.photoSize))
+        #expect(SettingsSearch.settings(matching: "metadata", availability: .init()).contains(.detailsLocation))
+    }
+
     @Test func resetFindsPresetsAndRestoreDefaults() {
         let found = SettingsSearch.settings(matching: "reset", availability: .init())
         #expect(found.contains(.presets))
@@ -141,7 +150,6 @@ struct SettingsSearchTests {
                     "manualControls", "selfTimer", "burst", "interval", "astro", "flash", "light", "exposure", "closeUp",
                     "farFocus", "magnify", "grid", "level", "compare",
                 ])
-        #expect(CameraPointer.all.first == CameraPointer.all.first)
     }
 
     @Test func everyRowIsFoundByItsOwnTitle() {

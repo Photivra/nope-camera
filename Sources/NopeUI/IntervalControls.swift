@@ -2,9 +2,8 @@ import NopeCore
 import SwiftUI
 
 /// The interval and photo count of interval shooting (issue #48), with Start or Stop: one
-/// section, shown in Interval Settings (``IntervalSheet``). Pro Tools shows it too until its
-/// Interval section is removed (docs/design/BUILD-SPEC.md, 3.4); the drive strip and its card are
-/// then the one home of Interval.
+/// section, shown in Interval Settings (``IntervalSheet``). The drive strip and its card are the
+/// one home of Interval; Pro Tools has no Interval section (docs/design/BUILD-SPEC.md, 3.4).
 ///
 /// A series works in full auto and with manual controls on; `NopeCore` holds the series
 /// (`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).

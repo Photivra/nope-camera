@@ -327,7 +327,7 @@ enum ModeCardText {
         }
     }
 
-    /// "Next photo in 6s". Not in the catalog yet (BUILD-SPEC.md, figure drive-interval-running).
+    /// "Next photo in 6s" (BUILD-SPEC.md, figure drive-interval-running).
     ///
     /// - Parameter seconds: The seconds left.
     static func nextPhoto(in seconds: Int) -> Text {
@@ -362,7 +362,7 @@ enum ModeCardText {
             comment: "Astro card on the camera, before the frames start: the start delay (a duration such as \"10 seconds\"), the total time of all frames (such as \"20 s\"), and the most storage they can use (such as \"486 MB\"). All three values are formatted by the system.")
     }
 
-    /// "First frame in 8s". Not in the catalog yet (figure drive-astro-countdown).
+    /// "First frame in 8s" (figure drive-astro-countdown).
     ///
     /// - Parameter seconds: The seconds left.
     static func firstFrame(in seconds: Int) -> Text {
@@ -384,8 +384,7 @@ enum ModeCardText {
         }
     }
 
-    /// "13 s left": the exposure time of the frames still to take. Not in the catalog yet (figure
-    /// drive-astro-running).
+    /// "13 s left": the exposure time of the frames still to take (figure drive-astro-running).
     ///
     /// - Parameter seconds: The exposure time left, in seconds.
     static func exposureLeft(_ seconds: Double) -> Text {
@@ -826,7 +825,7 @@ struct DriveFeedback: ViewModifier {
     /// - Parameter content: The camera.
     func body(content: Content) -> some View {
         content
-            .sensoryFeedback(.impact(weight: .light), trigger: drive.countdown.remainingSeconds) { _, new in new != nil }
+            .sensoryFeedback(NopeHaptic.countdownSecond, trigger: drive.countdown.remainingSeconds) { _, new in new != nil }
             .onChange(of: drive.countdown.remainingSeconds) { _, remaining in
                 if let remaining { Self.announce(remaining.formatted()) }
             }
