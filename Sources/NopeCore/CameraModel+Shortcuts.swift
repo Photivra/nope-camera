@@ -321,7 +321,7 @@ extension CameraModel {
         switch status {
         case .saved(let photo): .saved(isSigned: photo.signature == .signed)
         case .savedBracket(let photos), .savedBurst(let photos):
-            .savedSeveral(allSigned: photos.allSatisfy { $0.signature == .signed })
+            .savedSeveral(count: photos.count, allSigned: photos.allSatisfy { $0.signature == .signed })
         case .failed(let error): .notSaved(error)
         case .idle, .capturing, .saving: .notSaved(.notRunning)
         }

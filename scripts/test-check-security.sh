@@ -82,5 +82,43 @@ expect fail "privacy manifest declaring tracking" "$d"
 d=$(new_tree); mkdir -p "$d/App.xcodeproj"; printf '<plist><dict><key>NSPrivacyTracking</key><false/><key>NSPrivacyTrackingDomains</key><array><string>t.example</string></array></dict></plist>\n' >"$d/PrivacyInfo.xcprivacy"
 expect fail "privacy manifest listing a tracking domain" "$d"
 
+# Assistant entry points (issue #82).
+gated='struct TakePhotoIntent: AppIntent {\n    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication\n    func perform() async throws -> some IntentResult & ReturnsValue<Int> {\n        let a = await gate.answer(.takePhoto) {}\n    }\n}\n'
+d=$(new_tree); mkdir -p "$d/App"; printf "$gated" >"$d/App/I.swift"
+expect pass "a listed gated intent that runs the check and requires an unlock" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct SneakyIntent: AppIntent {\n    func perform() async throws -> some IntentResult { .result() }\n}\n' >"$d/App/I.swift"
+expect fail "an intent not listed in assistant-entry-points.txt" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct TakePhotoIntent: AppIntent {\n    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication\n    func perform() async throws -> some IntentResult { await inbox.submit(.x) }\n}\n' >"$d/App/I.swift"
+expect fail "a gated intent that skips the check" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct TakePhotoIntent: AppIntent {\n    func perform() async throws -> some IntentResult { await gate.answer(.takePhoto) {} }\n}\n' >"$d/App/I.swift"
+expect fail "a gated intent without the unlock requirement" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct PhotoEntity: AppEntity {\n    let id: String\n}\n' >"$d/App/E.swift"
+expect fail "an entity not listed" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'struct OpenCameraIntent: CameraCaptureIntent {\n    func perform() async throws -> some IntentResult { .result() }\n}\n' >"$d/App/I.swift"
+expect pass "an intent that only opens a screen needs no check" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'func perform() async throws -> some IntentResult & ReturnsValue<IntentFile> {}\n' >"$d/App/R.swift"
+expect fail "an intent result that returns a file" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'let activity = NSUserActivity(activityType: "a")\n' >"$d/App/U.swift"
+expect fail "a user activity" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf 'import CoreSpotlight\n' >"$d/App/S.swift"
+expect fail "search indexing" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '.onOpenURL { _ in }\n' >"$d/App/L.swift"
+expect fail "a URL handler" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '<key>CFBundleURLTypes</key>\n' >"$d/App/Info.plist"
+expect fail "a URL scheme" "$d"
+
+d=$(new_tree); mkdir -p "$d/App"; printf '@AppIntent(schema: .camera.startCapture)\nstruct S {}\n' >"$d/App/A.swift"
+expect fail "an assistant schema" "$d"
+
 if [[ $failures -ne 0 ]]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all security check tests passed"

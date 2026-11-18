@@ -3,6 +3,7 @@
 # - Banned code: networking, web views, analytics or ads SDKs, unguarded logging,
 #   Unsafe pointer APIs outside allowlisted files.
 # - Dependency, entitlement and privacy manifest allowlists.
+# - Assistant entry points (issue #82): listed, gated, no indexing, links or schemas.
 # Run from the repository root. Optional first argument: a directory to check instead.
 set -euo pipefail
 
@@ -66,6 +67,36 @@ if find . -name '*.xcodeproj' -maxdepth 3 2>/dev/null | grep -q .; then
     fi
   done <<<"$manifests"
 fi
+
+# 6. Assistant entry points (issue #82): every App Intent, entity, query, App Shortcuts
+#    provider and control is listed in security/assistant-entry-points.txt with its kind; a
+#    gated intent's type calls the Assistant Access check (gate.answer) and requires an unlocked
+#    device; results carry a sentence and at most a number; no URL scheme, search indexing,
+#    donation, user activity or assistant schema exists.
+entry_list=$(grep -vE '^\s*(#|$)' security/assistant-entry-points.txt 2>/dev/null || true)
+entry_protocols='AppIntent|SetValueIntent|LiveActivityIntent|CameraCaptureIntent|AudioPlaybackIntent|ForegroundContinuableIntent|SnippetIntent|AppEntity|IndexedEntity|TransientAppEntity|EntityQuery|EntityStringQuery|EnumerableEntityQuery|EntityPropertyQuery|AppShortcutsProvider|ControlWidget'
+entry_banned='NSUserActivity|CoreSpotlight|CSSearchableItem|IndexedEntity|IntentDonationManager|\.donate\(|onOpenURL|CFBundleURLTypes|@AssistantIntent|@AssistantEntity|@AssistantEnum|@AppIntent\(schema|@AppEntity\(schema|@AppEnum\(schema|ShowsSnippetView|OpensIntent|Transferable'
+while IFS= read -r f; do
+  [[ -f "$f" ]] || continue
+  if hits=$(grep -nE "$entry_banned" "$f" | grep -vE '^[0-9]+:[[:space:]]*//'); then
+    while IFS= read -r h; do report "assistant entry point not allowed in $f:$h (docs/design/assistant-access.md, 7.4)"; done <<<"$hits"
+  fi
+  [[ "$f" == *.swift ]] || continue
+  if hits=$(grep -nE 'ReturnsValue<' "$f" | grep -vE 'ReturnsValue<Int>'); then
+    while IFS= read -r h; do report "an intent result other than a sentence and a number in $f:$h"; done <<<"$hits"
+  fi
+  while IFS= read -r decl; do
+    [[ -z "$decl" ]] && continue
+    line=${decl%%:*}; name=$(sed -E 's/^[0-9]+:[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor)[[:space:]]+([A-Za-z_][A-Za-z0-9_]*).*/\4/' <<<"$decl")
+    kind=$(awk -v n="$name" '$1 == n { print $2 }' <<<"$entry_list")
+    if [[ -z "$kind" ]]; then report "$name in $f is not in security/assistant-entry-points.txt"; continue; fi
+    if [[ "$kind" == takes-photos || "$kind" == changes ]]; then
+      body=$(awk -v start="$line" 'NR >= start { print } NR > start && /^}/ { exit }' "$f")
+      grep -q 'gate\.answer(' <<<"$body" || report "$name in $f doesn't run the Assistant Access check (gate.answer) in perform()"
+      grep -q 'authenticationPolicy.*\.requiresAuthentication' <<<"$body" || report "$name in $f doesn't require an unlocked device (authenticationPolicy)"
+    fi
+  done < <(grep -nE "^[[:space:]]*(public |private |fileprivate |internal )?(final )?(struct|class|enum|actor)[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*:[^{]*\b($entry_protocols)\b" "$f" || true)
+done < <(files)
 
 if [[ $fail -ne 0 ]]; then exit 1; fi
 echo "security checks passed"

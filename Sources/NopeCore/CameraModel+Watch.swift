@@ -79,7 +79,7 @@ extension WatchResult {
     init(_ outcome: ShortcutOutcome) {
         switch outcome {
         case .saved(let isSigned): self = .saved(isSigned: isSigned)
-        case .savedSeveral(let allSigned): self = .savedSeveral(allSigned: allSigned)
+        case .savedSeveral(_, let allSigned): self = .savedSeveral(allSigned: allSigned)
         case .notSaved, .lensUnavailable, .lensSelected, .lightOn, .lightOff, .noLight, .lightUnavailable,
             .intervalStarted, .intervalBlockedByAstro, .intervalNotShorterThanTime, .intervalStopped, .noIntervalRunning,
             .bracketUnavailable,

@@ -16,6 +16,30 @@
     "Signed." : {
       "comment" : "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.",
       "extractionState" : "manual"
+    },
+    "Apply Factory Defaults? Privacy settings stay as they are." : {
+      "comment" : "Question Siri asks before nope. applies Factory Defaults through Siri or Shortcuts, which leaves every Privacy setting as it is. Factory Defaults and Privacy are names in nope.'s Settings. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Apply the preset “%@”? Its privacy settings are not applied." : {
+      "comment" : "Question Siri asks before nope. applies a saved preset through Siri or Shortcuts, which leaves every Privacy setting as it is. The placeholder is the preset's name, in the language's quotation marks. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Assistant Access is off. You can turn it on in nope. › Settings › Privacy." : {
+      "comment" : "Siri's answer when Assistant Access is off: the action was refused and nothing changed. Assistant Access, Settings and Privacy are names in nope.'s Settings. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Cancelled. Nothing changed." : {
+      "comment" : "Siri's answer after the person cancelled nope.'s question before an action. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Unlock this device to use nope.'s actions. Nothing changed." : {
+      "comment" : "Siri's answer when an action was asked for while the iPhone or iPad is locked; nothing was taken or changed. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "You can change this in nope. › Settings › Privacy." : {
+      "comment" : "Shown under the question Siri or Shortcuts asks before one of nope.'s actions. Settings and Privacy are names in nope.'s Settings. Keep \"nope.\" unchanged. Draft for the Honesty review.",
+      "extractionState" : "manual"
     }
   },
   "version" : "1.0"

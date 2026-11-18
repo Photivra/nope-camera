@@ -1036,7 +1036,22 @@ XCTest can't speak to Siri or run a shortcut, so Debug builds take
 `lens-ultraWide` for Switch Lens, `preset-factory` for Apply Preset or `interval` for Start
 Interval Shooting; several requests separated by commas are sent one after another, and the last
 one's answer is shown (`interval,lens-ultraWide` asks for a lens while a series runs). The app sends
-the request through the same `ShortcutInbox` the intents use and shows what Siri would say
+the request through the Assistant Access check and the same `ShortcutInbox` the intents use
+(`AssistantGate`, issue #82) and shows what Siri would say. Access is off by default, so
+`ShortcutUITests` launch with `-NopeSettings.assistantAccess YES -NopeSettings.assistantAsk never`;
+`-NopeSimulatedAssistantAnswer cancel` cancels the question that Every Action and Only Before a
+Photo ask (it is confirmed otherwise). `AssistantAccessUITests.swift` covers the Settings page
+(off and on, Ask First while off, the largest text size, right to left, night mode all red with
+the iPad window corner excluded, search, the Lock Screen camera's read-only row) and the requests
+through the check: every action refused while access is off with the refusal card and its count,
+a cancelled question, the camera's hint and the This Session list, and the tip after five
+confirmations. At the largest text size the audit's Dynamic Type check reports the page's switch
+title, "Assistant Access", as "partially unsupported" or "Text clipped" on the iPhone and iPad Simulators (iOS 27.2)
+wherever it is drawn; that one finding is set aside there, and
+`testAssistantAccessTitleGrowsAtEveryTextSize` measures the switch's row growing at all nine
+text sizes instead. The check, the session record, the stored settings and presets that keep the
+Privacy settings are unit tested in `AssistantAccessTests`. Before Assistant Access, the request
+went straight to the inbox, as described here:
 (`ShortcutUITests`: a delay with the countdown, a cancelled countdown, no camera access, a burst
 of three, a bracket in full auto, a bracket taken brightest first, a lens switch, and a lens switch refused during a series). The Interval drive mode is covered by
 `testIntervalShootingFromTheDriveMenuInFullAuto` and the sheet's audits at the largest text size
@@ -1308,6 +1323,39 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   Location on and access declined, it says some settings couldn't be applied; the light stays
   off.
 - Check in each language that ships (English only in 1.0.0) that Siri accepts the phrases.
+
+### Assistant Access on a device (issue #82)
+
+The design's assumptions (`docs/design/assistant-access.md`, section 14). Each is an assumption
+until it is confirmed in Apple's documentation for iOS 26 and 27 and on a device; record the
+result, the device and the iOS version here. A check that fails changes the design (the column
+"If it doesn't hold"), not the wording. None has been run yet.
+
+| # | Check on a device | If it doesn't hold | Result |
+| --- | --- | --- | --- |
+| 1 | A gated intent starts in the background and moves to the foreground only after the check and the question (`supportedModes` `[.background, .foreground(.dynamic)]`, `continueInForeground`): with access off, "Take a photo with nope." answers without opening the app | Go back to `openAppWhenRun`: the app opens, then refuses or asks | Not run |
+| 2 | `requestConfirmation` shows the question, the line under it ("You can change this in nope. › Settings › Privacy.") and the custom buttons (Take Photo, Switch Lens, Apply Preset, Cancel) in Siri and in Shortcuts, before the app opens, and throws on Cancel | The app's own card on the camera (design, 5.5); drop the line if only it fails | Not run |
+| 3 | An unattended Shortcuts automation stops at the question and doesn't run the action | Every Action and Only Before a Photo must refuse when no person can answer | Not run |
+| 4 | After Cancel, Siri and Shortcuts show "Cancelled. Nothing changed." | No answer; nothing is claimed | Not run |
+| 5 | `authenticationPolicy = .requiresAuthentication` makes Siri ask for an unlock for every gated action, on the Lock Screen, through headphones and in a car; the app's own check (protected data unavailable) answers "Unlock this device to use nope.'s actions. Nothing changed." if a request still arrives locked | The check refuses while the device is locked, by the app's own test (built) | Not run |
+| 6 | A result can carry one button that runs Open Assistant Access (Open Settings in the off answer). Not built: the off answer is the sentence alone, which names the path; the Open Assistant Access action exists in Shortcuts | Keep the sentence alone | Not run |
+| 7 | Camera-domain assistant schemas: what exists on iOS 26 and 27, and whether a conforming intent still runs `perform()` and can ask for confirmation. None is adopted | No schema is adopted | Not run |
+| 8 | The system doesn't record or suggest the app's actions unless the app donates them (the app donates nothing) | State what the system does on the Honesty screen; point to the system's Siri settings for the app | Not run |
+| 9 | Siri on Apple Watch, headphones, a car or a speaker can't run the phone's actions around the check; the headphone remote's volume press stays a shutter button | Any path found gets the same check before release | Not run |
+| 10 | iPhone Mirroring: whether the camera runs, and whether any control can be operated from the Mac | State it as a limit | Not run |
+| 11 | Siri on a locked phone: the photo action requires unlocking | Release blocker | Not run |
+| 12 | The camera stops when the app leaves the screen, and the system's camera indicator shows whenever it runs. Only after this is recorded may the page and the Honesty screen say "No photo is taken while nope. is not on screen" (decision 19) | Release blocker | Not run |
+| 13 | With access off, the system lists the app's actions and phrases and nothing else about the app; the Apply Preset picker lists only Factory Defaults | State what is listed | Not run |
+
+Also on a device: the manual accessibility pass with VoiceOver, Voice Control and Switch Control
+over the Assistant Access page, a refused request, a question answered by voice and by touch,
+and the camera's hint; each gated action from Siri and Shortcuts with access off (the off answer,
+nothing changes, the refusal card the next time the camera is shown), with Every Action (the
+question names the values the action runs with), with Only Before a Photo and with Never; Apply
+Preset through Shortcuts with a preset that has Location and signing on while both are off (they
+stay off; the answer says privacy settings weren't applied); a saved shortcut that names a
+saved preset while access is off; and a shortcut saved before 1.0.0 (it answers that access is
+off until it is turned on).
 
 ### Live Activity on a device
 

@@ -17,11 +17,11 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "Photo saved. It isn't signed.",
                 comment: "Siri's answer after nope. saved a photo without a Content Credentials signature.")
-        case .savedSeveral(allSigned: true):
+        case .savedSeveral(_, allSigned: true):
             LocalizedStringResource(
                 "Photos saved and signed.",
                 comment: "Siri's answer after nope. saved an exposure bracket, each frame its own signed photo.")
-        case .savedSeveral(allSigned: false):
+        case .savedSeveral(_, allSigned: false):
             LocalizedStringResource(
                 "Photos saved. Not all of them are signed.",
                 comment: "Siri's answer after nope. saved an exposure bracket in which some photos aren't signed.")

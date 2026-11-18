@@ -386,6 +386,21 @@ keyboard and the status bar are drawn by the system in the dark appearance night
 
 ### Siri, Shortcuts, Control Center and the Lock Screen (issues #42, #62)
 
+**Assistant Access (issue #82).** Every gated intent's `perform()` calls one helper in the app
+target, `AssistantGate.answer`, which runs `AssistantSession.perform(_:access:confirm:run:)` in
+`NopeCore`: it reads `AssistantAccess` (from `NopeSettings.assistantAccess`, `assistantAsk` and
+whether the device is locked), refuses, asks with the system's `requestConfirmation`, or goes on;
+records the request in memory; reads the check again after a confirmation; opens the app with
+`continueInForeground` if the action needs the camera; then runs the code described below. The
+gated intents run in the background first (`supportedModes`) and require an unlocked device
+(`authenticationPolicy`). `PresetQuery` lists saved presets only while access is on
+(`AssistantAccess.offeredPresets(_:)`), and the shortcut path applies a preset with
+`keepsPrivacySettings: true`. Open the Camera, Open Assistant Access, the Control Center controls,
+the Live Activity's Stop button and the Apple Watch app are not gated. The camera shows the
+session's hint, refusal card and tip (`AssistantHints`), and Settings › Privacy › Assistant Access
+(`AssistantAccessSettingsView`) the This Session list; `\.assistantSession` is `nil` in the Lock
+Screen camera, where the row is read only.
+
 The App Intents hold no rules (AGENTS.md, "Siri and Shortcuts"). `TakePhotoIntent` (a delay of
 none, 3 or 10 seconds or a custom number up to 60, and an optional lens) opens the app, turns its
 parameters into a `PhotoShortcut` and calls `ShortcutInbox.submit(_:)`, which waits for the
@@ -581,7 +596,7 @@ Nothing applies a preset on its own: the app never changes the person's settings
   read. A setting missing from an older preset gets its default when the preset is applied
   (`NopeSettings.apply(_:)` removes keys the snapshot doesn't have); a choice a later version adds
   is read as the default. One damaged preset is skipped without hiding the others.
-- **Applying** (`SettingsPresets.apply(_:camera:location:)`): the snapshot replaces the
+- **Applying** (`SettingsPresets.apply(_:camera:location:keepsPrivacySettings:)`): the snapshot replaces the
   settings, then `CameraModel.applyCameraSetup(_:manualControlsOn:)` sets the camera through the
   same intents as the interface, so every lens rule still applies. Factory Defaults is an empty
   snapshot and `CameraSetup.factory`; saved presets are kept. Location is never turned on by the
@@ -604,7 +619,7 @@ Nothing applies a preset on its own: the app never changes the person's settings
   slot is used) picks a `PresetEntity` (Factory Defaults, then the saved presets, from
   `PresetQuery` over the app's `SettingsPresets`, registered with `AppDependencyManager`). It
   opens the app and sends `ShortcutRequest.applyPreset(_:)` through the inbox; the model waits for
-  the camera, then calls the same `SettingsPresets.apply(_:camera:location:)` (a camera that
+  the camera, then calls the same `SettingsPresets.apply(_:camera:location:keepsPrivacySettings:)` (a camera that
   can't start leaves the camera values unchanged, `PresetNotice.cameraNotReady`). The outcome,
   `ShortcutOutcome.presetApplied(_:)`, `.busy` or `.presetUnavailable`, becomes one spoken
   sentence: which preset, whether everything applied as saved, and that Presets can undo it,

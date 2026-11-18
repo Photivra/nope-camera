@@ -98,6 +98,12 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case detailsAlwaysSaved = "settings.details.alwaysSaved"
     /// The Sign Each Photo switch.
     case signEachPhoto = "settings.signEachPhoto"
+    /// The Assistant Access row and page (issue #82).
+    case assistantAccess = "settings.assistantAccess"
+    /// The Assistant Access switch, on its page.
+    case assistantAccessSwitch = "settings.assistantAccess.switch"
+    /// Ask First, on the Assistant Access page.
+    case assistantAsk = "settings.assistantAccess.ask"
 
     // Camera.
 
@@ -181,10 +187,11 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     var page: SettingsPage? {
         switch self {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
-            .details, .signEachPhoto, .fastShutter, .focusOnFaces, .pinch, .startInCleanView, .overlays,
-            .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn, .liveActivity,
-            .accessibility, .honesty, .about:
+            .details, .signEachPhoto, .assistantAccess, .fastShutter, .focusOnFaces, .pinch, .startInCleanView,
+            .overlays, .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .keepScreenOn,
+            .liveActivity, .accessibility, .honesty, .about:
             nil
+        case .assistantAccessSwitch, .assistantAsk: .assistantAccess
         case .factoryDefaults, .saveCurrentSettings: .presets
         case .pairedWithRAW: .formats
         case .copiesLook, .heifCompression, .heifBitDepth, .jpegCompression, .colorSpace, .copySize, .copiesRestoreDefaults:
@@ -215,7 +222,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .privacy, .details, .detailsRemoveAll, .detailsLocation, .detailsDateAndTime, .detailsSubSecondTime,
             .detailsTimeZone, .detailsCameraMakeAndModel, .detailsLensMakeAndModel, .detailsExactCameraModel,
             .detailsLensCorrections, .detailsExposureSettings, .detailsSystemVersion, .detailsMakerNotes,
-            .detailsAppNameAndVersion, .detailsStandardFileTags, .detailsAlwaysSaved, .signEachPhoto:
+            .detailsAppNameAndVersion, .detailsStandardFileTags, .detailsAlwaysSaved, .signEachPhoto, .assistantAccess,
+            .assistantAccessSwitch, .assistantAsk:
             .privacy
         case .camera, .fastShutter, .focusOnFaces, .pinch: .camera
         case .screen, .startInCleanView, .overlays, .overlaysGrid, .overlaysGridStyle, .overlaysLevel,
@@ -262,6 +270,8 @@ enum SettingsPage: String, Hashable, CaseIterable {
     case photoSize = "settings.photoSize"
     /// Details in Each Photo.
     case details = "settings.details"
+    /// Assistant Access.
+    case assistantAccess = "settings.assistantAccess"
     /// Fast Shutter.
     case fastShutter = "settings.fastShutter"
     /// Viewfinder Overlays.
@@ -469,6 +479,10 @@ enum SettingsText {
     static let alwaysSaved = LocalizedStringResource("Always Saved", table: "Honesty", bundle: bundle, comment: "Section header above the details every photo keeps.")
     /// "Sign Each Photo".
     static let signEachPhoto = LocalizedStringResource("Sign Each Photo", table: "Honesty", bundle: bundle, comment: "Switch that adds a Content Credentials signature to each photo.")
+    /// "Assistant Access" (issue #82).
+    static let assistantAccess = LocalizedStringResource("Assistant Access", table: "Honesty", bundle: bundle, comment: "Settings row, page title and switch: whether Siri, Shortcuts and other assistants can use nope.'s actions. A name in nope.'s Settings.")
+    /// "Ask First", on the Assistant Access page.
+    static let askFirst = LocalizedStringResource("Ask First", table: "Honesty", bundle: bundle, comment: "Section header and setting on nope.'s Assistant Access page: when nope. asks before an assistant's action runs. A name in nope.'s Settings.")
     /// "Fast Shutter".
     static let fastShutter = LocalizedStringResource("Fast Shutter", bundle: bundle, comment: "Setting and quick control: how fast a shutter full auto prefers, to avoid blur.")
     /// "Focus on Faces".
@@ -559,6 +573,8 @@ enum SettingsText {
         case .detailsStandardFileTags: standardFileTags
         case .detailsAlwaysSaved: alwaysSaved
         case .signEachPhoto: signEachPhoto
+        case .assistantAccess, .assistantAccessSwitch: assistantAccess
+        case .assistantAsk: askFirst
         case .fastShutter: fastShutter
         case .focusOnFaces: focusOnFaces
         case .pinch: pinch
@@ -616,6 +632,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Remove All Optional Details", defaultValue: "metadata, EXIF, strip", bundle: bundle, comment: "Settings search keywords for Remove All Optional Details, separated by commas. Not shown on screen.")
         case .signEachPhoto:
             LocalizedStringResource("Search keywords: Sign Each Photo", defaultValue: "Content Credentials, C2PA, signature", bundle: bundle, comment: "Settings search keywords for Sign Each Photo, separated by commas. Not shown on screen. Content Credentials and C2PA are names; keep them unchanged.")
+        case .assistantAccess, .assistantAccessSwitch, .assistantAsk:
+            LocalizedStringResource("Search keywords: Assistant Access", defaultValue: "siri, shortcuts, assistant, voice, automation, AI, intelligence, ask, confirm", bundle: bundle, comment: "Settings search keywords for Assistant Access, separated by commas. Not shown on screen. Siri and Shortcuts are Apple's names.")
         case .fastShutter:
             LocalizedStringResource("Search keywords: Fast Shutter", defaultValue: "blur, motion, freeze, action, sports", bundle: bundle, comment: "Settings search keywords for Fast Shutter, separated by commas. Not shown on screen.")
         case .focusOnFaces:
@@ -837,6 +855,9 @@ enum SettingsSearch {
         /// Whether the device has two or more rear lenses (`LensPinch/isOffered(on:)`), so the
         /// Pinch setting applies.
         var offersPinch = false
+        /// Whether the Assistant Access page can be opened: everywhere but the Lock Screen
+        /// camera, where the row is read only.
+        var offersAssistantAccessPage = true
 
         /// Creates the availability.
         ///
@@ -850,11 +871,12 @@ enum SettingsSearch {
         ///   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
         ///   - offersKeepScreenOn: Whether Keep Screen On is offered.
         ///   - offersPinch: Whether the device has two or more rear lenses, so Pinch applies.
+        ///   - offersAssistantAccessPage: Whether the Assistant Access page can be opened.
         init(
             hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true,
             offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false,
             offersAstro: Bool = false, offersKeepScreenOn: Bool = true,
-            offersPinch: Bool = false
+            offersPinch: Bool = false, offersAssistantAccessPage: Bool = true
         ) {
             self.hasPresets = hasPresets
             self.offersPhotoSize = offersPhotoSize
@@ -865,6 +887,7 @@ enum SettingsSearch {
             self.offersAstro = offersAstro
             self.offersKeepScreenOn = offersKeepScreenOn
             self.offersPinch = offersPinch
+            self.offersAssistantAccessPage = offersAssistantAccessPage
         }
 
         /// Whether the item exists here.
@@ -882,6 +905,7 @@ enum SettingsSearch {
             case .keepNightModeAfterAstro: offersAstro
             case .keepScreenOn: offersKeepScreenOn
             case .pinch: offersPinch
+            case .assistantAccess, .assistantAccessSwitch, .assistantAsk: offersAssistantAccessPage
             default: true
             }
         }

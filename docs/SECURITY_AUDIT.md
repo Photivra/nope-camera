@@ -450,10 +450,16 @@ MASVS-PLATFORM-1, MASVS-PLATFORM-2, MASVS-CODE-4.
   parameters are validated by `NopeCore` (`PhotoShortcut` clamps the delay to 0 to 60 seconds
   and the count to 1 to 50; `IntervalSettings` clamps an interval series; an unknown lens takes
   no photo and changes nothing), and the intents return only whether a photo was saved and
-  signed or what changed, never image data or metadata. Issue #82 (not built yet) adds intents
+  signed or what changed, never image data or metadata. Issue #82 adds intents
   for every existing control: each checks Assistant Access inside `perform()`, its entry-point
   test lists every intent, App Shortcut, control and link, and the results stay within this
   rule (format, lens, RAW or processed, saved or not; no file, thumbnail or tag values).
+- **Run (Assistant Access, issue #82):** `scripts/check-security.sh` passes: every App Intent,
+  entity, query, App Shortcuts provider and control is in `security/assistant-entry-points.txt`
+  with its kind; each gated intent runs the check (`gate.answer`) and requires an unlocked device;
+  no intent returns more than a sentence and a number; no URL scheme, search indexing, donation,
+  user activity or assistant schema exists. On a device, the checks of `docs/TESTING.md`,
+  "Assistant Access on a device", are recorded.
 - **Pass:** no untrusted input other than the camera, the user's own taps and App Intents.
 
 ### 18. Static analysis

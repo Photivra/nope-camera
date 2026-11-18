@@ -80,9 +80,6 @@
     "Camera access is off for nope. You can turn it on in the Settings app." : {
       "comment" : "Siri's answer when camera access was declined. Keep \"nope.\" unchanged; Settings is the iOS app."
     },
-    "Chooses how fast a shutter nope. prefers while Manual Controls are off, to avoid blur." : {
-      "comment" : "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English."
-    },
     "Close-Up" : {
       "comment" : "Quick control and pill on the camera: limits autofocus to near subjects, for small things close to the lens."
     },
@@ -244,30 +241,6 @@
     "Open the Camera" : {
       "comment" : "The name of the action that opens nope.'s camera, in the Shortcuts app."
     },
-    "Opens nope. and applies a settings preset: Factory Defaults or one you saved. You can undo it in Presets." : {
-      "comment" : "Describes nope.'s Apply Preset action in the Shortcuts app. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one." : {
-      "comment" : "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and limits autofocus to near subjects (Close-Up) or far subjects (Far Focus), or lifts the limit." : {
-      "comment" : "Describes nope.'s Set Focus Range action in the Shortcuts app. Close-Up and Far Focus are the names of the camera's controls. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and starts a series of photos at a fixed interval." : {
-      "comment" : "Describes nope.'s Start Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and switches the camera to a lens." : {
-      "comment" : "Describes nope.'s Switch Lens action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and takes a photo with the current settings, after an optional delay." : {
-      "comment" : "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change." : {
-      "comment" : "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
-    "Opens nope. and turns on the steady light. It turns off when nope. closes." : {
-      "comment" : "Describes nope.'s Turn On the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged."
-    },
     "Opens the nope. camera." : {
       "comment" : "Describes what nope.'s Open the Camera action and control do, in the Shortcuts app and the controls gallery. Keep \"nope.\" unchanged."
     },
@@ -380,9 +353,6 @@
     "Stopped. Photos saved: %lld" : {
       "comment" : "Live Activity: a burst or the night sky helper stopped early, for example because the camera stopped. The number is how many photos were saved."
     },
-    "Stops nope.'s interval series. Photos already taken are kept." : {
-      "comment" : "Describes nope.'s Stop Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
     "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved." : {
       "comment" : "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged."
     },
@@ -461,12 +431,6 @@
     },
     "Turns nope.'s night mode on or off: every nope. screen in red on black." : {
       "comment" : "Describes nope.'s Set Night Mode action in the Shortcuts app. Keep \"nope.\" unchanged."
-    },
-    "Turns off nope.'s steady light." : {
-      "comment" : "Describes nope.'s Turn Off the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged."
-    },
-    "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure." : {
-      "comment" : "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged."
     },
     "Ultra Wide" : {
       "comment" : "The ultra wide rear camera, as a lens choice."
@@ -616,6 +580,218 @@
     },
     "Interval shooting didn't start. The time between photos must be shorter than the duration." : {
       "comment" : "Siri's answer when interval shooting was asked for with a duration that is no longer than the time between photos, so the series would take only one photo.",
+      "extractionState" : "manual"
+    },
+    "Apply" : {
+      "comment" : "Button of the question Siri asks before nope. applies Factory Defaults.",
+      "extractionState" : "manual"
+    },
+    "Cancel" : {
+      "comment" : "Button of the question Siri or Shortcuts asks before one of nope.'s actions: nothing runs.",
+      "extractionState" : "manual"
+    },
+    "Chooses how fast a shutter nope. prefers while Manual Controls are off, to avoid blur. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Open Assistant Access" : {
+      "comment" : "The name of nope.'s action that opens nope.'s Settings at the Assistant Access page, in the Shortcuts app. Assistant Access is the name of the page.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and applies a settings preset: Factory Defaults or one you saved. You can undo it in Presets. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Apply Preset action in the Shortcuts app. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and limits autofocus to near subjects (Close-Up) or far subjects (Far Focus), or lifts the limit. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Set Focus Range action in the Shortcuts app. Close-Up and Far Focus are the names of the camera's controls. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and starts a series of photos at a fixed interval. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Start Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and switches the camera to a lens. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Switch Lens action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and takes a photo with the current settings, after an optional delay. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope. and turns on the steady light. It turns off when nope. closes. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Turn On the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Opens nope.'s Settings at Assistant Access, where you choose whether Siri, Shortcuts and other assistants can use nope. It changes nothing." : {
+      "comment" : "Describes nope.'s Open Assistant Access action in the Shortcuts app. Assistant Access is the name of the page in nope.'s Settings. Keep \"nope.\" unchanged. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Set" : {
+      "comment" : "Button of the question Siri asks before nope. changes a setting: the focus range, the photo size or Fast Shutter.",
+      "extractionState" : "manual"
+    },
+    "Set Fast Shutter to %@?" : {
+      "comment" : "Question Siri asks before nope. changes Fast Shutter. Fast Shutter is the name of nope.'s setting; the placeholder is a choice, such as \"Freeze Motion (1/500 s)\".",
+      "extractionState" : "manual"
+    },
+    "Set the focus range to %@?" : {
+      "comment" : "Question Siri asks before nope. changes the autofocus range. The placeholder is the choice's name: No Limit, Close-Up or Far Focus.",
+      "extractionState" : "manual"
+    },
+    "Set the photo size of %@ to %@?" : {
+      "comment" : "Question Siri asks before nope. changes a lens's photo size. The first placeholder is a camera, such as \"the telephoto camera\"; the second is Standard or Largest.",
+      "extractionState" : "manual"
+    },
+    "Set the photo size to %@?" : {
+      "comment" : "Question Siri asks before nope. changes the photo size of the lens in use. The placeholder is Standard or Largest.",
+      "extractionState" : "manual"
+    },
+    "Start" : {
+      "comment" : "Button of the question Siri asks before nope. starts interval shooting.",
+      "extractionState" : "manual"
+    },
+    "Start interval shooting with the times in Interval Settings?" : {
+      "comment" : "Question Siri asks before nope. starts an interval series whose interval or length the shortcut leaves to the ones chosen in nope. Interval Settings is the name of the card in nope.",
+      "extractionState" : "manual"
+    },
+    "Start interval shooting? %lld photos, one every %@." : {
+      "comment" : "Question Siri asks before nope. starts an interval series. The number is how many photos; the placeholder is a duration, such as \"10 seconds\".",
+      "extractionState" : "manual"
+    },
+    "Start interval shooting? A photo every %@ for %@." : {
+      "comment" : "Question Siri asks before nope. starts an interval series. The placeholders are durations, such as \"10 seconds\" and \"5 minutes\".",
+      "extractionState" : "manual"
+    },
+    "Stop interval shooting?" : {
+      "comment" : "Question Siri asks before nope. stops an interval series.",
+      "extractionState" : "manual"
+    },
+    "Stops nope.'s interval series. Photos already taken are kept. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Stop Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Switch to %@?" : {
+      "comment" : "Question Siri asks before nope. switches lenses. The placeholder is a camera, such as \"the telephoto camera\".",
+      "extractionState" : "manual"
+    },
+    "Take Photos" : {
+      "comment" : "Button of the question Siri asks before nope. takes a burst.",
+      "extractionState" : "manual"
+    },
+    "Take a bracket of %lld photos in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes an exposure bracket after a delay. The first number is how many photos: 3, 5 or 7; the second is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a bracket of %lld photos with %@ in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes an exposure bracket with a lens after a delay. The first number is how many photos: 3, 5 or 7; the placeholder is a camera, such as \"the telephoto camera\"; the last number is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a bracket of %lld photos with %@?" : {
+      "comment" : "Question Siri asks before nope. takes an exposure bracket with a lens. The number is how many photos: 3, 5 or 7; the placeholder is a camera, such as \"the telephoto camera\".",
+      "extractionState" : "manual"
+    },
+    "Take a bracket of %lld photos?" : {
+      "comment" : "Question Siri asks before nope. takes an exposure bracket. The number is how many photos: 3, 5 or 7.",
+      "extractionState" : "manual"
+    },
+    "Take a burst of %lld photos in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes a burst after a delay. The first number is how many photos, at least 2; the second is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a burst of %lld photos with %@ in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes a burst with a lens after a delay. The first number is how many photos, at least 2; the placeholder is a camera, such as \"the telephoto camera\"; the last number is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a burst of %lld photos with %@?" : {
+      "comment" : "Question Siri asks before nope. takes a burst with a lens. The number is how many photos, at least 2; the placeholder is a camera, such as \"the telephoto camera\".",
+      "extractionState" : "manual"
+    },
+    "Take a burst of %lld photos?" : {
+      "comment" : "Question Siri asks before nope. takes a burst. The number is how many photos, at least 2.",
+      "extractionState" : "manual"
+    },
+    "Take a photo in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes a photo after a delay. The number is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a photo with %@ in %lld seconds?" : {
+      "comment" : "Question Siri asks before nope. takes a photo with a lens after a delay. The placeholder is a camera, such as \"the telephoto camera\"; the number is the delay in seconds.",
+      "extractionState" : "manual"
+    },
+    "Take a photo with %@?" : {
+      "comment" : "Question Siri asks before nope. takes a photo with a lens. The placeholder is a camera, such as \"the telephoto camera\".",
+      "extractionState" : "manual"
+    },
+    "Take a photo?" : {
+      "comment" : "Question Siri asks before nope. takes a photo.",
+      "extractionState" : "manual"
+    },
+    "Turn Off" : {
+      "comment" : "Button of the question Siri asks before nope. turns something off: the light, night mode or Focus on Faces.",
+      "extractionState" : "manual"
+    },
+    "Turn On" : {
+      "comment" : "Button of the question Siri asks before nope. turns something on: the light, night mode or Focus on Faces.",
+      "extractionState" : "manual"
+    },
+    "Turn off Focus on Faces?" : {
+      "comment" : "Question Siri asks before nope. turns Focus on Faces off. Focus on Faces is the name of nope.'s switch.",
+      "extractionState" : "manual"
+    },
+    "Turn off night mode?" : {
+      "comment" : "Question Siri asks before nope. turns night mode off.",
+      "extractionState" : "manual"
+    },
+    "Turn off the light?" : {
+      "comment" : "Question Siri asks before nope. turns its steady light (the torch) off.",
+      "extractionState" : "manual"
+    },
+    "Turn on Focus on Faces?" : {
+      "comment" : "Question Siri asks before nope. turns Focus on Faces on. Focus on Faces is the name of nope.'s switch.",
+      "extractionState" : "manual"
+    },
+    "Turn on night mode?" : {
+      "comment" : "Question Siri asks before nope. turns night mode on.",
+      "extractionState" : "manual"
+    },
+    "Turn on the light?" : {
+      "comment" : "Question Siri asks before nope. turns its steady light (the torch) on.",
+      "extractionState" : "manual"
+    },
+    "Turns nope.'s night mode on or off: every nope. screen in red on black. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Set Night Mode action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Turns off nope.'s steady light. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Turn Off the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure. Needs Assistant Access, in nope. › Settings › Privacy." : {
+      "comment" : "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "the front camera" : {
+      "comment" : "Fills the camera placeholder of the questions Siri asks before nope.'s actions, as in \"Take a photo with the front camera?\".",
+      "extractionState" : "manual"
+    },
+    "the telephoto camera" : {
+      "comment" : "Fills the camera placeholder of the questions Siri asks before nope.'s actions, as in \"Take a photo with the telephoto camera?\".",
+      "extractionState" : "manual"
+    },
+    "the ultra wide camera" : {
+      "comment" : "Fills the camera placeholder of the questions Siri asks before nope.'s actions, as in \"Take a photo with the ultra wide camera?\".",
+      "extractionState" : "manual"
+    },
+    "the wide camera" : {
+      "comment" : "Fills the camera placeholder of the questions Siri asks before nope.'s actions, as in \"Take a photo with the wide camera?\".",
       "extractionState" : "manual"
     }
   },

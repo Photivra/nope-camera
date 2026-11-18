@@ -5,8 +5,19 @@
 # measured the test on that device. Balanced per device, longest test first into the shard
 # with the least time; add a new test to the shard with the least time on each device, with
 # twice its local time and an "e".
+2 3 NopeAppUITests/testACancelledQuestionChangesNothing 78e 72e
 3 2 NopeAppUITests/testAccessibilityFeedbackMentionsTheLevel 240e 268e
 3 2 NopeAppUITests/testAfterAPinchControlsStayAndATapStillFocuses 70e 61e
+1 3 NopeAppUITests/testAnActionThatRanIsShownOnTheCameraAndListed 102e 56e
+1 3 NopeAppUITests/testAssistantAccessChoicesStayEnabledWhileOff 46e 44e
+3 3 NopeAppUITests/testAssistantAccessIsReadOnlyInTheLockScreenCamera 48e 40e
+3 1 NopeAppUITests/testAssistantAccessPageAtTheLargestTextSize 80e 86e
+2 1 NopeAppUITests/testAssistantAccessPageDefault 46e 66e
+2 1 NopeAppUITests/testAssistantAccessPageInNightModeIsAllRed 54e 56e
+3 1 NopeAppUITests/testAssistantAccessPageOn 44e 38e
+1 3 NopeAppUITests/testAssistantAccessPageRightToLeft 48e 42e
+2 3 NopeAppUITests/testAssistantAccessRowAndNote 44e 40e
+4 2 NopeAppUITests/testAssistantAccessTitleGrowsAtEveryTextSize 382e 676e
 1 1 NopeAppUITests/testAstroAtTheLargestTextSizeAndRightToLeft 56 89
 1 2 NopeAppUITests/testAstroCardsCoverage 26e 97e
 1 3 NopeAppUITests/testAstroFramesPauseWhenLeavingAndContinueOnReturn 94 100
@@ -103,6 +114,7 @@
 3 1 NopeAppUITests/testDriveCardsRightToLeft 44e 45e
 2 1 NopeAppUITests/testDriveCardsSideways 26e 26e
 3 1 NopeAppUITests/testDriveStripSelectsEachMode 43e 44e
+3 1 NopeAppUITests/testEveryActionIsRefusedWhileAccessIsOff 44e 60e
 3 3 NopeAppUITests/testEveryManualControlIsSettableInLandscapeAtTheLargestTextSize 30 27
 4 2 NopeAppUITests/testEveryTagNightSearchField 126e 108e
 3 3 NopeAppUITests/testExposureCompensationInFullAuto 37 38
@@ -282,6 +294,7 @@
 2 3 NopeAppUITests/testSettingsRootRowsDoNotChange 233e 233e
 1 3 NopeAppUITests/testSettingsScreensPassAccessibilityAudits 221e 219e
 4 2 NopeAppUITests/testSettingsScreensPassAccessibilityAuditsInTheLightSetting 222e 220e
+1 1 NopeAppUITests/testSettingsSearchFindsAssistantAccessByKeyword 62e 58e
 3 3 NopeAppUITests/testSettingsSearchFindsEveryRootRowByName 86e 90e
 4 1 NopeAppUITests/testSettingsSearchFindsKeepScreenOn 60e 58e
 1 3 NopeAppUITests/testSettingsSearchFindsLevelByTap 38e 40e
@@ -305,9 +318,12 @@
 2 3 NopeAppUITests/testStorageAndBatteryWarnings 75 71
 4 3 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 34 32
 4 3 NopeAppUITests/testTappingTheLastPhotoOpensTheViewer 33 42
+1 3 NopeAppUITests/testTheCardInNightModeAndAtTheLargestTextSize 42e 44e
 2 3 NopeAppUITests/testTheCloseUpSwitchIsDisabledDuringTheCountdown 54e 50e
 1 1 NopeAppUITests/testTheLargestLiveActivityRowIsNoTallerThanBefore 16e 16e
 4 3 NopeAppUITests/testTheLiveActivityStopButtonIsACapsuleTarget 45e 45e
+2 1 NopeAppUITests/testTheRefusalCardClosesUntilTheNextRefusal 16e 26e
+2 3 NopeAppUITests/testTheTipShowsOnceAfterFiveConfirmations 24e 34e
 2 3 NopeAppUITests/testThreePillsAndMore 177e 136e
 3 2 NopeAppUITests/testTimerCardCountsDown 43e 43e
 4 1 NopeAppUITests/testTimerDelayMenu 48e 48e
@@ -333,6 +349,7 @@
 3 1 NopeAppUITests/testViewfinderStaysInsideTheScrollingLayout 30 28
 2 1 NopeAppUITests/testWarningChips 98e 100e
 1 1 NopeAppUITests/testWarningsAtTheLargestTextSizeAndRightToLeft 30 36
+3 3 NopeAppUITests/testWithNeverAnActionRunsWithoutAsking 58e 42e
 2 2 OverlayUITests/testFlatLevelSaysItPointsDown 13 11
 1 1 OverlayUITests/testGridAndLevelFromTheQuickControls 52 49
 1 3 OverlayUITests/testGridOnlyAndLevelOnly 26 33

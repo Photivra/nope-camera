@@ -485,6 +485,8 @@ struct CameraHints: View {
             CloseUpSuggestion(model: model, lens: lens)
         }
         ComparisonHint(model: model)
+        // What an assistant did (issue #82).
+        AssistantHints()
     }
 }
 

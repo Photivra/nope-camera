@@ -32,7 +32,8 @@ extension PresetChoice {
 /// Applying a settings preset from Siri or Shortcuts (issues #62 and #72).
 extension CameraModel {
     /// Applies a preset for a request, through the same path as the Presets list
-    /// (``SettingsPresets/apply(_:camera:location:)``): every setting, then the camera's lens,
+    /// (``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``), except that the
+    /// Privacy settings and Assistant Access stay as they are: every other setting, then the camera's lens,
     /// exposure and drive values, with Location only through its permission prompt. A preset
     /// never turns the light on (``CameraSetup`` doesn't hold it). The apply can be undone in the
     /// Presets list, as one made there.
@@ -51,7 +52,8 @@ extension CameraModel {
     func applyPreset(_ choice: PresetChoice, presets: SettingsPresets?, inbox: ShortcutInbox) async -> ShortcutOutcome {
         guard let presets else { return .presetUnavailable }
         let camera: CameraModel? = await cameraProblem(inbox: inbox) == nil ? self : nil
-        let result = await presets.apply(choice, camera: camera, location: location)
+        // Through an assistant, a preset leaves every Privacy setting as it is (issue #82).
+        let result = await presets.apply(choice, camera: camera, location: location, keepsPrivacySettings: true)
         if result.isApplied { return .presetApplied(result) }
         return result.notices.contains(.cameraBusy) ? .busy : .presetUnavailable
     }

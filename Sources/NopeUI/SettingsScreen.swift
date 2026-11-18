@@ -14,7 +14,8 @@ extension EnvironmentValues {
 ///
 /// - Presets, always shown where the app has presets, with Factory Defaults inside;
 /// - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
-/// - Privacy: Details in Each Photo, Sign Each Photo;
+/// - Privacy: Details in Each Photo, Sign Each Photo, Assistant Access (issue #82), last in the
+///   group;
 /// - Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
 /// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
 ///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
@@ -76,6 +77,10 @@ public struct SettingsScreen: View {
 
     /// Whether to offer Keep Screen On: not in the Lock Screen camera.
     @Environment(\.offersKeepScreenOn) private var offersKeepScreenOn
+
+    /// What assistants did since the app opened, or `nil` in the Lock Screen camera, where
+    /// Assistant Access is read only.
+    @Environment(\.assistantSession) private var assistantSession
 
     /// Creates the settings screen.
     ///
@@ -145,7 +150,8 @@ public struct SettingsScreen: View {
             offersLiveActivity: offersLiveActivity,
             offersAstro: camera?.deviceOffersAstro ?? false,
             offersKeepScreenOn: offersKeepScreenOn,
-            offersPinch: LensPinch.isOffered(on: lenses))
+            offersPinch: LensPinch.isOffered(on: lenses),
+            offersAssistantAccessPage: assistantSession != nil)
     }
 
     /// The list or the search results, in the navigation stack.
@@ -244,6 +250,8 @@ public struct SettingsScreen: View {
             PhotoSizeSettingsView(settings: settings, lenses: lenses)
         case .details:
             PrivacySettingsView(settings: settings, location: location)
+        case .assistantAccess:
+            AssistantAccessSettingsView(settings: settings, session: assistantSession)
         case .fastShutter:
             // The camera's own state, which Astro also turns on; the stored option where there
             // is no camera.
@@ -285,9 +293,14 @@ public struct SettingsScreen: View {
         }
     }
 
-    /// Details in Each Photo and Sign Each Photo: what each photo says. Release 1.1.0 adds its
-    /// rows under Sign Each Photo (Save Photos To, Lock Captures, Assistant Access); each will be
-    /// one row here with its own identifier, and the group needs no other change.
+    /// Details in Each Photo, Sign Each Photo and Assistant Access: what each photo says, and
+    /// what assistants may do. Release 1.1.0 adds Save Photos To and Lock Captures above
+    /// Assistant Access, which stays last in the group; each will be one row here with its own
+    /// identifier, and the group needs no other change.
+    ///
+    /// In the Lock Screen camera (no ``assistantSession``) the Assistant Access row is read
+    /// only, with the note "Unlock to change.", so a person holding a locked phone can't turn
+    /// access on.
     private var privacySection: some View {
         Section {
             pageRow(.details, value: PrivacySettingsView.summary(of: settings.metadata))
@@ -299,6 +312,16 @@ public struct SettingsScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Explains the signing switch. Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version."))
             .settingsRow(.signEachPhoto)
+            if assistantSession != nil {
+                pageRow(
+                    .assistantAccess, value: AssistantAccessSettingsView.summary(of: settings),
+                    note: Text(AssistantAccessText.rowNote))
+            } else {
+                SettingsValueLabel(
+                    title: Text(SettingsText.assistantAccess), value: AssistantAccessSettingsView.summary(of: settings),
+                    note: Text(AssistantAccessText.unlockToChange))
+                .settingsRow(.assistantAccess)
+            }
         } header: {
             Text(SettingsText.privacy)
         }

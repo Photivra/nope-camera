@@ -18,6 +18,11 @@ import SwiftUI
 /// Shooting with the interval and count already chosen. Several requests separated by commas
 /// are sent one after another, each once the one before has ended; the last one's answer is
 /// shown. For example `interval,lens-ultraWide` asks for a lens while a series runs.
+///
+/// Each request goes through the Assistant Access check (issue #82), as from an App Intent:
+/// launch with `-NopeSettings.assistantAccess YES` (and `-NopeSettings.assistantAsk never` to
+/// skip the question) for it to run. The question is confirmed unless
+/// `-NopeSimulatedAssistantAnswer cancel` is given.
 @MainActor
 enum SimulatedShortcut {
     /// The launch argument: `-NopeSimulatedShortcut`.
@@ -63,18 +68,52 @@ enum SimulatedShortcut {
     /// The result of this launch's request.
     static let result = Result()
 
-    /// Sends the requests, if the launch asks for any, and records what Siri would say to the
-    /// last one.
+    /// The launch argument that answers the Assistant Access question: `-NopeSimulatedAssistantAnswer
+    /// cancel` cancels it; without it, every question is confirmed.
+    static let answerArgument = "-NopeSimulatedAssistantAnswer"
+
+    /// Whether the simulated person confirms the question.
+    private static var confirms: Bool {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: answerArgument), index + 1 < arguments.count else { return true }
+        return arguments[index + 1] != "cancel"
+    }
+
+    /// The Assistant Access action a request comes from.
     ///
-    /// - Parameter inbox: The app's inbox.
-    static func run(with inbox: ShortcutInbox) async {
+    /// - Parameter request: The request.
+    /// - Returns: Its action.
+    static func action(for request: ShortcutRequest) -> AssistantAction {
+        switch request {
+        case .takePhoto: .takePhoto
+        case .takeBracket: .takeBracket
+        case .selectLens: .switchLens
+        case .setLight(let isOn): isOn ? .turnOnLight : .turnOffLight
+        case .startInterval: .startInterval
+        case .stopInterval: .stopInterval
+        case .setFocusRange: .setFocusRange
+        case .setPhotoSize: .setPhotoSize
+        case .applyPreset: .applyPreset
+        }
+    }
+
+    /// Sends the requests, if the launch asks for any, each through the Assistant Access check
+    /// as the App Intents send them (``AssistantGate``), and records what Siri would say to the
+    /// last one. The question is answered by ``answerArgument``.
+    ///
+    /// - Parameters:
+    ///   - inbox: The app's inbox.
+    ///   - gate: The Assistant Access check.
+    static func run(with inbox: ShortcutInbox, gate: AssistantGate) async {
         let requests = requests
         guard !requests.isEmpty, result.message == nil else { return }
-        var outcome: ShortcutOutcome?
+        var answer: AssistantAnswer?
         for request in requests {
-            outcome = await inbox.submit(request)
+            answer = await gate.answer(action(for: request), confirm: { confirms }, openApp: {}) {
+                AssistantAnswer(await inbox.submit(request))
+            }
         }
-        if let outcome { result.message = String(localized: ShortcutDialog.message(for: outcome)) }
+        if let answer { result.message = String(localized: answer.sentence) }
     }
 
     /// Shows what Siri would say, for the UI tests to read.

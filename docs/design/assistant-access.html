@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nope. design: Assistant Access</title>
+<style>
+
+:root{--bg:#f2f2f7;--card:#fff;--ink:#1c1c1e;--muted:#5f5f64;--rule:#d1d1d6;--pick:#0b6b60}
+@media (prefers-color-scheme: dark){:root{--bg:#000;--card:#1c1c1e;--ink:#f2f2f7;--muted:#a1a1a6;--rule:#3a3a3c;--pick:#5fe0d0}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:28px;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-size:22px;letter-spacing:-.01em;margin:48px 0 8px}
+h3{font-size:17px;margin:24px 0 4px}
+p{margin:0 0 12px;max-width:820px}
+a{color:inherit}
+.muted{color:var(--muted)}
+nav.set{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
+nav.set a{display:inline-block;padding:6px 12px;border-radius:16px;background:var(--card);text-decoration:none;font-size:13px;font-weight:600}
+nav.set a.here{background:var(--ink);color:var(--bg)}
+ul{margin:0 0 12px;padding-left:20px;max-width:820px}li{margin:0 0 4px}
+.figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:32px 24px;margin-top:16px;align-items:start}
+.figs.wide{grid-template-columns:repeat(auto-fill,minmax(480px,1fr))}
+.figs.small{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+figure{margin:0}
+figure img{display:block;max-width:100%;height:auto;background:#000;box-shadow:0 0 0 1px var(--rule)}
+figcaption{font-size:13px;color:var(--muted);margin-top:12px}
+figcaption b{display:block;color:var(--ink);font-size:14px}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:16px 0;background:var(--card);border-radius:12px;overflow:hidden;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:8px 12px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:0}
+thead th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font:13px ui-monospace,Menlo,monospace}
+.pick{border-left:4px solid var(--pick);background:var(--card);border-radius:0 12px 12px 0;padding:16px 24px;margin-top:16px}
+.pick p:last-child,.pick ul:last-child{margin-bottom:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:16px}
+.cards a{display:block;background:var(--card);border-radius:16px;padding:16px 20px;text-decoration:none}
+.cards a b{display:block;font-size:17px}.cards a span{color:var(--muted);font-size:13px}
+.sw{border-radius:12px;padding:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.swl{font-size:12px;color:var(--muted);margin:16px 0 4px;font-weight:600}
+.scale{display:flex;align-items:flex-end;gap:16px;margin:8px 0 16px}
+.scale div{text-align:center;font-size:12px;color:var(--muted)}
+.scale i{display:block;background:var(--ink);height:16px;margin:0 auto 4px;border-radius:1px}
+.radii{display:flex;gap:16px;margin:8px 0}
+.radii div{text-align:center;font-size:12px;color:var(--muted)}
+.radii i{display:block;width:64px;height:64px;border:2px solid var(--ink);border-bottom-color:transparent;border-right-color:transparent;margin:0 auto 4px}
+.chip2{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:0 0 0 1px var(--rule)}
+
+
+</style>
+</head>
+<body>
+<main>
+<h1>Assistant Access</h1>
+<p class="muted">Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18 for issue 82; not yet accepted. The wording is a draft for the Honesty review. The behavior, the assumptions to confirm on a device, the tests and the decisions are in <a href="assistant-access.md">assistant-access.md</a>.</p>
+<nav class="set"><a href="overview.html">Overview</a><a href="design-system.html">Design system</a><a href="camera.html">Camera</a><a href="drive.html">Drive modes</a><a href="quick-menu.html">Q</a><a href="manual-controls.html">Manual Controls</a><a href="sheets.html">Sheets</a><a href="viewer.html">Last Photo viewer</a><a href="photo-details.html">Photo Details</a><a href="settings.html">Settings</a><a href="setting-scope.html">Where a setting applies</a><a href="layouts.html">Layouts</a><a href="ipad.html">iPad</a><a href="duo.html">iPhone Duo</a><a href="system.html">System</a><a href="watch.html">Apple Watch</a><a href="navigation.html">Navigation map</a><a href="icon.html">Icon</a><a href="assistant-access.html" class=here>Assistant Access</a></nav>
+<p style="margin-top:24px">One setting in Settings › Privacy decides whether Siri, Shortcuts and other assistants on the device may use the app’s actions, and whether the app asks first. It is off on a fresh install. When it is on, each action is named and confirmed before it runs, unless the person chooses otherwise.</p>
+<ul><li>Off until the person turns it on. With access off, every request is refused and nothing changes.</li>
+<li>One check, inside every action, at run time.</li>
+<li>An assistant gets one sentence about what happened. Never a photo, a location or a photo’s details.</li>
+<li>No assistant action changes a Privacy setting.</li>
+<li>The app shows what an assistant did, and what it refused. Nothing about it is written to disk.</li>
+<li>Q does not change: no tile, and no action that opens or edits it.</li></ul>
+<h2>The setting</h2><h3>The row and the page</h3><div class="figs "><figure id="assistant-root"><a href="screens/assistant-root.html"><img src="screens/assistant-root.png" width="260" alt="The Privacy group with Assistant Access" loading="lazy" style="border-radius:12px"></a><figcaption><b>The Privacy group with Assistant Access</b>The new row is last in the group. Its value is Off on a fresh install; under the title and value, one note that never changes says who the setting is for. The note is plain secondary text, the pattern of the Fast Shutter row.</figcaption></figure><figure id="assistant-page-off"><a href="screens/assistant-page-off.html"><img src="screens/assistant-page-off.png" width="260" alt="Assistant Access, as installed" loading="lazy" style="border-radius:12px"></a><figcaption><b>Assistant Access, as installed</b>Off, with Ask First on Every Action. One line at the top says that Ask First is not used now; the three choices stay shown and enabled, so no row appears when the switch is turned on. Then what an assistant gets, and the requests since the app opened.</figcaption></figure><figure id="assistant-page-on"><a href="screens/assistant-page-on.html"><img src="screens/assistant-page-on.png" width="260" alt="Assistant Access on, asking before every action" loading="lazy" style="border-radius:12px"></a><figcaption><b>Assistant Access on, asking before every action</b>The top line is gone; nothing else moves. The last group lists this session’s requests by action name and result only, newest first. It is kept in memory and cleared when the app closes.</figcaption></figure></div>
+<h3>Light, night mode, right to left, the largest text size</h3><div class="figs "><figure id="assistant-page-light"><a href="screens/assistant-page-light.html"><img src="screens/assistant-page-light.png" width="260" alt="Light appearance" loading="lazy" style="border-radius:12px"></a><figcaption><b>Light appearance</b>The page follows the system appearance. Secondary text is #6D6D72.</figcaption></figure><figure id="assistant-page-night"><a href="screens/assistant-page-night.html"><img src="screens/assistant-page-night.png" width="260" alt="Night mode" loading="lazy" style="border-radius:12px"></a><figcaption><b>Night mode</b>Red on black, with Only Before a Photo selected. The system’s question and Siri’s own screen are drawn by iOS and are not red.</figcaption></figure><figure id="assistant-page-rtl"><a href="screens/assistant-page-rtl.html"><img src="screens/assistant-page-rtl.png" width="260" alt="Right to left" loading="lazy" style="border-radius:12px"></a><figcaption><b>Right to left</b>Mirrored. Drawn with the English text, as the right-to-left pseudo-language shows it.</figcaption></figure><figure id="assistant-page-largest"><a href="screens/assistant-page-largest.html"><img src="screens/assistant-page-largest.png" width="260" alt="The largest text size" loading="lazy" style="border-radius:12px"></a><figcaption><b>The largest text size</b>Every line wraps and nothing is truncated; the switch moves under its explanation and the checkmark under the selected choice’s sentence. The page scrolls.</figcaption></figure></div>
+<h2>Asking first</h2>
+<p>The question is the system’s confirmation, so it is spoken by Siri and looks the same in Shortcuts. It is shown before the app opens. A confirmation covers one run with the values it names and is never remembered.</p><div class="figs "><figure id="assistant-confirm"><a href="screens/assistant-confirm.html"><img src="screens/assistant-confirm.png" width="260" alt="The question" loading="lazy" style="border-radius:12px"></a><figcaption><b>The question</b>Asked by the system before the action runs, and before the app opens. The sentence names the action and its values, Siri speaks it, one line says where to change this, and the button names the action. A preset’s question says that its privacy settings are not applied.</figcaption></figure><figure id="assistant-answers"><a href="screens/assistant-answers.html"><img src="screens/assistant-answers.png" width="260" alt="The answers" loading="lazy" style="border-radius:12px"></a><figcaption><b>The answers</b>With access off, the answer says so and offers Open Settings, which opens the app at Assistant Access. After Cancel nothing changes. A confirmed action answers with today’s sentence; a preset applied through an assistant says what it left out.</figcaption></figure></div>
+<div class="tw"><table><thead><tr><th>Assistant Access</th><th>Ask First</th><th>A request to change something</th><th>A request that takes photos</th></tr></thead><tbody>
+<tr><td>Off</td><td>(any)</td><td>Refused. Nothing changes.</td><td>Refused. No photo.</td></tr>
+<tr><td>On</td><td>Every Action</td><td>Asks, then runs.</td><td>Asks, then runs.</td></tr>
+<tr><td>On</td><td>Only Before a Photo</td><td>Runs.</td><td>Asks, then runs.</td></tr>
+<tr><td>On</td><td>Never</td><td>Runs.</td><td>Runs.</td></tr></tbody></table></div>
+<h2>On the camera</h2>
+<p>An action that ran is shown as a hint with the sentence the assistant got. Refused requests are shown the next time the camera is on screen. A tip appears once, after five confirmed requests.</p><div class="figs "><figure id="assistant-camera-notice"><a href="screens/assistant-camera-notice.html"><img src="screens/assistant-camera-notice.png" width="260" alt="The camera after an assistant’s action" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>The camera after an assistant’s action</b>A hint in the bottom stack, with the caption Siri or Shortcuts and the same sentence the assistant got. It follows the timing of the other hints and stays until VoiceOver has announced it.</figcaption></figure><figure id="assistant-camera-refused"><a href="screens/assistant-camera-refused.html"><img src="screens/assistant-camera-refused.png" width="260" alt="The camera after refused requests" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>The camera after refused requests</b>Shown the next time the camera is on screen, until dismissed. It tells a person that something asked, and gives one tap to the setting. The count is kept in memory only.</figcaption></figure><figure id="assistant-tip"><a href="screens/assistant-tip.html"><img src="screens/assistant-tip.png" width="260" alt="The tip, once" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>The tip, once</b>After the fifth confirmed request, once. Settings opens Assistant Access; the close button ends it for good.</figcaption></figure><figure id="assistant-camera-night"><a href="screens/assistant-camera-night.html"><img src="screens/assistant-camera-night.png" width="260" alt="The hint in night mode" loading="lazy" style="border-radius:13.9% / 6.4%"></a><figcaption><b>The hint in night mode</b>Red on black, like every other hint.</figcaption></figure></div>
+<h2>The Lock Screen camera</h2><div class="figs "><figure id="assistant-lock-row"><a href="screens/assistant-lock-row.html"><img src="screens/assistant-lock-row.png" width="260" alt="The row in the Lock Screen camera’s Settings" loading="lazy" style="border-radius:12px"></a><figcaption><b>The row in the Lock Screen camera’s Settings</b>Read only, with a lock in place of the chevron and the words Unlock to change. No assistant action runs in the Lock Screen camera.</figcaption></figure></div>
+<h2>Not drawn</h2>
+<ul><li>iPad and the iPhone Duo inner display: the page is a pushed page inside the Settings popover, as <a href="screens/ipad-settings-page.html">ipad-settings-page</a>.</li>
+<li>Apple Watch: no setting and no assistant action. The watch’s button is a remote shutter a person presses.</li>
+<li>Q: unchanged.</li></ul>
+</main>
+</body>
+</html>

@@ -15,7 +15,7 @@ extension NopeAppUITests {
     /// out, and the Simulator offers no Live Activity. Keep Screen On is always shown in the app.
     static let settingsRootRows = [
         "settings.presets", "settings.formats", "settings.copies", "settings.mirrorFrontCamera",
-        "settings.details", "settings.signEachPhoto", "settings.fastShutter", "settings.focusOnFaces",
+        "settings.details", "settings.signEachPhoto", "settings.assistantAccess", "settings.fastShutter", "settings.focusOnFaces",
         "settings.startInCleanView", "settings.overlays", "settings.nightMode", "settings.redViewfinder",
         "settings.keepScreenOn", "settings.accessibility", "settings.honesty", "settings.about",
     ]

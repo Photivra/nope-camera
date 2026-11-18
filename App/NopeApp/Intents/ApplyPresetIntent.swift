@@ -7,7 +7,7 @@ import NopeCore
 ///
 /// The intent holds no rules (AGENTS.md, "Siri and Shortcuts"): it hands
 /// ``ShortcutRequest/applyPreset(_:)`` to the app's ``ShortcutInbox``, and the camera screen
-/// applies it with ``SettingsPresets/apply(_:camera:location:)``: the same path, the same
+/// applies it with ``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``: the same path, the same
 /// permission prompt for Location, and the same Undo in the Presets list. A preset never turns
 /// the light on. The lens and exposure apply to the running camera, so the app opens first. It
 /// has no Siri phrase: every App Shortcut slot is used (`NopeShortcuts`).
@@ -19,11 +19,13 @@ struct ApplyPresetIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and applies a settings preset: Factory Defaults or one you saved. You can undo it in Presets.",
+            "Opens nope. and applies a settings preset: Factory Defaults or one you saved. You can undo it in Presets. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Apply Preset action in the Shortcuts app. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged."))
 
-    /// The lens and exposure apply to the running camera, which runs only in the foreground.
-    static let openAppWhenRun = true
+    /// Runs in the background first, so a refused or cancelled request never opens the app;
+    /// the app opens once the request is allowed (`continueInForeground`; issue #82, device
+    /// check 1 in docs/TESTING.md). The camera needs the app in the foreground.
+    static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
 
     /// The preset.
     @Parameter(
@@ -33,6 +35,12 @@ struct ApplyPresetIntent: AppIntent {
 
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
+
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
 
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
@@ -44,11 +52,16 @@ struct ApplyPresetIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard let choice = PresetChoice(identifier: preset.id) else {
-            return .result(dialog: IntentDialog(ShortcutDialog.message(for: .presetUnavailable)))
+        let choice = PresetChoice(identifier: preset.id)
+        // The name shown is the entity's: Factory Defaults' fixed name, or the person's own text.
+        let name = choice == .factoryDefaults ? nil : String(localized: preset.name)
+        let answer = await gate.answer(
+            .applyPreset, question: AssistantQuestions.applyPreset(named: name), intent: self, opensApp: true
+        ) {
+            guard let choice else { return AssistantAnswer(.presetUnavailable) }
+            return AssistantAnswer(await inbox.submit(.applyPreset(choice)))
         }
-        let outcome = await inbox.submit(.applyPreset(choice))
-        return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
+        return .result(dialog: IntentDialog(answer.sentence))
     }
 }
 
@@ -100,9 +113,16 @@ struct PresetEntity: AppEntity {
 }
 
 /// The presets Shortcuts can pick: Factory Defaults first, then the saved ones by name.
+///
+/// A saved preset's name is the person's own text, so the saved presets are listed only while
+/// Assistant Access is on (``AssistantAccess/offeredPresets(_:)``, issue #82); Factory Defaults,
+/// a fixed name, is always listed.
 struct PresetQuery: EntityQuery {
     /// The person's presets, the same object the camera screen shows.
     @Dependency private var presets: SettingsPresets
+
+    /// The Assistant Access check.
+    @Dependency private var gate: AssistantGate
 
     /// The presets with these identifiers that still exist.
     ///
@@ -115,15 +135,15 @@ struct PresetQuery: EntityQuery {
 
     /// Every preset, for the picker.
     ///
-    /// - Returns: Factory Defaults and the saved presets.
+    /// - Returns: Factory Defaults and, while Assistant Access is on, the saved presets.
     @MainActor
     func suggestedEntities() async throws -> [PresetEntity] {
         all()
     }
 
-    /// Factory Defaults and the saved presets.
+    /// Factory Defaults and the saved presets assistants may see.
     @MainActor
     private func all() -> [PresetEntity] {
-        [.factoryDefaults] + presets.saved.map(PresetEntity.init)
+        [.factoryDefaults] + gate.access.offeredPresets(presets.saved).map(PresetEntity.init)
     }
 }

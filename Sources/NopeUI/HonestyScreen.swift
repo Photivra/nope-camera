@@ -78,6 +78,12 @@ struct HonestyScreen: View {
                     "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Siri, Shortcuts and Assistants", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what Siri, Shortcuts and other assistants can do with nope. and learn from it (issue #82). Siri and Shortcuts are Apple's names."),
+                text: Text(
+                    "Siri, Shortcuts and other assistants can use nope. only if you turn on Assistant Access, and nope. asks before each action unless you choose otherwise. An assistant gets one sentence about what happened. It never gets a photo, a location or a photo’s details from nope. This covers nope.’s own actions; photos you save to Photos, and what you let an assistant see on your screen, are up to iOS.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #82; docs/design/assistant-access.md, text 25. Assistant Access is the name of nope.'s setting. Siri, Shortcuts, Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English."))
         } header: {
             Text("What nope. Never Does", tableName: "Honesty", bundle: .module, comment: "Honesty section header. Keep \"nope.\" unchanged.")
         }
