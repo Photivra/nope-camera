@@ -20994,6 +20994,20 @@ search.
 
 - Parameter id: The item.
 
+## `SettingsNavigation/openSearchResult(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func openSearchResult(_ id: SettingsID)
+```
+
+Shows a search result: pushes its page and asks for its row to be scrolled into view.
+The search stays, so going back shows the same text and results
+(`docs/design/night-search-field.md`, section 3, "Choose a result").
+
+- Parameter id: The result's item.
+
 ## `SettingsNavigation/path`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -21179,7 +21193,8 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 
 - Presets, always shown where the app has presets, with Factory Defaults inside;
 - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
-- Privacy: Details in Each Photo, Sign Each Photo;
+- Privacy: Details in Each Photo, Sign Each Photo, Assistant Access (issue #82), last in the
+  group;
 - Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
 - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Keep Screen On (not
@@ -21365,12 +21380,12 @@ var hasPresets: Bool
 
 Whether presets exist (not in the Lock Screen camera).
 
-## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:offersKeepScreenOn:)`
+## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:offersKeepScreenOn:offersPinch:offersAssistantAccessPage:)`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
 
 ```swift
-init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false, offersKeepScreenOn: Bool = true)
+init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false, offersKeepScreenOn: Bool = true, offersPinch: Bool = false, offersAssistantAccessPage: Bool = true)
 ```
 
 Creates the availability.
@@ -21384,6 +21399,8 @@ Creates the availability.
   - offersLiveActivity: Whether the Live Activity switch is offered.
   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
   - offersKeepScreenOn: Whether Keep Screen On is offered.
+  - offersPinch: Whether the device has two or more rear lenses, so Pinch applies.
+  - offersAssistantAccessPage: Whether the Assistant Access page can be opened.
 
 ## `SettingsSearch/Availability/offers(_:)`
 

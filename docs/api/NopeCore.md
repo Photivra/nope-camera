@@ -4708,6 +4708,19 @@ once, so none outlasts the visit.
   - lens: The lens it was taken with.
   - takenAt: When the shutter took it.
 
+## `CameraModel/keepsScreenForSeries`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor var keepsScreenForSeries: Bool { get }
+```
+
+Whether a series that keeps the screen awake and dims it is going
+(``SeriesScreenKeeper``): an interval series (running or paused), an Astro run or a focus
+bracket (issue #90). Each can outlast the auto-lock. A countdown or a burst isn't one; Keep
+Screen On covers those.
+
 ## `CameraModel/lastPressPhotos`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -21190,6 +21203,20 @@ by default. ``SeriesScreenKeeper`` applies it with ``KeepScreenOnRule``: the scr
 after a while without a touch or a photo, and the phone's Auto-Lock applies again after
 ``KeepScreenOnRule/limit``. The Lock Screen camera doesn't use it.
 
+## `NopeSettings/makePresetSnapshot()`
+
+internal, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+@MainActor func makePresetSnapshot() throws -> NopeSettingsSnapshot
+```
+
+Copies every stored setting a preset holds: all of ``makeSnapshot()`` except Assistant
+Access, which no preset stores (`docs/design/assistant-access.md`, 3.5).
+
+- Returns: The snapshot.
+- Throws: As ``makeSnapshot()``.
+
 ## `NopeSettings/makeSnapshot()`
 
 public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
@@ -27983,8 +28010,9 @@ Screen On is used (issue #97), and puts both back when that ends.
 This is the only place the app turns the idle timer off or changes the brightness. It has two
 reasons to keep the screen awake, and a running series wins:
 
-- **A series** (an interval series or an Astro run in the foreground). The screen mustn't lock,
-  or the camera stops and the series with it. The screen dims at once and has no time limit;
+- **A series** (an interval series, an Astro run or a focus bracket in the foreground,
+  ``CameraModel/keepsScreenForSeries``). The screen mustn't lock, or the camera stops and the
+  series with it. The screen dims at once and has no time limit;
   dimming saves battery over a long series (AGENTS.md, "Battery").
 - **Keep Screen On** (``KeepScreenOnRule``), while the camera screen is showing and running.
   The screen dims after a while without activity, and the idle timer is turned on again at
@@ -28085,8 +28113,8 @@ Keeps the screen awake, and dims it, while a series runs in the foreground or Ke
 Screen On is used, and puts both back otherwise.
 
 - Parameters:
-  - isSeriesRunning: Whether an interval series or an Astro run is going on the camera
-    screen.
+  - isSeriesRunning: Whether an interval series, an Astro run or a focus bracket is going on
+    the camera screen (``CameraModel/keepsScreenForSeries``).
   - isInForeground: Whether the app is in the foreground.
   - keepScreenOn: Keep Screen On's conditions; ``KeepScreenOnConditions/off`` by default.
 
