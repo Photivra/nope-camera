@@ -18,7 +18,8 @@ final class ShortcutUITests: XCTestCase {
     @MainActor
     func launch(_ scenario: String, request: String) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request]
+        // Signing on (off by default, issue #80), so Siri's answers about signed photos show.
+        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request, "-NopeSimulatedSigning"]
         app.launchAfterThePreviousRunExits()
         return app
     }
@@ -97,8 +98,14 @@ final class ShortcutUITests: XCTestCase {
         let message = result(app)
         XCTAssertTrue(message.waitForExistence(timeout: 30))
         XCTAssertEqual(message.label, "Factory Defaults applied. You can undo it in Presets.")
-        // The Presets list shows the result with Undo, as after applying it there.
-        app.buttons["Settings"].tap()
+        // The Presets list shows the result with Undo, as after applying it there. Settings is
+        // in Q on the stacked camera (BUILD-SPEC.md, 3.1) and in the column on iPad.
+        let settings = app.buttons["Settings"]
+        if !settings.waitForExistence(timeout: 5) {
+            app.buttons["Quick Menu"].tap()
+            XCTAssertTrue(settings.waitForExistence(timeout: 5))
+        }
+        settings.tap()
         let presets = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch
         XCTAssertTrue(presets.waitForExistence(timeout: 5))
         presets.tap()

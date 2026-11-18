@@ -65,18 +65,44 @@ actor FakeHardware: CaptureHardware {
     func discoverCameras() async -> [CameraDeviceDescription] { cameras }
 
     private(set) var torchRequests: [Double?] = []
+    /// Whether a camera input is attached, as `SystemCaptureHardware`'s `currentInput`.
+    private(set) var isInputAttached = false
+    /// Whether the system allows the torch; `false` simulates a device too hot for it.
+    private var torchAvailable = true
+    /// Whether `configure(_:)` waits for `releaseConfigure()` before attaching the input.
+    private var holdsConfigure = false
+    /// The configure call waiting for `releaseConfigure()`, if any.
+    private var heldConfigure: CheckedContinuation<Void, Never>?
 
+    func setTorchAvailable(_ isAvailable: Bool) { torchAvailable = isAvailable }
+    func holdConfigure() { holdsConfigure = true }
+    var isConfigureHeld: Bool { heldConfigure != nil }
+    func releaseConfigure() {
+        holdsConfigure = false
+        heldConfigure?.resume()
+        heldConfigure = nil
+    }
+
+    /// Answers as `SystemCaptureHardware.switchTorch(level:)` does: without an attached input a
+    /// request for the light is pending (issue #75).
     func setTorch(level: Double?) async -> TorchStatus {
         torchRequests.append(level)
-        return level.map { .on(level: $0) } ?? .off
+        guard let level else { return .off }
+        guard isInputAttached else { return .pending }
+        return torchAvailable ? .on(level: level) : .unavailable
     }
 
     func configure(_ configuration: SessionConfiguration) async throws(CaptureError) {
         configurations.append(configuration)
+        if holdsConfigure { await withCheckedContinuation { heldConfigure = $0 } }
         if let configureError { throw configureError }
+        isInputAttached = true
     }
 
-    func stop() async { stopCount += 1 }
+    func stop() async {
+        stopCount += 1
+        isInputAttached = false
+    }
 
     func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto {
         plans.append(plan)

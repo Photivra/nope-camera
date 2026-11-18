@@ -24,6 +24,13 @@ public enum TorchStatus: Equatable, Sendable {
     /// The light is on at a brightness level from just above 0 to 1 (full).
     case on(level: Double)
 
+    /// The person asked for the light while the camera isn't ready for it: it is starting,
+    /// or switching lenses or settings, so no camera is attached to switch (issue #75). The
+    /// light is off for now. It is applied as soon as the camera has started, and then becomes
+    /// ``on(level:)``, or ``unavailable`` if the system refuses it. An interface shows the
+    /// person's choice (the switch stays on), not "off".
+    case pending
+
     /// The person asked for the light, but the system didn't allow it or turned it off, for
     /// example because the device is too hot. The light is off. An interface says so until the
     /// person turns the light off or tries again.
@@ -55,6 +62,11 @@ public protocol LightCaptureBackend: CaptureBackend {
     /// ``TorchStatus/unavailable`` and leaves the light off. Stopping the camera or switching
     /// lenses turns the light off, so ``LightModel`` asks again after each start.
     ///
+    /// A request to turn the light on while no camera is attached (before the start, or while
+    /// the camera is reconfigured) is answered ``TorchStatus/pending``, never
+    /// ``TorchStatus/off``: the light can't be switched yet, and ``LightModel`` applies it after
+    /// the start (issue #75).
+    ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` to turn the light
     ///   off.
     /// - Returns: The light's state afterwards.
@@ -73,6 +85,9 @@ public protocol LightCaptureBackend: CaptureBackend {
 ///   lens without a torch (AGENTS.md, "Battery"). The brightness level is kept.
 /// - After a restart of the same lens, such as a recovery from an error, a torch that was on
 ///   comes back on.
+/// - A request made before the camera is ready is kept as ``TorchStatus/pending`` and applied
+///   once the camera has started; the light then comes on or is reported unavailable, never
+///   silently turned off (issue #75).
 ///
 /// Isolated to the main actor, like ``CameraModel``.
 @MainActor
@@ -114,7 +129,8 @@ public final class LightModel {
     /// Whether the camera is running, so the torch can be switched.
     private var isRunning = false
 
-    /// Whether the person wants the torch on. It survives a restart of the same lens.
+    /// Whether the person wants the torch on. It survives a restart of the same lens, and
+    /// is what ``TorchStatus/pending`` shows while the camera isn't ready.
     private var wantsTorch = false
 
     /// The hardware, or `nil` when the backend has no torch.
@@ -176,17 +192,19 @@ public final class LightModel {
     }
 
     /// Records the lens the camera is about to start with. Called by ``CameraModel`` before
-    /// each start; the light is off until ``sessionDidStart()``.
+    /// each start; the light is off until ``sessionDidStart()``, and shows
+    /// ``TorchStatus/pending`` meanwhile when the person wants it.
     ///
     /// - Parameter lens: The lens.
     func lensWillStart(_ lens: Lens) {
         if !lens.hasTorch { wantsTorch = false }
         self.lens = lens
         isRunning = false
-        if torch != .unavailable { torch = .off }
+        if torch != .unavailable { torch = wantsTorch ? .pending : .off }
     }
 
-    /// Turns the torch back on after a start, if the person wants it and the lens has one.
+    /// Records that the camera runs, after a start or after an interruption ended, and turns the
+    /// torch on if the person asked for it meanwhile and the lens has one.
     ///
     /// Side effect: may switch the torch on.
     func sessionDidStart() async {
@@ -204,6 +222,7 @@ public final class LightModel {
     func cameraDidPause() async {
         isRunning = false
         wantsTorch = false
+        if torch == .pending { torch = .off }
         guard isTorchOn else { return }
         torch = .off
         _ = await backend?.setTorch(level: nil)
@@ -223,7 +242,12 @@ public final class LightModel {
         if isOn {
             guard supportsTorch else { return }
             wantsTorch = true
-            if isRunning { await applyTorch() }
+            guard isRunning else {
+                // Kept, and shown, until the camera has started (issue #75).
+                torch = .pending
+                return
+            }
+            await applyTorch()
         } else {
             wantsTorch = false
             let wasOn = isTorchOn
@@ -234,10 +258,27 @@ public final class LightModel {
 
     /// Asks the hardware for the torch at ``torchLevel``, and records the answer. Does nothing
     /// without a backend.
+    ///
+    /// The answer is never recorded as a silent "off" (issue #75):
+    /// - ``TorchStatus/pending`` (the camera is being reconfigured) keeps the request, which the
+    ///   next ``sessionDidStart()`` applies;
+    /// - ``TorchStatus/off`` in answer to "on" is recorded as ``TorchStatus/unavailable``, so an
+    ///   interface says the light didn't come on;
+    /// - if the person turned the light off, or the camera paused, while the hardware answered,
+    ///   a light that came on is turned off again.
     func applyTorch() async {
         guard let backend else { return }
         let status = await backend.setTorch(level: torchLevel)
-        torch = status
-        wantsTorch = status != .unavailable && wantsTorch
+        guard wantsTorch else {
+            if case .on = status { _ = await backend.setTorch(level: nil) }
+            return
+        }
+        switch status {
+        case .on, .pending:
+            torch = status
+        case .off, .unavailable:
+            torch = .unavailable
+            wantsTorch = false
+        }
     }
 }

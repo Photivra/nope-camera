@@ -201,8 +201,11 @@ extension CameraModel {
             tracker.recordTaken()
             let previous = pending
             let captureDuration = now() - start
+            let distortionCorrection = distortionCorrection(of: photo)
             pending = Task {
-                await Self.saveResult(photo, saver: saver, settings: settings, captureDuration: captureDuration)
+                await Self.saveResult(
+                    photo, saver: saver, settings: settings, captureDuration: captureDuration,
+                    distortionCorrection: distortionCorrection)
             }
             if let previous, let error = await collect(previous, into: &saved, tracker: tracker) {
                 failure = error
@@ -275,12 +278,17 @@ extension CameraModel {
     ///   - saver: The save pipeline.
     ///   - settings: The settings the burst is taken with.
     ///   - captureDuration: How long the camera took to return the frame.
+    ///   - distortionCorrection: The lens's distortion correction, for the details.
     /// - Returns: The saved photo, or the error.
     private nonisolated static func saveResult(
-        _ photo: CapturedPhoto, saver: PhotoSaver, settings: SaveSettings, captureDuration: Duration
+        _ photo: CapturedPhoto, saver: PhotoSaver, settings: SaveSettings, captureDuration: Duration,
+        distortionCorrection: DistortionCorrection?
     ) async -> Result<SavedPhoto, CaptureError> {
         do {
-            return .success(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
+            return .success(
+                try await saver.save(
+                    photo, settings: settings, captureDuration: captureDuration,
+                    distortionCorrection: distortionCorrection))
         } catch {
             return .failure(error)
         }

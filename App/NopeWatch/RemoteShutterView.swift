@@ -16,11 +16,11 @@ struct RemoteShutterView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: NopeSpace.xs) {
                     StatusLineView(line: WatchText.message(for: remote.display), identifier: "WatchStatus")
                         .accessibilityAddTraits(.updatesFrequently)
                     if let result = remote.lastResult {
-                        StatusLineView(line: WatchText.message(for: result), identifier: "WatchResult")
+                        StatusLineView(line: resultLine(result), identifier: "WatchResult")
                     }
                     if remote.canCancelTimer {
                         cancelButton
@@ -39,14 +39,27 @@ struct RemoteShutterView: View {
         }
         .sensoryFeedback(trigger: remote.lastResult) { _, new in
             guard let new else { return nil }
-            return WatchText.message(for: new).tone == .warning ? .warning : .success
+            return resultLine(new).tone == .warning ? .warning : .success
         }
         .onChange(of: remote.display) { _, new in
             if case .countingDown(let seconds) = new { announce(WatchText.countdown(seconds)) }
         }
         .onChange(of: remote.lastResult) { _, new in
-            if let new { announce(WatchText.message(for: new).text) }
+            if let new { announce(resultLine(new).text) }
         }
+    }
+
+    /// The smallest height of Take Photo and Cancel Timer: 56 points, the tile minimum
+    /// (docs/design/watch.html: "at least 56 pt tall and full width"). A label that wraps, in a
+    /// long language or at a large text size, makes the button taller.
+    static let buttonMinHeight = NopeSize.tileMin
+
+    /// The line for a result, with the phone's reason when its photos aren't all signed.
+    ///
+    /// - Parameter result: How the last photo ended.
+    /// - Returns: The message.
+    private func resultLine(_ result: WatchResult) -> StatusLine {
+        WatchText.message(for: result, unsignedReason: remote.lastUnsignedReason)
     }
 
     /// The shutter: a large round button, enabled only while the phone's camera is ready.
@@ -60,7 +73,7 @@ struct RemoteShutterView: View {
                 Image(systemName: "camera.circle.fill")
             }
             .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 56)
+            .frame(maxWidth: .infinity, minHeight: Self.buttonMinHeight)
         }
         // The system's bordered style: white text on gray keeps WCAG contrast; teal is kept for
         // verified facts (issue #68), and white text on a teal fill would fall below 4.5:1.
@@ -81,7 +94,7 @@ struct RemoteShutterView: View {
                 Image(systemName: "xmark.circle.fill")
             }
             .font(.headline)
-            .frame(maxWidth: .infinity, minHeight: 56)
+            .frame(maxWidth: .infinity, minHeight: Self.buttonMinHeight)
         }
         .buttonStyle(.bordered)
         .accessibilityIdentifier("WatchCancelTimer")
@@ -141,8 +154,8 @@ struct StatusLineView: View {
     private var color: Color {
         switch line.tone {
         case .plain: .primary
-        case .verified: .teal
-        case .warning: .orange
+        case .verified: NopeColor.fact
+        case .warning: NopeColor.warning
         }
     }
 }

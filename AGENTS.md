@@ -1,9 +1,9 @@
 # AGENTS.md
 
 Photivra Nope Camera™ is a free, open-source (GPLv3) camera app for iPhone and iPad, with
-Android planned. It captures a photo with as little processing as the device allows, signs it
-with C2PA Content Credentials, and saves it to Photos. Neither the app nor its files track the
-user. The full design is in issue #1.
+Android planned. It captures a photo with as little processing as the device allows, can sign it
+with C2PA Content Credentials (off by default), and saves it to Photos. Neither the app nor its
+files track the user. The full design is in issue #1.
 
 ## Rules that always apply
 
@@ -26,7 +26,8 @@ user. The full design is in issue #1.
 3. **Honesty.** These rules are not traded away for convenience:
    - As little processing as the device allows: single-frame Bayer RAW, never ProRAW or
      multi-frame capture.
-   - Every photo is signed, with a fresh key per photo.
+   - Signing is the person's choice and off by default. When it is on, every photo is signed,
+     with a fresh key per photo, and a photo that could not be signed says so.
    - Nothing in the app or its files can track the user.
    - User-facing wording never claims more than is true. Say "as little processing as your phone
      allows", never "zero processing".
@@ -45,7 +46,7 @@ user. The full design is in issue #1.
 
 ## Code
 
-- **Swift and SwiftUI, iOS and iPadOS 18+.** Use native frameworks first:
+- **Swift and SwiftUI, iOS and iPadOS 26+, watchOS 26+.** Use native frameworks first:
   - AVFoundation for capture and DNG metadata;
   - Core Image for RAW development;
   - ImageIO with the system HEIF encoder;
@@ -114,7 +115,7 @@ user. The full design is in issue #1.
   - Release RAW buffers as soon as each photo is saved.
   - Measure energy with Instruments on real devices before each release. No telemetry.
 - **Siri and Shortcuts.** Every user action is exposed as an App Intent, with App Shortcuts
-  phrases localized in all launch languages. Intents call `NopeCore` like any other interface,
+  phrases localized in every language that ships. Intents call `NopeCore` like any other interface,
   and hold no business rules of their own.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
@@ -131,7 +132,8 @@ Without Color Alone, Sufficient Contrast and Reduced Motion.
     logically.
   - The viewfinder announces the lens, the format (RAW or the HEIF fallback), and exposure
     warnings.
-  - Capture results are announced: "Photo saved and signed", or what went wrong.
+  - Capture results are announced: "Photo saved" and whether it was signed, or what went
+    wrong.
   - Manual controls are adjustable elements (swipe up or down to change them).
   - The Honesty screen and settings read in a sensible order.
 - **Taking photos without seeing the screen.**
@@ -235,14 +237,14 @@ files, data, specifications, documentation and tools.
 
 ## Localization
 
-The app is localized from the first release in English (`en`, the development language),
-Japanese (`ja`), Spanish (`es`), French (`fr`), German (`de`), Korean (`ko`), Chinese
-Traditional (`zh-Hant`), Chinese Simplified (`zh-Hans`), Portuguese (Brazil) (`pt-BR`),
-Italian (`it`) and Dutch (`nl`).
+Version 1.0.0 ships in English (`en`, the development language) only (issue #86). Other
+languages come back in later releases; their earlier draft translations are in the git history.
+The app stays ready for them:
 - **Every user-facing string** goes in a String Catalog (`Localizable.xcstrings`), with a comment
   that gives translators context. This includes accessibility labels, alerts, permission prompts
   (`InfoPlist.xcstrings`) and the lock-screen and Control Center controls. No hard-coded
-  user-facing text.
+  user-facing text. String Catalogs are the only source of strings: no hand-written `.strings`
+  or `.lproj` files; Xcode builds those from the catalogs.
 - **Use system formatting** for numbers, units, dates and plurals (`FormatStyle`, plural
   variants in the catalog). Never concatenate translated fragments; use whole sentences with
   placeholders.
@@ -250,7 +252,12 @@ Italian (`it`) and Dutch (`nl`).
   - no fixed widths for text, and text expands for long languages;
   - right-to-left ready, with leading and trailing rather than left and right, even though no
     right-to-left language ships yet;
-  - tested with the pseudo-language and right-to-left pseudo-language launch arguments.
+  - tested with Apple's double-length and right-to-left pseudo-languages
+    (`-NSDoubleLocalizedStrings YES`; `-AppleTextDirection YES
+    -NSForceRightToLeftWritingDirection YES`).
+- **`scripts/check-localization.sh` lists the languages that ship** and fails on a translation
+  into any other language. Adding a language means adding it there, to the project's known
+  regions, to every catalog and to the store listings in the same pull request.
 - **Translations may start as AI translations.** Mark every AI-translated string "needs review"
   in its catalog, never "translated", until a fluent human has checked it.
 - **Honesty wording is kept apart.** The Honesty screen, privacy settings, signature and
@@ -258,10 +265,11 @@ Italian (`it`) and Dutch (`nl`).
   `store/metadata/<locale>/`.
   - These texts must not claim more in translation than the English does.
   - Before a release, every string in `Honesty.xcstrings` and every store listing file in every
-    language must be reviewed by a fluent human.
+    language that ships must be reviewed by a fluent human.
   - Other interface strings may ship AI-translated and are reviewed when a reviewer is available.
-- **A pull request that adds or changes a user-facing string** adds the translations (AI or
-  human) and marks them "needs review". No string ships untranslated.
+- **A pull request that adds or changes a user-facing string** adds it to the catalog with its
+  translator comment and, for each translated language that ships, its translation (AI or
+  human) marked "needs review". No string ships untranslated in a language that ships.
 - **Store listings** (name, subtitle, description, keywords, screenshots) are localized for
   every app language.
 

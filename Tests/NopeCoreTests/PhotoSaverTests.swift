@@ -127,15 +127,15 @@ struct PhotoSaverTests {
             data: photo.data, format: photo.format, lensID: photo.lensID, dimensions: photo.dimensions,
             exposureDuration: nil, iso: nil, rawImageData: photo.rawImageData,
             rawClipping: SimulatedCaptureBackend.placeholderClipping)
-        let saved = try await Self.saver(library: FakeLibrary()).save(measured, settings: SaveSettings())
+        let saved = try await Self.saver(library: FakeLibrary()).save(measured, settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.details?.rawClipping == SimulatedCaptureBackend.placeholderClipping)
-        let unmeasured = try await Self.saver(library: FakeLibrary()).save(photo, settings: SaveSettings())
+        let unmeasured = try await Self.saver(library: FakeLibrary()).save(photo, settings: SaveSettings.rawPlusHEIFSigned)
         #expect(unmeasured.details?.rawClipping == nil)
     }
 
     @Test func rawPlusHEIFIsSavedAsOnePairedAsset() async throws {
         let library = FakeLibrary()
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.metadata.signsPhotos = false
         let saved = try await Self.saver(library: library).save(Self.rawPhoto(), settings: settings)
         #expect(saved.formats == [.raw, .heif])
@@ -151,7 +151,7 @@ struct PhotoSaverTests {
 
     @Test func everyFormatAndEveryCustomSwitchSaves() async throws {
         let library = FakeLibrary()
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         settings.metadata.setRemovesAllOptionalDetails(false)
         for item in MetadataItem.allCases { settings.metadata.set(item, isOn: true) }
@@ -168,7 +168,7 @@ struct PhotoSaverTests {
     @Test(arguments: DevelopedLook.allCases)
     func theDevelopedLookIsPassedToTheDeveloper(look: DevelopedLook) async throws {
         let developer = FakeDeveloper()
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         settings.developedLook = look
         _ = try await Self.saver(developer: developer, library: FakeLibrary()).save(Self.rawPhoto(), settings: settings)
@@ -176,13 +176,13 @@ struct PhotoSaverTests {
     }
 
     @Test func noSignerSavesUnsignedAndSaysSo() async throws {
-        let saved = try await Self.saver(library: FakeLibrary()).save(Self.rawPhoto(), settings: SaveSettings())
+        let saved = try await Self.saver(library: FakeLibrary()).save(Self.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.signature == .unsigned(.unavailable))
     }
 
     @Test func aSigningFailureSavesUnsignedAndSaysSo() async throws {
         let saved = try await Self.saver(signer: FakeSigner(failing: [.heif]), library: FakeLibrary()).save(
-            Self.rawPhoto(), settings: SaveSettings())
+            Self.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.signature == .unsigned(.failed))
     }
 
@@ -192,7 +192,7 @@ struct PhotoSaverTests {
         let library = FakeLibrary()
         let photo = Self.rawPhoto()
         let saved = try await Self.saver(signer: FakeSigner(changesRawData: true), library: library).save(
-            photo, settings: SaveSettings())
+            photo, settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.signature == .unsigned(.signedFileFailedCheck))
         let added = await library.added.first?.first
         #expect(added?.primary.data == photo.data)
@@ -205,7 +205,7 @@ struct PhotoSaverTests {
     @Test(arguments: [PhotoFormat.raw, .heif, .jpeg])
     func aSignedFileThatFailsTheReadBackFallsBackToItsUnsignedFile(format: PhotoFormat) async throws {
         let library = FakeLibrary()
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         let photo = Self.rawPhoto()
         let saved = try await Self.saver(signer: FakeSigner(breaksFiles: [format]), library: library).save(
@@ -226,7 +226,7 @@ struct PhotoSaverTests {
 
     /// The first reason a file isn't signed is the one the status gives.
     @Test func theFirstUnsignedReasonIsReported() async throws {
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.jpeg, isSelected: true)
         let signer = FakeSigner(failing: [.heif], breaksFiles: [.raw, .jpeg])
         let saved = try await Self.saver(signer: signer, library: FakeLibrary()).save(Self.rawPhoto(), settings: settings)
@@ -244,7 +244,7 @@ struct PhotoSaverTests {
             lensID: "wide", dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: nil, iso: nil,
             rawImageData: Data(CleanFiles.rawImageData))
         await #expect(throws: CaptureError.metadataNotAllowed) {
-            try await Self.saver(library: library).save(photo, settings: SaveSettings())
+            try await Self.saver(library: library).save(photo, settings: SaveSettings.rawPlusHEIFSigned)
         }
         #expect(await library.added.isEmpty)
     }
@@ -253,7 +253,7 @@ struct PhotoSaverTests {
         let library = FakeLibrary()
         let reader = BytesReader(imageIOKeys: [ImageIOKey("{MakerApple}", "3")])
         await #expect(throws: CaptureError.metadataNotAllowed) {
-            try await Self.saver(reader: reader, library: library).save(Self.rawPhoto(), settings: SaveSettings())
+            try await Self.saver(reader: reader, library: library).save(Self.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         }
         #expect(await library.added.isEmpty)
     }
@@ -261,19 +261,19 @@ struct PhotoSaverTests {
     @Test func readBackAndLibraryErrorsArePassedOn() async {
         await #expect(throws: CaptureError.metadataNotAllowed) {
             try await Self.saver(reader: BytesReader(error: .metadataNotAllowed), library: FakeLibrary()).save(
-                Self.rawPhoto(), settings: SaveSettings())
+                Self.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         }
         await #expect(throws: CaptureError.photosAccessDenied) {
-            try await Self.saver(library: FakeLibrary(error: .photosAccessDenied)).save(Self.rawPhoto(), settings: SaveSettings())
+            try await Self.saver(library: FakeLibrary(error: .photosAccessDenied)).save(Self.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         }
         await #expect(throws: CaptureError.developmentFailed) {
             try await Self.saver(developer: FakeDeveloper(error: .developmentFailed), library: FakeLibrary()).save(
-                Self.rawPhoto(), settings: SaveSettings())
+                Self.rawPhoto(), settings: SaveSettings.rawPlusHEIFSigned)
         }
     }
 
     @Test func rawOnlyAndDevelopedOnlySelections() async throws {
-        var settings = SaveSettings()
+        var settings = SaveSettings.rawPlusHEIFSigned
         settings.setFormat(.heif, isSelected: false)
         #expect(try await Self.saver(library: FakeLibrary()).save(Self.rawPhoto(), settings: settings).formats == [.raw])
         settings.setFormat(.jpeg, isSelected: true)
@@ -292,11 +292,27 @@ struct PhotoSaverTests {
             data: data, format: .processedFallback(fallback), lensID: "tele", dimensions: PhotoDimensions(width: 4, height: 3),
             exposureDuration: nil, iso: nil)
         let library = FakeLibrary()
-        let saved = try await Self.saver(library: library).save(photo, settings: SaveSettings())
+        let saved = try await Self.saver(library: library).save(photo, settings: SaveSettings.rawPlusHEIFSigned)
         #expect(saved.formats == [format])
         #expect(saved.isProcessedFallback)
         // The signer is told the phone processed this file, so its manifest says so.
         #expect(await library.added.first?.first?.primary.isProcessedByDevice == true)
+        // Without the lens's distortion correction, the details have none.
+        #expect(saved.details?.distortionCorrection == nil)
+    }
+
+    @Test(arguments: DistortionCorrection.allCases)
+    func theLensDistortionCorrectionReachesOnlyAFallbacksDetails(correction: DistortionCorrection) async throws {
+        let allowlist = MetadataPlan().allowlist(for: .heif, signed: false)
+        let fallback = CapturedPhoto(
+            data: FakeFiles.heif(for: allowlist), format: .processedFallback(.heif), lensID: "tele",
+            dimensions: PhotoDimensions(width: 4, height: 3), exposureDuration: nil, iso: nil)
+        let saver = Self.saver(library: FakeLibrary())
+        let saved = try await saver.save(fallback, settings: SaveSettings(), distortionCorrection: correction)
+        #expect(saved.details?.distortionCorrection == correction)
+        // RAW never has the camera's distortion correction (AVCaptureDevice.h).
+        let raw = try await saver.save(Self.rawPhoto(), settings: SaveSettings(), distortionCorrection: correction)
+        #expect(raw.details?.distortionCorrection == nil)
     }
 
     @Test func planUsesTheAppVersion() {

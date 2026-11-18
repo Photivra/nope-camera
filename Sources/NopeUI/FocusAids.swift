@@ -34,7 +34,7 @@ extension View {
 /// focus point.
 struct FocusSquareLayer: View {
     /// The side of the square, in points.
-    static var side: CGFloat { 60 }
+    static var side: CGFloat { NopeSize.focusSquare }
 
     /// The camera model.
     let model: CameraModel
@@ -92,8 +92,8 @@ struct FocusSquareLayer: View {
                 // Kept inside the picture, below the square, or above it near the bottom edge.
                 .position(
                     x: min(max(x, Self.side), max(proxy.size.width - Self.side, Self.side)),
-                    y: y + Self.side < proxy.size.height - CameraStyle.minimumTarget
-                        ? y + Self.side : max(y - Self.side, CameraStyle.minimumTarget / 2))
+                    y: y + Self.side < proxy.size.height - NopeSize.minTarget
+                        ? y + Self.side : max(y - Self.side, NopeSize.minTarget / 2))
             }
         }
     }
@@ -138,9 +138,8 @@ struct FocusLockButton: View {
             } icon: {
                 Image(systemName: isLocked ? "lock.fill" : "lock.open")
             }
-            .pillShape()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NopePillStyle(isOnPicture: true))
         .accessibilityLabel(isLocked ? FocusText.unlock : FocusText.lock)
         .accessibilityInputLabels(isLocked ? [FocusText.unlock, Text(verbatim: "AE/AF")] : [FocusText.lock])
         .accessibilityShowsLargeContentViewer()
@@ -176,7 +175,7 @@ enum FocusText {
 
 /// The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
 /// vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
-/// swipe. Every one of them also has a button: the lock button, the Hide Controls tray item and
+/// swipe. Every one of them also has a button: the lock button, Hide Controls in the quick menu and
 /// Show Controls (issue #68, "Gestures always have a button").
 struct ViewfinderTouches: ViewModifier {
     /// How long a press must last to lock, in seconds: the system's usual long press.
@@ -277,6 +276,9 @@ struct ViewfinderTouches: ViewModifier {
 /// Exposure compensation in full auto (issue #41): − and + steppers around a native slider over
 /// thirds of a stop, within the lens's range, and Reset. The slider is adjustable with VoiceOver
 /// (swipe up or down), and every step has a button for Voice Control and Switch Control.
+///
+/// It looks like the manual dial (``ControlDial``): on the backing with the large radius, on the
+/// picture's lower edge (docs/design/BUILD-SPEC.md, 3.4).
 struct AutoExposureDial: View {
     /// The camera model.
     let model: CameraModel
@@ -304,15 +306,17 @@ struct AutoExposureDial: View {
 
     /// The dial.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
+        VStack(alignment: .leading, spacing: NopeSpace.xs) {
+            HStack(alignment: .center, spacing: NopeSpace.xs) {
                 Text("Exposure", bundle: .module, comment: "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Text(verbatim: valueText)
-                    .font(.headline.monospacedDigit())
+                    .font(NopeFont.dialValue)
+                    .fixedSize()
                     .accessibilityHidden(true)
-                Spacer(minLength: 8)
                 Button(action: close) {
                     Label {
                         Text("Close Exposure", bundle: .module, comment: "Button that closes the exposure compensation dial on the camera.")
@@ -321,10 +325,10 @@ struct AutoExposureDial: View {
                     }
                     .labelStyle(.iconOnly)
                 }
-                .buttonStyle(SelectableCapsuleStyle(isSelected: false))
-                .accessibilityShowsLargeContentViewer()
+                .buttonStyle(NopeIconButtonStyle())
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
-            HStack(spacing: CameraStyle.targetSpacing) {
+            HStack(spacing: NopeSpace.xs) {
                 stepButton(by: -1)
                 slider
                 stepButton(by: 1)
@@ -335,13 +339,14 @@ struct AutoExposureDial: View {
                 }
                 // Filled white at 0, as Auto is on the manual dial; not disabled, because a dimmed
                 // button fails the contrast audit over the picture.
-                .buttonStyle(SelectableCapsuleStyle(isSelected: compensation == 0))
+                .buttonStyle(NopeCapsuleStyle(isSelected: compensation == 0, isCompact: true, idleFill: .tile))
+                .fixedSize()
                 .accessibilityAddTraits(compensation == 0 ? .isSelected : [])
             }
         }
-        .foregroundStyle(.white)
-        .padding(12)
-        .darkBacking()
+        .foregroundStyle(NopeColor.label)
+        .padding(NopeSpace.s)
+        .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.large))
         .accessibilityElement(children: .contain)
     }
 
@@ -355,7 +360,7 @@ struct AutoExposureDial: View {
                 Text("Exposure", bundle: .module, comment: "Name of the exposure compensation control in full auto, in the quick-controls tray and on its dial.")
             }
             .accessibilityValue(Text(verbatim: valueText))
-            .nightModeTrackTint()
+            .dialSliderTint()
         }
     }
 
@@ -375,8 +380,7 @@ struct AutoExposureDial: View {
             }
             .labelStyle(.iconOnly)
         }
-        .buttonStyle(SelectableCapsuleStyle(isSelected: false))
-        .accessibilityShowsLargeContentViewer()
+        .buttonStyle(NopeIconButtonStyle())
     }
 
     /// Sends an aid intent.
@@ -445,11 +449,11 @@ struct HintLabel: View {
         } icon: {
             Image(systemName: systemImage)
         }
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.white)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .darkBacking()
+        .font(NopeFont.status)
+        .foregroundStyle(NopeColor.label)
+        .padding(.horizontal, NopeSpace.s)
+        .padding(.vertical, NopeSpace.xs)
+        .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         .accessibilityElement(children: .combine)
         .onAppear { AccessibilityNotification.Announcement(text).post() }
     }
@@ -483,16 +487,16 @@ struct CloseUpSuggestion: View {
 
     /// The suggestion.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: NopeSpace.xs) {
             Label {
                 Text(verbatim: text)
                     .fixedSize(horizontal: false, vertical: true)
             } icon: {
                 Image(systemName: "camera.macro")
             }
-            .font(.subheadline.weight(.semibold))
+            .font(NopeFont.status)
             .accessibilityElement(children: .combine)
-            HStack(spacing: CameraStyle.targetSpacing) {
+            HStack(spacing: NopeSpace.xs) {
                 Button {
                     let model = model
                     let id = lens.id
@@ -500,19 +504,19 @@ struct CloseUpSuggestion: View {
                 } label: {
                     Text("Switch to \(LensName.string(for: lens.kind))", bundle: .module, comment: "Button in the close-up hint: switches to the suggested lens. The value is a lens name such as Ultra Wide.")
                 }
-                .buttonStyle(SelectableCapsuleStyle(isSelected: false))
+                .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
                 Button {
                     let model = model
                     Task { await model.send(.auto(.dismissCloseUpSuggestion)) }
                 } label: {
                     Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
                 }
-                .buttonStyle(SelectableCapsuleStyle(isSelected: false))
+                .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
             }
         }
-        .foregroundStyle(.white)
-        .padding(12)
-        .darkBacking()
+        .foregroundStyle(NopeColor.label)
+        .padding(NopeSpace.s)
+        .nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.small))
         .accessibilityElement(children: .contain)
         .onAppear { AccessibilityNotification.Announcement(text).post() }
     }

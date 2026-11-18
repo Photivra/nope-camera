@@ -89,8 +89,9 @@ protocol CaptureHardware: Sendable {
     /// or make the torch unavailable (`isTorchAvailable`); the light then stays off.
     ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-    /// - Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
-    ///   is attached.
+    /// - Returns: The light's state afterwards. While no camera with a torch is attached (during
+    ///   discovery, a teardown or a reconfiguration), a request for the light is
+    ///   `TorchStatus.pending` and a request to turn it off is `TorchStatus.off` (issue #75).
     func setTorch(level: Double?) async -> TorchStatus
 }
 

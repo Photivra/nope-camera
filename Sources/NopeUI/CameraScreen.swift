@@ -14,8 +14,10 @@ import SwiftUI
 /// passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
 /// backed by `AVCaptureVideoPreviewLayer`).
 ///
-/// A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
-/// state, so settings and the Honesty screen are reachable before the camera is allowed. Before
+/// Settings (``SettingsScreen``, a popover in a regular-width window, a sheet otherwise) is
+/// reachable in every state, so settings and the Honesty screen are reachable before the camera
+/// is allowed: from a Settings button above the screens shown before the camera is ready, from
+/// the column layout's Settings button, and from Q in the stacked and scrolling layouts. Before
 /// camera access is asked, ``FirstRunView`` says what the app does, then asks.
 ///
 /// The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
@@ -42,6 +44,10 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// Whether the settings sheet is open.
     @State private var showsSettings = false
 
+    /// Where Settings is, kept outside its presentation so it stays on its page when the
+    /// presentation changes (night mode on iPad, a fold on the iPhone Duo).
+    @State private var settingsNavigation = SettingsNavigation()
+
     /// Makes the live viewfinder for the model's preview source.
     private let viewfinder: (any CameraPreviewSource) -> Viewfinder
 
@@ -51,7 +57,7 @@ public struct CameraScreen<Viewfinder: View>: View {
     ///   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     ///     and runs `CameraModel.observeEvents()` while it is visible.
     ///   - settings: The person's settings, opened from the Settings button.
-    ///   - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+    ///   - presets: The saved settings presets, shown in Settings and the quick menu, or
     ///     `nil` to offer none (the Lock Screen camera, which can't read them).
     ///   - viewfinder: Makes the live viewfinder from the model's preview source.
     public init(
@@ -76,15 +82,15 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// The screen's content for the current state.
     public var body: some View {
         // Outside the ready camera, the Settings button sits above the content, not over it, so
-        // scrolling content at large text sizes never passes under it. The ready camera has it
-        // in its own top bar or control column.
+        // scrolling content at large text sizes never passes under it. The ready camera opens
+        // Settings from Q, or from its control column.
         VStack(spacing: 0) {
             if !isReady {
                 HStack {
                     Spacer()
                     SettingsButton { showsSettings = true }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, NopeSpace.m)
             }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -131,11 +137,12 @@ public struct CameraScreen<Viewfinder: View>: View {
         }
         .background(.background)
         // A popover on iPad (a sheet in night mode, see AdaptivePresentation); a sheet on iPhone.
-        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn) {
+        // Night mode turned on in the popover moves Settings to the sheet at once, on the same page.
+        .adaptivePresentation(isPresented: $showsSettings, prefersSheet: settings.isNightModeOn, switchesToSheet: true) {
             SettingsScreen(
                 settings: settings, deviceSupportsBayerRAW: model.capabilities?.supportsBayerRAW ?? true,
                 deviceHasFrontCamera: model.capabilities?.hasFrontCamera ?? true, location: model.location,
-                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model)
+                lenses: model.capabilities?.lenses ?? [], presets: presets, camera: model, navigation: settingsNavigation)
                 .nightModeStyle(settings.isNightModeOn)
                 // The system's light or dark setting, not the camera's dark appearance.
                 .screenAppearance(.system, isNightMode: settings.isNightModeOn)
@@ -144,7 +151,18 @@ public struct CameraScreen<Viewfinder: View>: View {
                 // audit.
                 .presentationBackground(.background)
         }
-        .onChange(of: showsSettings) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsSettings) { _, isPresenting in
+            presentsSheet(isPresenting)
+            // Settings opens at its list again next time.
+            if !isPresenting { settingsNavigation.reset() }
+        }
+        // Opens Settings at a page or row (the Photo Format sheet's All Photo Settings and Look).
+        .environment(
+            \.openSettingsAt,
+            OpenSettingsAction { id in
+                settingsNavigation.open(id)
+                showsSettings = true
+            })
         // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The model
         // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
         // and continue (issue #64).
@@ -175,7 +193,7 @@ public struct CameraScreen<Viewfinder: View>: View {
         settings.isNightModeOn && settings.tintsViewfinderInNightMode
     }
 
-    /// Whether the camera is ready, so the Settings button is in the camera layout.
+    /// Whether the camera is ready, so Settings opens from the camera layout.
     private var isReady: Bool {
         if case .ready = model.state { true } else { false }
     }
@@ -204,10 +222,7 @@ public struct CameraScreen<Viewfinder: View>: View {
                         openAppSettings()
                     } label: {
                         Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
-                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
                 }
             }
         case .unavailable:

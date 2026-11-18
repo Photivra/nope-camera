@@ -237,10 +237,15 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     /// `AVErrorTorchLevelUnavailable` (`AVCaptureDevice.h`, `setTorchModeOn(level:)`); the light
     /// is then left off and reported unavailable, rather than silently brighter or dimmer.
     ///
+    /// Without an attached camera that has a torch (during discovery, which attaches each
+    /// camera in turn, or between a teardown and the next attach), a request for the light
+    /// can't be applied yet: it is answered `.pending`, not `.off`, and `LightModel` applies it
+    /// after the start (issue #75).
+    ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
     /// - Returns: The light's state afterwards.
     private func switchTorch(level: Double?) -> TorchStatus {
-        guard let device = currentInput?.device, device.hasTorch else { return .off }
+        guard let device = currentInput?.device, device.hasTorch else { return level == nil ? .off : .pending }
         guard let level else {
             turnTorchOff(device)
             return .off
@@ -372,6 +377,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                 PhotoDimensions(width: Int($0.width), height: Int($0.height))
             },
             fieldOfViewDegrees: Double(format.videoFieldOfView),
+            canTurnOffDistortionCorrection: device.isGeometricDistortionCorrectionSupported,
             manualControls: Self.manualSupport(of: device),
             // Read with this camera attached: the list is "for the current capture session
             // configuration" (`AVCapturePhotoOutput.supportedFlashModes`).
@@ -401,8 +407,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
                     lensAperture: AVCaptureDevice.currentLensAperture, duration: AVCaptureDevice.autoExposureDuration,
                     iso: AVCaptureDevice.autoISO)
         }
-        var exposureRegion = false
-        if #available(iOS 26.0, *) { exposureRegion = device.isExposureRectOfInterestSupported }
+        let exposureRegion = device.isExposureRectOfInterestSupported
         return ManualControlSupport(
             customExposure: device.isExposureModeSupported(.custom),
             continuousAutoExposure: device.isExposureModeSupported(.continuousAutoExposure),
@@ -467,7 +472,7 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     ///   - metering: The metering mode.
     ///   - device: The camera.
     private func applyMetering(_ metering: MeteringMode, to device: AVCaptureDevice) {
-        if #available(iOS 26.0, *), device.isExposureRectOfInterestSupported {
+        if device.isExposureRectOfInterestSupported {
             let minimum = device.minExposureRectOfInterestSize
             if let region = MeteringRegion.region(
                 for: metering, minimumWidth: Double(minimum.width), minimumHeight: Double(minimum.height))

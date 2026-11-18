@@ -1,6 +1,6 @@
 # Research: device capability survey
 
-Status: research, 2026-11-11, iOS/iPadOS 18 minimum, current release 27. No code. **C** = confirmed in Apple documentation or by Apple engineers. **I** = inferred: verify on a device. The app reads every capability at run time; this table is for planning only.
+Status: research, 2026-11-11, iOS/iPadOS 18 minimum, current release 27. No code. Since 1.0.0 the minimum is iOS/iPadOS 26 (issue #78), so the iPhone XS, XS Max and XR rows no longer apply. **C** = confirmed in Apple documentation or by Apple engineers. **I** = inferred: verify on a device. The app reads every capability at run time; this table is for planning only.
 
 ## Device × feature table
 

@@ -25,6 +25,22 @@ struct StatusLine: Equatable {
     let tone: Tone
 }
 
+extension StatusLine {
+    /// The line for photos that aren't all signed: plain, with the information symbol, when
+    /// signing is off by choice; otherwise a warning with the triangle. The words are the same
+    /// either way and never say the photo is signed (AGENTS.md, "Honesty").
+    ///
+    /// - Parameters:
+    ///   - text: The words, localized.
+    ///   - unsignedReason: Why the photos aren't all signed, or `nil` when the phone didn't say.
+    init(text: String, unsignedReason: SignatureStatus.UnsignedReason?) {
+        let isByChoice = unsignedReason == .turnedOff
+        self.init(
+            text: text, symbol: isByChoice ? "info.circle" : WatchText.warningSymbol,
+            tone: isByChoice ? .plain : .warning)
+    }
+}
+
 /// The localized words for the watch's display and results.
 enum WatchText {
     /// The status line for what the watch shows.
@@ -52,15 +68,23 @@ enum WatchText {
                 text: String(localized: "Taking photo…", comment: "Watch status: the phone is taking or saving a photo."),
                 symbol: "hourglass", tone: .plain)
         case .unavailable(let problem):
-            StatusLine(text: text(for: problem), symbol: "exclamationmark.triangle", tone: .warning)
+            StatusLine(text: text(for: problem), symbol: warningSymbol, tone: .warning)
         }
     }
 
     /// The result line for the last photo the watch asked for.
     ///
-    /// - Parameter result: How it ended.
+    /// An unsigned result is plain status, with the information symbol, when the phone says
+    /// signing is off by choice (``SignatureStatus/UnsignedReason/turnedOff``); it is a warning
+    /// when a photo couldn't be signed, or when the phone didn't say why (an older version), as
+    /// before (docs/design/BUILD-SPEC.md, 3.13 and section 6, item 6).
+    ///
+    /// - Parameters:
+    ///   - result: How it ended.
+    ///   - unsignedReason: Why its photos aren't all signed (``WatchRemote/lastUnsignedReason``),
+    ///     or `nil`.
     /// - Returns: The message.
-    static func message(for result: WatchResult) -> StatusLine {
+    static func message(for result: WatchResult, unsignedReason: SignatureStatus.UnsignedReason? = nil) -> StatusLine {
         switch result {
         case .saved(isSigned: true):
             StatusLine(
@@ -69,7 +93,7 @@ enum WatchText {
         case .saved(isSigned: false):
             StatusLine(
                 text: String(localized: "Saved, not signed", comment: "Watch warning: the photo was saved on the phone but isn't signed with Content Credentials."),
-                symbol: "exclamationmark.triangle", tone: .warning)
+                unsignedReason: unsignedReason)
         case .savedSeveral(allSigned: true):
             StatusLine(
                 text: String(localized: "Photos saved and signed", comment: "Watch result: a bracket of photos was saved on the phone and every one is signed."),
@@ -77,11 +101,11 @@ enum WatchText {
         case .savedSeveral(allSigned: false):
             StatusLine(
                 text: String(localized: "Photos saved, not all signed", comment: "Watch warning: a bracket of photos was saved on the phone, but some aren't signed."),
-                symbol: "exclamationmark.triangle", tone: .warning)
+                unsignedReason: unsignedReason)
         case .notSaved:
             StatusLine(
                 text: String(localized: "Not saved. Your phone shows why.", comment: "Watch warning: the photo wasn't saved; the reason is on the phone's screen."),
-                symbol: "xmark.octagon", tone: .warning)
+                symbol: warningSymbol, tone: .warning)
         case .cancelled:
             StatusLine(
                 text: String(localized: "Timer cancelled. No photo taken.", comment: "Watch result: the self-timer was cancelled, so no photo was taken."),
@@ -93,13 +117,17 @@ enum WatchText {
         case .notTaken:
             StatusLine(
                 text: String(localized: "No photo taken.", comment: "Watch result: nothing was taken because the phone's camera wasn't available; the status line says why."),
-                symbol: "xmark.octagon", tone: .warning)
+                symbol: "xmark.circle", tone: .warning)
         case .notUnderstood:
             StatusLine(
                 text: String(localized: "Update nope. on your phone and watch.", comment: "Watch warning: the phone and watch apps are different versions. Keep \"nope.\" unchanged."),
-                symbol: "arrow.triangle.2.circlepath", tone: .warning)
+                symbol: warningSymbol, tone: .warning)
         }
     }
+
+    /// The warning symbol: a triangle, as on every warning in the app (docs/design/tokens.md,
+    /// "Color": warnings only, with a triangle and words).
+    static let warningSymbol = "exclamationmark.triangle"
 
     /// Why the phone's camera can't take a photo.
     ///

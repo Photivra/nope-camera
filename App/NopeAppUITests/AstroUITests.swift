@@ -4,11 +4,13 @@ import XCTest
 /// simulated backend. The `manual` scenario's wide lens has Bayer RAW, manual exposure and
 /// manual focus, so the helper is offered there.
 extension NopeAppUITests {
-    /// The Astro pill at the top of the camera (the tray item has the same name, so the tray is
-    /// closed before it is used).
+    /// Turns the astro helper on from the drive strip's Astro word (docs/design/BUILD-SPEC.md,
+    /// 3.5), which replaced the quick-controls tray's Astro item, and waits until it is selected.
     @MainActor
-    private func astroPill(_ app: XCUIApplication) -> XCUIElement {
-        app.buttons["Astro"].firstMatch
+    private func turnOnAstro(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+        driveStripWord(app, "Astro").tap()
+        let selected = app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", "Astro")).firstMatch
+        XCTAssertTrue(selected.waitForExistence(timeout: 5), file: file, line: line)
     }
 
     /// Opens a pushed-list picker in a form and chooses a value.
@@ -23,43 +25,39 @@ extension NopeAppUITests {
         XCTAssertTrue(row.waitForExistence(timeout: 10), "back from the \(picker) list")
     }
 
-    /// While Astro is on, an interval series can't start: Start in Pro Tools is disabled and
-    /// says why.
+    /// While Astro is on, no interval series runs with it. Astro and Interval are now words of
+    /// one drive strip, and Pro Tools no longer has Start (BUILD-SPEC.md, 3.4 and 3.5), so the
+    /// series is reached only by choosing Interval, which turns Astro off; its Start is enabled.
     @MainActor
     func testIntervalStartIsDisabledWhileAstroIsOn() throws {
         let app = launch("manual")
-        quickControl(app, "Astro")
-        closeTray(app)
-        let more = app.buttons["More Manual Controls"]
-        XCTAssertTrue(more.waitForExistence(timeout: 10))
-        more.tap()
-        app.buttons["Pro Tools"].tap()
-        let reason = element(app, containing: "Turn off Astro to start interval shooting.")
-        var swipes = 0
-        while !reason.exists && swipes < 8 {
-            app.swipeUp()
-            swipes += 1
-        }
-        XCTAssertTrue(reason.exists)
+        turnOnAstro(app)
+        XCTAssertTrue(element(app, containing: "Astro frames").waitForExistence(timeout: 10))
+        chooseDrive(app, "Interval Shooting")
         let start = app.buttons["Start"]
-        XCTAssertTrue(start.exists)
-        XCTAssertFalse(start.isEnabled)
+        XCTAssertTrue(start.waitForExistence(timeout: 10))
+        XCTAssertTrue(start.isEnabled)
+        XCTAssertFalse(element(app, containing: "Turn off Astro to start interval shooting.").exists)
         // As for the other form screens at the default size, the iOS 27.2 Simulator reports form
         // text as "partially unsupported" Dynamic Type; the form is audited at the largest size
         // in testIntervalSheetAtTheLargestTextSizeAndRightToLeft.
-        try audit(app, afterScrolling: true, checksDynamicType: false)
+        try audit(app, checksDynamicType: false)
+        app.buttons["Done"].tap()
+        XCTAssertFalse(
+            app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", "Astro")).firstMatch.exists,
+            "Astro stayed on with Interval")
+        XCTAssertFalse(element(app, containing: "Astro frames").exists)
     }
 
     @MainActor
     func testAstroHelperIsRedOnBlackAndSetsUpTheFrames() throws {
-        let app = launch("manual", extraArguments: ["-NopeSimulatedViewfinder", "white"])
-        quickControl(app, "Astro")
-        let selected = app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", "Astro")).firstMatch
-        XCTAssertTrue(selected.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Drive"].exists, "Astro has its own self-timer and frame count")
-        closeTray(app)
+        let app = launch("manual", extraArguments: Self.signingOn + ["-NopeSimulatedViewfinder", "white"])
+        // Astro is one choice of the drive strip, so no self-timer or burst runs with its own
+        // start delay and frame count.
+        turnOnAstro(app)
+        XCTAssertFalse(
+            app.buttons.matching(NSPredicate(format: "label == %@ AND selected == YES", "Timer")).firstMatch.exists)
         // Night mode comes on with the helper; the viewfinder keeps its natural colors.
-        XCTAssertTrue(astroPill(app).waitForExistence(timeout: 10))
         XCTAssertTrue(element(app, containing: "Astro frames: 20").waitForExistence(timeout: 10))
         XCTAssertEqual(nonRedPixels(app, outside: app.otherElements["Viewfinder"].frame), 0, "white, blue or other colors remain")
         // Manual controls come on, with the helper's focus, shutter and ISO.
@@ -86,9 +84,11 @@ extension NopeAppUITests {
         done.tap()
         XCTAssertTrue(element(app, containing: "Astro frames: 5").waitForExistence(timeout: 10))
 
-        // The shutter counts down, then takes the frames, each saved as its own photo.
+        // The shutter counts the start delay down on the Astro card, then takes the frames, each
+        // saved as its own photo.
         app.buttons["Take Photo"].tap()
-        XCTAssertTrue(app.buttons["Cancel Timer"].waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "First frame in").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Stop Frames"].exists)
         let thumbnail = app.descendants(matching: .any)["Last Photo"]
         XCTAssertTrue(
             XCTWaiter().wait(
@@ -96,8 +96,9 @@ extension NopeAppUITests {
                 timeout: 30) == .completed)
         try audit(app)
 
-        // The pill turns the helper off; night mode stays on.
-        astroPill(app).tap()
+        // Single on the drive strip, which replaced the Astro pill, turns the helper off; night
+        // mode stays on.
+        driveStripWord(app, "Single").tap()
         XCTAssertFalse(element(app, containing: "Astro frames").waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["More Manual Controls"].exists, "manual controls go back off")
         XCTAssertEqual(nonRedPixels(app, outside: app.otherElements["Viewfinder"].frame), 0)
@@ -106,8 +107,7 @@ extension NopeAppUITests {
     @MainActor
     func testAstroFramesShowProgressAndStop() throws {
         let app = launch("astro", extraArguments: Self.nightModeOn)
-        quickControl(app, "Astro")
-        closeTray(app)
+        turnOnAstro(app)
         app.buttons["Astro Settings"].tap()
         choose(app, "300", in: "Frames")
         choose(app, "3 seconds", in: "Start Delay")
@@ -145,8 +145,7 @@ extension NopeAppUITests {
     @MainActor
     func testAstroFramesPauseWhenLeavingAndContinueOnReturn() throws {
         let app = launch("astro")
-        quickControl(app, "Astro")
-        closeTray(app)
+        turnOnAstro(app)
         app.buttons["Astro Settings"].tap()
         choose(app, "300", in: "Frames")
         choose(app, "3 seconds", in: "Start Delay")
@@ -185,7 +184,7 @@ extension NopeAppUITests {
     @MainActor
     func testAstroAtTheLargestTextSizeAndRightToLeft() throws {
         let large = launch("manual", extraArguments: Self.largestTextSize)
-        quickControl(large, "Astro")
+        turnOnAstro(large)
         XCTAssertTrue(element(large, containing: "Astro frames").waitForExistence(timeout: 10))
         try auditScrollingScreen(large)
         // The sheet's rows grow with the text (its audit skips Dynamic Type, as Pro Tools' does:
@@ -207,8 +206,7 @@ extension NopeAppUITests {
         large.terminate()
 
         let rightToLeft = launch("manual", extraArguments: Self.rightToLeft)
-        quickControl(rightToLeft, "Astro")
-        closeTray(rightToLeft)
+        turnOnAstro(rightToLeft)
         XCTAssertTrue(element(rightToLeft, containing: "Astro frames").waitForExistence(timeout: 10))
         try audit(rightToLeft)
         rightToLeft.buttons["Astro Settings"].tap()

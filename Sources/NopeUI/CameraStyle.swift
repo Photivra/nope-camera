@@ -9,125 +9,21 @@ import SwiftUI
 /// There is no yellow. Every state also has a symbol or words, so nothing depends on color
 /// alone (AGENTS.md, "Vision settings"). In night mode both teal and amber become the night
 /// red (``NightStyle``); the symbols and words still tell them apart.
+///
+/// The values come from the design tokens (`DesignTokens.swift`, docs/design/tokens.md); sizes
+/// and spacing are ``NopeRadius``, ``NopeSize`` and ``NopeSpace``.
 enum CameraStyle {
-    /// A verified fact, such as the seal on a single-frame RAW.
-    static var fact: CameraColor { CameraColor(.teal) }
+    /// A verified fact, such as the seal on a single-frame RAW: ``NopeColor/fact``, shown as the
+    /// night red in night mode.
+    static var fact: CameraColor { CameraColor(NopeColor.fact) }
 
-    /// A warning: something that changes what the photo is, or a failure.
-    static var warning: CameraColor { CameraColor(.orange) }
+    /// A warning: something that changes what the photo is, or a failure. ``NopeColor/warning``,
+    /// shown as the night red in night mode.
+    static var warning: CameraColor { CameraColor(NopeColor.warning) }
 
     /// Secondary text, such as an explanation under a setting: the system's secondary style,
     /// and in night mode the full night red, because a dimmer red falls below 4.5:1 contrast.
     static var secondaryText: SecondaryText { SecondaryText() }
-
-    /// The corner radius of chips, pills and banners, in points.
-    static var cornerRadius: CGFloat { 10 }
-
-    /// The minimum size of every touch target, in points (AGENTS.md, "Touch targets").
-    static var minimumTarget: CGFloat { 44 }
-
-    /// The space between neighboring touch targets, in points (issue #68, "Point budget").
-    static var targetSpacing: CGFloat { 8 }
-}
-
-/// A dark backing for anything drawn over the picture: a system material darkened so text and
-/// icons keep their contrast over a white or yellow scene, and solid black with Reduce
-/// Transparency or Increase Contrast (issue #68, "Contrast").
-struct DarkBacking<S: Shape>: ViewModifier {
-    /// The backing's shape.
-    let shape: S
-
-    /// Whether Reduce Transparency is on.
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    /// Whether Increase Contrast is on.
-    @Environment(\.colorSchemeContrast) private var contrast
-
-    /// Creates the backing.
-    ///
-    /// - Parameter shape: The backing's shape.
-    init(shape: S) {
-        self.shape = shape
-    }
-
-    /// The opacity of the black over the material. The iPad accessibility audit reported text
-    /// on a 75% backing as low contrast, so it is 90%. Over a pure white frame the backing is at
-    /// most a 10% gray, which white text passes against with a wide margin (WCAG 2.2, 1.4.3,
-    /// 4.5:1). The camera screen is audited over a black viewfinder in the Simulator; the white
-    /// and yellow frames are a device check (docs/TESTING.md).
-    private static var dimming: Double { 0.9 }
-
-    /// Puts the backing behind the content.
-    ///
-    /// - Parameter content: The content.
-    func body(content: Content) -> some View {
-        content.background {
-            if reduceTransparency || contrast == .increased {
-                shape.fill(.black)
-            } else {
-                shape.fill(.ultraThinMaterial).overlay(shape.fill(.black.opacity(Self.dimming)))
-            }
-        }
-    }
-}
-
-extension View {
-    /// Puts a dark backing behind a control drawn over the picture.
-    ///
-    /// - Parameter shape: The backing's shape; a rounded rectangle by default.
-    func darkBacking<S: Shape>(_ shape: S) -> some View {
-        modifier(DarkBacking(shape: shape))
-    }
-
-    /// Puts a rounded dark backing behind a control drawn over the picture.
-    func darkBacking() -> some View {
-        modifier(DarkBacking(shape: RoundedRectangle(cornerRadius: CameraStyle.cornerRadius)))
-    }
-}
-
-/// A capsule button that is filled white with bold black text when selected, and plain white on
-/// a dark fill otherwise, as the camera's lens and readout buttons are (issue #68, "Colors").
-struct SelectableCapsuleStyle: ButtonStyle {
-    /// Whether the button shows the selected item.
-    let isSelected: Bool
-
-    /// The space on each side of the label, in points.
-    let horizontalPadding: CGFloat
-
-    /// Whether the button is enabled.
-    @Environment(\.isEnabled) private var isEnabled
-
-    /// Whether night mode is on: the dark fill is darker there, because night mode's red
-    /// multiply turns white text on the 20% gray into red on dark red at only about 4.6:1, which
-    /// the audit reported for small readout text; on an 8% gray it is about 5.2:1.
-    @Environment(\.isNightMode) private var isNightMode
-
-    /// Creates the style.
-    ///
-    /// - Parameters:
-    ///   - isSelected: Whether the button shows the selected item.
-    ///   - horizontalPadding: The space on each side of the label, in points; smaller for the
-    ///     manual readouts, so seven fit in a row.
-    init(isSelected: Bool, horizontalPadding: CGFloat = 10) {
-        self.isSelected = isSelected
-        self.horizontalPadding = horizontalPadding
-    }
-
-    /// The styled button.
-    ///
-    /// - Parameter configuration: The button's label and press state.
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .fontWeight(isSelected ? .bold : .regular)
-            .foregroundStyle(isSelected ? Color.black : Color.white)
-            .padding(.horizontal, horizontalPadding)
-            .frame(minWidth: CameraStyle.minimumTarget, minHeight: CameraStyle.minimumTarget)
-            .background(isSelected ? Color.white : Color(white: isNightMode ? 0.08 : 0.2), in: .capsule)
-            .opacity(configuration.isPressed ? 0.7 : (isEnabled ? 1 : 0.5))
-            .contentShape(.capsule)
-            .contentShape(.hoverEffect, .capsule)
-            .hoverEffect(.highlight)
-    }
 }
 
 /// Presents content as a popover in a regular-width window (iPad) and as a sheet otherwise
@@ -138,7 +34,10 @@ struct SelectableCapsuleStyle: ButtonStyle {
 /// With `prefersSheet` (night mode) it is a sheet on iPad too: the iPad popover is translucent
 /// glass whatever its presentation background, so the picture and the system's colors showed
 /// through night mode's red on black. The style is chosen when the content opens and kept
-/// while it is open, so turning night mode on or off inside it doesn't close it.
+/// while it is open, so turning night mode off inside it, rotating, resizing or folding doesn't
+/// close it. With `switchesToSheet` (Settings), turning night mode on inside an open popover
+/// moves the content to the sheet at once (owner decision of 2026-11-17, issue #74): the content
+/// keeps its place when its state lives outside it (`SettingsNavigation`).
 struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// How the content is shown.
     enum Style {
@@ -154,6 +53,9 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// Whether a sheet is wanted in a regular-width window too.
     let prefersSheet: Bool
 
+    /// Whether an open popover becomes the sheet when `prefersSheet` turns on.
+    let switchesToSheet: Bool
+
     /// The presented content.
     let presented: () -> Presented
 
@@ -168,10 +70,15 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
     /// - Parameters:
     ///   - isPresented: Whether the content is shown.
     ///   - prefersSheet: Whether a sheet is wanted in a regular-width window too.
+    ///   - switchesToSheet: Whether an open popover becomes the sheet when `prefersSheet` turns on.
     ///   - presented: The presented content.
-    init(isPresented: Binding<Bool>, prefersSheet: Bool, presented: @escaping () -> Presented) {
+    init(
+        isPresented: Binding<Bool>, prefersSheet: Bool, switchesToSheet: Bool = false,
+        presented: @escaping () -> Presented
+    ) {
         _isPresented = isPresented
         self.prefersSheet = prefersSheet
+        self.switchesToSheet = switchesToSheet
         self.presented = presented
     }
 
@@ -189,6 +96,10 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
             .popover(isPresented: shown(as: .popover)) { presented().environment(\.isPresentedInPopover, true) }
             .sheet(isPresented: shown(as: .sheet), content: presented)
             .onChange(of: isPresented, initial: true) { _, isOpen in openStyle = isOpen ? currentStyle : nil }
+            .onChange(of: prefersSheet) { _, wantsSheet in
+                guard switchesToSheet, wantsSheet, isPresented, openStyle == .popover else { return }
+                openStyle = .sheet
+            }
     }
 
     /// Whether the content is shown in the style.
@@ -199,7 +110,9 @@ struct AdaptivePresentation<Presented: View>: ViewModifier {
         Binding {
             isPresented && (openStyle ?? currentStyle) == style
         } set: { isOpen in
-            if !isOpen { isPresented = false }
+            // Only the style in use closes the content: the popover the switch to the sheet
+            // dismisses must not close it.
+            if !isOpen, (openStyle ?? currentStyle) == style { isPresented = false }
         }
     }
 }
@@ -211,24 +124,24 @@ extension View {
     /// - Parameters:
     ///   - isPresented: Whether the content is shown.
     ///   - prefersSheet: Whether a sheet is wanted on iPad too, as in night mode.
+    ///   - switchesToSheet: Whether an open popover becomes the sheet when `prefersSheet` turns on.
     ///   - content: The presented content.
     func adaptivePresentation<Presented: View>(
-        isPresented: Binding<Bool>, prefersSheet: Bool = false, @ViewBuilder content: @escaping () -> Presented
+        isPresented: Binding<Bool>, prefersSheet: Bool = false, switchesToSheet: Bool = false,
+        @ViewBuilder content: @escaping () -> Presented
     ) -> some View {
-        modifier(AdaptivePresentation(isPresented: isPresented, prefersSheet: prefersSheet, presented: content))
+        modifier(
+            AdaptivePresentation(
+                isPresented: isPresented, prefersSheet: prefersSheet, switchesToSheet: switchesToSheet, presented: content))
     }
 }
 
 extension View {
-    /// Turns off the soft fade iOS 26 draws where scrolling content meets the screen's edges, so
-    /// text scrolled under the status bar keeps its contrast (the iPad audit reported faded text
-    /// at the top of the scrolling camera layout). Earlier versions have no such effect.
-    @ViewBuilder func hardScrollEdges() -> some View {
-        if #available(iOS 26, *) {
-            scrollEdgeEffectStyle(.hard, for: .all)
-        } else {
-            self
-        }
+    /// Turns off the soft fade iOS 26 and later draw where scrolling content meets the screen's
+    /// edges, so text scrolled under the status bar keeps its contrast (the iPad audit reported
+    /// faded text at the top of the scrolling camera layout).
+    func hardScrollEdges() -> some View {
+        scrollEdgeEffectStyle(.hard, for: .all)
     }
 }
 
@@ -266,7 +179,7 @@ struct CameraColor: ShapeStyle {
 /// The app never changes the screen's brightness; people dim it with the device's own controls.
 enum NightStyle {
     /// The one color of night mode: pure sRGB red.
-    static var red: Color { Color(.sRGB, red: 1, green: 0, blue: 0) }
+    static var red: Color { NopeColor.night }
 
     /// The tint of system controls in night mode, before the multiply: white, shown as the full
     /// night red. Tinted text and icons (a back button, a picker's checkmark, a button in a list)
@@ -281,20 +194,95 @@ enum NightStyle {
     static var trackTint: Color { Color(white: 0.3) }
 }
 
-/// The system switch, with ``NightStyle/trackTint`` on its track in night mode, so its knob
-/// stays distinct from the track while other tinted controls use the full night red. Outside
-/// night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
-/// with its own style keeps that style.
+/// The switch in night mode: on is a filled track with a dark knob, off is an outlined track
+/// with a red knob (`docs/design/BUILD-SPEC.md`, 3.10, "Night mode"), so on and off differ by
+/// more than the knob's side, as the 0.3.0 night-mode finding asked. Outside night mode it is
+/// the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle with its own style
+/// keeps that style.
 struct NightModeSwitchStyle: ToggleStyle {
     /// Creates the style. It holds no state.
     init() {}
 
-    /// The toggle, drawn by the system.
+    /// The toggle: the system's outside night mode, ``NightModeSwitch`` in it.
     ///
     /// - Parameter configuration: The toggle's label and state.
     func makeBody(configuration: Configuration) -> some View {
-        Toggle(configuration)
-            .nightModeTrackTint()
+        NightModeSwitch(configuration: configuration)
+    }
+}
+
+/// The drawing of ``NightModeSwitchStyle``. Night mode multiplies everything by pure red
+/// (``NightModeStyle``), so it draws in white and grays: white shows as the full night red.
+/// It is a button that VoiceOver, Voice Control and Switch Control see as the system switch
+/// (`accessibilityRepresentation`).
+struct NightModeSwitch: View {
+    /// The toggle's label and state.
+    let configuration: ToggleStyleConfiguration
+
+    /// Whether night mode is on.
+    @Environment(\.isNightMode) private var isNightMode
+
+    /// Whether the switch can be changed.
+    @Environment(\.isEnabled) private var isEnabled
+
+    /// Whether Reduce Motion is on: the knob then moves without animation.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The track's size, the system switch's size (UIKit `UISwitch`, 51 × 31 points), so a
+    /// row's height doesn't change when night mode turns on.
+    static let trackSize = CGSize(width: 51, height: 31)
+
+    /// The space between the knob and the track's edge.
+    static let knobInset: CGFloat = 2
+
+    /// Creates the switch.
+    ///
+    /// - Parameter configuration: The toggle's label and state.
+    init(configuration: ToggleStyleConfiguration) {
+        self.configuration = configuration
+    }
+
+    /// The system switch, or the night drawing.
+    var body: some View {
+        if isNightMode {
+            Button {
+                configuration.isOn.toggle()
+            } label: {
+                HStack(spacing: NopeSpace.s) {
+                    configuration.label
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    track
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .opacity(isEnabled ? 1 : NopeMotion.disabledOpacity)
+            .accessibilityRepresentation {
+                Toggle(isOn: configuration.$isOn) { configuration.label }
+            }
+        } else {
+            Toggle(configuration)
+        }
+    }
+
+    /// The track and knob: filled with a dark knob when on, outlined with a red knob when off.
+    private var track: some View {
+        let isOn = configuration.isOn
+        let knob = Self.trackSize.height - Self.knobInset * 2
+        return ZStack(alignment: isOn ? .trailing : .leading) {
+            Capsule()
+                .fill(isOn ? Color.white : Color.clear)
+            Capsule()
+                .strokeBorder(NopeColor.nightOutlineUnderMultiply, lineWidth: NopeSize.warningOutline)
+                .opacity(isOn ? 0 : 1)
+            Circle()
+                .fill(isOn ? Color.black : Color.white)
+                .frame(width: knob, height: knob)
+                .padding(Self.knobInset)
+        }
+        .frame(width: Self.trackSize.width, height: Self.trackSize.height)
+        .animation(reduceMotion ? nil : NopeMotion.select, value: isOn)
+        .accessibilityHidden(true)
     }
 }
 

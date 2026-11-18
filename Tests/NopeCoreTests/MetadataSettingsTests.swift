@@ -3,12 +3,13 @@ import NopeCore
 import Testing
 
 struct MetadataSettingsTests {
-    @Test func firstLaunchRemovesEverythingAndSigns() {
+    @Test func firstLaunchRemovesEverythingAndDoesntSign() {
         let settings = MetadataSettings()
         #expect(settings.removesAllOptionalDetails)
         #expect(!settings.isCustom)
         #expect(settings.enabledItems.isEmpty)
-        #expect(settings.signsPhotos)
+        // Signing is off by default (issue #80).
+        #expect(!settings.signsPhotos)
         #expect(settings.ownerName.isEmpty)
         #expect(settings.copyrightNotice.isEmpty)
         for item in MetadataItem.allCases { #expect(!settings.isOn(item)) }
@@ -74,13 +75,15 @@ struct MetadataSettingsTests {
         #expect(PhotoFormat(rawValue: "raw") == .raw)
     }
 
-    @Test func formatsDefaultToRAWPlusHEIFAndNeverBecomeEmpty() {
+    @Test func formatsDefaultToRAWOnlyAndNeverBecomeEmpty() {
         var settings = SaveSettings()
-        #expect(settings.formats == [.raw, .heif])
+        // RAW only by default (issue #80).
+        #expect(settings.formats == [.raw])
         #expect(settings.metadata == MetadataSettings())
         #expect(settings.developedLook == .standard)
         #expect(DevelopedLook(rawValue: "flat") == .flat)
         var results: [Bool] = []
+        results.append(settings.setFormat(.heif, isSelected: true))
         results.append(settings.setFormat(.jpeg, isSelected: true))
         #expect(settings.formats == [.raw, .heif, .jpeg])
         results.append(settings.setFormat(.raw, isSelected: false))
@@ -90,6 +93,6 @@ struct MetadataSettingsTests {
         #expect(settings.formats == [.jpeg])
         results.append(settings.setFormat(.raw, isSelected: false))
         #expect(settings.formats == [.jpeg])
-        #expect(results == [true, true, true, false, true])
+        #expect(results == [true, true, true, true, false, true])
     }
 }

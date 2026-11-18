@@ -49,6 +49,7 @@ Related documentation in the repository:
 - ``PhotoDimensions``
 - ``ApertureRange``
 - ``ProcessedFallback``
+- ``DistortionCorrection``
 - ``CameraPermission``
 - ``PhotoFormat``
 

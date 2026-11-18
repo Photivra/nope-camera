@@ -38,11 +38,15 @@ struct NopeSettingsTests {
     @Test func firstLaunchDefaults() {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)
-        #expect(settings.formats == [.raw, .heif])
-        #expect(settings.orderedFormats == [.raw, .heif])
+        // Issue #80: RAW only, signing off, Face Detection off, the Processed marker on.
+        #expect(settings.formats == [.raw])
+        #expect(settings.orderedFormats == [.raw])
         #expect(settings.metadata == MetadataSettings())
         #expect(settings.save == SaveSettings())
-        #expect(settings.signsPhotos)
+        #expect(!settings.signsPhotos)
+        #expect(!settings.followsFaces)
+        #expect(settings.showsProcessedMarker)
+        #expect(!settings.savesDevelopedFormat)
         #expect(!settings.showsManualControls)
         #expect(!settings.startsInCleanView)
         #expect(settings.developedLook == .standard)
@@ -55,7 +59,8 @@ struct NopeSettingsTests {
         #expect(settings.setFormat(.jpeg, isSelected: true))
         #expect(settings.setFormat(.heif, isSelected: false))
         settings.setMetadataItem(.timeZone, isIncluded: true)
-        settings.setSignsPhotos(false)
+        settings.setSignsPhotos(true)
+        settings.setShowsProcessedMarker(false)
         settings.setShowsManualControls(true)
         settings.setStartsInCleanView(true)
         settings.setDevelopedLook(.flat)
@@ -65,7 +70,8 @@ struct NopeSettingsTests {
         #expect(reloaded.orderedFormats == [.raw, .jpeg])
         #expect(reloaded.metadata.isCustom)
         #expect(reloaded.metadata.enabledItems == [.timeZone])
-        #expect(!reloaded.signsPhotos)
+        #expect(reloaded.signsPhotos)
+        #expect(!reloaded.showsProcessedMarker)
         #expect(reloaded.showsManualControls)
         #expect(reloaded.developedLook == .flat)
         #expect(reloaded.startsInCleanView)
@@ -80,6 +86,8 @@ struct NopeSettingsTests {
     @Test func theLastFormatCantBeTurnedOff() {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(!settings.canTurnOff(.raw, deviceSupportsBayerRAW: true))
+        settings.setFormat(.heif, isSelected: true)
         #expect(settings.canTurnOff(.raw, deviceSupportsBayerRAW: true))
         settings.setFormat(.heif, isSelected: false)
         #expect(!settings.canTurnOff(.raw, deviceSupportsBayerRAW: true))
@@ -93,8 +101,16 @@ struct NopeSettingsTests {
         #expect(!NopeSettings.isAvailable(.raw, deviceSupportsBayerRAW: false))
         #expect(NopeSettings.isAvailable(.raw, deviceSupportsBayerRAW: true))
         #expect(NopeSettings.isAvailable(.heif, deviceSupportsBayerRAW: false))
+        // RAW only (the default) leaves nothing a device without RAW can save: HEIF stands in.
         #expect(settings.selectedFormats(deviceSupportsBayerRAW: false) == [.heif])
-        #expect(settings.selectedFormats(deviceSupportsBayerRAW: true) == [.raw, .heif])
+        #expect(settings.selectedFormats(deviceSupportsBayerRAW: true) == [.raw])
+        #expect(!settings.canTurnOff(.heif, deviceSupportsBayerRAW: false))
+        settings.setFormat(.jpeg, isSelected: true)
+        #expect(settings.selectedFormats(deviceSupportsBayerRAW: false) == [.jpeg])
+        settings.setFormat(.heif, isSelected: true)
+        #expect(settings.selectedFormats(deviceSupportsBayerRAW: false) == [.heif, .jpeg])
+        #expect(settings.selectedFormats(deviceSupportsBayerRAW: true) == [.raw, .heif, .jpeg])
+        settings.setFormat(.jpeg, isSelected: false)
         // HEIF is the only format this device can save, so it stays on.
         #expect(!settings.canTurnOff(.heif, deviceSupportsBayerRAW: false))
         #expect(settings.canTurnOff(.heif, deviceSupportsBayerRAW: true))
@@ -143,8 +159,43 @@ struct NopeSettingsTests {
     @Test func developedFormatsAreReported() {
         let scratch = ScratchDefaults()
         let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(!settings.savesDevelopedFormat)
+        settings.setFormat(.heif, isSelected: true)
         #expect(settings.savesDevelopedFormat)
         settings.setFormat(.heif, isSelected: false)
         #expect(!settings.savesDevelopedFormat)
+    }
+
+    @Test func settingsSavedBeforeTheNewDefaultsAreKept() {
+        // Stored by 0.x before issue #80: RAW plus HEIF, signing on and Face Detection on.
+        let scratch = ScratchDefaults()
+        let old = #"{"formats":["raw","heif"],"metadata":{"removesAllOptionalDetails":true,"enabledItems":[],"signsPhotos":true,"ownerName":"","copyrightNotice":""},"developedLook":"standard"}"#
+        scratch.defaults.set(Data(old.utf8), forKey: NopeSettings.Key.save)
+        scratch.defaults.set(true, forKey: NopeSettings.Key.followsFaces)
+        let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(settings.formats == [.raw, .heif])
+        #expect(settings.signsPhotos)
+        #expect(settings.followsFaces)
+        #expect(settings.showsProcessedMarker)
+        // A stored "off" is kept too.
+        scratch.defaults.set(false, forKey: NopeSettings.Key.followsFaces)
+        #expect(!NopeSettings(defaults: scratch.defaults).followsFaces)
+    }
+
+    @Test func theProcessedMarkerSwitchIsSavedAndReloaded() {
+        let scratch = ScratchDefaults()
+        let settings = NopeSettings(defaults: scratch.defaults)
+        #expect(settings.showsProcessedMarker)
+        settings.setShowsProcessedMarker(false)
+        #expect(!settings.showsProcessedMarker)
+        #expect(!NopeSettings(defaults: scratch.defaults).showsProcessedMarker)
+        // Another process's change is picked up by reload.
+        let other = NopeSettings(defaults: scratch.defaults)
+        settings.setShowsProcessedMarker(true)
+        #expect(other.reload())
+        #expect(other.showsProcessedMarker)
+        // A launch argument string reads as a Boolean.
+        scratch.defaults.set("NO", forKey: NopeSettings.Key.showsProcessedMarker)
+        #expect(!NopeSettings(defaults: scratch.defaults).showsProcessedMarker)
     }
 }

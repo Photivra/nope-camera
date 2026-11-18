@@ -96,7 +96,8 @@ What the app does for taking photos without looking at the screen: the hardware 
 buttons, haptics and spoken feedback (issue #68, "Settings").
 
 It lists only what is built; none of these have a switch yet, so the screen shows facts and
-no control that does nothing. Settings for them (issue #37) add rows here.
+no control that does nothing. Settings for them (issue #37) add rows here. The Night Mode
+entry says how to dim the screen, which nope. never does itself.
 
 ## `AccessibilitySettingsView/body`
 
@@ -144,7 +145,10 @@ reported form headers and footers as not following Dynamic Type.
 With `prefersSheet` (night mode) it is a sheet on iPad too: the iPad popover is translucent
 glass whatever its presentation background, so the picture and the system's colors showed
 through night mode's red on black. The style is chosen when the content opens and kept
-while it is open, so turning night mode on or off inside it doesn't close it.
+while it is open, so turning night mode off inside it, rotating, resizing or folding doesn't
+close it. With `switchesToSheet` (Settings), turning night mode on inside an open popover
+moves the content to the sheet at once (owner decision of 2026-11-17, issue #74): the content
+keeps its place when its state lives outside it (`SettingsNavigation`).
 
 ## `AdaptivePresentation/Style`
 
@@ -189,12 +193,12 @@ Attaches the popover and the sheet; only the chosen one is ever shown.
 
 - Parameter content: The presenting view.
 
-## `AdaptivePresentation/init(isPresented:prefersSheet:presented:)`
+## `AdaptivePresentation/init(isPresented:prefersSheet:switchesToSheet:presented:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@MainActor init(isPresented: Binding<Bool>, prefersSheet: Bool, presented: @escaping () -> Presented)
+@MainActor init(isPresented: Binding<Bool>, prefersSheet: Bool, switchesToSheet: Bool = false, presented: @escaping () -> Presented)
 ```
 
 Creates the modifier.
@@ -202,6 +206,7 @@ Creates the modifier.
 - Parameters:
   - isPresented: Whether the content is shown.
   - prefersSheet: Whether a sheet is wanted in a regular-width window too.
+  - switchesToSheet: Whether an open popover becomes the sheet when `prefersSheet` turns on.
   - presented: The presented content.
 
 ## `AdaptivePresentation/isPresented`
@@ -233,6 +238,16 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 ```
 
 The presented content.
+
+## `AdaptivePresentation/switchesToSheet`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor let switchesToSheet: Bool
+```
+
+Whether an open popover becomes the sheet when `prefersSheet` turns on.
 
 ## `AperturePicker`
 
@@ -296,8 +311,8 @@ internal, declared in `Sources/NopeUI/AstroControls.swift`
 @MainActor struct AstroFeedback
 ```
 
-Announcements for the astro helper without looking at the screen: the start and the end of
-the frames (AGENTS.md, "Taking photos without seeing the screen"). The countdown before the
+Announcements for the astro helper without looking at the screen: that it came on, with the
+manual controls and night mode, and the start and the end of the frames (AGENTS.md, "Taking photos without seeing the screen"). The countdown before the
 first frame has the self-timer's own ticks and numbers (``DriveFeedback``).
 
 ## `AstroFeedback/astro`
@@ -323,84 +338,127 @@ The content with the feedback attached.
 
 - Parameter content: The camera.
 
-## `AstroFeedback/init(astro:)`
+## `AstroFeedback/init(astro:isNightModeOn:)`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 ```swift
-@MainActor init(astro: AstroModel)
+@MainActor init(astro: AstroModel, isNightModeOn: Bool)
 ```
 
 Creates the feedback.
 
-- Parameter astro: The astro helper.
+- Parameters:
+  - astro: The astro helper.
+  - isNightModeOn: Whether night mode is on.
 
-## `AstroPanel`
-
-internal, declared in `Sources/NopeUI/AstroControls.swift`
-
-```swift
-@MainActor struct AstroPanel
-```
-
-The astro helper over the picture while it is on: the frames the shutter will take and a
-button for the settings, or while the frames run, the count and a Stop button. The running
-count stays in clean view, so stopping never depends on a gesture.
-
-## `AstroPanel/body`
+## `AstroFeedback/isNightModeOn`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 ```swift
-@MainActor var body: some View { get }
+@MainActor let isNightModeOn: Bool
 ```
 
-The row, or nothing.
+Whether night mode is on, so the announcement names it only then.
 
-## `AstroPanel/init(model:showsControls:openSettings:)`
+## `AstroRun`
 
-internal, declared in `Sources/NopeUI/AstroControls.swift`
+internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor init(model: CameraModel, showsControls: Bool, openSettings: @escaping () -> Void)
+struct AstroRun
 ```
 
-Creates the panel.
+A run of Astro's frames, as its card shows it.
+
+## `AstroRun/exposureSecondsLeft`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+var exposureSecondsLeft: Double? { get }
+```
+
+The exposure time of the frames still to take, in seconds, or `nil` without a shutter.
+Like Astro Settings' "Exposure Time in All", it leaves out the time each frame takes to
+save, which nothing reports (`AstroEstimate.totalExposureSeconds`).
+
+## `AstroRun/fractionDone`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+var fractionDone: Double { get }
+```
+
+How much of the run is done, from 0 to 1.
+
+## `AstroRun/frameCount`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+let frameCount: Int
+```
+
+The frames the run takes.
+
+## `AstroRun/frameNumber`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+var frameNumber: Int { get }
+```
+
+The frame being taken now, counted from 1, never past the last.
+
+## `AstroRun/init(taken:frameCount:isPaused:shutter:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+init(taken: Int, frameCount: Int, isPaused: Bool, shutter: Double?)
+```
+
+Creates a run.
 
 - Parameters:
-  - model: The camera model.
-  - showsControls: Whether the other controls are shown.
-  - openSettings: Opens the astro settings.
+  - taken: The frames taken so far.
+  - frameCount: The frames the run takes.
+  - isPaused: Whether the run is paused.
+  - shutter: Each frame's shutter, in seconds, or `nil`.
 
-## `AstroPanel/model`
+## `AstroRun/isPaused`
 
-internal, declared in `Sources/NopeUI/AstroControls.swift`
-
-```swift
-@MainActor let model: CameraModel
-```
-
-The camera model.
-
-## `AstroPanel/openSettings`
-
-internal, declared in `Sources/NopeUI/AstroControls.swift`
+internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor let openSettings: () -> Void
+let isPaused: Bool
 ```
 
-Opens the astro settings.
+Whether the run is paused (the camera is interrupted); it continues after the start delay.
 
-## `AstroPanel/showsControls`
+## `AstroRun/shutter`
 
-internal, declared in `Sources/NopeUI/AstroControls.swift`
+internal, declared in `Sources/NopeUI/DriveControls.swift`
 
 ```swift
-@MainActor let showsControls: Bool
+let shutter: Double?
 ```
 
-Whether the other controls are shown (not clean view).
+Each frame's shutter, in seconds, or `nil` before the camera reports one.
+
+## `AstroRun/taken`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+let taken: Int
+```
+
+The frames taken so far.
 
 ## `AstroSheet`
 
@@ -512,6 +570,21 @@ internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 "Astro".
 
+## `AstroText/turnedOn(isNightModeOn:)`
+
+internal, declared in `Sources/NopeUI/AstroControls.swift`
+
+```swift
+@MainActor static func turnedOn(isNightModeOn: Bool) -> String
+```
+
+What VoiceOver hears when Astro comes on. From the drive strip it also turns on the
+manual controls and night mode (docs/design/BUILD-SPEC.md, section 4); from a preset it
+turns on the manual controls only, so night mode is named only while it is on.
+
+- Parameter isNightModeOn: Whether night mode is on.
+- Returns: The announcement.
+
 ## `AutoExposureDial`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -523,6 +596,9 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 Exposure compensation in full auto (issue #41): − and + steppers around a native slider over
 thirds of a stop, within the lens's range, and Reset. The slider is adjustable with VoiceOver
 (swipe up or down), and every step has a button for Voice Control and Switch Control.
+
+It looks like the manual dial (``ControlDial``): on the backing with the large radius, on the
+picture's lower edge (docs/design/BUILD-SPEC.md, 3.4).
 
 ## `AutoExposureDial/body`
 
@@ -748,7 +824,7 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 What the camera screen's registries read: the camera model and the person's settings.
 
-The quick-controls tray (``QuickControls``), the state pills (``StatePills``) and the warning
+The quick menu (``QuickControls``), the state pills (``StatePills``) and the warning
 chips (``CameraWarnings``) build their items from it, so a new feature adds its item in one
 place without touching the layout.
 
@@ -849,8 +925,9 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 @MainActor struct CameraFlipButton
 ```
 
-Switches between the front camera and the rear lens last used, as its own button beside the
-shutter rather than a lens button (issue #68).
+Switches between the front camera and the rear lens last used, as its own round button at the
+trailing end of the lens row (the bottom of the column layout), rather than a lens button
+(issue #68; docs/design/BUILD-SPEC.md, 3.1).
 
 ## `CameraFlipButton/action`
 
@@ -945,8 +1022,8 @@ orientation and window size:
 - at accessibility text sizes, every window scrolls the bands with a shorter picture
   (``scrolling``), because only that layout has room for the enlarged manual controls list:
   the column has no room for it, and offered only All Auto and Pro Tools there;
-- otherwise, a space taller than wide, on a phone-sized screen, stacks the bands: top bar,
-  picture, lens row, manual readout and shutter row (``stacked``);
+- otherwise, a space taller than wide, on a phone-sized screen, stacks the rows: status line,
+  picture, lens row, drive strip and shutter row (``stacked``);
 - a space wider than tall, or a full-size iPad window, puts the picture beside a control
   column on the trailing edge with the shutter centered (``column``).
 
@@ -983,13 +1060,13 @@ internal, declared in `Sources/NopeUI/CameraLayout.swift`
 static func bandsOverlayPicture(in space: CGSize, bandsHeight: CGFloat) -> Bool
 ```
 
-Whether the lens row and manual readout must overlay the bottom of the picture, on a dark
-backing, because the whole 4:3 picture and the bands don't fit one above the other, as on
-a 4.7-inch iPhone (issue #68, "Point budget").
+Whether the lens row and drive strip must overlay the bottom of the picture, on a dark
+backing, because the whole 4:3 picture and the rows don't fit one above the other, as on
+a 4.7-inch iPhone or the outer display of an iPhone Duo (issue #68, "Point budget").
 
 - Parameters:
-  - space: The space between the top bar and the shutter row.
-  - bandsHeight: The height of the lens row and manual readout together.
+  - space: The space between the status line and the shutter row.
+  - bandsHeight: The height of the lens row and drive strip together.
 - Returns: `true` when the bands overlay the picture.
 
 ## `CameraLayout/column`
@@ -1077,8 +1154,8 @@ internal, declared in `Sources/NopeUI/CameraLayout.swift`
 static var scrollingPictureHeight: CGFloat { get }
 ```
 
-The picture's height in the scrolling layout, in points: enough to frame a shot while the
-enlarged controls take the rest of the screen.
+The picture's height in the scrolling layout, in points (``NopeSize/scrollingPicture``):
+enough to frame a shot while the enlarged controls take the rest of the screen.
 
 ## `CameraLayout/shutterRowHeight`
 
@@ -1088,7 +1165,8 @@ internal, declared in `Sources/NopeUI/CameraLayout.swift`
 static var shutterRowHeight: CGFloat { get }
 ```
 
-The shutter row's height, in points (issue #68, "Point budget").
+The shutter row's smallest height, in points (``NopeSize/shutterRowMin``; issue #68,
+"Point budget").
 
 ## `CameraLayout/stacked`
 
@@ -1108,7 +1186,148 @@ internal, declared in `Sources/NopeUI/CameraLayout.swift`
 static var topBarHeight: CGFloat { get }
 ```
 
-The top bar's height, in points (issue #68, "Point budget").
+The status line's height, in points (``NopeSize/statusRow``; issue #68, "Point budget").
+
+## `CameraPointer`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+struct CameraPointer
+```
+
+A control on the camera that isn't in Settings, which search answers with where it is
+(`docs/design/SETTINGS-PLAN.md`, 3.6).
+
+## `CameraPointer/==(_:_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func == (lhs: CameraPointer, rhs: CameraPointer) -> Bool
+```
+
+Equal when the identifiers are.
+
+- Parameters:
+  - lhs: A pointer.
+  - rhs: Another pointer.
+
+## `CameraPointer/Place`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+enum Place
+```
+
+Where a control is on the camera, in words.
+
+## `CameraPointer/Place/aboveShutter`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case aboveShutter
+```
+
+The drive strip, above the shutter.
+
+## `CameraPointer/Place/besideLenses`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case besideLenses
+```
+
+The Manual Controls button, beside the lenses.
+
+## `CameraPointer/Place/inQ`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case inQ
+```
+
+A tile of Q.
+
+## `CameraPointer/Place/text`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var text: LocalizedStringResource { get }
+```
+
+The place, as one whole sentence.
+
+## `CameraPointer/all`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let all: [CameraPointer]
+```
+
+Every pointer, in the order results list them.
+
+## `CameraPointer/id`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+let id: String
+```
+
+A stable identifier.
+
+## `CameraPointer/init(id:title:keywords:place:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+init(id: String, title: LocalizedStringResource, keywords: LocalizedStringResource?, place: Place)
+```
+
+Creates a pointer.
+
+- Parameters:
+  - id: A stable identifier.
+  - title: The control's name, the one the camera shows.
+  - keywords: Other words for it, separated by commas, or `nil`.
+  - place: Where it is.
+
+## `CameraPointer/keywords`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+let keywords: LocalizedStringResource?
+```
+
+Other words for it, separated by commas, or `nil`.
+
+## `CameraPointer/place`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+let place: Place
+```
+
+Where it is.
+
+## `CameraPointer/title`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+let title: LocalizedStringResource
+```
+
+The control's name, the one the camera shows.
 
 ## `CameraReadyView`
 
@@ -1118,32 +1337,40 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor struct CameraReadyView
 ```
 
-The camera when it is ready, in the approved clean layout (issue #68, "UX v3").
+The camera when it is ready, in direction B of the 1.0.0 design (docs/design/BUILD-SPEC.md,
+3.1, 3.11 and 3.12).
 
-Full auto shows the format chip, Settings, the lens row below the 4:3 picture with the
-quick-controls button (⋯) at its end, the shutter, the camera flip and, after the first photo
-of the session, the last-photo thumbnail. Everything else appears only when it isn't at its
-default: state pills (``StatePills``), warning chips (``CameraWarnings``), the manual
-readout row and its dial when the "Manual controls" option is on, and a failure banner.
+Full auto shows the format status, the picture, the lens row (Manual Controls, the lenses,
+Switch Camera), the drive strip (Single, Timer, Burst, Interval, Astro), and the shutter row:
+the last photo after the first of the session, the shutter, and Q, which opens the quick
+menu. Everything else appears only when it isn't at its default: state pills
+(``StatePills``), warning chips (``CameraWarnings``), and on the picture's lower edge the
+hints, the open dial, the running mode's card and the manual readouts.
 
 ``CameraLayout`` chooses the arrangement:
-- **Stacked** (iPhone): top bar 44 points, the whole picture, the lens row, the manual
-  readout, and the shutter row 88 points. When the bands don't fit below the picture, as on a
-  4.7-inch iPhone, they overlay its bottom on a dark backing. The layout stays put when the
-  iPhone turns; icons and text blocks turn upright as units, and the chip, pills and warnings
-  move to the picture's upper edge.
-- **Scrolling**: the same bands in a scroll view at accessibility text sizes, in every window,
-  with the enlarged manual controls list; the viewfinder is clipped to the scroll view.
-- **Column** (iPad, or a window wider than tall, below the accessibility sizes): the picture
-  beside a trailing column with the shutter centered; pills, chip and warnings over the
-  picture's top, and the manual controls and tray over its bottom.
+- **Stacked** (iPhone, the iPhone Duo's outer display, compact iPad windows): the status line
+  (format status leading, pills trailing), the whole picture, the lens row and drive strip,
+  and the shutter row. When the rows don't fit below the picture, as on a 4.7-inch iPhone,
+  they overlay its bottom (``StackedMiddle``). The layout stays put when the iPhone turns;
+  icons and text blocks turn upright as units, the status moves onto the picture's upper
+  edge, Manual Controls shows "A" or "M", and the drive strip shows symbols with the mode
+  named in a pill on the picture. No Settings button: Settings opens from Q.
+- **Scrolling**: at accessibility text sizes, in every window. The status, a 280-point
+  picture, then every control as a full-width row; the shutter row stays pinned.
+- **Column** (iPad, the iPhone Duo's inner display, any window wider than tall): the picture
+  beside a trailing column with Settings, the lenses and Manual Controls at the top, Q, the
+  shutter and the last photo centered, and Switch Camera at the bottom. Format status and
+  warnings sit on the picture's top leading corner and pills on its top trailing corner; the
+  bottom stack and the drive strip are centered on its lower edge.
 
-Clean view leaves only the picture, the shutter, a Show Controls button in the thumbnail's
-place and any warning. Every gesture has a button: swiping the picture down or up is a
-shortcut for Hide Controls (in the tray) and Show Controls.
+Clean view leaves only the picture, the shutter, a Show Controls button in the last photo's
+place, any warning and any running series. Every gesture has a button: swiping the picture
+down or up is a shortcut for Hide Controls (in the quick menu) and Show Controls.
 
 The picture's frame is left clear and reported (``ViewfinderFrame``): ``CameraScreen`` draws
-the live viewfinder there, behind this view, so it stays the same view in every mode.
+the live viewfinder there, behind this view, so it stays the same view in every mode. The view
+keeps its state (the open dial, the quick menu, the timer delay) when the window changes
+layout, as when an iPhone Duo folds or unfolds.
 
 ## `CameraReadyView/body`
 
@@ -1170,7 +1397,7 @@ Creates the ready view.
   - settings: The person's settings.
   - lenses: The lenses, in display order.
   - openSettings: Opens Settings.
-  - presets: The saved settings presets, or `nil` for no Presets tray item.
+  - presets: The saved settings presets, or `nil` for no Presets item.
 
 ## `CameraReadyView/lenses`
 
@@ -1210,7 +1437,7 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor let presets: SettingsPresets?
 ```
 
-The saved settings presets (issue #72), or `nil` for no Presets tray item.
+The saved settings presets (issue #72), or `nil` for no Presets item.
 
 ## `CameraReadyView/settings`
 
@@ -1221,6 +1448,83 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 ```
 
 The person's settings.
+
+## `CameraRowLabel`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor struct CameraRowLabel
+```
+
+The content of a full-width camera row in the scrolling layout (accessibility text sizes):
+the name on top, then the value, each wrapping rather than truncating.
+
+## `CameraRowLabel/body`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The name over the value.
+
+## `CameraRowLabel/detail`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let detail: Text?
+```
+
+A further line under the value, such as "No RAW", or `nil` for none.
+
+## `CameraRowLabel/init(name:value:detail:systemImage:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor init(name: Text, value: Text?, detail: Text? = nil, systemImage: String? = nil)
+```
+
+Creates a row's content.
+
+- Parameters:
+  - name: The row's name.
+  - value: The row's value, or `nil` for none.
+  - detail: A further line under the value, or `nil` for none.
+  - systemImage: The SF Symbol before the name, or `nil` for none.
+
+## `CameraRowLabel/name`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let name: Text
+```
+
+The row's name, such as "Manual Controls" or "Wide".
+
+## `CameraRowLabel/systemImage`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let systemImage: String?
+```
+
+The SF Symbol before the name, or `nil` for none.
+
+## `CameraRowLabel/value`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let value: Text?
+```
+
+The row's value, such as "Off" or "1×", or `nil` for none.
 
 ## `CameraScreen`
 
@@ -1243,8 +1547,10 @@ The live viewfinder comes from the app target: `NopeUI` can't show camera video,
 passes a closure that turns the model's `CameraPreviewSource` into a view (for example one
 backed by `AVCaptureVideoPreviewLayer`).
 
-A Settings button opens ``SettingsScreen`` (a popover on iPad, a sheet on iPhone) in every
-state, so settings and the Honesty screen are reachable before the camera is allowed. Before
+Settings (``SettingsScreen``, a popover in a regular-width window, a sheet otherwise) is
+reachable in every state, so settings and the Honesty screen are reachable before the camera
+is allowed: from a Settings button above the screens shown before the camera is ready, from
+the column layout's Settings button, and from Q in the stacked and scrolling layouts. Before
 camera access is asked, ``FirstRunView`` says what the app does, then asks.
 
 The app target can set ``SwiftUICore/EnvironmentValues/openAppSettings`` (Open Settings buttons),
@@ -1297,7 +1603,7 @@ Creates the camera screen.
   - model: The model to render. The screen sends `CameraIntent.start` when it appears
     and runs `CameraModel.observeEvents()` while it is visible.
   - settings: The person's settings, opened from the Settings button.
-  - presets: The saved settings presets, shown in Settings and the quick-controls tray, or
+  - presets: The saved settings presets, shown in Settings and the quick menu, or
     `nil` to offer none (the Lock Screen camera, which can't read them).
   - viewfinder: Makes the live viewfinder from the model's preview source.
 
@@ -1319,15 +1625,8 @@ There is no yellow. Every state also has a symbol or words, so nothing depends o
 alone (AGENTS.md, "Vision settings"). In night mode both teal and amber become the night
 red (``NightStyle``); the symbols and words still tell them apart.
 
-## `CameraStyle/cornerRadius`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-static var cornerRadius: CGFloat { get }
-```
-
-The corner radius of chips, pills and banners, in points.
+The values come from the design tokens (`DesignTokens.swift`, docs/design/tokens.md); sizes
+and spacing are ``NopeRadius``, ``NopeSize`` and ``NopeSpace``.
 
 ## `CameraStyle/fact`
 
@@ -1337,17 +1636,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var fact: CameraColor { get }
 ```
 
-A verified fact, such as the seal on a single-frame RAW.
-
-## `CameraStyle/minimumTarget`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-static var minimumTarget: CGFloat { get }
-```
-
-The minimum size of every touch target, in points (AGENTS.md, "Touch targets").
+A verified fact, such as the seal on a single-frame RAW: ``NopeColor/fact``, shown as the
+night red in night mode.
 
 ## `CameraStyle/secondaryText`
 
@@ -1360,16 +1650,6 @@ static var secondaryText: SecondaryText { get }
 Secondary text, such as an explanation under a setting: the system's secondary style,
 and in night mode the full night red, because a dimmer red falls below 4.5:1 contrast.
 
-## `CameraStyle/targetSpacing`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-static var targetSpacing: CGFloat { get }
-```
-
-The space between neighboring touch targets, in points (issue #68, "Point budget").
-
 ## `CameraStyle/warning`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -1378,7 +1658,8 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 static var warning: CameraColor { get }
 ```
 
-A warning: something that changes what the photo is, or a failure.
+A warning: something that changes what the photo is, or a failure. ``NopeColor/warning``,
+shown as the night red in night mode.
 
 ## `CameraWarning`
 
@@ -1388,11 +1669,12 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 struct CameraWarning
 ```
 
-A persistent warning about what the photo is, such as "Not Signed" (issue #68, "Feedback
+A persistent warning about what the photo is, such as "Storage Low" (issue #68, "Feedback
 tiers"): an amber chip with a symbol and words that stays until the cause goes away, even in
 clean view. Tapping it shows the explanation.
 
-The no-RAW fallback is not in this list: the format chip itself turns into its warning.
+The no-RAW fallback is not in this list: the format status shows the "Processed" marker
+(``FormatChip``).
 
 ## `CameraWarning/explanation`
 
@@ -1526,8 +1808,12 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 @MainActor static func signing(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning?
 ```
 
-"Not Signed" while signing is off in Settings, or after the last photo couldn't be
-signed. A missing signature is always stated, never hidden (issue #1).
+"Not Signed" after the last photo couldn't be signed while signing is on. A missing
+signature is always stated, never hidden (issue #1).
+
+Signing is off by default (issue #80), so signing that is off is not a warning: the
+message after each save says "Saved. Not signed: signing is off in Settings.", and the
+photo's details say it isn't signed.
 
 - Parameters:
   - context: The model and settings.
@@ -1622,6 +1908,94 @@ static func savedPhotos(in status: CaptureStatus) -> [SavedPhoto]?
 The photos a status reports as saved, or `nil` when it reports no save.
 
 - Parameter status: A capture status.
+
+## `CenteredRowLayout`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+struct CenteredRowLayout
+```
+
+Lays out three views in a row with the middle one centered on the row, the first at the
+leading edge and the last at the trailing edge: the lens row, whose lens group sits on the
+same center line as the shutter (docs/design/BUILD-SPEC.md, 3.1). When a side is too wide to
+leave the middle centered, the middle moves toward the other side just enough to keep the
+spacing; it never overlaps a side. Right to left, the row mirrors.
+
+## `CenteredRowLayout/horizontalFrames(widths:width:spacing:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+static func horizontalFrames(widths: (leading: CGFloat, middle: CGFloat, trailing: CGFloat), width: CGFloat, spacing: CGFloat) -> (leading: ClosedRange<CGFloat>, middle: ClosedRange<CGFloat>, trailing: ClosedRange<CGFloat>)
+```
+
+Where each of three views goes along the row, from the row's leading edge.
+
+The middle view is centered when the sides allow it, otherwise moved toward the narrower
+side to keep `spacing` from the wider one. When the three don't fit at all, the middle
+keeps its width and the sides share what is left equally.
+
+- Parameters:
+  - widths: The natural widths of the leading, middle and trailing views, in points.
+  - width: The row's width, in points.
+  - spacing: The smallest space between neighbors, in points.
+- Returns: The start and end of each view, in points from the leading edge.
+
+## `CenteredRowLayout/init(spacing:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+init(spacing: CGFloat)
+```
+
+Creates the layout.
+
+- Parameter spacing: The smallest space between neighbors, in points.
+
+## `CenteredRowLayout/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Places the views.
+
+- Parameters:
+  - bounds: The row's frame.
+  - proposal: The proposed size.
+  - subviews: The three views.
+  - cache: Unused.
+
+## `CenteredRowLayout/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The row's size: the proposed width, or the three widths and spacing when none is
+proposed; the tallest view's height.
+
+- Parameters:
+  - proposal: The proposed size.
+  - subviews: The three views.
+  - cache: Unused.
+
+## `CenteredRowLayout/spacing`
+
+internal, declared in `Sources/NopeUI/CameraLayout.swift`
+
+```swift
+let spacing: CGFloat
+```
+
+The smallest space between neighbors, in points.
 
 ## `CloseUpSuggestion`
 
@@ -2372,14 +2746,16 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 @MainActor struct ControlDial
 ```
 
-The dial of one control, over the bottom of the picture on a dark backing: its name and the
-lens's range, then − and + steppers around a native slider over the lens's real steps, and
-Auto (issue #68, "Manual"). Nothing needs a gesture: every step has a button.
+The dial of one control, directly above the readout row (docs/design/BUILD-SPEC.md, 3.4):
+the control's name, its value with the meter beside it, and Auto; then − and + around a
+native slider over the lens's real steps; then the lens's range. Nothing needs a gesture:
+every step has a button.
 
 In Auto the value is the camera's; a step or the slider switches the control to Manual, and
 Auto hands it back. The aperture uses a segmented picker of the recommended stops, and white
-balance adds a tint slider and presets. While the camera reports readings, the meter shows
-how the exposure compares with its reading.
+balance adds a tint slider and presets. A control the lens can't change says so in words
+instead of showing a slider. While the camera reports readings, the meter shows how the
+exposure compares with its reading.
 
 ## `ControlDial/body`
 
@@ -2425,6 +2801,19 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The camera model.
 
+## `ControlDial/showsMeter(for:)`
+
+internal, declared in `Sources/NopeUI/ControlDial.swift`
+
+```swift
+@MainActor static func showsMeter(for control: ManualControl) -> Bool
+```
+
+Whether the dial shows the meter beside the value: for the controls that change the
+exposure, not for focus or white balance.
+
+- Parameter control: The control.
+
 ## `ControlReadout`
 
 internal, declared in `Sources/NopeUI/ManualControlsView.swift`
@@ -2433,11 +2822,12 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 @MainActor struct ControlReadout
 ```
 
-One readout of the manual controls row: the short name with A or M, and the value in use.
+One readout of the manual controls row: A or M over the value in use, in a tile
+(``NopeTileStyle``) that is filled white while its dial is open.
 
-For VoiceOver it is one adjustable element: swipe up or down steps the value, double-tap
-opens its dial, and actions switch it between Auto and Manual or return everything to Auto
-(AGENTS.md, "Manual controls are adjustable elements").
+For VoiceOver it is one adjustable element: swipe up or down steps the value without opening
+the dial, double-tap opens its dial, and actions switch it between Auto and Manual or return
+everything to Auto (AGENTS.md, "Manual controls are adjustable elements").
 
 ## `ControlReadout/body`
 
@@ -2733,6 +3123,149 @@ The value of a control as text, such as "200", "1/500", "f/1.8", "+0.3", "5,200 
   - value: The value in the control's unit.
   - control: The control.
 
+## `CopiesSettingsView`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor struct CopiesSettingsView
+```
+
+HEIF and JPEG Copies: the look and the file options of the copies developed from the RAW, on
+one page (`docs/design/BUILD-SPEC.md`, 3.10; it replaces the Look and File Options pages).
+
+Sections, in order: a line saying no copy is saved, while none is; Look (Standard, Flat, each
+with its sentence); Files (HEIF Compression, HEIF Bit Depth, JPEG Compression, Color Space and
+Copy Size, each a menu on its row with its explanation); Restore Defaults, while a file
+option is changed, with the footer that the RAW is never changed. Every control stays
+enabled with RAW only, so the copies can be set up before one is turned on in Formats. The
+Settings row is always shown. The rules and values are in `NopeSettings` and
+`DevelopedFileOptions`; this view only shows them.
+
+## `CopiesSettingsView/body`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The form.
+
+## `CopiesSettingsView/explanation(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func explanation(of look: DevelopedLook) -> Text
+```
+
+What a look does, in one line.
+
+- Parameter look: The look.
+- Returns: The explanation, from `Honesty.xcstrings`.
+
+## `CopiesSettingsView/init(settings:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor init(settings: NopeSettings)
+```
+
+Creates the page.
+
+- Parameter settings: The settings to show and change.
+
+## `CopiesSettingsView/name(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func name(of space: OutputColorSpace) -> String
+```
+
+A color space's name. Color space names are the same in every language, so they aren't
+translated.
+
+- Parameter space: The color space.
+- Returns: "Display P3" or "sRGB".
+
+## `CopiesSettingsView/settings`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The settings to show and change.
+
+## `CopiesSettingsView/summary(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func summary(of settings: NopeSettings) -> Text
+```
+
+The Settings row: the look while a copy is saved, "Not Saved" otherwise.
+
+- Parameter settings: The settings.
+- Returns: The value text.
+
+## `CopiesSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func title(of depth: HEIFBitDepth) -> Text
+```
+
+A bit depth's name.
+
+- Parameter depth: The bit depth.
+- Returns: "10-bit" or "8-bit", localized.
+
+## `CopiesSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func title(of look: DevelopedLook) -> Text
+```
+
+A look's name.
+
+- Parameter look: The look.
+- Returns: "Standard" or "Flat".
+
+## `CopiesSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func title(of quality: CompressionQuality) -> Text
+```
+
+A compression's name.
+
+- Parameter quality: The compression.
+- Returns: Its localized name.
+
+## `CopiesSettingsView/title(of:)`
+
+internal, declared in `Sources/NopeUI/CopiesSettingsView.swift`
+
+```swift
+@MainActor static func title(of size: OutputSize) -> Text
+```
+
+A size's name.
+
+- Parameter size: The size.
+- Returns: Its localized name.
+
 ## `CountdownNumber`
 
 internal, declared in `Sources/NopeUI/DriveControls.swift`
@@ -2741,9 +3274,10 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor struct CountdownNumber
 ```
 
-The large countdown number in the middle of the picture while the self-timer runs. VoiceOver
-hears each number through an announcement instead (``DriveFeedback``), so it is hidden from
-assistive technologies.
+The large countdown number in the middle of the picture while the self-timer, or Astro's start
+delay, runs: large enough to read from a distance (docs/design/drive.html, "Timer, counting
+down"). VoiceOver hears each number through an announcement instead (``DriveFeedback``), so it
+is hidden from assistive technologies. Its backing keeps it legible over a bright picture.
 
 ## `CountdownNumber/body`
 
@@ -2776,53 +3310,6 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 Creates the number.
 
 - Parameter drive: The drive model.
-
-## `DarkBacking`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor struct DarkBacking<S> where S : Shape
-```
-
-A dark backing for anything drawn over the picture: a system material darkened so text and
-icons keep their contrast over a white or yellow scene, and solid black with Reduce
-Transparency or Increase Contrast (issue #68, "Contrast").
-
-## `DarkBacking/body(content:)`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor func body(content: Content) -> some View
-
-```
-
-Puts the backing behind the content.
-
-- Parameter content: The content.
-
-## `DarkBacking/init(shape:)`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor init(shape: S)
-```
-
-Creates the backing.
-
-- Parameter shape: The backing's shape.
-
-## `DarkBacking/shape`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor let shape: S
-```
-
-The backing's shape.
 
 ## `DetailRow`
 
@@ -2878,6 +3365,64 @@ internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
 ```
 
 The value.
+
+## `DialSliderTint`
+
+internal, declared in `Sources/NopeUI/ControlDial.swift`
+
+```swift
+@MainActor struct DialSliderTint
+```
+
+A dial slider's filled track: white, as the dials are drawn (docs/design/screens/manual-iso),
+or night mode's dark red (``NightStyle/trackTint``), so the thumb stays visible on it.
+
+## `DialSliderTint/body(content:)`
+
+internal, declared in `Sources/NopeUI/ControlDial.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The slider with its track tint.
+
+- Parameter content: The slider.
+
+## `DialSliderTint/init()`
+
+internal, declared in `Sources/NopeUI/ControlDial.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state.
+
+## `DialText`
+
+internal, declared in `Sources/NopeUI/ControlDial.swift`
+
+```swift
+enum DialText
+```
+
+The colors of a dial's text.
+
+## `DialText/secondary(isNightMode:)`
+
+internal, declared in `Sources/NopeUI/ControlDial.swift`
+
+```swift
+static func secondary(isNightMode: Bool) -> Color
+```
+
+The secondary text on a dial (the range line, notes and the meter):
+``NopeColor/labelSecondary``, or white in night mode, where it is drawn in the full night
+red so it keeps its contrast on black.
+
+- Parameter isNightMode: Whether night mode is on.
 
 ## `DoneButton`
 
@@ -2970,48 +3515,212 @@ Creates the feedback.
 
 - Parameter drive: The drive model.
 
-## `DriveProgressView`
+## `DriveModePill`
 
-internal, declared in `Sources/NopeUI/DriveControls.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor struct DriveProgressView
+@MainActor struct DriveModePill
 ```
 
-A running countdown or burst: what it is doing and a button to stop it. It stays on screen,
-even in clean view, until it ends, so stopping never depends on a gesture.
+The selected drive mode's name as a pill on the picture, while the iPhone is held sideways
+and the strip shows only symbols (BUILD-SPEC.md, 3.1). It is a label, not a control: the
+strip changes the mode.
 
-## `DriveProgressView/body`
+## `DriveModePill/body`
 
-internal, declared in `Sources/NopeUI/DriveControls.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
 @MainActor var body: some View { get }
 ```
 
-The text and the button, or nothing.
+The pill.
 
-## `DriveProgressView/init(model:)`
+## `DriveModePill/init(word:)`
 
-internal, declared in `Sources/NopeUI/DriveControls.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor init(model: CameraModel)
+@MainActor init(word: DriveWord)
 ```
 
-Creates the view.
+Creates the pill.
 
-- Parameter model: The camera model.
+- Parameter word: The selected word.
 
-## `DriveProgressView/model`
+## `DriveModePill/word`
 
-internal, declared in `Sources/NopeUI/DriveControls.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let word: DriveWord
+```
+
+The selected word.
+
+## `DriveStrip`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor struct DriveStrip
+```
+
+The drive strip above the shutter: Single, Timer, Burst, Interval and Astro, exactly one
+selected (docs/design/BUILD-SPEC.md, 3.5). It replaces the Drive menu of the quick-controls
+tray and the Astro switch, and with them the Drive and Astro pills.
+
+- Choosing a word sets that mode; choosing another word while Astro is on turns Astro off
+  first. Choosing Interval only selects it: the shutter starts the series.
+- Tapping the selected word again: Timer opens a menu of 3 and 10 seconds; Interval and Astro
+  open their settings; Single and Burst do nothing.
+- While a countdown, burst, interval series or astro run is going, the other words are
+  disabled.
+- It never truncates a word: the words get less padding, then scroll sideways, keeping the
+  selected word in view.
+
+A selection haptic confirms each change, and VoiceOver announces the new mode.
+
+## `DriveStrip/Presentation`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+enum Presentation
+```
+
+How the strip is drawn for its place on the camera.
+
+## `DriveStrip/Presentation/backedWords`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case backedWords
+```
+
+Words in a capsule with the backing, on the lower edge of the picture (column layout).
+
+## `DriveStrip/Presentation/rows`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case rows
+```
+
+One full-width row per word: the scrolling layout at accessibility text sizes.
+
+## `DriveStrip/Presentation/symbols`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case symbols
+```
+
+Symbols only, each turned upright: the stacked layout with the iPhone held sideways,
+where the selected mode's name is a pill on the picture (``DriveModePill``).
+
+## `DriveStrip/Presentation/words`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case words
+```
+
+Words on the black row above the shutter (stacked layout).
+
+## `DriveStrip/body`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The strip.
+
+## `DriveStrip/init(model:settings:presentation:timerDelay:openIntervalSettings:openAstroSettings:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor init(model: CameraModel, settings: NopeSettings, presentation: Presentation, timerDelay: Binding<SelfTimerDelay>, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void)
+```
+
+Creates the strip.
+
+- Parameters:
+  - model: The camera model.
+  - settings: The person's settings.
+  - presentation: How the strip is drawn.
+  - timerDelay: The self-timer delay Timer chooses, kept for the session by the camera.
+  - openIntervalSettings: Opens the interval settings.
+  - openAstroSettings: Opens the astro settings.
+
+## `DriveStrip/model`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
 @MainActor let model: CameraModel
 ```
 
 The camera model.
+
+## `DriveStrip/openAstroSettings`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let openAstroSettings: () -> Void
+```
+
+Opens the astro settings.
+
+## `DriveStrip/openIntervalSettings`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let openIntervalSettings: () -> Void
+```
+
+Opens the interval settings.
+
+## `DriveStrip/presentation`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let presentation: Presentation
+```
+
+How the strip is drawn.
+
+## `DriveStrip/settings`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The person's settings: choosing Astro turns night mode on, as the astro switch did.
+
+## `DriveStrip/timerDelay`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@Binding @MainActor var timerDelay: SelfTimerDelay { get nonmutating set }
+```
+
+The self-timer delay Timer chooses: the last one chosen in this session, 3 seconds at
+first. It isn't stored (BUILD-SPEC.md, section 6, item 8).
 
 ## `DriveText`
 
@@ -3021,7 +3730,8 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 @MainActor enum DriveText
 ```
 
-The words for the drive modes, the self-timer and bursts (issues #39 and #46).
+The words for the drive modes, the self-timer and bursts (issues #39 and #46). The modes' own
+names are the drive strip's (`DriveWord`).
 
 ## `DriveText/endMessage(_:)`
 
@@ -3034,18 +3744,6 @@ internal, declared in `Sources/NopeUI/DriveControls.swift`
 What to announce when a burst ends other than by the person, or `nil`.
 
 - Parameter result: How the burst ended.
-
-## `DriveText/name(of:)`
-
-internal, declared in `Sources/NopeUI/DriveControls.swift`
-
-```swift
-@MainActor static func name(of mode: DriveMode) -> Text
-```
-
-A mode's name, as the Drive menu lists it.
-
-- Parameter mode: The mode.
 
 ## `DriveText/shortSeconds(_:)`
 
@@ -3083,71 +3781,292 @@ A number of seconds in words, such as "3 seconds", for VoiceOver.
 
 - Parameter seconds: The seconds.
 
-## `DriveText/systemImage(for:)`
+## `DriveWord`
 
-internal, declared in `Sources/NopeUI/DriveControls.swift`
-
-```swift
-@MainActor static func systemImage(for mode: DriveMode) -> String
-```
-
-The SF Symbol for a mode.
-
-- Parameter mode: The mode.
-
-## `EditPresetsScreen`
-
-internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor struct EditPresetsScreen
+enum DriveWord
 ```
 
-The saved presets, each opening its rename and delete screen; swiping a row deletes it.
+One word of the drive strip: what the shutter does (docs/design/BUILD-SPEC.md, 3.5).
 
-## `EditPresetsScreen/body`
+Four words are drive modes of `NopeCore` (`DriveMode`); Astro is the astro helper, which has
+its own shutter. The words are an interface's names for existing intents; they hold no rules.
 
-internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+## `DriveWord/astro`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor var body: some View { get }
+case astro
 ```
 
-The list.
+The astro helper (issue #60).
 
-## `EditPresetsScreen/camera`
+## `DriveWord/burst`
 
-internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor let camera: CameraModel?
+case burst
 ```
 
-The camera, or `nil`.
+A rapid run of separate photos: `DriveMode/burst`.
 
-## `EditPresetsScreen/init(presets:camera:)`
+## `DriveWord/id`
 
-internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor init(presets: SettingsPresets, camera: CameraModel?)
+var id: `Self` { get }
 ```
 
-Creates the list.
+The word itself, so the cases can be listed with `ForEach`.
+
+## `DriveWord/interval`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case interval
+```
+
+An interval series: `DriveMode/interval`.
+
+## `DriveWord/mode(timerDelay:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+func mode(timerDelay: SelfTimerDelay) -> DriveMode?
+```
+
+The drive mode the word chooses, or `nil` for Astro, which is turned on with its own
+intent.
+
+- Parameter timerDelay: The self-timer's delay for ``timer``.
+- Returns: The mode, or `nil`.
+
+## `DriveWord/offered(offersAstro:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+static func offered(offersAstro: Bool) -> [DriveWord]
+```
+
+The words the strip offers: all five where the astro helper can be used or is on,
+otherwise the four drive modes.
+
+- Parameter offersAstro: Whether Astro is offered.
+- Returns: The words, in display order.
+
+## `DriveWord/opensSettingsHint`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor static var opensSettingsHint: Text { get }
+```
+
+The VoiceOver hint of the selected Interval or Astro word: choosing it again opens its
+settings.
+
+## `DriveWord/selected(mode:isAstroOn:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+static func selected(mode: DriveMode, isAstroOn: Bool) -> DriveWord
+```
+
+The word that shows what the shutter does now.
 
 - Parameters:
-  - presets: The presets.
-  - camera: The camera, or `nil`.
+  - mode: The drive mode.
+  - isAstroOn: Whether the astro helper is on; it takes over the shutter whatever the
+    mode.
+- Returns: The selected word.
 
-## `EditPresetsScreen/presets`
+## `DriveWord/single`
 
-internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
 
 ```swift
-@MainActor let presets: SettingsPresets
+case single
 ```
 
-The presets.
+One photo per press: `DriveMode/single`.
+
+## `DriveWord/string`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor var string: String { get }
+```
+
+The word as a string, for the VoiceOver announcement of a new mode.
+
+## `DriveWord/systemImage`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+var systemImage: String { get }
+```
+
+The SF Symbol shown in place of the word while the iPhone is held sideways.
+
+## `DriveWord/timer`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+case timer
+```
+
+The self-timer: `DriveMode/timer(_:)` with the last delay chosen.
+
+## `DriveWord/title`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor var title: Text { get }
+```
+
+The word, as the strip shows it.
+
+## `DriveWordStyle`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor struct DriveWordStyle
+```
+
+A drive word: a capsule ``NopeSize/driveWord`` high with a 44-point target, filled white
+when selected and with no fill otherwise (docs/design/tokens.md, "Capsule"). It is
+`NopeCapsuleStyle` with the padding the strip chooses, which tightens before the strip
+scrolls (BUILD-SPEC.md, 3.5, "Fit"); `NopeCapsuleStyle` has a fixed padding.
+
+## `DriveWordStyle/init(isSelected:padding:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor init(isSelected: Bool, padding: CGFloat)
+```
+
+Creates the style.
+
+- Parameters:
+  - isSelected: Whether the word is selected.
+  - padding: The space on each side of the label, in points.
+
+## `DriveWordStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the word is selected.
+
+## `DriveWordStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled word.
+
+- Parameter configuration: The word's label and press state.
+
+## `DriveWordStyle/padding`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let padding: CGFloat
+```
+
+The space on each side of the label, in points.
+
+## `DriveWordStyling`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor struct DriveWordStyling
+```
+
+Applies a drive word's style: ``DriveWordStyle`` in the strip, a tile row in the scrolling
+layout.
+
+## `DriveWordStyling/body(content:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@ViewBuilder @MainActor func body(content: Content) -> some View
+
+```
+
+The control with its style.
+
+- Parameter content: The word's button or menu.
+
+## `DriveWordStyling/init(isSelected:padding:isRow:)`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor init(isSelected: Bool, padding: CGFloat, isRow: Bool)
+```
+
+Creates the styling.
+
+- Parameters:
+  - isSelected: Whether the word is selected.
+  - padding: The space on each side of the label, in points, in the strip.
+  - isRow: Whether the word is a full-width row.
+
+## `DriveWordStyling/isRow`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let isRow: Bool
+```
+
+Whether the word is a full-width row (scrolling layout).
+
+## `DriveWordStyling/isSelected`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the word is selected.
+
+## `DriveWordStyling/padding`
+
+internal, declared in `Sources/NopeUI/DriveStrip.swift`
+
+```swift
+@MainActor let padding: CGFloat
+```
+
+The space on each side of the label, in points, in the strip.
 
 ## `EnvironmentValues/cameraGravitySource`
 
@@ -3206,6 +4125,33 @@ var isPresentedInPopover: Bool { get set }
 Whether the view is presented in a popover (Settings and the format details on iPad), set
 by ``AdaptivePresentation``.
 
+## `EnvironmentValues/isStatusOnPicture`
+
+internal, declared in `Sources/NopeUI/StatePills.swift`
+
+```swift
+var isStatusOnPicture: Bool { get set }
+```
+
+Whether the status (the format status and the pills) is drawn over the picture: in the
+column layout, and while an iPhone is held sideways. There it gets the dark backing
+(``NopeMaterial/backing``); in the stacked layout's status line it sits on black. The
+camera layout sets it.
+
+## `EnvironmentValues/nopeSecondaryLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+var nopeSecondaryLabel: Color { get set }
+```
+
+The color of secondary text inside a custom button, such as a tile's name or a readout's
+mode letter, for the button's state: set by the button styles from
+``NopeControlAppearance/secondaryLabel``. A view inside the button's label reads it; the
+hierarchical `.secondary` style would instead fade the primary color, which the
+accessibility audit reported as low contrast on a selected tile.
+
 ## `EnvironmentValues/offersLiveActivity`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
@@ -3242,6 +4188,18 @@ var openPhotosApp: CameraAction? { get set }
 Opens the Photos app, for the last-photo thumbnail (issue #36). `nil` makes a tap on the
 thumbnail show the photo's details instead, and hides Open in Photos. The app target sets
 it; it runs only when the person taps.
+
+## `EnvironmentValues/openSettingsAt`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var openSettingsAt: OpenSettingsAction? { get set }
+```
+
+Opens Settings at an item, or `nil` where Settings can't be opened. The camera screen
+sets it; the Photo Format sheet's All Photo Settings and Look rows and the Location
+warning's explanation use it, for example `openSettingsAt?(.photos)`.
 
 ## `EnvironmentValues/seriesScreenKeeper`
 
@@ -3410,9 +4368,12 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 @MainActor struct FailureBanner
 ```
 
-The banner for a failed capture or save (issue #68, "Feedback tiers"): it stays until it is
-dismissed or the next photo is saved, takes VoiceOver focus when it appears, and offers one
-action, Try Again or Open Settings. Its text wraps onto as many lines as it needs.
+The banner for a failed capture or save (issue #68, "Feedback tiers"; docs/design/BUILD-SPEC.md,
+3.7): it stays until it is dismissed or the next photo is saved, takes VoiceOver focus when it
+appears, and offers one action, Try Again or Open Settings. It sits on the picture's upper
+edge on solid black inside an amber outline, the sentence leading and the buttons trailing;
+at accessibility text sizes the buttons go below the sentence, which wraps onto as many lines
+as it needs.
 
 ## `FailureBanner/body`
 
@@ -3644,131 +4605,6 @@ Level values as a list, such as "528, 528, 528, 528".
 - Parameter values: The values.
 - Returns: The list, in the current language.
 
-## `FileOptionsSettingsView`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor struct FileOptionsSettingsView
-```
-
-How the HEIF and JPEG copies are encoded (issue #57): compression, HEIF bit depth, color
-space and size, each a native picker with a one-line explanation, and a button that restores the
-defaults.
-
-Advanced options: Settings links to this screen only while HEIF or JPEG is selected, and the
-defaults need no change (owner principle: full auto by default, every file setting the
-device allows behind the advanced options). The rules and values are in
-`DevelopedFileOptions`; this view only shows them.
-
-## `FileOptionsSettingsView/body`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The form.
-
-## `FileOptionsSettingsView/init(settings:)`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor init(settings: NopeSettings)
-```
-
-Creates the file options.
-
-- Parameter settings: The settings to show and change.
-
-## `FileOptionsSettingsView/link(settings:)`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor static func link(settings: NopeSettings) -> some View
-
-```
-
-A navigation row to the file options, showing whether they are at their defaults.
-
-- Parameter settings: The settings.
-
-## `FileOptionsSettingsView/name(of:)`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor static func name(of space: OutputColorSpace) -> String
-```
-
-A color space's name. Color space names are the same in every language, so they aren't
-translated.
-
-- Parameter space: The color space.
-- Returns: "Display P3" or "sRGB".
-
-## `FileOptionsSettingsView/rowTitle`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor static var rowTitle: Text { get }
-```
-
-The row and screen title, "File Options".
-
-## `FileOptionsSettingsView/settings`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor let settings: NopeSettings
-```
-
-The settings to show and change.
-
-## `FileOptionsSettingsView/title(of:)`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor static func title(of depth: HEIFBitDepth) -> Text
-```
-
-A bit depth's name.
-
-- Parameter depth: The bit depth.
-- Returns: "10-bit" or "8-bit", localized.
-
-## `FileOptionsSettingsView/title(of:)`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor static func title(of quality: CompressionQuality) -> Text
-```
-
-A compression's name.
-
-- Parameter quality: The compression.
-- Returns: Its localized name.
-
-## `FileOptionsSettingsView/title(of:)`
-
-internal, declared in `Sources/NopeUI/FileOptionsSettingsView.swift`
-
-```swift
-@MainActor static func title(of size: OutputSize) -> Text
-```
-
-A size's name.
-
-- Parameter size: The size.
-- Returns: Its localized name.
-
 ## `FirstRunView`
 
 internal, declared in `Sources/NopeUI/FirstRunView.swift`
@@ -3777,12 +4613,14 @@ internal, declared in `Sources/NopeUI/FirstRunView.swift`
 @MainActor struct FirstRunView
 ```
 
-The first screen before camera access is asked (issue #68, "First run"): the app's name, three
-statements about what it does, and Continue, which shows the system camera prompt in context.
-A note says Photos access is asked the first time a photo is saved.
+The first screen before camera access is asked (issue #68, "First run"; docs/design/BUILD-SPEC.md,
+3.8, figures `first-run` and `first-run-light`): the app's name, three statements about what it
+does, and Continue, which shows the system camera prompt in context. A note says Photos access
+is asked the first time a photo is saved. It follows the system's light or dark appearance.
 
-The statements are honesty claims, so they live in `Honesty.xcstrings`. At large text sizes
-the screen scrolls, with Continue at the end, so nothing is clipped.
+The statements are honesty claims, so they live in `Honesty.xcstrings`; the second says that
+signing is the person's choice and off until they turn it on (issue #80). At large text sizes
+the text scrolls and Continue stays pinned below it, full width, so nothing is clipped.
 
 ## `FirstRunView/body`
 
@@ -4008,10 +4846,11 @@ The highlighted cells, drawn as a shape so they add nothing to the accessibility
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-@MainActor static let color: Color
+@MainActor static var color: Color { get }
 ```
 
-The highlight color.
+The highlight color: magenta, a color the interface uses for nothing else
+(``NopeColor/peaking``).
 
 ## `FocusPeakingOverlay/init(map:)`
 
@@ -4193,15 +5032,87 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 @MainActor struct FormatChip
 ```
 
-Says what the next photo will be, at the top of the camera: a teal seal and the formats it is
-saved in ("RAW + HEIF") for a single-frame RAW, or an amber warning, "No RAW on This Lens", for
-the labeled processed fallback. Tapping it opens the explanation and the formats
-(``FormatDetailsSheet``).
+The format status at the leading end of the status line (docs/design/BUILD-SPEC.md, 3.2): what
+the next photo will be. A teal seal and the formats it is saved in ("RAW + HEIF") for a
+single-frame RAW; for a lens without Bayer RAW, the "Processed" marker, an amber triangle and
+the word, shown before the photo is taken (issue #80). Tapping it opens the explanation, the
+lens's processing note and the formats (``FormatDetailsSheet``).
+
+The person can hide the marker in Settings (`NopeSettings/showsProcessedMarker`). The status
+then names the file the lens saves ("HEIF") with no symbol, and never the teal seal; VoiceOver
+still says the photo is processed, and so do the photo's details.
+
+In the status line it is a symbol and words with no fill. On the picture (the column layout,
+and an iPhone held sideways, the `isStatusOnPicture` environment value) it keeps a capsule of
+``NopeMaterial/backing``, so it stays readable over any scene.
 
 The wording is an honesty claim, so it lives in `Honesty.xcstrings` (AGENTS.md, "Honesty
 wording is kept apart"). Teal marks only the fact the camera reported (the lens gives Bayer
-RAW); the fallback uses a warning symbol and words, never color alone. Format names are
+RAW); the fallback uses a warning symbol and a word, never color alone. Format names are
 Latin abbreviations, so they stay left to right in right-to-left layouts.
+
+## `FormatChip/Presentation`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+enum Presentation
+```
+
+What the format status shows.
+
+## `FormatChip/Presentation/identifier`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+var identifier: String { get }
+```
+
+The accessibility identifier of the format status in this presentation, for UI
+tests: "FormatStatus.raw", "FormatStatus.processedMarker" or
+"FormatStatus.processedName".
+
+## `FormatChip/Presentation/processedMarker`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+case processedMarker
+```
+
+The amber triangle and "Processed": the lens can't save RAW.
+
+## `FormatChip/Presentation/processedName`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+case processedName
+```
+
+The processed file's name with no symbol: the lens can't save RAW, and the person
+turned the marker off.
+
+## `FormatChip/Presentation/raw`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+case raw
+```
+
+The teal seal and the saved formats: the lens gives Bayer RAW.
+
+## `FormatChip/accessibilityName`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor static var accessibilityName: Text { get }
+```
+
+"Photo Format", the name VoiceOver and Voice Control use.
 
 ## `FormatChip/action`
 
@@ -4221,7 +5132,24 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 @MainActor var body: some View { get }
 ```
 
-The chip.
+The format status.
+
+## `FormatChip/files(for:savedFormats:)`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor static func files(for format: CaptureFormat, savedFormats: [PhotoFormat]) -> [PhotoFormat]
+```
+
+The files a photo with this format is saved as: the selected formats for a single-frame
+RAW, or the lens's one processed file (`PhotoSaver` saves only that file for a lens
+without RAW).
+
+- Parameters:
+  - format: The format of the next photo.
+  - savedFormats: The selected formats, in display order.
+- Returns: The formats, in display order.
 
 ## `FormatChip/format`
 
@@ -4233,20 +5161,41 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 The format of the next photo.
 
-## `FormatChip/init(format:savedFormats:action:)`
+## `FormatChip/init(format:savedFormats:showsProcessedMarker:action:)`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 ```swift
-@MainActor init(format: CaptureFormat, savedFormats: [PhotoFormat], action: @escaping () -> Void)
+@MainActor init(format: CaptureFormat, savedFormats: [PhotoFormat], showsProcessedMarker: Bool = true, action: @escaping () -> Void)
 ```
 
-Creates the chip.
+Creates the format status.
 
 - Parameters:
   - format: The format of the next photo.
   - savedFormats: The formats each photo is saved in, in display order.
+  - showsProcessedMarker: Whether the "Processed" marker shows on a lens without RAW
+    (`NopeSettings/showsProcessedMarker`).
   - action: Opens the explanation and the formats.
+
+## `FormatChip/isShown(for:showsControls:showsProcessedMarker:)`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor static func isShown(for format: CaptureFormat, showsControls: Bool, showsProcessedMarker: Bool) -> Bool
+```
+
+Whether the format status is shown. With the controls shown it always is. In clean view
+only the "Processed" marker stays, so a processed photo is never taken unannounced
+(BUILD-SPEC.md, 3.1); a RAW lens's status, or a hidden marker's file name, goes with the
+controls.
+
+- Parameters:
+  - format: The format of the next photo.
+  - showsControls: Whether the camera's controls are shown (not clean view).
+  - showsProcessedMarker: Whether the "Processed" marker is on in Settings.
+- Returns: Whether to show it.
 
 ## `FormatChip/names(of:)`
 
@@ -4262,6 +5211,21 @@ same in every language and aren't translated.
 - Parameter formats: The formats, in display order.
 - Returns: The joined names.
 
+## `FormatChip/presentation(for:showsProcessedMarker:)`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor static func presentation(for format: CaptureFormat, showsProcessedMarker: Bool) -> Presentation
+```
+
+What the format status shows for a format.
+
+- Parameters:
+  - format: The format of the next photo.
+  - showsProcessedMarker: Whether the "Processed" marker is on in Settings.
+- Returns: The seal and formats, the marker, or the processed file's name.
+
 ## `FormatChip/savedFormats`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
@@ -4270,7 +5234,18 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 @MainActor let savedFormats: [PhotoFormat]
 ```
 
-The formats each photo is saved in, in display order.
+The formats each photo is saved in, in display order. Used for a single-frame RAW; a lens
+without RAW saves only its processed file.
+
+## `FormatChip/showsProcessedMarker`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor let showsProcessedMarker: Bool
+```
+
+Whether the "Processed" marker shows on a lens without RAW.
 
 ## `FormatChip/spokenName(for:)`
 
@@ -4285,6 +5260,23 @@ The format's name for VoiceOver, as a sentence fragment.
 - Parameter format: A capture format.
 - Returns: For example "single-frame RAW" or "HEIF with some device processing".
 
+## `FormatChip/spokenValue(for:savedFormats:)`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor static func spokenValue(for format: CaptureFormat, savedFormats: [PhotoFormat]) -> String
+```
+
+The format status's VoiceOver value: "single-frame RAW, RAW + HEIF", or "Processed: no RAW
+on this lens, HEIF" for a lens without RAW, whether the marker shows or not
+(docs/design/ACCESSIBILITY.md, "VoiceOver order").
+
+- Parameters:
+  - format: The format of the next photo.
+  - savedFormats: The selected formats, in display order.
+- Returns: The value.
+
 ## `FormatDetailsSheet`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
@@ -4293,8 +5285,18 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 @MainActor struct FormatDetailsSheet
 ```
 
-The format chip's sheet: what the next photo is, in plain words, then the formats and the
-look, the same controls as in Settings. A popover on iPad, a sheet on iPhone.
+The format status's sheet: what the next photo is, in plain words; then, for a lens with RAW,
+the formats to choose from, the Look row while a HEIF or JPEG copy is saved, and All Photo
+Settings (BUILD-SPEC.md, 3.2). A popover on iPad, a sheet on iPhone.
+
+For a lens without RAW the formats are read-only (owner decision of 2026-11-18): the sheet
+shows the processing note (``ProcessingNote``, issue #80), the one processed file that lens
+saves, that the format choices are for the other lenses, the Show Processed Marker switch, and
+a row that opens Settings at Formats to change them. Nothing on it changes the formats.
+
+Look, All Photo Settings and Formats for Other Lenses close the sheet and then open Settings
+through `openSettingsAt`. Settings opens only once the sheet has gone, since the camera can't
+show both at once.
 
 ## `FormatDetailsSheet/body`
 
@@ -4304,7 +5306,7 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 @MainActor var body: some View { get }
 ```
 
-The explanation and the formats, with a Done button.
+The explanation, the formats and the links, with a Done button.
 
 ## `FormatDetailsSheet/deviceSupportsBayerRAW`
 
@@ -4316,6 +5318,16 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 Whether any camera on the device gives Bayer RAW.
 
+## `FormatDetailsSheet/distortionCorrection`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor let distortionCorrection: DistortionCorrection
+```
+
+The selected lens's distortion correction, for the processing note of a lens without RAW.
+
 ## `FormatDetailsSheet/format`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
@@ -4326,12 +5338,12 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 The format of the next photo.
 
-## `FormatDetailsSheet/init(settings:format:deviceSupportsBayerRAW:)`
+## `FormatDetailsSheet/init(settings:format:deviceSupportsBayerRAW:distortionCorrection:)`
 
 internal, declared in `Sources/NopeUI/FormatChip.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, format: CaptureFormat, deviceSupportsBayerRAW: Bool)
+@MainActor init(settings: NopeSettings, format: CaptureFormat, deviceSupportsBayerRAW: Bool, distortionCorrection: DistortionCorrection = .notSwitchable)
 ```
 
 Creates the sheet.
@@ -4340,6 +5352,8 @@ Creates the sheet.
   - settings: The person's settings.
   - format: The format of the next photo.
   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+  - distortionCorrection: The selected lens's distortion correction
+    (`Lens/distortionCorrection`). Defaults to the value that claims least.
 
 ## `FormatDetailsSheet/settings`
 
@@ -4350,6 +5364,53 @@ internal, declared in `Sources/NopeUI/FormatChip.swift`
 ```
 
 The person's settings.
+
+## `FormatStatusStyle`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor struct FormatStatusStyle
+```
+
+The look of the format status: ``NopeFont/status`` in white, a 44-point target, and on the
+picture a capsule of ``NopeMaterial/backing`` (with an outline under Increase Contrast). In
+the status line it has no fill, so its symbol lines up with the margin.
+
+## `FormatStatusStyle/init(isOnPicture:)`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor init(isOnPicture: Bool)
+```
+
+Creates the style.
+
+- Parameter isOnPicture: Whether the status is drawn over the picture.
+
+## `FormatStatusStyle/isOnPicture`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor let isOnPicture: Bool
+```
+
+Whether the status is drawn over the picture.
+
+## `FormatStatusStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/FormatChip.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled status.
+
+- Parameter configuration: The label and press state.
 
 ## `FormatsSettingsView`
 
@@ -4362,9 +5423,10 @@ internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
 Chooses the formats each photo is saved in: a native checkmark list.
 
 At least one format stays selected: `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
-disables the last one. On a device without Bayer RAW the RAW row stays visible, unavailable, and says why.
-The camera's format chip shows the same list under an explanation of the next photo, with a
-link to the look (``FormatDetailsSheet``).
+disables the last one. On a device without Bayer RAW the RAW row stays visible, unavailable,
+and says why. The camera's format status shows the same list between an explanation of the
+next photo and its links (``FormatDetailsSheet``) for a lens with RAW; for a lens without RAW
+that sheet shows its one processed file instead, read-only.
 
 ## `FormatsSettingsView/body`
 
@@ -4394,14 +5456,24 @@ internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
 @MainActor let explanation: AnyView?
 ```
 
-An explanation shown above the formats, or `nil`.
+Sections shown above the formats, or `nil`.
 
-## `FormatsSettingsView/init(settings:deviceSupportsBayerRAW:explanation:showsLookLink:)`
+## `FormatsSettingsView/footer`
 
 internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, explanation: AnyView? = nil, showsLookLink: Bool = false)
+@MainActor let footer: AnyView?
+```
+
+Sections shown below the formats, or `nil`.
+
+## `FormatsSettingsView/init(settings:deviceSupportsBayerRAW:explanation:footer:)`
+
+internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
+
+```swift
+@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, explanation: AnyView? = nil, footer: AnyView? = nil)
 ```
 
 Creates the formats list.
@@ -4409,8 +5481,8 @@ Creates the formats list.
 - Parameters:
   - settings: The settings to show and change.
   - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-  - explanation: An explanation shown above the formats, or `nil`.
-  - showsLookLink: Whether a row links to the look while HEIF or JPEG is selected.
+  - explanation: Sections shown above the formats, or `nil`.
+  - footer: Sections shown below the formats, or `nil`.
 
 ## `FormatsSettingsView/name(of:)`
 
@@ -4436,16 +5508,6 @@ internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
 
 The settings to show and change.
 
-## `FormatsSettingsView/showsLookLink`
-
-internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
-
-```swift
-@MainActor let showsLookLink: Bool
-```
-
-Whether a row links to the HEIF and JPEG look while HEIF or JPEG is selected.
-
 ## `FormatsSettingsView/summary(of:deviceSupportsBayerRAW:)`
 
 internal, declared in `Sources/NopeUI/FormatsSettingsView.swift`
@@ -4461,6 +5523,60 @@ using the system list format for the current language.
   - settings: The settings.
   - deviceSupportsBayerRAW: Whether RAW can be chosen on this device.
 - Returns: The available selected formats, in display order.
+
+## `GalleryReadoutLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct GalleryReadoutLabel
+```
+
+A sample manual readout's content in the gallery: the mode letter over the value.
+
+## `GalleryReadoutLabel/body`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The mode letter over the value.
+
+## `GalleryReadoutLabel/init(mode:value:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(mode: String, value: String)
+```
+
+Creates the readout's content.
+
+- Parameters:
+  - mode: "A" or "M".
+  - value: The value.
+
+## `GalleryReadoutLabel/mode`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let mode: String
+```
+
+"A" or "M".
+
+## `GalleryReadoutLabel/value`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let value: String
+```
+
+The value.
 
 ## `GridOverlay`
 
@@ -4483,19 +5599,17 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 The lines: a dark outline under a white line, drawn as shapes (not a canvas), so they
 add nothing to the accessibility tree.
 
-## `GridOverlay/init(style:placement:)`
+## `GridOverlay/init(style:)`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-@MainActor init(style: GridStyle, placement: SpiralPlacement)
+@MainActor init(style: GridStyle)
 ```
 
 Creates the grid.
 
-- Parameters:
-  - style: The style.
-  - placement: Where the spiral sits.
+- Parameter style: The style.
 
 ## `GridOverlay/lineWidth`
 
@@ -4517,30 +5631,19 @@ internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 The width of the dark outline under it, in points.
 
-## `GridOverlay/path(style:placement:in:)`
+## `GridOverlay/path(style:in:)`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-nonisolated static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path
+nonisolated static func path(style: GridStyle, in size: CGSize) -> Path
 ```
 
-The grid's lines, or the spiral, at a size.
+The grid's lines at a size.
 
 - Parameters:
   - style: The style.
-  - placement: The spiral's placement.
   - size: The picture's size.
-
-## `GridOverlay/placement`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-@MainActor let placement: SpiralPlacement
-```
-
-Where the spiral sits, for `GridStyle/goldenSpiral`.
 
 ## `GridOverlay/style`
 
@@ -4562,19 +5665,17 @@ struct GridShape
 
 The grid's lines as a shape.
 
-## `GridShape/init(style:placement:)`
+## `GridShape/init(style:)`
 
 internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
 
 ```swift
-init(style: GridStyle, placement: SpiralPlacement)
+init(style: GridStyle)
 ```
 
 Creates the shape.
 
-- Parameters:
-  - style: The style.
-  - placement: Where the spiral sits.
+- Parameter style: The style.
 
 ## `GridShape/path(in:)`
 
@@ -4587,16 +5688,6 @@ func path(in rect: CGRect) -> Path
 The lines in a rectangle.
 
 - Parameter rect: The picture's rectangle.
-
-## `GridShape/placement`
-
-internal, declared in `Sources/NopeUI/ViewfinderOverlays.swift`
-
-```swift
-let placement: SpiralPlacement
-```
-
-Where the spiral sits.
 
 ## `GridShape/style`
 
@@ -4876,6 +5967,59 @@ internal, declared in `Sources/NopeUI/HonestyScreen.swift`
 
 The heading.
 
+## `HuggingHeight`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+struct HuggingHeight
+```
+
+One view as tall as it would like to be, up to the height offered, such as a scroll view that
+hugs short content and scrolls long content.
+
+## `HuggingHeight/init()`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+init()
+```
+
+Creates the layout.
+
+## `HuggingHeight/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Gives the view the whole bounds.
+
+- Parameters:
+  - bounds: Where to place the view.
+  - proposal: The proposed size.
+  - subviews: The one view.
+  - cache: Unused.
+
+## `HuggingHeight/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The view's ideal height at the offered width, capped at the offered height.
+
+- Parameters:
+  - proposal: The proposed size.
+  - subviews: The one view.
+  - cache: Unused.
+- Returns: The size.
+
 ## `Image/photo(_:)`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -4889,61 +6033,6 @@ An image of a photo's thumbnail, made from its RGBA pixels with Core Graphics.
 - Parameter thumbnail: The thumbnail.
 - Returns: The image, or `nil` if Core Graphics can't make one.
 
-## `IntervalProgressView`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor struct IntervalProgressView
-```
-
-The progress of a running interval series and a button to stop it. It stays on screen, even
-in clean view, until the series ends.
-
-## `IntervalProgressView/body`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The count and the Stop button.
-
-## `IntervalProgressView/init(progress:stop:)`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor init(progress: IntervalProgress, stop: @escaping () -> Void)
-```
-
-Creates the progress view.
-
-- Parameters:
-  - progress: The progress.
-  - stop: Stops the series.
-
-## `IntervalProgressView/progress`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor let progress: IntervalProgress
-```
-
-The progress.
-
-## `IntervalProgressView/stop`
-
-internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
-
-```swift
-@MainActor let stop: () -> Void
-```
-
-Stops the series.
-
 ## `IntervalSection`
 
 internal, declared in `Sources/NopeUI/IntervalControls.swift`
@@ -4953,8 +6042,8 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 ```
 
 The interval and photo count of interval shooting (issue #48), with Start or Stop: one
-section, shown in the Interval sheet of the Drive menu and in Pro Tools, so both offer the
-same thing.
+section, shown in Interval Settings (``IntervalSheet``). The drive strip and its card are the
+one home of Interval; Pro Tools has no Interval section (docs/design/BUILD-SPEC.md, 3.4).
 
 A series works in full auto and with manual controls on; `NopeCore` holds the series
 (`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
@@ -5024,8 +6113,9 @@ internal, declared in `Sources/NopeUI/IntervalControls.swift`
 @MainActor struct IntervalSheet
 ```
 
-The Interval sheet, opened from the Drive menu and the Interval pill: the series' interval
-and photo count, and Start. In the Interval drive mode the shutter starts the series too.
+Interval Settings, opened from the selected Interval word of the drive strip and from the
+interval card (docs/design/BUILD-SPEC.md, 3.5): the series' interval and photo count, and
+Start. In the Interval drive mode the shutter starts the series too.
 
 ## `IntervalSheet/body`
 
@@ -5226,6 +6316,16 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 
 The lens.
 
+## `LensButton/noRAWHint`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor static var noRAWHint: Text { get }
+```
+
+Why a lens says "No RAW".
+
 ## `LensButtons`
 
 internal, declared in `Sources/NopeUI/LensRow.swift`
@@ -5239,8 +6339,10 @@ bold, and marked selected for VoiceOver; a lens without Bayer RAW says "No RAW",
 reason as its hint (issue #1, "Lenses"). It stays selectable, because its labeled fallback is
 still a photo. The front camera has its own button (``CameraFlipButton``).
 
-In a row the buttons sit side by side and wrap into a column when the text is too large; in
-the iPad's control column they are one column.
+The buttons sit in one capsule group with ``NopeColor/controlFill``, the selected lens filled
+white (docs/design/BUILD-SPEC.md, 3.1): side by side in the lens row, one above the other in
+the column layout. Each lens's 36-point capsule sits in its 44-point target, so neighbors'
+capsules are at least ``NopeSpace/xxs`` apart inside the group.
 
 ## `LensButtons/body`
 
@@ -5342,6 +6444,73 @@ The name of a kind of lens, such as "Wide".
 
 - Parameter kind: The kind of lens.
 - Returns: The localized name.
+
+## `LensRows`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor struct LensRows
+```
+
+One full-width row per lens, the front camera included, for the scrolling layout at
+accessibility text sizes (docs/design/BUILD-SPEC.md, 3.12): the lens's name over its
+magnification, the selected lens filled white. A lens without RAW says "No RAW".
+
+## `LensRows/body`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The rows.
+
+## `LensRows/init(lenses:selectedID:select:)`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor init(lenses: [Lens], selectedID: Lens.ID?, select: @escaping (Lens.ID) -> Void)
+```
+
+Creates the rows.
+
+- Parameters:
+  - lenses: The lenses, in display order.
+  - selectedID: The selected lens's identifier.
+  - select: Called with a lens's identifier when it is pressed.
+
+## `LensRows/lenses`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor let lenses: [Lens]
+```
+
+The lenses, in display order.
+
+## `LensRows/select`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor let select: (Lens.ID) -> Void
+```
+
+Called with a lens's identifier when it is pressed.
+
+## `LensRows/selectedID`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor let selectedID: Lens.ID?
+```
+
+The selected lens's identifier.
 
 ## `LevelOverlay`
 
@@ -5884,6 +7053,17 @@ Creates the readout.
 
 - Parameter rows: The lines.
 
+## `LiveReadoutView/lineSpacing`
+
+internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
+
+```swift
+@MainActor static let lineSpacing: CGFloat
+```
+
+The space between lines, in points: one point, so the lines read as one dense block of
+small type, as a camera's readout does.
+
 ## `LiveReadoutView/rows`
 
 internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
@@ -5893,99 +7073,6 @@ internal, declared in `Sources/NopeUI/LiveAidsPanel.swift`
 ```
 
 The lines.
-
-## `LookSettingsView`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor struct LookSettingsView
-```
-
-How HEIF and JPEG are developed from the RAW: a native inline picker, each look with a
-one-line explanation. Settings links to it while HEIF or JPEG is selected. The wording is a
-processing claim, so the explanations are in `Honesty.xcstrings`.
-
-## `LookSettingsView/body`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor var body: some View { get }
-```
-
-The look picker.
-
-## `LookSettingsView/explanation(of:)`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor static func explanation(of look: DevelopedLook) -> Text
-```
-
-What a look does, in one line.
-
-- Parameter look: The look.
-- Returns: The explanation, from `Honesty.xcstrings`.
-
-## `LookSettingsView/init(settings:)`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor init(settings: NopeSettings)
-```
-
-Creates the look picker.
-
-- Parameter settings: The settings to show and change.
-
-## `LookSettingsView/link(settings:)`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor static func link(settings: NopeSettings) -> some View
-
-```
-
-A navigation row to the look, showing the current look.
-
-- Parameter settings: The settings.
-
-## `LookSettingsView/rowTitle`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor static var rowTitle: Text { get }
-```
-
-The row and screen title, "Look".
-
-## `LookSettingsView/settings`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor let settings: NopeSettings
-```
-
-The settings to show and change.
-
-## `LookSettingsView/title(of:)`
-
-internal, declared in `Sources/NopeUI/LookSettingsView.swift`
-
-```swift
-@MainActor static func title(of look: DevelopedLook) -> Text
-```
-
-A look's name.
-
-- Parameter look: The look.
-- Returns: "Standard" or "Flat".
 
 ## `MagnifierText`
 
@@ -6007,6 +7094,195 @@ static var title: Text { get }
 
 "Magnify".
 
+## `ManualBadge`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor struct ManualBadge
+```
+
+"M" in a badge of the label's color, with the letter cut out of it, so the tile's own fill
+shows through: white on a dark tile, dark on the open (white) tile, and black on red in night
+mode.
+
+## `ManualBadge/body`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The badge.
+
+## `ManualBadge/init()`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the badge. It holds no state.
+
+## `ManualControlsButton`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor struct ManualControlsButton
+```
+
+The Manual Controls button on the camera (issue #77; docs/design/BUILD-SPEC.md, 3.4): one tap
+turns manual controls on, the next turns them off, from full auto and from manual alike.
+
+It replaces the Manual Controls switch in Settings and the M pill. It calls
+`CameraModel.setManualControls(_:settings:)`, which stores the choice as the Manual Controls
+option and sends the intent itself, so turning manual controls off always turns them and the
+astro helper off, even when the helper had turned them on without changing the option.
+
+VoiceOver reads "Manual Controls, On" or "Off"; Voice Control answers to "Manual Controls" and
+to the visible word. It is hidden in clean view by the camera layout, not here.
+
+## `ManualControlsButton/Presentation`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+enum Presentation
+```
+
+How the button is drawn for its place on the camera.
+
+## `ManualControlsButton/Presentation/capsule`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+case capsule
+```
+
+The slider symbol and "Auto" or "Manual" in a capsule: the lens row and the column.
+
+## `ManualControlsButton/Presentation/compactCapsule`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+case compactCapsule
+```
+
+The same, in the small capsule of the narrow column layout.
+
+## `ManualControlsButton/Presentation/letter`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+case letter
+```
+
+"A" or "M" in a 44-point circle: the lens row of an iPhone held sideways, where a
+word turned upright would not fit the row's height.
+
+## `ManualControlsButton/Presentation/row`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+case row
+```
+
+A full-width row with the name over the state: the scrolling layout at accessibility
+text sizes.
+
+## `ManualControlsButton/body`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The button.
+
+## `ManualControlsButton/identifier`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor static var identifier: String { get }
+```
+
+The button's accessibility identifier.
+
+## `ManualControlsButton/init(isOn:presentation:toggle:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor init(isOn: Bool, presentation: Presentation = .capsule, toggle: @escaping () -> Void)
+```
+
+Creates the button.
+
+- Parameters:
+  - isOn: Whether manual controls are on.
+  - presentation: How the button is drawn for its place.
+  - toggle: Turns manual controls on or off; the camera layout calls
+    `CameraModel.setManualControls(_:settings:)` with the opposite of `isOn`.
+
+## `ManualControlsButton/isOn`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let isOn: Bool
+```
+
+Whether manual controls are on.
+
+## `ManualControlsButton/name`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor static var name: Text { get }
+```
+
+"Manual Controls", the button's name for VoiceOver and Voice Control.
+
+## `ManualControlsButton/presentation`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let presentation: Presentation
+```
+
+How the button is drawn.
+
+## `ManualControlsButton/systemImage`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor static var systemImage: String { get }
+```
+
+The SF Symbol of manual controls.
+
+## `ManualControlsButton/toggle`
+
+internal, declared in `Sources/NopeUI/ManualControlsButton.swift`
+
+```swift
+@MainActor let toggle: () -> Void
+```
+
+Turns manual controls on or off.
+
 ## `ManualControlsList`
 
 internal, declared in `Sources/NopeUI/ManualControlsList.swift`
@@ -6015,10 +7291,11 @@ internal, declared in `Sources/NopeUI/ManualControlsList.swift`
 @MainActor struct ManualControlsList
 ```
 
-The manual controls at accessibility text sizes: one row per control, in the grid's order,
-with an Auto/Manual switch and a stepper, so nothing is clipped (AGENTS.md, "Larger Text").
+The manual controls at accessibility text sizes: one row per control, in the readout row's
+order, with an Auto/Manual switch and a stepper, so nothing is clipped (AGENTS.md, "Larger
+Text"; docs/design/BUILD-SPEC.md, 3.12).
 
-It shows the same values as the grid and sends the same intents.
+It shows the same values as the readout row and sends the same intents.
 
 ## `ManualControlsList/body`
 
@@ -6060,8 +7337,8 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 @MainActor struct ManualOptionsMenu
 ```
 
-The last readout button: "All Auto" and Pro Tools (metering, modes, locks, bracketing,
-interval shooting).
+More, the last button of the readout row: "All Auto" and Pro Tools (exposure mode, metering,
+the locks, bracketing and the live aids).
 
 ## `ManualOptionsMenu/body`
 
@@ -6126,14 +7403,18 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 @MainActor struct ManualReadoutRow
 ```
 
-The manual controls' readout row, shown only when the "Manual controls" option is on: one
-button per control in a fixed order (`ManualControl`), each with its short name, A or M, and
-the value in use, then a last button with "All Auto" and Pro Tools (issue #68, "Manual").
+The manual controls' readout row on the picture's lower edge, shown only while manual
+controls are on (docs/design/BUILD-SPEC.md, 3.4): six readouts of equal width in a fixed
+order (`ManualControl`), each with A or M over the value in use, then More (All Auto and Pro
+Tools).
 
-Pressing a readout opens its dial (``ControlDial``) and fills the readout white; pressing it
-again closes the dial. A control the lens can't set stays in its place. At accessibility text
-sizes ``ManualControlsList`` replaces the row. Every value and rule comes from
-`ManualControlsModel`.
+Pressing a readout opens its dial (``ControlDial``) above the row and fills the readout white;
+pressing it again closes the dial. A control the lens can't set stays in its place. The camera
+hides the row while a series runs, and at accessibility text sizes ``ManualControlsList``
+replaces it. Every value and rule comes from `ManualControlsModel`.
+
+VoiceOver reads the row as the container "Manual Controls"; each readout is adjustable
+(docs/design/ACCESSIBILITY.md, row 8).
 
 ## `ManualReadoutRow/body`
 
@@ -6143,8 +7424,8 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 @MainActor var body: some View { get }
 ```
 
-The row, or two rows when seven readouts don't fit side by side (narrow phones, larger
-text). Values never break inside a number.
+The row, or two rows when the readouts don't fit side by side at an equal width (narrow
+screens, larger text, long values). Values never break inside a number.
 
 ## `ManualReadoutRow/init(model:openControl:showsProTools:)`
 
@@ -6190,6 +7471,768 @@ internal, declared in `Sources/NopeUI/ManualControlsView.swift`
 ```
 
 Whether Pro Tools is shown; the camera screen presents it.
+
+## `ModeCard`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct ModeCard<Detail, Accessory> where Detail : View, Accessory : View
+```
+
+One mode card: the title and an optional detail line, an accessory (usually a Stop capsule)
+trailing, and a progress bar under them when the end is known. `NopeRadius.large`, on
+`NopeMaterial.backing`, outlined in night mode and with Increase Contrast.
+
+## `ModeCard/accessory`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let accessory: Accessory
+```
+
+The trailing control.
+
+## `ModeCard/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `ModeCard/detail`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let detail: Detail?
+```
+
+A second, smaller line, or `nil`.
+
+## `ModeCard/fractionDone`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let fractionDone: Double?
+```
+
+How much is done, from 0 to 1, or `nil` for no progress bar.
+
+## `ModeCard/init(title:accessory:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(title: Text, @ViewBuilder accessory: () -> Accessory)
+```
+
+Creates a card with one line.
+
+- Parameters:
+  - title: What the mode does or how far it is.
+  - accessory: The trailing control.
+
+## `ModeCard/init(title:detail:fractionDone:accessory:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(title: Text, detail: Detail?, fractionDone: Double? = nil, @ViewBuilder accessory: () -> Accessory)
+```
+
+Creates a card.
+
+- Parameters:
+  - title: What the mode does or how far it is.
+  - detail: A second, smaller line, or `nil`.
+  - fractionDone: How much is done, from 0 to 1, or `nil` for no progress bar.
+  - accessory: The trailing control.
+
+## `ModeCard/title`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+What the mode does or how far it is.
+
+## `ModeCardBackground`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct ModeCardBackground
+```
+
+A mode card's background: the backing in a `NopeRadius.large` rectangle, with an outline in
+night mode (the night outline, as the design draws it) and with Increase Contrast.
+
+## `ModeCardBackground/body(content:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content on its background.
+
+- Parameter content: The card's content.
+
+## `ModeCardBackground/init()`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the background. It holds no state of its own.
+
+## `ModeCardButtonStyle`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct ModeCardButtonStyle
+```
+
+The press and disabled states of a whole-card button (``NopePressEffect``).
+
+## `ModeCardButtonStyle/init()`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `ModeCardButtonStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The pressed card.
+
+- Parameter configuration: The card and its press state.
+
+## `ModeCardLines`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct ModeCardLines<Detail> where Detail : View
+```
+
+A card's title over its detail, read by VoiceOver as one text.
+
+## `ModeCardLines/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The lines.
+
+## `ModeCardLines/detail`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let detail: Detail?
+```
+
+The detail, or `nil`.
+
+## `ModeCardLines/init(title:detail:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(title: Text, detail: Detail?)
+```
+
+Creates the lines.
+
+- Parameters:
+  - title: The title.
+  - detail: The detail, or `nil`.
+
+## `ModeCardLines/title`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The title.
+
+## `ModeCardState`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+enum ModeCardState
+```
+
+What the mode card on the picture's lower edge shows (docs/design/BUILD-SPEC.md, 3.5): one
+case per state that has a card. Single has none, and Timer and Burst have none while idle:
+the shutter shows the delay, and the strip names the mode.
+
+It is plain data worked out from the camera's state (``resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``),
+so which card shows is tested without drawing.
+
+## `ModeCardState/astroCountdown(remaining:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case astroCountdown(remaining: Int)
+```
+
+Astro's start delay counts down before the first frame: "First frame in 8s" and Stop
+Frames.
+
+## `ModeCardState/astroReady(frameCount:startDelay:estimate:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case astroReady(frameCount: Int, startDelay: SelfTimerDelay, estimate: AstroEstimate?)
+```
+
+Astro is on and ready: the frames and the estimate. The whole card is the button Astro
+Settings.
+
+## `ModeCardState/astroRunning(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case astroRunning(AstroRun)
+```
+
+Astro's frames run or are paused: the frame, a progress bar and Stop Frames.
+
+## `ModeCardState/burstEnded(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case burstEnded(BurstResult)
+```
+
+A burst stopped by itself: why, as text, until the next action (``DriveText/endMessage(_:)``).
+
+## `ModeCardState/burstRunning(taken:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case burstRunning(taken: Int)
+```
+
+A burst runs: "Photos taken: 12" and Stop Burst.
+
+## `ModeCardState/current(_:endedBurst:showsControls:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func current(_ model: CameraModel, endedBurst: BurstResult?, showsControls: Bool) -> ModeCardState?
+```
+
+The card for the camera model's state, or `nil` (see ``resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)``).
+
+- Parameters:
+  - model: The camera model.
+  - endedBurst: A burst that stopped by itself and whose message still shows, or `nil`.
+  - showsControls: Whether the controls are shown.
+- Returns: The card, or `nil`.
+
+## `ModeCardState/intervalIdle(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case intervalIdle(IntervalSettings)
+```
+
+Interval is chosen and no series runs: "Every 10 seconds, 10 photos". The whole card is
+the button Interval Settings.
+
+## `ModeCardState/intervalRunning(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case intervalRunning(IntervalProgress)
+```
+
+An interval series runs or is paused: the count, a progress bar and Stop.
+
+## `ModeCardState/isRunning`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+var isRunning: Bool { get }
+```
+
+Whether the card shows something that runs, and so stays in clean view: stopping never
+depends on bringing the controls back.
+
+## `ModeCardState/resolve(mode:countdownRemaining:burst:endedBurst:intervalProgress:intervalSettings:isAstroOn:astroRun:astroStartDelay:astroEstimate:showsControls:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+static func resolve(mode: DriveMode, countdownRemaining: Int?, burst: BurstProgress?, endedBurst: BurstResult?, intervalProgress: IntervalProgress?, intervalSettings: IntervalSettings, isAstroOn: Bool, astroRun: AstroRun?, astroStartDelay: SelfTimerDelay, astroEstimate: AstroEstimate?, showsControls: Bool) -> ModeCardState?
+```
+
+The card for the camera's state, or `nil` for none. A running series or countdown comes
+first; an idle card shows only while the controls are shown (not in clean view).
+
+- Parameters:
+  - mode: The drive mode.
+  - countdownRemaining: The self-timer's seconds left, or `nil` when it isn't counting.
+  - burst: The running burst, or `nil`.
+  - endedBurst: A burst that stopped by itself and whose message still shows, or `nil`.
+  - intervalProgress: The running interval series, or `nil`.
+  - intervalSettings: The next interval series.
+  - isAstroOn: Whether Astro is on.
+  - astroRun: Astro's running frames, or `nil`.
+  - astroStartDelay: Astro's start delay.
+  - astroEstimate: What Astro's next run will take, or `nil`.
+  - showsControls: Whether the controls are shown (not clean view).
+- Returns: The card, or `nil`.
+
+## `ModeCardState/timerCountdown(remaining:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+case timerCountdown(remaining: Int)
+```
+
+The self-timer counts down: "Photo in 3s" and Cancel Timer.
+
+## `ModeCardText`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor enum ModeCardText
+```
+
+The mode card's words (docs/design/BUILD-SPEC.md, section 4). Keys the string catalog doesn't
+have yet carry their English as the default value.
+
+## `ModeCardText/astroFrames(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func astroFrames(_ frameCount: Int) -> String
+```
+
+"Astro frames: 20".
+
+- Parameter frameCount: The frames the run takes.
+
+## `ModeCardText/astroProgress(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func astroProgress(_ run: AstroRun) -> Text
+```
+
+"Frame 7 of 20", or "Paused: 7 of 20 frames".
+
+- Parameter run: The run.
+
+## `ModeCardText/astroSummary(startDelay:estimate:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func astroSummary(startDelay: SelfTimerDelay, estimate: AstroEstimate?) -> String?
+```
+
+"After 10 seconds · 20 s in all · at most 486 MB", or `nil` before the camera reports a
+shutter for the estimate.
+
+- Parameters:
+  - startDelay: Astro's start delay.
+  - estimate: What the run will take.
+
+## `ModeCardText/burstTaken(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func burstTaken(_ taken: Int) -> Text
+```
+
+"Photos taken: 12".
+
+- Parameter taken: The photos taken so far.
+
+## `ModeCardText/cancelTimer`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var cancelTimer: Text { get }
+```
+
+"Cancel Timer".
+
+## `ModeCardText/exposureLeft(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func exposureLeft(_ seconds: Double) -> Text
+```
+
+"13 s left": the exposure time of the frames still to take (figure drive-astro-running).
+
+- Parameter seconds: The exposure time left, in seconds.
+
+## `ModeCardText/firstFrame(in:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func firstFrame(in seconds: Int) -> Text
+```
+
+"First frame in 8s" (figure drive-astro-countdown).
+
+- Parameter seconds: The seconds left.
+
+## `ModeCardText/intervalProgress(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func intervalProgress(_ progress: IntervalProgress) -> Text
+```
+
+"3 of 10 photos taken", or "Paused: 3 of 10 photos taken".
+
+- Parameter progress: The series' progress.
+
+## `ModeCardText/intervalSettings`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var intervalSettings: Text { get }
+```
+
+"Interval Settings".
+
+## `ModeCardText/intervalSummary(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func intervalSummary(_ settings: IntervalSettings) -> String
+```
+
+"Every 10 seconds, 10 photos".
+
+- Parameter settings: The series.
+
+## `ModeCardText/nextPhoto(in:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func nextPhoto(in seconds: Int) -> Text
+```
+
+"Next photo in 6s" (BUILD-SPEC.md, figure drive-interval-running).
+
+- Parameter seconds: The seconds left.
+
+## `ModeCardText/photoIn(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func photoIn(_ seconds: Int) -> Text
+```
+
+"Photo in 3s".
+
+- Parameter seconds: The seconds left.
+
+## `ModeCardText/shortDuration(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func shortDuration(_ seconds: Double) -> String
+```
+
+A duration in the system's narrow form with up to two units, such as "13s" or "5m 20s".
+
+- Parameter seconds: The duration, in seconds.
+
+## `ModeCardText/spokenDuration(_:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static func spokenDuration(_ seconds: Double) -> String
+```
+
+A duration in words, such as "10 seconds", for the interval card.
+
+- Parameter seconds: The duration, in seconds.
+
+## `ModeCardText/stopBurst`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var stopBurst: Text { get }
+```
+
+"Stop Burst".
+
+## `ModeCardText/stopFrames`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var stopFrames: Text { get }
+```
+
+"Stop Frames".
+
+## `ModeCardText/stopInterval`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor static var stopInterval: Text { get }
+```
+
+"Stop", for an interval series.
+
+## `ModeCards`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct ModeCards
+```
+
+The selected drive mode's card on the picture's lower edge (docs/design/BUILD-SPEC.md, 3.5;
+docs/design/drive.html): idle, it names what the shutter will do; running, it shows progress
+and a button that stops it. One card at a time, from ``ModeCardState``.
+
+- Interval and Astro, idle: the whole card is one button that opens their settings.
+- Running: the count, a progress bar where the end is known, and Stop. It stays in clean view
+  until the run ends, so stopping never depends on a gesture; the shutter stops it too.
+- A burst that stopped by itself says why until the next action: another photo, a new mode,
+  lens or Astro.
+
+## `ModeCards/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card, or nothing.
+
+## `ModeCards/init(model:showsControls:openIntervalSettings:openAstroSettings:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(model: CameraModel, showsControls: Bool, openIntervalSettings: @escaping () -> Void, openAstroSettings: @escaping () -> Void)
+```
+
+Creates the cards.
+
+- Parameters:
+  - model: The camera model.
+  - showsControls: Whether the controls are shown.
+  - openIntervalSettings: Opens Interval Settings.
+  - openAstroSettings: Opens Astro Settings.
+
+## `ModeCards/model`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let model: CameraModel
+```
+
+The camera model.
+
+## `ModeCards/openAstroSettings`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let openAstroSettings: () -> Void
+```
+
+Opens Astro Settings.
+
+## `ModeCards/openIntervalSettings`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let openIntervalSettings: () -> Void
+```
+
+Opens Interval Settings.
+
+## `ModeCards/showsControls`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let showsControls: Bool
+```
+
+Whether the controls are shown (not clean view).
+
+## `NextPhotoDetail`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct NextPhotoDetail
+```
+
+"Next photo in 6s", counting down each second until the photo is due.
+
+## `NextPhotoDetail/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The seconds left, or nothing once the photo is due.
+
+## `NextPhotoDetail/init(timing:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(timing: NextPhotoTiming)
+```
+
+Creates the detail.
+
+- Parameter timing: When the next photo is due.
+
+## `NextPhotoDetail/timing`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let timing: NextPhotoTiming
+```
+
+When the next photo is due.
+
+## `NextPhotoTiming`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+struct NextPhotoTiming
+```
+
+When an interval series' next photo is due, for the running card's "Next photo in 6s".
+
+`NopeCore` doesn't publish the time of the next photo, so the card counts from the moment the
+count of photos taken last changed, by the series' interval: the series waits that long after
+each photo is saved (`ManualControlsModel`). The interval is the one set now, which is the
+series' own unless it was changed in Interval Settings while the series runs (the change
+applies to the next series). Until the card sees a photo counted, and while the series is
+paused, it shows no time rather than a guessed one.
+
+## `NextPhotoTiming/init(lastPhoto:interval:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+init(lastPhoto: Date, interval: Double)
+```
+
+Creates the timing.
+
+- Parameters:
+  - lastPhoto: When the last photo was counted.
+  - interval: The series' interval, in seconds.
+
+## `NextPhotoTiming/interval`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+let interval: Double
+```
+
+The series' interval, in seconds.
+
+## `NextPhotoTiming/lastPhoto`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+let lastPhoto: Date
+```
+
+When the last photo was counted.
+
+## `NextPhotoTiming/secondsLeft(at:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+func secondsLeft(at now: Date) -> Int?
+```
+
+The whole seconds until the next photo, rounded up, or `nil` once it is due (it is being
+taken or waits for the camera).
+
+- Parameter now: The current time.
+- Returns: The seconds left, at least 1, or `nil`.
 
 ## `NightModeStyle`
 
@@ -6241,6 +8284,72 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 Whether night mode is on.
 
+## `NightModeSwitch`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor struct NightModeSwitch
+```
+
+The drawing of ``NightModeSwitchStyle``. Night mode multiplies everything by pure red
+(``NightModeStyle``), so it draws in white and grays: white shows as the full night red.
+It is a button that VoiceOver, Voice Control and Switch Control see as the system switch
+(`accessibilityRepresentation`).
+
+## `NightModeSwitch/body`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The system switch, or the night drawing.
+
+## `NightModeSwitch/configuration`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor let configuration: ToggleStyleConfiguration
+```
+
+The toggle's label and state.
+
+## `NightModeSwitch/init(configuration:)`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor init(configuration: ToggleStyleConfiguration)
+```
+
+Creates the switch.
+
+- Parameter configuration: The toggle's label and state.
+
+## `NightModeSwitch/knobInset`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor static let knobInset: CGFloat
+```
+
+The space between the knob and the track's edge.
+
+## `NightModeSwitch/trackSize`
+
+internal, declared in `Sources/NopeUI/CameraStyle.swift`
+
+```swift
+@MainActor static let trackSize: CGSize
+```
+
+The track's size, the system switch's size (UIKit `UISwitch`, 51 × 31 points), so a
+row's height doesn't change when night mode turns on.
+
 ## `NightModeSwitchStyle`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -6249,10 +8358,11 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 @MainActor struct NightModeSwitchStyle
 ```
 
-The system switch, with ``NightStyle/trackTint`` on its track in night mode, so its knob
-stays distinct from the track while other tinted controls use the full night red. Outside
-night mode it is the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle
-with its own style keeps that style.
+The switch in night mode: on is a filled track with a dark knob, off is an outlined track
+with a red knob (`docs/design/BUILD-SPEC.md`, 3.10, "Night mode"), so on and off differ by
+more than the knob's side, as the 0.3.0 night-mode finding asked. Outside night mode it is
+the system's switch, unchanged. ``NightModeStyle`` applies it; a toggle with its own style
+keeps that style.
 
 ## `NightModeSwitchStyle/init()`
 
@@ -6273,7 +8383,7 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```
 
-The toggle, drawn by the system.
+The toggle: the system's outside night mode, ``NightModeSwitch`` in it.
 
 - Parameter configuration: The toggle's label and state.
 
@@ -6365,6 +8475,2164 @@ multiply: a dark gray, shown as a dark red, so the knob or thumb (white, shown a
 red) stands out from the track by at least 3:1 (WCAG 2.2, 1.4.11). Applied by
 ``NightModeSwitchStyle`` and `nightModeTrackTint()`.
 
+## `NopeButtonGallery`
+
+public, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeButtonGallery
+```
+
+Debug builds only: every custom button type in each of its states, on the camera's black, for
+review and for the UI tests' accessibility audits (docs/design/BUILD-SPEC.md, section 8,
+chunk 0). The app shows it instead of the camera when launched with `-NopeButtonGallery`;
+`-NopeButtonGallery.night YES` draws it in night mode. Its words are fixed English sample
+labels, not interface text.
+
+## `NopeButtonGallery/body`
+
+public, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The button types, one section each.
+
+## `NopeButtonGallery/init(isNightMode:)`
+
+public, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isNightMode: Bool = false)
+```
+
+Creates the gallery.
+
+- Parameter isNightMode: Whether to draw it in night mode.
+
+## `NopeButtonGallery/isNightMode`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isNightMode: Bool
+```
+
+Whether the gallery is in night mode.
+
+## `NopeCapsuleStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeCapsuleStyle
+```
+
+A capsule button with a symbol and words (docs/design/tokens.md, "Capsule", "Toggle" and
+"Destructive").
+
+- Secondary: Manual Controls, card buttons, Auto on a dial, Try Again.
+- Selectable (`isSelected`): filled white with a black label when on; Manual Controls,
+  lenses, drive words, the Compare view buttons.
+- Destructive (`role: .destructive`, or a `Button(role: .destructive)`): the red label of Stop,
+  Stop Burst and Stop Frames.
+
+It is ``NopeSize/capsule`` (36 points) high with a 44-point target; ``NopeSize/capsuleLarge``
+in the Q panel's foot. The label is ``NopeFont/status``, or ``NopeFont/pill`` when compact; a
+font set on the label itself wins, as for the lens labels (``NopeFont/lens``).
+
+```swift
+Button(action: stop) { Label(stopTitle, systemImage: "stop.fill") }
+    .buttonStyle(NopeCapsuleStyle(role: .destructive))
+```
+
+## `NopeCapsuleStyle/horizontalPadding`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var horizontalPadding: CGFloat { get }
+```
+
+The space on each side of the label, in points.
+
+## `NopeCapsuleStyle/idleFill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let idleFill: NopeIdleFill
+```
+
+What the button is filled with when it isn't selected.
+
+## `NopeCapsuleStyle/init(isSelected:role:size:isCompact:idleFill:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isSelected: Bool = false, role: ButtonRole? = nil, size: CGFloat = NopeSize.capsule, isCompact: Bool = false, idleFill: NopeIdleFill = .control)
+```
+
+Creates the style.
+
+- Parameters:
+  - isSelected: Whether the button is selected or on.
+  - role: The button's role; `.destructive` gives the red label. A `Button(role:)` role
+    does the same.
+  - size: The visible height in points: ``NopeSize/capsule`` (36) by default,
+    ``NopeSize/capsuleLarge`` (44) in the Q panel's foot, ``NopeSize/driveWord`` (32) for
+    drive words, ``NopeSize/lensItem`` (36) for a lens. The hit target is at least 44.
+  - isCompact: Whether the button is a small capsule, with the pill font and less padding.
+  - idleFill: What the button is filled with when not selected: ``NopeIdleFill/control`` on
+    the black rows, ``NopeIdleFill/tile`` in panels and dials, ``NopeIdleFill/none`` for
+    drive words.
+
+## `NopeCapsuleStyle/isCompact`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isCompact: Bool
+```
+
+Whether the button is a small capsule: ``NopeFont/pill`` and ``NopeSpace/s`` padding.
+
+## `NopeCapsuleStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the button is selected or on.
+
+## `NopeCapsuleStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled button.
+
+- Parameter configuration: The button's label and press state.
+
+## `NopeCapsuleStyle/role`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let role: ButtonRole?
+```
+
+The button's role; `.destructive` gives the red label.
+
+## `NopeCapsuleStyle/size`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let size: CGFloat
+```
+
+The visible height, in points.
+
+## `NopeColor`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeColor
+```
+
+The colors of the camera, one meaning each (docs/design/tokens.md, "Color").
+
+The camera is always dark. Teal is for verified facts only, amber for warnings only, and a
+white fill for the selected item; there is no yellow, and no state is shown by color alone
+(AGENTS.md, "Vision settings"). Brand color reaches system controls only through `tint`.
+
+Night mode keeps `NightModeStyle`, which multiplies everything by pure red: a view under it
+draws white for the night red and uses ``nightOutlineUnderMultiply`` for an outline. ``night``
+and ``nightOutline`` are the final colors, for parts drawn outside that multiply.
+
+## `NopeColor/additional`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var additional: [(name: String, color: Color)] { get }
+```
+
+The color tokens that aren't in docs/design/tokens.md.
+
+## `NopeColor/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, color: Color)] { get }
+```
+
+Every color token whose name is a row of docs/design/tokens.md, for the tests and the
+gallery. The colors this file adds are in ``additional``.
+
+## `NopeColor/controlFill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var controlFill: Color { get }
+```
+
+A 20% gray (`#333333`): the fill of buttons on the camera's black rows.
+
+## `NopeColor/controlFillNight`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var controlFillNight: Color { get }
+```
+
+An 8% gray, shown as `#140000` under the night multiply: the fill of an off control in
+night mode. The night red is 5.1:1 on it; on ``controlFill`` it would be 4.6:1, which the
+0.3.0 audit reported for small text. Not in tokens.md (design-system.html, `--fill`).
+
+## `NopeColor/destructive`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var destructive: Color { get }
+```
+
+A light red (`#FF7169`, 4.7:1 on ``controlFill``): the labels of Stop buttons.
+
+tokens.md defines it as `Color.red` with the mockup value `#FF6961`. The system red in the
+dark appearance is `#FF453A`, 3.7:1 on ``controlFill``, and `#FF6961` is 4.48:1; both fall
+below the 4.5:1 WCAG 2.2 asks for text (1.4.3) at 15 points semibold, so this is the
+nearest red that passes.
+
+## `NopeColor/fact`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var fact: Color { get }
+```
+
+System teal (`#40C8E0` in the dark appearance, 10.6:1 on black): verified facts only, such
+as the RAW seal and the signed seal.
+
+## `NopeColor/label`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var label: Color { get }
+```
+
+White (21:1 on black): text and symbols on the camera.
+
+## `NopeColor/labelSecondary`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var labelSecondary: Color { get }
+```
+
+A 69% gray (`#B0B0B0`, 9.7:1 on black, 5.8:1 on ``controlFill``): secondary text on the
+camera. The mockups draw it as `#AEAEB2`.
+
+## `NopeColor/night`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var night: Color { get }
+```
+
+Pure sRGB red (`#FF0000`, 5.25:1 on black): night mode's one color.
+
+## `NopeColor/nightOutline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var nightOutline: Color { get }
+```
+
+A dark red (`#B3201A`, 3.1:1 on black): the outline of an off control in night mode, for
+parts drawn outside `NightModeStyle`'s multiply. tokens.md writes it as red 0.70, green
+0.125, blue 0.10; this is the same color as the exact bytes of its mockup value.
+
+## `NopeColor/nightOutlineUnderMultiply`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var nightOutlineUnderMultiply: Color { get }
+```
+
+An 80% gray that becomes the night-mode outline under `NightModeStyle`'s multiply by pure
+red: `#CC0000`, 3.6:1 on black and 3.5:1 on ``controlFillNight`` (WCAG 2.2, 1.4.11, asks
+3:1). ``nightOutline`` would lose its green and blue there and fall to 2.9:1. Not in
+tokens.md.
+
+## `NopeColor/peaking`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var peaking: Color { get }
+```
+
+A bright magenta (`#FF33D9`, 6.7:1 on black): focus peaking only.
+
+## `NopeColor/selectedFill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var selectedFill: Color { get }
+```
+
+White: the fill of a selected or on control. Its label is ``selectedLabel``.
+
+## `NopeColor/selectedLabel`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var selectedLabel: Color { get }
+```
+
+Black: the label on ``selectedFill``.
+
+## `NopeColor/selectedLabelSecondary`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var selectedLabelSecondary: Color { get }
+```
+
+A dark gray (`#3A3A3C`, 11.4:1 on white): a tile's name on a selected tile. Not in
+tokens.md (design-system.html, `.tile.sel small`).
+
+## `NopeColor/stripIdle`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var stripIdle: Color { get }
+```
+
+An 83% gray (`#D4D4D4`, 14.1:1 on black): unselected drive words and tile names. The
+mockups draw it as `#D1D1D6`.
+
+## `NopeColor/warning`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var warning: Color { get }
+```
+
+System orange (`#FF9F0A`, 10.2:1 on black): warnings only, always with a triangle and words.
+
+## `NopeControlAppearance`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+struct NopeControlAppearance
+```
+
+The colors of a custom control in one state, resolved from the tokens. It is plain data, so
+the rules are tested without drawing.
+
+Night mode is drawn by `NightModeStyle`, which multiplies everything by pure red: white here is
+shown as the night red, black stays black, and ``NopeColor/nightOutlineUnderMultiply`` is
+shown as the night outline.
+
+## `NopeControlAppearance/Fill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+enum Fill
+```
+
+How a control is filled.
+
+## `NopeControlAppearance/Fill/color(_:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case color(Color)
+```
+
+A solid color.
+
+## `NopeControlAppearance/Fill/material(_:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case material(NopeMaterial)
+```
+
+A material over the picture.
+
+## `NopeControlAppearance/Fill/none`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case none
+```
+
+No fill.
+
+## `NopeControlAppearance/fill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let fill: Fill
+```
+
+The fill.
+
+## `NopeControlAppearance/init(fill:label:secondaryLabel:outline:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+init(fill: Fill, label: Color, secondaryLabel: Color, outline: Color?)
+```
+
+Creates an appearance. Use ``resolve(isSelected:idleFill:isDestructive:isNightMode:increaseContrast:)``
+to get the one the design gives a state.
+
+- Parameters:
+  - fill: The fill.
+  - label: The label's primary color.
+  - secondaryLabel: The label's secondary color.
+  - outline: The outline, or `nil` for none.
+
+## `NopeControlAppearance/label`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let label: Color
+```
+
+The label's primary color: its symbol and main text.
+
+## `NopeControlAppearance/outline`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let outline: Color?
+```
+
+The outline, or `nil` for none. Its width is ``NopeSize/outline``.
+
+## `NopeControlAppearance/resolve(isSelected:idleFill:isDestructive:isNightMode:increaseContrast:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+static func resolve(isSelected: Bool, idleFill: NopeIdleFill, isDestructive: Bool = false, isNightMode: Bool, increaseContrast: Bool) -> NopeControlAppearance
+```
+
+The appearance of a control.
+
+- Parameters:
+  - isSelected: Whether the control is selected or on.
+  - idleFill: What the control is filled with when it isn't selected.
+  - isDestructive: Whether the label is a destructive action, such as Stop.
+  - isNightMode: Whether night mode is on.
+  - increaseContrast: Whether Increase Contrast is on.
+- Returns: The fill, label colors and outline.
+
+## `NopeControlAppearance/secondaryLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+let secondaryLabel: Color
+```
+
+The label's secondary color, for a tile's name or a readout's mode letter.
+
+## `NopeControlBackground`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeControlBackground<S> where S : InsettableShape
+```
+
+Draws a ``NopeControlAppearance``'s fill and outline behind content, in a shape.
+
+## `NopeControlBackground/appearance`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let appearance: NopeControlAppearance
+```
+
+The appearance.
+
+## `NopeControlBackground/body(content:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the fill behind it and the outline over its edge.
+
+- Parameter content: The content.
+
+## `NopeControlBackground/init(appearance:shape:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(appearance: NopeControlAppearance, shape: S)
+```
+
+Creates the background.
+
+- Parameters:
+  - appearance: The appearance.
+  - shape: The shape.
+
+## `NopeControlBackground/shape`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let shape: S
+```
+
+The shape.
+
+## `NopeCountdownFont`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor struct NopeCountdownFont
+```
+
+Scales the countdown font with Dynamic Type (docs/design/tokens.md, "Type", `countdown`).
+
+## `NopeCountdownFont/body(content:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, in the scaled countdown font.
+
+- Parameter content: The countdown text.
+
+## `NopeCountdownFont/init()`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the modifier. It holds no state of its own.
+
+## `NopeFont`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeFont
+```
+
+The type ramp: the system font through Dynamic Type text styles, so every token scales with
+the person's text size, up to the largest accessibility sizes (docs/design/tokens.md, "Type").
+
+Forms, sheets, menus and alerts use the system styles unchanged. A font set on a button's own
+label wins over the one a button style sets, so a lens label can use ``lens`` inside a
+``NopeCapsuleStyle``.
+
+## `NopeFont/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, font: Font)] { get }
+```
+
+Every type token with its name in docs/design/tokens.md, for the tests and the gallery.
+
+## `NopeFont/countdown`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var countdown: Font { get }
+```
+
+The countdown number at its default size, 96 points, bold, without scaling. Use
+`nopeCountdownFont()`, which scales it with Dynamic Type; this value is the
+font at the default text size, for comparison and previews.
+
+## `NopeFont/countdown(size:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func countdown(size: CGFloat) -> Font
+```
+
+The countdown font at a size, bold.
+
+- Parameter size: The size in points, usually scaled with `@ScaledMetric`.
+- Returns: The system font at that size, bold.
+
+## `NopeFont/countdownSize`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let countdownSize: CGFloat
+```
+
+96 points: the countdown number's size at the default text size.
+
+## `NopeFont/countdownTextStyle`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let countdownTextStyle: Font.TextStyle
+```
+
+The text style the countdown scales with: Large Title, the largest system style.
+
+## `NopeFont/dialValue`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var dialValue: Font { get }
+```
+
+Body, semibold, monospaced digits (17 points): dial values.
+
+## `NopeFont/lens`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var lens: Font { get }
+```
+
+Footnote, semibold, monospaced digits (13 points): lens labels.
+
+## `NopeFont/pill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var pill: Font { get }
+```
+
+Footnote, semibold (13 points): pills, chips, small capsules and card details.
+
+## `NopeFont/q`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var q: Font { get }
+```
+
+Title 3, bold (20 points): the letter Q.
+
+## `NopeFont/readoutMode`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var readoutMode: Font { get }
+```
+
+Caption 2, bold (11 points): the A or M on a readout.
+
+## `NopeFont/status`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var status: Font { get }
+```
+
+Subheadline, semibold (15 points at the default size): format status, drive words,
+capsule labels and card titles.
+
+## `NopeFont/tileName`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var tileName: Font { get }
+```
+
+Caption, medium (12 points): tile names and readout values.
+
+## `NopeFont/tileValue`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var tileValue: Font { get }
+```
+
+Subheadline, semibold (15 points): tile values.
+
+## `NopeHaptic`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeHaptic
+```
+
+The haptics, all played through `sensoryFeedback`, each paired with something seen and a
+VoiceOver announcement (docs/design/tokens.md, "Haptics").
+
+```swift
+.sensoryFeedback(NopeHaptic.driveModeChanged, trigger: driveMode)
+```
+
+## `NopeHaptic/allAuto`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var allAuto: SensoryFeedback { get }
+```
+
+All Auto returned every manual control to auto.
+
+## `NopeHaptic/countdownSecond`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var countdownSecond: SensoryFeedback { get }
+```
+
+One second of a countdown passed.
+
+## `NopeHaptic/driveModeChanged`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var driveModeChanged: SensoryFeedback { get }
+```
+
+The drive mode changed (new in 1.0.0, extending the lens rule).
+
+## `NopeHaptic/lensChanged`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var lensChanged: SensoryFeedback { get }
+```
+
+The lens changed.
+
+## `NopeHaptic/levelFlat`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var levelFlat: SensoryFeedback { get }
+```
+
+The level reached flat.
+
+## `NopeHaptic/manualControlsChanged`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var manualControlsChanged: SensoryFeedback { get }
+```
+
+Manual Controls turned on or off (new in 1.0.0, extending the lens rule).
+
+## `NopeHaptic/notSaved`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var notSaved: SensoryFeedback { get }
+```
+
+A photo wasn't saved.
+
+## `NopeHaptic/saved`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var saved: SensoryFeedback { get }
+```
+
+A photo was saved.
+
+## `NopeHaptic/shutter`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var shutter: SensoryFeedback { get }
+```
+
+The shutter is pressed.
+
+## `NopeIconButtonStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeIconButtonStyle
+```
+
+A round symbol button: 44 points across by default, 52 for Q (docs/design/tokens.md, "Icon").
+
+Use it for Switch Camera, Q, minus and plus, close, Show Controls and More. Selected (Q while
+its panel is open) is filled white with a black symbol. The button can't grow with the text
+size, so its label is shown in the Large Content Viewer; give the button an accessibility
+label.
+
+```swift
+Button(action: toggleQuickMenu) {
+    Text(verbatim: "Q").font(NopeFont.q)
+}
+.buttonStyle(NopeIconButtonStyle(size: NopeSize.quick, isSelected: isOpen))
+```
+
+## `NopeIconButtonStyle/init(size:isSelected:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(size: CGFloat = NopeSize.iconButton, isSelected: Bool = false)
+```
+
+Creates the style.
+
+- Parameters:
+  - size: The diameter, in points: ``NopeSize/iconButton`` (44) by default, ``NopeSize/quick``
+    (52) for Q. The hit target is never smaller than ``NopeSize/minTarget``.
+  - isSelected: Whether the button is selected, as Q is while its panel is open.
+
+## `NopeIconButtonStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the button is selected.
+
+## `NopeIconButtonStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled button.
+
+- Parameter configuration: The button's label and press state.
+
+## `NopeIconButtonStyle/size`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let size: CGFloat
+```
+
+The diameter, in points.
+
+## `NopeIdleFill`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+enum NopeIdleFill
+```
+
+What a custom control is filled with when it isn't selected.
+
+## `NopeIdleFill/backing`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case backing
+```
+
+``NopeMaterial/backing``: a pill or chip drawn over the picture.
+
+## `NopeIdleFill/control`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case control
+```
+
+``NopeColor/controlFill``, or ``NopeColor/controlFillNight`` in night mode: buttons on the
+camera's black rows.
+
+## `NopeIdleFill/none`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case none
+```
+
+No fill: the unselected drive words, which sit on the black strip.
+
+## `NopeIdleFill/tile`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+case tile
+```
+
+``NopeMaterial/tile``, or ``NopeColor/controlFillNight`` in night mode: tiles and buttons
+in panels and dials.
+
+## `NopeMaterial`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeMaterial
+```
+
+The backgrounds of things drawn over the picture (docs/design/tokens.md, "Materials").
+
+Apply one with `nopeBackground(_:in:)`:
+
+```swift
+card.nopeBackground(.backing, in: RoundedRectangle(cornerRadius: NopeRadius.large))
+```
+
+## `NopeMaterial/backing`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case backing
+```
+
+The system's ultra-thin material under black at ``backingDimming``; solid black with
+Reduce Transparency or Increase Contrast. Everything on the picture: cards, the readout
+row, dials, hints, the Q panel and the status on iPad.
+
+## `NopeMaterial/backingDimming`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let backingDimming: Double
+```
+
+The opacity of the black over the material in ``backing``: 90%.
+
+tokens.md says 86%. The 0.3.0 iPad accessibility audit reported text on a 75% backing as
+low contrast, and 0.3.0 ships 90%, which passed; this keeps the value that passed
+(docs/design/BUILD-SPEC.md, section 1: existing behavior wins and is flagged). Over a pure
+white frame the backing is at most a 10% gray, which white text passes with a wide margin
+(WCAG 2.2, 1.4.3).
+
+## `NopeMaterial/isSolid(reduceTransparency:increaseContrast:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+func isSolid(reduceTransparency: Bool, increaseContrast: Bool) -> Bool
+```
+
+Whether the material is drawn as solid black instead of a translucent material: with
+Reduce Transparency or Increase Contrast, for ``backing`` and the backing under ``tile``;
+always for ``solid``; never for ``rowOverlay``, which is a fixed 72% black.
+
+- Parameters:
+  - reduceTransparency: Whether Reduce Transparency is on.
+  - increaseContrast: Whether Increase Contrast is on.
+- Returns: `true` when the material is solid black.
+
+## `NopeMaterial/name`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+var name: String { get }
+```
+
+The material's name in docs/design/tokens.md.
+
+## `NopeMaterial/rowOverlay`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case rowOverlay
+```
+
+Black at ``rowOverlayOpacity``: the lens row and drive strip where they overlay the
+picture on the smallest iPhones.
+
+## `NopeMaterial/rowOverlayOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let rowOverlayOpacity: Double
+```
+
+The opacity of the black in ``rowOverlay``: 72%.
+
+## `NopeMaterial/solid`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case solid
+```
+
+Solid black: the failure banner and pause messages, which must be readable over any scene.
+
+## `NopeMaterial/tile`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+case tile
+```
+
+A 30% system gray over ``backing``: tiles and buttons inside the Q panel and dials.
+
+## `NopeMaterial/tileFillOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let tileFillOpacity: Double
+```
+
+The opacity of the system gray in ``tile``: 30%.
+
+## `NopeMaterial/tileGray`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var tileGray: Color { get }
+```
+
+The system gray of ``tile``. On watchOS, which has no `UIColor.systemGray`, SwiftUI's gray.
+
+## `NopeMaterialBackground`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor struct NopeMaterialBackground<S> where S : Shape
+```
+
+Draws a ``NopeMaterial`` behind content, in a shape, following Reduce Transparency and
+Increase Contrast.
+
+## `NopeMaterialBackground/body(content:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+Puts the material behind the content.
+
+- Parameter content: The content.
+
+## `NopeMaterialBackground/init(material:shape:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor init(material: NopeMaterial, shape: S)
+```
+
+Creates the background.
+
+- Parameters:
+  - material: The material.
+  - shape: The background's shape.
+
+## `NopeMaterialBackground/material`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor let material: NopeMaterial
+```
+
+The material.
+
+## `NopeMaterialBackground/shape`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor let shape: S
+```
+
+The background's shape.
+
+## `NopeMotion`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeMotion
+```
+
+Animations and their Reduce Motion forms (docs/design/tokens.md, "Motion").
+
+Nothing moves by itself, pulses or blinks. Ask for the form that fits the person's setting:
+
+```swift
+@Environment(\.accessibilityReduceMotion) private var reduceMotion
+…
+.animation(NopeMotion.panel(reduceMotion: reduceMotion), value: isOpen)
+.transition(NopeMotion.panelTransition(reduceMotion: reduceMotion))
+```
+
+## `NopeMotion/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, animation: Animation)] { get }
+```
+
+Every animation token with its name in docs/design/tokens.md, for the tests.
+
+## `NopeMotion/disabledOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let disabledOpacity: Double
+```
+
+The opacity of a disabled custom button, and of the other drive words while the drive is
+busy: 40%.
+
+## `NopeMotion/fade`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var fade: Animation { get }
+```
+
+Ease in and out, 0.2 seconds: pills, chips, hints and clean view. The same with Reduce
+Motion, since a fade doesn't move.
+
+## `NopeMotion/opacity(isPressed:isEnabled:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func opacity(isPressed: Bool, isEnabled: Bool) -> Double
+```
+
+A button's opacity for its press and enabled states.
+
+- Parameters:
+  - isPressed: Whether the button is pressed.
+  - isEnabled: Whether the button is enabled.
+- Returns: ``disabledOpacity`` when disabled, ``pressedOpacity`` while pressed, otherwise 1.
+
+## `NopeMotion/panel`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var panel: Animation { get }
+```
+
+Snappy, 0.3 seconds: the Q panel, cards and dials appearing.
+
+## `NopeMotion/panel(reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func panel(reduceMotion: Bool) -> Animation
+```
+
+The panel's animation for the person's setting: ``panel``, or with Reduce Motion a 0.2-second
+crossfade (``fade``); pair it with ``panelTransition(reduceMotion:)``.
+
+- Parameter reduceMotion: Whether Reduce Motion is on.
+- Returns: The animation.
+
+## `NopeMotion/panelTransition(reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func panelTransition(reduceMotion: Bool) -> AnyTransition
+```
+
+How a panel, card or dial enters and leaves: rising from the bottom edge with a fade, or with
+Reduce Motion only a fade.
+
+- Parameter reduceMotion: Whether Reduce Motion is on.
+- Returns: The transition.
+
+## `NopeMotion/pressedOpacity`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pressedOpacity: Double
+```
+
+The opacity of a custom button while it is pressed: 70%.
+
+## `NopeMotion/pressedScale`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pressedScale: CGFloat
+```
+
+The scale of a custom button while it is pressed: 97%; none with Reduce Motion.
+
+## `NopeMotion/scale(isPressed:reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func scale(isPressed: Bool, reduceMotion: Bool) -> CGFloat
+```
+
+A button's scale for its press state.
+
+- Parameters:
+  - isPressed: Whether the button is pressed.
+  - reduceMotion: Whether Reduce Motion is on.
+- Returns: ``pressedScale`` while pressed without Reduce Motion, otherwise 1.
+
+## `NopeMotion/select`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var select: Animation { get }
+```
+
+Snappy, 0.2 seconds: the selection fill moving between lenses or drive words.
+
+## `NopeMotion/select(reduceMotion:)`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static func select(reduceMotion: Bool) -> Animation?
+```
+
+The selection's animation for the person's setting: ``select``, or with Reduce Motion none,
+so the fill switches without sliding.
+
+- Parameter reduceMotion: Whether Reduce Motion is on.
+- Returns: The animation, or `nil` for none.
+
+## `NopePillLabelStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopePillLabelStyle
+```
+
+A pill's label: the symbol and the title, ``NopeSpace/xxs`` apart.
+
+## `NopePillLabelStyle/init()`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NopePillLabelStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The symbol, then the title.
+
+- Parameter configuration: The label's icon and title.
+
+## `NopePillStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopePillStyle
+```
+
+A pill: a small capsule for a changed setting (docs/design/tokens.md, "Pill").
+
+It is ``NopeSize/pill`` (28 points) high with a 44-point target, in ``NopeFont/pill``, with
+``NopeSpace/xxs`` between symbol and text. Over the picture (the column layout, a sideways
+iPhone) it has the backing, so its contrast doesn't depend on the scene.
+
+## `NopePillStyle/init(isSelected:isOnPicture:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isSelected: Bool = false, isOnPicture: Bool = false)
+```
+
+Creates the style.
+
+- Parameters:
+  - isSelected: Whether the pill is selected.
+  - isOnPicture: Whether the pill is drawn over the picture, where it gets the backing
+    (``NopeMaterial/backing``) instead of ``NopeColor/controlFill``.
+
+## `NopePillStyle/isOnPicture`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isOnPicture: Bool
+```
+
+Whether the pill is drawn over the picture.
+
+## `NopePillStyle/isSelected`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isSelected: Bool
+```
+
+Whether the pill is selected.
+
+## `NopePillStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled pill.
+
+- Parameter configuration: The pill's label and press state.
+
+## `NopePressEffect`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopePressEffect
+```
+
+The press and enabled states every custom button shares: 70% opacity and 97% scale while
+pressed (opacity only with Reduce Motion), and 40% opacity when disabled.
+
+## `NopePressEffect/body(content:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, faded and scaled for its state.
+
+- Parameter content: The styled button.
+
+## `NopePressEffect/init(isPressed:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isPressed: Bool)
+```
+
+Creates the effect.
+
+- Parameter isPressed: Whether the button is pressed.
+
+## `NopePressEffect/isPressed`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isPressed: Bool
+```
+
+Whether the button is pressed.
+
+## `NopePrimaryActionStyle`
+
+internal, declared in `Sources/NopeUI/StatusMessageView.swift`
+
+```swift
+@MainActor struct NopePrimaryActionStyle
+```
+
+The one primary action of a screen before the camera is ready, such as Continue or Open
+Settings (docs/design/tokens.md, "System"; BUILD-SPEC.md, 3.8): the system's
+`.borderedProminent` button at the large size, full width, filled with the label color (white
+on the dark appearance, black on the light one) with the background color for its words.
+
+The system blue fill is not used: white words on it failed the accessibility audit's contrast
+check in the dark appearance. Night mode's red multiply turns the white fill red and keeps the
+black words.
+
+## `NopePrimaryActionStyle/init()`
+
+internal, declared in `Sources/NopeUI/StatusMessageView.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `NopePrimaryActionStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/StatusMessageView.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The button, in the system's prominent style.
+
+- Parameter configuration: The button's label, role and action.
+
+## `NopeRadius`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeRadius
+```
+
+The corner radii, in points: two radii and the capsule (docs/design/tokens.md, "Radii").
+
+Buttons, pills, chips, the lens group and drive words use `Capsule()` and need no value.
+System sheets, forms, menus and alerts keep the system's radii. The 0.3.0 radii map as
+8, 10 and 12 → 12, and 20 → 24.
+
+## `NopeRadius/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, value: CGFloat)] { get }
+```
+
+Every radius token with its name in docs/design/tokens.md, for the tests and the gallery.
+
+## `NopeRadius/large`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let large: CGFloat
+```
+
+24 points: the Q panel, mode cards, dials, the failure banner and pause messages.
+
+## `NopeRadius/small`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let small: CGFloat
+```
+
+12 points: tiles, readouts, the thumbnail, hints and the magnifier.
+
+## `NopeSize`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeSize
+```
+
+Sizes and hit targets, in points (docs/design/tokens.md, "Sizes").
+
+Every control's hit target is at least ``minTarget`` (44 × 44 points, AGENTS.md "Touch
+targets"), with ``targetGap`` between targets. A control drawn smaller (a 28-point pill, a
+36-point capsule, a 32-point drive word) extends its target with `nopeHitTarget()`.
+
+## `NopeSize/additional`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var additional: [(name: String, value: CGFloat)] { get }
+```
+
+The size tokens that aren't a row of their own in docs/design/tokens.md: those named in a
+row's notes, and those this file adds for values the build specification names.
+
+## `NopeSize/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, value: CGFloat)] { get }
+```
+
+Every size token whose name is a row of docs/design/tokens.md, with its value, in the order
+of the table, for the tests and the gallery. The values named only in the table's notes
+(``shutterRing``, ``shutterDisc``, ``capsuleLarge``, ``lensItemMinWidth``) and those not in
+tokens.md are listed in ``additional``.
+
+## `NopeSize/capsule`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let capsule: CGFloat
+```
+
+36 points: the visible height of capsule buttons (``NopeCapsuleStyle``); their target is
+still 44.
+
+## `NopeSize/capsuleLarge`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let capsuleLarge: CGFloat
+```
+
+44 points: the large capsule buttons in the Q panel's foot.
+
+## `NopeSize/column`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let column: CGFloat
+```
+
+104 points: the width of the trailing column in the column layout.
+
+## `NopeSize/driveRow`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let driveRow: CGFloat
+```
+
+44 points: the drive strip of the stacked layout.
+
+## `NopeSize/driveWord`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let driveWord: CGFloat
+```
+
+32 points: the visible height of a drive word; its target is 44.
+
+## `NopeSize/focusSquare`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let focusSquare: CGFloat
+```
+
+60 points: the focus square (unchanged from 0.3.0).
+
+## `NopeSize/iconButton`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let iconButton: CGFloat
+```
+
+44 points: round symbol buttons (``NopeIconButtonStyle``).
+
+## `NopeSize/lensItem`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let lensItem: CGFloat
+```
+
+36 points: the height of one lens inside the 44-point lens group.
+
+## `NopeSize/lensItemMinWidth`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let lensItemMinWidth: CGFloat
+```
+
+40 points: the smallest width of one lens inside the lens group.
+
+## `NopeSize/lensRow`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let lensRow: CGFloat
+```
+
+56 points: the lens row of the stacked layout.
+
+## `NopeSize/minTarget`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let minTarget: CGFloat
+```
+
+44 points: the smallest hit target of any control (Apple Human Interface Guidelines,
+"Accessibility"; WCAG 2.2, 2.5.8).
+
+## `NopeSize/outline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let outline: CGFloat
+```
+
+1 point: the outline of an unselected control with Increase Contrast, of an off control in
+night mode, and of cards and dials (docs/design/design-system.html). Not in tokens.md.
+
+## `NopeSize/panelMaxWidth`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let panelMaxWidth: CGFloat
+```
+
+372 points: the Q panel's width in the column layout and on a sideways iPhone.
+
+## `NopeSize/pictureStackMaxWidth`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pictureStackMaxWidth: CGFloat
+```
+
+480 points: the widest the bottom stack on the picture gets in the column layout
+(docs/design/BUILD-SPEC.md, 3.11). Not in tokens.md.
+
+## `NopeSize/pill`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let pill: CGFloat
+```
+
+28 points: the visible height of pills and warning chips; their target is 44.
+
+## `NopeSize/quick`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let quick: CGFloat
+```
+
+52 points: the Q button.
+
+## `NopeSize/readout`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let readout: CGFloat
+```
+
+48 points: the height of a manual readout.
+
+## `NopeSize/scrollingPicture`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let scrollingPicture: CGFloat
+```
+
+280 points: the picture's height in the scrolling layout (unchanged from 0.3.0).
+
+## `NopeSize/scrollingRowButton`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let scrollingRowButton: CGFloat
+```
+
+64 points: Q and Last Photo in the scrolling layout's pinned shutter row
+(docs/design/BUILD-SPEC.md, 3.12). Not in tokens.md; named here so the layout needs no
+literal.
+
+## `NopeSize/shutter`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutter: CGFloat
+```
+
+76 points: the diameter of Take Photo.
+
+## `NopeSize/shutterDisc`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterDisc: CGFloat
+```
+
+60 points: the diameter of the shutter's disc, inside the ring.
+
+## `NopeSize/shutterRing`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterRing: CGFloat
+```
+
+4 points: the width of the shutter's ring.
+
+## `NopeSize/shutterRowMin`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let shutterRowMin: CGFloat
+```
+
+88 points: the smallest height of the shutter row; it takes the remaining height
+(101 points on a 402 × 874-point screen).
+
+## `NopeSize/statusRow`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let statusRow: CGFloat
+```
+
+44 points: the status line of the stacked layout.
+
+## `NopeSize/targetGap`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let targetGap: CGFloat
+```
+
+8 points: the smallest gap between two targets; 4 points (``NopeSpace/xxs``) inside the
+lens group.
+
+## `NopeSize/thumbnail`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let thumbnail: CGFloat
+```
+
+52 points: Last Photo.
+
+## `NopeSize/tileMin`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let tileMin: CGFloat
+```
+
+56 points: the smallest height of a tile; it grows when the name wraps.
+
+## `NopeSize/warningOutline`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let warningOutline: CGFloat
+```
+
+1.5 points: the amber outline of a warning chip and the failure banner
+(docs/design/design-system.html). Not in tokens.md.
+
+## `NopeSpace`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+enum NopeSpace
+```
+
+The spacing scale, in points: one scale on a 4-point grid (docs/design/tokens.md, "Spacing").
+
+Use it for padding and stack spacing. The 0.3.0 values map to it as 2 → 4, 6 → 8, 9 → 8,
+10 → 12 and 20 → 24.
+
+```swift
+HStack(spacing: NopeSpace.xs) { … }
+    .padding(.horizontal, NopeSpace.m)
+```
+
+## `NopeSpace/all`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static var all: [(name: String, value: CGFloat)] { get }
+```
+
+Every spacing token with its name in docs/design/tokens.md, smallest first, for the tests
+and the button gallery.
+
+## `NopeSpace/l`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let l: CGFloat
+```
+
+24 points: the spacing between sections, and the gaps of the column layout.
+
+## `NopeSpace/m`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let m: CGFloat
+```
+
+16 points: the screen margin, panel padding and capsule padding.
+
+## `NopeSpace/s`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let s: CGFloat
+```
+
+12 points: the inner padding of pills and small capsules, and of dials.
+
+## `NopeSpace/xl`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xl: CGFloat
+```
+
+32 points: the side margin of the shutter row.
+
+## `NopeSpace/xs`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xs: CGFloat
+```
+
+8 points: the gap between controls and between tiles, the inset of items from the
+picture's edge, and the gap between pills and capsules.
+
+## `NopeSpace/xxl`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xxl: CGFloat
+```
+
+48 points: large separations on the first-run and message screens.
+
+## `NopeSpace/xxs`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let xxs: CGFloat
+```
+
+4 points: the gap between a symbol and its text in a pill, inside the lens group, and
+between manual readouts.
+
+## `NopeTileLabel`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeTileLabel
+```
+
+A tile's content: the name on top (``NopeFont/tileName``, up to two lines, in the secondary
+style), then the symbol and the value (``NopeFont/tileValue``). Inside a button, VoiceOver
+reads the name, then the value ("Grid, Thirds").
+
+## `NopeTileLabel/body`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The name over the symbol and value.
+
+## `NopeTileLabel/init(name:value:systemImage:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(name: Text, value: Text, systemImage: String? = nil)
+```
+
+Creates a tile's content.
+
+- Parameters:
+  - name: The tile's name.
+  - value: The tile's value.
+  - systemImage: The SF Symbol before the value, or `nil` for none.
+
+## `NopeTileLabel/name`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let name: Text
+```
+
+The tile's name, such as "Grid".
+
+## `NopeTileLabel/systemImage`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let systemImage: String?
+```
+
+The SF Symbol before the value, or `nil` for none.
+
+## `NopeTileLabel/value`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let value: Text
+```
+
+The tile's value, such as "Thirds" or "Off".
+
+## `NopeTileStyle`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor struct NopeTileStyle
+```
+
+A tile: a name over a symbol and value, in a rounded rectangle (docs/design/tokens.md, "Tile").
+Use it for the Q tiles and the manual readouts; ``NopeTileLabel`` lays out a tile's content.
+
+Off, it is a 30% gray over the backing (``NopeMaterial/tile``); on, filled white with a black
+label. The label's foreground style is the value's color; the name's color is in the
+environment, as `nopeSecondaryLabel`.
+
+```swift
+Button(action: toggleGrid) {
+    NopeTileLabel(name: gridTitle, value: gridValue, systemImage: "grid")
+}
+.buttonStyle(NopeTileStyle(isOn: isGridOn))
+```
+
+## `NopeTileStyle/alignment`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let alignment: Alignment
+```
+
+Where the content sits inside the tile.
+
+## `NopeTileStyle/init(isOn:minHeight:alignment:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor init(isOn: Bool, minHeight: CGFloat = NopeSize.tileMin, alignment: Alignment = .leading)
+```
+
+Creates the style.
+
+- Parameters:
+  - isOn: Whether the tile is on.
+  - minHeight: The smallest height in points: ``NopeSize/tileMin`` (56) for a Q tile,
+    ``NopeSize/readout`` (48) for a manual readout. The tile grows when its name wraps.
+  - alignment: Where the content sits: leading for a Q tile, centered for a readout.
+
+## `NopeTileStyle/isOn`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let isOn: Bool
+```
+
+Whether the tile is on.
+
+## `NopeTileStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled tile.
+
+- Parameter configuration: The tile's label and press state.
+
+## `NopeTileStyle/minHeight`
+
+internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
+
+```swift
+@MainActor let minHeight: CGFloat
+```
+
+The smallest height, in points.
+
+## `OpenSettingsAction`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+struct OpenSettingsAction
+```
+
+Opens Settings at an item. Call it like a function with a ``SettingsID``.
+
+## `OpenSettingsAction/callAsFunction(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func callAsFunction(_ id: SettingsID)
+```
+
+Opens Settings at the item.
+
+- Parameter id: The page or row to show.
+
+## `OpenSettingsAction/init(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+init(_ handler: @escaping @MainActor (SettingsID) -> Void)
+```
+
+Creates the action.
+
+- Parameter handler: Opens Settings at the item, on the main actor.
+
 ## `OverlaySettingsView`
 
 internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
@@ -6375,7 +10643,8 @@ internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 
 The viewfinder overlays: grid and its style, level, focus peaking, histogram and live camera
 readout, each its own switch, all off by default (issues #40, #47, #51 and #52). Settings
-links to it from its Camera section.
+links to it from its Screen section, with a value that names what is on. Grid, Level, Focus
+Peaking and the readout are also Q tiles; each changes the same value.
 
 The screen renders `NopeSettings` and changes it only through its methods.
 
@@ -6388,6 +10657,16 @@ internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 ```
 
 The form.
+
+## `OverlaySettingsView/focusPeakingTitle`
+
+internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+
+```swift
+@MainActor static var focusPeakingTitle: Text { get }
+```
+
+"Focus Peaking".
 
 ## `OverlaySettingsView/gridTitle`
 
@@ -6421,19 +10700,6 @@ internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 
 "Level".
 
-## `OverlaySettingsView/link(settings:)`
-
-internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
-
-```swift
-@MainActor static func link(settings: NopeSettings) -> some View
-
-```
-
-A navigation row to the overlays, showing "On" when any is on.
-
-- Parameter settings: The settings.
-
 ## `OverlaySettingsView/name(of:)`
 
 internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
@@ -6445,6 +10711,19 @@ internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 The name of a grid style.
 
 - Parameter style: The style.
+
+## `OverlaySettingsView/onNames(of:)`
+
+internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+
+```swift
+@MainActor static func onNames(of options: OverlayOptions) -> [LocalizedStringResource]
+```
+
+The names of the overlays that are on, in the order of the page.
+
+- Parameter options: The overlay options.
+- Returns: The names.
 
 ## `OverlaySettingsView/rowTitle`
 
@@ -6466,15 +10745,20 @@ internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 
 The settings to show and change.
 
-## `OverlaySettingsView/turnSpiralTitle`
+## `OverlaySettingsView/summary(of:)`
 
 internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
 
 ```swift
-@MainActor static var turnSpiralTitle: Text { get }
+@MainActor static func summary(of options: OverlayOptions) -> Text
 ```
 
-"Turn Spiral".
+The Settings row's value: "Off"; the names when one or two overlays are on ("Grid,
+Level"); a count from three ("3 On"). Keep Readout in Clean View is part of the readout,
+not an overlay of its own.
+
+- Parameter options: The overlay options.
+- Returns: The value text.
 
 ## `PeakingShape`
 
@@ -6601,6 +10885,35 @@ Why an optional item isn't in the files.
 - Parameter state: What happened to the item.
 - Returns: The reason, from `Honesty.xcstrings`.
 
+## `PhotoDetailsSections/signatureStyle(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func signatureStyle(_ signature: SignatureStatus) -> AnyShapeStyle
+```
+
+The color of the signature row's symbol: teal for a verified fact, the secondary text
+color for plain information, amber for a warning.
+
+- Parameter signature: The photo's signature status.
+- Returns: The symbol's style.
+
+## `PhotoDetailsSections/signatureSymbol(_:)`
+
+internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
+
+```swift
+@MainActor static func signatureSymbol(_ signature: SignatureStatus) -> String
+```
+
+The symbol of the signature row: the seal when signed; the info symbol when signing is
+off in Settings, which is the person's choice and not a problem (`docs/design/BUILD-SPEC.md`,
+3.9); the warning triangle when a photo couldn't be signed.
+
+- Parameter signature: The photo's signature status.
+- Returns: An SF Symbol name.
+
 ## `PhotoDetailsSheet`
 
 internal, declared in `Sources/NopeUI/PhotoDetailsSheet.swift`
@@ -6675,7 +10988,7 @@ internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
 The photo size of each lens that offers more than one (issue #57): a pushed-list picker per
 lens, with the sizes the lens reports and a plain explanation.
 
-Advanced option: Settings links here only when a lens offers a choice
+Advanced option: Settings shows its row only when a lens offers a choice
 (`Lens.photoSizeChoices`), which is a lens without Bayer RAW; a Bayer RAW lens always takes
 the sensor's binned RAW. The default is the smallest size, as before this option existed.
 The rules are in `Lens` and `NopeSettings`; this view only shows them.
@@ -6727,21 +11040,6 @@ The lenses that offer a choice of photo size.
 - Parameter lenses: The device's lenses.
 - Returns: Those with `Lens.photoSizeChoices`.
 
-## `PhotoSizeSettingsView/link(settings:lenses:)`
-
-internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
-
-```swift
-@ViewBuilder @MainActor static func link(settings: NopeSettings, lenses: [Lens]) -> some View
-
-```
-
-A navigation row to the screen, or nothing when no lens offers a choice.
-
-- Parameters:
-  - settings: The settings.
-  - lenses: The device's lenses.
-
 ## `PhotoSizeSettingsView/rowTitle`
 
 internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
@@ -6761,6 +11059,22 @@ internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
 ```
 
 The settings to show and change.
+
+## `PhotoSizeSettingsView/summary(settings:lenses:)`
+
+internal, declared in `Sources/NopeUI/PhotoSizeSettingsView.swift`
+
+```swift
+@MainActor static func summary(settings: NopeSettings, lenses: [Lens]) -> Text
+```
+
+The Settings row's value: "Default" while every lens takes photos at its default size,
+"Custom" otherwise. Settings shows the row only when a lens offers a choice.
+
+- Parameters:
+  - settings: The settings.
+  - lenses: The device's lenses.
+- Returns: The value text.
 
 ## `PhotoSizeSettingsView/title(of:)`
 
@@ -6783,7 +11097,7 @@ internal, declared in `Sources/NopeUI/PresetsScreen.swift`
 @MainActor struct PresetNameScreen
 ```
 
-Names a new preset, or renames or deletes a saved one.
+Names a new preset, or renames a saved one. Deleting is in the preset's More menu.
 
 ## `PresetNameScreen/body`
 
@@ -6840,6 +11154,84 @@ internal, declared in `Sources/NopeUI/PresetsScreen.swift`
 
 The presets.
 
+## `PresetRow`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor struct PresetRow
+```
+
+A saved preset's row: its name, which applies it, and a More menu with Rename and Delete,
+also offered as swipe actions and VoiceOver actions. Delete asks first, in a confirmation
+anchored to the More button (a popover on iPad).
+
+## `PresetRow/apply`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let apply: () -> Void
+```
+
+Applies the preset.
+
+## `PresetRow/body`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The name and the More menu.
+
+## `PresetRow/delete`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let delete: () -> Void
+```
+
+Deletes the preset, once confirmed.
+
+## `PresetRow/init(preset:apply:rename:delete:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor init(preset: SettingsPreset, apply: @escaping () -> Void, rename: @escaping () -> Void, delete: @escaping () -> Void)
+```
+
+Creates the row.
+
+- Parameters:
+  - preset: The preset.
+  - apply: Applies the preset.
+  - rename: Opens the Rename Preset page.
+  - delete: Deletes the preset, once confirmed.
+
+## `PresetRow/preset`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let preset: SettingsPreset
+```
+
+The preset.
+
+## `PresetRow/rename`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+@MainActor let rename: () -> Void
+```
+
+Opens the Rename Preset page.
+
 ## `PresetText`
 
 internal, declared in `Sources/NopeUI/PresetsScreen.swift`
@@ -6849,6 +11241,29 @@ enum PresetText
 ```
 
 The words of the presets screens.
+
+## `PresetText/delete`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let delete: Text
+```
+
+"Delete", in a preset's More menu.
+
+## `PresetText/deleteTitle(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func deleteTitle(_ name: String) -> String
+```
+
+The delete confirmation's title, "Delete “NAME”?".
+
+- Parameter name: The preset's name.
+- Returns: The localized title.
 
 ## `PresetText/factoryDefaults`
 
@@ -6869,6 +11284,19 @@ static let factoryDefaultsExplanation: Text
 ```
 
 What Factory Defaults does.
+
+## `PresetText/more(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func more(_ name: String) -> Text
+```
+
+The More menu's name, "More for NAME".
+
+- Parameter name: The preset's name.
+- Returns: The localized name.
 
 ## `PresetText/notice(_:)`
 
@@ -6895,6 +11323,29 @@ Why a name can't be saved.
 
 - Parameter problem: The problem.
 - Returns: The sentence.
+
+## `PresetText/rename`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static let rename: Text
+```
+
+"Rename", in a preset's More menu.
+
+## `PresetText/savedCount(_:)`
+
+internal, declared in `Sources/NopeUI/PresetsScreen.swift`
+
+```swift
+static func savedCount(_ count: Int) -> Text
+```
+
+The Presets row's value in Settings: "None Saved" or "2 Saved".
+
+- Parameter count: The number of saved presets.
+- Returns: The localized value.
 
 ## `PresetText/summary(of:)`
 
@@ -6940,8 +11391,10 @@ internal, declared in `Sources/NopeUI/PresetsScreen.swift`
 ```
 
 The settings presets (issue #72): Factory Defaults and the saved presets, each applied with
-one tap, the result of the last apply with an Undo button, and links to save the current
-settings and to rename or delete saved presets.
+one tap, the result of the last apply with an Undo button, and a link to save the current
+settings. Each saved preset has a More menu (Rename, Delete), with the same two as swipe and
+VoiceOver actions; Rename pushes the Rename Preset page and Delete asks first
+(`docs/design/BUILD-SPEC.md`, 3.9). No page is more than two levels below Settings.
 
 The same list opens from Settings (pushed) and from the Presets item of the quick-controls
 tray (``PresetsSheet``), and applying works the same from both. A preset is applied only when
@@ -6984,23 +11437,6 @@ Creates the list.
   - presets: The presets.
   - settings: The settings.
   - camera: The camera, or `nil`.
-
-## `PresetsScreen/link(presets:settings:camera:)`
-
-internal, declared in `Sources/NopeUI/PresetsScreen.swift`
-
-```swift
-@MainActor static func link(presets: SettingsPresets, settings: NopeSettings, camera: CameraModel?) -> some View
-
-```
-
-The Presets row in Settings, with the number of saved presets.
-
-- Parameters:
-  - presets: The presets.
-  - settings: The settings.
-  - camera: The camera, or `nil`.
-- Returns: The link.
 
 ## `PresetsScreen/presets`
 
@@ -7095,13 +11531,15 @@ internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
 @MainActor struct PrivacySettingsView
 ```
 
-The metadata switches, the signing switch and the locked items, as in `docs/PRIVACY.md`,
-"Metadata plan".
+Details in Each Photo: the metadata switches and the locked items, as in `docs/PRIVACY.md`,
+"Metadata plan" (`docs/design/BUILD-SPEC.md`, 3.10; it replaces Choose Details and the
+master switch that was also on the Settings list).
 
-The master switch comes first, then one switch per optional item with what turning it off
-costs, then the Standard File Tags switch (outside the master switch, on by default), then the
-items every file keeps, each marked locked with the reason. The signing switch
-is on the Settings screen itself, outside the master switch. All wording is a privacy claim, so it lives in
+Sections, in order: Remove All Optional Details with its explanation; Location, with the
+access notice and Open Settings under it when access is refused; Other Details, one switch
+per other optional item with what turning it off costs; Standard File Tags (outside the
+master switch, on by default); Always Saved, the items every file keeps, each locked with the
+reason. The signing switch is on the Settings list itself, outside the master switch. All wording is a privacy claim, so it lives in
 `Honesty.xcstrings` (AGENTS.md, "Honesty wording is kept apart"). The rules are in
 `MetadataSettings`; this view only shows them.
 
@@ -7184,7 +11622,8 @@ internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
 @MainActor static func summary(of metadata: MetadataSettings) -> Text
 ```
 
-The settings row's value: "All Removed" or "Custom".
+The settings row's value: "All Optional Removed", "Custom, Location On" or "Custom", so
+the list answers whether a location is written without opening the page.
 
 - Parameter metadata: The metadata settings.
 - Returns: The summary text.
@@ -7197,7 +11636,7 @@ internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
 @MainActor static var title: Text { get }
 ```
 
-The settings row and screen title, "Choose Details".
+The settings row and screen title, "Details in Each Photo".
 
 ## `PrivacySettingsView/title(of:)`
 
@@ -7217,7 +11656,7 @@ A locked item's name.
 internal, declared in `Sources/NopeUI/PrivacySettingsView.swift`
 
 ```swift
-@MainActor static func title(of item: MetadataItem) -> LocalizedStringResource
+nonisolated static func title(of item: MetadataItem) -> LocalizedStringResource
 ```
 
 An optional item's name.
@@ -7233,11 +11672,15 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 @MainActor struct ProToolsSheet
 ```
 
-The exposure mode, metering, AE and AF locks, exposure bracketing and interval shooting, in a
-standard form, opened from the last button of the manual controls row.
+The exposure mode, metering, AE and AF locks, exposure bracketing and the live aids, in a
+standard form, opened from More at the end of the manual readout row
+(docs/design/BUILD-SPEC.md, 3.4).
 
-Each section appears only when the selected lens supports it. Like the camera it covers, the
-sheet is dark in either system setting (``ScreenAppearance/camera``).
+Interval shooting is not here: the drive strip and its card are its one home, so no second
+Start button behaves differently (docs/design/SETTINGS-PLAN.md, decision 8). Each section
+appears only when the selected lens supports it. Like the camera it covers, the sheet is dark
+in either system setting (``ScreenAppearance/camera``), and it covers the whole window on
+every device.
 
 ## `ProToolsSheet/body`
 
@@ -7284,59 +11727,164 @@ internal, declared in `Sources/NopeUI/ProToolsSheet.swift`
 
 The person's settings, for the live aid switches, or `nil` to leave them out.
 
-## `QuickControlButton`
+## `ProcessingNote`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
 
 ```swift
-@MainActor struct QuickControlButton
+@MainActor struct ProcessingNote
 ```
 
-One tray item: its symbol above its name, filled white when on.
+The processing note of a lens without Bayer RAW (issue #80; docs/design/BUILD-SPEC.md, 3.2),
+opened from the "Processed" marker: what the phone does on this lens, then what the app does.
 
-## `QuickControlButton/body`
+Two sections, each paragraph its own row, so VoiceOver reads them one at a time and the form
+scrolls between them at the largest text sizes:
+- **What the Phone Does on This Lens**: the phone's camera processes the file before the app
+  receives it, and the app can't turn that off (AVFoundation offers no switch for a processed
+  photo's pipeline). Then the lens's distortion correction as the camera reports it
+  (`Lens/distortionCorrection`). No processing step is named unless it is verified.
+- **What nope. Does**: nothing more to this lens's file (`PhotoSaver` saves the camera's file
+  as it is); HEIF and JPEG copies developed from a RAW get the chosen look (`DevelopedLook`).
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+The wording is a processing claim, so it lives in `Honesty.xcstrings` (AGENTS.md, "Honesty
+wording is kept apart"); it is a draft for the Honesty review (BUILD-SPEC.md, section 5).
+
+## `ProcessingNote/body`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
 
 ```swift
 @MainActor var body: some View { get }
 ```
 
-The control.
+The note's two sections.
 
-## `QuickControlButton/close`
+## `ProcessingNote/distortion(_:)`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
-
-```swift
-@MainActor let close: () -> Void
-```
-
-Closes the tray after a button's action.
-
-## `QuickControlButton/init(item:close:)`
-
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
 
 ```swift
-@MainActor init(item: QuickControlItem, close: @escaping () -> Void)
+@MainActor static func distortion(_ correction: DistortionCorrection) -> Text
 ```
 
-Creates the item's control.
+Whether a lens lets the app turn off distortion correction, in plain words. Also used in
+the photo's details.
+
+- Parameter correction: The lens's distortion correction.
+- Returns: The sentence.
+
+## `ProcessingNote/distortionCorrection`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor let distortionCorrection: DistortionCorrection
+```
+
+Whether the lens lets the app turn off distortion correction.
+
+## `ProcessingNote/init(distortionCorrection:look:)`
+
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
+
+```swift
+@MainActor init(distortionCorrection: DistortionCorrection, look: DevelopedLook)
+```
+
+Creates the note.
 
 - Parameters:
-  - item: The item.
-  - close: Closes the tray after a button's action.
+  - distortionCorrection: Whether the lens lets the app turn off distortion correction.
+  - look: The look of the HEIF and JPEG copies developed from a RAW.
 
-## `QuickControlButton/item`
+## `ProcessingNote/look`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/ProcessingNote.swift`
 
 ```swift
-@MainActor let item: QuickControlItem
+@MainActor let look: DevelopedLook
 ```
 
-The item.
+The look of the HEIF and JPEG copies developed from a RAW.
+
+## `QuickButton`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor struct QuickButton
+```
+
+Q, beside the shutter: opens and closes the quick menu (docs/design/BUILD-SPEC.md, 3.6). It is
+filled white while the menu is open. Its name, "Quick Menu", is what VoiceOver reads and what
+Voice Control users say; the Large Content Viewer shows it.
+
+## `QuickButton/action`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor let action: () -> Void
+```
+
+Opens or closes the quick menu.
+
+## `QuickButton/body`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The button.
+
+## `QuickButton/init(isOpen:size:action:)`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor init(isOpen: Bool, size: CGFloat = NopeSize.quick, action: @escaping () -> Void)
+```
+
+Creates the button.
+
+- Parameters:
+  - isOpen: Whether the quick menu is open.
+  - size: The diameter, in points.
+  - action: Opens or closes the quick menu.
+
+## `QuickButton/isOpen`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor let isOpen: Bool
+```
+
+Whether the quick menu is open.
+
+## `QuickButton/name`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor static var name: Text { get }
+```
+
+"Quick Menu".
+
+## `QuickButton/size`
+
+internal, declared in `Sources/NopeUI/LensRow.swift`
+
+```swift
+@MainActor let size: CGFloat
+```
+
+The diameter: ``NopeSize/quick``, or ``NopeSize/scrollingRowButton`` in the scrolling
+layout.
 
 ## `QuickControlItem`
 
@@ -7346,11 +11894,11 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 struct QuickControlItem
 ```
 
-One item of the quick-controls tray, such as Hide Controls (issue #68, "Quick-controls
-tray").
+One tile of the quick menu, Q (docs/design/BUILD-SPEC.md, 3.6), such as Grid or Night Mode.
 
-An item is a button, a switch, or a native menu of values. Switches and menus show their
-current state in words for VoiceOver; an item that is on is filled white.
+An item is a button, a switch, or a native menu of values. Its tile shows the name on top,
+then the symbol and the current value ("Grid", "Thirds"); a tile that is on is filled white.
+VoiceOver reads the name, then the value.
 
 ## `QuickControlItem/Kind`
 
@@ -7370,7 +11918,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 case button(@MainActor () -> Void)
 ```
 
-Does one thing, then the tray closes.
+Does one thing, then the panel closes.
 
 ## `QuickControlItem/Kind/menu(_:)`
 
@@ -7380,7 +11928,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 case menu([Option])
 ```
 
-Chooses one value from a native menu.
+Chooses one value from a native menu. The panel stays open.
 
 ## `QuickControlItem/Kind/toggle(isOn:set:)`
 
@@ -7390,7 +11938,8 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 case toggle(isOn: Bool, set: @MainActor (Bool) -> Void)
 ```
 
-Turns something on or off: `isOn` is the current state, `set` changes it.
+Turns something on or off: `isOn` is the current state, `set` changes it. The panel
+stays open.
 
 ## `QuickControlItem/Option`
 
@@ -7400,7 +11949,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 struct Option
 ```
 
-One value of a menu item, such as "3 s" for a timer.
+One value of a menu item, such as "Thirds" for the grid.
 
 ## `QuickControlItem/Option/id`
 
@@ -7458,6 +12007,39 @@ let title: Text
 
 The value's name.
 
+## `QuickControlItem/closesPanel`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+var closesPanel: Bool { get }
+```
+
+Whether pressing the tile closes the panel: a button does; a switch or a menu doesn't,
+so several can be changed in a row.
+
+## `QuickControlItem/customIsOn`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+var customIsOn: Bool?
+```
+
+Whether the tile is drawn as on when that isn't what the kind gives (``isOn``), such as
+Exposure while its compensation isn't 0; `nil` for the kind's own state.
+
+## `QuickControlItem/customValue`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+var customValue: Text?
+```
+
+The value shown on the tile when it isn't the one the kind gives (``value``), such as a
+percentage for Light or "2 Saved" for Presets; `nil` for the kind's own value.
+
 ## `QuickControlItem/id`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
@@ -7466,14 +12048,14 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 let id: String
 ```
 
-A stable identifier, such as "hideControls".
+A stable identifier, such as "grid". The UI tests find a tile by it.
 
-## `QuickControlItem/init(id:title:systemImage:kind:)`
+## `QuickControlItem/init(id:title:systemImage:kind:value:isOn:)`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-init(id: String, title: Text, systemImage: String, kind: Kind)
+init(id: String, title: Text, systemImage: String, kind: Kind, value: Text? = nil, isOn: Bool? = nil)
 ```
 
 Creates an item.
@@ -7483,6 +12065,8 @@ Creates an item.
   - title: The item's name.
   - systemImage: The SF Symbol.
   - kind: What it does.
+  - value: The value to show instead of the kind's own, or `nil`.
+  - isOn: Whether the tile is on, instead of what the kind gives, or `nil`.
 
 ## `QuickControlItem/isOn`
 
@@ -7493,7 +12077,7 @@ var isOn: Bool { get }
 ```
 
 Whether the item is on: a switch that is on, or a menu whose value isn't its first
-(default) option.
+(default) option, unless the item says otherwise.
 
 ## `QuickControlItem/kind`
 
@@ -7513,7 +12097,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 let systemImage: String
 ```
 
-The SF Symbol.
+The SF Symbol shown before the value.
 
 ## `QuickControlItem/title`
 
@@ -7523,7 +12107,18 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 let title: Text
 ```
 
-The item's name, shown under its symbol and read by VoiceOver.
+The item's name, shown on top of its tile and read by VoiceOver.
+
+## `QuickControlItem/value`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+var value: Text? { get }
+```
+
+The value on the tile: the item's own value if it has one; otherwise On or Off for a
+switch, the chosen option's name for a menu, and nothing for a button.
 
 ## `QuickControls`
 
@@ -7533,26 +12128,14 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 @MainActor enum QuickControls
 ```
 
-The registry of quick-controls tray items, in display order. Each camera toggle adds one
-function here; the tray shows whatever the functions return for the current lens and
-settings (`nil` hides an item the device can't do).
+The registry of quick-menu tiles, in display order. Each feature adds one function here; the
+panel shows whatever the functions return for the current lens and settings (`nil` hides a
+tile the device can't do or that doesn't apply, such as Far Focus in full auto).
 
-The planned order is Light, Flash, Drive, Exposure, Grid, Level, Fast Shutter, Night, then
-Hide Controls last (issue #68); Presets (issue #72) comes just before Night.
-
-## `QuickControls/astro(_:)`
-
-internal, declared in `Sources/NopeUI/AstroControls.swift`
-
-```swift
-@MainActor static func astro(_ context: CameraControlContext) -> QuickControlItem?
-```
-
-Astro: the night sky helper (issue #60). Shown on a lens it can use, or while it is on.
-Turning it on also turns night mode on (issue #60: "turns it on by default"); turning it
-off leaves night mode as it is.
-
-- Parameter context: The model and settings.
+The order is Flash, Light, Exposure, Close-Up, Far Focus, Fast Shutter, Magnify, Focus
+Peaking, Grid, Level, Readout, Night Mode, Compare, Presets (docs/design/BUILD-SPEC.md, 3.6):
+thirteen tiles in full auto on a device with every feature, in five rows of three. Drive and
+Astro are on the drive strip, and Hide Controls is a button in the panel's foot.
 
 ## `QuickControls/builders`
 
@@ -7562,8 +12145,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 @MainActor static let builders: [@MainActor (CameraControlContext) -> QuickControlItem?]
 ```
 
-Every item builder, in display order. Add a feature's builder here, before
-``hideControls(_:)``.
+Every item builder, in display order.
 
 ## `QuickControls/closeUp(_:)`
 
@@ -7598,21 +12180,7 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 @MainActor static func current(_ context: CameraControlContext) -> [QuickControlItem]
 ```
 
-The tray's items for the current state, in display order.
-
-- Parameter context: The model and settings.
-
-## `QuickControls/drive(_:)`
-
-internal, declared in `Sources/NopeUI/DriveControls.swift`
-
-```swift
-@MainActor static func drive(_ context: CameraControlContext) -> QuickControlItem?
-```
-
-Drive: a menu of single, the 3 and 10 second self-timer, burst and interval shooting
-(issue #68). Choosing Interval Shooting also opens its settings (``IntervalSheet``).
-Bracketing stays in Pro Tools, behind the manual controls.
+The tiles for the current state, in display order.
 
 - Parameter context: The model and settings.
 
@@ -7624,8 +12192,10 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 @MainActor static func exposure(_ context: CameraControlContext) -> QuickControlItem?
 ```
 
-Exposure: opens the exposure compensation dial in full auto (issue #41). Shown when the
-lens can compensate and manual controls are off; with them on, the readout row has it.
+Exposure: opens the exposure compensation dial in full auto (issue #41) and closes the
+panel. Shown when the lens can compensate and manual controls are off; with them on, the
+readout row has it. Its value is the compensation, such as "+0.7", and it is on while
+that isn't 0.
 
 - Parameter context: The model and settings.
 
@@ -7652,7 +12222,8 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Fast Shutter: how fast a shutter full auto prefers (issue #56), the same choice as in
-Settings. Shown while manual controls are off, where it applies.
+Settings. Shown while manual controls are off, where it applies. Its value is short:
+Standard, 1/500 or 1/1000.
 
 - Parameter context: The model and settings.
 
@@ -7665,7 +12236,22 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Flash: Off, Auto or On (issue #38). Shown only on a lens with a flash, with the modes the
-lens supports.
+lens supports. The menu names each mode in full ("Flash Auto"); the tile's value is the
+short word.
+
+- Parameter context: The model and settings.
+
+## `QuickControls/focusPeaking(_:)`
+
+internal, declared in `Sources/NopeUI/OverlaySettingsView.swift`
+
+```swift
+@MainActor static func focusPeaking(_ context: CameraControlContext) -> QuickControlItem?
+```
+
+Focus Peaking: a switch for the same value as Settings › Viewfinder Overlays and Pro Tools
+(`docs/design/BUILD-SPEC.md`, 3.6; decision 7.7), so it is two taps away in full auto
+too. Shown in full auto and with manual controls on, wherever the live aids can run.
 
 - Parameter context: The model and settings.
 
@@ -7686,11 +12272,11 @@ Grid: a menu of Off and each grid style.
 internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-@MainActor static func hideControls(_ context: CameraControlContext) -> QuickControlItem?
+@MainActor static func hideControls(_ context: CameraControlContext) -> QuickControlItem
 ```
 
 Hide Controls: clean view, which leaves only the shutter, a Show Controls button and any
-warnings.
+warnings. It is the first button of the panel's foot, not a tile.
 
 - Parameter context: The model and settings.
 
@@ -7715,7 +12301,8 @@ internal, declared in `Sources/NopeUI/QuickControls.swift`
 ```
 
 Light: the torch, a steady light for close subjects in the dark (issue #38). Shown only
-on a lens with a torch. Its brightness is on the Light pill that appears while it is on.
+on a lens with a torch. Its value is Off or the brightness, such as "25%"; the Light pill
+that appears while it is on changes the brightness.
 
 - Parameter context: The model and settings.
 
@@ -7772,127 +12359,1069 @@ camera).
 
 - Parameter context: The model and settings.
 
-## `QuickControlsButton`
+## `QuickControls/presetsValue(_:)`
 
-internal, declared in `Sources/NopeUI/LensRow.swift`
-
-```swift
-@MainActor struct QuickControlsButton
-```
-
-The ⋯ button at the end of the lens row: opens and closes the quick-controls tray.
-
-## `QuickControlsButton/action`
-
-internal, declared in `Sources/NopeUI/LensRow.swift`
+internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-@MainActor let action: () -> Void
+@MainActor static func presetsValue(_ context: CameraControlContext) -> Text
 ```
 
-Opens or closes the tray.
+The Presets tile's value: how many presets are saved ("2 Saved"), or None Saved.
 
-## `QuickControlsButton/body`
+- Parameter context: The model and settings.
 
-internal, declared in `Sources/NopeUI/LensRow.swift`
+## `QuickControls/readoutValue(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-@MainActor var body: some View { get }
+@MainActor static func readoutValue(_ context: CameraControlContext) -> Text
 ```
 
-The button.
+The Readout tile's value: Off, On, or Pinned while the readout stays in clean view.
 
-## `QuickControlsButton/init(isOpen:action:)`
+- Parameter context: The model and settings.
 
-internal, declared in `Sources/NopeUI/LensRow.swift`
+## `QuickControls/withValue(_:_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-@MainActor init(isOpen: Bool, action: @escaping () -> Void)
+@MainActor static func withValue(_ builder: @escaping @MainActor (CameraControlContext) -> QuickControlItem?, _ value: @escaping @MainActor (CameraControlContext) -> Text) -> @MainActor (CameraControlContext) -> QuickControlItem?
 ```
 
-Creates the button.
+A builder whose item shows a value worked out here, for builders that live in other
+files and show something other than their menu's option name or a switch's On or Off.
 
 - Parameters:
-  - isOpen: Whether the tray is open.
-  - action: Opens or closes the tray.
+  - builder: The item's builder.
+  - value: The value to show.
+- Returns: The builder with the value added.
 
-## `QuickControlsButton/isOpen`
-
-internal, declared in `Sources/NopeUI/LensRow.swift`
-
-```swift
-@MainActor let isOpen: Bool
-```
-
-Whether the tray is open.
-
-## `QuickControlsTray`
+## `QuickControlsText`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
 
 ```swift
-@MainActor struct QuickControlsTray
+enum QuickControlsText
 ```
 
-The quick-controls tray: one scrolling row of items that takes the lens row's place while it
-is open, or, over the picture in the iPad column layout, rows that wrap so every item shows
-whole (a row scrolled under the picture's edge cut the last item there). It closes when an
-item's action runs, on the shutter, or on a tap outside.
+The quick menu's own words: tile values and the foot's buttons.
 
-## `QuickControlsTray/body`
+## `QuickControlsText/done`
 
 internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var done: Text { get }
+```
+
+"Done", which closes the list at accessibility text sizes.
+
+## `QuickControlsText/hideControls`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var hideControls: Text { get }
+```
+
+"Hide Controls", the first button of the panel's foot.
+
+## `QuickControlsText/lightValue(_:requestedLevel:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static func lightValue(_ torch: TorchStatus, requestedLevel: Double) -> Text
+```
+
+The Light tile's value: the brightness while the light is on or waiting for the camera,
+Light Unavailable when the system refused it, and Off otherwise.
+
+- Parameters:
+  - torch: The light's state.
+  - requestedLevel: The brightness the person chose, from 0 to 1, shown while waiting.
+
+## `QuickControlsText/off`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var off: Text { get }
+```
+
+"Off", the value of a switch tile that is off.
+
+## `QuickControlsText/on`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var on: Text { get }
+```
+
+"On", the value of a switch tile that is on.
+
+## `QuickControlsText/pinned`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var pinned: Text { get }
+```
+
+"Pinned", the Readout tile's value while the readout stays in clean view.
+
+## `QuickControlsText/saved(_:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static func saved(_ count: Int) -> Text
+```
+
+How many presets are saved: "2 Saved", or "None Saved" for none.
+
+- Parameter count: The number of saved presets.
+
+## `QuickControlsText/settings`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var settings: Text { get }
+```
+
+"Settings", the second button of the panel's foot.
+
+## `QuickControlsText/shortName(of:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static func shortName(of choice: FastShutter) -> Text
+```
+
+A fast shutter choice's short name on its tile: Standard, 1/500 or 1/1000. The fractions
+are shutter speeds, written the same in every language, as on the manual readouts.
+
+- Parameter choice: The choice.
+
+## `QuickControlsText/shortName(of:)`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static func shortName(of mode: FlashMode) -> Text
+```
+
+A flash mode's short name on its tile: Off, Auto or On.
+
+- Parameter mode: The flash mode.
+
+## `QuickControlsText/title`
+
+internal, declared in `Sources/NopeUI/QuickControls.swift`
+
+```swift
+static var title: Text { get }
+```
+
+"Quick Menu": the name of the Q button, of the panel for VoiceOver, and the title of the
+list at accessibility text sizes.
+
+## `QuickListRow`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickListRow
+```
+
+One row of ``QuickMenuList``: the tile's name over its value, full width, as a button, a
+switch or a menu.
+
+## `QuickListRow/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
 
 ```swift
 @MainActor var body: some View { get }
 ```
 
-The row, or the wrapped rows.
+The row's control.
 
-## `QuickControlsTray/close`
+## `QuickListRow/close`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
 
 ```swift
 @MainActor let close: () -> Void
 ```
 
-Closes the tray.
+Closes the list after a button's action.
 
-## `QuickControlsTray/init(items:wraps:close:)`
+## `QuickListRow/init(item:close:)`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
 
 ```swift
-@MainActor init(items: [QuickControlItem], wraps: Bool = false, close: @escaping () -> Void)
+@MainActor init(item: QuickControlItem, close: @escaping () -> Void)
 ```
 
-Creates the tray.
+Creates a row.
 
 - Parameters:
-  - items: The items, in display order.
-  - wraps: Whether the items wrap into rows instead of scrolling.
-  - close: Closes the tray.
+  - item: The item.
+  - close: Closes the list after a button's action.
 
-## `QuickControlsTray/items`
+## `QuickListRow/item`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let item: QuickControlItem
+```
+
+The item.
+
+## `QuickListRowLabel`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickListRowLabel
+```
+
+A list row's content: the name in the body style, the value under it in the secondary color.
+
+## `QuickListRowLabel/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The name over the value.
+
+## `QuickListRowLabel/init(item:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(item: QuickControlItem)
+```
+
+Creates the view for an item.
+
+- Parameter item: The item.
+
+## `QuickListRowLabel/item`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let item: QuickControlItem
+```
+
+The item.
+
+## `QuickMenuList`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickMenuList
+```
+
+Q as a full-height list, for the scrolling layout at accessibility text sizes: the title and
+Done, then one row per tile, then Hide Controls and Settings. In this layout it is the only
+way to Settings (docs/design/BUILD-SPEC.md, 3.12).
+
+## `QuickMenuList/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The title bar over the rows.
+
+## `QuickMenuList/close`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the list.
+
+## `QuickMenuList/hideControls`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let hideControls: () -> Void
+```
+
+Turns on clean view.
+
+## `QuickMenuList/init(context:isPresented:openSettings:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(context: CameraControlContext, isPresented: Binding<Bool>, openSettings: @escaping () -> Void)
+```
+
+Creates the list for the camera, as ``QuickPanel/init(context:isPresented:openSettings:)``.
+
+- Parameters:
+  - context: The model and settings.
+  - isPresented: Whether Q is open; the list sets it to `false` to close.
+  - openSettings: Opens Settings.
+
+## `QuickMenuList/init(items:close:hideControls:openSettings:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(items: [QuickControlItem], close: @escaping () -> Void, hideControls: @escaping () -> Void, openSettings: @escaping () -> Void)
+```
+
+Creates the list from its parts.
+
+- Parameters:
+  - items: The tiles, in display order.
+  - close: Closes the list.
+  - hideControls: Turns on clean view.
+  - openSettings: Opens Settings.
+
+## `QuickMenuList/items`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
 
 ```swift
 @MainActor let items: [QuickControlItem]
 ```
 
-The items, in display order.
+The tiles, in display order.
 
-## `QuickControlsTray/wraps`
+## `QuickMenuList/openSettings`
 
-internal, declared in `Sources/NopeUI/QuickControls.swift`
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
 
 ```swift
-@MainActor let wraps: Bool
+@MainActor let openSettings: () -> Void
 ```
 
-Whether the items wrap into rows instead of scrolling.
+Opens Settings.
+
+## `QuickMenuPicker`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickMenuPicker
+```
+
+A menu item's values as a native picker, with a checkmark on the one in use.
+
+## `QuickMenuPicker/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The picker.
+
+## `QuickMenuPicker/init(item:options:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(item: QuickControlItem, options: [QuickControlItem.Option])
+```
+
+Creates the picker.
+
+- Parameters:
+  - item: The item, for the picker's name.
+  - options: The values.
+
+## `QuickMenuPicker/item`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let item: QuickControlItem
+```
+
+The item, for the picker's name.
+
+## `QuickMenuPicker/options`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let options: [QuickControlItem.Option]
+```
+
+The values.
+
+## `QuickPanel`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickPanel
+```
+
+Q's panel: every tile the camera offers now, in rows of up to three, then the foot with Hide
+Controls and Settings.
+
+It is drawn on the dark backing with large corners. It has no fixed height: when it would be
+taller than the space it is given, it scrolls. Switches and menus leave it open; a button
+tile (Exposure, Presets), Hide Controls and Settings close it. Escape, or the VoiceOver
+escape gesture, closes it, and VoiceOver focus moves to the first tile when it opens.
+
+## `QuickPanel/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The panel, scrolling when it doesn't fit.
+
+## `QuickPanel/close`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the panel.
+
+## `QuickPanel/hideControls`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let hideControls: () -> Void
+```
+
+Turns on clean view.
+
+## `QuickPanel/init(context:isPresented:openSettings:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(context: CameraControlContext, isPresented: Binding<Bool>, openSettings: @escaping () -> Void)
+```
+
+Creates the panel for the camera: the tiles of ``QuickControls`` for the context, with
+Hide Controls sending clean view to its model.
+
+- Parameters:
+  - context: The model and settings.
+  - isPresented: Whether Q is open; the panel sets it to `false` to close.
+  - openSettings: Opens Settings.
+
+## `QuickPanel/init(items:close:hideControls:openSettings:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(items: [QuickControlItem], close: @escaping () -> Void, hideControls: @escaping () -> Void, openSettings: @escaping () -> Void)
+```
+
+Creates the panel from its parts.
+
+- Parameters:
+  - items: The tiles, in display order.
+  - close: Closes the panel.
+  - hideControls: Turns on clean view.
+  - openSettings: Opens Settings.
+
+## `QuickPanel/items`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let items: [QuickControlItem]
+```
+
+The tiles, in display order.
+
+## `QuickPanel/openSettings`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let openSettings: () -> Void
+```
+
+Opens Settings.
+
+## `QuickPanelFoot`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickPanelFoot
+```
+
+The panel's foot: Hide Controls and Settings, side by side when both fit at their natural
+widths, otherwise one above the other (``SideBySideOrStacked``).
+
+## `QuickPanelFoot/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The two buttons.
+
+## `QuickPanelFoot/hideControls`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let hideControls: () -> Void
+```
+
+Turns on clean view.
+
+## `QuickPanelFoot/init(hideControls:openSettings:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(hideControls: @escaping () -> Void, openSettings: @escaping () -> Void)
+```
+
+Creates the foot.
+
+- Parameters:
+  - hideControls: Turns on clean view.
+  - openSettings: Opens Settings.
+
+## `QuickPanelFoot/openSettings`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let openSettings: () -> Void
+```
+
+Opens Settings.
+
+## `QuickTile`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickTile
+```
+
+One tile: a button, a switch or a menu, drawn with ``NopeTileStyle``.
+
+VoiceOver reads the name, then the value ("Grid, Thirds"); a switch has the selected trait
+while it is on. Voice Control uses the name.
+
+## `QuickTile/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The control.
+
+## `QuickTile/close`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the panel after a button's action.
+
+## `QuickTile/init(item:close:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(item: QuickControlItem, close: @escaping () -> Void)
+```
+
+Creates a tile.
+
+- Parameters:
+  - item: The item.
+  - close: Closes the panel after a button's action.
+
+## `QuickTile/item`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let item: QuickControlItem
+```
+
+The item.
+
+## `QuickTileGrid`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+struct QuickTileGrid
+```
+
+The tiles in rows of equal columns, three when every tile fits, otherwise two or one.
+
+Its subviews come in threes: each tile, then its name and its value, both hidden. A tile fits
+a column when its name and its value each wrap there only between words (``QuickTileMetrics/wordSafeWidth(singleLineWidth:characterWidth:laidOutWidth:)``).
+A `LazyVGrid` of flexible columns can't make that choice: its tiles fill whatever width they
+get, so a long word was broken across lines instead ("Third / s"). Tiles in a row share the
+tallest one's height. Right to left, SwiftUI mirrors the placement.
+
+## `QuickTileGrid/Cache`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+struct Cache
+```
+
+Each tile's narrowest width, worked out once per set of subviews.
+
+## `QuickTileGrid/Cache/init(requiredWidths:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+init(requiredWidths: [CGFloat])
+```
+
+Creates the cache.
+
+- Parameter requiredWidths: The narrowest width of each tile, in points, in order.
+
+## `QuickTileGrid/Cache/requiredWidths`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+var requiredWidths: [CGFloat]
+```
+
+The narrowest width of each tile, in points, in order.
+
+## `QuickTileGrid/breaksAnywhere`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+let breaksAnywhere: Bool
+```
+
+Whether names may break between any two characters (Japanese and Chinese).
+
+## `QuickTileGrid/init(spacing:breaksAnywhere:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+init(spacing: CGFloat, breaksAnywhere: Bool)
+```
+
+Creates the grid.
+
+- Parameters:
+  - spacing: The space between tiles, across and down, in points.
+  - breaksAnywhere: Whether names may break between any two characters.
+
+## `QuickTileGrid/makeCache(subviews:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func makeCache(subviews: Subviews) -> Cache
+```
+
+Measures every tile's narrowest width.
+
+- Parameter subviews: The tiles and their measuring copies.
+- Returns: The cache.
+
+## `QuickTileGrid/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache)
+```
+
+Places the tiles row by row from the leading edge, and the measuring copies out of sight.
+
+- Parameters:
+  - bounds: Where to place the tiles.
+  - proposal: The proposed size.
+  - subviews: The tiles and their measuring copies.
+  - cache: The tiles' narrowest widths.
+
+## `QuickTileGrid/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize
+```
+
+The grid's size: as wide as offered (or three of the widest tile), as tall as its rows.
+
+- Parameters:
+  - proposal: The proposed size.
+  - subviews: The tiles and their measuring copies.
+  - cache: The tiles' narrowest widths.
+- Returns: The grid's size.
+
+## `QuickTileGrid/spacing`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+let spacing: CGFloat
+```
+
+The space between tiles, across and down.
+
+## `QuickTileGrid/updateCache(_:subviews:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func updateCache(_ cache: inout Cache, subviews: Subviews)
+```
+
+Measures again when the subviews change.
+
+- Parameters:
+  - cache: The cache.
+  - subviews: The tiles and their measuring copies.
+
+## `QuickTileLabel`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickTileLabel
+```
+
+A tile's content: the name on top, in the secondary color, wrapping onto more lines rather
+than being cut; then the symbol and the value, on one line.
+
+``QuickTileGrid`` chooses a column count at which every word of every name and value fits, so
+a word such as "Thirds" is never broken mid-word; names and values wrap between words.
+
+## `QuickTileLabel/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The name over the value row.
+
+## `QuickTileLabel/init(item:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(item: QuickControlItem)
+```
+
+Creates the view for an item.
+
+- Parameter item: The item.
+
+## `QuickTileLabel/item`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let item: QuickControlItem
+```
+
+The item.
+
+## `QuickTileMetrics`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+enum QuickTileMetrics
+```
+
+The measurements behind the tile grid's column count, as plain functions, so they are tested
+without drawing.
+
+## `QuickTileMetrics/breaksAnywhere(languageCode:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static func breaksAnywhere(languageCode: String?) -> Bool
+```
+
+Whether names in a language may break between any two characters, as Japanese and
+Chinese are written without spaces between words; Korean, like the other launch
+languages, breaks between words.
+
+- Parameter languageCode: The language's code, such as "ja", or `nil`.
+- Returns: `true` for Japanese and Chinese.
+
+## `QuickTileMetrics/columnCount(requiredWidths:width:spacing:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static func columnCount(requiredWidths: [CGFloat], width: CGFloat, spacing: CGFloat) -> Int
+```
+
+The most columns, up to ``maxColumns``, at which every tile fits; one when even one
+column is too narrow.
+
+- Parameters:
+  - requiredWidths: Each tile's narrowest width, in points.
+  - width: The grid's width, in points.
+  - spacing: The space between columns, in points.
+- Returns: The column count.
+
+## `QuickTileMetrics/columnWidth(columns:width:spacing:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static func columnWidth(columns: Int, width: CGFloat, spacing: CGFloat) -> CGFloat
+```
+
+The width of each column for a column count.
+
+- Parameters:
+  - columns: The number of columns, at least 1.
+  - width: The grid's width, in points.
+  - spacing: The space between columns, in points.
+- Returns: The column width, in points.
+
+## `QuickTileMetrics/maxColumns`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static let maxColumns: Int
+```
+
+The most columns: three (docs/design/BUILD-SPEC.md, 3.6).
+
+## `QuickTileMetrics/rows(count:columns:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static func rows(count: Int, columns: Int) -> [Range<Int>]
+```
+
+The rows of a grid: the indexes of the tiles in each row, in reading order.
+
+- Parameters:
+  - count: The number of tiles.
+  - columns: The column count, at least 1.
+- Returns: The rows.
+
+## `QuickTileMetrics/tileHorizontalPadding`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static let tileHorizontalPadding: CGFloat
+```
+
+The space a tile adds on each side of its content: ``NopeTileStyle`` pads the content by
+``NopeSpace/s`` on the leading side and ``NopeSpace/xs`` on the trailing side.
+
+## `QuickTileMetrics/widestCharacterPerLineHeight`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static let widestCharacterPerLineHeight: CGFloat
+```
+
+The widest character as a share of a line's height: about 0.95 em for "W" in the system
+font, whose lines are about 1.2 em high. A word broken between characters fills its line
+to within one character; German and other languages also hyphenate, and a hyphenated
+line usually ends further from the edge, so the bound is kept as tight as it safely can
+be (a looser one stopped at a hyphenated "Kurze Verschluss-" and dropped to one column).
+Measured on the iOS 27.2 Simulator: "Kurze Verschlusszeit" at the largest standard size
+is 171 points on one line with lines 21.7 points high.
+
+## `QuickTileMetrics/wordSafeWidth(singleLineWidth:characterWidth:laidOutWidth:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+static func wordSafeWidth(singleLineWidth: CGFloat, characterWidth: CGFloat, laidOutWidth: (CGFloat) -> CGFloat) -> CGFloat
+```
+
+The narrowest width at which a text wraps only between words, found without knowing its
+words.
+
+Text that must wrap breaks between words while each word fits on a line, and in the
+middle of a word only when the word is wider than the line; a word broken that way fills
+its line to within a character of the width. So, from the one-line width, this asks for
+one point less each time and takes the width the text then lays out at; it stops at the
+last width before a layout filled its line to within `characterWidth`. A text whose
+lines happen to end that close to the edge stops early, which only asks for more room.
+
+- Parameters:
+  - singleLineWidth: The text's width on one line, in points.
+  - characterWidth: The widest a character can be, in points
+    (``widestCharacterPerLineHeight`` of the line height).
+  - laidOutWidth: The width the text takes when it is offered a width, in points.
+- Returns: The narrowest width without a word broken, in points.
+
+## `QuickTileValueRow`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickTileValueRow
+```
+
+A tile's symbol and value: side by side when both fit on one line; otherwise the symbol
+above the value, which then has the tile's whole width and wraps between its words ("None /
+Saved"). ``QuickTileGrid`` keeps every word of the value within the tile, so a value is never
+broken mid-word ("Stand / ard") or cut.
+
+A `ViewThatFits` of the two arrangements made the accessibility audit report "Text clipped"
+for the arrangement it didn't show; ``SymbolAndValueLayout`` measures instead.
+
+## `QuickTileValueRow/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The symbol and the value.
+
+## `QuickTileValueRow/init(item:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(item: QuickControlItem)
+```
+
+Creates the view for an item.
+
+- Parameter item: The item.
+
+## `QuickTileValueRow/item`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let item: QuickControlItem
+```
+
+The item.
+
+## `QuickTiles`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor struct QuickTiles
+```
+
+The tiles in rows of up to three (``QuickTileGrid``), each tile with its two hidden
+measuring copies.
+
+## `QuickTiles/body`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The tiles.
+
+## `QuickTiles/close`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the panel, after a button tile.
+
+## `QuickTiles/focusedTile`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let focusedTile: AccessibilityFocusState<String?>.Binding?
+```
+
+The tile VoiceOver focuses, if the panel tracks it.
+
+## `QuickTiles/init(items:close:focusedTile:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor init(items: [QuickControlItem], close: @escaping () -> Void, focusedTile: AccessibilityFocusState<String?>.Binding? = nil)
+```
+
+Creates the tiles.
+
+- Parameters:
+  - items: The tiles, in display order.
+  - close: Closes the panel, after a button tile.
+  - focusedTile: The tile VoiceOver focuses, if the panel tracks it.
+
+## `QuickTiles/items`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+@MainActor let items: [QuickControlItem]
+```
+
+The tiles, in display order.
 
 ## `RAWClippingSection`
 
@@ -7990,6 +13519,261 @@ A share of photosites, such as "0.4% of photosites".
 
 - Parameter share: The share, 0 to 1.
 - Returns: The text.
+
+## `ReadoutLabel`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor struct ReadoutLabel
+```
+
+A readout's content: the mode letter over the value. "M" is drawn in a filled badge and "A"
+plain, so the mode never depends on color alone; the letters are the same in every language,
+as on a camera's readout.
+
+## `ReadoutLabel/body`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The letter over the value. Neither is truncated or broken inside a number: the row
+becomes two rows instead.
+
+## `ReadoutLabel/init(isManual:value:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor init(isManual: Bool, value: String)
+```
+
+Creates the content.
+
+- Parameters:
+  - isManual: Whether the control is set manually.
+  - value: The value.
+
+## `ReadoutLabel/isManual`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor let isManual: Bool
+```
+
+Whether the control is set manually.
+
+## `ReadoutLabel/value`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+@MainActor let value: String
+```
+
+The value, such as "ISO 400" or "1/60".
+
+## `ReadoutRowLayout`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+struct ReadoutRowLayout
+```
+
+The readout row's arrangement: the readouts side by side, then More at
+``NopeSize/minTarget``, filling the width offered. The readouts share the width equally; a
+readout whose value needs more than its share (its ideal width plus ``NopeSpace/xxs``) gets
+what it needs and the others share the rest equally, as the design's flexible row does
+(docs/design/screens/drive-astro: "ISO 3200" beside "1 s"). Only when the readouts' needs
+don't fit together do they take two rows of four equal cells: the first four readouts, then
+the rest and More.
+
+A long value on its own, such as the highest ISO that Astro sets ("ISO 12,096"), so keeps the
+one row on a 402-point iPhone: two rows pushed the Astro card up to a third of the picture,
+against the quarter BUILD-SPEC.md, 3.5, allows.
+
+It is a layout rather than `ViewThatFits` over an `HStack` and a `Grid`, so the readouts get
+exactly equal widths whenever they fit, More keeps its own width, and one row is chosen
+whenever the values fit (docs/design/screens/camera-manual, a 402-point iPhone).
+
+## `ReadoutRowLayout/Arrangement`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+struct Arrangement
+```
+
+How the views are arranged at one width.
+
+## `ReadoutRowLayout/Arrangement/cellWidth`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+let cellWidth: CGFloat
+```
+
+The width of a readout, in points: the equal share of the readouts that need no more
+than it, or the width of every cell in two rows.
+
+## `ReadoutRowLayout/Arrangement/cellWidths`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+let cellWidths: [CGFloat]
+```
+
+Each readout's width in one row, in points, in order; empty in two rows.
+
+## `ReadoutRowLayout/Arrangement/init(isOneRow:cellWidth:cellWidths:rowHeight:size:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+init(isOneRow: Bool, cellWidth: CGFloat, cellWidths: [CGFloat] = [], rowHeight: CGFloat, size: CGSize)
+```
+
+Creates an arrangement.
+
+- Parameters:
+  - isOneRow: Whether everything is in one row.
+  - cellWidth: The width of a readout, in points.
+  - cellWidths: Each readout's width in one row, in points; empty in two rows.
+  - rowHeight: The height of a row, in points.
+  - size: The whole size, in points.
+
+## `ReadoutRowLayout/Arrangement/isOneRow`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+let isOneRow: Bool
+```
+
+Whether everything is in one row.
+
+## `ReadoutRowLayout/Arrangement/rowHeight`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+let rowHeight: CGFloat
+```
+
+The height of a row, in points.
+
+## `ReadoutRowLayout/Arrangement/size`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+let size: CGSize
+```
+
+The whole size.
+
+## `ReadoutRowLayout/arrangement(ideals:width:spacing:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+static func arrangement(ideals: [CGSize], width: CGFloat?, spacing: CGFloat) -> Arrangement
+```
+
+The arrangement for some ideal sizes in a width.
+
+- Parameters:
+  - ideals: The views' ideal sizes; the last is More.
+  - width: The width offered, or `nil` for the ideal width.
+  - spacing: The space between views, in points.
+
+## `ReadoutRowLayout/cellsPerRow`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+static let cellsPerRow: Int
+```
+
+How many cells each of the two rows has.
+
+## `ReadoutRowLayout/init(spacing:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+init(spacing: CGFloat)
+```
+
+Creates the layout.
+
+- Parameter spacing: The space between views, in points.
+
+## `ReadoutRowLayout/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Places the readouts and More.
+
+- Parameters:
+  - bounds: The row's rectangle.
+  - proposal: The offered size.
+  - subviews: The readouts, then More.
+  - cache: Unused.
+
+## `ReadoutRowLayout/sharedWidths(needs:total:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+static func sharedWidths(needs: [CGFloat], total: CGFloat) -> (share: CGFloat, widths: [CGFloat])
+```
+
+The readouts' widths in one row: an equal share of the total, except that a readout that
+needs more than the share gets what it needs and the others share the rest, repeated
+until every readout has at least what it needs.
+
+- Parameters:
+  - needs: Each readout's ideal width plus ``NopeSpace/xxs``, in points; their sum is at
+    most `total`.
+  - total: The width the readouts share, in points.
+- Returns: The share of the readouts that need no more than it, and every readout's width.
+
+## `ReadoutRowLayout/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The row's size for the width offered.
+
+- Parameters:
+  - proposal: The offered size.
+  - subviews: The readouts, then More.
+  - cache: Unused.
+
+## `ReadoutRowLayout/spacing`
+
+internal, declared in `Sources/NopeUI/ManualControlsView.swift`
+
+```swift
+let spacing: CGFloat
+```
+
+The space between views, in points.
 
 ## `ResourceWarningAnnouncements`
 
@@ -8277,65 +14061,6 @@ The style for the environment.
 
 - Parameter environment: The view's environment.
 
-## `SelectableCapsuleStyle`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor struct SelectableCapsuleStyle
-```
-
-A capsule button that is filled white with bold black text when selected, and plain white on
-a dark fill otherwise, as the camera's lens and readout buttons are (issue #68, "Colors").
-
-## `SelectableCapsuleStyle/horizontalPadding`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor let horizontalPadding: CGFloat
-```
-
-The space on each side of the label, in points.
-
-## `SelectableCapsuleStyle/init(isSelected:horizontalPadding:)`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor init(isSelected: Bool, horizontalPadding: CGFloat = 10)
-```
-
-Creates the style.
-
-- Parameters:
-  - isSelected: Whether the button shows the selected item.
-  - horizontalPadding: The space on each side of the label, in points; smaller for the
-    manual readouts, so seven fit in a row.
-
-## `SelectableCapsuleStyle/isSelected`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor let isSelected: Bool
-```
-
-Whether the button shows the selected item.
-
-## `SelectableCapsuleStyle/makeBody(configuration:)`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor func makeBody(configuration: Configuration) -> some View
-
-```
-
-The styled button.
-
-- Parameter configuration: The button's label and press state.
-
 ## `SeriesScreen`
 
 internal, declared in `Sources/NopeUI/SeriesScreen.swift`
@@ -8406,8 +14131,10 @@ internal, declared in `Sources/NopeUI/SessionStatusView.swift`
 @MainActor struct SessionStatusView
 ```
 
-A message over the viewfinder when the camera isn't running, with a solid backing so it
-stays readable over any scene. Nothing while the camera runs.
+A message in the middle of the picture when the camera isn't running (docs/design/BUILD-SPEC.md,
+3.7, figure `camera-paused`), on solid black so it stays readable over any scene. Every pause
+uses the same place: another app or a call, split view, cooling down, could not start, no
+picture, and the spinner while the camera starts. Nothing while the camera runs.
 
 ## `SessionStatusView/body`
 
@@ -8504,8 +14231,10 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor struct SettingsButton
 ```
 
-Opens Settings. Its name, "Settings", is what VoiceOver reads and what Voice Control users
-say; the Large Content Viewer shows it at accessibility text sizes.
+Opens Settings: at the top of the column layout, and above the screens shown before the camera
+is ready. In the stacked and scrolling layouts Settings opens from Q instead. Its name,
+"Settings", is what VoiceOver reads and what Voice Control users say; the Large Content Viewer
+shows it at accessibility text sizes.
 
 ## `SettingsButton/action`
 
@@ -8539,6 +14268,940 @@ Creates the button.
 
 - Parameter action: Opens Settings.
 
+## `SettingsCard`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor struct SettingsCard
+```
+
+An idle card that is one button: Interval Settings or Astro Settings. It shows what the
+shutter will do and a chevron; VoiceOver reads the button's name, then the card's text as its
+value.
+
+## `SettingsCard/action`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let action: () -> Void
+```
+
+Opens the settings.
+
+## `SettingsCard/body`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `SettingsCard/detail`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let detail: String?
+```
+
+A second line, or `nil`.
+
+## `SettingsCard/init(title:detail:name:action:)`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor init(title: String, detail: String?, name: Text, action: @escaping () -> Void)
+```
+
+Creates the card.
+
+- Parameters:
+  - title: What the shutter will do.
+  - detail: A second line, or `nil`.
+  - name: The button's name.
+  - action: Opens the settings.
+
+## `SettingsCard/name`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let name: Text
+```
+
+The button's name: "Interval Settings" or "Astro Settings".
+
+## `SettingsCard/title`
+
+internal, declared in `Sources/NopeUI/DriveControls.swift`
+
+```swift
+@MainActor let title: String
+```
+
+What the shutter will do.
+
+## `SettingsID`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+enum SettingsID
+```
+
+A stable identifier for each group, page and row of Settings (`docs/design/BUILD-SPEC.md`,
+3.10).
+
+The raw value is the row's accessibility identifier, so UI tests and assistive tools find a
+row whatever the language. Search uses the identifiers as destinations, the Photo Format
+sheet's All Photo Settings opens ``photos`` and its Look row opens ``copies``, and the
+Location warning's explanation opens ``details``. They leave room for links into Settings
+later (issue 82); in 1.0.0 nothing outside the app can open them (there is no URL scheme).
+
+A raw value never changes once released: rename a case's Swift name if needed, not its raw
+value.
+
+## `SettingsID/about`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case about
+```
+
+The About and Licenses row and page.
+
+## `SettingsID/accessibility`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case accessibility
+```
+
+The Accessibility row and page.
+
+## `SettingsID/camera`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case camera
+```
+
+The Camera group: how the camera focuses and exposes.
+
+## `SettingsID/colorSpace`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case colorSpace
+```
+
+Color Space, on HEIF and JPEG Copies.
+
+## `SettingsID/copies`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case copies
+```
+
+The HEIF and JPEG Copies row and page.
+
+## `SettingsID/copiesLook`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case copiesLook
+```
+
+The Look section of HEIF and JPEG Copies.
+
+## `SettingsID/copiesRestoreDefaults`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case copiesRestoreDefaults
+```
+
+Restore Defaults, on HEIF and JPEG Copies.
+
+## `SettingsID/copySize`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case copySize
+```
+
+Copy Size, on HEIF and JPEG Copies.
+
+## `SettingsID/details`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case details
+```
+
+The Details in Each Photo row and page.
+
+## `SettingsID/details(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func details(_ item: MetadataItem) -> SettingsID?
+```
+
+The identifier of an optional detail's switch on Details in Each Photo, or `nil` for an
+item Settings doesn't offer (`MetadataItem/isOfferedInSettings`).
+
+- Parameter item: The detail.
+- Returns: Its row's identifier.
+
+## `SettingsID/detailsAlwaysSaved`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsAlwaysSaved
+```
+
+The Always Saved section.
+
+## `SettingsID/detailsAppNameAndVersion`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsAppNameAndVersion
+```
+
+App Name and Version.
+
+## `SettingsID/detailsCameraMakeAndModel`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsCameraMakeAndModel
+```
+
+Camera Make and Model.
+
+## `SettingsID/detailsDateAndTime`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsDateAndTime
+```
+
+Date and Time Taken.
+
+## `SettingsID/detailsExactCameraModel`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsExactCameraModel
+```
+
+Exact Model for RAW Editors.
+
+## `SettingsID/detailsExposureSettings`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsExposureSettings
+```
+
+Exposure Settings.
+
+## `SettingsID/detailsLensCorrections`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsLensCorrections
+```
+
+Lens Correction Instructions.
+
+## `SettingsID/detailsLensMakeAndModel`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsLensMakeAndModel
+```
+
+Lens Make and Model.
+
+## `SettingsID/detailsLocation`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsLocation
+```
+
+The Location switch, on Details in Each Photo.
+
+## `SettingsID/detailsMakerNotes`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsMakerNotes
+```
+
+Maker Notes.
+
+## `SettingsID/detailsRemoveAll`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsRemoveAll
+```
+
+Remove All Optional Details, on Details in Each Photo.
+
+## `SettingsID/detailsStandardFileTags`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsStandardFileTags
+```
+
+Standard File Tags.
+
+## `SettingsID/detailsSubSecondTime`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsSubSecondTime
+```
+
+Sub-Second Time.
+
+## `SettingsID/detailsSystemVersion`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsSystemVersion
+```
+
+iOS Version.
+
+## `SettingsID/detailsTimeZone`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case detailsTimeZone
+```
+
+Time Zone.
+
+## `SettingsID/factoryDefaults`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case factoryDefaults
+```
+
+Factory Defaults, on the Presets page.
+
+## `SettingsID/fastShutter`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case fastShutter
+```
+
+The Fast Shutter row and page.
+
+## `SettingsID/focusOnFaces`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case focusOnFaces
+```
+
+The Focus on Faces switch.
+
+## `SettingsID/formats`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case formats
+```
+
+The Formats row and page.
+
+## `SettingsID/group`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var group: SettingsID? { get }
+```
+
+The group this item belongs to, or `nil` for Presets, which has none.
+
+## `SettingsID/heifBitDepth`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case heifBitDepth
+```
+
+HEIF Bit Depth, on HEIF and JPEG Copies.
+
+## `SettingsID/heifCompression`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case heifCompression
+```
+
+HEIF Compression, on HEIF and JPEG Copies.
+
+## `SettingsID/honesty`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case honesty
+```
+
+The Honesty row and page.
+
+## `SettingsID/jpegCompression`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case jpegCompression
+```
+
+JPEG Compression, on HEIF and JPEG Copies.
+
+## `SettingsID/license`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case license
+```
+
+The License page, under About and Licenses.
+
+## `SettingsID/liveActivity`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case liveActivity
+```
+
+The Live Activity switch.
+
+## `SettingsID/mirrorFrontCamera`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case mirrorFrontCamera
+```
+
+The Mirror Front Camera switch.
+
+## `SettingsID/more`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case more
+```
+
+The More group: Accessibility, Honesty, About.
+
+## `SettingsID/navigationPath`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var navigationPath: [SettingsPage] { get }
+```
+
+The pages to push to show this item: its page, or the page it opens; none for a row on
+the Settings list.
+
+## `SettingsID/nightMode`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case nightMode
+```
+
+The Night Mode switch.
+
+## `SettingsID/noticesAndTrademarks`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case noticesAndTrademarks
+```
+
+The Notices and Trademarks page, under About and Licenses.
+
+## `SettingsID/opensPage`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var opensPage: SettingsPage? { get }
+```
+
+The page this row opens, or `nil` for a switch, a group or a row on a page.
+
+## `SettingsID/overlays`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlays
+```
+
+The Viewfinder Overlays row and page.
+
+## `SettingsID/overlaysFocusPeaking`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysFocusPeaking
+```
+
+Focus Peaking, on Viewfinder Overlays.
+
+## `SettingsID/overlaysGrid`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysGrid
+```
+
+Grid, on Viewfinder Overlays.
+
+## `SettingsID/overlaysGridStyle`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysGridStyle
+```
+
+Grid Style, on Viewfinder Overlays (shown while the grid is on).
+
+## `SettingsID/overlaysHistogram`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysHistogram
+```
+
+Histogram, on Viewfinder Overlays.
+
+## `SettingsID/overlaysKeepReadout`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysKeepReadout
+```
+
+Keep Readout in Clean View, on Viewfinder Overlays (shown while the readout is on).
+
+## `SettingsID/overlaysLevel`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysLevel
+```
+
+Level, on Viewfinder Overlays.
+
+## `SettingsID/overlaysLiveReadout`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlaysLiveReadout
+```
+
+Live Camera Readout, on Viewfinder Overlays.
+
+## `SettingsID/page`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var page: SettingsPage? { get }
+```
+
+The page this item is on, or `nil` for the Settings list itself.
+
+## `SettingsID/pairedWithRAW`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case pairedWithRAW
+```
+
+Paired with RAW, on the Formats page.
+
+## `SettingsID/photoSize`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case photoSize
+```
+
+The Photo Size row and page.
+
+## `SettingsID/photos`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case photos
+```
+
+The Photos group: what each photo is saved as.
+
+## `SettingsID/presets`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case presets
+```
+
+The Presets row and page.
+
+## `SettingsID/privacy`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case privacy
+```
+
+The Privacy group: what each photo says.
+
+## `SettingsID/redViewfinder`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case redViewfinder
+```
+
+The Red Viewfinder switch.
+
+## `SettingsID/saveCurrentSettings`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case saveCurrentSettings
+```
+
+Save Current Settings, on the Presets page.
+
+## `SettingsID/screen`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case screen
+```
+
+The Screen group: what the screen shows.
+
+## `SettingsID/scrollTarget`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var scrollTarget: SettingsID? { get }
+```
+
+The row to scroll to once the item's page is shown: a group's first row, the item's own
+row, or `nil` when the item is a page, which opens at its top.
+
+## `SettingsID/showProcessedMarker`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case showProcessedMarker
+```
+
+The Show Processed Marker switch.
+
+## `SettingsID/signEachPhoto`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case signEachPhoto
+```
+
+The Sign Each Photo switch.
+
+## `SettingsID/startInCleanView`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case startInCleanView
+```
+
+The Start in Clean View switch.
+
+## `SettingsNavigation`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor final class SettingsNavigation
+```
+
+Where Settings is and what it shows: the pushed pages, the search text and the row to scroll
+to.
+
+The camera screen keeps one for as long as Settings is open, outside the presentation, so
+Settings stays on the same page when its presentation changes: from a popover to the night
+mode sheet on iPad, or across a fold on the iPhone Duo. It is reset when Settings closes, so
+Settings opens at its list again, as before.
+
+## `SettingsNavigation/init()`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates a navigation at the Settings list.
+
+## `SettingsNavigation/open(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func open(_ id: SettingsID)
+```
+
+Shows an item: pushes its page and asks for its row to be scrolled into view. Ends a
+search.
+
+- Parameter id: The item.
+
+## `SettingsNavigation/path`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor var path: [SettingsPage] { get set }
+```
+
+The pages pushed above the Settings list.
+
+## `SettingsNavigation/reset()`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func reset()
+```
+
+Returns to the Settings list, with no search.
+
+## `SettingsNavigation/scrollTarget`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor var scrollTarget: SettingsID? { get set }
+```
+
+The row to scroll to when its page shows, or `nil`.
+
+## `SettingsNavigation/searchText`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor var searchText: String { get set }
+```
+
+The search text.
+
+## `SettingsPage`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+enum SettingsPage
+```
+
+A page one level below Settings, pushed onto its navigation stack. Its raw value is the
+identifier of the row that opens it (``SettingsID``).
+
+## `SettingsPage/about`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case about
+```
+
+About and Licenses.
+
+## `SettingsPage/accessibility`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case accessibility
+```
+
+Accessibility.
+
+## `SettingsPage/copies`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case copies
+```
+
+HEIF and JPEG Copies.
+
+## `SettingsPage/details`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case details
+```
+
+Details in Each Photo.
+
+## `SettingsPage/fastShutter`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case fastShutter
+```
+
+Fast Shutter.
+
+## `SettingsPage/formats`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case formats
+```
+
+Formats.
+
+## `SettingsPage/honesty`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case honesty
+```
+
+Honesty.
+
+## `SettingsPage/id`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var id: SettingsID { get }
+```
+
+The row that opens the page.
+
+## `SettingsPage/overlays`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case overlays
+```
+
+Viewfinder Overlays.
+
+## `SettingsPage/photoSize`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case photoSize
+```
+
+Photo Size.
+
+## `SettingsPage/presets`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case presets
+```
+
+Presets.
+
 ## `SettingsScreen`
 
 public, declared in `Sources/NopeUI/SettingsScreen.swift`
@@ -8547,16 +15210,29 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 @MainActor struct SettingsScreen
 ```
 
-The settings: a short inset grouped list in a navigation stack, opened from the camera
-(issue #68, "Settings"): Presets (issue #72), Photos (formats, look, file options, photo size),
-Privacy (the master switch, signing, the details), Camera (manual controls, clean view, face
-detection, night mode, front camera mirroring) and More (Accessibility, Honesty, About).
+The settings: a search field, then Presets and five groups in an inset grouped list in a
+navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
+`docs/design/SETTINGS-PLAN.md`):
 
-One line per row; each switch's explanation is in a footer or on its detail screen. Each
-row shows its current value, so the state reads at a glance. The screen renders a
-`NopeSettings` and changes it only through its methods, which hold the rules (AGENTS.md,
-"One direction of flow"). It follows the system's light or dark setting, also when it is
-presented from the dark camera (`ScreenAppearance.system`), and is red on black in night mode.
+- Presets, always shown where the app has presets, with Factory Defaults inside;
+- Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
+- Privacy: Details in Each Photo, Sign Each Photo;
+- Camera: Fast Shutter, Focus on Faces;
+- Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Red
+  Viewfinder, Live Activity;
+- More: Accessibility, Honesty, About and Licenses.
+
+A row is shown or not by the device only; no row appears or disappears when a setting
+changes, so focus never moves by itself. Each page row shows its value, and a value that
+doesn't fit beside its title goes under it (``SettingsValueLabel``). Each switch has a
+one-sentence explanation (two where honesty needs it). No page is more than two levels
+below Settings. Search (``SettingsSearch``) finds every row by its name or a keyword, and
+answers a search for a camera control with where it is.
+
+The screen renders a `NopeSettings` and changes it only through its methods, which hold the
+rules (AGENTS.md, "One direction of flow"). It follows the system's light or dark setting,
+also when it is presented from the dark camera (`ScreenAppearance.system`), and is red on
+black in night mode.
 
 ```swift
 .sheet(isPresented: $showsSettings) {
@@ -8572,7 +15248,7 @@ public, declared in `Sources/NopeUI/SettingsScreen.swift`
 @MainActor var body: some View { get }
 ```
 
-The form and its toolbar.
+The list or the search results, in the navigation stack.
 
 ## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:lenses:presets:camera:)`
 
@@ -8594,9 +15270,1078 @@ Creates the settings screen.
   - location: Location tagging (`CameraModel/location`), or `nil` when the app has no
     location service, which hides the Location switch.
   - lenses: The device's lenses (`DeviceCapabilities/lenses`), which show the Photo Size
-    row when one offers a choice (`Lens/photoSizeChoices`). Defaults to none.
+    row when one offers a choice (`Lens/photoSizeChoices`), and the Show Processed Marker
+    switch when one has no Bayer RAW. Defaults to none.
   - presets: The saved settings presets (issue #72), or `nil` to hide the Presets row.
   - camera: The camera, whose lens and exposure presets save and set, or `nil`.
+
+## `SettingsScreen/init(settings:deviceSupportsBayerRAW:deviceHasFrontCamera:location:lenses:presets:camera:navigation:)`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor init(settings: NopeSettings, deviceSupportsBayerRAW: Bool, deviceHasFrontCamera: Bool, location: LocationTagging?, lenses: [Lens], presets: SettingsPresets?, camera: CameraModel?, navigation: SettingsNavigation?)
+```
+
+Creates the settings screen with a navigation the presenter keeps, so the screen stays
+on its page when the presentation changes.
+
+- Parameters:
+  - settings: The settings to show and change.
+  - deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
+  - deviceHasFrontCamera: Whether the device has a front camera.
+  - location: Location tagging, or `nil`.
+  - lenses: The device's lenses.
+  - presets: The saved settings presets, or `nil`.
+  - camera: The camera, or `nil`.
+  - navigation: The navigation, or `nil` to keep one in the screen.
+
+## `SettingsScrollTarget`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor struct SettingsScrollTarget
+```
+
+Scrolls a Settings page to the row ``SettingsNavigation/scrollTarget`` names when it shows,
+once.
+
+## `SettingsScrollTarget/body(content:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The page, scrolled to its target row.
+
+- Parameter content: The page's form.
+
+## `SettingsScrollTarget/init(navigation:page:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor init(navigation: SettingsNavigation?, page: SettingsPage?)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - navigation: The navigation, or `nil`.
+  - page: The page, or `nil` for the Settings list.
+
+## `SettingsScrollTarget/navigation`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor let navigation: SettingsNavigation?
+```
+
+The navigation, or `nil` outside Settings.
+
+## `SettingsScrollTarget/page`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor let page: SettingsPage?
+```
+
+The page this is, or `nil` for the Settings list.
+
+## `SettingsSearch`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+enum SettingsSearch
+```
+
+The Settings search index and its matching (`docs/design/BUILD-SPEC.md`, 3.10, "Search").
+
+The index has one entry for each setting on any page, with its title, its keywords and its
+page path, and the pointers to camera controls that aren't in Settings
+(``CameraPointer``). Entries that this device or this camera screen doesn't show are left
+out, so no result opens a page that isn't there. Matching is plain text, ignoring case and
+diacritics: a result has every word of the search in its title or keywords, or, when none
+has, any word.
+
+## `SettingsSearch/Availability`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+struct Availability
+```
+
+What this device and this camera screen offer, which decides which entries exist.
+
+## `SettingsSearch/Availability/hasFrontCamera`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var hasFrontCamera: Bool
+```
+
+Whether the device has a front camera.
+
+## `SettingsSearch/Availability/hasPresets`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var hasPresets: Bool
+```
+
+Whether presets exist (not in the Lock Screen camera).
+
+## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false)
+```
+
+Creates the availability.
+
+- Parameters:
+  - hasPresets: Whether presets exist.
+  - offersPhotoSize: Whether a lens offers a choice of photo size.
+  - hasFrontCamera: Whether the device has a front camera.
+  - offersLocation: Whether the app can tag a location.
+  - offersProcessedMarker: Whether a lens has no Bayer RAW.
+  - offersLiveActivity: Whether the Live Activity switch is offered.
+
+## `SettingsSearch/Availability/offers(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+func offers(_ id: SettingsID) -> Bool
+```
+
+Whether the item exists here.
+
+- Parameter id: The item.
+- Returns: `false` for an item this device or screen doesn't show.
+
+## `SettingsSearch/Availability/offersLiveActivity`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersLiveActivity: Bool
+```
+
+Whether the Live Activity switch is offered.
+
+## `SettingsSearch/Availability/offersLocation`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersLocation: Bool
+```
+
+Whether the app can tag a location.
+
+## `SettingsSearch/Availability/offersPhotoSize`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersPhotoSize: Bool
+```
+
+Whether a lens offers a choice of photo size.
+
+## `SettingsSearch/Availability/offersProcessedMarker`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersProcessedMarker: Bool
+```
+
+Whether a lens has no Bayer RAW, so the Processed marker applies.
+
+## `SettingsSearch/keywords(from:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func keywords(from list: String) -> [String]
+```
+
+A localized keyword list split into keywords: at commas, including the full-width and
+ideographic commas of Chinese and Japanese, and at semicolons.
+
+- Parameter list: The list, such as "metadata, EXIF, GPS".
+- Returns: The trimmed, non-empty keywords.
+
+## `SettingsSearch/matches(_:title:keywords:requiresAll:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func matches(_ words: [String], title: String, keywords: [String], requiresAll: Bool = false) -> Bool
+```
+
+Whether a search's words are in a title or its keywords, ignoring case and diacritics, as
+the system's standard search does: each word (`requiresAll`) or any word.
+
+- Parameters:
+  - words: The words of the search.
+  - title: The localized title.
+  - keywords: The localized keywords.
+  - requiresAll: Whether every word must be found; otherwise any one is enough.
+- Returns: `true` on a match; `false` with no words.
+
+## `SettingsSearch/place(of:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func place(of id: SettingsID) -> String
+```
+
+Where an item is, as a search result shows it: its group for a row of the Settings list,
+"Group › Page" for a row on a page, "Presets" for a row on the Presets page, and
+"Settings" for the Presets row, which has no group.
+
+- Parameter id: The item.
+- Returns: The localized place.
+
+## `SettingsSearch/pointers(matching:availability:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func pointers(matching query: String, availability: Availability = Availability()) -> [CameraPointer]
+```
+
+The camera controls a search finds (``results(for:availability:)``).
+
+- Parameters:
+  - query: The search text.
+  - availability: What this device and screen offer.
+- Returns: The matching pointers.
+
+## `SettingsSearch/results(for:availability:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func results(for query: String, availability: Availability) -> (pointers: [CameraPointer], settings: [SettingsID])
+```
+
+What a search finds: the camera pointers and the Settings items, in the order of the
+Settings list.
+
+An item matches when it has every word of the search, so "focus on faces" finds Focus on
+Faces alone. When nothing has every word, an item that has any word matches, so a search
+for several things at once ("shutter flash manual") lists each of them.
+
+- Parameters:
+  - query: The search text.
+  - availability: What this device and screen offer.
+- Returns: The matching pointers and items.
+
+## `SettingsSearch/searchable`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let searchable: [SettingsID]
+```
+
+The items search lists: every row and page, without the group headers.
+
+## `SettingsSearch/settings(matching:availability:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func settings(matching query: String, availability: Availability) -> [SettingsID]
+```
+
+The Settings items a search finds (``results(for:availability:)``).
+
+- Parameters:
+  - query: The search text.
+  - availability: What this device and screen offer.
+- Returns: The matching items.
+
+## `SettingsSearch/spokenPlace(of:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func spokenPlace(of id: SettingsID) -> String
+```
+
+Where an item is, as VoiceOver reads it, without the separator symbol.
+
+- Parameter id: The item.
+- Returns: The localized place.
+
+## `SettingsSearch/words(of:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func words(of query: String) -> [String]
+```
+
+The words of a search, split at white space.
+
+- Parameter query: The search text.
+- Returns: Its words; none for empty or blank text.
+
+## `SettingsSearchField`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor struct SettingsSearchField
+```
+
+The Settings search field, left out in Night Mode.
+
+iOS draws the search field as gray glass outside the app's views, where night mode's red
+filter (``NightModeStyle``) can't reach it, so Settings has no search field while Night Mode
+is on (owner decision of 2026-11-18). Every row stays reachable from the list, and the field
+returns when Night Mode is turned off.
+
+## `SettingsSearchField/body(content:)`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor func body(content: Content) -> some View
+
+```
+
+The content, with the search field in the navigation bar's drawer unless it is left out.
+
+- Parameter content: The Settings list or the search results.
+
+## `SettingsSearchField/init(text:isHidden:)`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor init(text: Binding<String>, isHidden: Bool)
+```
+
+Creates the modifier.
+
+- Parameters:
+  - text: The search text.
+  - isHidden: Whether the field is left out, as in Night Mode.
+
+## `SettingsSearchField/isHidden`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor let isHidden: Bool
+```
+
+Whether the field is left out: Night Mode is on.
+
+## `SettingsSearchField/text`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@Binding @MainActor var text: String { get nonmutating set }
+```
+
+The search text.
+
+## `SettingsSearchResults`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor struct SettingsSearchResults
+```
+
+The search results that replace the Settings list while searching: the pointers to the
+camera under "On the Camera", then the settings under "In Settings". Choosing a setting opens
+its page; a pointer doesn't navigate. With no match, the system's empty search state.
+
+## `SettingsSearchResults/availability`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor let availability: SettingsSearch.Availability
+```
+
+What this device and screen offer.
+
+## `SettingsSearchResults/body`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The results, or the empty state.
+
+## `SettingsSearchResults/init(query:availability:open:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor init(query: String, availability: SettingsSearch.Availability, open: @escaping (SettingsID) -> Void)
+```
+
+Creates the results.
+
+- Parameters:
+  - query: The search text.
+  - availability: What this device and screen offer.
+  - open: Opens an item.
+
+## `SettingsSearchResults/open`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor let open: (SettingsID) -> Void
+```
+
+Opens an item.
+
+## `SettingsSearchResults/query`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor let query: String
+```
+
+The search text.
+
+## `SettingsText`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+enum SettingsText
+```
+
+The names Settings shows and searches, as resources, so a row and its search entry always
+use the same localized words.
+
+## `SettingsText/about`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let about: LocalizedStringResource
+```
+
+"About and Licenses".
+
+## `SettingsText/accessibility`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let accessibility: LocalizedStringResource
+```
+
+"Accessibility".
+
+## `SettingsText/alwaysSaved`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let alwaysSaved: LocalizedStringResource
+```
+
+"Always Saved".
+
+## `SettingsText/bundle`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let bundle: LocalizedStringResource.BundleDescription
+```
+
+The module's bundle, for the resources.
+
+## `SettingsText/camera`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let camera: LocalizedStringResource
+```
+
+"Camera".
+
+## `SettingsText/colorSpace`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let colorSpace: LocalizedStringResource
+```
+
+"Color Space".
+
+## `SettingsText/copies`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let copies: LocalizedStringResource
+```
+
+"HEIF and JPEG Copies".
+
+## `SettingsText/copySize`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let copySize: LocalizedStringResource
+```
+
+"Copy Size".
+
+## `SettingsText/details`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let details: LocalizedStringResource
+```
+
+"Details in Each Photo".
+
+## `SettingsText/factoryDefaults`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let factoryDefaults: LocalizedStringResource
+```
+
+"Factory Defaults".
+
+## `SettingsText/fastShutter`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let fastShutter: LocalizedStringResource
+```
+
+"Fast Shutter".
+
+## `SettingsText/focusOnFaces`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let focusOnFaces: LocalizedStringResource
+```
+
+"Focus on Faces".
+
+## `SettingsText/focusPeaking`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let focusPeaking: LocalizedStringResource
+```
+
+"Focus Peaking".
+
+## `SettingsText/formats`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let formats: LocalizedStringResource
+```
+
+"Formats".
+
+## `SettingsText/grid`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let grid: LocalizedStringResource
+```
+
+"Grid".
+
+## `SettingsText/gridStyle`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let gridStyle: LocalizedStringResource
+```
+
+"Grid Style".
+
+## `SettingsText/heifBitDepth`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let heifBitDepth: LocalizedStringResource
+```
+
+"HEIF Bit Depth".
+
+## `SettingsText/heifCompression`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let heifCompression: LocalizedStringResource
+```
+
+"HEIF Compression".
+
+## `SettingsText/histogram`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let histogram: LocalizedStringResource
+```
+
+"Histogram".
+
+## `SettingsText/honesty`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let honesty: LocalizedStringResource
+```
+
+"Honesty".
+
+## `SettingsText/jpegCompression`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let jpegCompression: LocalizedStringResource
+```
+
+"JPEG Compression".
+
+## `SettingsText/keepReadout`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let keepReadout: LocalizedStringResource
+```
+
+"Keep Readout in Clean View".
+
+## `SettingsText/keywords(of:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func keywords(of id: SettingsID) -> LocalizedStringResource?
+```
+
+Other words people use for an item, as one localized list separated by commas, or `nil`.
+Not shown on screen; translators list the words people use in their language.
+
+- Parameter id: The item.
+- Returns: The keywords, or `nil` when the item has none beyond its name.
+
+## `SettingsText/level`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let level: LocalizedStringResource
+```
+
+"Level".
+
+## `SettingsText/license`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let license: LocalizedStringResource
+```
+
+"License".
+
+## `SettingsText/liveActivity`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let liveActivity: LocalizedStringResource
+```
+
+"Live Activity".
+
+## `SettingsText/liveReadout`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let liveReadout: LocalizedStringResource
+```
+
+"Live Camera Readout".
+
+## `SettingsText/look`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let look: LocalizedStringResource
+```
+
+"Look".
+
+## `SettingsText/mirrorFrontCamera`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let mirrorFrontCamera: LocalizedStringResource
+```
+
+"Mirror Front Camera".
+
+## `SettingsText/more`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let more: LocalizedStringResource
+```
+
+"More".
+
+## `SettingsText/nightMode`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let nightMode: LocalizedStringResource
+```
+
+"Night Mode".
+
+## `SettingsText/noticesAndTrademarks`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let noticesAndTrademarks: LocalizedStringResource
+```
+
+"Notices and Trademarks".
+
+## `SettingsText/overlays`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let overlays: LocalizedStringResource
+```
+
+"Viewfinder Overlays".
+
+## `SettingsText/pairedWithRAW`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let pairedWithRAW: LocalizedStringResource
+```
+
+"Paired with RAW".
+
+## `SettingsText/path(_:_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func path(_ group: String, _ page: String) -> String
+```
+
+A page path in search results: a group, then a page, as one whole localized format.
+
+- Parameters:
+  - group: The group's name.
+  - page: The page's name.
+- Returns: For example "Privacy › Details in Each Photo".
+
+## `SettingsText/photoSize`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let photoSize: LocalizedStringResource
+```
+
+"Photo Size".
+
+## `SettingsText/photos`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let photos: LocalizedStringResource
+```
+
+"Photos", the group header (its own key: "Photos" alone is a count).
+
+## `SettingsText/presets`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let presets: LocalizedStringResource
+```
+
+"Presets".
+
+## `SettingsText/privacy`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let privacy: LocalizedStringResource
+```
+
+"Privacy".
+
+## `SettingsText/redViewfinder`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let redViewfinder: LocalizedStringResource
+```
+
+"Red Viewfinder".
+
+## `SettingsText/removeAll`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let removeAll: LocalizedStringResource
+```
+
+"Remove All Optional Details".
+
+## `SettingsText/restoreDefaults`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let restoreDefaults: LocalizedStringResource
+```
+
+"Restore Defaults".
+
+## `SettingsText/saveCurrentSettings`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let saveCurrentSettings: LocalizedStringResource
+```
+
+"Save Current Settings".
+
+## `SettingsText/screen`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let screen: LocalizedStringResource
+```
+
+"Screen".
+
+## `SettingsText/settingsList`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static var settingsList: String { get }
+```
+
+"Settings", where the Presets row is, which has no group.
+
+## `SettingsText/showProcessedMarker`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let showProcessedMarker: LocalizedStringResource
+```
+
+"Show Processed Marker".
+
+## `SettingsText/signEachPhoto`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let signEachPhoto: LocalizedStringResource
+```
+
+"Sign Each Photo".
+
+## `SettingsText/spokenPath(_:_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func spokenPath(_ group: String, _ page: String) -> String
+```
+
+A page path as VoiceOver reads it, without the separator symbol.
+
+- Parameters:
+  - group: The group's name.
+  - page: The page's name.
+- Returns: For example "Privacy, Details in Each Photo".
+
+## `SettingsText/spokenResult(_:_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func spokenResult(_ title: String, _ place: String) -> String
+```
+
+What VoiceOver reads for a search result: the setting, then where it is.
+
+- Parameters:
+  - title: The setting's name.
+  - place: Where it is, from ``spokenPath(_:_:)`` or a group name.
+- Returns: For example "Location, in Privacy, Details in Each Photo".
+
+## `SettingsText/standardFileTags`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let standardFileTags: LocalizedStringResource
+```
+
+"Standard File Tags".
+
+## `SettingsText/startInCleanView`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let startInCleanView: LocalizedStringResource
+```
+
+"Start in Clean View".
+
+## `SettingsText/title(of:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static func title(of id: SettingsID) -> LocalizedStringResource
+```
+
+An item's name, as its row shows it.
+
+- Parameter id: The item.
+- Returns: The localized name.
+
+## `SettingsValueLabel`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor struct SettingsValueLabel
+```
+
+A Settings row's title with its value: beside the title when both fit on one line, under it
+otherwise, at every text size (`docs/design/BUILD-SPEC.md`, 3.10, "Values wrap"). Neither is
+ever truncated. VoiceOver reads the title, then the value.
+
+## `SettingsValueLabel/body`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The title and value, side by side or stacked.
+
+## `SettingsValueLabel/init(title:value:)`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor init(title: Text, value: Text)
+```
+
+Creates the label.
+
+- Parameters:
+  - title: The row's title.
+  - value: The row's value.
+
+## `SettingsValueLabel/title`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor let title: Text
+```
+
+The row's title.
+
+## `SettingsValueLabel/value`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor let value: Text
+```
+
+The row's value.
 
 ## `SheetPresentationAction`
 
@@ -8687,12 +16432,57 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 The shutter: a large round button, drawn because no system control exists for it.
 
-It is 76 points across, larger than the 44-point minimum (AGENTS.md, "Touch targets"), and
-supports VoiceOver, Voice Control ("Take Photo") and the Large Content Viewer. A haptic
-confirms each press. The volume buttons and Camera Control are wired by the app target, and
-the Space bar by ``CameraCommands``. On iPad it shows a round pointer highlight. It stays at
-the bottom of the screen in portrait and of the controls column in landscape, in reach of the
-thumb in both orientations.
+It is 76 points across (``NopeSize/shutter``), larger than the 44-point minimum (AGENTS.md,
+"Touch targets"), and supports VoiceOver, Voice Control ("Take Photo") and the Large Content
+Viewer. A haptic confirms each press. The volume buttons and Camera Control are wired by the
+app target, and the Space bar by ``CameraCommands``. On iPad it shows a round pointer
+highlight. It stays in the middle of the shutter row in portrait and of the controls column
+in landscape, in reach of the thumb in both orientations.
+
+The disc says what a press does (docs/design/BUILD-SPEC.md, 3.5): with the self-timer chosen
+and idle it shows the delay ("3" or "10") in black; while a series or countdown runs, the disc
+gives way to a stop square, because a press stops it. Its name stays "Take Photo"; the
+VoiceOver value says the mode (`shutterDriveValue(_:)`).
+
+## `ShutterButton/Face`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+enum Face
+```
+
+What the disc shows.
+
+## `ShutterButton/Face/photo`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+case photo
+```
+
+The plain white disc.
+
+## `ShutterButton/Face/stop`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+case stop
+```
+
+A stop square: a series or countdown runs, and a press stops it.
+
+## `ShutterButton/Face/timer(seconds:)`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+case timer(seconds: Int)
+```
+
+The self-timer's delay on the disc, in seconds.
 
 ## `ShutterButton/action`
 
@@ -8724,18 +16514,29 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 The shutter's diameter, in points.
 
-## `ShutterButton/init(isEnabled:action:)`
+## `ShutterButton/face`
 
 internal, declared in `Sources/NopeUI/ShutterButton.swift`
 
 ```swift
-@MainActor init(isEnabled: Bool, action: @escaping () -> Void)
+@MainActor let face: Face
+```
+
+What the disc shows.
+
+## `ShutterButton/init(isEnabled:face:action:)`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor init(isEnabled: Bool, face: Face = .photo, action: @escaping () -> Void)
 ```
 
 Creates the shutter.
 
 - Parameters:
   - isEnabled: Whether a photo can be taken now.
+  - face: What the disc shows; the plain disc by default.
   - action: Called when the shutter is pressed.
 
 ## `ShutterButton/isEnabled`
@@ -8747,6 +16548,83 @@ internal, declared in `Sources/NopeUI/ShutterButton.swift`
 ```
 
 Whether a photo can be taken now.
+
+## `ShutterButton/stopSide`
+
+internal, declared in `Sources/NopeUI/ShutterButton.swift`
+
+```swift
+@MainActor static var stopSide: CGFloat { get }
+```
+
+The side of the stop square: half the disc, so the ring still reads as the shutter.
+
+## `SideBySideOrStacked`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+struct SideBySideOrStacked
+```
+
+Two views side by side in equal halves when both fit there at their natural widths;
+otherwise one above the other, each the full width. Unlike `ViewThatFits`, it measures the
+views' content, so buttons that stretch to fill their space don't always count as fitting.
+
+## `SideBySideOrStacked/init(spacing:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+init(spacing: CGFloat)
+```
+
+Creates the layout.
+
+- Parameter spacing: The space between the views, in points.
+
+## `SideBySideOrStacked/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Places the views side by side from the leading edge, or one above the other.
+
+- Parameters:
+  - bounds: Where to place the views.
+  - proposal: The proposed size.
+  - subviews: The views.
+  - cache: Unused.
+
+## `SideBySideOrStacked/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The size: the width offered, or the natural widths side by side; the height of the
+taller view, or of both stacked.
+
+- Parameters:
+  - proposal: The proposed size.
+  - subviews: The views.
+  - cache: Unused.
+- Returns: The size.
+
+## `SideBySideOrStacked/spacing`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+let spacing: CGFloat
+```
+
+The space between the two views.
 
 ## `SlotValue`
 
@@ -8794,9 +16672,10 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor struct StackedMiddle<Picture, Dial, Bands> where Picture : View, Dial : View, Bands : View
 ```
 
-The middle of the stacked layout: the whole picture with the bands below it when they fit,
-otherwise the bands over the bottom of the picture on a dark backing (4.7-inch iPhones). The
-open dial sits over the bottom of the picture, above the bands.
+The middle of the stacked layout: the whole picture with the rows below it when they fit,
+otherwise the rows over the bottom of the picture on ``NopeMaterial/rowOverlay`` (4.7-inch
+iPhones, the iPhone Duo's outer display). The bottom stack sits over the bottom of the
+picture, above the rows.
 
 ## `StackedMiddle/bands`
 
@@ -8806,7 +16685,7 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor let bands: Bands
 ```
 
-The lens row and the manual readout.
+The lens row and the drive strip.
 
 ## `StackedMiddle/bandsHeight`
 
@@ -8826,7 +16705,7 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor var body: some View { get }
 ```
 
-The picture and the bands.
+The picture and the rows.
 
 ## `StackedMiddle/dial`
 
@@ -8836,7 +16715,7 @@ internal, declared in `Sources/NopeUI/CameraReadyView.swift`
 @MainActor let dial: Dial
 ```
 
-The open manual dial, or nothing.
+The bottom stack (hints, dial, mode card, readouts), or nothing.
 
 ## `StackedMiddle/init(bandsHeight:picture:dial:bands:)`
 
@@ -8851,8 +16730,8 @@ Creates the middle.
 - Parameters:
   - bandsHeight: The measured height of the bands.
   - picture: The picture with its overlays.
-  - dial: The open manual dial, or nothing.
-  - bands: The lens row and the manual readout.
+  - dial: The bottom stack, or nothing.
+  - bands: The lens row and the drive strip.
 
 ## `StackedMiddle/picture`
 
@@ -8872,8 +16751,8 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 struct StatePill
 ```
 
-One small pill at the top of the camera for a setting that isn't at its default, such as
-"M" for manual controls or a lock (issue #68, "Non-default state"). Defaults are invisible.
+One small pill on the status line for a setting that isn't at its default, such as the light's
+brightness or a lock (issue #68, "Non-default state"). Defaults are invisible.
 
 A pill has a symbol and short text, so it never relies on color, and one or more actions
 to change or reset it: one action makes the pill a button, more make it a menu.
@@ -8962,7 +16841,7 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 let id: String
 ```
 
-A stable identifier, such as "manual".
+A stable identifier, such as "light".
 
 ## `StatePill/init(id:systemImage:text:label:actions:value:)`
 
@@ -8990,7 +16869,7 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 let label: Text
 ```
 
-The full name for VoiceOver and Voice Control, such as "Manual Controls".
+The full name for VoiceOver and Voice Control, such as "Light".
 
 ## `StatePill/systemImage`
 
@@ -9010,7 +16889,7 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 let text: Text
 ```
 
-The short visible text, such as "M" or "AE/AF".
+The short visible text, such as "25%" or "AE/AF".
 
 ## `StatePill/value`
 
@@ -9030,7 +16909,8 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor struct StatePillButton
 ```
 
-One state pill: a button for one action, a menu for more.
+One state pill: a button for one action, a menu for more. The row gives it its style
+(``NopePillStyle``).
 
 ## `StatePillButton/body`
 
@@ -9072,8 +16952,10 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor struct StatePillRow
 ```
 
-The state pills at the top of the camera: at most three, then "+n" for the rest, each with a
-symbol and short text. Each pill is a button, or a menu when it has more than one action.
+The state pills on the status line, trailing (docs/design/BUILD-SPEC.md, 3.3): at most three
+(fewer when they don't fit on one line), then "+n" for the rest, each with a symbol and short text. Each pill is a button, or a menu
+when it has more than one action. Over the picture (the column layout, an iPhone held
+sideways) each pill has the dark backing, so it keeps its contrast over any scene.
 
 ## `StatePillRow/body`
 
@@ -9083,7 +16965,9 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 @MainActor var body: some View { get }
 ```
 
-The row.
+The row: as many pills as fit, at most three, each on one line; the rest fold into
+"+n". With longer words or larger text, fewer pills show before "+n", so no pill's text
+wraps or is cut.
 
 ## `StatePillRow/init(pills:)`
 
@@ -9128,20 +17012,12 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 The registry of state pills: each feature with a non-default state adds one function here
 that returns its pill, or `nil` at the default.
 
+No pill repeats what a control on the camera already shows (docs/design/BUILD-SPEC.md, 3.3):
+manual controls have the Manual Controls button, and the drive modes and Astro have the drive
+strip, which also turn them off.
+
 The order of ``builders`` is the order on screen; ``StatePillRow`` shows the first
 ``StatePillRow/maximumVisible`` and folds the rest into "+n".
-
-## `StatePills/astro(_:)`
-
-internal, declared in `Sources/NopeUI/AstroControls.swift`
-
-```swift
-@MainActor static func astro(_ context: CameraControlContext) -> StatePill?
-```
-
-"Astro" while the night sky helper is on; its action turns it off.
-
-- Parameter context: The model and settings.
 
 ## `StatePills/builders`
 
@@ -9210,20 +17086,6 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 ```
 
 The pills for settings not at their defaults, in display order.
-
-- Parameter context: The model and settings.
-
-## `StatePills/drive(_:)`
-
-internal, declared in `Sources/NopeUI/DriveControls.swift`
-
-```swift
-@MainActor static func drive(_ context: CameraControlContext) -> StatePill?
-```
-
-The self-timer's delay ("3s"), "Burst" or "Interval" while the drive mode isn't single;
-its action returns to single photos, and the Interval pill also opens the interval
-settings.
 
 - Parameter context: The model and settings.
 
@@ -9317,18 +17179,6 @@ internal, declared in `Sources/NopeUI/StatePills.swift`
 
 - Parameter context: The model and settings.
 
-## `StatePills/manual(_:)`
-
-internal, declared in `Sources/NopeUI/StatePills.swift`
-
-```swift
-@MainActor static func manual(_ context: CameraControlContext) -> StatePill?
-```
-
-"M" while manual controls are on; its action turns them off.
-
-- Parameter context: The model and settings.
-
 ## `StatusMessageView`
 
 internal, declared in `Sources/NopeUI/StatusMessageView.swift`
@@ -9337,12 +17187,15 @@ internal, declared in `Sources/NopeUI/StatusMessageView.swift`
 @MainActor struct StatusMessageView<Actions> where Actions : View
 ```
 
-A centered message with a symbol, a title, an explanation and optional actions.
+A centered message with a symbol, a title, an explanation and optional actions
+(docs/design/BUILD-SPEC.md, 3.8, figures `camera-denied` and `camera-unavailable`).
 
 Used for the permission and no-camera states. It is built from plain `Text`, `Image` and
 `Button` views rather than `ContentUnavailableView`, because that view's symbol keeps a fixed
 size and fails the accessibility audit's Dynamic Type check. At large text sizes the content
-scrolls instead of being clipped (AGENTS.md, "Larger Text").
+scrolls instead of being clipped (AGENTS.md, "Larger Text"). The actions are pinned below it,
+full width, in the primary style (``NopePrimaryActionStyle``), so the one action is always in
+reach.
 
 ## `StatusMessageView/actions`
 
@@ -9352,7 +17205,7 @@ internal, declared in `Sources/NopeUI/StatusMessageView.swift`
 @MainActor let actions: Actions
 ```
 
-Buttons below the explanation, if any.
+Buttons pinned below the message, if any.
 
 ## `StatusMessageView/body`
 
@@ -9362,7 +17215,7 @@ internal, declared in `Sources/NopeUI/StatusMessageView.swift`
 @MainActor var body: some View { get }
 ```
 
-The message, centered when it fits and scrolling when it doesn't.
+The message, centered when it fits and scrolling when it doesn't, with the actions below.
 
 ## `StatusMessageView/init(title:systemImage:message:)`
 
@@ -9393,7 +17246,7 @@ Creates a message with actions.
   - title: The headline.
   - systemImage: The SF Symbol shown above the title.
   - message: The explanation below the title.
-  - actions: Buttons below the explanation.
+  - actions: Buttons pinned below the message, drawn in the primary style.
 
 ## `StatusMessageView/message`
 
@@ -9425,6 +17278,71 @@ internal, declared in `Sources/NopeUI/StatusMessageView.swift`
 
 The headline.
 
+## `SymbolAndValueLayout`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+struct SymbolAndValueLayout
+```
+
+A symbol and a text: in a row, centered on each other, when both fit the width at their
+natural sizes; otherwise the symbol above the text, which wraps at the full width.
+
+## `SymbolAndValueLayout/init(spacing:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+init(spacing: CGFloat)
+```
+
+Creates the layout.
+
+- Parameter spacing: The space between the views, in points.
+
+## `SymbolAndValueLayout/placeSubviews(in:proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
+```
+
+Places the symbol and the text in a row from the leading edge, or one above the other.
+
+- Parameters:
+  - bounds: Where to place them.
+  - proposal: The proposed size.
+  - subviews: The symbol and the text.
+  - cache: Unused.
+
+## `SymbolAndValueLayout/sizeThatFits(proposal:subviews:cache:)`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
+```
+
+The size of the row, or of the symbol above the wrapped text.
+
+- Parameters:
+  - proposal: The proposed size.
+  - subviews: The symbol and the text.
+  - cache: Unused.
+- Returns: The size.
+
+## `SymbolAndValueLayout/spacing`
+
+internal, declared in `Sources/NopeUI/QuickPanel.swift`
+
+```swift
+let spacing: CGFloat
+```
+
+The space between the symbol and the text.
+
 ## `ThumbnailSlot`
 
 internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
@@ -9435,12 +17353,60 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 
 The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and invisible
 until the first photo of the session, never an empty square. Then it shows the last photo with
-a teal seal when every file was signed, or an amber mark when one wasn't.
+a teal seal when every file was signed, or an amber mark when signing was on and a file
+couldn't be signed. With signing off by choice it has no badge (docs/design/BUILD-SPEC.md, 3.3
+and 3.7): that isn't a warning, and its value still says "Saved. Not signed: signing is off in
+Settings."
 
 With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
 without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
 Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
 Control offer both, Open in Photos and Photo Details.
+
+## `ThumbnailSlot/Badge`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+enum Badge
+```
+
+The mark on the thumbnail's corner.
+
+## `ThumbnailSlot/Badge/notSigned`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+case notSigned
+```
+
+An amber triangle: signing was on and a file couldn't be signed.
+
+## `ThumbnailSlot/Badge/signed`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+case signed
+```
+
+A teal seal: every file is signed.
+
+## `ThumbnailSlot/badge(for:)`
+
+internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
+
+```swift
+@MainActor static func badge(for photos: [SavedPhoto]) -> Badge?
+```
+
+The mark for the photos saved by one press of the shutter, or `nil` for none: a teal seal
+when every file is signed, an amber triangle when one couldn't be signed while signing
+was on, and nothing when signing was off by choice.
+
+- Parameter photos: The saved photos.
+- Returns: The badge, or `nil`.
 
 ## `ThumbnailSlot/body`
 
@@ -9527,7 +17493,8 @@ internal, declared in `Sources/NopeUI/CaptureFeedback.swift`
 @MainActor static var side: CGFloat { get }
 ```
 
-The slot's side, in points: larger than the 44-point minimum, smaller than the shutter.
+The slot's side, in points: larger than the 44-point minimum, smaller than the shutter
+(``NopeSize/thumbnail``).
 
 ## `TintAndPresets`
 
@@ -9537,7 +17504,7 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 @MainActor struct TintAndPresets
 ```
 
-The white balance tint slider and the presets menu.
+The white balance tint slider and the presets menu, in one row under the dial's slider.
 
 ## `TintAndPresets/body`
 
@@ -9728,12 +17695,12 @@ internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
 
 The width the content wraps at while sideways, or `nil` for its natural width.
 
-## `View/adaptivePresentation(isPresented:prefersSheet:content:)`
+## `View/adaptivePresentation(isPresented:prefersSheet:switchesToSheet:content:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@MainActor func adaptivePresentation<Presented>(isPresented: Binding<Bool>, prefersSheet: Bool = false, @ViewBuilder content: @escaping () -> Presented) -> some View where Presented : View
+@MainActor func adaptivePresentation<Presented>(isPresented: Binding<Bool>, prefersSheet: Bool = false, switchesToSheet: Bool = false, @ViewBuilder content: @escaping () -> Presented) -> some View where Presented : View
 
 ```
 
@@ -9743,6 +17710,7 @@ with `prefersSheet`.
 - Parameters:
   - isPresented: Whether the content is shown.
   - prefersSheet: Whether a sheet is wanted on iPad too, as in night mode.
+  - switchesToSheet: Whether an open popover becomes the sheet when `prefersSheet` turns on.
   - content: The presented content.
 
 ## `View/announcesResourceWarnings(_:)`
@@ -9758,18 +17726,20 @@ Announces storage and battery warnings (``ResourceWarningAnnouncements``).
 
 - Parameter model: The camera model.
 
-## `View/astroFeedback(_:)`
+## `View/astroFeedback(_:isNightModeOn:)`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
 
 ```swift
-@MainActor func astroFeedback(_ astro: AstroModel) -> some View
+@MainActor func astroFeedback(_ astro: AstroModel, isNightModeOn: Bool) -> some View
 
 ```
 
 Adds the astro helper's announcements (``AstroFeedback``).
 
-- Parameter astro: The astro helper.
+- Parameters:
+  - astro: The astro helper.
+  - isNightModeOn: Whether night mode is on.
 
 ## `View/comparisonCover(_:isNightMode:)`
 
@@ -9787,29 +17757,16 @@ Covers the screen with the compare view while the comparison is presented
   - model: The camera model.
   - isNightMode: Whether night mode is on, so the view is red too.
 
-## `View/darkBacking()`
+## `View/dialSliderTint()`
 
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
+internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 ```swift
-@MainActor func darkBacking() -> some View
+@MainActor func dialSliderTint() -> some View
 
 ```
 
-Puts a rounded dark backing behind a control drawn over the picture.
-
-## `View/darkBacking(_:)`
-
-internal, declared in `Sources/NopeUI/CameraStyle.swift`
-
-```swift
-@MainActor func darkBacking<S>(_ shape: S) -> some View where S : Shape
-
-```
-
-Puts a dark backing behind a control drawn over the picture.
-
-- Parameter shape: The backing's shape; a rounded rectangle by default.
+Draws a dial slider's filled track white, or dark red in night mode (``DialSliderTint``).
 
 ## `View/driveFeedback(_:)`
 
@@ -9844,13 +17801,13 @@ live viewfinder it draws behind the interface, so all three stay aligned. The la
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
 
 ```swift
-@ViewBuilder @MainActor func hardScrollEdges() -> some View
+@MainActor func hardScrollEdges() -> some View
 
 ```
 
-Turns off the soft fade iOS 26 draws where scrolling content meets the screen's edges, so
-text scrolled under the status bar keeps its contrast (the iPad audit reported faded text
-at the top of the scrolling camera layout). Earlier versions have no such effect.
+Turns off the soft fade iOS 26 and later draw where scrolling content meets the screen's
+edges, so text scrolled under the status bar keeps its contrast (the iPad audit reported
+faded text at the top of the scrolling camera layout).
 
 ## `View/nightModeStyle(_:)`
 
@@ -9877,17 +17834,44 @@ internal, declared in `Sources/NopeUI/CameraStyle.swift`
 Draws a switch's or slider's filled track in night mode's dark red
 (``NightStyle/trackTint``), so its knob or thumb stays visible on it.
 
-## `View/pillShape()`
+## `View/nopeBackground(_:in:)`
 
-internal, declared in `Sources/NopeUI/StatePills.swift`
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
 
 ```swift
-@MainActor func pillShape() -> some View
+@MainActor func nopeBackground<S>(_ material: NopeMaterial, in shape: S) -> some View where S : Shape
 
 ```
 
-The look of a state pill: small bold text on a dark capsule, inside a touch target at
-least 44 points on each side.
+Puts a ``NopeMaterial`` behind the view, in a shape.
+
+- Parameters:
+  - material: The material.
+  - shape: The background's shape, for example `Capsule()` or a rounded rectangle with
+    ``NopeRadius/large``.
+
+## `View/nopeCountdownFont()`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func nopeCountdownFont() -> some View
+
+```
+
+Sets the countdown font, 96 points bold at the default text size, scaled with Dynamic Type.
+
+## `View/nopeHitTarget()`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+@MainActor func nopeHitTarget() -> some View
+
+```
+
+Makes the view's hit target at least ``NopeSize/minTarget`` (44 points) in each direction,
+with the whole frame tappable, without changing how large it is drawn.
 
 ## `View/screenAppearance(_:isNightMode:)`
 
@@ -9920,6 +17904,34 @@ burst when the camera screen goes away (``SeriesScreen``).
 - Parameters:
   - model: The camera model.
   - isNightMode: Whether night mode is on.
+
+## `View/settingsContainerRow(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func settingsContainerRow(_ id: SettingsID) -> some View
+
+```
+
+Gives a Settings row that holds a control of its own, such as a menu picker, its stable
+identifier on a container element, so the control inside keeps its own element.
+
+- Parameter id: The row's identifier.
+
+## `View/settingsRow(_:)`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+@MainActor func settingsRow(_ id: SettingsID) -> some View
+
+```
+
+Gives a Settings row its stable identifier: the scroll identity search uses and the
+accessibility identifier.
+
+- Parameter id: The row's identifier.
 
 ## `View/shutterDriveValue(_:)`
 
@@ -10148,7 +18160,7 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 The touches on the viewfinder: tap to focus and expose, press and hold to lock, and a long
 vertical swipe for clean view. One gesture tells them apart, so a tap never also counts as a
-swipe. Every one of them also has a button: the lock button, the Hide Controls tray item and
+swipe. Every one of them also has a button: the lock button, Hide Controls in the quick menu and
 Show Controls (issue #68, "Gestures always have a button").
 
 ## `ViewfinderTouches/allowsDrags`
@@ -10259,8 +18271,10 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 @MainActor struct WarningChip
 ```
 
-An amber warning chip. Tapping it shows the explanation in a popover; VoiceOver reads the
-explanation as its value without opening it.
+An amber warning chip (docs/design/tokens.md, "Warning chip"): a triangle and words in the
+pill font on the dark backing, inside an amber outline, ``NopeSize/pill`` high in a 44-point
+target. Tapping it shows the explanation in a popover; VoiceOver reads the explanation as its
+value without opening it.
 
 ## `WarningChip/body`
 
@@ -10293,6 +18307,41 @@ internal, declared in `Sources/NopeUI/CameraWarnings.swift`
 ```
 
 The warning.
+
+## `WarningChipStyle`
+
+internal, declared in `Sources/NopeUI/CameraWarnings.swift`
+
+```swift
+@MainActor struct WarningChipStyle
+```
+
+The look of a warning chip: the pill font in white on ``NopeMaterial/backing``, with an amber
+outline (``NopeSize/warningOutline``), ``NopeSize/pill`` high in a 44-point target, and the
+shared press effect. Night mode draws the outline and the triangle in its red.
+
+## `WarningChipStyle/init()`
+
+internal, declared in `Sources/NopeUI/CameraWarnings.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the style. It holds no state.
+
+## `WarningChipStyle/makeBody(configuration:)`
+
+internal, declared in `Sources/NopeUI/CameraWarnings.swift`
+
+```swift
+@MainActor func makeBody(configuration: Configuration) -> some View
+
+```
+
+The styled chip.
+
+- Parameter configuration: The label and press state.
 
 ## `WindowAppearanceAction`
 
@@ -10464,68 +18513,3 @@ internal, declared in `Sources/NopeUI/CameraEnvironment.swift`
 ```
 
 Creates the modifier. It reads everything from the environment.
-
-## `WrappingRows`
-
-internal, declared in `Sources/NopeUI/QuickControls.swift`
-
-```swift
-struct WrappingRows
-```
-
-Lays its views out left to right (in reading order) in rows that wrap at the proposed width,
-each row centered.
-
-## `WrappingRows/init(spacing:)`
-
-internal, declared in `Sources/NopeUI/QuickControls.swift`
-
-```swift
-init(spacing: CGFloat)
-```
-
-Creates the layout.
-
-- Parameter spacing: The space between views and between rows.
-
-## `WrappingRows/placeSubviews(in:proposal:subviews:cache:)`
-
-internal, declared in `Sources/NopeUI/QuickControls.swift`
-
-```swift
-func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ())
-```
-
-Places the views row by row, each row centered in the bounds.
-
-- Parameters:
-  - bounds: Where to place the views.
-  - proposal: The proposed size.
-  - subviews: The views.
-  - cache: Unused.
-
-## `WrappingRows/sizeThatFits(proposal:subviews:cache:)`
-
-internal, declared in `Sources/NopeUI/QuickControls.swift`
-
-```swift
-func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize
-```
-
-The size of the rows at the proposed width.
-
-- Parameters:
-  - proposal: The proposed size.
-  - subviews: The views.
-  - cache: Unused.
-- Returns: The rows' size.
-
-## `WrappingRows/spacing`
-
-internal, declared in `Sources/NopeUI/QuickControls.swift`
-
-```swift
-let spacing: CGFloat
-```
-
-The space between views and between rows.

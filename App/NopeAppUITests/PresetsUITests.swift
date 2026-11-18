@@ -1,7 +1,7 @@
 import XCTest
 
 /// UI tests for settings presets (issue #72): saving, applying, Factory Defaults, undo, renaming
-/// and deleting, from Settings and from the quick-controls tray, with accessibility audits at the
+/// and deleting, from Settings and from Q, the quick menu, with accessibility audits at the
 /// default and largest text sizes, right to left and in night mode.
 ///
 /// Settings are changed through the interface here, not with launch arguments: a launch argument
@@ -10,10 +10,7 @@ extension NopeAppUITests {
     /// Opens Settings and its Presets screen.
     @MainActor
     func openPresetsInSettings(_ app: XCUIApplication) {
-        let settings = app.buttons["Settings"]
-        XCTAssertTrue(settings.waitForExistence(timeout: 10))
-        settings.tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Presets")).firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Presets"].waitForExistence(timeout: 5))
     }
@@ -119,12 +116,14 @@ extension NopeAppUITests {
         backOneScreen(app)
         XCTAssertEqual(mirrorSwitch(app).value as? String, "0")
 
-        // Rename, then delete.
+        // Rename, then delete, from the preset's More menu (which replaced the Rename or Delete
+        // page).
         openPresetsRow(app)
-        tapListButton(app, "Rename or Delete")
-        XCTAssertTrue(app.navigationBars["Rename or Delete"].waitForExistence(timeout: 5))
-        try audit(app, checksDynamicType: false, checksContrast: !isPad)
-        app.buttons["Selfie"].tap()
+        tapListButton(app, "More for Selfie")
+        let rename = app.buttons["Rename"]
+        XCTAssertTrue(rename.waitForExistence(timeout: 5))
+        rename.tap()
+        XCTAssertTrue(app.navigationBars["Rename Preset"].waitForExistence(timeout: 5))
         let field = app.textFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
@@ -133,12 +132,16 @@ extension NopeAppUITests {
         field.typeText("s")
         app.navigationBars["Rename Preset"].buttons["Save"].tap()
         XCTAssertTrue(app.buttons["Selfies"].waitForExistence(timeout: 5))
-        app.buttons["Selfies"].tap()
-        app.buttons["Delete Preset"].tap()
-        XCTAssertTrue(app.navigationBars["Rename or Delete"].waitForExistence(timeout: 5))
-        backOneScreen(app)
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+        tapListButton(app, "More for Selfies")
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
+        delete.tap()
+        let confirm = app.buttons["Delete Preset"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        confirm.tap()
         XCTAssertTrue(element(app, containing: "No saved presets yet").waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Rename or Delete"].exists)
+        XCTAssertFalse(app.buttons["More for Selfies"].exists)
     }
 
     @MainActor
@@ -148,7 +151,7 @@ extension NopeAppUITests {
         let viewfinder = app.otherElements["Viewfinder"].frame
         quickControl(app, "Night Mode")
         XCTAssertTrue(app.buttons["Night Mode"].isSelected)
-        // Presets is further along the tray, which stays open after a switch.
+        // Presets is further along Q, which stays open after a switch.
         let presets = app.buttons["Presets"]
         XCTAssertTrue(presets.waitForExistence(timeout: 5))
         presets.tap()
@@ -157,15 +160,18 @@ extension NopeAppUITests {
         // The white viewfinder keeps its natural colors behind the sheet; it shows at the sheet's
         // rounded top corners, so its frame is left out of the check.
         XCTAssertEqual(nonRedPixels(app, outside: viewfinder), 0, "the presets sheet is red on black")
-        try audit(app)
+        // Dynamic Type is audited at the largest size (testPresetsAtTheLargestTextSize): at the
+        // default size the Simulator reports list rows as "partially unsupported", as for the
+        // Settings screens (testSettingsScreensPassAccessibilityAudits).
+        try audit(app, checksDynamicType: false)
 
-        // Applying from the tray works as in Settings: Factory Defaults turns night mode off.
+        // Applying from Q works as in Settings: Factory Defaults turns night mode off.
         factoryDefaults(app).tap()
         XCTAssertTrue(element(app, containing: "Factory Defaults applied.").waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
-        let tray = app.buttons["Quick Controls"]
-        XCTAssertTrue(tray.waitForExistence(timeout: 5))
-        tray.tap()
+        let quick = quickMenuButton(app)
+        XCTAssertTrue(quick.waitForExistence(timeout: 5))
+        if !quick.isSelected { quick.tap() }
         XCTAssertTrue(app.buttons["Night Mode"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Night Mode"].isSelected)
     }
@@ -174,12 +180,6 @@ extension NopeAppUITests {
     func testPresetsAtTheLargestTextSize() throws {
         let app = launch("allow", extraArguments: Self.largestTextSize)
         continuePastFirstRun(app)
-        let tray = app.buttons["Quick Controls"]
-        var swipes = 0
-        while !(tray.exists && tray.isHittable) && swipes < 4 {
-            app.swipeUp()
-            swipes += 1
-        }
         quickControl(app, "Presets")
         XCTAssertTrue(app.navigationBars["Presets"].waitForExistence(timeout: 5))
         try audit(app, checksContrast: !isPad)

@@ -30,7 +30,7 @@ struct ViewfinderOverlays: View {
     /// The current text size; at accessibility sizes the panel moves below the picture.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    /// Which way up the person holds the iPhone, for the spiral and the panel's corner.
+    /// Which way up the person holds the iPhone, for the panel's corner.
     @Environment(\.cameraUprightRotation) private var rotation
 
     /// The layout direction, to put the panel on a physical corner.
@@ -70,7 +70,7 @@ struct ViewfinderOverlays: View {
             // Drawn shapes only, so nothing here is an accessibility element. (Marking them
             // hidden made SwiftUI expose an unlabeled element instead.)
             if options.showsGrid {
-                GridOverlay(style: options.gridStyle, placement: spiralPlacement)
+                GridOverlay(style: options.gridStyle)
                     .allowsHitTesting(false)
             }
             if options.showsLevel, let gravitySource {
@@ -82,7 +82,7 @@ struct ViewfinderOverlays: View {
                 LiveAidsPanel(model: model, settings: settings)
                     .allowsHitTesting(false)
                     .uprightUnit()
-                    .padding(CameraStyle.targetSpacing)
+                    .padding(NopeSpace.xs)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: panelAlignment)
             }
         }
@@ -93,16 +93,6 @@ struct ViewfinderOverlays: View {
                 await model.live.setNeeds([])
                 await model.live.setShowsStats(false)
             }
-        }
-    }
-
-    /// The spiral's placement, turned with the device so it keeps its place relative to the
-    /// horizon while the camera layout stays put.
-    private var spiralPlacement: SpiralPlacement {
-        switch rotation {
-        case .portrait: options.spiralPlacement
-        case .landscapeLeft: options.spiralPlacement.turned(by: 1)
-        case .landscapeRight: options.spiralPlacement.turned(by: -1)
         }
     }
 
@@ -146,9 +136,6 @@ struct GridOverlay: View {
     /// The style.
     let style: GridStyle
 
-    /// Where the spiral sits, for `GridStyle/goldenSpiral`.
-    let placement: SpiralPlacement
-
     /// The width of the white line, in points.
     static let lineWidth: CGFloat = 1
 
@@ -157,35 +144,27 @@ struct GridOverlay: View {
 
     /// Creates the grid.
     ///
-    /// - Parameters:
-    ///   - style: The style.
-    ///   - placement: Where the spiral sits.
-    init(style: GridStyle, placement: SpiralPlacement) {
+    /// - Parameter style: The style.
+    init(style: GridStyle) {
         self.style = style
-        self.placement = placement
     }
 
     /// The lines: a dark outline under a white line, drawn as shapes (not a canvas), so they
     /// add nothing to the accessibility tree.
     var body: some View {
-        let shape = GridShape(style: style, placement: placement)
+        let shape = GridShape(style: style)
         shape.stroke(.white.opacity(0.9), lineWidth: Self.lineWidth)
             .background(shape.stroke(.black.opacity(0.6), lineWidth: Self.outlineWidth))
     }
 
-    /// The grid's lines, or the spiral, at a size.
+    /// The grid's lines at a size.
     ///
     /// - Parameters:
     ///   - style: The style.
-    ///   - placement: The spiral's placement.
     ///   - size: The picture's size.
-    nonisolated static func path(style: GridStyle, placement: SpiralPlacement, in size: CGSize) -> Path {
+    nonisolated static func path(style: GridStyle, in size: CGSize) -> Path {
         let point = { (guide: GuidePoint) in CGPoint(x: guide.x * size.width, y: guide.y * size.height) }
         var path = Path()
-        if style == .goldenSpiral {
-            path.addLines(GoldenSpiral.points(placement: placement).map(point))
-            return path
-        }
         let aspectRatio = size.height > 0 ? size.width / size.height : 1
         for line in GridGeometry.lines(for: style, aspectRatio: aspectRatio) {
             path.move(to: point(line.start))
@@ -200,24 +179,18 @@ struct GridShape: Shape {
     /// The style.
     let style: GridStyle
 
-    /// Where the spiral sits.
-    let placement: SpiralPlacement
-
     /// Creates the shape.
     ///
-    /// - Parameters:
-    ///   - style: The style.
-    ///   - placement: Where the spiral sits.
-    init(style: GridStyle, placement: SpiralPlacement) {
+    /// - Parameter style: The style.
+    init(style: GridStyle) {
         self.style = style
-        self.placement = placement
     }
 
     /// The lines in a rectangle.
     ///
     /// - Parameter rect: The picture's rectangle.
     func path(in rect: CGRect) -> Path {
-        GridOverlay.path(style: style, placement: placement, in: rect.size)
+        GridOverlay.path(style: style, in: rect.size)
             .offsetBy(dx: rect.minX, dy: rect.minY)
     }
 }
@@ -228,8 +201,9 @@ struct FocusPeakingOverlay: View {
     /// The map of in-focus cells.
     let map: FocusPeakingMap
 
-    /// The highlight color.
-    static let color = Color(red: 1, green: 0.2, blue: 0.85)
+    /// The highlight color: magenta, a color the interface uses for nothing else
+    /// (``NopeColor/peaking``).
+    static var color: Color { NopeColor.peaking }
 
     /// Creates the overlay.
     ///
@@ -318,7 +292,7 @@ struct LevelOverlay: View {
         .accessibilityValue(LevelText.description(of: state))
         // VoiceOver reads it; touches go to the viewfinder under it.
         .accessibilityRespondsToUserInteraction(false)
-        .sensoryFeedback(.alignment, trigger: state?.isLevel ?? false) { _, isLevel in isLevel }
+        .sensoryFeedback(NopeHaptic.levelFlat, trigger: state?.isLevel ?? false) { _, isLevel in isLevel }
     }
 
     /// The horizon bar, with short fixed marks on either side to show the tilt against.

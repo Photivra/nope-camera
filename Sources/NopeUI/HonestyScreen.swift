@@ -17,15 +17,15 @@ struct HonestyScreen: View {
         // A plain scrolling column rather than a lazy `List`: the screen is static text, and
         // every statement exists from the start for VoiceOver and the accessibility audit.
         ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
+            VStack(alignment: .leading, spacing: NopeSpace.xl) {
                 neverSection
                 iOSSection
                 limitsSection
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
+            .padding(NopeSpace.m)
         }
-        .navigationTitle(Text("Honesty", tableName: "Honesty", bundle: .module, comment: "Settings row and screen title: what nope. does and doesn't do, and what it can't control."))
+        .navigationTitle(Text(SettingsText.honesty))
     }
 
     /// What the app never does, and how to check.
@@ -57,9 +57,15 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Location Only If You Turn It On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos include a location only when the person turns Location on."),
                 text: Text(
-                    "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.",
+                    "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
+                    comment: "Issue #43; docs/PRIVACY.md, \"Location\". Details in Each Photo is the name of nope.'s own settings page; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Signing Is Your Choice", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos are signed with Content Credentials only when the person turns signing on."),
+                text: Text(
+                    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
             HonestyStatement(
                 title: Text("The Comparison Photo Is Never Saved", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the phone-processed photo of the comparison shot is never saved."),
                 text: Text(
@@ -116,11 +122,17 @@ struct HonestyScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language."))
             HonestyStatement(
+                title: Text("Lenses Without RAW", tableName: "Honesty", bundle: .module, comment: "Honesty heading: on lenses that can't save RAW, the phone processes the photo. RAW is a file format name."),
+                text: Text(
+                    "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
                 title: Text("Faces and Autofocus", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may detect faces to choose where to focus."),
                 text: Text(
-                    "iOS may detect faces in the viewfinder to decide where to focus. nope. doesn't read or save which faces it found.",
+                    "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus, on by default). Keep \"nope.\" unchanged. Must not claim more than the English."))
+                    comment: "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Don't describe the switch as turning face detection off. Keep \"nope.\" unchanged. Must not claim more than the English."))
         } header: {
             Text("What iOS May Still Do", tableName: "Honesty", bundle: .module, comment: "Honesty section header: things iOS does that the app can't change. iOS is a product name.")
         }
@@ -167,7 +179,7 @@ struct HonestyStatement: View {
 
     /// The heading above the statement.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             title
                 .font(.headline)
             text
@@ -198,7 +210,7 @@ struct HonestySection<Content: View, Header: View>: View {
 
     /// The heading above the statements. VoiceOver users can jump between headings.
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: NopeSpace.m) {
             header
                 .font(.title3.weight(.semibold))
                 .accessibilityAddTraits(.isHeader)

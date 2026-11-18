@@ -49,8 +49,9 @@ must not claim more than `docs/research/privacy-claims.md` supports.
 
 ## Manual controls
 
-Manual controls are off by default; the "Manual controls" option in Settings turns them on, and
-the app target sends `.manual(.setEnabled(_:))` when it changes. Everything about them is in
+Manual controls are off by default; the Manual Controls button on the camera turns them on and
+off with `CameraModel.setManualControls(_:settings:)`, which stores the "Manual controls" option
+and sends `.manual(.setEnabled(_:))` at once. Everything about them is in
 `CameraModel.manual` (`ManualControlsModel`): which controls the selected lens offers
 (`availability(of:)`), the steps of each one (`scale(for:)`), the value in use (`value(of:)`), the
 exposure modes, bracketing and interval shooting (which, unlike the other manual intents, works
@@ -58,7 +59,7 @@ in full auto too; the `.interval` drive mode starts it from the shutter). Send `
 intents to change them; the
 model keeps the combination valid for the lens. Offer "All Auto" whenever
 `manual.settings.isAutomatic` is false. The full-auto aids (tap to focus and the lock, exposure
-compensation, Close-Up, Far Focus, Face Detection, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
+compensation, Close-Up, Far Focus, Focus on Faces, the fast shutter choice and the magnifier) are `.auto(AutoControlIntent)`
 intents that work with manual controls off; see the DocC article for what to show. Run
 `manual.observeReadings()` in a second `.task` so the
 values the camera is using appear. Clean view is `CameraModel.isCleanView`; it must never hide
@@ -95,7 +96,7 @@ last-photo view.
 ## Rules that still apply
 
 Your interface follows AGENTS.md like the standard one: native controls, Dynamic Type, VoiceOver
-labels, 44-point touch targets, every string in a String Catalog in all eleven languages, and the
+labels, 44-point touch targets, every string in a String Catalog in every language that ships, and the
 name written "nope.".
 
 ## Reference

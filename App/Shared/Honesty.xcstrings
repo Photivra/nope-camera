@@ -1,204 +1,22 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "Not every photo is signed. Open nope. for details.": {
-      "comment": "Live Activity, after photos were saved and at least one has no Content Credentials signature; nope. says why. Honesty wording: never imply they are all signed. Keep \"nope.\" unchanged.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Nicht alle Fotos sind signiert. Öffne nope. für Details."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "No todas las fotos están firmadas. Abre nope. para ver los detalles."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Les photos ne sont pas toutes signées. Ouvrez nope. pour en savoir plus."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Non tutte le foto sono firmate. Apri nope. per i dettagli."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "一部の写真には署名がありません。詳しくはnope.を開いてください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "일부 사진은 서명되지 않았습니다. 자세한 내용은 nope.을 여세요."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Niet alle foto’s zijn ondertekend. Open nope. voor details."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Nem todas as fotos estão assinadas. Abra o nope. para ver os detalhes."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "并非所有照片都已签名。打开 nope. 查看详情。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "並非所有照片都已簽署。打開 nope. 查看詳情。"
-          }
-        }
-      }
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Not every photo is signed. Open nope. for details." : {
+      "comment" : "Live Activity, after photos were saved and at least one has no Content Credentials signature; nope. says why. Honesty wording: never imply they are all signed. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
     },
-    "Not signed. Open nope. for details.": {
-      "comment": "Live Activity, after one photo was saved without a Content Credentials signature; nope. says why. Honesty wording: never imply the photo is signed. Keep \"nope.\" unchanged.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Nicht signiert. Öffne nope. für Details."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Sin firmar. Abre nope. para ver los detalles."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Non signée. Ouvrez nope. pour en savoir plus."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Non firmata. Apri nope. per i dettagli."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "署名なし。詳しくはnope.を開いてください。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "서명되지 않음. 자세한 내용은 nope.을 여세요."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Niet ondertekend. Open nope. voor details."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Não assinada. Abra o nope. para ver os detalhes."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "未签名。打开 nope. 查看详情。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "未簽署。打開 nope. 查看詳情。"
-          }
-        }
-      }
+    "Not signed. Open nope. for details." : {
+      "comment" : "Live Activity, after one photo was saved without a Content Credentials signature; nope. says why. Honesty wording: never imply the photo is signed. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
     },
-    "Signed.": {
-      "comment": "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Signiert."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Con firma."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Avec signature."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Con firma."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "署名済み。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "서명됨."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Ondertekend."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Com assinatura."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已签名。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "已簽署。"
-          }
-        }
-      }
+    "Not signed: signing is off in Settings." : {
+      "comment" : "Live Activity, after photos were saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply a photo is signed.",
+      "extractionState" : "manual"
+    },
+    "Signed." : {
+      "comment" : "Live Activity, after photos were saved: every saved photo has a Content Credentials signature. Honesty wording: says only that they are signed.",
+      "extractionState" : "manual"
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

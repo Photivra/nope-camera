@@ -11,6 +11,8 @@ actor ScriptedLightBackend: LightCaptureBackend {
     let capabilities: DeviceCapabilities
     /// Whether the system allows the torch.
     private var available = true
+    /// The answers to the next requests for the light, before `available` is used.
+    private var scriptedAnswers: [TorchStatus] = []
     private(set) var torchRequests: [Double?] = []
     private(set) var captureRequests: [CaptureRequest] = []
 
@@ -22,6 +24,7 @@ actor ScriptedLightBackend: LightCaptureBackend {
     nonisolated func emit(_ event: CaptureEvent) { continuation.yield(event) }
     nonisolated func finish() { continuation.finish() }
     func setAvailable(_ isAvailable: Bool) { available = isAvailable }
+    func answerNext(_ statuses: TorchStatus...) { scriptedAnswers = statuses }
 
     func currentPermission() async -> CameraPermission { .authorized }
     func requestPermission() async -> CameraPermission { .authorized }
@@ -37,6 +40,7 @@ actor ScriptedLightBackend: LightCaptureBackend {
     func setTorch(level: Double?) async -> TorchStatus {
         torchRequests.append(level)
         guard let level else { return .off }
+        if !scriptedAnswers.isEmpty { return scriptedAnswers.removeFirst() }
         return available ? .on(level: level) : .unavailable
     }
 }
@@ -143,12 +147,72 @@ struct LightModelTests {
         await model.send(.start)
         // No lens yet when asked, so nothing was wanted.
         #expect(model.light.torch == .off)
-        // Asked between the lens choice and the start: applied once running.
+        // Asked between the lens choice and the start: shown as waiting (the switch stays on),
+        // then applied once running (issue #75).
         model.light.lensWillStart(Self.wide)
         await model.light.handle(.setTorch(true))
+        #expect(model.light.torch == .pending)
+        #expect(!model.light.isTorchOn)
         #expect(await backend.torchRequests.isEmpty)
         await model.light.sessionDidStart()
         #expect(model.light.torch == .on(level: 0.25))
+    }
+
+    @Test func lightWaitingForARestartStaysOnTheSwitch() async {
+        let (model, _) = await Self.running()
+        await model.send(.light(.setTorch(true)))
+        // A restart of the same lens: the light waits for it instead of reading "off".
+        model.light.lensWillStart(Self.wide)
+        #expect(model.light.torch == .pending)
+        await model.light.sessionDidStart()
+        #expect(model.light.torch == .on(level: 0.25))
+    }
+
+    @Test func pendingAnswerIsKeptAndAppliedAtTheNextStart() async {
+        let (model, backend) = await Self.running()
+        // The camera is being reconfigured when the request arrives (issue #75).
+        await backend.answerNext(.pending)
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .pending)
+        await model.light.sessionDidStart()
+        #expect(model.light.torch == .on(level: 0.25))
+        #expect(await backend.torchRequests == [0.25, 0.25])
+    }
+
+    @Test func offAnswerToARequestIsReportedUnavailable() async {
+        let (model, backend) = await Self.running()
+        // A backend that answers "off" to a request for the light: reported, never silently off.
+        await backend.answerNext(.off)
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .unavailable)
+        // Not retried by itself at the next start.
+        await model.light.sessionDidStart()
+        #expect(await backend.torchRequests == [0.25])
+    }
+
+    @Test func pauseWhileWaitingTurnsTheLightOff() async {
+        let backend = ScriptedLightBackend(capabilities: Self.lenses)
+        let model = CameraModel(backend: backend)
+        model.light.lensWillStart(Self.wide)
+        await model.light.handle(.setTorch(true))
+        #expect(model.light.torch == .pending)
+        await model.light.cameraDidPause()
+        #expect(model.light.torch == .off)
+        await model.light.sessionDidStart()
+        #expect(model.light.torch == .off)
+        #expect(await backend.torchRequests.isEmpty)
+    }
+
+    @Test func lightTurnedOffWhileTheHardwareAnsweredGoesOff() async {
+        let (model, backend) = await Self.running()
+        // The answer arrives after the person turned the light off (or the camera paused): a
+        // light that came on is turned off again; any other answer changes nothing.
+        await model.light.applyTorch()
+        #expect(model.light.torch == .off)
+        await backend.setAvailable(false)
+        await model.light.applyTorch()
+        #expect(model.light.torch == .off)
+        #expect(await backend.torchRequests == [0.25, nil, 0.25])
     }
 
     @Test func torchFollowsLensSwitches() async {
@@ -175,6 +239,35 @@ struct LightModelTests {
         await model.observeEvents()
         #expect(model.light.torch == .off)
         #expect(await backend.torchRequests == [0.25, nil])
+    }
+
+    /// Issue #75: after an interruption ends the camera runs again without a new start, and a
+    /// light asked for then must reach the hardware instead of staying pending.
+    @Test func lightAskedForAfterAnInterruptionEndsComesOn() async {
+        let (model, backend) = await Self.running()
+        backend.emit(.interrupted(.inUseElsewhere))
+        backend.emit(.interruptionEnded)
+        backend.finish()
+        await model.observeEvents()
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .on(level: 0.25))
+        #expect(await backend.torchRequests == [0.25])
+    }
+
+    /// A light asked for during the interruption waits, and comes on when the interruption ends.
+    @Test func lightAskedForDuringAnInterruptionComesOnWhenItEnds() async {
+        let (model, backend) = await Self.running()
+        let observing = Task { await model.observeEvents() }
+        backend.emit(.interrupted(.inUseElsewhere))
+        while model.sessionStatus != .interrupted(.inUseElsewhere) { await Task.yield() }
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .pending)
+        #expect(await backend.torchRequests.isEmpty)
+        backend.emit(.interruptionEnded)
+        backend.finish()
+        await observing.value
+        #expect(model.light.torch == .on(level: 0.25))
+        #expect(await backend.torchRequests == [0.25])
     }
 
     @Test func pauseWithTheTorchOffAsksNothing() async {

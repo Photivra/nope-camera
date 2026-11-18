@@ -1,8 +1,9 @@
 # App Store listing drafts
 
 Status: **draft, needs human review.** Nothing here is approved for submission. The English text
-is a draft for the maintainer; every other language is an AI translation that a fluent human
-must review before release (AGENTS.md, "Localization").
+is a draft for the maintainer. Version 1.0.0 is listed in English only (issue #86); a listing in
+another language is added with that language and needs a fluent human review before release
+(AGENTS.md, "Localization").
 
 The listing text itself lives in [`store/metadata/<locale>/`](../../store/metadata/README.md)
 (AGENTS.md, "Localization"), one file per App Store Connect field, with its review status in
@@ -11,7 +12,7 @@ the other submission answers:
 
 | File | What it holds |
 |---|---|
-| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords for the 11 launch languages, in 13 App Store locales (Spanish and French in two regions each) |
+| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords in English (`en-US`), the only language of version 1.0.0 |
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
@@ -24,7 +25,7 @@ the other submission answers:
 | Subtitle | 30 characters | "RAW photos. No tracking." (maintainer's choice, 24); translations keep the same meaning within 30 |
 | Promotional text | 170 characters | Can be changed without a new build |
 | Description | 4,000 characters | Plain text, no markup |
-| Keywords | 100 characters | The drafts give both characters and UTF-8 bytes; the Japanese and Korean keywords are over 100 bytes, so shorten them if App Store Connect rejects them. Comma separated, no spaces needed; words in the name are already indexed, so "camera", "Photivra" and "nope" are left out; no other apps' names |
+| Keywords | 100 characters | Comma separated, no spaces needed; words in the name are already indexed, so "camera", "Photivra" and "nope" are left out; no other apps' names |
 
 Source: [App Store Connect: app information](https://developer.apple.com/help/app-store-connect/reference/app-information/)
 and [platform version information](https://developer.apple.com/help/app-store-connect/reference/platform-version-information/).
@@ -48,23 +49,23 @@ The description describes the planned 1.0 app. As of 2026-11-12, saving to Photo
 metadata allowlist and fail-closed read-back, HEIF and JPEG development, and Content
 Credentials signing, the settings screens (formats and Privacy) and the Honesty screen are
 merged and tested in the Simulator, **but not yet checked on a device**, and the Honesty and
-privacy wording still needs fluent human review. The Honesty screen doesn't yet show the last
-photo's details. **Every claim below must be
+privacy wording still needs fluent human review. The last photo's details are on What's in This
+Photo, not on the Honesty screen. **Every claim below must be
 shipped and verified, on a device where the table says so, before the listing is submitted;
 remove any sentence whose feature isn't in the release.**
 
 | # | Claim in the description | Depends on | Verified by |
 |---|---|---|---|
 | C1 | Single-frame Bayer RAW (DNG), never ProRAW or merged frames | Capture core and saving to Photos (merged; device check pending) | Tag check on a device; `docs/PRIVACY.md` |
-| C2 | A lens without unprocessed RAW is labeled before and after the shot | Fallback badge (merged); how the saved file and signature record it (to confirm) | UI tests; signature check |
+| C2 | A lens without unprocessed RAW is labeled before and after the shot | The "Processed" marker before the shot, on by default and hidden only if the person turns it off, and its processing note (issue #80); the photo's details and, when signed, its manifest after (to confirm) | UI tests (`ProcessedMarkerUITests.swift`); signature check |
 | C3 | Optional HEIF or JPEG developed by the app from the same RAW, with no noise reduction, sharpening or local tone mapping | `NopeDevelop` (merged; device check pending) | Development tests; output review |
 | C4 | No networking code, no network connections, no analytics, ads or accounts | Merged; the C2PA library is built without network features and CI checks the library and the linked app for networking code (`scripts/check-no-networking.sh`) | `docs/SECURITY_AUDIT.md` checks 3, 7 and 8 |
 | C5 | App Privacy Report lists no domains for the app | C4 | Audit check 8 on a device, over 7 days |
 | C6 | Optional details removed by default; you choose what each photo keeps | Metadata allowlist and fail-closed read-back (merged; device check pending); the Privacy settings screen where you choose (merged; device check pending) | Audit check 9 |
-| C7 | Location off by default | Location switch off by default; asks for "while using the app" access when turned on; writes latitude, longitude and altitude only (`LocationTagging`, issue #43; device check pending) | Audit checks 9 and 16 |
+| C7 | Location off by default; Focus on Faces off by default, so autofocus and auto exposure don't follow faces (the listing doesn't say face detection is off: iOS may still detect faces in the viewfinder, as the Honesty screen says) | Location switch off by default; asks for "while using the app" access when turned on; writes latitude, longitude and altitude only (`LocationTagging`, issue #43; device check pending); Focus on Faces off by default (issue #80) | Audit checks 9 and 16; unit tests (`NopeSettingsTests`) |
 | C8 | Add-only Photos access; can't see existing photos | Add-only saving (merged; device check pending) | Audit check 16 |
-| C9 | Every photo signed with a new key; signatures can't link photos | `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10 |
-| C10 | The Honesty screen lists the last photo's details, what the phone may still do, and what no app can remove | Honesty screen (merged: what the app never does, what iOS may still do, what no app can remove); the last photo's details on screen (not built) | UI tests; human review of `Honesty.xcstrings` |
+| C9 | Signing off by default; when it's on, every photo is signed with a new key, signatures can't link photos, and a signed photo shows that it was taken with the app and which version | Signing off by default (issue #80); `NopeSigning` with C2PA (merged; device check of Secure Enclave signing pending) | Audit check 10; unit tests (`MetadataSettingsTests`) |
+| C10 | What's in This Photo lists the last photo's details; the Honesty screen says what the phone may still do and what no app can remove | What's in This Photo, opened from the last photo (merged); Honesty screen in Settings (merged: what the app never does, what iOS may still do, what no app can remove) | UI tests; human review of `Honesty.xcstrings` |
 | C11 | VoiceOver, Voice Control, the largest text sizes; volume buttons as a shutter | Volume and Camera Control shutter (merged); every 1.0 screen passing audits and the manual pass (not done) | `accessibility-label.md` |
 | C12 | Free and open source under GPL-3.0 | True today | `LICENSE` |
 

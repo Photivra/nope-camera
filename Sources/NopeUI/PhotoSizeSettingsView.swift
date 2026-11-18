@@ -4,7 +4,7 @@ import SwiftUI
 /// The photo size of each lens that offers more than one (issue #57): a pushed-list picker per
 /// lens, with the sizes the lens reports and a plain explanation.
 ///
-/// Advanced option: Settings links here only when a lens offers a choice
+/// Advanced option: Settings shows its row only when a lens offers a choice
 /// (`Lens.photoSizeChoices`), which is a lens without Bayer RAW; a Bayer RAW lens always takes
 /// the sensor's binned RAW. The default is the smallest size, as before this option existed.
 /// The rules are in `Lens` and `NopeSettings`; this view only shows them.
@@ -41,13 +41,13 @@ struct PhotoSizeSettingsView: View {
                     } label: {
                         Text(verbatim: LensName.string(for: lens.kind))
                     }
-                    // A pushed list, as the other pickers in Settings: a menu's value was reported
+                    // A pushed list, as Paired with RAW in Formats: a menu's value was reported
                     // clipped at large text sizes.
                     .pickerStyle(.navigationLink)
                 }
             }
             // A row rather than a section footer, which the accessibility audit reported as not
-            // following Dynamic Type (see LookSettingsView).
+            // following Dynamic Type (see CopiesSettingsView).
             Section {
                 Text(
                     "These lenses have no RAW, so each photo is the phone's processed file. A larger size has more pixels and bigger files. The smallest size is the default.",
@@ -61,7 +61,7 @@ struct PhotoSizeSettingsView: View {
 
     /// The row and screen title, "Photo Size".
     static var rowTitle: Text {
-        Text("Photo Size", bundle: .module, comment: "Settings row and screen title: the size of photos from lenses that offer more than one.")
+        Text(SettingsText.photoSize)
     }
 
     /// The lenses that offer a choice of photo size.
@@ -72,28 +72,18 @@ struct PhotoSizeSettingsView: View {
         lenses.filter { !$0.photoSizeChoices.isEmpty }
     }
 
-    /// A navigation row to the screen, or nothing when no lens offers a choice.
+    /// The Settings row's value: "Default" while every lens takes photos at its default size,
+    /// "Custom" otherwise. Settings shows the row only when a lens offers a choice.
     ///
     /// - Parameters:
     ///   - settings: The settings.
     ///   - lenses: The device's lenses.
-    @ViewBuilder
-    static func link(settings: NopeSettings, lenses: [Lens]) -> some View {
-        let choices = lensesWithChoices(lenses)
-        if !choices.isEmpty {
-            NavigationLink {
-                PhotoSizeSettingsView(settings: settings, lenses: choices)
-            } label: {
-                LabeledContent {
-                    if choices.allSatisfy({ settings.photoSize(for: $0) == $0.defaultPhotoSize }) {
-                        Text(String(localized: "Photo size: Default", defaultValue: "Default", bundle: .module, comment: "Settings row value: every lens takes photos at its default size."))
-                    } else {
-                        Text(String(localized: "Photo size: Custom", defaultValue: "Custom", bundle: .module, comment: "Settings row value: at least one lens takes photos at a size other than its default."))
-                    }
-                } label: {
-                    rowTitle
-                }
-            }
+    /// - Returns: The value text.
+    static func summary(settings: NopeSettings, lenses: [Lens]) -> Text {
+        if lensesWithChoices(lenses).allSatisfy({ settings.photoSize(for: $0) == $0.defaultPhotoSize }) {
+            Text(String(localized: "Photo size: Default", defaultValue: "Default", bundle: .module, comment: "Settings row value: every lens takes photos at its default size."))
+        } else {
+            Text(String(localized: "Photo size: Custom", defaultValue: "Custom", bundle: .module, comment: "Settings row value: at least one lens takes photos at a size other than its default."))
         }
     }
 

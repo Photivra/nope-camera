@@ -181,9 +181,11 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
     /// Turns the running lens's torch on at a level, or off.
     ///
     /// - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-    /// - Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+    /// - Returns: The light's state. While the session isn't configured (before a start, or
+    ///   while it is reconfigured), a request for the light is `TorchStatus.pending`, never a
+    ///   silent `TorchStatus.off` (issue #75); `LightModel` applies it after the start.
     public func setTorch(level: Double?) async -> TorchStatus {
-        guard activeConfiguration != nil else { return .off }
+        guard activeConfiguration != nil else { return level == nil ? .off : .pending }
         return await hardware.setTorch(level: level)
     }
 }

@@ -2,8 +2,8 @@ import NopeCore
 import SwiftUI
 
 /// The interval and photo count of interval shooting (issue #48), with Start or Stop: one
-/// section, shown in the Interval sheet of the Drive menu and in Pro Tools, so both offer the
-/// same thing.
+/// section, shown in Interval Settings (``IntervalSheet``). The drive strip and its card are the
+/// one home of Interval; Pro Tools has no Interval section (docs/design/BUILD-SPEC.md, 3.4).
 ///
 /// A series works in full auto and with manual controls on; `NopeCore` holds the series
 /// (`ManualControlsModel.interval` and `ManualControlIntent.startInterval`).
@@ -74,7 +74,7 @@ struct IntervalSection: View {
                 }
             }
         } footer: {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: NopeSpace.xs) {
                 if manual.intervalProgress == nil, let blocker = model.intervalBlocker {
                     Self.reason(blocker)
                 }
@@ -111,8 +111,9 @@ struct IntervalSection: View {
     }
 }
 
-/// The Interval sheet, opened from the Drive menu and the Interval pill: the series' interval
-/// and photo count, and Start. In the Interval drive mode the shutter starts the series too.
+/// Interval Settings, opened from the selected Interval word of the drive strip and from the
+/// interval card (docs/design/BUILD-SPEC.md, 3.5): the series' interval and photo count, and
+/// Start. In the Interval drive mode the shutter starts the series too.
 struct IntervalSheet: View {
     /// The camera model.
     let model: CameraModel

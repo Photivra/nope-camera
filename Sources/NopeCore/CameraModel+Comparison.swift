@@ -49,7 +49,9 @@ extension CameraModel {
         }
         captureStatus = .saving
         do {
-            let result = try await saver.saveReturningFiles(photo, settings: settings, captureDuration: captureDuration)
+            let result = try await saver.saveReturningFiles(
+                photo, settings: settings, captureDuration: captureDuration,
+                distortionCorrection: distortionCorrection(of: photo))
             captureStatus = .saved(result.saved)
             await comparison.present(
                 phone, saved: result.saved, files: result.files, delay: secondStart - started,

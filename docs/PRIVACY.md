@@ -2,7 +2,7 @@
 
 How Photivra Nope Camera handles every metadata item it writes or removes. Status: in development.
 The app saves photos to Photos with metadata built from the allowlist below and checked by reading
-each file back; photos are not signed yet. The list follows issue #1, "Privacy"; the saved files are
+each file back, and signs them only when the person turns signing on. The list follows issue #1, "Privacy"; the saved files are
 **still to be confirmed by the device tag check** (issue #1, step 2; "Device checks" below). Wording
 for any user-facing claim comes from
 [`docs/research/privacy-claims.md`](research/privacy-claims.md).
@@ -26,8 +26,10 @@ for any user-facing claim comes from
   are one Photos asset: the DNG is the main resource and the processed file the alternate, as
   Apple documents ("Capturing Photos in RAW and Apple ProRAW Formats"). With RAW, HEIF and JPEG
   all selected, Settings › Formats › Paired with RAW chooses which copy is the alternate (HEIF by
-  default); the other is its own asset (issue #50). Pairing changes nothing in any file. The formats are RAW plus
-  HEIF by default (`SaveSettings`); a lens without RAW saves its labeled processed fallback. If a
+  default); the other is its own asset (issue #50). Pairing changes nothing in any file. The format is RAW only by
+  default (`SaveSettings`, issue #80); HEIF and JPEG copies are added in Settings › Formats, and
+  settings a person saved before keep their formats. A lens without RAW saves its labeled
+  processed fallback (see "Processing"). If a
   file fails the check, nothing is saved and the screen says "Not saved: nope. couldn't confirm
   that the photo holds only the details you chose." Files aren't written to disk, with one
   exception PhotoKit requires: the processed copy paired with a RAW is added to Photos from a
@@ -39,7 +41,8 @@ for any user-facing claim comes from
   with the Lock Screen camera, or still saving after the screen locked, would be split into two
   photos. It exists only for the moment the save takes.
 - **Signing:** every file is signed with Content Credentials when the signature switch is on
-  (the default), and the screen says "Saved and signed." If signing fails, the photo is saved
+  (off by default, issue #80), and the screen says "Saved and signed." With it off, the screen
+  says "Saved. Not signed: signing is off in Settings." If signing fails, the photo is saved
   unsigned and the screen says "Saved. Not signed: the signature couldn't be created." Signing
   runs before the read-back, so a signed file is checked like any other (see "Content
   Credentials").
@@ -73,7 +76,7 @@ for any user-facing claim comes from
   needs no permission) only while it is shown; focus peaking and the histogram sample a few
   reduced preview frames a second in memory only while they are shown; the live camera readout
   reads values the camera reports. None of this is written to a photo, stored, logged or copied.
-- **Comparison shot (issue #55):** off unless the person turns Compare on (quick-controls tray;
+- **Comparison shot (issue #55):** off unless the person turns Compare on (a tile in Q, the quick menu;
   not remembered). Each single or self-timer photo is then followed by a second photo with the
   phone's processing at `.quality` prioritization, which keeps the system's own metadata, so the
   compare view can show what it carries. That photo is never saved, signed, written to a file,
@@ -170,9 +173,14 @@ drive and astro values, saved when the person taps Save Current Settings.
 
 The app signs each saved file (DNG, HEIF, JPEG) with C2PA Content Credentials
 (`ContentCredentialsSigner` in `NopeSigning`, called by `PhotoSaver` before the read-back).
-Signing has its own switch (`MetadataSettings.signsPhotos`), on by default, outside the "Remove
-all optional details" master switch. If signing fails, the photo is saved unsigned and the
-screen says so.
+Signing has its own switch (Settings › Privacy › Sign Each Photo, `MetadataSettings.signsPhotos`),
+outside the "Remove all optional details" master switch. It is **off by default** (owner
+decision, issue #80): a signed file shows that it was made by Photivra Nope Camera and which
+version (the claim generator, below), so signing is the person's choice, and the switch's
+explanation says so. A value the person already saved is kept; a fresh install and Factory
+Defaults start with it off. If signing fails, the photo is saved unsigned and the screen says
+so; a "Not Signed" warning then stays on the camera until a photo is signed again. Signing that
+is off is not a warning: the message after each photo says the photo isn't signed.
 
 **What it proves.** The signature proves the file hasn't changed since the app signed it. It
 doesn't prove who took the photo or on which device. Each file is signed with a new key and a
@@ -243,6 +251,47 @@ check." (`SignatureStatus.UnsignedReason.signedFileFailedCheck`).
 
 **Signing must be the last change.** Any later change to the bytes (an edit in Photos, export,
 re-encoding by a sharing app) breaks the signature or removes it.
+
+## Processing
+
+The app asks the camera for as little processing as the device allows
+(`ProcessingSwitches.leastProcessing` in `NopeCapture`): `.speed` quality prioritization; Apple
+ProRAW, zero shutter lag, responsive capture, deferred delivery, constant color and
+content-aware distortion correction off where the photo output offers them; the camera's
+geometric distortion correction off where the camera allows it; and zoom 1.0.
+
+- **A lens with Bayer RAW:** the DNG holds the sensor data. Apple's documentation says "RAW photo
+  captures never have GDC applied, regardless of the value of
+  AVCaptureDevice.geometricDistortionCorrectionEnabled" (`AVCaptureDevice.h`). HEIF and JPEG
+  copies are developed by the app from the RAW (`DevelopedLook`): one global tone curve
+  (Standard) or none (Flat), with no noise reduction, sharpening, local tone mapping or lens
+  correction. The default is RAW only (issue #80).
+- **A lens without Bayer RAW (the processed fallback):** the phone's camera makes the HEIF (or
+  JPEG, on a lens without HEVC). AVFoundation offers apps no switch for how it turns the sensor
+  data into that image (its colors, tone and any noise reduction and sharpening). The app saves
+  the file without changing its pixels and writes only the allowlisted metadata.
+- **The "Processed" marker (issue #80):** before a photo is taken with such a lens, the camera
+  shows "Processed" with an amber triangle in its format status, also in clean view (VoiceOver:
+  "Processed: no RAW on this lens"). Tapping it opens the lens's processing note: what the phone
+  does, the lens's distortion correction, and what the app does to the files it saves; on that
+  lens the format list is read-only, naming the one file it saves. Settings › Screen › Show
+  Processed Marker hides the marker (on by default; offered only on a device with such a lens,
+  `NopeSettings.showsProcessedMarker`). Hiding it changes nothing else: the format status names
+  the file, VoiceOver still names the format in the status and the viewfinder's description, "What's in This Photo" says "Processed by the phone's
+  camera", and a signed file's manifest says the phone processed it.
+- **Distortion correction per lens (issue #80):** `Lens.distortionCorrection` is what the camera
+  reports, not a measurement. `turnedOff`: the camera offers the switch
+  (`isGeometricDistortionCorrectionSupported`) and the app turns it off. `notSwitchable`: the
+  camera offers no switch and doesn't report whether the processed photo is corrected, so the
+  note says its photos may be corrected. The processing note and "What's in This Photo" (for a
+  processed fallback) show it. Which lenses correct their processed photos anyway is a device
+  check (`TESTING.md`, "Processing disclosure on a device").
+- **Focus on Faces (issue #80; Face Detection before 1.0.0):** Settings › Camera › Focus on
+  Faces, off by default. Off sets
+  `automaticallyAdjustsFaceDrivenAutoFocusEnabled` and `isFaceDrivenAutoFocusEnabled` (and the
+  auto exposure pair) to false where the camera supports continuous autofocus or auto exposure;
+  on hands them back to the system. The app never reads which faces the camera found: it has no
+  metadata output. A value the person already saved is kept.
 
 ## Tag check
 
@@ -334,7 +383,7 @@ turning the master on clears every item, turning it off always starts from these
 | Maker notes (Apple) | Off | Nothing visible; they hold time since restart and per-photo IDs | Present (`0x927C`) |
 | Your name and copyright | Off | Nothing; only written if you enter them | Not written by the system |
 | App name and version ("Photivra Nope Camera" and its version) | On | Apps can't show what made the file | Written by the app |
-| Content Credentials signature (outside the master switch) | On | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by the app |
+| Content Credentials signature (outside the master switch) | Off (issue #80) | The photo can't be checked for changes. The signature never has a timestamp (see "Content Credentials") | Written by the app |
 
 Serial numbers, unique image IDs and raw data IDs are never written, by the system or by the app,
 so they have no switch.
@@ -353,7 +402,7 @@ details" turns it off like every other item.
 
 - **Asking:** turning the switch on asks for "while using the app" location access first
   (`LocationTagging.turnOn(in:)`); if access is declined or restricted, the switch stays off and
-  Choose Details says how to allow it in Settings. The app never asks for "always" access and has no
+  Details in Each Photo says how to allow it in Settings. The app never asks for "always" access and has no
   background mode.
 - **When it runs:** location updates run only while the switch is on, access is allowed and the
   camera is running (`LocationTagging.update(isOn:cameraIsRunning:)`); they stop on any
@@ -389,7 +438,7 @@ copy. Orientation is a locked item and the read-back accepts all eight values.
 
 ### Developed file options
 
-Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
+Settings › Photos › HEIF and JPEG Copies (issue #57; File Options before 1.0.0): the compression of the HEIF and JPEG copies, the
 HEIF bit depth (10 or 8), the color space (Display P3 or sRGB) and the copy size (full, half or a
 quarter of the RAW's width and height). They change only how the developed copies are encoded,
 never the RAW; the only metadata they touch is EXIF `PixelXDimension` and `PixelYDimension` of a
@@ -399,7 +448,7 @@ app can control, and what the app offers, is in
 
 ### Standard File Tags
 
-Settings › Privacy › Choose Details › Standard File Tags, **on by default** (owner decision,
+Settings › Privacy › Details in Each Photo › Standard File Tags, **on by default** (owner decision,
 2026-11-16) and outside "Remove all optional details", like signing
 (`MetadataSettings.writesStandardFileTags`). It writes the tags the Exif standard requires that
 are fixed values and say nothing about the photo, the device or the person:

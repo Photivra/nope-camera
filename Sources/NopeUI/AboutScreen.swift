@@ -37,14 +37,13 @@ struct AboutScreen: View {
             }
             Section {
                 NavigationLink {
-                    LegalTextView(
-                        resource: "GPL-3.0",
-                        title: Text("License", bundle: .module, comment: "Title of the screen showing the full license text."))
+                    LegalTextView(resource: "GPL-3.0", title: Text(SettingsText.license))
                 } label: {
                     Text(
                         "GNU General Public License, version 3 only (GPL-3.0-only)", bundle: .module,
                         comment: "Row that opens the full license text. GNU General Public License is the license's name; keep GPL-3.0-only unchanged.")
                 }
+                .settingsRow(.license)
                 Text(
                     "nope. is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
                     comment: "Plain summary of the GPL. Keep \"nope.\" unchanged.")
@@ -55,12 +54,11 @@ struct AboutScreen: View {
             Section {
                 Text(verbatim: Self.dngNotice)
                 NavigationLink {
-                    LegalTextView(
-                        resource: "NOTICE",
-                        title: Text("Notices and Trademarks", bundle: .module, comment: "Row and screen title for the copyright, trademark and third-party notices."))
+                    LegalTextView(resource: "NOTICE", title: Text(SettingsText.noticesAndTrademarks))
                 } label: {
-                    Text("Notices and Trademarks", bundle: .module, comment: "Row and screen title for the copyright, trademark and third-party notices.")
+                    Text(SettingsText.noticesAndTrademarks)
                 }
+                .settingsRow(.noticesAndTrademarks)
             } header: {
                 Text("Third-Party Notices", bundle: .module, comment: "Section header for notices required by other licenses.")
             } footer: {
@@ -82,7 +80,7 @@ struct AboutScreen: View {
                     comment: "Footer under the source code link. Keep \"nope.\" unchanged.")
             }
         }
-        .navigationTitle(Text("About and Licenses", bundle: .module, comment: "Settings row and screen title: version, license and third-party notices."))
+        .navigationTitle(Text(SettingsText.about))
     }
 
     /// The version and build number from an Info.plist dictionary, such as "0.1.0 (1)".
@@ -130,7 +128,7 @@ struct LegalTextView: View {
     /// which scrolls as it goes.
     var body: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+            LazyVStack(alignment: .leading, spacing: NopeSpace.s) {
                 ForEach(paragraphs.indices, id: \.self) { index in
                     Text(verbatim: paragraphs[index])
                         .font(.body)
@@ -139,7 +137,7 @@ struct LegalTextView: View {
                 }
             }
             .textSelection(.enabled)
-            .padding()
+            .padding(NopeSpace.m)
         }
         .navigationTitle(title)
         .toolbarTitleDisplayMode(.inline)

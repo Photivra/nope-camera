@@ -268,7 +268,9 @@ func setTorch(level: Double?) async -> TorchStatus
 Turns the running lens's torch on at a level, or off.
 
 - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-- Returns: The light's state; `TorchStatus.off` while the session isn't configured.
+- Returns: The light's state. While the session isn't configured (before a start, or
+  while it is reconfigured), a request for the light is `TorchStatus.pending`, never a
+  silent `TorchStatus.off` (issue #75); `LightModel` applies it after the start.
 
 ## `AVFoundationCaptureBackend/startSession(_:)`
 
@@ -528,6 +530,17 @@ let aperture: ApertureRange
 
 The aperture, as f-numbers.
 
+## `CameraDeviceDescription/canTurnOffDistortionCorrection`
+
+internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
+
+```swift
+let canTurnOffDistortionCorrection: Bool
+```
+
+Whether the camera lets apps turn its geometric distortion correction off
+(`isGeometricDistortionCorrectionSupported`); the app then does (issue #80).
+
 ## `CameraDeviceDescription/deviceType`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
@@ -580,12 +593,12 @@ let hasTorch: Bool
 Whether the camera has a torch that can be turned on (`hasTorch` and
 `isTorchModeSupported(.on)`).
 
-## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:manualControls:flashModes:hasTorch:)`
+## `CameraDeviceDescription/init(uniqueID:deviceType:position:isVirtual:rawPixelFormats:supportsHEVC:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:fieldOfViewDegrees:canTurnOffDistortionCorrection:manualControls:flashModes:hasTorch:)`
 
 internal, declared in `Sources/NopeCapture/CameraDeviceDescription.swift`
 
 ```swift
-init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(uniqueID: String, deviceType: DeviceType, position: Position, isVirtual: Bool, rawPixelFormats: [RAWPixelFormat], supportsHEVC: Bool, isoRange: ClosedRange<Double>, exposureDurationRange: ClosedRange<Double>, aperture: ApertureRange, maxBracketedPhotoCount: Int, photoDimensions: [PhotoDimensions], fieldOfViewDegrees: Double, canTurnOffDistortionCorrection: Bool = false, manualControls: ManualControlSupport = .none, flashModes: [FlashMode] = [], hasTorch: Bool = false)
 ```
 
 Creates a camera description.
@@ -603,6 +616,8 @@ Creates a camera description.
   - maxBracketedPhotoCount: The most frames in one bracketed capture.
   - photoDimensions: The supported maximum photo sizes, as reported.
   - fieldOfViewDegrees: The horizontal field of view, in degrees.
+  - canTurnOffDistortionCorrection: Whether the camera lets apps turn its geometric
+    distortion correction off. Defaults to `false`.
   - manualControls: The camera's answers about manual control. Defaults to none.
   - flashModes: The supported flash modes. Defaults to none.
   - hasTorch: Whether the camera has a torch. Defaults to `false`.
@@ -875,8 +890,9 @@ The system may refuse a level while the device is hot (`AVErrorTorchLevelUnavail
 or make the torch unavailable (`isTorchAvailable`); the light then stays off.
 
 - Parameter level: The brightness, from just above 0 to 1, or `nil` for off.
-- Returns: The light's state afterwards: `TorchStatus.off` when no camera with a torch
-  is attached.
+- Returns: The light's state afterwards. While no camera with a torch is attached (during
+  discovery, a teardown or a reconfiguration), a request for the light is
+  `TorchStatus.pending` and a request to turn it off is `TorchStatus.off` (issue #75).
 
 ## `CaptureHardware/stop()`
 
@@ -1491,8 +1507,8 @@ init(_ reason: AVCaptureSession.InterruptionReason?)
 
 Converts the reason in `AVCaptureSession.wasInterruptedNotification`.
 
-A missing reason, or one added in a later iOS (such as sensitive content mitigation in
-iOS 26), becomes `InterruptionReason.other`.
+A missing reason, or one the app has no case for (such as sensitive content mitigation,
+iOS 26, or one added in a later iOS), becomes `InterruptionReason.other`.
 
 - Parameter reason: The value of `AVCaptureSessionInterruptionReasonKey`, or `nil`.
 
@@ -1887,7 +1903,7 @@ internal, declared in `Sources/NopeCapture/ManualControlSupport.swift`
 let exposureRegion: Bool
 ```
 
-iOS 26: `isExposureRectOfInterestSupported`.
+`isExposureRectOfInterestSupported`.
 
 ## `ManualControlSupport/focusPoint`
 

@@ -1986,6 +1986,20 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The device's free storage and battery, for warnings and to stop a burst in time.
 
+## `CameraModel/distortionCorrection(of:)`
+
+internal, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor func distortionCorrection(of photo: CapturedPhoto) -> DistortionCorrection?
+```
+
+The distortion correction of the lens a photo was taken with, for its details (issue #80),
+or `nil` when the lens isn't known.
+
+- Parameter photo: A captured photo.
+- Returns: The lens's ``Lens/distortionCorrection``.
+
 ## `CameraModel/drive`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2522,6 +2536,32 @@ Records whether the app is in the foreground, and applies it to the self-timer a
 astro helper (``CameraIntent/setInForeground(_:)``).
 
 - Parameter isInForeground: Whether the app is in the foreground now.
+
+## `CameraModel/setManualControls(_:settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func setManualControls(_ isOn: Bool, settings: NopeSettings) async
+```
+
+Turns manual controls on or off and stores the choice as the "Manual controls" option
+(``NopeSettings/showsManualControls``). Use it for every control that turns manual
+controls on or off, such as a Manual Controls button.
+
+Storing the option alone isn't enough: the astro helper turns manual controls on without
+changing the option, so storing "off" while the helper had turned them on changes no
+stored value, and an interface that follows the option (a SwiftUI `.task(id:)`) sends
+nothing. This call stores the option and sends ``ManualControlIntent/setEnabled(_:)``
+itself, so turning manual controls off always turns them and the helper off. An interface
+that also follows the option may send the same intent again; it changes nothing then.
+
+Side effects: as ``ManualControlIntent/setEnabled(_:)``; off returns every control to
+automatic and turns the astro helper off.
+
+- Parameters:
+  - isOn: Whether manual controls are on.
+  - settings: The person's settings, where the option is stored.
 
 ## `CameraModel/startTimer(seconds:shot:)`
 
@@ -6307,6 +6347,52 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 
 The battery's state, or `nil` on a device without a battery.
 
+## `DistortionCorrection`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+enum DistortionCorrection
+```
+
+Whether a lens lets the app turn off the camera's geometric distortion correction, as the
+camera reports it (issue #80).
+
+Geometric distortion correction reshapes the picture to lessen a wide lens's fisheye effect,
+so it changes pixels. The app turns it off wherever the camera allows (`docs/PRIVACY.md`,
+"Processing"). Apple's documentation says "RAW photo captures never have GDC applied,
+regardless of the value of AVCaptureDevice.geometricDistortionCorrectionEnabled"
+(`AVCaptureDevice.h`, `geometricDistortionCorrectionSupported`), so this matters only for a
+lens's processed fallback. An interface discloses it in the lens's processing note and in
+the photo's details.
+
+The value is what the camera reports, not a measurement: whether a lens that offers no
+switch corrects its photos anyway is checked on real devices (`docs/TESTING.md`).
+
+## `DistortionCorrection/notSwitchable`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+case notSwitchable
+```
+
+The camera offers apps no switch for the correction
+(`AVCaptureDevice.isGeometricDistortionCorrectionSupported` is `false`) and doesn't report
+whether its processed photos are corrected, so they may be.
+
+## `DistortionCorrection/turnedOff`
+
+public, declared in `Sources/NopeCore/DistortionCorrection.swift`
+
+```swift
+case turnedOff
+```
+
+The camera lets apps turn the correction off
+(`AVCaptureDevice.isGeometricDistortionCorrectionSupported` is `true`), and the app turns
+it off.
+
 ## `Double/limited(to:)`
 
 internal, declared in `Sources/NopeCore/WhiteBalance.swift`
@@ -7449,81 +7535,6 @@ internal, declared in `Sources/NopeCore/AstroHelper.swift`
 
 Counts a frame taken.
 
-## `GoldenSpiral`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-enum GoldenSpiral
-```
-
-The golden (Fibonacci) spiral: quarter circles in the squares that a golden rectangle divides
-into, stretched to fill the picture (issue #40).
-
-It is built in a landscape golden rectangle (phi wide, 1 high): a square is cut from the left,
-then from the top, the right and the bottom of what is left, again and again, and each square
-holds a quarter circle that continues the last one. The points are then scaled to the unit
-square and moved to the ``SpiralPlacement``.
-
-## `GoldenSpiral/place(_:_:)`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func place(_ point: GuidePoint, _ placement: SpiralPlacement) -> GuidePoint
-```
-
-Moves a point of the standard spiral to a placement: mirrored left to right first if the
-placement is flipped, then turned clockwise a quarter turn at a time.
-
-- Parameters:
-  - point: A point of the standard spiral.
-  - placement: The placement.
-
-## `GoldenSpiral/points(placement:)`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func points(placement: SpiralPlacement) -> [GuidePoint]
-```
-
-The spiral as a polyline from its outer end to its center, in unit coordinates.
-
-- Parameter placement: Where the spiral sits.
-- Returns: ``squareCount`` × ``pointsPerQuarter`` + 1 points.
-
-## `GoldenSpiral/pointsPerQuarter`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let pointsPerQuarter: Int
-```
-
-The points drawn along each quarter circle; enough for a smooth curve at full screen.
-
-## `GoldenSpiral/squareCount`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let squareCount: Int
-```
-
-How many squares the spiral passes through. After ten the squares are smaller than a
-hundredth of the picture, too small to see.
-
-## `GoldenSpiral/unplacedPoints()`
-
-internal, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static func unplacedPoints() -> [GuidePoint]
-```
-
-The spiral in the standard placement, in unit coordinates.
-
 ## `GravitySource`
 
 public, declared in `Sources/NopeCore/Level.swift`
@@ -7621,16 +7632,6 @@ enum GridGeometry
 Where each grid style's lines go, in unit coordinates, so every interface draws the same
 guides (issue #40). Guides are on screen only.
 
-## `GridGeometry/goldenRatio`
-
-public, declared in `Sources/NopeCore/GridGeometry.swift`
-
-```swift
-static let goldenRatio: Double
-```
-
-The golden ratio, phi: (1 + √5) / 2.
-
 ## `GridGeometry/lines(for:aspectRatio:)`
 
 public, declared in `Sources/NopeCore/GridGeometry.swift`
@@ -7642,8 +7643,7 @@ static func lines(for style: GridStyle, aspectRatio: Double) -> [GuideLine]
 The straight lines of a grid style.
 
 - Parameters:
-  - style: The style. ``GridStyle/goldenSpiral`` has no straight lines; draw
-    ``GoldenSpiral/points(placement:)`` instead.
+  - style: The style.
   - aspectRatio: The picture's width divided by its height, such as 0.75 for a 4:3
     picture held upright. Only ``GridStyle/square`` uses it.
 - Returns: The lines, vertical ones first.
@@ -7668,26 +7668,6 @@ case fourByFour
 ```
 
 Three lines each way, at quarters.
-
-## `GridStyle/goldenRatio`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-case goldenRatio
-```
-
-Two lines each way at the golden ratio (phi): about 38% and 62%.
-
-## `GridStyle/goldenSpiral`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-case goldenSpiral
-```
-
-A golden (Fibonacci) spiral, in one of eight placements (``SpiralPlacement``).
 
 ## `GridStyle/square`
 
@@ -8850,6 +8830,18 @@ The 24 MP size AVFoundation delivers only through deferred photo delivery, which
 turns off: "The maxPhotoDimensions setting for 24MP (5712, 4284), when supported, is only
 serviced as 24MP via deferred photo delivery" (`AVCapturePhotoOutput.h`).
 
+## `Lens/distortionCorrection`
+
+public, declared in `Sources/NopeCore/Lens.swift`
+
+```swift
+let distortionCorrection: DistortionCorrection
+```
+
+Whether the app can turn off the camera's geometric distortion correction on this lens,
+as the camera reports it (issue #80). It affects only the processed fallback: RAW never
+has the correction applied (``DistortionCorrection``).
+
 ## `Lens/equivalentFocalLength`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -8907,12 +8899,12 @@ A stable identifier for this lens on this device, supplied by the backend.
 
 It identifies the lens only within the app and is never written to a photo.
 
-## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:)`
+## `Lens/init(id:kind:bayerRAWFormat:processedFallback:magnification:isoRange:exposureDurationRange:aperture:maxBracketedPhotoCount:photoDimensions:manualControls:equivalentFocalLength:flashModes:hasTorch:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/Lens.swift`
 
 ```swift
-init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false)
+init(id: String, kind: Kind, bayerRAWFormat: String?, processedFallback: ProcessedFallback = .heif, magnification: Double? = nil, isoRange: ClosedRange<Double>? = nil, exposureDurationRange: ClosedRange<Double>? = nil, aperture: ApertureRange? = nil, maxBracketedPhotoCount: Int = 0, photoDimensions: [PhotoDimensions] = [], manualControls: ManualCapabilities = .none, equivalentFocalLength: Double? = nil, flashModes: [FlashMode] = [], hasTorch: Bool = false, distortionCorrection: DistortionCorrection = .notSwitchable)
 ```
 
 Creates a lens description.
@@ -8933,6 +8925,8 @@ Creates a lens description.
   - equivalentFocalLength: The 35 mm-equivalent focal length in millimeters, or `nil`.
   - flashModes: The flash modes the lens supports. Defaults to none.
   - hasTorch: Whether the lens has a torch. Defaults to `false`.
+  - distortionCorrection: Whether the app can turn off the camera's geometric distortion
+    correction. Defaults to ``DistortionCorrection/notSwitchable``, which claims least.
 
 ## `Lens/isoRange`
 
@@ -9270,6 +9264,11 @@ The system may refuse a level while the device is hot; the backend then reports
 ``TorchStatus/unavailable`` and leaves the light off. Stopping the camera or switching
 lenses turns the light off, so ``LightModel`` asks again after each start.
 
+A request to turn the light on while no camera is attached (before the start, or while
+the camera is reconfigured) is answered ``TorchStatus/pending``, never
+``TorchStatus/off``: the light can't be switched yet, and ``LightModel`` applies it after
+the start (issue #75).
+
 - Parameter level: The brightness, from just above 0 to 1, or `nil` to turn the light
   off.
 - Returns: The light's state afterwards.
@@ -9336,6 +9335,9 @@ intents. The rules:
   lens without a torch (AGENTS.md, "Battery"). The brightness level is kept.
 - After a restart of the same lens, such as a recovery from an error, a torch that was on
   comes back on.
+- A request made before the camera is ready is kept as ``TorchStatus/pending`` and applied
+  once the camera has started; the light then comes on or is reported unavailable, never
+  silently turned off (issue #75).
 
 Isolated to the main actor, like ``CameraModel``.
 
@@ -9349,6 +9351,14 @@ internal, declared in `Sources/NopeCore/Light.swift`
 
 Asks the hardware for the torch at ``torchLevel``, and records the answer. Does nothing
 without a backend.
+
+The answer is never recorded as a silent "off" (issue #75):
+- ``TorchStatus/pending`` (the camera is being reconfigured) keeps the request, which the
+  next ``sessionDidStart()`` applies;
+- ``TorchStatus/off`` in answer to "on" is recorded as ``TorchStatus/unavailable``, so an
+  interface says the light didn't come on;
+- if the person turned the light off, or the camera paused, while the hardware answered,
+  a light that came on is turned off again.
 
 ## `LightModel/cameraDidPause()`
 
@@ -9453,7 +9463,8 @@ internal, declared in `Sources/NopeCore/Light.swift`
 ```
 
 Records the lens the camera is about to start with. Called by ``CameraModel`` before
-each start; the light is off until ``sessionDidStart()``.
+each start; the light is off until ``sessionDidStart()``, and shows
+``TorchStatus/pending`` meanwhile when the person wants it.
 
 - Parameter lens: The lens.
 
@@ -9465,7 +9476,8 @@ internal, declared in `Sources/NopeCore/Light.swift`
 @MainActor func sessionDidStart() async
 ```
 
-Turns the torch back on after a start, if the person wants it and the lens has one.
+Records that the camera runs, after a start or after an interruption ended, and turns the
+torch on if the person asked for it meanwhile and the lens has one.
 
 Side effect: may switch the torch on.
 
@@ -9745,7 +9757,18 @@ public, declared in `Sources/NopeCore/LiveActivity.swift`
 case notAllSigned
 ```
 
-At least one saved photo isn't signed.
+At least one saved photo isn't signed, although signing was on or couldn't be offered.
+
+## `LiveActivityContent/Signing/off`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case off
+```
+
+No saved photo is signed, because the person has signing turned off
+(``SignatureStatus/UnsignedReason/turnedOff``): the person's choice, not a problem.
 
 ## `LiveActivityContent/canStop`
 
@@ -10230,6 +10253,17 @@ case signed
 ```
 
 "Signed.": every saved photo is signed.
+
+## `LiveActivitySigningLine/signingOff`
+
+public, declared in `Sources/NopeCore/LiveActivity.swift`
+
+```swift
+case signingOff
+```
+
+"Not signed: signing is off in Settings.": signing is off by the person's choice, so the
+line states it without pointing to a problem.
 
 ## `LiveActivityStatusLine`
 
@@ -15051,7 +15085,7 @@ metadata allowlist takes (``MetadataPlan``). It holds the rules of `docs/PRIVACY
 - Turning the master back on turns every item off again.
 - Turning the master off sets every item to its documented default
   (``MetadataItem/isOnWhenCustomizing``).
-- Signing (``signsPhotos``) is outside the master switch and on by default.
+- Signing (``signsPhotos``) is outside the master switch and off by default (issue #80).
 
 ```swift
 var settings = MetadataSettings()          // master on, every item off
@@ -15090,8 +15124,8 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 init()
 ```
 
-The settings on first launch: every optional detail removed, photos signed, and no name
-or copyright entered.
+The settings on first launch: every optional detail removed, photos not signed, and no
+name or copyright entered.
 
 ## `MetadataSettings/isCustom`
 
@@ -15172,8 +15206,10 @@ public, declared in `Sources/NopeCore/MetadataSettings.swift`
 var signsPhotos: Bool
 ```
 
-Whether each photo is signed with Content Credentials. Outside the master switch; on by
-default.
+Whether each photo is signed with Content Credentials. Outside the master switch; off by
+default (owner decision, issue #80): a signed photo shows that it was taken with the app
+and which version (the manifest's claim generator, `docs/PRIVACY.md`, "Content
+Credentials"), so signing is the person's choice. A stored value is kept as saved.
 
 ## `MetadataSettings/writesStandardFileTags`
 
@@ -15527,6 +15563,16 @@ static let showsManualControls: String
 
 Whether the manual controls are shown, a Boolean.
 
+## `NopeSettings/Key/showsProcessedMarker`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let showsProcessedMarker: String
+```
+
+Whether the "Processed" marker is shown, a Boolean.
+
 ## `NopeSettings/Key/startsInCleanView`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15655,8 +15701,8 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 ```
 
 Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
-#57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
-with ``AutoControlIntent/setFollowsFaces(_:)``.
+#57). Off by default (owner decision, issue #80); on gives the system's own behavior. The
+app passes it to ``CameraModel/manual`` with ``AutoControlIntent/setFollowsFaces(_:)``.
 
 ## `NopeSettings/formats`
 
@@ -15666,7 +15712,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var formats: Set<PhotoFormat> { get }
 ```
 
-The formats each photo is saved in. Never empty; RAW and HEIF by default.
+The formats each photo is saved in. Never empty; RAW only by default.
 
 ## `NopeSettings/init(defaults:)`
 
@@ -15679,7 +15725,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Loads the settings, using the default for any value not stored yet or not readable.
 
 Unreadable save settings fall back to ``SaveSettings/init()``, which removes every
-optional detail and signs: the most private choice (AGENTS.md, "Fail closed").
+optional detail and doesn't sign: the most private choice (AGENTS.md, "Fail closed").
 
 - Parameter defaults: The store to read and write, normally `UserDefaults.standard`.
   Tests pass a store of their own.
@@ -15870,8 +15916,13 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 The selected formats the device can save, in display order.
 
+On a device without Bayer RAW, a selection of RAW alone (the default) leaves nothing the
+device can save; HEIF then stands in, the processed fallback a lens gives by default
+(``Lens/processedFallback``), so the list is never empty.
+
 - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-- Returns: ``orderedFormats`` without RAW on a device that has none.
+- Returns: ``orderedFormats`` without RAW on a device that has none, or HEIF when nothing
+  else is left.
 
 ## `NopeSettings/setDevelopedLook(_:)`
 
@@ -16147,6 +16198,19 @@ Shows or hides the manual controls on the camera screen, and saves the change.
 
 - Parameter isOn: Whether the manual controls are shown.
 
+## `NopeSettings/setShowsProcessedMarker(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setShowsProcessedMarker(_ isOn: Bool)
+```
+
+Shows or hides the "Processed" marker, and saves the change.
+
+- Parameter isOn: Whether the camera shows the marker before a photo is taken with a lens
+  without Bayer RAW.
+
 ## `NopeSettings/setSignsPhotos(_:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16229,6 +16293,19 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Whether the camera screen shows the manual controls. Off by default, so the camera stays
 simple unless the person asks (AGENTS.md, "Cognitive").
 
+## `NopeSettings/showsProcessedMarker`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var showsProcessedMarker: Bool { get set }
+```
+
+Whether the camera shows the "Processed" marker before a photo is taken with a lens
+without Bayer RAW (issue #80). On by default. Off hides the marker only: the photo is
+still the labeled processed fallback, VoiceOver still names its format, and the photo's
+details still say the phone processed it.
+
 ## `NopeSettings/signsPhotos`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16237,7 +16314,7 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor var signsPhotos: Bool { get }
 ```
 
-Whether each photo is signed with Content Credentials. On by default, and separate from
+Whether each photo is signed with Content Credentials. Off by default, and separate from
 the metadata master switch (`docs/PRIVACY.md`, "Metadata plan").
 
 ## `NopeSettings/startsInCleanView`
@@ -16273,16 +16350,6 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 The torch's brightness, remembered between launches (the torch itself always starts off).
 ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
 with ``LightIntent/setTorchLevel(_:)``.
-
-## `NopeSettings/turnSpiral()`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-@MainActor func turnSpiral()
-```
-
-Moves the golden spiral to its next placement, and saves the change.
 
 ## `NopeSettingsSnapshot`
 
@@ -16500,6 +16567,17 @@ static let pinsLiveReadout: String
 
 Whether the live camera readout stays in clean view, a Boolean.
 
+## `OverlayOptions/Key/removedSpiralPlacement`
+
+internal, declared in `Sources/NopeCore/OverlayOptions.swift`
+
+```swift
+static let removedSpiralPlacement: String
+```
+
+The golden spiral's placement, stored before issue #76 removed the golden grids; no
+longer read, and removed when the options are stored.
+
 ## `OverlayOptions/Key/showsFocusPeaking`
 
 internal, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16550,16 +16628,6 @@ static let showsLiveReadout: String
 
 Whether the live camera readout is shown, a Boolean.
 
-## `OverlayOptions/Key/spiralPlacement`
-
-internal, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let spiralPlacement: String
-```
-
-The spiral placement, a ``SpiralPlacement/index``.
-
 ## `OverlayOptions/gridStyle`
 
 public, declared in `Sources/NopeCore/OverlayOptions.swift`
@@ -16578,8 +16646,7 @@ public, declared in `Sources/NopeCore/OverlayOptions.swift`
 init()
 ```
 
-Creates the defaults: every overlay off, the rule-of-thirds grid style and the standard
-spiral placement.
+Creates the defaults: every overlay off and the rule-of-thirds grid style.
 
 ## `OverlayOptions/init(defaults:)`
 
@@ -16682,16 +16749,6 @@ view only when it is pinned (issue #52).
 
 - Parameter isCleanView: Whether clean view is on.
 - Returns: `true` if the readout is shown.
-
-## `OverlayOptions/spiralPlacement`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var spiralPlacement: SpiralPlacement
-```
-
-Where the golden spiral sits, when ``gridStyle`` is ``GridStyle/goldenSpiral``.
 
 ## `OverlayOptions/store(in:)`
 
@@ -16908,12 +16965,12 @@ request when there is one.
 Every reply to a ``WatchCommand`` is one, and the phone also sends one whenever the status
 changes or a photo ends while the watch app is reachable.
 
-## `PhoneUpdate/init(status:result:)`
+## `PhoneUpdate/init(status:result:unsignedReason:)`
 
 public, declared in `Sources/NopeCore/WatchMessages.swift`
 
 ```swift
-init(status: WatchStatus, result: WatchResult? = nil)
+init(status: WatchStatus, result: WatchResult? = nil, unsignedReason: SignatureStatus.UnsignedReason? = nil)
 ```
 
 Creates an update.
@@ -16921,6 +16978,8 @@ Creates an update.
 - Parameters:
   - status: The camera's status.
   - result: A new result, or `nil`.
+  - unsignedReason: Why the result's photos aren't all signed, or `nil` when they are or
+    there is no result.
 
 ## `PhoneUpdate/result`
 
@@ -16941,6 +17000,25 @@ let status: WatchStatus
 ```
 
 The camera's status.
+
+## `PhoneUpdate/unsignedReason`
+
+public, declared in `Sources/NopeCore/WatchMessages.swift`
+
+```swift
+let unsignedReason: SignatureStatus.UnsignedReason?
+```
+
+Why the result's photos aren't all signed, when ``result`` is
+``WatchResult/saved(isSigned:)`` with `false` or ``WatchResult/savedSeveral(allSigned:)``
+with `false`; otherwise `nil`. It is also `nil` from a phone app that doesn't send it.
+
+Signing is the person's choice and off by default (issue #80), so an interface shows
+``SignatureStatus/UnsignedReason/turnedOff`` as plain status, and any other reason as a
+photo that couldn't be signed.
+
+Optional, so the message stays readable both ways between apps of this protocol version
+with and without it (``WatchMessageCoding/version`` is unchanged).
 
 ## `PhotoComparison`
 
@@ -17740,12 +17818,12 @@ case manual
 
 1: manual white balance.
 
-## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:)`
+## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:distortionCorrection:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil) -> PhotoDetails
+static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil) -> PhotoDetails
 ```
 
 Builds the details of one saved photo.
@@ -17757,6 +17835,8 @@ Builds the details of one saved photo.
   - signature: The photo's signature status.
   - timings: The measured timings.
   - rawClipping: The clipping counted at capture time, or `nil`.
+  - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    `nil`.
 - Returns: The details.
 
 ## `PhotoDetails/colorFilterLetters`
@@ -17797,6 +17877,18 @@ container block and XMP property.
 
 - Parameter inventory: The read-back.
 - Returns: The names, in file order.
+
+## `PhotoDetails/distortionCorrection`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let distortionCorrection: DistortionCorrection?
+```
+
+For a lens's processed fallback, whether the app could turn off the camera's geometric
+distortion correction on that lens, as the camera reported it (issue #80); `nil` for a
+photo with RAW, whose files never have the correction (``DistortionCorrection``).
 
 ## `PhotoDetails/exposure`
 
@@ -17862,12 +17954,12 @@ Whether a tag carries an item.
   - tag: A tag with a value.
 - Returns: `true` if the tag is one of the item's.
 
-## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:)`
+## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil)
+init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil)
 ```
 
 Creates details.
@@ -17880,6 +17972,8 @@ Creates details.
   - signature: The signature status.
   - timings: The timings.
   - rawClipping: The RAW clipping, or `nil`.
+  - distortionCorrection: The lens's distortion correction for a processed fallback, or
+    `nil`.
 
 ## `PhotoDetails/integer(_:in:directory:)`
 
@@ -18235,7 +18329,7 @@ A file format the app can save.
 
 The raw values are stable, so settings that store a format can be saved and read back.
 
-The defaults follow issue #1, "Formats": RAW plus HEIF.
+The default is RAW only (owner decision, issue #80): HEIF and JPEG copies are optional.
 
 ## `PhotoFormat/defaultSelection`
 
@@ -18245,7 +18339,8 @@ public, declared in `Sources/NopeCore/PhotoFormat.swift`
 static let defaultSelection: Set<PhotoFormat>
 ```
 
-The formats selected when the app is first installed: RAW and HEIF.
+The formats selected when the app is first installed, and by Factory Defaults: RAW only
+(issue #80). Settings a person has saved keep their own selection.
 
 ## `PhotoFormat/heif`
 
@@ -18609,12 +18704,12 @@ The metadata plan for a set of choices, with this app's version.
 - Parameter settings: The person's metadata choices.
 - Returns: The plan.
 
-## `PhotoSaver/save(_:settings:captureDuration:)`
+## `PhotoSaver/save(_:settings:captureDuration:distortionCorrection:)`
 
 public, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil) async throws(CaptureError) -> SavedPhoto
+func save(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration? = nil, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> SavedPhoto
 ```
 
 Saves one photo.
@@ -18626,21 +18721,24 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - settings: The formats and metadata choices.
   - captureDuration: How long the camera took to return the photo, for the details, or
     `nil` when unknown.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction as
+    the camera reported it (``Lens/distortionCorrection``), for the details; ignored for
+    a RAW photo.
 - Returns: What was saved, with its thumbnail and details.
 - Throws: ``CaptureError/developmentFailed`` if a format can't be developed,
   ``CaptureError/metadataNotAllowed`` if any unsigned file fails the read-back (nothing is
   saved),
   or the library's ``CaptureError/photosAccessDenied`` or ``CaptureError/saveFailed``.
 
-## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:)`
+## `PhotoSaver/saveReturningFiles(_:settings:captureDuration:distortionCorrection:)`
 
 internal, declared in `Sources/NopeCore/PhotoSaver.swift`
 
 ```swift
-func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
+func saveReturningFiles(_ photo: CapturedPhoto, settings: SaveSettings, captureDuration: Duration?, distortionCorrection: DistortionCorrection? = nil) async throws(CaptureError) -> (saved: SavedPhoto, files: [PhotoFile])
 ```
 
-Saves one photo, as ``save(_:settings:captureDuration:)`` does, and also returns the
+Saves one photo, as ``save(_:settings:captureDuration:distortionCorrection:)`` does, and also returns the
 files exactly as they were added to Photos, for the compare view of the comparison shot
 (issue #55). The files stay in memory; the caller drops them.
 
@@ -18650,8 +18748,10 @@ Side effects: may show the add-only Photos prompt; adds the photo to Photos.
   - photo: The captured photo, with its metadata already built for the plan.
   - settings: The formats and metadata choices.
   - captureDuration: How long the camera took to return the photo, or `nil`.
+  - distortionCorrection: For a processed fallback, the lens's distortion correction, or
+    `nil`.
 - Returns: What was saved, and the saved files in the order they were built.
-- Throws: The same errors as ``save(_:settings:captureDuration:)``.
+- Throws: The same errors as ``save(_:settings:captureDuration:distortionCorrection:)``.
 
 ## `PhotoShortcut`
 
@@ -19854,7 +19954,7 @@ What the app saves for each photo: the file formats, the developed look and the 
 choices.
 
 ``CameraModel/saveSettings`` holds the current value. The format rule from issue #1,
-"Formats", lives here: RAW plus HEIF by default, any combination of RAW, HEIF and JPEG, and
+"Formats", lives here: RAW only by default (issue #80), any combination of RAW, HEIF and JPEG, and
 never none. A lens without Bayer RAW always saves its labeled processed fallback instead.
 
 ## `SaveSettings/developedLook`
@@ -19897,8 +19997,9 @@ public, declared in `Sources/NopeCore/SaveSettings.swift`
 init()
 ```
 
-The settings on first launch: RAW plus HEIF, ``MetadataSettings/init()``, and the
-standard look.
+The settings on first launch and for Factory Defaults: RAW only, ``MetadataSettings/init()``
+(signing off), and the standard look. Stored settings are decoded as saved, so a person's
+own choices are kept.
 
 ## `SaveSettings/metadata`
 
@@ -21800,7 +21901,8 @@ public, declared in `Sources/NopeCore/SavedPhoto.swift`
 enum UnsignedReason
 ```
 
-Why a photo isn't signed.
+Why a photo isn't signed. It is also sent to the Apple Watch app (``PhoneUpdate``), so
+its raw values are part of the watch message format.
 
 ## `SignatureStatus/UnsignedReason/failed`
 
@@ -21811,6 +21913,22 @@ case failed
 ```
 
 The signer failed for at least one file.
+
+## `SignatureStatus/UnsignedReason/init(photosOf:)`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+init?(photosOf status: CaptureStatus)
+```
+
+Why the photos a capture saved aren't all signed, for the watch (``PhoneUpdate``).
+
+When the photos are unsigned for different reasons, a reason other than
+``turnedOff`` wins: a photo that couldn't be signed must not read as the person's choice.
+
+- Parameter status: The camera's capture status after the photos were saved.
+- Returns: `nil` when every photo is signed or the status holds no saved photo.
 
 ## `SignatureStatus/UnsignedReason/signedFileFailedCheck`
 
@@ -22421,120 +22539,6 @@ init()
 
 Creates a simulated preview source.
 
-## `SpiralPlacement`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-struct SpiralPlacement
-```
-
-Where the golden spiral sits: one of its eight placements, four quarter turns each drawn
-plain or flipped (issue #40, "The spiral can be flipped and rotated to any of its 8
-placements").
-
-## `SpiralPlacement/count`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let count: Int
-```
-
-The number of placements: four turns, each plain or flipped.
-
-## `SpiralPlacement/index`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var index: Int { get }
-```
-
-The placement's number, 0 to 7, as stored in the settings.
-
-## `SpiralPlacement/init(index:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-init(index: Int)
-```
-
-The placement with a number.
-
-- Parameter index: Any whole number; it is reduced to 0 through 7.
-
-## `SpiralPlacement/init(quarterTurns:isFlipped:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-init(quarterTurns: Int, isFlipped: Bool)
-```
-
-Creates a placement.
-
-- Parameters:
-  - quarterTurns: Clockwise quarter turns; any whole number, reduced to 0 through 3.
-  - isFlipped: Whether the spiral is mirrored left to right before it is turned.
-
-## `SpiralPlacement/isFlipped`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-let isFlipped: Bool
-```
-
-Whether the spiral is mirrored left to right before it is turned.
-
-## `SpiralPlacement/next`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-var next: SpiralPlacement { get }
-```
-
-The next of the eight placements, wrapping back to the first: the "Turn Spiral" button
-and accessibility action step through them.
-
-## `SpiralPlacement/quarterTurns`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-let quarterTurns: Int
-```
-
-Clockwise quarter turns, 0 to 3.
-
-## `SpiralPlacement/standard`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-static let standard: SpiralPlacement
-```
-
-The placement the app starts with: no turn, not flipped. The spiral then winds in toward the
-right third of a landscape frame.
-
-## `SpiralPlacement/turned(by:)`
-
-public, declared in `Sources/NopeCore/OverlayOptions.swift`
-
-```swift
-func turned(by turns: Int) -> SpiralPlacement
-```
-
-The placement turned by more quarter turns, so the spiral keeps its place relative to the
-horizon while the device is turned and the camera layout stays put.
-
-- Parameter turns: Clockwise quarter turns to add; negative turns counterclockwise.
-- Returns: The turned placement, flipped the same way.
-
 ## `StorageWarning`
 
 public, declared in `Sources/NopeCore/DeviceStatus.swift`
@@ -22976,6 +22980,20 @@ case on(level: Double)
 
 The light is on at a brightness level from just above 0 to 1 (full).
 
+## `TorchStatus/pending`
+
+public, declared in `Sources/NopeCore/Light.swift`
+
+```swift
+case pending
+```
+
+The person asked for the light while the camera isn't ready for it: it is starting,
+or switching lenses or settings, so no camera is attached to switch (issue #75). The
+light is off for now. It is applied as soon as the camera has started, and then becomes
+``on(level:)``, or ``unavailable`` if the system refuses it. An interface shows the
+person's choice (the switch stays on), not "off".
+
 ## `TorchStatus/unavailable`
 
 public, declared in `Sources/NopeCore/Light.swift`
@@ -23234,6 +23252,16 @@ internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
 
 A result that couldn't be delivered because the watch app wasn't reachable. It goes with
 the next reply, then is cleared.
+
+## `WatchCommandServer/undeliveredUnsignedReason`
+
+internal, declared in `Sources/NopeCore/WatchCommandServer.swift`
+
+```swift
+@MainActor var undeliveredUnsignedReason: SignatureStatus.UnsignedReason? { get }
+```
+
+Why the undelivered result's photos aren't all signed (``PhoneUpdate/unsignedReason``).
 
 ## `WatchDelay`
 
@@ -23613,6 +23641,18 @@ public, declared in `Sources/NopeCore/WatchRemote.swift`
 How the last photo the watch asked for ended, or `nil` before one ends. Cleared when the
 next photo is asked for.
 
+## `WatchRemote/lastUnsignedReason`
+
+public, declared in `Sources/NopeCore/WatchRemote.swift`
+
+```swift
+@MainActor var lastUnsignedReason: SignatureStatus.UnsignedReason? { get set }
+```
+
+Why the photos of ``lastResult`` aren't all signed (``PhoneUpdate/unsignedReason``), or
+`nil` when they are, there is no result, or the phone didn't say. Show
+``SignatureStatus/UnsignedReason/turnedOff`` as plain status: signing is off by choice.
+
 ## `WatchRemote/link`
 
 internal, declared in `Sources/NopeCore/WatchRemote.swift`
@@ -23711,6 +23751,17 @@ case cancelled
 ```
 
 The countdown was cancelled, on the watch or on the phone. Say no photo was taken.
+
+## `WatchResult/includesUnsignedPhotos`
+
+internal, declared in `Sources/NopeCore/CameraModel+Watch.swift`
+
+```swift
+var includesUnsignedPhotos: Bool { get }
+```
+
+Whether the result reports saved photos that aren't all signed, so a ``PhoneUpdate``
+carries the reason.
 
 ## `WatchResult/init(_:)`
 

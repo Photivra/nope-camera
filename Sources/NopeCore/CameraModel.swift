@@ -131,6 +131,15 @@ public final class CameraModel {
         return capabilities
     }
 
+    /// The distortion correction of the lens a photo was taken with, for its details (issue #80),
+    /// or `nil` when the lens isn't known.
+    ///
+    /// - Parameter photo: A captured photo.
+    /// - Returns: The lens's ``Lens/distortionCorrection``.
+    func distortionCorrection(of photo: CapturedPhoto) -> DistortionCorrection? {
+        capabilities?.lens(withID: photo.lensID)?.distortionCorrection
+    }
+
     /// The lens in use, or `nil` before the camera is ready.
     public var selectedLens: Lens? {
         guard let selectedLensID else { return nil }
@@ -226,7 +235,12 @@ public final class CameraModel {
             sessionStatus = .interrupted(reason)
             await light.cameraDidPause()
         case .interruptionEnded:
-            if case .interrupted = sessionStatus { sessionStatus = .running }
+            guard case .interrupted = sessionStatus else { return }
+            sessionStatus = .running
+            // The camera runs again without a new start, so the light must learn it here: left
+            // out, a light asked for after any interruption (a call, or a return from the
+            // background) stayed "pending" and never reached the hardware (issue #75).
+            await light.sessionDidStart()
         case .heat(let level):
             await applyHeat(level)
         case .failed:
@@ -362,6 +376,9 @@ public final class CameraModel {
             await light.sessionDidStart()
         } catch {
             sessionStatus = .failed(error)
+            // The camera didn't start, so a light waiting for it is turned off rather than left
+            // waiting (issue #75).
+            await light.cameraDidPause()
         }
     }
 
@@ -419,7 +436,10 @@ public final class CameraModel {
         }
         captureStatus = .saving
         do {
-            captureStatus = .saved(try await saver.save(photo, settings: settings, captureDuration: captureDuration))
+            captureStatus = .saved(
+                try await saver.save(
+                    photo, settings: settings, captureDuration: captureDuration,
+                    distortionCorrection: distortionCorrection(of: photo)))
         } catch {
             captureStatus = .failed(error)
         }
@@ -481,7 +501,7 @@ public final class CameraModel {
             captureStatus = .saving
             var saved: [SavedPhoto] = []
             for photo in photos {
-                saved.append(try await saver.save(photo, settings: settings))
+                saved.append(try await saver.save(photo, settings: settings, distortionCorrection: distortionCorrection(of: photo)))
             }
             captureStatus = .savedBracket(saved)
         } catch {

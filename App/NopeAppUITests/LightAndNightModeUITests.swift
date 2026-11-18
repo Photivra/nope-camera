@@ -64,10 +64,10 @@ extension NopeAppUITests {
         XCTAssertTrue(flashPill.waitForExistence(timeout: 5))
         flashPill.tap()
         XCTAssertFalse(flashPill.waitForExistence(timeout: 2))
-        // The ultra wide has neither: the tray doesn't offer them.
+        // The ultra wide has neither: Q doesn't offer them.
         closeTray(app)
         app.buttons["Ultra Wide"].tap()
-        app.buttons["Quick Controls"].tap()
+        quickMenuButton(app).tap()
         XCTAssertTrue(app.buttons["Hide Controls"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Light"].exists)
         XCTAssertFalse(app.buttons["Flash"].exists)
@@ -102,9 +102,19 @@ extension NopeAppUITests {
         try audit(app)
     }
 
+    /// What's in This Photo is red on black in night mode, as the camera's other sheets are.
+    @MainActor
+    func testLastPhotoDetailsInNightMode() throws {
+        let app = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn)
+        openPhotoDetails(app)
+        settle()
+        XCTAssertEqual(nonRedPixels(app, outside: .zero), 0, "white, blue or other colors remain in What's in This Photo")
+        try audit(app, checksDynamicType: false)
+    }
+
     @MainActor
     func testNightModeCameraWithPhotoWarningAndLight() throws {
-        let app = launch("signingFails", extraArguments: Self.nightModeOn)
+        let app = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
         app.buttons["Take Photo"].tap()
         XCTAssertTrue(app.buttons["Not Signed"].waitForExistence(timeout: 10))
@@ -114,7 +124,7 @@ extension NopeAppUITests {
         try audit(app)
         app.terminate()
 
-        let large = launch("signingFails", extraArguments: Self.nightModeOn + Self.largestTextSize)
+        let large = launch("signingFails", extraArguments: Self.signingOn + Self.nightModeOn + Self.largestTextSize)
         XCTAssertTrue(large.buttons["Take Photo"].waitForExistence(timeout: 10))
         try auditScrollingScreen(large)
     }
@@ -161,8 +171,7 @@ extension NopeAppUITests {
     func testNightModeSettingsScreensPassAccessibilityAudits() throws {
         let app = launch("photosDenied", extraArguments: Self.nightModeOn)
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-        app.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        openSettings(app)
         let tint = app.switches.matching(NSPredicate(format: "label BEGINSWITH %@", "Red Viewfinder")).firstMatch
         var swipes = 0
         while !tint.isHittable && swipes < 6 {
@@ -194,9 +203,9 @@ extension NopeAppUITests {
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)
     }
 
-    /// The Choose Details footer and header, which the audit's Dynamic Type check is not asked
-    /// about (``NopeAppUITests/measuredDynamicTypeLabels``), and the master switch's title are
-    /// measured here instead: each is larger at every one of the nine text sizes than at the
+    /// The Details in Each Photo footer and header (Choose Details before 1.0.0), which the
+    /// audit's Dynamic Type check is not asked about (``NopeAppUITests/measuredDynamicTypeLabels``),
+    /// are measured here instead: each is larger at every one of the nine text sizes than at the
     /// size before, in night mode, where Settings is a sheet on iPad too.
     @MainActor
     func testChooseDetailsTextGrowsAtEveryTextSize() throws {
@@ -204,19 +213,22 @@ extension NopeAppUITests {
             "L", "XL", "XXL", "XXXL", "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL",
             "AccessibilityXXXL",
         ]
-        let labels = Self.measuredDynamicTypeLabels + ["Remove All Optional Details"]
+        // The master switch's title isn't measured since 1.0.0: in night mode its row is the
+        // switch (NightModeSwitch), whose title has no element of its own and whose row keeps
+        // its height until the title wraps; the audit checks the switch at the largest size.
+        let labels = Self.measuredDynamicTypeLabels
         var previous: [String: CGFloat] = [:]
         for category in categories {
             let app = launch(
                 "photosDenied",
                 extraArguments: Self.nightModeOn + ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory" + category])
             XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
-            app.buttons["Settings"].tap()
-            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
-            open(app, row: "Choose Details")
-            XCTAssertTrue(app.navigationBars["Choose Details"].waitForExistence(timeout: 5))
+            openSettings(app)
+            open(app, row: "Details in Each Photo")
+            XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
             for label in labels {
-                let text = app.staticTexts[label]
+                // "Location" is also the switch's title; the header is the first match, above it.
+                let text = app.staticTexts[label].firstMatch
                 XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
                 // The text's area: a line that wraps gets narrower and taller.
                 let area = text.frame.width * text.frame.height
@@ -328,11 +340,13 @@ extension NopeAppUITests {
         return count
     }
 
-    /// Closes the quick-controls tray if it is open.
+    /// Closes Q, the quick menu that replaced the quick-controls tray, if it is open.
     @MainActor
     func closeTray(_ app: XCUIApplication) {
-        let tray = app.buttons["Quick Controls"]
-        if tray.isSelected { tray.tap() }
+        let quick = quickMenuButton(app)
+        guard quick.exists, quick.isSelected else { return }
+        quick.tap()
+        _ = app.descendants(matching: .any)["quickMenu"].waitForNonExistence(timeout: 5)
     }
 
     /// Counts sampled pixels of a screenshot that match a test.

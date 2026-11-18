@@ -127,7 +127,9 @@ struct LiveActivityTests {
         #expect(Content(kind: .burst, phase: .finished, saved: 3, signing: .allSigned).signingLine == .signed)
         #expect(Content(kind: .burst, phase: .stopped, saved: 3, signing: .notAllSigned).signingLine == .notAllSigned)
         #expect(Content(kind: .timer, phase: .failed, saved: 1, signing: .notAllSigned).signingLine == .notSigned)
-        #expect(LiveActivitySigningLine.allCases.count == 3)
+        #expect(Content(kind: .timer, phase: .finished, saved: 1, signing: .off).signingLine == .signingOff)
+        #expect(Content(kind: .burst, phase: .finished, saved: 3, signing: .off).signingLine == .signingOff)
+        #expect(LiveActivitySigningLine.allCases.count == 4)
 
         #expect(Content(kind: .interval, phase: .running).canStop)
         #expect(Content(kind: .interval, phase: .paused).canStop)
@@ -156,7 +158,7 @@ struct LiveActivityTests {
         #expect(decoded == content)
         #expect(Content.Kind.allCases.count == 4)
         #expect(Content.Phase.allCases.count == 8)
-        #expect(Content.Signing.allCases.count == 2)
+        #expect(Content.Signing.allCases.count == 3)
     }
 
     // MARK: - The model's content
@@ -288,7 +290,13 @@ struct LiveActivityTests {
         #expect(
             model.liveActivityOutcome(after: timer)
                 == Content(kind: .timer, phase: .finished, taken: 1, saved: 1, signing: .allSigned))
+        // Signing off by choice is reported as such, not as photos that couldn't be signed.
         model.captureStatus = .savedBracket([unsigned, unsigned, unsigned])
+        #expect(
+            model.liveActivityOutcome(after: timer)
+                == Content(kind: .timer, phase: .finished, taken: 1, saved: 3, signing: .off))
+        // A photo that couldn't be signed never reads as the person's choice.
+        model.captureStatus = .savedBracket([unsigned, photo(.unsigned(.failed)), unsigned])
         #expect(
             model.liveActivityOutcome(after: timer)
                 == Content(kind: .timer, phase: .finished, taken: 1, saved: 3, signing: .notAllSigned))

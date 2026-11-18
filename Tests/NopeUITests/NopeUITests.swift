@@ -6,7 +6,8 @@ import Testing
 @testable import NopeUI
 
 struct LocalizationTests {
-    static let launchLocales = ["en", "ja", "es", "fr", "de", "ko", "zh-Hant", "zh-Hans", "pt-BR", "it", "nl"]
+    /// The languages the app ships in: English only.
+    static let launchLocales = ["en"]
 
     @Test func bundleShipsEveryLaunchLocale() {
         let available = Set(Bundle.module.localizations.map { $0.lowercased() })
@@ -19,12 +20,13 @@ struct LocalizationTests {
     func stringsAreTranslated(locale: String) throws {
         let path = try #require(Bundle.module.path(forResource: locale, ofType: "lproj"))
         let bundle = try #require(Bundle(path: path))
-        let value = bundle.localizedString(forKey: "Allow Camera Access", value: "MISSING", table: nil)
+        // Keys the 1.0.0 interface uses: the shutter's name and the format status's name.
+        let value = bundle.localizedString(forKey: "Take Photo", value: "MISSING", table: nil)
         #expect(value != "MISSING")
-        #expect(value != "Allow Camera Access")
-        let honesty = bundle.localizedString(forKey: "No RAW on This Lens", value: "MISSING", table: "Honesty")
+        #expect(value != "Take Photo")
+        let honesty = bundle.localizedString(forKey: "Photo Format", value: "MISSING", table: "Honesty")
         #expect(honesty != "MISSING")
-        #expect(honesty != "No RAW on This Lens")
+        #expect(honesty != "Photo Format")
     }
 }
 
@@ -265,18 +267,28 @@ struct RegistryTests {
         #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
     }
 
-    @Test func signingOffOrFailedIsAWarning() {
+    @Test func onlyAFailedSignatureIsAWarning() {
+        // Signing is off by default (issue #80): off is not a warning, even after a photo.
         let context = Self.context(suite: "RegistryTests.signing")
+        #expect(!context.settings.signsPhotos)
+        #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
+        // With signing on, a photo that couldn't be signed is a warning until the next one is.
+        context.settings.setSignsPhotos(true)
         #expect(CameraWarnings.current(context, lastSignature: .unsigned(.failed)).map(\.id) == ["signing"])
-        context.settings.setSignsPhotos(false)
-        #expect(CameraWarnings.current(context, lastSignature: nil).map(\.id) == ["signing"])
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.signedFileFailedCheck)).map(\.id) == ["signing"])
+        #expect(CameraWarnings.current(context, lastSignature: .unsigned(.turnedOff)).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: .signed).isEmpty)
+        #expect(CameraWarnings.current(context, lastSignature: nil).isEmpty)
     }
 
-    @Test func trayEndsWithHideControls() {
+    @Test func quickMenuHasNoHideControlsTileAndStartsOff() {
+        // Hide Controls is in Q's foot, and Drive and Astro on the drive strip (BUILD-SPEC 3.6).
         let context = Self.context(suite: "RegistryTests.tray")
-        let items = QuickControls.current(context)
-        #expect(items.last?.id == "hideControls")
-        #expect(items.allSatisfy { !$0.isOn })
+        let ids = QuickControls.current(context).map(\.id)
+        #expect(!ids.contains("hideControls") && !ids.contains("drive") && !ids.contains("astro"))
+        #expect(ids.contains("focusPeaking"))
+        #expect(QuickControls.current(context).allSatisfy { !$0.isOn })
     }
 
     @Test func trayItemsReportWhetherTheyAreOn() {
@@ -304,7 +316,6 @@ struct DriveTextTests {
     @Test func secondsUseSystemFormatting() {
         #expect(DriveText.shortSeconds(3).contains("3"))
         #expect(DriveText.spokenSeconds(10).contains("10"))
-        #expect(DriveText.systemImage(for: .burst) != DriveText.systemImage(for: .single))
     }
 }
 

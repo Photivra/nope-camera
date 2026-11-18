@@ -112,6 +112,11 @@ struct PhotoDetailsSections: View {
             ForEach(Array(details.files.enumerated()), id: \.offset) { _, file in
                 DetailRow(title: Text(verbatim: FormatsSettingsView.name(of: file.format)), value: Self.processing(file.processing))
             }
+            // A processed fallback: whether the lens let the app turn off distortion correction
+            // (issue #80). RAW never has it, so a RAW photo has no line.
+            if let correction = details.distortionCorrection {
+                ProcessingNote.distortion(correction)
+            }
         } header: {
             Text("Processing", bundle: .module, comment: "Heading in the photo details: what processing each file went through.")
         }
@@ -206,19 +211,46 @@ struct PhotoDetailsSections: View {
         }
     }
 
+    /// The symbol of the signature row: the seal when signed; the info symbol when signing is
+    /// off in Settings, which is the person's choice and not a problem (`docs/design/BUILD-SPEC.md`,
+    /// 3.9); the warning triangle when a photo couldn't be signed.
+    ///
+    /// - Parameter signature: The photo's signature status.
+    /// - Returns: An SF Symbol name.
+    static func signatureSymbol(_ signature: SignatureStatus) -> String {
+        switch signature {
+        case .signed: "checkmark.seal.fill"
+        case .unsigned(.turnedOff): "info.circle"
+        case .unsigned: "exclamationmark.triangle.fill"
+        }
+    }
+
+    /// The color of the signature row's symbol: teal for a verified fact, the secondary text
+    /// color for plain information, amber for a warning.
+    ///
+    /// - Parameter signature: The photo's signature status.
+    /// - Returns: The symbol's style.
+    static func signatureStyle(_ signature: SignatureStatus) -> AnyShapeStyle {
+        switch signature {
+        case .signed: AnyShapeStyle(CameraStyle.fact)
+        case .unsigned(.turnedOff): AnyShapeStyle(CameraStyle.secondaryText)
+        case .unsigned: AnyShapeStyle(CameraStyle.warning)
+        }
+    }
+
     /// Whether the photo is signed, and each signed file's manifest.
     @ViewBuilder private var signatureSection: some View {
         Section {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Image(systemName: details.signature == .signed ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                    .foregroundStyle(details.signature == .signed ? CameraStyle.fact : CameraStyle.warning)
+            HStack(alignment: .firstTextBaseline, spacing: NopeSpace.xs) {
+                Image(systemName: Self.signatureSymbol(details.signature))
+                    .foregroundStyle(Self.signatureStyle(details.signature))
                     .accessibilityHidden(true)
                 Text(verbatim: CaptureMessages.message(for: details.signature))
                     .fixedSize(horizontal: false, vertical: true)
             }
             ForEach(Array(details.files.enumerated()), id: \.offset) { _, file in
                 if let credentials = file.contentCredentials {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                         Text(verbatim: FormatsSettingsView.name(of: file.format)).font(.headline)
                         Text(
                             "Claim generator: \(credentials.generatorName) \(credentials.generatorVersion)", tableName: "Honesty", bundle: .module,
@@ -402,7 +434,7 @@ struct FileDetailsRows: View {
 
     /// The rows, as one element per file for VoiceOver.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             HStack {
                 Text(verbatim: FormatsSettingsView.name(of: file.format)).font(.headline)
                 Spacer(minLength: 8)
@@ -474,7 +506,7 @@ struct DetailRow: View {
                 Spacer(minLength: 8)
                 value.foregroundStyle(CameraStyle.secondaryText).multilineTextAlignment(.trailing)
             }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 title
                 value.foregroundStyle(CameraStyle.secondaryText)
             }

@@ -74,8 +74,9 @@ The app never writes serial numbers or unique image IDs into your photos.
 
 ## The signature (Content Credentials)
 
-Each photo is signed so that anyone can check whether the file has changed since the app saved it.
-The signature doesn't prove who took the photo.
+Signing is off by default. When you turn it on, each photo is signed so that anyone can check
+whether the file has changed since the app saved it. A signed photo also shows that it was taken
+with the app and which version. The signature doesn't prove who took the photo.
 
 - A new signing key is made for every photo inside your device's Secure Enclave, used once and
   then discarded. The key never leaves the Secure Enclave. Because every photo has its own key,
@@ -89,7 +90,7 @@ The signature doesn't prove who took the photo.
 ## What your phone may still do outside the app's control
 
 Once a photo is in your library, iOS and the Photos app handle it. The Honesty screen in the app
-(the ⓘ button) explains each of these, with a link to its setting:
+(Settings, then Honesty) explains each of these, with a link to its setting:
 
 - **iCloud Photos.** With standard protection, Apple holds the keys to iCloud Photos. With
   Advanced Data Protection, only your devices do. Some photo metadata and Shared Albums stay

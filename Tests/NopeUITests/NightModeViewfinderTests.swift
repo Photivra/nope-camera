@@ -70,6 +70,22 @@ struct NightModeViewfinderTests {
         }
     }
 
+    /// Makes a window without a window scene. `UIWindow(frame:)` is deprecated in iOS 26 in favor
+    /// of `init(windowScene:)` (`UIKit/UIWindow.h`), but these tests run in the `xctest` process,
+    /// which has no connected window scene (`UIApplication.shared.connectedScenes` was empty in
+    /// the iOS 27.2 Simulator). Calling the deprecated initializer through a protocol keeps the
+    /// deprecation warning, which the package treats as an error, to this one test helper.
+    @MainActor protocol FramedWindowMaking {
+        /// A window with the given frame, in points.
+        func makeWindow(frame: CGRect) -> UIWindow
+    }
+
+    /// The only ``FramedWindowMaking``.
+    struct FramedWindowMaker: FramedWindowMaking {
+        @available(iOS, deprecated: 26.0, message: "UIWindow(frame:) is deprecated; see FramedWindowMaking")
+        func makeWindow(frame: CGRect) -> UIWindow { UIWindow(frame: frame) }
+    }
+
     /// The camera screen in a window, ready, with a counting viewfinder.
     @MainActor
     struct Harness {
@@ -87,7 +103,8 @@ struct NightModeViewfinderTests {
             await model.send(.start)
             let counter = counter
             let screen = CameraScreen(model: model, settings: settings) { _ in CountingViewfinder(counter: counter) }
-            window = UIWindow(frame: CGRect(x: 0, y: 0, width: 402, height: 874))
+            window = (FramedWindowMaker() as any FramedWindowMaking).makeWindow(
+                frame: CGRect(x: 0, y: 0, width: 402, height: 874))
             window.rootViewController = UIHostingController(rootView: screen)
             window.makeKeyAndVisible()
             await settle()

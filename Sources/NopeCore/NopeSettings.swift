@@ -70,9 +70,15 @@ public final class NopeSettings {
     public private(set) var showsLiveActivity: Bool
 
     /// Whether faces the camera detects steer autofocus and auto exposure (Face Detection, issue
-    /// #57). On by default, the system's own behavior; the app passes it to ``CameraModel/manual``
-    /// with ``AutoControlIntent/setFollowsFaces(_:)``.
+    /// #57). Off by default (owner decision, issue #80); on gives the system's own behavior. The
+    /// app passes it to ``CameraModel/manual`` with ``AutoControlIntent/setFollowsFaces(_:)``.
     public private(set) var followsFaces: Bool
+
+    /// Whether the camera shows the "Processed" marker before a photo is taken with a lens
+    /// without Bayer RAW (issue #80). On by default. Off hides the marker only: the photo is
+    /// still the labeled processed fallback, VoiceOver still names its format, and the photo's
+    /// details still say the phone processed it.
+    public private(set) var showsProcessedMarker: Bool
 
     /// The photo size chosen for each lens that offers a choice (``Lens/photoSizeChoices``,
     /// issue #57). Empty by default: every lens at its default size. The app passes it to the
@@ -87,7 +93,7 @@ public final class NopeSettings {
     /// Loads the settings, using the default for any value not stored yet or not readable.
     ///
     /// Unreadable save settings fall back to ``SaveSettings/init()``, which removes every
-    /// optional detail and signs: the most private choice (AGENTS.md, "Fail closed").
+    /// optional detail and doesn't sign: the most private choice (AGENTS.md, "Fail closed").
     ///
     /// - Parameter defaults: The store to read and write, normally `UserDefaults.standard`.
     ///   Tests pass a store of their own.
@@ -108,7 +114,10 @@ public final class NopeSettings {
         isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
         showsLiveActivity = defaults.bool(forKey: Key.showsLiveActivity)
-        followsFaces = defaults.object(forKey: Key.followsFaces) == nil || defaults.bool(forKey: Key.followsFaces)
+        // A missing value is the default, off.
+        followsFaces = defaults.bool(forKey: Key.followsFaces)
+        showsProcessedMarker =
+            defaults.object(forKey: Key.showsProcessedMarker) == nil || defaults.bool(forKey: Key.showsProcessedMarker)
         // Unreadable sizes fall back to the defaults: every lens at its default size.
         photoSizes = defaults.data(forKey: Key.photoSizes).flatMap {
             try? JSONDecoder().decode([Lens.ID: PhotoDimensions].self, from: $0)
@@ -116,7 +125,7 @@ public final class NopeSettings {
         migrateManualControlsOption()
     }
 
-    /// The formats each photo is saved in. Never empty; RAW and HEIF by default.
+    /// The formats each photo is saved in. Never empty; RAW only by default.
     public var formats: Set<PhotoFormat> {
         save.formats
     }
@@ -126,7 +135,7 @@ public final class NopeSettings {
         save.metadata
     }
 
-    /// Whether each photo is signed with Content Credentials. On by default, and separate from
+    /// Whether each photo is signed with Content Credentials. Off by default, and separate from
     /// the metadata master switch (`docs/PRIVACY.md`, "Metadata plan").
     public var signsPhotos: Bool {
         save.metadata.signsPhotos
@@ -156,10 +165,16 @@ public final class NopeSettings {
 
     /// The selected formats the device can save, in display order.
     ///
+    /// On a device without Bayer RAW, a selection of RAW alone (the default) leaves nothing the
+    /// device can save; HEIF then stands in, the processed fallback a lens gives by default
+    /// (``Lens/processedFallback``), so the list is never empty.
+    ///
     /// - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
-    /// - Returns: ``orderedFormats`` without RAW on a device that has none.
+    /// - Returns: ``orderedFormats`` without RAW on a device that has none, or HEIF when nothing
+    ///   else is left.
     public func selectedFormats(deviceSupportsBayerRAW: Bool) -> [PhotoFormat] {
-        orderedFormats.filter { Self.isAvailable($0, deviceSupportsBayerRAW: deviceSupportsBayerRAW) }
+        let available = orderedFormats.filter { Self.isAvailable($0, deviceSupportsBayerRAW: deviceSupportsBayerRAW) }
+        return available.isEmpty ? [.heif] : available
     }
 
     /// Whether the person can turn a selected format off.
@@ -380,6 +395,7 @@ public final class NopeSettings {
             update(\.tintsViewfinderInNightMode, from: stored),
             update(\.showsLiveActivity, from: stored),
             update(\.followsFaces, from: stored),
+            update(\.showsProcessedMarker, from: stored),
             update(\.photoSizes, from: stored),
         ]
         return changes.contains(true)
@@ -405,6 +421,15 @@ public final class NopeSettings {
     public func setFollowsFaces(_ isOn: Bool) {
         followsFaces = isOn
         defaults.set(isOn, forKey: Key.followsFaces)
+    }
+
+    /// Shows or hides the "Processed" marker, and saves the change.
+    ///
+    /// - Parameter isOn: Whether the camera shows the marker before a photo is taken with a lens
+    ///   without Bayer RAW.
+    public func setShowsProcessedMarker(_ isOn: Bool) {
+        showsProcessedMarker = isOn
+        defaults.set(isOn, forKey: Key.showsProcessedMarker)
     }
 
     /// The photo size chosen for a lens, as the camera will use it: the choice when the lens
@@ -470,6 +495,8 @@ public final class NopeSettings {
         static let showsLiveActivity = "NopeSettings.showsLiveActivity"
         /// Whether detected faces steer autofocus and auto exposure, a Boolean.
         static let followsFaces = "NopeSettings.followsFaces"
+        /// Whether the "Processed" marker is shown, a Boolean.
+        static let showsProcessedMarker = "NopeSettings.showsProcessedMarker"
         /// The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
         static let photoSizes = "NopeSettings.photoSizes"
     }
