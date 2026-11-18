@@ -32,12 +32,22 @@ extension XCUIApplication {
     func performCompleteAccessibilityAudit(
         for types: XCUIAccessibilityAuditType = .all, _ handler: @escaping (XCUIAccessibilityAuditIssue) throws -> Bool
     ) throws {
+        let started = Date()
         do {
             try performAccessibilityAudit(for: types, handler)
         } catch let error as NSError
             where error.domain == Self.auditErrorDomain && error.code == Self.auditTimedOutCode {
+            // The test log says which check was slow: XCTest's error doesn't.
+            NSLog("Audit of types %llu didn't finish in %.1f s; running one audit per type", types.rawValue, Date().timeIntervalSince(started))
             for type in Self.singleAuditTypes where types.contains(type) {
-                try performAccessibilityAudit(for: type, handler)
+                let typeStarted = Date()
+                do {
+                    try performAccessibilityAudit(for: type, handler)
+                } catch {
+                    NSLog("Audit of type %llu alone failed after %.1f s", type.rawValue, Date().timeIntervalSince(typeStarted))
+                    throw error
+                }
+                NSLog("Audit of type %llu alone took %.1f s", type.rawValue, Date().timeIntervalSince(typeStarted))
             }
         }
     }

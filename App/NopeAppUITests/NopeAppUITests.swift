@@ -190,10 +190,12 @@ final class NopeAppUITests: XCTestCase {
             Self.isClippedContrastIssue(issue, in: app) || Self.isOpenIPadFinding(issue)
                 || (!checksContrast && issue.auditType == .contrast)
         }
-        var remaining = try reportedIssues(app).filter { !ignored($0) }
+        // A check whose findings are all ignored isn't run (see ``audit(_:afterScrolling:)``).
+        let types = Self.auditTypes(contrast: checksContrast, dynamicType: true)
+        var remaining = try reportedIssues(app, types).filter { !ignored($0) }
         if !remaining.isEmpty {
             waitUntilStill(app)
-            remaining = try reportedIssues(app).filter { !ignored($0) }
+            remaining = try reportedIssues(app, types).filter { !ignored($0) }
         }
         for issue in remaining {
             XCTFail("\(issue.compactDescription): \(issue.element?.debugDescription ?? "no element")", file: file, line: line)
@@ -506,7 +508,12 @@ final class NopeAppUITests: XCTestCase {
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
-        var remaining = try judged(reportedIssues(app), in: app, round: 1, ignored: ignored)
+        // A check whose every finding is ignored isn't run: the contrast check after a scroll and
+        // where the test skips it, and the Dynamic Type check where the test skips it. The
+        // contrast check is the audit's slowest part, and it alone took longer than XCTest's 15
+        // seconds on the scrolled compare details (docs/TESTING.md, "Audits that don't finish").
+        let types = Self.auditTypes(contrast: checksContrast && !afterScrolling, dynamicType: checksDynamicType)
+        var remaining = try judged(reportedIssues(app, types), in: app, round: 1, ignored: ignored)
         // An issue fails the test when the audit reports it again in each of two more audits of
         // the same screen. On the iPad CI runner the audit's first pass over a screen reported
         // findings that a second audit three seconds later didn't (build 44149517211: ten
@@ -516,7 +523,7 @@ final class NopeAppUITests: XCTestCase {
         var round = 2
         while !remaining.isEmpty && round <= 3 {
             settle()
-            let again = try judged(reportedIssues(app), in: app, round: round, ignored: ignored)
+            let again = try judged(reportedIssues(app, types), in: app, round: round, ignored: ignored)
             remaining = remaining.filter { issue in again.contains { Self.isSameFinding($0, issue) } }
             round += 1
         }
@@ -565,11 +572,26 @@ final class NopeAppUITests: XCTestCase {
         return remaining
     }
 
-    /// Runs the accessibility audit and returns every issue it found, without failing the test.
+    /// Every audit type except the ones a test skips, whose findings would all be ignored.
+    ///
+    /// - Parameters:
+    ///   - contrast: Whether the contrast check runs.
+    ///   - dynamicType: Whether the Dynamic Type check runs.
+    static func auditTypes(contrast: Bool, dynamicType: Bool) -> XCUIAccessibilityAuditType {
+        var types = XCUIAccessibilityAuditType.all
+        if !contrast { types.subtract(.contrast) }
+        if !dynamicType { types.subtract(.dynamicType) }
+        return types
+    }
+
+    /// Runs the accessibility audit of the given types and returns every issue it found, without
+    /// failing the test.
     @MainActor
-    private func reportedIssues(_ app: XCUIApplication) throws -> [XCUIAccessibilityAuditIssue] {
+    private func reportedIssues(
+        _ app: XCUIApplication, _ types: XCUIAccessibilityAuditType = .all
+    ) throws -> [XCUIAccessibilityAuditIssue] {
         var issues: [XCUIAccessibilityAuditIssue] = []
-        try app.performCompleteAccessibilityAudit { issue in
+        try app.performCompleteAccessibilityAudit(for: types) { issue in
             issues.append(issue)
             return true
         }

@@ -822,6 +822,30 @@ the first audit and again in each of two more audits of the same screen (the sam
 element with the same label). A finding that is real is reported every time and still fails.
 Why the runner's first audit reports them isn't known.
 
+#### Audits that don't finish
+
+In build 44185929631 two tests failed with "Audit failed to complete in time" (XCTest's error
+-56): `testComparisonShotShowsBothPicturesAndTheirDetails` on iPhone and
+`testLastPhotoDetailsAtTheLargestTextSize` on iPad. Both failed in the audit that follows a
+scroll (`audit(_:afterScrolling: true)`), in its first pass, so the rule about repeated audits
+played no part. XCTest gives an audit 15 seconds. On a Mac the compare test failed the same way
+six times out of six: on the compare details, scrolled to the identifier row, the whole audit
+ran into the 15 seconds and so did the contrast check alone (the same list's audit before the
+scroll took two seconds); `performCompleteAccessibilityAudit`, which runs one audit per check
+after such a timeout, has nothing smaller than one check to fall back to. On the iPad runner
+the audit of the last photo's details after a scroll had taken about ten seconds when it passed
+(build 44149517211).
+
+After a scroll every contrast finding is ignored (see `audit(_:)` above: the rows are
+contrast-checked before scrolling), and so are the contrast or Dynamic Type findings of a test
+that skips that check. `audit(_:)` and `auditScrollingScreen(_:)` now leave a check whose every
+finding is ignored out of the audit, so the slowest check doesn't run where its result was
+thrown away; what fails a test is unchanged. With that the compare test passes on a Mac (three
+of three runs on iPhone, two of two on iPad). When an audit does time out,
+`performCompleteAccessibilityAudit` writes to the test log how long it ran and how long each
+check then took alone, which XCTest's error doesn't say. Why the contrast check doesn't finish
+on that part of the compare details isn't known.
+
 #### Continue on the first-run screen (open)
 
 In build 44149517211 two tests at the largest text size failed the same way, once each:
