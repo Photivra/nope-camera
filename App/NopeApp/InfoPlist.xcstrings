@@ -1,294 +1,54 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "CFBundleDisplayName": {
-      "comment": "The app's name on the Home Screen. Always \"nope.\", lowercase with a period, in every language.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nope."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "The app's name on the Home Screen. Always \"nope.\", lowercase with a period, in every language.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nope."
           }
         }
       }
     },
-    "NSCameraUsageDescription": {
-      "comment": "Camera permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. verwendet die Kamera, um die Fotos aufzunehmen, die du aufnehmen möchtest."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nope. uses the camera to take the photos you ask for."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. usa la cámara para tomar las fotos que pides."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. utilise l’appareil photo pour prendre les photos que vous demandez."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. usa la fotocamera per scattare le foto che richiedi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. はカメラを使って、あなたが撮影を指示した写真を撮ります。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope.는 카메라를 사용하여 사용자가 요청한 사진을 찍습니다."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. gebruikt de camera om de foto’s te maken waar je om vraagt."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "O nope. usa a câmera para tirar as fotos que você pedir."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. 使用相机拍摄你要求的照片。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. 會使用相機拍攝你要求的照片。"
+    "NSCameraUsageDescription" : {
+      "comment" : "Camera permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nope. uses the camera to take the photos you ask for."
           }
         }
       }
     },
-    "NSLocationWhenInUseUsageDescription": {
-      "comment": "Location permission prompt, shown only when the person turns Location on in nope.'s settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. fügt hinzu, wo jedes Foto aufgenommen wurde, nur solange Standort in den Einstellungen von nope. an ist. Dein Standort wird nie irgendwohin gesendet."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. añade dónde se tomó cada foto, solo mientras Ubicación está activada en los ajustes de nope. Tu ubicación nunca se envía a ningún sitio."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. ajoute où chaque photo a été prise, uniquement quand Position est activé dans les réglages de nope. Votre position n’est jamais envoyée nulle part."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. aggiunge dove è stata scattata ogni foto, solo mentre Posizione è attiva nelle impostazioni di nope. La tua posizione non viene mai inviata da nessuna parte."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. は、nope. の設定で位置情報がオンのときだけ、各写真の撮影場所を追加します。位置情報がどこかに送信されることはありません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope.는 nope. 설정에서 위치가 켜져 있는 동안에만 각 사진의 촬영 위치를 추가합니다. 위치는 어디로도 전송되지 않습니다."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. voegt toe waar elke foto is gemaakt, alleen zolang Locatie aan staat in de instellingen van nope. Je locatie wordt nooit ergens heen gestuurd."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "O nope. adiciona onde cada foto foi tirada, apenas enquanto Localização estiver ativada nos ajustes do nope. Sua localização nunca é enviada a lugar nenhum."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "仅当 nope. 设置中的位置打开时，nope. 才会添加每张照片的拍摄地点。你的位置绝不会发送到任何地方。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "僅當 nope. 設定中的位置開啟時，nope. 才會加入每張照片的拍攝地點。你的位置絕不會傳送到任何地方。"
+    "NSLocationWhenInUseUsageDescription" : {
+      "comment" : "Location permission prompt, shown only when the person turns Location on in nope.'s settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere."
           }
         }
       }
     },
-    "NSPhotoLibraryAddUsageDescription": {
-      "comment": "Photos add-only permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. fügt die Fotos, die du aufnimmst, deiner Mediathek hinzu. Es kann deine vorhandenen Fotos nicht sehen."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nope. adds the photos you take to your photo library. It can't see your existing photos."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. añade a tu fototeca las fotos que tomas. No puede ver tus fotos existentes."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. ajoute les photos que vous prenez à votre photothèque. Il ne peut pas voir vos photos existantes."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. aggiunge le foto che scatti alla tua libreria foto. Non può vedere le foto esistenti."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. は撮影した写真を写真ライブラリに追加します。既存の写真を見ることはできません。"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope.는 촬영한 사진을 사진 보관함에 추가합니다. 기존 사진은 볼 수 없습니다."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. voegt de foto’s die je maakt toe aan je fotobibliotheek. Het kan je bestaande foto’s niet zien."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "O nope. adiciona as fotos que você tira à sua fototeca. Ele não pode ver suas fotos existentes."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. 会将你拍摄的照片添加到照片图库，但无法查看你现有的照片。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "nope. 會將你拍攝的照片加入照片圖庫，但無法查看你現有的照片。"
+    "NSPhotoLibraryAddUsageDescription" : {
+      "comment" : "Photos add-only permission prompt. Keep \"nope.\" unchanged: it is the app's name.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nope. adds the photos you take to your photo library. It can't see your existing photos."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

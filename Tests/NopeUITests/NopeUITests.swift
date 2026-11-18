@@ -6,7 +6,8 @@ import Testing
 @testable import NopeUI
 
 struct LocalizationTests {
-    static let launchLocales = ["en", "ja", "es", "fr", "de", "ko", "zh-Hant", "zh-Hans", "pt-BR", "it", "nl"]
+    /// The languages the app ships in: English only.
+    static let launchLocales = ["en"]
 
     @Test func bundleShipsEveryLaunchLocale() {
         let available = Set(Bundle.module.localizations.map { $0.lowercased() })

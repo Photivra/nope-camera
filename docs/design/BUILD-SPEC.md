@@ -10,7 +10,7 @@ This document says what to build, in which files, and how to tell it is done. Th
 - **Architecture.** `NopeUI` reads state from `NopeCore` and sends intents. It holds no business rules. Everything here except section 6 is inside `NopeUI`, the app targets' views, and the string catalogs.
 - **Native first.** `Menu`, `Toggle`, `Picker`, `Form`, sheets, popovers, `confirmationDialog`, `searchable`, `sensoryFeedback`. Custom drawing only for the shutter, viewfinder overlays, tiles, readouts and the drive strip.
 - **Tokens only.** No literal spacing, radius, size, color or duration outside `DesignTokens.swift`.
-- **Every string** goes in a catalog with a translator comment and all eleven languages, marked "needs review". Honesty wording goes in `Honesty.xcstrings` and is a draft until reviewed.
+- **Every string** goes in a catalog with a translator comment. Version 1.0.0 ships in English only (issue #86), so no translations are added. Honesty wording goes in `Honesty.xcstrings` and is a draft until reviewed.
 - **Every screen and state** has a UI test with an accessibility audit; coverage of non-UI code stays at 100%.
 - **Layouts.** The three arrangements and the rule that chooses them stay as they are (`CameraLayout.arrangement`): stacked, column, scrolling.
 - **When the mockup and this text disagree, this text is right.** When this text and the code's existing behavior disagree on something not listed as a change, keep the behavior and flag it.
@@ -328,7 +328,7 @@ AC: `LiveActivityUITests` and `NopeWatchUITests` pass their audits, the watch on
 
 ## 4. New and changed strings
 
-Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. All need a translator comment and eleven languages ("needs review").
+Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. All need a translator comment; 1.0.0 ships in English only (issue #86).
 
 | String | Where | Note |
 | --- | --- | --- |

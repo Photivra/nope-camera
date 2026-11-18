@@ -8,7 +8,7 @@ The standard SwiftUI interface for Photivra Nope Camera.
 holds no business rules, so it can be replaced: see `docs/BUILDING-AN-INTERFACE.md` in the
 repository and the "Building an interface" article in `NopeCore`.
 
-Every string is in the module's `Localizable.xcstrings`, in all eleven launch languages, except
+Every string is in the module's `Localizable.xcstrings` (English only in version 1.0.0), except
 honesty claims (the RAW badge, the no-RAW fallback wording, the privacy and signing settings and
 the Honesty screen), which are in `Honesty.xcstrings` and need a fluent human review before
 release.

@@ -2,14 +2,16 @@ import XCTest
 
 /// UI tests for the states of the watch screen in the 1.0.0 design (docs/design/watch.html,
 /// BUILD-SPEC.md 3.13): every status and result, the unsigned result when signing is off by
-/// choice, the largest text size, right to left and German. Each state is audited. Run them on
+/// choice, the largest text size, right to left and double-length text. Each state is audited. Run them on
 /// the 40 mm and the 46 mm Simulators; the phone is simulated (`-NopeSimulatedPhone`).
 extension NopeWatchUITests {
     /// The launch arguments for right-to-left layout.
     static let rightToLeft = ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
 
-    /// The launch arguments for German, the longest launch language.
-    static let german = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE"]
+    /// The launch arguments for Apple's double-length pseudo-language: every localized string is
+    /// shown twice, which stands in for a long language while the app ships in English only.
+    /// Xcode's App Language option "Double-Length Pseudolanguage" sets the same.
+    static let doubleLength = ["-NSDoubleLocalizedStrings", "YES"]
 
     /// The shortest height of Take Photo and Cancel Timer, in points (docs/design/watch.html).
     static let buttonMinHeight: CGFloat = 56
@@ -195,7 +197,7 @@ extension NopeWatchUITests {
         attachScreenshot(of: ready, named: "watch-ready")
     }
 
-    // MARK: Largest text size, right to left, German
+    // MARK: Largest text size, right to left, double-length text
 
     @MainActor
     func testTheLargestTextSizeScrollsToEveryControl() throws {
@@ -243,27 +245,34 @@ extension NopeWatchUITests {
     }
 
     @MainActor
-    func testGerman() throws {
-        let app = launch("unreachable", extraArguments: Self.german)
+    func testDoubleLengthText() throws {
+        let app = launch("unreachable", extraArguments: Self.doubleLength)
         XCTAssertTrue(status(in: app).waitForExistence(timeout: 10))
-        XCTAssertEqual(
-            status(in: app).label, "Dein Telefon ist nicht erreichbar. Halte es in der Nähe und lass nope. geöffnet.")
-        attachScreenshot(of: app, named: "watch-german-warning")
+        let warning = "Can't reach your phone. Keep it nearby with nope. open."
+        XCTAssertEqual(status(in: app).label, "\(warning) \(warning)")
+        attachScreenshot(of: app, named: "watch-long-text-warning")
         try audit(app)
         app.terminate()
 
-        let ready = launch("ready", extraArguments: Self.german)
+        let ready = launch("ready", extraArguments: Self.doubleLength)
         let shutter = ready.buttons["WatchShutter"]
         XCTAssertTrue(shutter.waitForExistence(timeout: 10))
-        XCTAssertEqual(shutter.label, "Foto aufnehmen")
+        XCTAssertEqual(shutter.label, "Take Photo Take Photo")
         XCTAssertGreaterThanOrEqual(shutter.frame.height, Self.buttonMinHeight)
-        attachScreenshot(of: ready, named: "watch-german")
+        attachScreenshot(of: ready, named: "watch-long-text")
         try audit(ready)
         let delay = ready.buttons["WatchDelay"]
         scroll(to: delay, in: ready)
         delay.tap()
-        XCTAssertTrue(ready.buttons["3 Sekunden"].waitForExistence(timeout: 10))
-        attachScreenshot(of: ready, named: "watch-german-delay")
+        XCTAssertTrue(ready.buttons["3 seconds"].waitForExistence(timeout: 10))
+        attachScreenshot(of: ready, named: "watch-long-text-delay")
         try audit(ready)
+
+        // Double-length text in a right-to-left layout.
+        ready.terminate()
+        let mirrored = launch("ready", extraArguments: Self.doubleLength + Self.rightToLeft)
+        XCTAssertTrue(mirrored.buttons["WatchShutter"].waitForExistence(timeout: 10))
+        attachScreenshot(of: mirrored, named: "watch-long-text-rtl")
+        try audit(mirrored)
     }
 }

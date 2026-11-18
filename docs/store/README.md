@@ -1,8 +1,9 @@
 # App Store listing drafts
 
 Status: **draft, needs human review.** Nothing here is approved for submission. The English text
-is a draft for the maintainer; every other language is an AI translation that a fluent human
-must review before release (AGENTS.md, "Localization").
+is a draft for the maintainer. Version 1.0.0 is listed in English only (issue #86); a listing in
+another language is added with that language and needs a fluent human review before release
+(AGENTS.md, "Localization").
 
 The listing text itself lives in [`store/metadata/<locale>/`](../../store/metadata/README.md)
 (AGENTS.md, "Localization"), one file per App Store Connect field, with its review status in
@@ -11,7 +12,7 @@ the other submission answers:
 
 | File | What it holds |
 |---|---|
-| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords for the 11 launch languages, in 13 App Store locales (Spanish and French in two regions each) |
+| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords in English (`en-US`), the only language of version 1.0.0 |
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
@@ -24,7 +25,7 @@ the other submission answers:
 | Subtitle | 30 characters | "RAW photos. No tracking." (maintainer's choice, 24); translations keep the same meaning within 30 |
 | Promotional text | 170 characters | Can be changed without a new build |
 | Description | 4,000 characters | Plain text, no markup |
-| Keywords | 100 characters | The drafts give both characters and UTF-8 bytes; the Japanese and Korean keywords are over 100 bytes, so shorten them if App Store Connect rejects them. Comma separated, no spaces needed; words in the name are already indexed, so "camera", "Photivra" and "nope" are left out; no other apps' names |
+| Keywords | 100 characters | Comma separated, no spaces needed; words in the name are already indexed, so "camera", "Photivra" and "nope" are left out; no other apps' names |
 
 Source: [App Store Connect: app information](https://developer.apple.com/help/app-store-connect/reference/app-information/)
 and [platform version information](https://developer.apple.com/help/app-store-connect/reference/platform-version-information/).

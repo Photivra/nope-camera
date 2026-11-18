@@ -95,7 +95,7 @@ last-photo view.
 ## Rules that still apply
 
 Your interface follows AGENTS.md like the standard one: native controls, Dynamic Type, VoiceOver
-labels, 44-point touch targets, every string in a String Catalog in all eleven languages, and the
+labels, 44-point touch targets, every string in a String Catalog in every language that ships, and the
 name written "nope.".
 
 ## Reference
