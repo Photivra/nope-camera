@@ -52,6 +52,16 @@ struct NopeApp: App {
     /// Requests from Siri and Shortcuts (issue #62), which the camera screen serves.
     private static let shortcuts = ShortcutInbox()
 
+    /// What assistants did since the app opened, in memory only, and the Assistant Access check's
+    /// runner (issue #82).
+    private static let assistantSession = AssistantSession(settings: sharedSettings)
+
+    /// The one helper every gated App Intent calls (issue #82). The device counts as locked while
+    /// protected data isn't available (`UIApplication.isProtectedDataAvailable`).
+    private static let assistantGate = AssistantGate(
+        session: assistantSession, settings: sharedSettings,
+        deviceIsLocked: { !UIApplication.shared.isProtectedDataAvailable })
+
     /// The link to the Apple Watch app (issue #63), whose commands go through ``shortcuts``.
     private static let watchSession = PhoneWatchSession()
 
@@ -80,6 +90,8 @@ struct NopeApp: App {
         AppDependencyManager.shared.add(dependency: shortcuts)
         let presets = Self.sharedPresets
         AppDependencyManager.shared.add(dependency: presets)
+        let assistantGate = Self.assistantGate
+        AppDependencyManager.shared.add(dependency: assistantGate)
         _ = Self.settingsSync
         Self.watchSession.activate()
     }
@@ -144,6 +156,9 @@ struct NopeApp: App {
             Viewfinder(source: source)
         }
         .environment(\.cameraUprightRotation, orientation.rotation)
+        // The Assistant Access hints, cards and session list (issue #82). The simulated Lock Screen
+        // camera has none, as the capture extension has none.
+        .environment(\.assistantSession, Self.simulatesLockScreenCamera ? nil : Self.assistantSession)
         .modifier(FollowsWindowSizeClasses())
         // Settings and the screens that aren't the camera follow the system's light or dark setting.
         .modifier(ProvidesSystemAppearance())
@@ -200,7 +215,7 @@ struct NopeApp: App {
         .task { await Self.watchSession.serve(model: model, inbox: Self.shortcuts) }
         #if DEBUG
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
-        .task { await SimulatedShortcut.run(with: Self.shortcuts) }
+        .task { await SimulatedShortcut.run(with: Self.shortcuts, gate: Self.assistantGate) }
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;

@@ -17,11 +17,13 @@ struct SetFocusRangeIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and limits autofocus to near subjects (Close-Up) or far subjects (Far Focus), or lifts the limit.",
+            "Opens nope. and limits autofocus to near subjects (Close-Up) or far subjects (Far Focus), or lifts the limit. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Set Focus Range action in the Shortcuts app. Close-Up and Far Focus are the names of the camera's controls. Keep \"nope.\" unchanged."))
 
-    /// The limit applies to the running camera, which runs only in the foreground.
-    static let openAppWhenRun = true
+    /// Runs in the background first, so a refused or cancelled request never opens the app;
+    /// the app opens once the request is allowed (`continueInForeground`; issue #82, device
+    /// check 1 in docs/TESTING.md). The camera needs the app in the foreground.
+    static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
 
     /// The range.
     @Parameter(
@@ -33,6 +35,12 @@ struct SetFocusRangeIntent: AppIntent {
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
 
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
+
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
         Summary("Set focus range to \(\.$range)")
@@ -43,8 +51,12 @@ struct SetFocusRangeIntent: AppIntent {
     /// - Returns: The outcome, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let outcome = await inbox.submit(.setFocusRange(range.choice))
-        return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
+        let choice = range.choice
+        let question = AssistantQuestions.focusRange(named: String(localized: range.localizedStringResource))
+        let answer = await gate.answer(.setFocusRange, question: question, intent: self, opensApp: true) {
+            AssistantAnswer(await inbox.submit(.setFocusRange(choice)))
+        }
+        return .result(dialog: IntentDialog(answer.sentence))
     }
 }
 
@@ -96,11 +108,13 @@ struct SetPhotoSizeIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one.",
+            "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
-    /// The lenses and their sizes are known once the camera runs, in the foreground.
-    static let openAppWhenRun = true
+    /// Runs in the background first, so a refused or cancelled request never opens the app;
+    /// the app opens once the request is allowed (`continueInForeground`; issue #82, device
+    /// check 1 in docs/TESTING.md). The camera needs the app in the foreground.
+    static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
 
     /// The size.
     @Parameter(
@@ -118,6 +132,12 @@ struct SetPhotoSizeIntent: AppIntent {
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
 
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
+
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
         Summary("Set photo size to \(\.$size)") {
@@ -131,8 +151,11 @@ struct SetPhotoSizeIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let request = PhotoSizeShortcut(lensKind: lens?.kind, size: size.size)
-        let outcome = await inbox.submit(.setPhotoSize(request))
-        return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
+        let question = AssistantQuestions.photoSize(named: String(localized: size.localizedStringResource), lens: lens?.kind)
+        let answer = await gate.answer(.setPhotoSize, question: question, intent: self, opensApp: true) {
+            AssistantAnswer(await inbox.submit(.setPhotoSize(request)))
+        }
+        return .result(dialog: IntentDialog(answer.sentence))
     }
 }
 
@@ -178,7 +201,7 @@ struct SetFastShutterIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Chooses how fast a shutter nope. prefers while Manual Controls are off, to avoid blur.",
+            "Chooses how fast a shutter nope. prefers while Manual Controls are off, to avoid blur. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English."))
 
     /// The choice.
@@ -191,6 +214,12 @@ struct SetFastShutterIntent: AppIntent {
     /// The person's settings, the same object the camera screen shows.
     @Dependency private var settings: NopeSettings
 
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
+
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
         Summary("Set fast shutter to \(\.$choice)")
@@ -201,10 +230,14 @@ struct SetFastShutterIntent: AppIntent {
     /// - Returns: The answer, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        settings.setFastShutter(choice.fastShutter)
-        return .result(
-            dialog: IntentDialog(
-                LocalizedStringResource("Fast Shutter is set.", comment: "Siri's answer after nope.'s Fast Shutter setting was changed.")))
+        let fastShutter = choice.fastShutter
+        let question = AssistantQuestions.fastShutter(named: String(localized: choice.localizedStringResource))
+        let answer = await gate.answer(.setFastShutter, question: question, intent: self, opensApp: false) {
+            settings.setFastShutter(fastShutter)
+            return AssistantAnswer(
+                LocalizedStringResource("Fast Shutter is set.", comment: "Siri's answer after nope.'s Fast Shutter setting was changed."))
+        }
+        return .result(dialog: IntentDialog(answer.sentence))
     }
 }
 
@@ -263,7 +296,7 @@ struct SetFaceDetectionIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure.",
+            "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
     /// Whether faces steer autofocus and auto exposure. Off by default, as the setting is
@@ -280,6 +313,12 @@ struct SetFaceDetectionIntent: AppIntent {
     /// The person's settings, the same object the camera screen shows.
     @Dependency private var settings: NopeSettings
 
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
+
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
         Summary("Set focus on faces to \(\.$isOn)")
@@ -290,11 +329,14 @@ struct SetFaceDetectionIntent: AppIntent {
     /// - Returns: The new state, said by Siri or shown by Shortcuts.
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        settings.setFollowsFaces(isOn)
-        let message =
-            isOn
-            ? LocalizedStringResource("Focus on Faces is on.", comment: "Siri's answer after nope.'s Focus on Faces was turned on.")
-            : LocalizedStringResource("Focus on Faces is off.", comment: "Siri's answer after nope.'s Focus on Faces was turned off.")
-        return .result(dialog: IntentDialog(message))
+        let isOn = isOn
+        let answer = await gate.answer(.setFocusOnFaces, question: AssistantQuestions.focusOnFaces(isOn: isOn), intent: self, opensApp: false) {
+            settings.setFollowsFaces(isOn)
+            return AssistantAnswer(
+                isOn
+                    ? LocalizedStringResource("Focus on Faces is on.", comment: "Siri's answer after nope.'s Focus on Faces was turned on.")
+                    : LocalizedStringResource("Focus on Faces is off.", comment: "Siri's answer after nope.'s Focus on Faces was turned off."))
+        }
+        return .result(dialog: IntentDialog(answer.sentence))
     }
 }

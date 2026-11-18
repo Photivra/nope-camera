@@ -1,0 +1,35 @@
+# Every way Siri, Shortcuts, other assistants and the system's controls reach the app
+# (issue #82; docs/design/assistant-access.md, section 17). scripts/check-security.sh fails on
+# an App Intent, entity, query, App Shortcuts provider or control that isn't listed here, on a
+# gated intent whose perform() doesn't go through the Assistant Access check (gate.answer) or
+# that doesn't require an unlocked device, and on any URL scheme, system search indexing,
+# donation, user activity or assistant schema. Adding a line is a reviewed decision.
+#
+# Each line: the type's name, then its kind:
+#   takes-photos | changes   gated: the Assistant Access check runs inside perform()
+#   opens-screen             opens a screen of the app only; not gated
+#   pressed-by-person        a control a person presses; not gated
+#   entity | query           the only entity and its query (saved preset names, behind the check)
+#   shortcuts | control      the App Shortcuts provider and the Control Center controls
+TakePhotoIntent takes-photos
+TakeBracketIntent takes-photos
+StartIntervalIntent takes-photos
+StopIntervalIntent changes
+SwitchLensIntent changes
+TurnOnLightIntent changes
+TurnOffLightIntent changes
+SetNightModeIntent changes
+SetFocusRangeIntent changes
+SetPhotoSizeIntent changes
+SetFastShutterIntent changes
+SetFaceDetectionIntent changes
+ApplyPresetIntent changes
+OpenCameraIntent opens-screen
+OpenAssistantAccessIntent opens-screen
+SetNightModeControlIntent pressed-by-person
+StopSeriesIntent pressed-by-person
+PresetEntity entity
+PresetQuery query
+NopeShortcuts shortcuts
+OpenCameraControl control
+NightModeControl control

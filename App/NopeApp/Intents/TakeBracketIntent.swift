@@ -21,11 +21,13 @@ struct TakeBracketIntent: AppIntent {
     /// What the action does, in the Shortcuts app.
     static let description = IntentDescription(
         LocalizedStringResource(
-            "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change.",
+            "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change. Needs Assistant Access, in nope. › Settings › Privacy.",
             comment: "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged."))
 
-    /// The camera needs the app in the foreground, so the app opens before the intent runs.
-    static let openAppWhenRun = true
+    /// Runs in the background first, so a refused or cancelled request never opens the app;
+    /// the app opens once the request is allowed (`continueInForeground`; issue #82, device
+    /// check 1 in docs/TESTING.md). The camera needs the app in the foreground.
+    static let supportedModes: IntentModes = [.background, .foreground(.dynamic)]
 
     /// The number of frames.
     @Parameter(
@@ -64,6 +66,12 @@ struct TakeBracketIntent: AppIntent {
     /// The app's inbox, which the camera screen serves.
     @Dependency private var inbox: ShortcutInbox
 
+    /// Every gated action needs an unlocked device (issue #82).
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
+
+    /// The Assistant Access check (issue #82).
+    @Dependency private var gate: AssistantGate
+
     /// How the action reads in the Shortcuts editor.
     static var parameterSummary: some ParameterSummary {
         Summary("Take a bracket of \(\.$frames), \(\.$step) apart") {
@@ -75,14 +83,19 @@ struct TakeBracketIntent: AppIntent {
 
     /// Hands the request to the camera screen and says how it ended.
     ///
-    /// - Returns: The outcome, said by Siri or shown by Shortcuts.
+    /// - Returns: The outcome, said by Siri or shown by Shortcuts, and the number of photos
+    ///   saved ("Photos Saved"; 0 when none was).
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ReturnsValue<Int> & ProvidesDialog {
         let request = BracketShortcut(
             frameCount: frames.count, step: step.stops, order: order.order, delaySeconds: delay.timer?.seconds ?? 0,
             lensKind: lens?.kind)
-        let outcome = await inbox.submit(.takeBracket(request))
-        return .result(dialog: IntentDialog(ShortcutDialog.message(for: outcome)))
+        let answer = await gate.answer(
+            .takeBracket, question: AssistantQuestions.takeBracket(request), intent: self, opensApp: true
+        ) {
+            AssistantAnswer(await inbox.submit(.takeBracket(request)))
+        }
+        return .result(value: answer.photosSaved, dialog: IntentDialog(answer.sentence))
     }
 }
 
