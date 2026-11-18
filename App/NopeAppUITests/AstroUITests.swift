@@ -97,11 +97,12 @@ extension NopeAppUITests {
         try audit(app)
 
         // Single on the drive strip, which replaced the Astro pill, turns the helper off; night
-        // mode stays on.
+        // mode, which the helper turned on, goes back off with the manual controls
+        // (AstroNightModeUITests covers the other cases).
         driveStripWord(app, "Single").tap()
-        XCTAssertFalse(element(app, containing: "Astro frames").waitForExistence(timeout: 5))
+        XCTAssertTrue(element(app, containing: "Astro frames").waitForNonExistence(timeout: 5))
         XCTAssertFalse(app.buttons["More Manual Controls"].exists, "manual controls go back off")
-        XCTAssertEqual(nonRedPixels(app, outside: app.otherElements["Viewfinder"].frame), 0)
+        XCTAssertGreaterThan(nonRedPixels(app, outside: app.otherElements["Viewfinder"].frame), 0, "night mode goes back off")
     }
 
     @MainActor

@@ -25,6 +25,7 @@ struct SettingsPresetsTests {
         "torchLevel": { $0.setTorchLevel(0.75) },
         "isNightModeOn": { $0.setNightMode(true) },
         "tintsViewfinderInNightMode": { $0.setTintsViewfinderInNightMode(true) },
+        "keepsNightModeAfterAstro": { $0.setKeepsNightModeAfterAstro(true) },
         "followsFaces": { $0.setFollowsFaces(true) },
         "showsProcessedMarker": { $0.setShowsProcessedMarker(false) },
         "showsLiveActivity": { $0.setShowsLiveActivity(true) },
@@ -37,9 +38,10 @@ struct SettingsPresetsTests {
         },
     ]
 
-    /// `NopeSettings` properties that aren't settings: where they are stored, and Observation's
-    /// bookkeeping.
-    static let notSettings: Set<String> = ["defaults", "$observationRegistrar"]
+    /// `NopeSettings` properties that aren't settings: where they are stored, Observation's
+    /// bookkeeping, and whether the astro helper turned night mode on (the app's state, which a
+    /// preset never carries; `AstroNightModeTests`).
+    static let notSettings: Set<String> = ["defaults", "$observationRegistrar", "isNightModeFromAstro"]
 
     /// The names of the stored properties of a value, without Observation's `_` prefix.
     static func storedProperties(of value: Any) -> [String] {

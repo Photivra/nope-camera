@@ -532,6 +532,7 @@ settings are never touched.
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
 | `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
+| `manual` (Astro and night mode, `AstroNightModeUITests`) | Astro turns night mode on; leaving it for Single turns night mode off again; night mode the person turned off and on again in Q while Astro was on, night mode on before Astro (`-NopeSettings.isNightModeOn YES`), and Keep Night Mode After Astro (`-NopeSettings.keepsNightModeAfterAstro YES`) each stay on; the Keep Night Mode After Astro row right after Night Mode, off by default, found by a keyword; audited at the default and largest text sizes, right to left and in night mode. A relaunch, which keeps night mode as it was, can't be tested here (each launch empties the settings): `AstroNightModeTests` covers it |
 | `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from Q and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
 In right-to-left layout the viewfinder, which `CameraScreen` draws behind the interface, was
@@ -1522,6 +1523,10 @@ tripod (issue #60):
   (natural and red viewfinder) with the magnifier on enlarges the real viewfinder;
 - the run stops when storage is nearly full and at 10% battery unplugged (`AstroModel.stopBatteryLevel`,
   an assumption), and every frame taken before is saved.
+- night mode: off before Astro, on with it, and off again after choosing another drive mode, after
+  switching to a lens without Astro; after the app is closed during Astro and opened again it is
+  still on, and leaving Astro later doesn't turn it off; on before Astro, or changed with the Control Center or Lock Screen control while Astro is on, it
+  stays as it is; with Keep Night Mode After Astro on, it stays on.
 
 ### iPhone Duo (foldable) on a device
 

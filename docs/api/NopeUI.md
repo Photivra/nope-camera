@@ -14757,6 +14757,16 @@ case jpegCompression
 
 JPEG Compression, on HEIF and JPEG Copies.
 
+## `SettingsID/keepNightModeAfterAstro`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case keepNightModeAfterAstro
+```
+
+The Keep Night Mode After Astro switch.
+
 ## `SettingsID/license`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -15265,8 +15275,8 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
 - Privacy: Details in Each Photo, Sign Each Photo;
 - Camera: Fast Shutter, Focus on Faces;
-- Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Red
-  Viewfinder, Live Activity;
+- Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
+  Night Mode After Astro (where the device offers Astro), Red Viewfinder, Live Activity;
 - More: Accessibility, Honesty, About and Licenses.
 
 A row is shown or not by the device only; no row appears or disappears when a setting
@@ -15448,12 +15458,12 @@ var hasPresets: Bool
 
 Whether presets exist (not in the Lock Screen camera).
 
-## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:)`
+## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:)`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
 
 ```swift
-init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false)
+init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false)
 ```
 
 Creates the availability.
@@ -15465,6 +15475,7 @@ Creates the availability.
   - offersLocation: Whether the app can tag a location.
   - offersProcessedMarker: Whether a lens has no Bayer RAW.
   - offersLiveActivity: Whether the Live Activity switch is offered.
+  - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
 
 ## `SettingsSearch/Availability/offers(_:)`
 
@@ -15478,6 +15489,17 @@ Whether the item exists here.
 
 - Parameter id: The item.
 - Returns: `false` for an item this device or screen doesn't show.
+
+## `SettingsSearch/Availability/offersAstro`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersAstro: Bool
+```
+
+Whether the device offers Astro (`CameraModel/deviceOffersAstro`), so the Keep Night
+Mode After Astro switch applies.
 
 ## `SettingsSearch/Availability/offersLiveActivity`
 
@@ -16001,6 +16023,16 @@ static let jpegCompression: LocalizedStringResource
 ```
 
 "JPEG Compression".
+
+## `SettingsText/keepNightModeAfterAstro`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let keepNightModeAfterAstro: LocalizedStringResource
+```
+
+"Keep Night Mode After Astro".
 
 ## `SettingsText/keepReadout`
 

@@ -71,6 +71,7 @@ Every stored setting, and every Settings row that is not a stored setting. "B" i
 | Live Camera Readout | Quick Controls (3); Pro Tools (3); Viewfinder Overlays (3) | Q tile (3); Pro Tools (3); Viewfinder Overlays (4) | Off | Presets |
 | Keep Readout in Clean View | Quick Controls menu (3); Viewfinder Overlays (3) | Q tile menu (3); Viewfinder Overlays (4) | Off | Presets |
 | Night Mode | Quick Controls (2); Settings › Camera (2) | Q tile (2); Settings › Screen (3) | Off | Control Center. Siri (on and off). Set Night Mode. Presets |
+| Keep Night Mode After Astro | – | Settings › Screen (3), where the device offers Astro (added 2026-11-18) | Off: leaving Astro turns night mode off again if Astro turned it on | Presets, Lock Screen camera |
 | Red Viewfinder | Settings › Camera (2); row shown only while Night Mode is on | Settings › Screen (3); same condition | Off | Presets |
 | Live Activity | Settings › Camera (2); where the device offers it | Settings › Screen (3) | Off | Presets |
 
@@ -195,6 +196,7 @@ Settings                                             search field at the top
 │  ├─ Viewfinder Overlays          value: Off / Grid, Level / 3 On  page   (moved from Camera)
 │  ├─ Show Processed Marker        switch                           (moved from Camera)
 │  ├─ Night Mode                   switch
+│  ├─ Keep Night Mode After Astro  switch                           (where the device offers Astro; added 2026-11-18)
 │  ├─ Red Viewfinder               switch                           always shown
 │  └─ Live Activity                switch                           (where the device offers it)
 │
@@ -204,7 +206,7 @@ Settings                                             search field at the top
    └─ About and Licenses           page → License; Notices and Trademarks
 ```
 
-Rows on the Settings list: 16 to 18, depending only on the device (Photo Size and Live Activity are shown where the device offers them). Direction B has 14 to 20, depending also on which switches are on. Here no row appears or disappears as a switch is changed.
+Rows on the Settings list: 16 to 19, depending only on the device (Photo Size, Keep Night Mode After Astro and Live Activity are shown where the device offers them). Direction B has 14 to 20, depending also on which switches are on. Here no row appears or disappears as a switch is changed.
 
 ### 3.2 Path to every option
 
@@ -230,6 +232,7 @@ Rows on the Settings list: 16 to 18, depending only on the device (Photo Size an
 | Grid Style, Keep Readout in Clean View | Q tile menu, or Viewfinder Overlays | 3 or 4 | 1 |
 | Show Processed Marker | Q › Settings › switch, or the foot of the processing note | 3 or 2 | 0 |
 | Night Mode | Q › Night Mode (home), Control Center, Siri, or Q › Settings › switch | 2, 1, 0 or 3 | 0 |
+| Keep Night Mode After Astro | Q › Settings › switch | 3 | 0 |
 | Red Viewfinder | Q › Settings › switch | 3 | 0 |
 | Live Activity | Q › Settings › switch | 3 | 0 |
 | Accessibility, Honesty, About and Licenses | Q › Settings › row | 3 | 1 |

@@ -218,8 +218,21 @@ frame that wouldn't fit in storage, at or below `AstroModel.stopBatteryLevel` un
 the storage. Turning it off turns manual controls off again only if it turned them on. The torch
 can't be turned on while it is on, and a lens it can't use turns it off. It is offered only
 where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen capture extension has
-no storage and battery reader, so it has no Astro. `NopeUI` turns night
-mode on with it (`NopeSettings.setNightMode(_:)`), shows it as the Astro word of the drive strip
+no storage and battery reader, so it has no Astro. `NopeUI` turns it on and off with
+`CameraModel.setAstro(_:settings:)`, which turns night mode on with it and returns night mode to
+what it was before when Astro ends, as for manual controls: night mode that was off goes off again
+however Astro ends in a running session (another drive mode, a lens without Astro, manual controls
+off, a preset); after the app is quit or closed by the system during Astro, the next launch keeps
+night mode as it was, so it opens red in the dark, and clears the record
+(`CameraModel.forgetNightModeFromAstroAtLaunch(settings:)`, when the camera screen appears; owner
+decision, 2026-11-18); night mode that was on before, or that the person changed while Astro was on (Settings,
+Q, the Control Center and Lock Screen control, Siri and Shortcuts, all through
+`NopeSettings.setNightMode(_:)`), stays as it is; and Keep Night Mode After Astro
+(`NopeSettings.keepsNightModeAfterAstro`, off by default) keeps it on. Which night mode Astro
+turned on is recorded in the shared store (`NopeSettings.isNightModeFromAstro`, under a key outside
+the settings prefix, so presets and the Lock Screen snapshot never carry it), so a change from
+another process clears it; applying a preset or snapshot clears it. The helper
+alone (`CameraIntent.astro`, as a preset turns it on) never changes night mode. `NopeUI` shows it as the Astro word of the drive strip
 with its mode card and an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
 (`SeriesScreenKeeper`).
 
@@ -253,8 +266,8 @@ mode and brightness are `NopeSettings.flashMode` and `torchLevel`, passed in by 
 
 ### Night mode (issue #61)
 
-`NopeSettings.isNightModeOn` (and `setNightMode(_:)`, for features such as the Astro helper) and
-`tintsViewfinderInNightMode`. `NopeUI` applies `NightModeStyle` at the root of the camera screen
+`NopeSettings.isNightModeOn` (and `setNightMode(_:)`, the person's choice), `tintsViewfinderInNightMode`
+and `keepsNightModeAfterAstro` (see "Astro helper" for how Astro turns night mode on and off). `NopeUI` applies `NightModeStyle` at the root of the camera screen
 and of each sheet: every text style is drawn white, then everything is multiplied by pure red,
 so white becomes red (5.25:1 on black), grays darker reds and black stays black; `CameraColor`
 turns teal and amber white first, so they don't vanish. To keep the viewfinder in natural
@@ -808,7 +821,8 @@ grouped list with a search field (`SettingsSearch.swift`): Presets (see "Setting
 Photos (Formats with the RAW pairing, HEIF and JPEG Copies with the look and the file options,
 Photo Size, Mirror Front Camera), Privacy (Details in Each Photo, with the master switch, and
 Sign Each Photo), Camera (Fast Shutter, Focus on Faces), Screen (Start in Clean View, Viewfinder
-Overlays, Show Processed Marker, Night Mode, Red Viewfinder, Live Activity) and More
+Overlays, Show Processed Marker, Night Mode, Keep Night Mode After Astro where the device offers
+Astro, Red Viewfinder, Live Activity) and More
 (Accessibility, Honesty, About). Manual controls are turned on and off on the camera, with the
 Manual Controls button; explanations are under each row and on the detail screens.
 

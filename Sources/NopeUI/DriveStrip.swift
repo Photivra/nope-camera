@@ -345,13 +345,12 @@ struct DriveStrip: View {
         let delay = timerDelay
         Task {
             if word == .astro {
-                // As the astro switch did: turning the helper on turns night mode on too (issue
-                // #60); the helper turns manual controls on itself.
-                settings.setNightMode(true)
-                await model.send(.astro(.setOn(true)))
+                // Turns night mode on too (issue #60), and leaving Astro turns it off again if
+                // Astro turned it on; the helper turns manual controls on itself.
+                await model.setAstro(true, settings: settings)
                 return
             }
-            if model.astro.isOn { await model.send(.astro(.setOn(false))) }
+            if model.astro.isOn { await model.setAstro(false, settings: settings) }
             if let mode = word.mode(timerDelay: delay) { await model.send(.drive(.setMode(mode))) }
         }
     }

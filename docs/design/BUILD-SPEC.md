@@ -162,7 +162,7 @@ Mode cards (one view, `ModeCard`, in `DriveControls.swift`, used by all modes; `
 - `AstroPanel`, `DriveProgressView` and `IntervalProgressView` become uses of `ModeCard` and move from the top of the picture to the bottom stack.
 - `ShutterButton`: while a series or countdown runs, the disc is a stop square; with Timer selected and idle, the disc shows the delay in black. Its label stays "Take Photo"; the value says the mode.
 - `IntervalSheet` and `AstroSheet`: content unchanged; medium and large detents.
-- Astro keeps today's behavior: it turns on Manual Controls and night mode, and hides the Light tile.
+- Astro keeps today's behavior: it turns on Manual Controls and night mode, and hides the Light tile. Leaving Astro turns each off again only if Astro turned it on (owner decision, 2026-11-18): night mode the person had on, or changed while Astro was on, stays as it is, and Keep Night Mode After Astro (Settings › Screen, off by default) keeps it on.
 
 AC: each mode is one tap from the default screen; the mode's name is always visible; an idle Astro screen covers no more than a quarter of the picture and a running one no more than a sixth; no white element appears at any point in Astro with night mode on; the strip never truncates a word in any launch language.
 UI tests: `testDriveStripSelectsEachMode`, `testTimerDelayMenu`, `testIntervalCardOpensSettings`, `testAstroFromStrip`; update the self-timer, burst, interval and `AstroUITests` flows that used the tray; pseudo-language test for the strip.
@@ -246,6 +246,7 @@ Root, in order. A row is shown or not by the device only; no row appears or disa
 | | Viewfinder Overlays | Page | "Off"; the names when one or two are on ("Grid, Level"); a count from three ("3 On") |
 | | Show Processed Marker | Switch | When the device has a lens without RAW |
 | | Night Mode | Switch | |
+| | Keep Night Mode After Astro | Switch | Where the device offers Astro (added 2026-11-18) |
 | | Red Viewfinder | Switch | Always shown, whether Night Mode is on or off |
 | | Live Activity | Switch | Where the device offers it |
 | More | Accessibility; Honesty; About and Licenses | Pages | |
@@ -363,6 +364,7 @@ Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. A
 | Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness. | Night Mode (Honesty) | Draft; the dimming advice moves to the Accessibility page |
 | nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings. | Accessibility page, Night Mode | Draft |
 | In Night Mode, shows the live picture in red too. Only the screen changes; photos keep their colors. | Red Viewfinder (Honesty) | Draft |
+| When Astro turns Night Mode on, it stays on after you leave Astro instead of turning off again. | Keep Night Mode After Astro | Draft (2026-11-18) |
 | Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent. | Live Activity (Honesty) | Draft; replaces the longer explanation |
 | Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone. | Standard File Tags (Honesty) | Draft; replaces "They say nothing about you, your phone or the photo." |
 | iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. | Honesty, Faces and Autofocus | Draft |

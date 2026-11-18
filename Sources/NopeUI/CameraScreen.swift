@@ -177,6 +177,9 @@ public struct CameraScreen<Viewfinder: View>: View {
         // Night mode: the home indicator, a white system bar, fades away until the screen is
         // touched.
         .persistentSystemOverlays(settings.isNightModeOn ? .hidden : .automatic)
+        // After a relaunch during Astro (off at every launch), night mode stays as it was, so the
+        // screen opens red in the dark; it becomes the person's (owner decision, 2026-11-18).
+        .task { model.forgetNightModeFromAstroAtLaunch(settings: settings) }
         .task { await model.send(.start) }
         .task { await model.observeEvents() }
         .task { await model.manual.observeReadings() }
