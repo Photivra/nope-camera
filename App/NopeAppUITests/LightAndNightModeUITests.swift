@@ -268,6 +268,13 @@ extension NopeAppUITests {
     func nonRedPixels(_ app: XCUIApplication, outside excluded: CGRect) -> Int {
         // Anti-aliased edges and the system's glass highlights mix in a little green and blue;
         // a pixel counts when green or blue is more than a quarter of its red (and visible).
+        nonRedPixels(app, outsideAll: [excluded])
+    }
+
+    /// Counts sampled screen pixels outside several frames (and below the status bar) that
+    /// aren't black or red, as the one-frame `nonRedPixels(_:outside:)` does.
+    @MainActor
+    func nonRedPixels(_ app: XCUIApplication, outsideAll excluded: [CGRect]) -> Int {
         countPixels(app, outside: excluded) { red, green, blue in max(green, blue) > max(24, red / 4) }
     }
 
@@ -352,7 +359,7 @@ extension NopeAppUITests {
     /// Counts sampled pixels of a screenshot that match a test.
     @MainActor
     private func countPixels(
-        _ app: XCUIApplication, outside excluded: CGRect, matching test: (Int, Int, Int) -> Bool
+        _ app: XCUIApplication, outside excluded: [CGRect], matching test: (Int, Int, Int) -> Bool
     ) -> Int {
         settle()
         let image = XCUIScreen.main.screenshot().image
@@ -361,7 +368,7 @@ extension NopeAppUITests {
         var count = 0
         let size = app.windows.firstMatch.frame.size
         for y in stride(from: Self.statusBarHeight, to: size.height - Self.homeIndicatorHeight, by: 4) {
-            for x in stride(from: CGFloat(0), to: size.width, by: 4) where !excluded.contains(CGPoint(x: x, y: y)) {
+            for x in stride(from: CGFloat(0), to: size.width, by: 4) where !excluded.contains(where: { $0.contains(CGPoint(x: x, y: y)) }) {
                 let (red, green, blue) = pixels.color(x: Int(x * scale), y: Int(y * scale))
                 if test(red, green, blue) { count += 1 }
             }

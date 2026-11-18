@@ -4472,6 +4472,10 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 The Fast Shutter setting (issue #56): an inline picker of the choices with the explanation,
 as the Look screen does, opened from the Camera section of Settings.
 
+The choice is used only while Manual Controls are off (`docs/design/BUILD-SPEC.md`, 3.16).
+While they are on, a line above the choices says the choice is not used now; the choices stay
+enabled, because the choice is stored and used again once Manual Controls are off.
+
 ## `FastShutterSettingsView/body`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
@@ -4480,19 +4484,21 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 @MainActor var body: some View { get }
 ```
 
-The picker and the explanation.
+The line while Manual Controls are on, the picker and the explanation.
 
-## `FastShutterSettingsView/init(settings:)`
+## `FastShutterSettingsView/init(settings:manualControlsAreOn:)`
 
 internal, declared in `Sources/NopeUI/FocusAids.swift`
 
 ```swift
-@MainActor init(settings: NopeSettings)
+@MainActor init(settings: NopeSettings, manualControlsAreOn: Bool)
 ```
 
 Creates the screen.
 
-- Parameter settings: The person's settings.
+- Parameters:
+  - settings: The person's settings.
+  - manualControlsAreOn: Whether Manual Controls are on now.
 
 ## `FastShutterSettingsView/link(settings:)`
 
@@ -4506,6 +4512,18 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 A navigation row to the setting, showing the current choice.
 
 - Parameter settings: The settings.
+
+## `FastShutterSettingsView/manualControlsAreOn`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+@MainActor let manualControlsAreOn: Bool
+```
+
+Whether Manual Controls are on now, so the choice is not used: the camera's own state
+(`ManualControlsModel.isEnabled`, which Astro also turns on), or the stored option
+(`NopeSettings.showsManualControls`) where there is no camera.
 
 ## `FastShutterSettingsView/settings`
 
@@ -4538,6 +4556,19 @@ static func name(_ choice: FastShutter) -> Text
 The name of a choice, such as "Freeze Motion (1/500 s)".
 
 - Parameter choice: The choice.
+
+## `FastShutterText/scopeNote`
+
+internal, declared in `Sources/NopeUI/FocusAids.swift`
+
+```swift
+static var scopeNote: Text { get }
+```
+
+Where the choice is used, the note under the Settings row and the start of the page:
+"Used only while Manual Controls are off." (`docs/design/SETTING-SCOPE.md`). With manual
+controls on, no shutter limit is sent (`ManualControlsModel.assist`), so the choice
+is stored but not used.
 
 ## `FastShutterText/title`
 
@@ -16299,6 +16330,13 @@ A Settings row's title with its value: beside the title when both fit on one lin
 otherwise, at every text size (`docs/design/BUILD-SPEC.md`, 3.10, "Values wrap"). Neither is
 ever truncated. VoiceOver reads the title, then the value.
 
+A row whose setting is used only in some state of the camera has a note too, such as Fast
+Shutter's "Used only while Manual Controls are off." (`docs/design/BUILD-SPEC.md`, 3.16;
+`docs/design/SETTING-SCOPE.md`). The note is a line of its own under the title and the
+value, as wide as the row, in the explanations' footnote size and secondary color. VoiceOver
+reads it after the value, as part of the label, and Voice Control keeps the title as the
+row's name.
+
 ## `SettingsValueLabel/body`
 
 internal, declared in `Sources/NopeUI/SettingsScreen.swift`
@@ -16307,14 +16345,14 @@ internal, declared in `Sources/NopeUI/SettingsScreen.swift`
 @MainActor var body: some View { get }
 ```
 
-The title and value, side by side or stacked.
+The title and value, then the note, if any.
 
-## `SettingsValueLabel/init(title:value:)`
+## `SettingsValueLabel/init(title:value:note:)`
 
 internal, declared in `Sources/NopeUI/SettingsScreen.swift`
 
 ```swift
-@MainActor init(title: Text, value: Text)
+@MainActor init(title: Text, value: Text, note: Text? = nil)
 ```
 
 Creates the label.
@@ -16322,6 +16360,17 @@ Creates the label.
 - Parameters:
   - title: The row's title.
   - value: The row's value.
+  - note: Where the setting is used, shown under the title and the value, or `nil`.
+
+## `SettingsValueLabel/note`
+
+internal, declared in `Sources/NopeUI/SettingsScreen.swift`
+
+```swift
+@MainActor let note: Text?
+```
+
+Where the setting is used, or `nil` for a row without a note.
 
 ## `SettingsValueLabel/title`
 

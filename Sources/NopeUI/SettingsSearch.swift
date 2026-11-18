@@ -600,6 +600,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Remove All Optional Details", defaultValue: "metadata, EXIF, strip", bundle: bundle, comment: "Settings search keywords for Remove All Optional Details, separated by commas. Not shown on screen.")
         case .signEachPhoto:
             LocalizedStringResource("Search keywords: Sign Each Photo", defaultValue: "Content Credentials, C2PA, signature", bundle: bundle, comment: "Settings search keywords for Sign Each Photo, separated by commas. Not shown on screen. Content Credentials and C2PA are names; keep them unchanged.")
+        case .fastShutter:
+            LocalizedStringResource("Search keywords: Fast Shutter", defaultValue: "blur, motion, freeze, action, sports", bundle: bundle, comment: "Settings search keywords for Fast Shutter, separated by commas. Not shown on screen.")
         case .focusOnFaces:
             LocalizedStringResource("Search keywords: Focus on Faces", defaultValue: "face detection, people, portrait", bundle: bundle, comment: "Settings search keywords for Focus on Faces, separated by commas. Not shown on screen.")
         case .nightMode, .redViewfinder:

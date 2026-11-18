@@ -292,6 +292,10 @@
       "comment" : "In the photo details: the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.",
       "extractionState" : "manual"
     },
+    "Manual Controls are on, so this choice is not used now." : {
+      "comment" : "First row of the Fast Shutter page in Settings while nope.'s Manual Controls are on: the choice is kept, but not used until Manual Controls are off. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English. Draft wording for the Honesty review (docs/design/SETTING-SCOPE.md). Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
     "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings." : {
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -666,6 +670,14 @@
       "comment" : "Claim 1 in docs/research/privacy-claims.md. App Privacy Report and the Settings path are Apple's names: use the names iOS shows in this language. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
+    "Used only while Manual Controls are off." : {
+      "comment" : "Note under the Fast Shutter row in Settings: the choice is used only while nope.'s Manual Controls are off. Manual Controls is the name of nope.'s button; use its translation. Must not claim more than the English. Draft wording for the Honesty review (docs/design/SETTING-SCOPE.md). Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Used only while Manual Controls are off. The camera keeps the shutter at least as fast as your choice while there is enough light, and uses a higher ISO to do it. In low light the shutter can be slower. Standard aims for a speed you can hold by hand." : {
+      "comment" : "First paragraph of the Fast Shutter page in Settings. Manual Controls is the name of nope.'s button; use its translation. Standard is the name of the first choice. ISO is a standard name. Must not claim more than the English: nope. sets a limit for the camera's auto exposure, which is lifted when there isn't enough light. Draft wording for the Honesty review (docs/design/SETTING-SCOPE.md). Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
     "What each file holds, read on this device. Values are shown on this screen only: nothing is stored or copied." : {
       "comment" : "Introduction of the compare view's Details tab. Must not claim more than the English.",
       "extractionState" : "manual"
@@ -696,6 +708,10 @@
     },
     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos." : {
       "comment" : "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "With Manual Controls on, this choice is not used. A shutter you set is used as set. A shutter on Auto is chosen by the camera." : {
+      "comment" : "Second paragraph of the Fast Shutter page in Settings. Manual Controls is the name of nope.'s button; use its translation. \"Auto\" is the word on a manual readout; use its translation. Must not claim more than the English. Draft wording for the Honesty review (docs/design/SETTING-SCOPE.md). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "With standard protection, Apple holds the keys to iCloud Photos. With Advanced Data Protection, only your devices do. Some photo metadata and Shared Albums stay under standard protection." : {

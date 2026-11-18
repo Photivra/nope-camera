@@ -257,7 +257,8 @@ struct ManualOptionsMenu: View {
                 Task {
                     await model.send(.manual(.allAuto))
                     AccessibilityNotification.Announcement(
-                        String(localized: "Full auto", bundle: .module, comment: "Announced after All Auto returned every control to automatic.")
+                        // Manual Controls stay on, so not "full auto" (docs/design/SETTING-SCOPE.md, decision 4).
+                        String(localized: "All controls on Auto", bundle: .module, comment: "VoiceOver announcement after All Auto returned every manual control to Auto. Manual Controls stay on, so don't say \"full auto\". \"Auto\" is the word on a manual readout; use its translation.")
                     ).post()
                 }
             } label: {

@@ -111,6 +111,13 @@ struct SettingsSearchTests {
         #expect(SettingsSearch.settings(matching: "metadata", availability: .init()).contains(.detailsLocation))
     }
 
+    /// Fast Shutter's keywords (`docs/design/SETTING-SCOPE.md`, decision 7).
+    @Test func motionWordsFindFastShutter() {
+        for word in ["blur", "motion", "freeze", "action", "sports"] {
+            #expect(SettingsSearch.settings(matching: word, availability: .init()).contains(.fastShutter), "\(word)")
+        }
+    }
+
     @Test func resetFindsPresetsAndRestoreDefaults() {
         let found = SettingsSearch.settings(matching: "reset", availability: .init())
         #expect(found.contains(.presets))
