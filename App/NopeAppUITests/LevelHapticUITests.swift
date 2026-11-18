@@ -116,7 +116,9 @@ extension NopeAppUITests {
         let burst = launchLevel("becomesLevel", scenario: "slowSaving")
         XCTAssertTrue(levelReads(burst, "Tilted 5° clockwise"))
         chooseDrive(burst, "Burst")
-        burst.buttons["Take Photo"].tap()
+        // In Burst, a tap on the shutter takes one photo (docs/design/BURST.md); Start Burst
+        // starts the burst that runs until it is stopped.
+        burst.buttons["Start Burst"].tap()
         let stop = burst.buttons["Stop Burst"]
         XCTAssertTrue(stop.waitForExistence(timeout: 5))
         XCTAssertTrue(levelReads(burst, "Level"))

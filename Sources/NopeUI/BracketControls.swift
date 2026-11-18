@@ -513,9 +513,13 @@ struct BracketSheet: View {
                         BracketTypeList(selection: selection)
                     } label: {
                         VStack(alignment: .leading, spacing: NopeSpace.xxs) {
+                            // Identified for the UI tests' audit, which measures this row's
+                            // two texts instead of trusting its Dynamic Type finding on them.
                             typeLabel
+                                .accessibilityIdentifier("bracketSettings.type.title")
                             typeName(selection.wrappedValue)
                                 .foregroundStyle(CameraStyle.secondaryText)
+                                .accessibilityIdentifier("bracketSettings.type.value")
                         }
                     }
                 } else {

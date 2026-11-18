@@ -746,8 +746,13 @@ final class NopeAppUITests: XCTestCase {
     /// instead (`testFocusBracketAtTheLargestTextSize`: taller than 110 points).
     static let measuredTypeRowLabels = ["Type", "Exposure", "Focus"]
 
+    /// The identifiers of the Type row's two texts, so the skip applies to that row only and not
+    /// to every text that reads "Type", "Exposure" or "Focus" elsewhere in the app.
+    static let measuredTypeRowIdentifiers: Set<String> = ["bracketSettings.type.title", "bracketSettings.type.value"]
+
     /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``, or a
-    /// Dynamic Type or Text clipped finding on a text of ``measuredTypeRowLabels``. In
+    /// Dynamic Type or Text clipped finding on a text of ``measuredTypeRowLabels`` in Bracket
+    /// Settings' Type row (``measuredTypeRowIdentifiers``). In
     /// build 44209365138 the iPad runner's audit reported both in three audits in a row in the
     /// night-mode Settings sheet at the largest text size, where they measure 167 and 83.5 points
     /// high and grow at every step from the default size (docs/TESTING.md).
@@ -755,7 +760,8 @@ final class NopeAppUITests: XCTestCase {
         guard issue.auditType == .dynamicType || issue.auditType == .textClipped, let label = issue.element?.label
         else { return false }
         if issue.auditType == .dynamicType, measuredDynamicTypeLabels.contains(label) { return true }
-        return issue.element?.elementType == .staticText && measuredTypeRowLabels.contains(label)
+        guard let element = issue.element, element.elementType == .staticText else { return false }
+        return measuredTypeRowLabels.contains(label) && measuredTypeRowIdentifiers.contains(element.identifier)
     }
 
     /// Whether an issue is "Text clipped" on an element in the bottom fifth of the list or popover

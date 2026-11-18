@@ -215,6 +215,10 @@ extension NopeAppUITests {
         let typeRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Type")).firstMatch
         XCTAssertTrue(typeRow.waitForExistence(timeout: 5))
         XCTAssertGreaterThan(typeRow.frame.height, 110, "the Type row doesn't grow")
+        // The audit's skip for this row's texts finds them by these identifiers only.
+        for identifier in Self.measuredTypeRowIdentifiers {
+            XCTAssertTrue(app.staticTexts[identifier].exists, "no text \(identifier) in the Type row")
+        }
         chooseFocusType(app)
         try audit(app)
         closeBracketSettings(app)
