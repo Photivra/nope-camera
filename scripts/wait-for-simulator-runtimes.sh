@@ -18,18 +18,29 @@
 # So: when a runtime is mounted under that directory, other than the ones named in
 # SIMULATOR_RUNTIMES_ON_DISK_IMAGES (runtime identifiers, space separated: the runtimes the
 # runner image mounts that way in every job), this waits until SIMULATOR_RUNTIME_SETTLE_SECONDS
-# (default 750) have passed since it was called, while nothing is booted. Otherwise it returns
-# at once. Call it as the job's first use of simctl, since the service starts then.
+# (default 750) have passed since the job first used simctl, while nothing is booted. Otherwise
+# it returns at once. The first call in a job notes the time in a file (SIMULATOR_FIRST_USE_FILE,
+# by default in the runner's temporary directory), so a later call, before a second attempt to
+# prepare the Simulator, waits only for what is left. Call it before the job's first use of
+# simctl, since the service starts then. Its own simctl call has a time limit.
 set -euo pipefail
 
 settle=${SIMULATOR_RUNTIME_SETTLE_SECONDS:-750}
 poll=${SIMULATOR_RUNTIME_POLL_SECONDS:-30}
 expected=${SIMULATOR_RUNTIMES_ON_DISK_IMAGES:-}
-started=$SECONDS
+scripts=$(cd "$(dirname "$0")" && pwd)
+first_use=${SIMULATOR_FIRST_USE_FILE:-${RUNNER_TEMP:-${TMPDIR:-/tmp}}/nope-simulator-first-use}
+now() { date +%s; }
+if [[ -s $first_use && $(cat "$first_use") =~ ^[0-9]+$ ]]; then
+  started=$(cat "$first_use")
+else
+  started=$(now)
+  echo "$started" >"$first_use" 2>/dev/null || true
+fi
 
 # The runtimes mounted from a plain disk image that aren't expected to be, one per line.
 unsettled() {
-  xcrun simctl runtime list -j 2>/dev/null | python3 -c '
+  "$scripts/with-timeout.sh" 120 xcrun simctl runtime list -j 2>/dev/null | python3 -c '
 import json, sys
 expected = set(sys.argv[1].split())
 try:
@@ -54,9 +65,9 @@ if [[ -z $first ]]; then
 fi
 echo "::warning::Simulator runtime mounted from a plain disk image; waiting up to $settle seconds for the runner to remount it before booting a Simulator:"
 echo "$first"
-while (( SECONDS - started < settle )); do
+while (( $(now) - started < settle )); do
   sleep "$poll"
-  now=$(unsettled)
-  echo "After $(( SECONDS - started )) seconds: ${now:-none mounted from a plain disk image}"
+  state=$(unsettled)
+  echo "After $(( $(now) - started )) seconds: ${state:-none mounted from a plain disk image}"
 done
-echo "Simulator runtimes: waited $(( SECONDS - started )) seconds"
+echo "Simulator runtimes: $(( $(now) - started )) seconds since the job first used simctl"

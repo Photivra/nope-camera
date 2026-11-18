@@ -557,7 +557,9 @@ the local toolchain). Jobs:
 | `ui-tests-ipad 1/2`, `2/2` | The same tests in two shards on the iPad Air 11-inch (M4) Simulator, except `testSourceCodeIsAnHTTPSLink`: on iPad the About screen's source link isn't found in the Settings popover, an open finding |
 | `ui-tests`, `ui-tests-ipad` | Pass only when every iPhone (iPad) shard passed; these are the required status checks |
 | `file-compat` | The pinned c2patool and exiftool (`scripts/install-file-validators.sh`) on the fixtures from `unit-tests`; both are required (see "File compatibility") |
-| `ui-tests-watch` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
+| `ui-tests-watch 1/1` | The Apple Watch app's UI tests with accessibility audits on the Apple Watch Series 12 (46mm) Simulator (`NopeWatch` scheme) |
+| `ui-tests-watch 1/1 (second runner)` | The same, only when the first job's runner was lost before the job ended |
+| `ui-tests-watch` | Passes when the watch tests passed on the first runner or on the second; the required status check |
 | `docs` | `scripts/check-docs.sh` |
 
 `.github/workflows/repo-checks.yml` (`repo-checks`) runs the quick checks above.
@@ -621,8 +623,10 @@ launch the app ("Timed out while launching application via Xcode", 170 s) and th
 passed: the watch's system app answered the test runner at once, but `xcodebuild` started the
 launch two minutes later, while it was booting the iPhone Simulator paired with the watch (it
 boots that iPhone for a watch test run). `scripts/prepare-simulator.sh` now boots the paired
-iPhone too, beside the watch and before the build, and waits for both, and it fails the step if
-the app can't be launched once (it ignored a failed launch before).
+iPhone too, beside the watch, and waits for both, and it fails if the app can't be launched
+once (it ignored a failed launch before). The boots are started before the build
+(`--start`, which waits for nothing) and waited for in the test step (see "Preparing the
+Simulator has a time limit" below).
 In the first sharded CI run, two shards failed before any test started ("The test runner crashed
 while preparing to run tests", after 7 to 9 minutes of "Testing started"), and the first test of
 two others failed to launch the app within its time limit; both happened on a Simulator the test
@@ -768,6 +772,40 @@ shard 4 the host process crashed in the first test, `xcodebuild` ended the whole
 test cut short ran again and passed, and the job passed although 17 of its 18 tests had never
 run. The second run now takes every test without a result, and
 `scripts/test-ui-test-shards.sh` has that case.
+
+#### Preparing the Simulator has a time limit
+
+In build 44222358365 the watch job stopped in its step "Find and boot the watch Simulator and
+its paired iPhone", which ran `scripts/prepare-simulator.sh`: the step started at 02:35:01 and
+never ended, the job was cancelled 55 minutes after it started (its limit was 45), the later
+steps stayed pending, and no log exists for the job. That is how a job looks whose runner
+stopped answering; which command was running isn't known. That step booted two Simulators
+with nothing limiting how long a `simctl` call may take, and it was outside the
+infrastructure classification. (In build 44149517211 one `simctl` step of an iPad shard had
+taken 9.6 minutes.)
+
+Now every `simctl` call that prepares a Simulator runs under `scripts/with-timeout.sh`, in the
+shard jobs and the watch job: 180 seconds to start a boot, 600 to finish it, 180 and 300 to
+stop the scheduler and the push service, 300 to install the app, 120 to launch it. A call that
+runs out of time fails the preparation, which is an infrastructure failure and is done once
+more (next section). The watch job starts both boots before its build without waiting for them
+(`prepare-simulator.sh --start`) and waits for them, with those limits, in its test step
+(`scripts/run-watch-ui-tests.sh`), so a boot that fails or never finishes is classified and
+tried again like any other. Installing the watch app is tried up to three times: on a Mac,
+right after the watch and its iPhone had booted, the pairing service removed the app while it
+was being installed ("Client appconduitd … requested uninstall") and the next install went
+through.
+
+#### A runner that is lost
+
+A time limit inside the job doesn't help when the runner itself is lost, as it may have been
+in build 44222358365: nothing in the job runs any more. For the watch tests there is
+therefore a second job, `ui-tests-watch 1/1 (second runner)`. The first job's last step notes
+that the job ended on its runner (it runs whatever the job's result); the second job runs
+only when the first didn't pass and that note is missing. A job that ended on its runner with
+a test failure or an infrastructure failure is not run again this way. The required check
+`ui-tests-watch` passes when either job passed. The iPhone and iPad shard jobs have no such
+second job yet; a lost runner there fails the build.
 
 #### Infrastructure and test failures
 
