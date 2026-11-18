@@ -435,7 +435,7 @@ struct ShortcutTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.twoLenses)
         let model = await makeModel(backend, sleep: { _ in await ticker.sleep() })
         await model.send(.drive(.startTimer(seconds: 5)))
-        #expect(await run(.selectLens(.telephoto), on: model) == .busy)
+        #expect(await run(.selectLens(.telephoto), on: model) == .lensBusy)
         #expect(model.selectedLens?.kind == .wide)
         model.drive.countdown.cancel()
     }

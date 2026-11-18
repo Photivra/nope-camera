@@ -20,7 +20,7 @@ Your interface depends on `NopeCore` only. It does three things:
    In the ready state, render `sessionStatus`, `captureStatus`, `selectedLensID` and
    `captureFormat` (say plainly when it is the processed fallback; when `captureStatus` is
    `.saved`, always say whether the photo is signed), and enable the shutter only
-   when `canCapture` is true.
+   when `canCapture` is true and your lens controls only when `canChangeLens` is true.
 3. **Holds no rules.** Don't decide privacy, formats, exposure or what the device supports. If
    you need a decision, it belongs in `NopeCore` as state or a capability value.
 

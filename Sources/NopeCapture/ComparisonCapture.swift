@@ -20,7 +20,8 @@ protocol ComparisonHardware: Sendable {
     ///   - sessionPlan: The session's own photo settings, prepared again afterwards.
     /// - Returns: The file bytes from `AVCapturePhoto.fileDataRepresentation()`, with the
     ///   system's metadata, and the resolved size. No pixel sample and no RAW data.
-    /// - Throws: `CaptureError.notRunning` if the session isn't running, or
+    /// - Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+    ///   isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
     ///   `CaptureError.captureFailed` if the system reports an error or no file.
     func captureComparison(_ plan: PhotoSettingsPlan, restoring sessionPlan: PhotoSettingsPlan)
         async throws(CaptureError) -> HardwarePhoto
@@ -57,7 +58,8 @@ extension CapturePolicy {
         let format: ProcessedFallback = request.format == .processedFallback(.jpeg) ? .jpeg : .heif
         return PhotoSettingsPlan(
             rawPixelFormat: nil, processedFormat: format,
-            switches: ProcessingSwitches.phoneProcessing.withFlashMode(request.flashMode.captureFlashMode))
+            switches: ProcessingSwitches.phoneProcessing.withFlashMode(request.flashMode.captureFlashMode),
+            deviceID: request.lens.id)
     }
 }
 

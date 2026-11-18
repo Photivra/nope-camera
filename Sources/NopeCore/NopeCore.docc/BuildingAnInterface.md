@@ -39,7 +39,9 @@ struct TextInterface {
 Send ``CameraIntent/start`` once when the interface appears, and
 ``CameraIntent/requestPermission`` only when the person presses a button. Send
 ``CameraIntent/selectLens(_:)`` when the person picks a lens and ``CameraIntent/capture`` from
-the shutter. The model decides what happens next.
+the shutter. The model decides what happens next. Disable the lens controls while
+``CameraModel/canChangeLens`` is false (``CameraModel/lensChangeBlocker`` says why); the model
+ignores a lens change then anyway.
 
 While the interface is visible, run ``CameraModel/observeEvents()`` (in SwiftUI, a second
 `.task`), so interruptions and heat reach ``CameraModel/sessionStatus``.

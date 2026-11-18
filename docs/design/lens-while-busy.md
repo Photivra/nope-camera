@@ -1,6 +1,6 @@
 # Lens controls while the camera is busy
 
-Status: proposed 2026-11-18. Not accepted yet; the decisions are in section 8. No drawing changes: the disabled state of every button type is already in [design-system.html](design-system.html) and [tokens.md](tokens.md) ("Button types").
+Status: accepted 2026-11-18, every decision in section 8 as recommended (decision 6: the hint; decision 7: the new sentence). No drawing changes: the disabled state of every button type is already in [design-system.html](design-system.html) and [tokens.md](tokens.md) ("Button types").
 
 The problem (issue 96): the lens can be changed while a photo or a series is being taken. The model gets one rule, `CameraModel.canChangeLens`, false while a photo is taken or saved, during a countdown, a burst, a bracket, an interval series, an Astro run and while the compare view is open. This file says what the interface does while that rule is false.
 
@@ -113,7 +113,7 @@ Device checks (`docs/TESTING.md`):
 
 ## 8. Decisions for the owner
 
-Each with the recommendation.
+Each with the recommendation. Outcome, 2026-11-18: all eight accepted as recommended.
 
 1. **Dimmed or hidden.** Recommended: dimmed and in place, in every state, for the lens buttons, the lens rows, Switch Camera and "Switch to Ultra Wide". Never hidden.
 2. **The lens in use.** Recommended: it stays full strength and selected while the others are dimmed, as the drive strip does.

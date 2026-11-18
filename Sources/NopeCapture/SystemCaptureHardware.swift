@@ -210,7 +210,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
         }
         let result: Result<[HardwarePhoto], CaptureError> = await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, let device = self.currentInput?.device else {
+                guard self.session.isRunning, let device = self.currentInput?.device,
+                    CapturePolicy.camera(device.uniqueID, matches: plan)
+                else {
                     continuation.resume(returning: .failure(.notRunning))
                     return
                 }
@@ -860,7 +862,9 @@ final class SystemCaptureHardware: CaptureHardware, @unchecked Sendable {
     private func startCapture(
         _ plan: PhotoSettingsPlan, metadata: MetadataPlan, completion: @escaping @Sendable (Result<HardwarePhoto, CaptureError>) -> Void
     ) {
-        guard session.isRunning, let device = currentInput?.device else {
+        // The attached camera must be the plan's: a lens change may have reconfigured the
+        // session while this photo waited for the output (CapturePolicy.camera(_:matches:)).
+        guard session.isRunning, let device = currentInput?.device, CapturePolicy.camera(device.uniqueID, matches: plan) else {
             completion(.failure(.notRunning))
             return
         }
@@ -1134,7 +1138,9 @@ extension SystemCaptureHardware: ComparisonHardware {
         }
         let result: Result<HardwarePhoto, CaptureError> = await withCheckedContinuation { continuation in
             queue.async {
-                guard self.session.isRunning, self.currentInput != nil else {
+                guard self.session.isRunning, let device = self.currentInput?.device,
+                    CapturePolicy.camera(device.uniqueID, matches: plan)
+                else {
                     continuation.resume(returning: .failure(.notRunning))
                     return
                 }

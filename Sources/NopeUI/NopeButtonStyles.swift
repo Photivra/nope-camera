@@ -165,13 +165,18 @@ struct NopeControlBackground<S: InsettableShape>: ViewModifier {
 }
 
 /// The press and enabled states every custom button shares: 70% opacity and 97% scale while
-/// pressed (opacity only with Reduce Motion), and 40% opacity when disabled.
+/// pressed (opacity only with Reduce Motion), and 40% opacity when disabled, unless
+/// ``SwiftUICore/EnvironmentValues/drawsDisabledDimmed`` is off (a lens control during the first
+/// moment of a photo, docs/design/lens-while-busy.md).
 struct NopePressEffect: ViewModifier {
     /// Whether the button is pressed.
     let isPressed: Bool
 
     /// Whether the button is enabled.
     @Environment(\.isEnabled) private var isEnabled
+
+    /// Whether a disabled button is drawn dimmed.
+    @Environment(\.drawsDisabledDimmed) private var drawsDisabledDimmed
 
     /// Whether Reduce Motion is on.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -188,7 +193,7 @@ struct NopePressEffect: ViewModifier {
     /// - Parameter content: The styled button.
     func body(content: Content) -> some View {
         content
-            .opacity(NopeMotion.opacity(isPressed: isPressed, isEnabled: isEnabled))
+            .opacity(NopeMotion.opacity(isPressed: isPressed, isEnabled: isEnabled || !drawsDisabledDimmed))
             .scaleEffect(NopeMotion.scale(isPressed: isPressed, reduceMotion: reduceMotion))
     }
 }

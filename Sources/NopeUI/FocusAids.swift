@@ -460,7 +460,8 @@ struct HintLabel: View {
 }
 
 /// "The subject may be too close to focus." with a button that switches to the ultra wide lens
-/// and one that dismisses the suggestion. The app never switches by itself.
+/// and one that dismisses the suggestion. The app never switches by itself. While the lens can't
+/// be changed (``LensBusyState``), only the switch button is disabled.
 struct CloseUpSuggestion: View {
     /// The camera model.
     let model: CameraModel
@@ -505,6 +506,8 @@ struct CloseUpSuggestion: View {
                     Text("Switch to \(LensName.string(for: lens.kind))", bundle: .module, comment: "Button in the close-up hint: switches to the suggested lens. The value is a lens name such as Ultra Wide.")
                 }
                 .buttonStyle(NopeCapsuleStyle(isCompact: true, idleFill: .tile))
+                // Disabled while the lens can't be changed; the hint itself stays (issue #96).
+                .lensBusyControl()
                 Button {
                     let model = model
                     Task { await model.send(.auto(.dismissCloseUpSuggestion)) }

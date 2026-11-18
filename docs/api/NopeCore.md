@@ -1856,6 +1856,21 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 Whether the shutter should be enabled: the camera is running, no photo is being taken
 or saved, and the compare view isn't open.
 
+## `CameraModel/canChangeLens`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var canChangeLens: Bool { get }
+```
+
+Whether the lens can be changed now: no photo is being taken or saved, no countdown,
+burst, interval series or astro run is in progress, and the compare view isn't open.
+
+The one rule for every way of changing the lens: ``CameraIntent/selectLens(_:)`` does
+nothing while it is false, Siri and Shortcuts refuse a lens change, and presets aren't
+applied (``isBusyForPresets``). An interface disables its lens controls while it is false.
+
 ## `CameraModel/canPressShutter`
 
 public, declared in `Sources/NopeCore/CameraModel+Drive.swift`
@@ -2108,7 +2123,8 @@ public, declared in `Sources/NopeCore/CameraSetup.swift`
 
 Whether the camera is in the middle of something a preset must not change: a photo being
 taken or saved, a countdown, a burst, an interval series, an astro run or the comparison
-shot.
+shot. The same rule as for a lens change (``canChangeLens``), because a preset may switch
+the lens.
 
 ## `CameraModel/isCleanView`
 
@@ -2154,6 +2170,39 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether the focus magnifier is shown: an enlarged part of the viewfinder for checking
 focus. Off by default. It changes only the preview, never the photo or the camera's zoom.
+
+## `CameraModel/isRunningSeries`
+
+internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var isRunningSeries: Bool { get }
+```
+
+Whether a countdown, a burst, an interval series or an astro run is in progress.
+
+## `CameraModel/isTakingPhoto`
+
+internal, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var isTakingPhoto: Bool { get }
+```
+
+Whether a photo or an exposure bracket is being taken or saved.
+
+## `CameraModel/lensChangeBlocker`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+@MainActor var lensChangeBlocker: LensChangeBlocker? { get }
+```
+
+Why the lens can't be changed now, or `nil` when it can (``canChangeLens``).
+
+A series wins over its own photos, so the reason stays ``LensChangeBlocker/runningSeries``
+for the whole series, the photos and the waits between them included.
 
 ## `CameraModel/light`
 
@@ -2471,7 +2520,8 @@ Handles one intent from the interface and updates the model's state.
 
 Side effects: ``CameraIntent/requestPermission`` may show the system camera prompt;
 ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
-``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
+``CameraIntent/selectLens(_:)`` start or reconfigure the camera (a lens change only while
+``canChangeLens`` is true);
 ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
 it to Photos (which may show the add-only Photos prompt), or applies the drive mode
 (``pressShutter()``).
@@ -9046,6 +9096,54 @@ var supportsBayerRAW: Bool { get }
 ```
 
 Whether this lens delivers single-frame Bayer RAW.
+
+## `LensChangeBlocker`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+enum LensChangeBlocker
+```
+
+Why the lens can't be changed now (issue #96; docs/design/lens-while-busy.md).
+
+Changing the lens restarts the camera. During a photo that would reconfigure the session
+under it; during a series it would end the series part-way or mix lenses in it. An interface
+disables its lens controls while ``CameraModel/lensChangeBlocker`` is not `nil`, and may draw
+the cases differently: a single photo is usually over before a person would notice, so the
+design draws the controls dimmed for ``takingPhoto`` only if it lasts, and for the others at
+once.
+
+## `LensChangeBlocker/comparing`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+case comparing
+```
+
+The compare view is open (issue #55): its photos are taken with the lens in use.
+
+## `LensChangeBlocker/runningSeries`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+case runningSeries
+```
+
+A self-timer countdown, a burst, an interval series or an astro run is in progress,
+including the waits between its photos.
+
+## `LensChangeBlocker/takingPhoto`
+
+public, declared in `Sources/NopeCore/CameraModel+Lens.swift`
+
+```swift
+case takingPhoto
+```
+
+One photo or one exposure bracket is being taken or saved.
 
 ## `LevelModel`
 
@@ -21594,6 +21692,19 @@ case intervalStopped
 ```
 
 The interval series was stopped. Say so; every photo already taken is saved.
+
+## `ShortcutOutcome/lensBusy`
+
+public, declared in `Sources/NopeCore/ShortcutRequest.swift`
+
+```swift
+case lensBusy
+```
+
+A lens change was asked for while the lens can't be changed
+(``CameraModel/canChangeLens``): a photo, countdown, burst, interval series or astro run
+is in progress, or the compare view is open. Say the app is busy and the lens didn't
+change.
 
 ## `ShortcutOutcome/lensSelected(_:)`
 

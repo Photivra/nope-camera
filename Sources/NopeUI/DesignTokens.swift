@@ -566,6 +566,12 @@ enum NopeMotion {
         reduceMotion ? nil : select
     }
 
+    /// How long a single photo or bracket must last before the lens controls are drawn dimmed:
+    /// 0.5 seconds (docs/design/lens-while-busy.md, "When the dimming is drawn"). They are
+    /// disabled at once; a photo that ends sooner draws nothing, so a normal photo doesn't make
+    /// the lens row blink.
+    static let busyDimDelay: Duration = .milliseconds(500)
+
     /// The opacity of a custom button while it is pressed: 70%.
     static let pressedOpacity: Double = 0.7
 

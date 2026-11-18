@@ -782,7 +782,8 @@ own DNG is also flattened once, only to keep its RAW image data as a reference.
   - metadata: The plan the file's metadata is built from.
 - Returns: The file bytes, the reference RAW image data, a few bytes sampled from the
   photo's pixel buffer, and capture details.
-- Throws: `CaptureError.notRunning` if the session isn't running, or
+- Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+  isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
   `CaptureError.captureFailed` if the system reports an error or no file.
 
 ## `CaptureHardware/captureBracket(_:frames:metadata:)`
@@ -801,7 +802,8 @@ built from the plan, as for ``capture(_:metadata:)``.
   - frames: Each frame's ISO and exposure duration.
   - metadata: The plan each file's metadata is built from.
 - Returns: The photos, in the order the system delivered them.
-- Throws: `CaptureError.notRunning` if the session isn't running, or
+- Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+  isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
   `CaptureError.captureFailed` if the system reports an error.
 
 ## `CaptureHardware/configure(_:)`
@@ -916,6 +918,29 @@ enum CapturePolicy
 ```
 
 Turns a `NopeCore` capture request into hardware settings.
+
+## `CapturePolicy/camera(_:matches:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+static func camera(_ deviceID: String, matches plan: PhotoSettingsPlan) -> Bool
+```
+
+Whether the attached camera is the one a photo was planned for, so the hardware may take
+it.
+
+The capture backend is an actor, and an actor runs other calls while one waits: a lens
+change can reconfigure the session while a photo waits for the output to be ready, so
+the attached camera may no longer be the plan's (issue #96). The model doesn't change the
+lens while a photo is taken (`CameraModel.canChangeLens`); this is the backend's own
+check, made on the session queue just before the capture starts. A plan not tied to a
+camera never matches.
+
+- Parameters:
+  - deviceID: The attached camera's `uniqueID`.
+  - plan: The photo's plan.
+- Returns: Whether they match.
 
 ## `CapturePolicy/comparisonPlan(for:)`
 
@@ -1241,7 +1266,8 @@ switches, and the app's photo just taken, are unchanged.
   - sessionPlan: The session's own photo settings, prepared again afterwards.
 - Returns: The file bytes from `AVCapturePhoto.fileDataRepresentation()`, with the
   system's metadata, and the resolved size. No pixel sample and no RAW data.
-- Throws: `CaptureError.notRunning` if the session isn't running, or
+- Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+  isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
   `CaptureError.captureFailed` if the system reports an error or no file.
 
 ## `FlashMode/captureFlashMode`
@@ -2685,14 +2711,39 @@ internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 struct PhotoSettingsPlan
 ```
 
-What one photo asks for: Bayer RAW only, or one processed fallback format.
+What one photo asks for: Bayer RAW only, or one processed fallback format, from one camera.
 
-## `PhotoSettingsPlan/init(rawPixelFormat:processedFormat:switches:)`
+## `PhotoSettingsPlan/deviceID`
 
 internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
 
 ```swift
-init(rawPixelFormat: UInt32?, processedFormat: ProcessedFallback?, switches: ProcessingSwitches)
+let deviceID: String?
+```
+
+The `uniqueID` of the camera the plan was made for, or `nil` for a plan not yet tied to
+a camera (``CapturePolicy/photoSettings(for:)``). The hardware takes a photo only with
+that camera attached (``CapturePolicy/camera(_:matches:)``).
+
+## `PhotoSettingsPlan/forCamera(_:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+func forCamera(_ deviceID: String) -> PhotoSettingsPlan
+```
+
+The same plan, made for one camera.
+
+- Parameter deviceID: The camera's `uniqueID`.
+- Returns: The plan with ``deviceID`` set.
+
+## `PhotoSettingsPlan/init(rawPixelFormat:processedFormat:switches:deviceID:)`
+
+internal, declared in `Sources/NopeCapture/CapturePolicy.swift`
+
+```swift
+init(rawPixelFormat: UInt32?, processedFormat: ProcessedFallback?, switches: ProcessingSwitches, deviceID: String? = nil)
 ```
 
 Creates a photo plan.
@@ -2701,6 +2752,7 @@ Creates a photo plan.
   - rawPixelFormat: The Bayer RAW pixel format code, or `nil`.
   - processedFormat: The processed format, or `nil`.
   - switches: The processing switches.
+  - deviceID: The camera's `uniqueID`, or `nil` for a plan not yet tied to a camera.
 
 ## `PhotoSettingsPlan/processedFormat`
 

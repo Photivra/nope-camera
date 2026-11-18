@@ -192,6 +192,9 @@
     "nope. is already taking a photo." : {
       "comment" : "Siri's answer when a photo, countdown or burst is already running. Keep \"nope.\" unchanged."
     },
+    "nope. is busy. The lens didn't change." : {
+      "comment" : "Siri's answer when Switch Lens is asked for while nope. is taking a photo, a countdown, burst, interval series or astro run is running, or the compare view is open; the lens stays as it was. Keep \"nope.\" unchanged."
+    },
     "nope. is still doing an earlier request. Nothing changed." : {
       "comment" : "Siri's answer when the request waited too long behind an earlier Siri, Shortcuts or Apple Watch request that nope. was still doing. Keep \"nope.\" unchanged."
     },

@@ -165,7 +165,8 @@ public final class CameraModel {
     ///
     /// Side effects: ``CameraIntent/requestPermission`` may show the system camera prompt;
     /// ``CameraIntent/start``, ``CameraIntent/requestPermission`` and
-    /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera;
+    /// ``CameraIntent/selectLens(_:)`` start or reconfigure the camera (a lens change only while
+    /// ``canChangeLens`` is true);
     /// ``CameraIntent/capture`` takes a photo and, once it passes the metadata read-back, adds
     /// it to Photos (which may show the add-only Photos prompt), or applies the drive mode
     /// (``pressShutter()``).
@@ -347,11 +348,12 @@ public final class CameraModel {
         }
     }
 
-    /// Switches to another lens, ignoring unknown identifiers and the lens already in use.
+    /// Switches to another lens, ignoring unknown identifiers, the lens already in use, and any
+    /// request while the lens can't be changed (``canChangeLens``, issue #96).
     ///
     /// - Parameter id: The lens to switch to.
     private func selectLens(_ id: Lens.ID) async {
-        guard id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
+        guard canChangeLens, id != selectedLensID, capabilities?.lens(withID: id) != nil else { return }
         selectedLensID = id
         await startSession()
         await astroLensDidChange()

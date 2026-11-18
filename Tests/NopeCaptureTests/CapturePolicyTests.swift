@@ -57,6 +57,24 @@ struct CapturePolicyTests {
         #expect(CapturePolicy.fileFormat(of: try #require(CapturePolicy.photoSettings(for: .processedFallback(.jpeg)))) == .jpeg)
     }
 
+    /// Issue #96: a photo is taken only with the camera its plan was made for, so a lens change
+    /// that reconfigured the session while the photo waited fails the photo instead of sending
+    /// its settings to another camera.
+    @Test func aPlanMatchesOnlyItsOwnCamera() throws {
+        let lens = Lens(id: "wide-id", kind: .wide, bayerRAWFormat: "bgg4")
+        let configuration = try #require(CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: lens)))
+        #expect(configuration.photoSettings.deviceID == "wide-id")
+        let withFlash = CapturePolicy.photoSettings(configuration.photoSettings, flashMode: .on)
+        #expect(withFlash.deviceID == "wide-id")
+        #expect(CapturePolicy.camera("wide-id", matches: withFlash))
+        #expect(!CapturePolicy.camera("tele-id", matches: withFlash))
+        // A plan not tied to a camera never matches.
+        let untied = try #require(CapturePolicy.photoSettings(for: .processedFallback(.heif)))
+        #expect(untied.deviceID == nil)
+        #expect(!CapturePolicy.camera("wide-id", matches: untied))
+        #expect(CapturePolicy.comparisonPlan(for: CaptureRequest(lens: lens)).deviceID == "wide-id")
+    }
+
     @Test func invalidRAWCodeHasNoConfiguration() {
         let lens = Lens(id: "bad", kind: .wide, bayerRAWFormat: "not a code")
         #expect(CapturePolicy.sessionConfiguration(for: CaptureRequest(lens: lens)) == nil)

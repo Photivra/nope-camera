@@ -92,6 +92,9 @@
 4 1 NopeAppUITests/testLastPhotoDetailsInNightMode 52e 53e
 3 1 NopeAppUITests/testLastPhotoDetailsListWhatWasSaved 65 89
 3 2 NopeAppUITests/testLastPhotoDetailsRightToLeft 81 59
+4 2 NopeAppUITests/testLensControlsAreDisabledDuringAnIntervalSeries 202e 214e
+1 1 NopeAppUITests/testLensControlsAreDisabledInPlaceDuringTheCountdown 68e 62e
+3 3 NopeAppUITests/testLensRowsAreDisabledDuringAnIntervalSeriesAtTheLargestTextSize 70e 58e
 3 2 NopeAppUITests/testLightStaysOnWhileTakingPhotosAndTurnsOffFromItsPill 95 53
 4 3 NopeAppUITests/testLiveActivityLayoutsPassAccessibilityAudits 193 170
 2 3 NopeAppUITests/testLiveActivitySwitchAtTheLargestTextSize 58 70
@@ -136,6 +139,7 @@
 3 2 NopeAppUITests/testPresetsFromTheTrayInNightMode 46 38
 1 1 NopeAppUITests/testPresetsInRightToLeftLayout 62 53
 3 2 NopeAppUITests/testPresetsSaveApplyUndoRenameAndDelete 147 162
+2 3 NopeAppUITests/testPressingADisabledLensDuringTheCountdownChangesNothing 62e 62e
 1 3 NopeAppUITests/testProToolsBracketing 49 57
 3 2 NopeAppUITests/testProToolsGrowsWithTheLargestTextSize 65 74
 4 3 NopeAppUITests/testProToolsHasNoIntervalSection 38e 38e
@@ -197,6 +201,7 @@
 2 3 NopeAppUITests/testStorageAndBatteryWarnings 75 71
 4 3 NopeAppUITests/testTapToFocusLocksWithTheButtonAndUnlocksWithThePill 34 32
 1 1 NopeAppUITests/testTappingTheLastPhotoOpensPhotos 33 42
+2 1 NopeAppUITests/testTheCloseUpSwitchIsDisabledDuringTheCountdown 54e 50e
 1 1 NopeAppUITests/testTheLargestLiveActivityRowIsNoTallerThanBefore 16e 16e
 4 3 NopeAppUITests/testTheLiveActivityStopButtonIsACapsuleTarget 45e 45e
 2 3 NopeAppUITests/testThreePillsAndMore 177e 136e
@@ -224,4 +229,5 @@
 3 2 ShortcutUITests/testARequestWithADelayCountsDownThenSaysThePhotoWasSaved 21 25
 1 1 ShortcutUITests/testARequestWithoutCameraAccessSaysWhy 10 11
 3 3 ShortcutUITests/testApplyPresetSaysWhatChangedAndCanBeUndone 19 16
+1 1 ShortcutUITests/testSwitchingLensesDuringASeriesSaysTheLensDidNotChange 18e 16e
 3 3 ShortcutUITests/testSwitchingLensesSaysWhichCamera 13 12

@@ -19,8 +19,6 @@ extension CameraModel {
         case .ready: break
         }
         if let seconds = drive.countdown.remainingSeconds { return .countingDown(secondsLeft: seconds) }
-        let isTakingPhoto = captureStatus == .capturing || captureStatus == .saving
-        let isRunningSeries = drive.isBusy || manual.intervalProgress != nil || astro.isRunning
         if isTakingPhoto || isRunningSeries { return .busy }
         return canCapture ? .ready : .unavailable(.notRunning)
     }
@@ -88,7 +86,7 @@ extension WatchResult {
             .focusRangeUnavailable, .photoSizeSet, .noPhotoSizeChoice, .presetApplied, .presetUnavailable:
             self = .notSaved
         case .cancelled: self = .cancelled
-        case .busy, .busyWithEarlierRequest: self = .busy
+        case .busy, .busyWithEarlierRequest, .lensBusy: self = .busy
         case .cameraUnavailable(let reason): self = .notTaken(WatchCameraProblem(reason))
         }
     }

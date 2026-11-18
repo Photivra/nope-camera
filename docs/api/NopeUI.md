@@ -927,7 +927,8 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 
 Switches between the front camera and the rear lens last used, as its own round button at the
 trailing end of the lens row (the bottom of the column layout), rather than a lens button
-(issue #68; docs/design/BUILD-SPEC.md, 3.1).
+(issue #68; docs/design/BUILD-SPEC.md, 3.1). Disabled while the lens can't be changed
+(``LensBusyState``).
 
 ## `CameraFlipButton/action`
 
@@ -2006,7 +2007,8 @@ internal, declared in `Sources/NopeUI/FocusAids.swift`
 ```
 
 "The subject may be too close to focus." with a button that switches to the ultra wide lens
-and one that dismisses the suggestion. The app never switches by itself.
+and one that dismisses the suggestion. The app never switches by itself. While the lens can't
+be changed (``LensBusyState``), only the switch button is disabled.
 
 ## `CloseUpSuggestion/body`
 
@@ -4103,6 +4105,18 @@ var cameraUprightRotation: UprightRotation { get set }
 Which way up the person holds the iPhone, for the camera layout's upright icons and text.
 ``UprightRotation/portrait`` by default.
 
+## `EnvironmentValues/drawsDisabledDimmed`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+var drawsDisabledDimmed: Bool { get set }
+```
+
+Whether a disabled custom button is drawn at ``NopeMotion/disabledOpacity``. `true` by
+default; the lens controls set it `false` while a photo is still too short to dim them
+(``LensBusyState/isDrawnDimmed``), so they are disabled but drawn as before.
+
 ## `EnvironmentValues/isNightMode`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -4137,6 +4151,17 @@ Whether the status (the format status and the pills) is drawn over the picture: 
 column layout, and while an iPhone is held sideways. There it gets the dark backing
 (``NopeMaterial/backing``); in the stacked layout's status line it sits on black. The
 camera layout sets it.
+
+## `EnvironmentValues/lensBusy`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+var lensBusy: LensBusyState { get set }
+```
+
+The lens controls' busy state, set once for the camera screen by
+``SwiftUICore/View/tracksLensBusy(_:)`` and read by each lens control.
 
 ## `EnvironmentValues/nopeSecondaryLabel`
 
@@ -6251,6 +6276,117 @@ The shortest line, in characters, that counts as hard-wrapped running text. The 
 files wrap their prose at about 72 characters; shorter lines are headings, titles or
 list entries and keep their line breaks.
 
+## `LensBusyState`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+struct LensBusyState
+```
+
+What the lens controls show while the lens can't be changed (issue #96;
+docs/design/lens-while-busy.md): the lens buttons, the lens rows, Switch Camera and the
+close-up hint's switch button.
+
+While ``blocker`` is not `nil`, every lens control except the lens in use is disabled at once
+and stays where it is; nothing is hidden or moved. ``isDrawnDimmed`` says whether the disabled
+controls are drawn at ``NopeMotion/disabledOpacity`` yet: at once for a countdown, burst,
+interval series or astro run, and for a single photo or bracket only after
+``NopeMotion/busyDimDelay``, so a normal photo doesn't make the lens row blink.
+
+## `LensBusyState/blocker`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+var blocker: LensChangeBlocker?
+```
+
+Why the lens can't be changed (`CameraModel.lensChangeBlocker`), or `nil` when it can.
+
+## `LensBusyState/free`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+static let free: LensBusyState
+```
+
+The lens can be changed: nothing is disabled.
+
+## `LensBusyState/hint`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+var hint: Text? { get }
+```
+
+The VoiceOver hint of a disabled lens control: the reason during a countdown, burst,
+interval series or astro run, the sentence presets use; `nil` otherwise (a single photo
+is read as "dimmed" only).
+
+## `LensBusyState/init(blocker:isDrawnDimmed:)`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+init(blocker: LensChangeBlocker?, isDrawnDimmed: Bool)
+```
+
+Creates a busy state.
+
+- Parameters:
+  - blocker: Why the lens can't be changed, or `nil` when it can.
+  - isDrawnDimmed: Whether the disabled controls are drawn dimmed.
+
+## `LensBusyState/isDisabled`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+var isDisabled: Bool { get }
+```
+
+Whether a lens control other than the lens in use is disabled.
+
+## `LensBusyState/isDrawnDimmed`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+var isDrawnDimmed: Bool
+```
+
+Whether the disabled controls are drawn dimmed.
+
+## `LensBusyState/isDrawnDimmed(for:photoDelayPassed:)`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+static func isDrawnDimmed(for blocker: LensChangeBlocker?, photoDelayPassed: Bool) -> Bool
+```
+
+Whether the disabled controls are drawn dimmed for a blocker.
+
+- Parameters:
+  - blocker: Why the lens can't be changed, or `nil`.
+  - photoDelayPassed: Whether a photo has lasted ``NopeMotion/busyDimDelay``, or the
+    controls were already dimmed when the photo began.
+- Returns: `false` when nothing is blocked; for a photo, `photoDelayPassed`; otherwise
+  `true`.
+
+## `LensBusyState/takingPhotosHint`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+static var takingPhotosHint: Text { get }
+```
+
+"The camera is taking photos. Try again when it's done."
+
 ## `LensButton`
 
 internal, declared in `Sources/NopeUI/LensRow.swift`
@@ -6259,7 +6395,8 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 @MainActor struct LensButton
 ```
 
-One lens button: its magnification (or name), and "No RAW" when it has no Bayer RAW.
+One lens button: its magnification (or name), and "No RAW" when it has no Bayer RAW. While the
+lens can't be changed (``LensBusyState``), it is disabled unless it is the lens in use.
 
 ## `LensButton/action`
 
@@ -6455,7 +6592,8 @@ internal, declared in `Sources/NopeUI/LensRow.swift`
 
 One full-width row per lens, the front camera included, for the scrolling layout at
 accessibility text sizes (docs/design/BUILD-SPEC.md, 3.12): the lens's name over its
-magnification, the selected lens filled white. A lens without RAW says "No RAW".
+magnification, the selected lens filled white. A lens without RAW says "No RAW". While the
+lens can't be changed (``LensBusyState``), every row but the lens in use is disabled.
 
 ## `LensRows/body`
 
@@ -9664,6 +9802,19 @@ static var all: [(name: String, animation: Animation)] { get }
 
 Every animation token with its name in docs/design/tokens.md, for the tests.
 
+## `NopeMotion/busyDimDelay`
+
+internal, declared in `Sources/NopeUI/DesignTokens.swift`
+
+```swift
+static let busyDimDelay: Duration
+```
+
+How long a single photo or bracket must last before the lens controls are drawn dimmed:
+0.5 seconds (docs/design/lens-while-busy.md, "When the dimming is drawn"). They are
+disabled at once; a photo that ends sooner draws nothing, so a normal photo doesn't make
+the lens row blink.
+
 ## `NopeMotion/disabledOpacity`
 
 internal, declared in `Sources/NopeUI/DesignTokens.swift`
@@ -9902,7 +10053,9 @@ internal, declared in `Sources/NopeUI/NopeButtonStyles.swift`
 ```
 
 The press and enabled states every custom button shares: 70% opacity and 97% scale while
-pressed (opacity only with Reduce Motion), and 40% opacity when disabled.
+pressed (opacity only with Reduce Motion), and 40% opacity when disabled, unless
+``SwiftUICore/EnvironmentValues/drawsDisabledDimmed`` is off (a lens control during the first
+moment of a photo, docs/design/lens-while-busy.md).
 
 ## `NopePressEffect/body(content:)`
 
@@ -17809,6 +17962,23 @@ Turns off the soft fade iOS 26 and later draw where scrolling content meets the 
 edges, so text scrolled under the status bar keeps its contrast (the iPad audit reported
 faded text at the top of the scrolling camera layout).
 
+## `View/lensBusyControl(isSelected:hint:)`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+@MainActor func lensBusyControl(isSelected: Bool = false, hint: Text? = nil) -> some View
+
+```
+
+Disables this lens control while the lens can't be changed, unless it is the lens in use,
+and gives it the busy hint during a series.
+
+- Parameters:
+  - isSelected: Whether the control is the lens in use.
+  - hint: The control's own VoiceOver hint, such as the reason for "No RAW", or `nil`.
+- Returns: The view.
+
 ## `View/nightModeStyle(_:)`
 
 internal, declared in `Sources/NopeUI/CameraStyle.swift`
@@ -17946,6 +18116,21 @@ Adds what the shutter does in the current drive mode, or with the astro helper o
 its VoiceOver value.
 
 - Parameter model: The camera model.
+
+## `View/tracksLensBusy(_:)`
+
+internal, declared in `Sources/NopeUI/LensBusy.swift`
+
+```swift
+@MainActor func tracksLensBusy(_ blocker: LensChangeBlocker?) -> some View
+
+```
+
+Gives the lens controls under this view the busy state of a camera model: put it once on
+the camera screen.
+
+- Parameter blocker: `CameraModel.lensChangeBlocker`.
+- Returns: The view.
 
 ## `View/uprightUnit(sidewaysWidth:)`
 

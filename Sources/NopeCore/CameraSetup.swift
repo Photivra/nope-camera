@@ -293,10 +293,10 @@ extension CameraModel {
 
     /// Whether the camera is in the middle of something a preset must not change: a photo being
     /// taken or saved, a countdown, a burst, an interval series, an astro run or the comparison
-    /// shot.
+    /// shot. The same rule as for a lens change (``canChangeLens``), because a preset may switch
+    /// the lens.
     public var isBusyForPresets: Bool {
-        drive.isBusy || manual.intervalProgress != nil || astro.isRunning || comparison.isPresented
-            || captureStatus == .capturing || captureStatus == .saving
+        !canChangeLens
     }
 
     /// Sets the camera up as a preset describes, through the same intents an interface sends.

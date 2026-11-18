@@ -198,6 +198,8 @@ struct CameraReadyView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
+        // The lens controls follow the model's one rule for a lens change (issue #96).
+        .tracksLensBusy(model.lensChangeBlocker)
         // While Pro Tools covers the screen, the camera controls under it are hidden from
         // assistive technologies, so VoiceOver reads only the form.
         .accessibilityHidden(showsProTools)

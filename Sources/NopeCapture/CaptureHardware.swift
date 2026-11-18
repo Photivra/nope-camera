@@ -50,7 +50,8 @@ protocol CaptureHardware: Sendable {
     ///   - metadata: The plan the file's metadata is built from.
     /// - Returns: The file bytes, the reference RAW image data, a few bytes sampled from the
     ///   photo's pixel buffer, and capture details.
-    /// - Throws: `CaptureError.notRunning` if the session isn't running, or
+    /// - Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+    ///   isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
     ///   `CaptureError.captureFailed` if the system reports an error or no file.
     func capture(_ plan: PhotoSettingsPlan, metadata: MetadataPlan) async throws(CaptureError) -> HardwarePhoto
 
@@ -78,7 +79,8 @@ protocol CaptureHardware: Sendable {
     ///   - frames: Each frame's ISO and exposure duration.
     ///   - metadata: The plan each file's metadata is built from.
     /// - Returns: The photos, in the order the system delivered them.
-    /// - Throws: `CaptureError.notRunning` if the session isn't running, or
+    /// - Throws: `CaptureError.notRunning` if the session isn't running or the attached camera
+    ///   isn't the plan's (`CapturePolicy.camera(_:matches:)`), or
     ///   `CaptureError.captureFailed` if the system reports an error.
     func captureBracket(_ plan: PhotoSettingsPlan, frames: [BracketFrame], metadata: MetadataPlan)
         async throws(CaptureError) -> [HardwarePhoto]

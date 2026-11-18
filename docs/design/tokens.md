@@ -108,6 +108,8 @@ Rules: one meaning for each color; never color alone; no yellow; brand color rea
 
 Pressed state of every custom button: opacity 0.7 and scale 0.97; opacity only with Reduce Motion.
 
+Busy dimming delay, `NopeMotion.busyDimDelay`: 0.5 s. While a single photo or bracket is taken or saved, the lens controls are disabled at once and drawn dimmed only once the photo has lasted this long; the change then uses `fade` ([lens-while-busy.md](lens-while-busy.md)).
+
 ## Haptics
 
 All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level flat `.alignment`; All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes.
