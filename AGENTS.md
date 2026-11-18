@@ -116,7 +116,9 @@ files track the user. The full design is in issue #1.
   - Measure energy with Instruments on real devices before each release. No telemetry.
 - **Siri and Shortcuts.** Every user action is exposed as an App Intent, with App Shortcuts
   phrases localized in every language that ships. Intents call `NopeCore` like any other interface,
-  and hold no business rules of their own.
+  and hold no business rules of their own. Every Siri and Shortcuts action goes through the
+  Assistant Access check (`AssistantAccess`, issue #82); no action reads photos or changes a
+  Privacy setting.
 - **Encoders.** Use the system HEIF/HEVC encoder only; never bundle an encoder.
 
 ## Accessibility
