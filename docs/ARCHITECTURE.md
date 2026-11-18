@@ -221,15 +221,17 @@ where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen captur
 no storage and battery reader, so it has no Astro. `NopeUI` turns it on and off with
 `CameraModel.setAstro(_:settings:)`, which turns night mode on with it and returns night mode to
 what it was before when Astro ends, as for manual controls: night mode that was off goes off again
-however Astro ends (another drive mode, a lens without Astro, manual controls off, a preset, or a
-relaunch, through `CameraModel.restoreNightModeAfterAstro(settings:)` when the camera screen
-appears); night mode that was on before, or that the person changed while Astro was on (Settings,
+however Astro ends in a running session (another drive mode, a lens without Astro, manual controls
+off, a preset); after the app is quit or closed by the system during Astro, the next launch keeps
+night mode as it was, so it opens red in the dark, and clears the record
+(`CameraModel.forgetNightModeFromAstroAtLaunch(settings:)`, when the camera screen appears; owner
+decision, 2026-11-18); night mode that was on before, or that the person changed while Astro was on (Settings,
 Q, the Control Center and Lock Screen control, Siri and Shortcuts, all through
 `NopeSettings.setNightMode(_:)`), stays as it is; and Keep Night Mode After Astro
 (`NopeSettings.keepsNightModeAfterAstro`, off by default) keeps it on. Which night mode Astro
 turned on is recorded in the shared store (`NopeSettings.isNightModeFromAstro`, under a key outside
 the settings prefix, so presets and the Lock Screen snapshot never carry it), so a change from
-another process and a relaunch both see it; applying a preset or snapshot clears it. The helper
+another process clears it; applying a preset or snapshot clears it. The helper
 alone (`CameraIntent.astro`, as a preset turns it on) never changes night mode. `NopeUI` shows it as the Astro word of the drive strip
 with its mode card and an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
 (`SeriesScreenKeeper`).

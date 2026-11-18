@@ -198,7 +198,8 @@ struct AstroNightModeTests {
 
     // MARK: - Relaunch
 
-    @Test func aRelaunchWhileAstroWasOnRestoresNightMode() async {
+    @Test func aRelaunchWhileAstroWasOnKeepsNightModeAndClearsTheRecord() async {
+        // Owner decision, 2026-11-18: a relaunch in the dark opens red.
         let scratch = ScratchDefaults()
         let before = NopeSettings(defaults: scratch.defaults)
         let first = await makeModel()
@@ -210,39 +211,38 @@ struct AstroNightModeTests {
         #expect(settings.isNightModeOn)
         #expect(settings.isNightModeFromAstro)
         let model = await makeModel()
-        model.restoreNightModeAfterAstro(settings: settings)
-        #expect(!settings.isNightModeOn)
+        model.forgetNightModeFromAstroAtLaunch(settings: settings)
+        #expect(settings.isNightModeOn)
         #expect(!settings.isNightModeFromAstro)
+        #expect(!NopeSettings(defaults: scratch.defaults).isNightModeFromAstro)
+
+        // Night mode is the person's now: Astro in this session finds it on and leaves it on.
+        await model.setAstro(true, settings: settings)
+        await model.setAstro(false, settings: settings)
+        #expect(settings.isNightModeOn)
     }
 
-    @Test func aRelaunchKeepsNightModeThatIsThePersonsOrKept() async {
-        // Night mode the person turned on.
-        let personScratch = ScratchDefaults()
-        let person = NopeSettings(defaults: personScratch.defaults)
-        person.setNightMode(true)
-        let model = await makeModel()
-        model.restoreNightModeAfterAstro(settings: person)
-        #expect(person.isNightModeOn)
-
-        // Keep Night Mode After Astro on.
-        let keepScratch = ScratchDefaults()
-        let keep = NopeSettings(defaults: keepScratch.defaults)
-        keep.setKeepsNightModeAfterAstro(true)
-        await model.setAstro(true, settings: keep)
-        let relaunched = NopeSettings(defaults: keepScratch.defaults)
-        let next = await makeModel()
-        next.restoreNightModeAfterAstro(settings: relaunched)
-        #expect(relaunched.isNightModeOn)
-        #expect(!relaunched.isNightModeFromAstro)
+    @Test func aRelaunchLeavesThePersonsNightModeAsItIs() async {
+        for isOn in [true, false] {
+            let settings = NopeSettings(defaults: ScratchDefaults().defaults)
+            settings.setNightMode(isOn)
+            let model = await makeModel()
+            model.forgetNightModeFromAstroAtLaunch(settings: settings)
+            #expect(settings.isNightModeOn == isOn)
+            #expect(!settings.isNightModeFromAstro)
+        }
     }
 
-    @Test func restoringWhileAstroIsOnDoesNothing() async {
+    @Test func forgettingWhileAstroIsOnDoesNothing() async {
         let settings = NopeSettings(defaults: ScratchDefaults().defaults)
         let model = await makeModel()
         await model.setAstro(true, settings: settings)
-        model.restoreNightModeAfterAstro(settings: settings)
+        model.forgetNightModeFromAstroAtLaunch(settings: settings)
         #expect(settings.isNightModeOn)
         #expect(settings.isNightModeFromAstro)
+        // Leaving Astro still restores it.
+        await model.setAstro(false, settings: settings)
+        #expect(!settings.isNightModeOn)
     }
 
     // MARK: - When Astro can't turn on

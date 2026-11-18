@@ -414,8 +414,8 @@ photo that goes through the metadata allowlist, read-back and signing like any o
 ``CameraModel/setAstro(_:settings:)``, which also turns night mode on, because night mode is a
 setting of the screens, kept in ``NopeSettings``, not of the camera. The helper is off at every
 launch (AGENTS.md, "Cognitive": no surprise modes), so the camera screen calls
-``CameraModel/restoreNightModeAfterAstro(settings:)`` once to restore night mode after a
-relaunch.
+``CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`` once: after a relaunch night
+mode stays as it was and is the person's.
 
 ## `AstroModel/beginRun()`
 
@@ -2054,6 +2054,24 @@ pause: the run should pause now, or starts to within ``pauseAfterErrorSeconds``.
 
 - Returns: `true` when the run should pause, so the photo is taken again after the pause.
 
+## `CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func forgetNightModeFromAstroAtLaunch(settings: NopeSettings)
+```
+
+Forgets that the astro helper turned night mode on, without changing night mode, when the
+helper ended without leaving it: the app was quit or closed by the system while the helper
+was on, and the helper is off at every launch. Night mode stays as it was, so a relaunch in
+the dark opens red (owner decision, 2026-11-18); it is the person's from then on. Call it
+once the camera screen shows. It does nothing while the helper is on.
+
+Side effects: may store that night mode is no longer the helper's.
+
+- Parameter settings: The person's settings, where the record is stored.
+
 ## `CameraModel/handle(_:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Astro.swift`
@@ -2422,23 +2440,6 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The handle the app turns into the live viewfinder, or `nil` when there is no video.
 
-## `CameraModel/restoreNightModeAfterAstro(settings:)`
-
-public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
-
-```swift
-@MainActor func restoreNightModeAfterAstro(settings: NopeSettings)
-```
-
-Turns night mode off again if the astro helper turned it on and ended without doing so:
-the app quit while the helper was on, and the helper is off at every launch. Call it once
-the camera screen shows. It does nothing while the helper is on, or when night mode is the
-person's.
-
-Side effects: may turn night mode off and store it.
-
-- Parameter settings: The person's settings, where night mode is stored.
-
 ## `CameraModel/saveComparing(_:started:request:settings:backend:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
@@ -2587,8 +2588,8 @@ to what it was before.
 
 The night mode rule mirrors the one for manual controls:
 - Night mode that was off is turned on, and turned off again when the helper ends: Astro
-  off, another drive mode, a lens without the helper, manual controls off, a preset, or a
-  relaunch (``restoreNightModeAfterAstro(settings:)``).
+  off, another drive mode, a lens without the helper, manual controls off, or a preset. A
+  relaunch keeps night mode as it was (``forgetNightModeFromAstroAtLaunch(settings:)``).
 - Night mode that was already on stays on.
 - A change the person makes to night mode while the helper is on
   (``NopeSettings/setNightMode(_:)``) is theirs, and is kept.
@@ -15862,8 +15863,9 @@ Whether night mode is on because the astro helper turned it on, and the person h
 changed it since. Leaving the helper turns night mode off again while this is `true`
 (unless ``keepsNightModeAfterAstro``).
 
-It is stored, so a relaunch (the helper is always off at launch) still restores night
-mode, and so a change from another process (a Control Center control) clears it. It is
+It is stored in the shared store, so a change from another process (a Control Center
+control) clears it; a relaunch clears it too, keeping night mode as it was
+(``CameraModel/forgetNightModeFromAstroAtLaunch(settings:)``). It is
 kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
 setting, so presets and the Lock Screen camera's snapshot don't carry it.
 

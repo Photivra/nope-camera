@@ -72,8 +72,9 @@ public final class NopeSettings {
     /// changed it since. Leaving the helper turns night mode off again while this is `true`
     /// (unless ``keepsNightModeAfterAstro``).
     ///
-    /// It is stored, so a relaunch (the helper is always off at launch) still restores night
-    /// mode, and so a change from another process (a Control Center control) clears it. It is
+    /// It is stored in the shared store, so a change from another process (a Control Center
+    /// control) clears it; a relaunch clears it too, keeping night mode as it was
+    /// (``CameraModel/forgetNightModeFromAstroAtLaunch(settings:)``). It is
     /// kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
     /// setting, so presets and the Lock Screen camera's snapshot don't carry it.
     public private(set) var isNightModeFromAstro: Bool

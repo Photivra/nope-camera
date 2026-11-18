@@ -59,8 +59,8 @@ extension CameraModel {
     ///
     /// The night mode rule mirrors the one for manual controls:
     /// - Night mode that was off is turned on, and turned off again when the helper ends: Astro
-    ///   off, another drive mode, a lens without the helper, manual controls off, a preset, or a
-    ///   relaunch (``restoreNightModeAfterAstro(settings:)``).
+    ///   off, another drive mode, a lens without the helper, manual controls off, or a preset. A
+    ///   relaunch keeps night mode as it was (``forgetNightModeFromAstroAtLaunch(settings:)``).
     /// - Night mode that was already on stays on.
     /// - A change the person makes to night mode while the helper is on
     ///   (``NopeSettings/setNightMode(_:)``) is theirs, and is kept.
@@ -87,17 +87,18 @@ extension CameraModel {
         await turnOnAstro(exposure)
     }
 
-    /// Turns night mode off again if the astro helper turned it on and ended without doing so:
-    /// the app quit while the helper was on, and the helper is off at every launch. Call it once
-    /// the camera screen shows. It does nothing while the helper is on, or when night mode is the
-    /// person's.
+    /// Forgets that the astro helper turned night mode on, without changing night mode, when the
+    /// helper ended without leaving it: the app was quit or closed by the system while the helper
+    /// was on, and the helper is off at every launch. Night mode stays as it was, so a relaunch in
+    /// the dark opens red (owner decision, 2026-11-18); it is the person's from then on. Call it
+    /// once the camera screen shows. It does nothing while the helper is on.
     ///
-    /// Side effects: may turn night mode off and store it.
+    /// Side effects: may store that night mode is no longer the helper's.
     ///
-    /// - Parameter settings: The person's settings, where night mode is stored.
-    public func restoreNightModeAfterAstro(settings: NopeSettings) {
-        guard !astro.isOn else { return }
-        settings.nightModeAstroDidEnd()
+    /// - Parameter settings: The person's settings, where the record is stored.
+    public func forgetNightModeFromAstroAtLaunch(settings: NopeSettings) {
+        guard !astro.isOn, settings.isNightModeFromAstro else { return }
+        settings.setNightModeFromAstro(false)
     }
 
     /// The helper's starting values for the selected lens, when it can turn on now: it is off,

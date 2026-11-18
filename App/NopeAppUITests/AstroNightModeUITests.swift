@@ -4,7 +4,8 @@ import XCTest
 /// again unless it was on before, the person changed it while Astro was on, or Keep Night Mode
 /// After Astro is on (Settings › Screen). The `manual` scenario's wide lens offers Astro. Every
 /// launch starts from the default settings (`SimulatedCameraLaunch.settingsStore()`), so a
-/// relaunch can't be tested here; `AstroNightModeTests` covers it.
+/// relaunch (which keeps night mode as it was) can't be tested here; `AstroNightModeTests`
+/// covers it.
 extension NopeAppUITests {
     /// Keep Night Mode After Astro on, as a launch argument.
     static let keepsNightModeAfterAstro = ["-NopeSettings.keepsNightModeAfterAstro", "YES"]

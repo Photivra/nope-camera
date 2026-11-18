@@ -51,8 +51,8 @@ public enum AstroIntent: Equatable, Sendable {
 /// ``CameraModel/setAstro(_:settings:)``, which also turns night mode on, because night mode is a
 /// setting of the screens, kept in ``NopeSettings``, not of the camera. The helper is off at every
 /// launch (AGENTS.md, "Cognitive": no surprise modes), so the camera screen calls
-/// ``CameraModel/restoreNightModeAfterAstro(settings:)`` once to restore night mode after a
-/// relaunch.
+/// ``CameraModel/forgetNightModeFromAstroAtLaunch(settings:)`` once: after a relaunch night
+/// mode stays as it was and is the person's.
 @MainActor
 @Observable
 public final class AstroModel {
