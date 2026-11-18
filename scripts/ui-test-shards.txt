@@ -6,6 +6,7 @@
 # with the least time; add a new test to the shard with the least time on each device, with
 # twice its local time and an "e".
 3 2 NopeAppUITests/testAccessibilityFeedbackMentionsTheLevel 240e 268e
+3 2 NopeAppUITests/testAfterAPinchControlsStayAndATapStillFocuses 70e 61e
 1 1 NopeAppUITests/testAstroAtTheLargestTextSizeAndRightToLeft 56 89
 1 2 NopeAppUITests/testAstroCardsCoverage 26e 97e
 1 3 NopeAppUITests/testAstroFramesPauseWhenLeavingAndContinueOnReturn 94 100
@@ -200,12 +201,25 @@
 4 1 NopeAppUITests/testNoPhotoSizeRowWhenEveryLensHasRAW 18 15
 1 2 NopeAppUITests/testNoPillRepeatsManualControlsOrTheDriveStrip 56e 57e
 2 2 NopeAppUITests/testNotSignedOnlyWhenSigningFailed 51e 52e
+1 2 NopeAppUITests/testOneLongPinchCrossesThreeLenses 34e 48e
 2 1 NopeAppUITests/testPairedWithRAWAppearsOnlyWithAllThreeFormats 43 37
 2 3 NopeAppUITests/testPairedWithRAWAtTheLargestTextSize 33 32
 4 1 NopeAppUITests/testPermissionCaptureAndFallbackPassAccessibilityAudits 57 49
 2 3 NopeAppUITests/testPhotoSizeAtTheLargestTextSize 34 36
 4 1 NopeAppUITests/testPhotoSizeOfALensWithoutRAW 30 32
 4 1 NopeAppUITests/testPhotosAccessDeniedIsExplained 23 26
+2 1 NopeAppUITests/testPinchAtTheLargestTextSizeChangesNothing 69e 42e
+4 3 NopeAppUITests/testPinchDoesNothingDuringACountdownBurstOrIntervalSeries 108e 119e
+1 1 NopeAppUITests/testPinchDoesNothingOnTheFrontCameraOrWithOneRearLens 76e 74e
+2 2 NopeAppUITests/testPinchDoesNothingWithAstroQOrADialOpen 110e 133e
+3 1 NopeAppUITests/testPinchLabelPassesAccessibilityAudits 116e 124e
+3 1 NopeAppUITests/testPinchOutAndInSwitchesToTheNextLens 59e 52e
+4 1 NopeAppUITests/testPinchSetToOffChangesNothing 33e 28e
+4 2 NopeAppUITests/testPinchSettingIsAbsentWithOneRearLens 45e 44e
+4 2 NopeAppUITests/testPinchSettingPassesAccessibilityAudits 123e 109e
+1 3 NopeAppUITests/testPinchSettingRowMenuAndSearch 118e 112e
+1 3 NopeAppUITests/testPinchSideways 60e 74e
+2 3 NopeAppUITests/testPinchWithMagnifyOnKeepsMagnify 45e 54e
 1 3 NopeAppUITests/testPresetsAtTheLargestTextSize 88e 47
 3 2 NopeAppUITests/testPresetsFromTheTrayInNightMode 46 38
 1 1 NopeAppUITests/testPresetsInRightToLeftLayout 62 53

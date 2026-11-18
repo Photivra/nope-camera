@@ -172,7 +172,7 @@ struct SettingsSearchTests {
     @Test func everyRowIsFoundByItsOwnTitle() {
         let all = SettingsSearch.Availability(
             hasPresets: true, offersPhotoSize: true, hasFrontCamera: true, offersLocation: true,
-            offersProcessedMarker: true, offersLiveActivity: true, offersAstro: true)
+            offersProcessedMarker: true, offersLiveActivity: true, offersAstro: true, offersPinch: true)
         for id in SettingsSearch.searchable {
             let title = String(localized: SettingsText.title(of: id))
             #expect(SettingsSearch.settings(matching: title, availability: all).contains(id), "\(id): \(title)")

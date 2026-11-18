@@ -149,6 +149,12 @@ struct CameraReadyView: View {
     /// The viewfinder's size, to turn a touch into a point in the picture.
     @State private var viewfinderSize = CGSize.zero
 
+    /// A pinch on the viewfinder that switches lenses (issue #95).
+    @State private var pinch = ViewfinderPinch()
+
+    /// How long the lens label of a pinch stays after the fingers lift.
+    @Environment(\.lensPinchLabelSeconds) private var pinchLabelSeconds
+
     /// Creates the ready view.
     ///
     /// - Parameters:
@@ -187,6 +193,20 @@ struct CameraReadyView: View {
 
     /// Whether the controls are shown: not in clean view.
     private var showsControls: Bool { !model.isCleanView }
+
+    /// Whether a pinch on the viewfinder switches lenses now (docs/design/pinch-lens.md,
+    /// section 5): the camera's rule, and nothing of the screen's own open over the picture (Q,
+    /// a dial, a sheet), outside the scrolling layout.
+    private var pinchSwitchesLenses: Bool {
+        model.pinchSwitchesLenses(setting: settings.pinch) && layout != .scrolling && !showsQuickMenu
+            && openControl == nil && !showsExposureDial && !presentsOwnSheet
+    }
+
+    /// The lens the lens buttons show selected: the lens a pinch has reached while it is shown,
+    /// otherwise the lens in use.
+    private var shownLensID: Lens.ID? {
+        pinch.shownLens?.id ?? model.selectedLensID
+    }
 
     /// Whether a countdown, burst, interval series or astro run is going: the shutter stops it,
     /// and the readout row and dials give the picture to the running mode's card.
@@ -505,7 +525,7 @@ struct CameraReadyView: View {
                     SettingsButton(action: openSettings)
                     ScrollView {
                         VStack(spacing: NopeSpace.xs) {
-                            LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID, isVertical: true) { select($0) }
+                            LensButtons(lenses: LensButtons.rear(lenses), selectedID: shownLensID, isVertical: true) { select($0) }
                             manualControlsButton(.compactCapsule)
                         }
                     }
@@ -612,7 +632,7 @@ struct CameraReadyView: View {
     private func lensRow(manualPresentation: ManualControlsButton.Presentation) -> some View {
         CenteredRowLayout(spacing: NopeSpace.xs) {
             manualControlsButton(manualPresentation)
-            LensButtons(lenses: LensButtons.rear(lenses), selectedID: model.selectedLensID) { select($0) }
+            LensButtons(lenses: LensButtons.rear(lenses), selectedID: shownLensID) { select($0) }
             if let flip = flipTarget {
                 CameraFlipButton { select(flip) }
                     .uprightUnit()
@@ -966,6 +986,12 @@ struct CameraReadyView: View {
             }
             CountdownNumber(drive: model.drive)
                 .uprightUnit()
+            LensPinchLabel(lens: pinch.shownLens)
+                // The lens row ticks for each step; in clean view, where it is hidden, the label
+                // does (docs/design/pinch-lens.md, section 4).
+                .sensoryFeedback(NopeHaptic.lensChanged, trigger: pinch.shownLens?.id) { _, new in
+                    new != nil && model.isCleanView
+                }
         }
         .clipped()
         .contentShape(.rect)
@@ -1003,7 +1029,14 @@ struct CameraReadyView: View {
                         sendFocus(at: location, locks: false)
                     },
                     hold: { sendFocus(at: $0, locks: true) },
-                    swipe: { height in Task { await model.send(.setCleanView(height > 0)) } }))
+                    swipe: { height in Task { await model.send(.setCleanView(height > 0)) } },
+                    allowsPinch: pinchSwitchesLenses,
+                    pinchChanged: { pinch.change(scale: $0, model: model, isAvailable: pinchSwitchesLenses) },
+                    pinchEnded: { pinch.end(model: model, labelSeconds: pinchLabelSeconds) }))
+            // A pinch that can no longer switch lenses (a photo started, Q opened) stops at once.
+            .onChange(of: pinchSwitchesLenses) { _, isAvailable in
+                if !isAvailable { pinch.cancel() }
+            }
             .environment(\.layoutDirection, .leftToRight)
     }
 

@@ -491,6 +491,26 @@
         }
       }
     },
+    "Pinch" : {
+      "comment" : "Setting in Settings › Camera: what a pinch on the camera picture does (Switch Lenses or Off). The gesture of two fingers moving apart or together; not zoom.",
+      "extractionState" : "manual"
+    },
+    "Pinch: Off" : {
+      "comment" : "Value of the Pinch setting: a pinch on the camera picture does nothing.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "Pinching to switch lenses is optional. The lens buttons do the same." : {
+      "comment" : "Accessibility screen: the pinch on the camera picture that switches rear lenses is never the only way; the lens buttons do the same.",
+      "extractionState" : "manual"
+    },
     "Planned Exposure" : {
       "comment" : "Row in the photo details of a bracket's frame: the exposure the app asked the camera for.",
       "extractionState" : "manual"
@@ -523,6 +543,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "continuous, speed"
+          }
+        }
+      }
+    },
+    "Search keywords: Pinch" : {
+      "comment" : "Settings search keywords for the Pinch setting, separated by commas. Not shown on screen. Zoom is listed so people who look for it find the setting and read that nope. has no zoom; keep a word for zoom.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zoom, lens, lenses, gesture, two fingers"
           }
         }
       }
@@ -561,6 +593,10 @@
     },
     "Subject Area" : {
       "comment" : "Row in the photo details: where the subject is in the picture, as two to four numbers in pixels, as written in the file.",
+      "extractionState" : "manual"
+    },
+    "Switch Lenses" : {
+      "comment" : "Value of the Pinch setting: a pinch on the camera picture moves to the next longer or wider rear lens. Not a zoom.",
       "extractionState" : "manual"
     },
     "Tag number" : {

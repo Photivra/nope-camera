@@ -15,7 +15,7 @@ extension EnvironmentValues {
 /// - Presets, always shown where the app has presets, with Factory Defaults inside;
 /// - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
 /// - Privacy: Details in Each Photo, Sign Each Photo;
-/// - Camera: Fast Shutter, Focus on Faces;
+/// - Camera: Fast Shutter, Focus on Faces, Pinch (with two or more rear lenses);
 /// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
 ///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Live Activity;
 /// - More: Accessibility, Honesty, About and Licenses.
@@ -139,7 +139,8 @@ public struct SettingsScreen: View {
             offersLocation: location != nil,
             offersProcessedMarker: !deviceSupportsBayerRAW || lenses.contains { !$0.supportsBayerRAW },
             offersLiveActivity: offersLiveActivity,
-            offersAstro: camera?.deviceOffersAstro ?? false)
+            offersAstro: camera?.deviceOffersAstro ?? false,
+            offersPinch: LensPinch.isOffered(on: lenses))
     }
 
     /// The list or the search results, in the navigation stack.
@@ -244,7 +245,7 @@ public struct SettingsScreen: View {
         case .overlays:
             OverlaySettingsView(settings: settings)
         case .accessibility:
-            AccessibilitySettingsView()
+            AccessibilitySettingsView(offersPinch: availability.offersPinch)
         case .honesty:
             HonestyScreen()
         case .about:
@@ -296,7 +297,8 @@ public struct SettingsScreen: View {
         }
     }
 
-    /// Fast Shutter and Focus on Faces: how the camera focuses and exposes.
+    /// Fast Shutter, Focus on Faces and Pinch: how the camera focuses, exposes and answers a
+    /// pinch.
     private var cameraSection: some View {
         Section {
             pageRow(.fastShutter, value: FastShutterText.name(settings.fastShutter), note: FastShutterText.scopeNote)
@@ -307,6 +309,9 @@ public struct SettingsScreen: View {
                     "Autofocus and auto exposure follow faces the camera finds.", bundle: .module,
                     comment: "Explains the Focus on Faces switch. It decides only whether nope.'s autofocus and auto exposure follow faces; don't describe it as turning face detection off."))
             .settingsRow(.focusOnFaces)
+            if availability.offersPinch {
+                PinchSettingRow(settings: settings)
+            }
         } header: {
             Text(SettingsText.camera)
         }

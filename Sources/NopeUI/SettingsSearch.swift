@@ -105,6 +105,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case fastShutter = "settings.fastShutter"
     /// The Focus on Faces switch.
     case focusOnFaces = "settings.focusOnFaces"
+    /// The Pinch menu (issue #95), on devices with two or more rear lenses.
+    case pinch = "settings.pinch"
 
     // Screen.
 
@@ -177,7 +179,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     var page: SettingsPage? {
         switch self {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
-            .details, .signEachPhoto, .fastShutter, .focusOnFaces, .startInCleanView, .overlays, .showProcessedMarker,
+            .details, .signEachPhoto, .fastShutter, .focusOnFaces, .pinch, .startInCleanView, .overlays, .showProcessedMarker,
             .nightMode, .keepNightModeAfterAstro, .redViewfinder, .liveActivity, .accessibility, .honesty, .about:
             nil
         case .factoryDefaults, .saveCurrentSettings: .presets
@@ -212,7 +214,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
             .detailsLensCorrections, .detailsExposureSettings, .detailsSystemVersion, .detailsMakerNotes,
             .detailsAppNameAndVersion, .detailsStandardFileTags, .detailsAlwaysSaved, .signEachPhoto:
             .privacy
-        case .camera, .fastShutter, .focusOnFaces: .camera
+        case .camera, .fastShutter, .focusOnFaces, .pinch: .camera
         case .screen, .startInCleanView, .overlays, .overlaysGrid, .overlaysGridStyle, .overlaysLevel,
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
             .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .liveActivity:
@@ -468,6 +470,8 @@ enum SettingsText {
     static let fastShutter = LocalizedStringResource("Fast Shutter", bundle: bundle, comment: "Setting and quick control: how fast a shutter full auto prefers, to avoid blur.")
     /// "Focus on Faces".
     static let focusOnFaces = LocalizedStringResource("Focus on Faces", bundle: bundle, comment: "Switch: autofocus and auto exposure follow faces the camera finds. Replaces Face Detection; also the name of the Shortcuts action Set Focus on Faces.")
+    /// "Pinch".
+    static let pinch = LocalizedStringResource("Pinch", bundle: bundle, comment: "Setting in Settings › Camera: what a pinch on the camera picture does (Switch Lenses or Off). The gesture of two fingers moving apart or together; not zoom.")
     /// "Start in Clean View".
     static let startInCleanView = LocalizedStringResource("Start in Clean View", bundle: bundle, comment: "Switch: the camera opens with only the viewfinder and the shutter.")
     /// "Viewfinder Overlays".
@@ -552,6 +556,7 @@ enum SettingsText {
         case .signEachPhoto: signEachPhoto
         case .fastShutter: fastShutter
         case .focusOnFaces: focusOnFaces
+        case .pinch: pinch
         case .startInCleanView: startInCleanView
         case .overlays: overlays
         case .overlaysGrid: grid
@@ -609,6 +614,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Fast Shutter", defaultValue: "blur, motion, freeze, action, sports", bundle: bundle, comment: "Settings search keywords for Fast Shutter, separated by commas. Not shown on screen.")
         case .focusOnFaces:
             LocalizedStringResource("Search keywords: Focus on Faces", defaultValue: "face detection, people, portrait", bundle: bundle, comment: "Settings search keywords for Focus on Faces, separated by commas. Not shown on screen.")
+        case .pinch:
+            LocalizedStringResource("Search keywords: Pinch", defaultValue: "zoom, lens, lenses, gesture, two fingers", bundle: bundle, comment: "Settings search keywords for the Pinch setting, separated by commas. Not shown on screen. Zoom is listed so people who look for it find the setting and read that nope. has no zoom; keep a word for zoom.")
         case .nightMode, .redViewfinder:
             LocalizedStringResource("Search keywords: Night Mode", defaultValue: "red, dark", bundle: bundle, comment: "Settings search keywords for Night Mode and Red Viewfinder, separated by commas. Not shown on screen.")
         case .keepNightModeAfterAstro:
@@ -816,6 +823,9 @@ enum SettingsSearch {
         /// Whether the device offers Astro (`CameraModel/deviceOffersAstro`), so the Keep Night
         /// Mode After Astro switch applies.
         var offersAstro = false
+        /// Whether the device has two or more rear lenses (`LensPinch/isOffered(on:)`), so the
+        /// Pinch setting applies.
+        var offersPinch = false
 
         /// Creates the availability.
         ///
@@ -827,10 +837,11 @@ enum SettingsSearch {
         ///   - offersProcessedMarker: Whether a lens has no Bayer RAW.
         ///   - offersLiveActivity: Whether the Live Activity switch is offered.
         ///   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
+        ///   - offersPinch: Whether the device has two or more rear lenses, so Pinch applies.
         init(
             hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true,
             offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false,
-            offersAstro: Bool = false
+            offersAstro: Bool = false, offersPinch: Bool = false
         ) {
             self.hasPresets = hasPresets
             self.offersPhotoSize = offersPhotoSize
@@ -839,6 +850,7 @@ enum SettingsSearch {
             self.offersProcessedMarker = offersProcessedMarker
             self.offersLiveActivity = offersLiveActivity
             self.offersAstro = offersAstro
+            self.offersPinch = offersPinch
         }
 
         /// Whether the item exists here.
@@ -854,6 +866,7 @@ enum SettingsSearch {
             case .showProcessedMarker: offersProcessedMarker
             case .liveActivity: offersLiveActivity
             case .keepNightModeAfterAstro: offersAstro
+            case .pinch: offersPinch
             default: true
             }
         }

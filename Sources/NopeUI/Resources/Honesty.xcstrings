@@ -782,6 +782,10 @@
       "comment" : "Spoken format name in the viewfinder description. RAW is a file format name.",
       "extractionState" : "manual"
     },
+    "Spread two fingers on the picture for the next longer lens, or pinch for the next wider one. nope. never enlarges or crops the picture." : {
+      "comment" : "Explains the Pinch setting. Longer and wider describe the phone's separate rear lenses, not a zoom range; never translate as zoom. Keep \"nope.\" unchanged. Must not claim more than the English: the photo and the picture on screen are never enlarged or cropped by a pinch.",
+      "extractionState" : "manual"
+    },
     "Standard File Tags" : {
       "comment" : "Switch: files carry the fixed tags the photo file standard (Exif) asks for, such as version numbers and the color space.",
       "extractionState" : "manual"
@@ -860,6 +864,10 @@
     },
     "Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. App Privacy Report and the Settings path are Apple's names: use the names iOS shows in this language. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Used only on the rear cameras. Not used in Astro, while photos are being taken, or at the largest text sizes." : {
+      "comment" : "Note under the Pinch setting: when a pinch switches lenses. Astro is the name of nope.'s night sky mode; use its translation. Must not claim more than the English.",
       "extractionState" : "manual"
     },
     "Used only while Manual Controls are off." : {

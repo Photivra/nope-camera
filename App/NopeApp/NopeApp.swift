@@ -202,6 +202,8 @@ struct NopeApp: App {
         // UI tests only: `-NopeSimulatedShortcut <seconds>` sends a Take Photo request.
         .task { await SimulatedShortcut.run(with: Self.shortcuts) }
         .overlay(alignment: .center) { SimulatedShortcut.ResultView() }
+        // UI tests only: `-NopeSimulatedPinchLabelSeconds <seconds>` keeps a pinch's lens label up.
+        .environment(\.lensPinchLabelSeconds, SimulatedPinch.labelSeconds)
         #endif
         // The battery and Low Power Mode warnings follow the system's change notifications;
         // nothing polls (AGENTS.md, "Battery").
