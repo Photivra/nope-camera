@@ -10,6 +10,18 @@
             "state" : "translated",
             "value" : "nope."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope."
+          }
         }
       }
     },
@@ -21,6 +33,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "nope. uses the camera to take the photos you ask for."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. usa la cámara para tomar las fotos que le pides."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. usa la cámara para tomar las fotos que le pides."
           }
         }
       }
@@ -34,6 +58,18 @@
             "state" : "translated",
             "value" : "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. añade a cada foto el lugar donde se tomó, solo mientras Ubicación está activada en los ajustes de nope. Tu ubicación nunca se envía a ningún sitio."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. agrega a cada foto el lugar donde se tomó, solo mientras Ubicación está activada en los ajustes de nope. Tu ubicación nunca se envía a ningún sitio."
+          }
         }
       }
     },
@@ -45,6 +81,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "nope. adds the photos you take to your photo library. It can't see your existing photos."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. añade a tu fototeca las fotos que tomas. No puede ver las fotos que ya tienes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. agrega a tu fototeca las fotos que tomas. No puede ver las fotos que ya tienes."
           }
         }
       }

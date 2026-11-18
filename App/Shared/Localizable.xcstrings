@@ -2,109 +2,599 @@
   "sourceLanguage" : "en",
   "strings" : {
     "“%@” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it." : {
-      "comment" : "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicó «%@», pero algunos ajustes no se pudieron aplicar tal como estaban guardados. Preajustes, en nope., muestra cuáles y permite deshacerlo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicó «%@», pero algunos ajustes no se pudieron aplicar tal como estaban guardados. Preajustes, en nope., muestra cuáles y permite deshacerlo."
+          }
+        }
+      }
     },
     "“%@” applied. You can undo it in Presets." : {
-      "comment" : "Siri's answer after nope. applied a saved settings preset. The placeholder is the preset's name, in the language's quotation marks. Presets is the name of the list in nope.'s Settings."
+      "comment" : "Siri's answer after nope. applied a saved settings preset. The placeholder is the preset's name, in the language's quotation marks. Presets is the name of the list in nope.'s Settings.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicó «%@». Puedes deshacerlo en Preajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicó «%@». Puedes deshacerlo en Preajustes."
+          }
+        }
+      }
     },
     "%lld of %lld photos taken" : {
-      "comment" : "Live Activity: interval shooting progress. Both numbers are counts of photos; the second is at least 2."
+      "comment" : "Live Activity: interval shooting progress. Both numbers are counts of photos; the second is at least 2.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$lld de %2$lld fotos tomadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$lld de %2$lld fotos tomadas"
+          }
+        }
+      }
     },
     "1 Stop" : {
-      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: one stop (EV) between photos."
+      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: one stop (EV) between photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "1 paso"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "1 paso"
+          }
+        }
+      }
     },
     "1/3 Stop" : {
-      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: a third of a stop (EV) between photos."
+      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: a third of a stop (EV) between photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "1/3 de paso"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "1/3 de paso"
+          }
+        }
+      }
     },
     "2 Stops" : {
-      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: two stops (EV) between photos."
+      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: two stops (EV) between photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "2 pasos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "2 pasos"
+          }
+        }
+      }
     },
     "2/3 Stop" : {
-      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: two thirds of a stop (EV) between photos."
+      "comment" : "A choice of the Step setting of nope.'s Take Bracket action: two thirds of a stop (EV) between photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "2/3 de paso"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "2/3 de paso"
+          }
+        }
+      }
     },
     "3 Photos" : {
-      "comment" : "A choice of the Frames setting of nope.'s Take Bracket action."
+      "comment" : "A choice of the Frames setting of nope.'s Take Bracket action.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "3 fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "3 fotos"
+          }
+        }
+      }
     },
     "3 Seconds" : {
-      "comment" : "A choice of the Delay setting of nope.'s Take Photo action, also said to Siri."
+      "comment" : "A choice of the Delay setting of nope.'s Take Photo action, also said to Siri.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "3 segundos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "3 segundos"
+          }
+        }
+      }
     },
     "5 Photos" : {
-      "comment" : "A choice of the Frames setting of nope.'s Take Bracket action."
+      "comment" : "A choice of the Frames setting of nope.'s Take Bracket action.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "5 fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "5 fotos"
+          }
+        }
+      }
     },
     "7 Photos" : {
-      "comment" : "A choice of the Frames setting of nope.'s Take Bracket action."
+      "comment" : "A choice of the Frames setting of nope.'s Take Bracket action.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "7 fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "7 fotos"
+          }
+        }
+      }
     },
     "10 Seconds" : {
-      "comment" : "A choice of the Delay setting of nope.'s Take Photo action, also said to Siri."
+      "comment" : "A choice of the Delay setting of nope.'s Take Photo action, also said to Siri.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "10 segundos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "10 segundos"
+          }
+        }
+      }
     },
     "A delay in seconds, up to a minute. It replaces the Delay choice." : {
-      "comment" : "Explains the Custom Delay setting of nope.'s Take Photo action. \"Delay\" is the name of the other setting."
+      "comment" : "Explains the Custom Delay setting of nope.'s Take Photo action. \"Delay\" is the name of the other setting.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un retardo en segundos, de hasta un minuto. Sustituye a la opción Retardo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Un retardo en segundos, de hasta un minuto. Sustituye a la opción Retardo."
+          }
+        }
+      }
     },
     "A photo wasn't saved. Open nope. for details." : {
-      "comment" : "Live Activity: a photo couldn't be taken or saved; nope. says why. Keep \"nope.\" unchanged."
+      "comment" : "Live Activity: a photo couldn't be taken or saved; nope. says why. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guardó una foto. Abre nope. para ver los detalles."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guardó una foto. Abre nope. para ver los detalles."
+          }
+        }
+      }
     },
     "Apply ${preset}" : {
-      "comment" : "How nope.'s Apply Preset action reads in the Shortcuts editor. ${preset} is a preset's name, such as \"Factory Defaults\". Keep ${preset} unchanged."
+      "comment" : "How nope.'s Apply Preset action reads in the Shortcuts editor. ${preset} is a preset's name, such as \"Factory Defaults\". Keep ${preset} unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aplicar ${preset}"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aplicar ${preset}"
+          }
+        }
+      }
     },
     "Apply Preset" : {
-      "comment" : "The name of nope.'s action that applies a settings preset (Factory Defaults or one the person saved), in the Shortcuts app."
+      "comment" : "The name of nope.'s action that applies a settings preset (Factory Defaults or one the person saved), in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aplicar preajuste"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aplicar preajuste"
+          }
+        }
+      }
     },
     "Astro" : {
-      "comment" : "Title on nope.'s Live Activity: the night sky helper, which takes a series of single RAW frames."
+      "comment" : "Title on nope.'s Live Activity: the night sky helper, which takes a series of single RAW frames.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Astro"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Astro"
+          }
+        }
+      }
     },
     "Astro is on. Turn it off to start interval shooting." : {
-      "comment" : "Siri's answer when interval shooting was asked for while nope.'s night sky helper is on. Astro is the helper's name on the camera."
+      "comment" : "Siri's answer when interval shooting was asked for while nope.'s night sky helper is on. Astro is the helper's name on the camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Astro está activado. Desactívalo para iniciar el disparo a intervalos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Astro está activado. Desactívalo para iniciar el disparo a intervalos."
+          }
+        }
+      }
     },
     "Autofocus has no range limit." : {
-      "comment" : "Siri's answer after nope.'s autofocus range limit (Close-Up or Far Focus) was lifted."
+      "comment" : "Siri's answer after nope.'s autofocus range limit (Close-Up or Far Focus) was lifted.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El enfoque automático no tiene límite de rango."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El enfoque automático no tiene límite de rango."
+          }
+        }
+      }
     },
     "Burst" : {
-      "comment" : "Title on nope.'s Live Activity: a rapid run of single photos."
+      "comment" : "Title on nope.'s Live Activity: a rapid run of single photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ráfaga"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ráfaga"
+          }
+        }
+      }
     },
     "Camera access is off for nope. You can turn it on in the Settings app." : {
-      "comment" : "Siri's answer when camera access was declined. Keep \"nope.\" unchanged; Settings is the iOS app."
+      "comment" : "Siri's answer when camera access was declined. Keep \"nope.\" unchanged; Settings is the iOS app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la cámara está desactivado para nope. Puedes activarlo en la app Ajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la cámara está desactivado para nope. Puedes activarlo en la app Configuración."
+          }
+        }
+      }
     },
     "Chooses how fast a shutter nope.'s full auto prefers, to avoid blur." : {
-      "comment" : "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Set Fast Shutter action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elige qué velocidad de obturación prefiere el automático total de nope. para evitar el desenfoque por movimiento."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elige qué velocidad de obturación prefiere el automático total de nope. para evitar el desenfoque por movimiento."
+          }
+        }
+      }
     },
     "Close-Up" : {
-      "comment" : "Quick control and pill on the camera: limits autofocus to near subjects, for small things close to the lens."
+      "comment" : "Quick control and pill on the camera: limits autofocus to near subjects, for small things close to the lens.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Primer plano"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Primer plano"
+          }
+        }
+      }
     },
     "Close-Up is on." : {
-      "comment" : "Siri's answer after nope. limited autofocus to near subjects. Close-Up is the camera control's name."
+      "comment" : "Siri's answer after nope. limited autofocus to near subjects. Close-Up is the camera control's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Primer plano está activado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Primer plano está activado."
+          }
+        }
+      }
     },
     "Custom Delay" : {
-      "comment" : "A setting of nope.'s Take Photo action: a delay in seconds that you type."
+      "comment" : "A setting of nope.'s Take Photo action: a delay in seconds that you type.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retardo personalizado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retardo personalizado"
+          }
+        }
+      }
     },
     "Delay" : {
-      "comment" : "A setting of nope.'s Take Photo action: how long to wait before the photo."
+      "comment" : "A setting of nope.'s Take Photo action: how long to wait before the photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retardo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retardo"
+          }
+        }
+      }
     },
     "Done: %lld of %lld photos taken" : {
-      "comment" : "Live Activity: interval shooting finished. Both numbers are counts of photos."
+      "comment" : "Live Activity: interval shooting finished. Both numbers are counts of photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Listo: %1$lld de %2$lld fotos tomadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Listo: %1$lld de %2$lld fotos tomadas"
+          }
+        }
+      }
     },
     "Every photo already taken is saved." : {
-      "comment" : "VoiceOver hint of the Stop button on nope.'s Live Activity."
+      "comment" : "VoiceOver hint of the Stop button on nope.'s Live Activity.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se guardan todas las fotos ya tomadas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se guardan todas las fotos ya tomadas."
+          }
+        }
+      }
     },
     "Factory Defaults" : {
-      "comment" : "Built-in settings preset that returns every setting to what a fresh install has."
+      "comment" : "Built-in settings preset that returns every setting to what a fresh install has.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valores de fábrica"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valores de fábrica"
+          }
+        }
+      }
     },
     "Factory Defaults applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it." : {
-      "comment" : "Siri's answer after nope. applied Factory Defaults but, for example, the camera wasn't on. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer after nope. applied Factory Defaults but, for example, the camera wasn't on. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicaron los valores de fábrica, pero algunos ajustes no se pudieron aplicar tal como estaban guardados. Preajustes, en nope., muestra cuáles y permite deshacerlo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicaron los valores de fábrica, pero algunos ajustes no se pudieron aplicar tal como estaban guardados. Preajustes, en nope., muestra cuáles y permite deshacerlo."
+          }
+        }
+      }
     },
     "Factory Defaults applied. You can undo it in Presets." : {
-      "comment" : "Siri's answer after nope. returned every setting to a fresh install's. Presets is the name of the list in nope.'s Settings."
+      "comment" : "Siri's answer after nope. returned every setting to a fresh install's. Presets is the name of the list in nope.'s Settings.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicaron los valores de fábrica. Puedes deshacerlo en Preajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se aplicaron los valores de fábrica. Puedes deshacerlo en Preajustes."
+          }
+        }
+      }
     },
     "Far Focus" : {
-      "comment" : "Quick control and pill on the camera: limits autofocus to far subjects, such as a landscape seen past near branches."
+      "comment" : "Quick control and pill on the camera: limits autofocus to far subjects, such as a landscape seen past near branches.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfoque lejano"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfoque lejano"
+          }
+        }
+      }
     },
     "Far Focus is on." : {
-      "comment" : "Siri's answer after nope. limited autofocus to far subjects. Far Focus is the camera control's name."
+      "comment" : "Siri's answer after nope. limited autofocus to far subjects. Far Focus is the camera control's name.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfoque lejano está activado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfoque lejano está activado."
+          }
+        }
+      }
     },
     "Fast Shutter" : {
-      "comment" : "Setting and quick control: how fast a shutter full auto prefers, to avoid blur."
+      "comment" : "Setting and quick control: how fast a shutter full auto prefers, to avoid blur.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obturación rápida"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obturación rápida"
+          }
+        }
+      }
     },
     "Fast Shutter is set." : {
-      "comment" : "Siri's answer after nope.'s Fast Shutter setting was changed."
+      "comment" : "Siri's answer after nope.'s Fast Shutter setting was changed.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obturación rápida ajustada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Obturación rápida ajustada."
+          }
+        }
+      }
     },
     "Fast shutter: Standard" : {
       "comment" : "Fast shutter choice: full auto aims for a shutter fast enough to hold by hand. The default.",
@@ -114,346 +604,1926 @@
             "state" : "translated",
             "value" : "Standard"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Estándar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Estándar"
+          }
         }
       }
     },
     "First frame in %@" : {
-      "comment" : "Live Activity: the countdown before the night sky helper's first frame. The placeholder is the time left, such as 0:07, counted down by the system."
+      "comment" : "Live Activity: the countdown before the night sky helper's first frame. The placeholder is the time left, such as 0:07, counted down by the system.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Primer fotograma en %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Primer fotograma en %@"
+          }
+        }
+      }
     },
     "Focus on Faces" : {
-      "comment" : "Switch: faces the camera detects steer autofocus and auto exposure."
+      "comment" : "Switch: faces the camera detects steer autofocus and auto exposure.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfocar caras"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfocar caras"
+          }
+        }
+      }
     },
     "Focus on Faces is off." : {
-      "comment" : "Siri's answer after nope.'s Focus on Faces was turned off."
+      "comment" : "Siri's answer after nope.'s Focus on Faces was turned off.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfocar caras está desactivado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfocar caras está desactivado."
+          }
+        }
+      }
     },
     "Focus on Faces is on." : {
-      "comment" : "Siri's answer after nope.'s Focus on Faces was turned on."
+      "comment" : "Siri's answer after nope.'s Focus on Faces was turned on.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfocar caras está activado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Enfocar caras está activado."
+          }
+        }
+      }
     },
     "Focus Range" : {
-      "comment" : "A setting of nope.'s Set Focus Range action: which subjects autofocus looks for."
+      "comment" : "A setting of nope.'s Set Focus Range action: which subjects autofocus looks for.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rango de enfoque"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rango de enfoque"
+          }
+        }
+      }
     },
     "Frame %lld of %lld" : {
-      "comment" : "Live Activity: which frame of the night sky helper's series is being taken, of how many."
+      "comment" : "Live Activity: which frame of the night sky helper's series is being taken, of how many.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotograma %1$lld de %2$lld"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotograma %1$lld de %2$lld"
+          }
+        }
+      }
     },
     "Frames" : {
-      "comment" : "A setting of nope.'s Take Bracket action: how many photos the bracket takes."
+      "comment" : "A setting of nope.'s Take Bracket action: how many photos the bracket takes.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotogramas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotogramas"
+          }
+        }
+      }
     },
     "Freeze Fast Motion (1/1000 s)" : {
-      "comment" : "Fast shutter choice: full auto keeps the shutter at 1/1000 second or faster. Keep the fraction."
+      "comment" : "Fast shutter choice: full auto keeps the shutter at 1/1000 second or faster. Keep the fraction.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Congelar movimiento rápido (1/1000 s)"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Congelar movimiento rápido (1/1000 s)"
+          }
+        }
+      }
     },
     "Freeze Motion (1/500 s)" : {
-      "comment" : "Fast shutter choice: full auto keeps the shutter at 1/500 second or faster. Keep the fraction."
+      "comment" : "Fast shutter choice: full auto keeps the shutter at 1/500 second or faster. Keep the fraction.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Congelar movimiento (1/500 s)"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Congelar movimiento (1/500 s)"
+          }
+        }
+      }
     },
     "Front" : {
-      "comment" : "The front (selfie) camera, as a lens choice."
+      "comment" : "The front (selfie) camera, as a lens choice.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Frontal"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Frontal"
+          }
+        }
+      }
     },
     "Interval Shooting" : {
-      "comment" : "Title on nope.'s Live Activity: a series of photos taken at a fixed interval."
+      "comment" : "Title on nope.'s Live Activity: a series of photos taken at a fixed interval.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Disparo a intervalos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Disparo a intervalos"
+          }
+        }
+      }
     },
     "Interval shooting started." : {
-      "comment" : "Siri's answer after nope. started a series of photos at a fixed interval."
+      "comment" : "Siri's answer after nope. started a series of photos at a fixed interval.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Disparo a intervalos iniciado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Disparo a intervalos iniciado."
+          }
+        }
+      }
     },
     "Interval shooting stopped. The photos taken are saved." : {
-      "comment" : "Siri's answer after nope.'s interval series was stopped; the photos already taken are kept."
+      "comment" : "Siri's answer after nope.'s interval series was stopped; the photos already taken are kept.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Disparo a intervalos detenido. Las fotos tomadas están guardadas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Disparo a intervalos detenido. Las fotos tomadas están guardadas."
+          }
+        }
+      }
     },
     "Largest" : {
-      "comment" : "A choice of nope.'s Set Photo Size action: the largest photo size the lens offers."
+      "comment" : "A choice of nope.'s Set Photo Size action: the largest photo size the lens offers.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Máximo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Máximo"
+          }
+        }
+      }
     },
     "Lens" : {
-      "comment" : "A setting of nope.'s Take Photo action: which camera to use."
+      "comment" : "A setting of nope.'s Take Photo action: which camera to use.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lente"
+          }
+        }
+      }
     },
     "More than one takes a burst: separate photos, as fast as the camera allows, up to 50." : {
-      "comment" : "Explains the Number of Photos setting of nope.'s Take Photo action."
+      "comment" : "Explains the Number of Photos setting of nope.'s Take Photo action.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Con más de una se toma una ráfaga: fotos separadas, tan rápido como permita la cámara, hasta 50."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Con más de una se toma una ráfaga: fotos separadas, tan rápido como permita la cámara, hasta 50."
+          }
+        }
+      }
     },
     "Night Mode" : {
-      "comment" : "The setting of nope.'s Set Night Mode action: on or off."
+      "comment" : "The setting of nope.'s Set Night Mode action: on or off.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modo nocturno"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modo nocturno"
+          }
+        }
+      }
     },
     "Night mode is off." : {
-      "comment" : "Siri's answer after nope.'s night mode was turned off."
+      "comment" : "Siri's answer after nope.'s night mode was turned off.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El modo nocturno está desactivado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El modo nocturno está desactivado."
+          }
+        }
+      }
     },
     "Night mode is on." : {
-      "comment" : "Siri's answer after nope.'s night mode was turned on."
+      "comment" : "Siri's answer after nope.'s night mode was turned on.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El modo nocturno está activado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El modo nocturno está activado."
+          }
+        }
+      }
     },
     "Night Mode Off" : {
-      "comment" : "The name of the shortcut that turns nope.'s night mode off, in the Shortcuts app."
+      "comment" : "The name of the shortcut that turns nope.'s night mode off, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modo nocturno desactivado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modo nocturno desactivado"
+          }
+        }
+      }
     },
     "Night Mode On" : {
-      "comment" : "The name of the shortcut that turns nope.'s night mode on, in the Shortcuts app."
+      "comment" : "The name of the shortcut that turns nope.'s night mode on, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modo nocturno activado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modo nocturno activado"
+          }
+        }
+      }
     },
     "No Delay" : {
-      "comment" : "A choice of the Delay setting of nope.'s Take Photo action: take the photo at once."
+      "comment" : "A choice of the Delay setting of nope.'s Take Photo action: take the photo at once.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin retardo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin retardo"
+          }
+        }
+      }
     },
     "No interval series is running." : {
-      "comment" : "Siri's answer when asked to stop interval shooting while none runs."
+      "comment" : "Siri's answer when asked to stop interval shooting while none runs.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No hay ninguna serie a intervalos en curso."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No hay ninguna serie a intervalos en curso."
+          }
+        }
+      }
     },
     "No Limit" : {
-      "comment" : "A choice of nope.'s Set Focus Range action: autofocus searches near and far."
+      "comment" : "A choice of nope.'s Set Focus Range action: autofocus searches near and far.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin límite"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin límite"
+          }
+        }
+      }
     },
     "nope. is already taking a photo." : {
-      "comment" : "Siri's answer when a photo, countdown or burst is already running. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer when a photo, countdown or burst is already running. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. ya está tomando una foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. ya está tomando una foto."
+          }
+        }
+      }
     },
     "nope. is still doing an earlier request. Nothing changed." : {
-      "comment" : "Siri's answer when the request waited too long behind an earlier Siri, Shortcuts or Apple Watch request that nope. was still doing. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer when the request waited too long behind an earlier Siri, Shortcuts or Apple Watch request that nope. was still doing. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. sigue ocupada con una solicitud anterior. No cambió nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. sigue ocupada con una solicitud anterior. No cambió nada."
+          }
+        }
+      }
     },
     "Now using the front camera." : {
-      "comment" : "Siri's answer after nope. switched to the front (selfie) camera."
+      "comment" : "Siri's answer after nope. switched to the front (selfie) camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara frontal."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara frontal."
+          }
+        }
+      }
     },
     "Now using the telephoto camera." : {
-      "comment" : "Siri's answer after nope. switched to the telephoto rear camera."
+      "comment" : "Siri's answer after nope. switched to the telephoto rear camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara con teleobjetivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara telefoto."
+          }
+        }
+      }
     },
     "Now using the ultra wide camera." : {
-      "comment" : "Siri's answer after nope. switched to the ultra wide rear camera."
+      "comment" : "Siri's answer after nope. switched to the ultra wide rear camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara ultra gran angular."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara ultra gran angular."
+          }
+        }
+      }
     },
     "Now using the wide camera." : {
-      "comment" : "Siri's answer after nope. switched to the wide (main) rear camera."
+      "comment" : "Siri's answer after nope. switched to the wide (main) rear camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara gran angular."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ahora se usa la cámara gran angular."
+          }
+        }
+      }
     },
     "Number of Photos" : {
-      "comment" : "A setting of nope.'s actions: how many photos to take."
+      "comment" : "A setting of nope.'s actions: how many photos to take.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Número de fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Número de fotos"
+          }
+        }
+      }
     },
     "Off" : {
-      "comment" : "Night mode turned off, in nope.'s Set Night Mode action."
+      "comment" : "Night mode turned off, in nope.'s Set Night Mode action.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivar"
+          }
+        }
+      }
     },
     "On" : {
-      "comment" : "Night mode turned on, in nope.'s Set Night Mode action."
+      "comment" : "Night mode turned on, in nope.'s Set Night Mode action.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activar"
+          }
+        }
+      }
     },
     "Open nope." : {
-      "comment" : "The name of the control that opens nope.'s camera, in Control Center and on the Lock Screen. Keep \"nope.\" unchanged."
+      "comment" : "The name of the control that opens nope.'s camera, in Control Center and on the Lock Screen. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abrir nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abrir nope."
+          }
+        }
+      }
     },
     "Open nope. to allow camera access." : {
-      "comment" : "Siri's answer when nope. hasn't asked for camera access yet. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer when nope. hasn't asked for camera access yet. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. para permitir el acceso a la cámara."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. para permitir el acceso a la cámara."
+          }
+        }
+      }
     },
     "Open the Camera" : {
-      "comment" : "The name of the action that opens nope.'s camera, in the Shortcuts app."
+      "comment" : "The name of the action that opens nope.'s camera, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abrir la cámara"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abrir la cámara"
+          }
+        }
+      }
     },
     "Opens nope. and applies a settings preset: Factory Defaults or one you saved. You can undo it in Presets." : {
-      "comment" : "Describes nope.'s Apply Preset action in the Shortcuts app. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Apply Preset action in the Shortcuts app. Presets is the name of the list in nope.'s Settings. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y aplica un preajuste: Valores de fábrica o uno que hayas guardado. Puedes deshacerlo en Preajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y aplica un preajuste: Valores de fábrica o uno que hayas guardado. Puedes deshacerlo en Preajustes."
+          }
+        }
+      }
     },
     "Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one." : {
-      "comment" : "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Set Photo Size action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y elige el tamaño de foto estándar o el máximo de un objetivo que ofrece más de uno."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y elige el tamaño de foto estándar o el máximo de un lente que ofrece más de uno."
+          }
+        }
+      }
     },
     "Opens nope. and limits autofocus to near subjects (Close-Up) or far subjects (Far Focus), or lifts the limit." : {
-      "comment" : "Describes nope.'s Set Focus Range action in the Shortcuts app. Close-Up and Far Focus are the names of the camera's controls. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Set Focus Range action in the Shortcuts app. Close-Up and Far Focus are the names of the camera's controls. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y limita el enfoque automático a sujetos cercanos (Primer plano) o lejanos (Enfoque lejano), o quita el límite."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y limita el enfoque automático a sujetos cercanos (Primer plano) o lejanos (Enfoque lejano), o quita el límite."
+          }
+        }
+      }
     },
     "Opens nope. and starts a series of photos at a fixed interval." : {
-      "comment" : "Describes nope.'s Start Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Start Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. e inicia una serie de fotos a intervalos fijos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. e inicia una serie de fotos a intervalos fijos."
+          }
+        }
+      }
     },
     "Opens nope. and switches the camera to a lens." : {
-      "comment" : "Describes nope.'s Switch Lens action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Switch Lens action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y cambia la cámara a un objetivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y cambia la cámara a un lente."
+          }
+        }
+      }
     },
     "Opens nope. and takes a photo with the current settings, after an optional delay." : {
-      "comment" : "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Take Photo action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y toma una foto con los ajustes actuales, tras un retardo opcional."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y toma una foto con los ajustes actuales, tras un retardo opcional."
+          }
+        }
+      }
     },
     "Opens nope. and takes separate photos at different exposures, once. Your bracket setting doesn't change." : {
-      "comment" : "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Take Bracket action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y toma una vez fotos separadas con distintas exposiciones. Tu ajuste de horquillado no cambia."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y toma una vez fotos separadas con distintas exposiciones. Tu ajuste de horquillado no cambia."
+          }
+        }
+      }
     },
     "Opens nope. and turns on the steady light. It turns off when nope. closes." : {
-      "comment" : "Describes nope.'s Turn On the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Turn On the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y enciende la luz continua. Se apaga al cerrar nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. y enciende la luz continua. Se apaga al cerrar nope."
+          }
+        }
+      }
     },
     "Opens the nope. camera." : {
-      "comment" : "Describes what nope.'s Open the Camera action and control do, in the Shortcuts app and the controls gallery. Keep \"nope.\" unchanged."
+      "comment" : "Describes what nope.'s Open the Camera action and control do, in the Shortcuts app and the controls gallery. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre la cámara de nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre la cámara de nope."
+          }
+        }
+      }
     },
     "Paused: %lld of %lld frames. Open nope. to continue." : {
-      "comment" : "Live Activity after the person left nope. during the night sky helper's frames, or the camera paused them: the run continues when nope. is open again, after its start delay. Both numbers are counts of frames. Keep \"nope.\" unchanged."
+      "comment" : "Live Activity after the person left nope. during the night sky helper's frames, or the camera paused them: the run continues when nope. is open again, after its start delay. Both numbers are counts of frames. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En pausa: %1$lld de %2$lld fotogramas. Abre nope. para continuar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En pausa: %1$lld de %2$lld fotogramas. Abre nope. para continuar."
+          }
+        }
+      }
     },
     "Paused: %lld of %lld photos taken. Open nope. to continue." : {
-      "comment" : "Live Activity after the person left nope. during interval shooting: the series continues when nope. is opened again. Both numbers are counts of photos. Keep \"nope.\" unchanged."
+      "comment" : "Live Activity after the person left nope. during interval shooting: the series continues when nope. is opened again. Both numbers are counts of photos. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En pausa: %1$lld de %2$lld fotos tomadas. Abre nope. para continuar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En pausa: %1$lld de %2$lld fotos tomadas. Abre nope. para continuar."
+          }
+        }
+      }
     },
     "Photo in %@" : {
-      "comment" : "Live Activity: the self-timer's countdown. The placeholder is the time left, such as 0:07, counted down by the system."
+      "comment" : "Live Activity: the self-timer's countdown. The placeholder is the time left, such as 0:07, counted down by the system.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto en %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto en %@"
+          }
+        }
+      }
     },
     "Photo saved and signed." : {
-      "comment" : "Siri's answer after nope. took and saved a signed photo."
+      "comment" : "Siri's answer after nope. took and saved a signed photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto guardada y firmada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto guardada y firmada."
+          }
+        }
+      }
     },
     "Photo saved. It isn't signed." : {
-      "comment" : "Siri's answer after nope. saved a photo without a Content Credentials signature."
+      "comment" : "Siri's answer after nope. saved a photo without a Content Credentials signature.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto guardada. No está firmada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto guardada. No está firmada."
+          }
+        }
+      }
     },
     "Photo Size" : {
-      "comment" : "Settings row and screen title: the size of photos from lenses that offer more than one."
+      "comment" : "Settings row and screen title: the size of photos from lenses that offer more than one.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tamaño de la foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tamaño de la foto"
+          }
+        }
+      }
     },
     "Photos saved and signed." : {
-      "comment" : "Siri's answer after nope. saved an exposure bracket, each frame its own signed photo."
+      "comment" : "Siri's answer after nope. saved an exposure bracket, each frame its own signed photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas y firmadas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas y firmadas."
+          }
+        }
+      }
     },
     "Photos saved: %lld" : {
-      "comment" : "Live Activity: a burst, the night sky helper or the self-timer finished. The number is how many photos were saved."
+      "comment" : "Live Activity: a burst, the night sky helper or the self-timer finished. The number is how many photos were saved.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas: %lld"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas: %lld"
+          }
+        }
+      }
     },
     "Photos saved. Not all of them are signed." : {
-      "comment" : "Siri's answer after nope. saved an exposure bracket in which some photos aren't signed."
+      "comment" : "Siri's answer after nope. saved an exposure bracket in which some photos aren't signed.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas. No todas están firmadas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas. No todas están firmadas."
+          }
+        }
+      }
     },
     "Photos taken: %lld" : {
-      "comment" : "Live Activity: how many photos a running burst has taken."
+      "comment" : "Live Activity: how many photos a running burst has taken.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos tomadas: %lld"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos tomadas: %lld"
+          }
+        }
+      }
     },
     "Preset" : {
-      "comment" : "A setting of nope.'s Apply Preset action: which settings preset to apply."
+      "comment" : "A setting of nope.'s Apply Preset action: which settings preset to apply.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Preajuste"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Preajuste"
+          }
+        }
+      }
     },
     "Saving paused. Open nope. to finish." : {
-      "comment" : "Live Activity: iOS gave nope. no more time in the background before every photo was saved; opening nope. lets it finish. Keep \"nope.\" unchanged."
+      "comment" : "Live Activity: iOS gave nope. no more time in the background before every photo was saved; opening nope. lets it finish. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardado en pausa. Abre nope. para terminar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardado en pausa. Abre nope. para terminar."
+          }
+        }
+      }
     },
     "Saving the photo…" : {
-      "comment" : "Live Activity: the self-timer's photo is being saved."
+      "comment" : "Live Activity: the self-timer's photo is being saved.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardando la foto…"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardando la foto…"
+          }
+        }
+      }
     },
     "Saving: %lld of %lld photos saved" : {
-      "comment" : "Live Activity after the person left nope. during a burst or the night sky helper: the photos already taken are being saved. Both numbers are counts of photos."
+      "comment" : "Live Activity after the person left nope. during a burst or the night sky helper: the photos already taken are being saved. Both numbers are counts of photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardando: %1$lld de %2$lld fotos guardadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardando: %1$lld de %2$lld fotos guardadas"
+          }
+        }
+      }
     },
     "Seconds Between Photos" : {
-      "comment" : "A setting of nope.'s Start Interval Shooting action: the time from one photo to the next, in seconds."
+      "comment" : "A setting of nope.'s Start Interval Shooting action: the time from one photo to the next, in seconds.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Segundos entre fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Segundos entre fotos"
+          }
+        }
+      }
     },
     "Self-Timer" : {
-      "comment" : "Title on nope.'s Live Activity: the countdown before a photo."
+      "comment" : "Title on nope.'s Live Activity: the countdown before a photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temporizador"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temporizador"
+          }
+        }
+      }
     },
     "Set Fast Shutter" : {
-      "comment" : "The name of nope.'s action that chooses how fast a shutter full auto prefers, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that chooses how fast a shutter full auto prefers, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar la obturación rápida"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar la obturación rápida"
+          }
+        }
+      }
     },
     "Set fast shutter to ${choice}" : {
-      "comment" : "How nope.'s Set Fast Shutter action reads in the Shortcuts editor. ${choice} is a choice such as \"Standard\". Keep ${choice} unchanged."
+      "comment" : "How nope.'s Set Fast Shutter action reads in the Shortcuts editor. ${choice} is a choice such as \"Standard\". Keep ${choice} unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar la obturación rápida a ${choice}"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar la obturación rápida a ${choice}"
+          }
+        }
+      }
     },
     "Set Focus on Faces" : {
-      "comment" : "The name of nope.'s action that turns Focus on Faces on or off, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that turns Focus on Faces on or off, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar Enfocar caras"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar Enfocar caras"
+          }
+        }
+      }
     },
     "Set focus on faces to ${isOn}" : {
-      "comment" : "How nope.'s Set Focus on Faces action reads in the Shortcuts editor. ${isOn} is \"On\" or \"Off\". Keep ${isOn} unchanged."
+      "comment" : "How nope.'s Set Focus on Faces action reads in the Shortcuts editor. ${isOn} is \"On\" or \"Off\". Keep ${isOn} unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "${isOn} Enfocar caras"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "${isOn} Enfocar caras"
+          }
+        }
+      }
     },
     "Set Focus Range" : {
-      "comment" : "The name of nope.'s action that limits autofocus to near or far subjects, or lifts the limit, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that limits autofocus to near or far subjects, or lifts the limit, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el rango de enfoque"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el rango de enfoque"
+          }
+        }
+      }
     },
     "Set focus range to ${range}" : {
-      "comment" : "How nope.'s Set Focus Range action reads in the Shortcuts editor. ${range} is a choice such as \"Close-Up\". Keep ${range} unchanged."
+      "comment" : "How nope.'s Set Focus Range action reads in the Shortcuts editor. ${range} is a choice such as \"Close-Up\". Keep ${range} unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el rango de enfoque a ${range}"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el rango de enfoque a ${range}"
+          }
+        }
+      }
     },
     "Set Night Mode" : {
-      "comment" : "The name of nope.'s action that turns night mode on or off, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that turns night mode on or off, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el modo nocturno"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el modo nocturno"
+          }
+        }
+      }
     },
     "Set night mode to ${isOn}" : {
       "comment" : "How nope.'s Set Night Mode action reads in the Shortcuts editor. ${isOn} is \"On\" or \"Off\". Keep ${isOn} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "${isOn} el modo nocturno"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "${isOn} el modo nocturno"
+          }
+        }
+      }
     },
     "Set Photo Size" : {
-      "comment" : "The name of nope.'s action that chooses the photo size of a lens, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that chooses the photo size of a lens, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el tamaño de la foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el tamaño de la foto"
+          }
+        }
+      }
     },
     "Set photo size to ${size}" : {
-      "comment" : "How nope.'s Set Photo Size action reads in the Shortcuts editor. ${size} is \"Standard\" or \"Largest\". Keep ${size} unchanged."
+      "comment" : "How nope.'s Set Photo Size action reads in the Shortcuts editor. ${size} is \"Standard\" or \"Largest\". Keep ${size} unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el tamaño de la foto a ${size}"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustar el tamaño de la foto a ${size}"
+          }
+        }
+      }
     },
     "Standard" : {
-      "comment" : "A choice of nope.'s Set Photo Size action: the lens's default, smallest photo size."
+      "comment" : "A choice of nope.'s Set Photo Size action: the lens's default, smallest photo size.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Estándar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Estándar"
+          }
+        }
+      }
     },
     "Start interval shooting" : {
-      "comment" : "How nope.'s Start Interval Shooting action reads in the Shortcuts editor."
+      "comment" : "How nope.'s Start Interval Shooting action reads in the Shortcuts editor.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Iniciar disparo a intervalos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Iniciar disparo a intervalos"
+          }
+        }
+      }
     },
     "Start Interval Shooting" : {
-      "comment" : "The name of nope.'s action that starts a series of photos taken at a fixed interval, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that starts a series of photos taken at a fixed interval, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Iniciar disparo a intervalos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Iniciar disparo a intervalos"
+          }
+        }
+      }
     },
     "Step" : {
-      "comment" : "A setting of nope.'s Take Bracket action: the exposure difference between neighboring photos, in stops."
+      "comment" : "A setting of nope.'s Take Bracket action: the exposure difference between neighboring photos, in stops.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Paso"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Paso"
+          }
+        }
+      }
     },
     "Stop" : {
-      "comment" : "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved."
+      "comment" : "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener"
+          }
+        }
+      }
     },
     "Stop Interval Shooting" : {
-      "comment" : "The name of nope.'s action that stops a running series of interval photos, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that stops a running series of interval photos, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener disparo a intervalos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener disparo a intervalos"
+          }
+        }
+      }
     },
     "Stop Series" : {
-      "comment" : "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears."
+      "comment" : "The name of the action behind the Stop button on nope.'s Live Activity: stops interval shooting or the night sky helper's frames. Keep \"nope.\" unchanged if it appears.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener serie"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detener serie"
+          }
+        }
+      }
     },
     "Stopped: %lld of %lld photos taken" : {
-      "comment" : "Live Activity: interval shooting was stopped early. Both numbers are counts of photos."
+      "comment" : "Live Activity: interval shooting was stopped early. Both numbers are counts of photos.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenido: %1$lld de %2$lld fotos tomadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenido: %1$lld de %2$lld fotos tomadas"
+          }
+        }
+      }
     },
     "Stopped. No photo taken." : {
-      "comment" : "Live Activity: the self-timer or the night sky helper's countdown was cancelled before any photo was taken."
+      "comment" : "Live Activity: the self-timer or the night sky helper's countdown was cancelled before any photo was taken.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenido. No se tomó ninguna foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenido. No se tomó ninguna foto."
+          }
+        }
+      }
     },
     "Stopped. Photos saved: %lld" : {
-      "comment" : "Live Activity: a burst or the night sky helper stopped early, for example because the camera stopped. The number is how many photos were saved."
+      "comment" : "Live Activity: a burst or the night sky helper stopped early, for example because the camera stopped. The number is how many photos were saved.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenido. Fotos guardadas: %lld"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detenido. Fotos guardadas: %lld"
+          }
+        }
+      }
     },
     "Stops nope.'s interval series. Photos already taken are kept." : {
-      "comment" : "Describes nope.'s Stop Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Stop Interval Shooting action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detiene la serie a intervalos de nope. Las fotos ya tomadas se conservan."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detiene la serie a intervalos de nope. Las fotos ya tomadas se conservan."
+          }
+        }
+      }
     },
     "Stops nope.'s interval shooting or astro frames. Every photo already taken is saved." : {
-      "comment" : "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged."
+      "comment" : "Describes the action behind the Stop button on nope.'s Live Activity. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detiene el disparo a intervalos o los fotogramas de Astro de nope. Se guardan todas las fotos ya tomadas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Detiene el disparo a intervalos o los fotogramas de Astro de nope. Se guardan todas las fotos ya tomadas."
+          }
+        }
+      }
     },
     "Switch Lens" : {
-      "comment" : "The name of nope.'s action that switches the camera to another lens, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that switches the camera to another lens, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cambiar de objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cambiar de lente"
+          }
+        }
+      }
     },
     "Switch to ${lens}" : {
-      "comment" : "How nope.'s Switch Lens action reads in the Shortcuts editor. ${lens} is a lens such as \"Wide\". Keep ${lens} unchanged."
+      "comment" : "How nope.'s Switch Lens action reads in the Shortcuts editor. ${lens} is a lens such as \"Wide\". Keep ${lens} unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cambiar a ${lens}"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cambiar a ${lens}"
+          }
+        }
+      }
     },
     "Take a bracket of ${frames}, ${step} apart" : {
-      "comment" : "How nope.'s Take Bracket action reads in the Shortcuts editor. ${frames} is a count such as \"3 Photos\"; ${step} is a step such as \"1 Stop\". Keep both placeholders unchanged."
+      "comment" : "How nope.'s Take Bracket action reads in the Shortcuts editor. ${frames} is a count such as \"3 Photos\"; ${step} is a step such as \"1 Stop\". Keep both placeholders unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar un horquillado de ${frames}, con ${step} de diferencia"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar un horquillado de ${frames}, con ${step} de diferencia"
+          }
+        }
+      }
     },
     "Take a photo (delay: ${delay})" : {
       "comment" : "How nope.'s Take Photo action reads in the Shortcuts editor. ${delay} is the chosen delay, such as \"3 Seconds\". Keep ${delay} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar una foto (retardo: ${delay})"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar una foto (retardo: ${delay})"
+          }
+        }
+      }
     },
     "Take Bracket" : {
-      "comment" : "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that takes an exposure bracket: several separate photos at different exposures, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar horquillado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar horquillado"
+          }
+        }
+      }
     },
     "Take Photo" : {
-      "comment" : "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri."
+      "comment" : "The name of nope.'s action that takes a photo, in the Shortcuts app and Siri.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar foto"
+          }
+        }
+      }
     },
     "Taking the photo…" : {
-      "comment" : "Live Activity: the self-timer's photo is being taken."
+      "comment" : "Live Activity: the self-timer's photo is being taken.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomando la foto…"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomando la foto…"
+          }
+        }
+      }
     },
     "Telephoto" : {
-      "comment" : "The telephoto rear camera, as a lens choice."
+      "comment" : "The telephoto rear camera, as a lens choice.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Teleobjetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Telefoto"
+          }
+        }
+      }
     },
     "That preset can't be found. Nothing changed." : {
-      "comment" : "Siri's answer when the settings preset asked for was deleted or can't be read."
+      "comment" : "Siri's answer when the settings preset asked for was deleted or can't be read.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se encuentra ese preajuste. No cambió nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se encuentra ese preajuste. No cambió nada."
+          }
+        }
+      }
     },
     "The camera isn't available right now." : {
-      "comment" : "Siri's answer when the camera didn't start, is in use by another app or is paused."
+      "comment" : "Siri's answer when the camera didn't start, is in use by another app or is paused.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara no está disponible en este momento."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara no está disponible en este momento."
+          }
+        }
+      }
     },
     "The light is off." : {
-      "comment" : "Siri's answer after nope.'s steady light (the torch) was turned off, or was already off."
+      "comment" : "Siri's answer after nope.'s steady light (the torch) was turned off, or was already off.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La luz está apagada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La luz está apagada."
+          }
+        }
+      }
     },
     "The light is on." : {
-      "comment" : "Siri's answer after nope. turned its steady light (the torch) on."
+      "comment" : "Siri's answer after nope. turned its steady light (the torch) on.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La luz está encendida."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La luz está encendida."
+          }
+        }
+      }
     },
     "The light isn't available right now." : {
-      "comment" : "Siri's answer when the system didn't allow the steady light (torch), for example because the phone is warm, or the night sky helper keeps it off."
+      "comment" : "Siri's answer when the system didn't allow the steady light (torch), for example because the phone is warm, or the night sky helper keeps it off.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La luz no está disponible en este momento."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La luz no está disponible en este momento."
+          }
+        }
+      }
     },
     "The photo size is set." : {
-      "comment" : "Siri's answer after nope. changed a lens's photo size; it applies from the next photo."
+      "comment" : "Siri's answer after nope. changed a lens's photo size; it applies from the next photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tamaño de la foto ajustado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tamaño de la foto ajustado."
+          }
+        }
+      }
     },
     "The photo wasn't saved. nope. shows why." : {
-      "comment" : "Siri's answer when the photo couldn't be taken or saved. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer when the photo couldn't be taken or saved. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La foto no se guardó. nope. muestra el motivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La foto no se guardó. nope. muestra el motivo."
+          }
+        }
+      }
     },
     "The timer was cancelled. No photo was taken." : {
-      "comment" : "Siri's answer when the self-timer was cancelled on the phone before the photo."
+      "comment" : "Siri's answer when the self-timer was cancelled on the phone before the photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se canceló el temporizador. No se tomó ninguna foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se canceló el temporizador. No se tomó ninguna foto."
+          }
+        }
+      }
     },
     "This device doesn't have that lens." : {
-      "comment" : "Siri's answer when the lens asked for doesn't exist on this iPhone or iPad."
+      "comment" : "Siri's answer when the lens asked for doesn't exist on this iPhone or iPad.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este dispositivo no tiene ese objetivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este dispositivo no tiene ese lente."
+          }
+        }
+      }
     },
     "This device has no camera nope. can use." : {
-      "comment" : "Siri's answer on a device without a usable camera. Keep \"nope.\" unchanged."
+      "comment" : "Siri's answer on a device without a usable camera. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este dispositivo no tiene ninguna cámara que nope. pueda usar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este dispositivo no tiene ninguna cámara que nope. pueda usar."
+          }
+        }
+      }
     },
     "This lens can't limit its focus range." : {
-      "comment" : "Siri's answer when the lens in use can't limit autofocus to near or far subjects."
+      "comment" : "Siri's answer when the lens in use can't limit autofocus to near or far subjects.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este objetivo no puede limitar su rango de enfoque."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este lente no puede limitar su rango de enfoque."
+          }
+        }
+      }
     },
     "This lens can't take that bracket." : {
-      "comment" : "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket."
+      "comment" : "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este objetivo no puede tomar ese horquillado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este lente no puede tomar ese horquillado."
+          }
+        }
+      }
     },
     "This lens has no light." : {
-      "comment" : "Siri's answer when the lens in use has no steady light (torch), for example the front camera."
+      "comment" : "Siri's answer when the lens in use has no steady light (torch), for example the front camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este objetivo no tiene luz."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este lente no tiene luz."
+          }
+        }
+      }
     },
     "This lens has only one photo size." : {
-      "comment" : "Siri's answer when the lens offers no choice of photo size."
+      "comment" : "Siri's answer when the lens offers no choice of photo size.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este objetivo solo tiene un tamaño de foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este lente solo tiene un tamaño de foto."
+          }
+        }
+      }
     },
     "Turn Off the Light" : {
-      "comment" : "The name of nope.'s action that turns the camera's steady light (the torch) off, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that turns the camera's steady light (the torch) off, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apagar la luz"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apagar la luz"
+          }
+        }
+      }
     },
     "Turn On the Light" : {
-      "comment" : "The name of nope.'s action that turns the camera's steady light (the torch) on, in the Shortcuts app."
+      "comment" : "The name of nope.'s action that turns the camera's steady light (the torch) on, in the Shortcuts app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Encender la luz"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Encender la luz"
+          }
+        }
+      }
     },
     "Turns nope.'s night mode on or off: every nope. screen in red on black." : {
-      "comment" : "Describes nope.'s Set Night Mode action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Set Night Mode action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activa o desactiva el modo nocturno de nope.: todas las pantallas de nope. en rojo sobre negro."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activa o desactiva el modo nocturno de nope.: todas las pantallas de nope. en rojo sobre negro."
+          }
+        }
+      }
     },
     "Turns off nope.'s steady light." : {
-      "comment" : "Describes nope.'s Turn Off the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Turn Off the Light action in the Shortcuts app. The light is the torch beside the camera. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apaga la luz continua de nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apaga la luz continua de nope."
+          }
+        }
+      }
     },
     "Turns on or off whether faces the camera detects steer nope.'s autofocus and auto exposure." : {
-      "comment" : "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged."
+      "comment" : "Describes nope.'s Set Focus on Faces action in the Shortcuts app. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activa o desactiva que las caras que detecta la cámara guíen el enfoque automático y la exposición automática de nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activa o desactiva que las caras que detecta la cámara guíen el enfoque automático y la exposición automática de nope."
+          }
+        }
+      }
     },
     "Ultra Wide" : {
-      "comment" : "The ultra wide rear camera, as a lens choice."
+      "comment" : "The ultra wide rear camera, as a lens choice.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ultra gran angular"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ultra gran angular"
+          }
+        }
+      }
     },
     "Wide" : {
-      "comment" : "The wide (main) rear camera, as a lens choice."
+      "comment" : "The wide (main) rear camera, as a lens choice.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gran angular"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gran angular"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

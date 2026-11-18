@@ -5,8 +5,8 @@ One folder per App Store locale, one file per App Store Connect field (`name.txt
 fastlane `deliver` reads. The files hold only the field text, so this page records their review
 status.
 
-Version 1.0.0 is listed in English only (issue #86). A listing in another language is added
-together with that language in the app; the earlier draft translations are in the git history.
+The app is listed in English and Spanish (issue #86). Listings in other languages are added
+together with those languages in the app; the earlier draft translations are in the git history.
 
 Field limits, the rules the text follows, and the claim table (which features each sentence
 depends on) are in [`docs/store/README.md`](../../docs/store/README.md).
@@ -14,16 +14,24 @@ depends on) are in [`docs/store/README.md`](../../docs/store/README.md).
 ## Review status
 
 **Every file here is a draft that needs human review.** Nothing is approved for submission.
-Before a release, the maintainer removes any sentence whose feature isn't in the release.
+Before a release, a fluent human reviews every language (AGENTS.md, "Localization"), and the
+maintainer removes any sentence whose feature isn't in the release.
 
 | Locale | Language | Source | Status |
 |---|---|---|---|
 | `en-US` | English (U.S.) | Written by the project | Draft, needs human review |
+| `es-ES` | Spanish (Spain) | Translation of `en-US`, in the wording of the app's `es` strings | Draft, needs human review |
+| `es-MX` | Spanish (Mexico) | `es-ES` with the wording of the app's `es-419` strings | Draft, needs human review |
+
+`es-MX` differs from `es-ES` only where the app's Latin American Spanish does ("lente" for
+"objetivo", "Reporte de privacidad de apps en Configuración" for "Informe de privacidad de las
+apps en Ajustes", "agregar" for "añadir") and claims nothing the English doesn't.
 
 ## Notes for reviewers
 
-- Keep "nope." exactly as written: lowercase, with the period. "Photivra Nope Camera" is never
-  translated.
+- Keep "nope." exactly as written: lowercase, with the period, unchanged in translation.
+  "Photivra Nope Camera" is never translated.
 - Apple setting and feature names (App Privacy Report, Voice Control, Settings) must match the
-  names Apple uses on the current iOS version.
-- The Honesty screen's name must match the app's own name for that screen.
+  names Apple uses in that language on the current iOS version.
+- The Honesty screen's name must match the app's own translation ("Honestidad").
+- A translation must not claim more than the English.

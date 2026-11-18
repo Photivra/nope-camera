@@ -1,0 +1,131 @@
+# Strings whose Latin American Spanish (es-419) wording differs from Spanish (es).
+# One line per string: the catalog's path, a tab, the string's key. scripts/check-localization.sh
+# requires es-419 to differ from es for every string listed here and to equal es for every other
+# string. Lines starting with "#" give the reason for the strings below them.
+
+# Lens: "objetivo" in Spain, "lente" (masculine) in Latin America; Apple's Camera settings use "Corrección del objetivo" (es) and "Corrección del lente" (es-419).
+App/Shared/Localizable.xcstrings	Lens
+App/Shared/Localizable.xcstrings	Opens nope. and chooses the standard or the largest photo size of a lens that offers more than one.
+App/Shared/Localizable.xcstrings	Opens nope. and switches the camera to a lens.
+App/Shared/Localizable.xcstrings	Switch Lens
+App/Shared/Localizable.xcstrings	This device doesn't have that lens.
+App/Shared/Localizable.xcstrings	This lens can't limit its focus range.
+App/Shared/Localizable.xcstrings	This lens can't take that bracket.
+App/Shared/Localizable.xcstrings	This lens has no light.
+App/Shared/Localizable.xcstrings	This lens has only one photo size.
+Sources/NopeUI/Resources/Localizable.xcstrings	A preset holds every setting: photos, privacy, camera, and the lens, exposure and drive mode. A preset that includes Location still asks for location access.
+Sources/NopeUI/Resources/Localizable.xcstrings	Lens
+Sources/NopeUI/Resources/Localizable.xcstrings	Lens distortion fix
+Sources/NopeUI/Resources/Localizable.xcstrings	Lens: %@. Format: %@.
+Sources/NopeUI/Resources/Localizable.xcstrings	Not available on this lens.
+Sources/NopeUI/Resources/Localizable.xcstrings	On the camera, beside the lenses
+Sources/NopeUI/Resources/Localizable.xcstrings	Set when Astro is turned on: focus at the far end, and the longest shutter and highest ISO this lens allows. Change them with the manual controls.
+Sources/NopeUI/Resources/Localizable.xcstrings	Some camera values were changed to what this lens supports.
+Sources/NopeUI/Resources/Localizable.xcstrings	The camera couldn't start. Try another lens.
+Sources/NopeUI/Resources/Localizable.xcstrings	The camera isn't on, so the lens and camera values didn't change.
+Sources/NopeUI/Resources/Localizable.xcstrings	These lenses have no RAW, so each photo is the phone's processed file. A larger size has more pixels and bigger files. The smallest size is the default.
+Sources/NopeUI/Resources/Localizable.xcstrings	This device has no lens like the preset's, so the lens didn't change.
+Sources/NopeUI/Resources/Localizable.xcstrings	This lens has a fixed aperture.
+Sources/NopeUI/Resources/Localizable.xcstrings	This lens: %@
+Sources/NopeUI/Resources/Honesty.xcstrings	Distortion correction stayed on for this lens.
+Sources/NopeUI/Resources/Honesty.xcstrings	Distortion correction stays on for this lens, even though nope. asks for it to be off.
+Sources/NopeUI/Resources/Honesty.xcstrings	Distortion correction: this lens doesn't let apps turn it off or report whether it's used, so its photos may be corrected for lens distortion.
+Sources/NopeUI/Resources/Honesty.xcstrings	Distortion correction: this lens lets apps turn it off, and nope. does.
+Sources/NopeUI/Resources/Honesty.xcstrings	Lens Correction Instructions
+Sources/NopeUI/Resources/Honesty.xcstrings	Lens Make and Model
+Sources/NopeUI/Resources/Honesty.xcstrings	Lens corrections: not stored
+Sources/NopeUI/Resources/Honesty.xcstrings	Lens corrections: stored, not applied
+Sources/NopeUI/Resources/Honesty.xcstrings	Lenses Without RAW
+Sources/NopeUI/Resources/Honesty.xcstrings	Not on this lens
+Sources/NopeUI/Resources/Honesty.xcstrings	Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve, and no noise reduction, sharpening or local tone mapping.
+Sources/NopeUI/Resources/Honesty.xcstrings	Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve, and no noise reduction, sharpening or local tone mapping.
+Sources/NopeUI/Resources/Honesty.xcstrings	Off: apps can't show which lens took it.
+Sources/NopeUI/Resources/Honesty.xcstrings	Off: editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way.
+Sources/NopeUI/Resources/Honesty.xcstrings	On a lens that can't save RAW, the phone processes the photo before nope. receives it. The camera marks these lenses Processed, unless you turn off Show Processed Marker.
+Sources/NopeUI/Resources/Honesty.xcstrings	On a lens that can't save RAW, the phone's camera processes the photo. nope. marks the camera "Processed" before you take it, unless you turn off Processed Marker in Settings, and the photo's details always say so. Tap the marker to see what processing that lens's photos get.
+Sources/NopeUI/Resources/Honesty.xcstrings	Processed by the phone's camera: this lens can't save RAW
+Sources/NopeUI/Resources/Honesty.xcstrings	Processed marker: spoken value
+Sources/NopeUI/Resources/Honesty.xcstrings	Processed: No RAW on This Lens
+Sources/NopeUI/Resources/Honesty.xcstrings	Shows "Processed" on the camera before you take a photo with a lens that can't save RAW. Tap it to see what processing that lens's photos get. On by default.
+Sources/NopeUI/Resources/Honesty.xcstrings	Shows Processed on the camera when a lens can't save RAW.
+Sources/NopeUI/Resources/Honesty.xcstrings	This lens can't save unprocessed RAW. Its photos have some device processing.
+Sources/NopeUI/Resources/Honesty.xcstrings	What the Phone Does on This Lens
+Sources/NopeUI/Resources/Honesty.xcstrings	nope. saves the camera's file without changing its pixels. On a lens with RAW, nope. develops its own HEIF and JPEG copies from the RAW, with one overall tone curve (Standard) or none (Flat), and no noise reduction, sharpening or local tone mapping.
+Sources/NopeUI/Resources/Honesty.xcstrings	On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so.
+
+# Telephoto: "teleobjetivo" in Spain, "telefoto" in Latin America (Apple's es-419 term).
+App/Shared/Localizable.xcstrings	Now using the telephoto camera.
+App/Shared/Localizable.xcstrings	Telephoto
+Sources/NopeUI/Resources/Localizable.xcstrings	Telephoto
+
+# The Settings app and the app's Settings screen: "Ajustes" in Spain, "Configuración" in Latin America (iOS es-419).
+App/NopeWatch/Localizable.xcstrings	Camera access is off. Turn it on in your phone's Settings app.
+App/Shared/Localizable.xcstrings	Camera access is off for nope. You can turn it on in the Settings app.
+Sources/NopeUI/Resources/Localizable.xcstrings	In Settings
+Sources/NopeUI/Resources/Localizable.xcstrings	Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app.
+Sources/NopeUI/Resources/Localizable.xcstrings	Open Settings
+Sources/NopeUI/Resources/Localizable.xcstrings	Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness: dim it in Control Center, or with Reduce White Point in the Accessibility settings.
+Sources/NopeUI/Resources/Localizable.xcstrings	Settings
+Sources/NopeUI/Resources/Localizable.xcstrings	To take photos, turn on camera access for nope. in the Settings app.
+Sources/NopeUI/Resources/Localizable.xcstrings	nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	If you opt in, Apple may share aggregated, non-identifying crash and usage statistics with developers. They never include your photos. It's in Settings › Privacy & Security › Analytics & Improvements.
+Sources/NopeUI/Resources/Honesty.xcstrings	Location access is off for nope., so photos can't include a location. To add one, allow location access in Settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	Location stays off, because location access isn't allowed for nope. You can allow it in Settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Choose Details in Settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	Not in the files: exposure settings are off in Settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	Off in Settings
+Sources/NopeUI/Resources/Honesty.xcstrings	Photos may privately compare landmark regions with Apple's servers (Enhanced Visual Search). You can turn it off in Settings › Apps › Photos.
+Sources/NopeUI/Resources/Honesty.xcstrings	Saved. Not signed: signing is off in Settings.
+Sources/NopeUI/Resources/Honesty.xcstrings	Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed.
+Sources/NopeUI/Resources/Honesty.xcstrings	The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it.
+Sources/NopeUI/Resources/Honesty.xcstrings	Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none.
+Sources/NopeUI/Resources/Honesty.xcstrings	nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings.
+
+# Press a button: "pulsar" in Spain, "presionar" in Latin America (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Astro. Press to start the frames after the start delay.
+Sources/NopeUI/Resources/Localizable.xcstrings	Burst. Press to start, press again to stop.
+Sources/NopeUI/Resources/Localizable.xcstrings	Counting down. Press to cancel.
+Sources/NopeUI/Resources/Localizable.xcstrings	Interval series running. Press to stop.
+Sources/NopeUI/Resources/Localizable.xcstrings	Interval shooting. Press to start the series.
+Sources/NopeUI/Resources/Localizable.xcstrings	Taking a burst. Press to stop.
+Sources/NopeUI/Resources/Localizable.xcstrings	Taking astro frames. Press to stop.
+
+# Countdown: "cuenta atrás" in Spain, "cuenta regresiva" in Latin America (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown.
+Sources/NopeUI/Resources/Localizable.xcstrings	Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it. VoiceOver says each second of the countdown.
+Sources/NopeUI/Resources/Localizable.xcstrings	Search keywords: Self-Timer
+
+# Live Activities: "Actividades en directo" (iOS es), "Actividades en vivo" (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Live Activity
+
+# Add: "añadir" in Spain, "agregar" in Latin America (iOS es-419).
+App/NopeApp/InfoPlist.xcstrings	NSLocationWhenInUseUsageDescription
+App/NopeApp/InfoPlist.xcstrings	NSPhotoLibraryAddUsageDescription
+Sources/NopeUI/Resources/Localizable.xcstrings	Adding to Photos
+Sources/NopeUI/Resources/Localizable.xcstrings	Not saved: the photo library couldn't add the photo. Try again.
+Sources/NopeUI/Resources/Honesty.xcstrings	Off: nothing is lost. Location is only added if you turn it on.
+
+# Focal length: "distancia focal" (iOS es), "longitud focal" (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Focal Length
+Sources/NopeUI/Resources/Honesty.xcstrings	Shutter speed, ISO, aperture and focal length. Off: you can't see later how the photo was taken.
+
+# Lock Screen: "pantalla de bloqueo" (iOS es), "pantalla bloqueada" (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Search keywords: Live Activity
+Sources/NopeUI/Resources/Honesty.xcstrings	Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent.
+Sources/NopeUI/Resources/Honesty.xcstrings	When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default.
+
+# Names of iOS features as iOS shows them in es-419: "Reducir el punto blanco", "Protección avanzada de datos", "Reporte de privacidad de apps", "Ahorrar batería" (Low Power Mode).
+Sources/NopeUI/Resources/Localizable.xcstrings	Battery at %@. Low Power Mode is on.
+Sources/NopeUI/Resources/Localizable.xcstrings	Low Power Mode
+Sources/NopeUI/Resources/Honesty.xcstrings	With standard protection, Apple holds the keys to iCloud Photos. With Advanced Data Protection, only your devices do. Some photo metadata and Shared Albums stay under standard protection.
+
+# Icon: "icono" in Spain, "ícono" in Latin America (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Photivra, Nope Camera, the app icon and the wordmark are trademarks and aren't covered by the GPL.
+
+# Done: "OK" (iOS es), "Listo" (iOS es-419).
+Sources/NopeUI/Resources/Localizable.xcstrings	Done
+
+# Siri phrases: "Haz una foto" is said in Spain only; Latin America keeps "Toma una foto" and "Saca una foto".
+App/NopeApp/AppShortcuts.xcstrings	Take a photo in ${delay} with ${applicationName}
+App/NopeApp/AppShortcuts.xcstrings	Take a photo with ${applicationName}

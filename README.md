@@ -16,7 +16,7 @@ These are the devices that run iOS, iPadOS and watchOS 26, as Apple lists them. 
 
 ## Languages
 
-Version 1.0.0 is in English only. The interface is built for translation (every string is in a String Catalog, and layouts are tested with long text and right to left), and other languages are planned for later releases.
+The app is in English and Spanish. Spanish comes in two variants: Spanish (`es`), and Latin American Spanish (`es-419`), which differs only where the wording does (for example "Ajustes" and "Configuración"). The Spanish text is a draft until a native speaker has reviewed it. Other languages are planned for later releases.
 
 ## License
 

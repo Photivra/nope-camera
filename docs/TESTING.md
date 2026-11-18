@@ -523,8 +523,29 @@ Right-to-left layout is tested with `-AppleTextDirection YES -NSForceRightToLeft
 (Apple's right-to-left pseudo-language: English text in a mirrored layout). Long text is tested
 with `-NSDoubleLocalizedStrings YES` (Apple's double-length pseudo-language: every string is
 shown twice), in `testQuickMenuLongLanguage` on the phone and `testDoubleLengthText` on the
-watch, each also right to left. These stand in for long and right-to-left languages while the
-app ships in English only (issue #86).
+watch, each also right to left. These stand in for long and right-to-left languages that don't
+ship yet (issue #86). Spanish is tested as itself: `testQuickMenuInSpanish` on the phone and
+`testSpanish` on the watch run in Spanish (`-AppleLanguages (es)`) and as a device set to Mexico
+(`-AppleLanguages (es-MX)`), which uses Latin American Spanish (`es-419`); they check a string
+that is the same in both and one whose wording differs. `LocalizationTests` checks the same in
+the `NopeUI` bundle.
+
+Before a release, export both Spanish variants and check that the export is clean (no errors,
+every string present), since native reviewers work from it:
+
+```sh
+xcodebuild -exportLocalizations -project App/NopeCamera.xcodeproj \
+  -localizationPath build/localizations -exportLanguage es -exportLanguage es-419
+```
+
+On 2026-11-17 (Xcode 27.2) the export succeeded for both, each `.xcloc` held every catalog
+string with its Spanish text and "needs review" state, and `xcodebuild -importLocalizations` of
+the unchanged export left every catalog byte for byte the same. Two side effects in the working
+copy are not to be committed: the export adds a `CFBundleName` entry for the capture extension
+to `App/NopeApp/InfoPlist.xcstrings`, and the import rewrites `project.pbxproj` in Xcode's own
+layout. The export also lists bundle names that Xcode takes from the targets' Info.plist files
+("NopeWatch", "NopeControls", "NopeCaptureExtension" and the display name "nope."); they are not
+translated.
 Every new screen and state adds an audit.
 
 ## Documentation
@@ -830,7 +851,7 @@ the device is locked (if it can't, photos are saved unsigned and the "Not Signed
   and settings), says it can be undone in Presets, and Presets shows Undo; with a preset that has
   Location on and access declined, it says some settings couldn't be applied; the light stays
   off.
-- Check in each language that ships (English only in 1.0.0) that Siri accepts the phrases.
+- Check in each language that ships (English; Spanish with the device set to Spain and to Mexico) that Siri accepts the localized phrases.
 
 ### Live Activity on a device
 

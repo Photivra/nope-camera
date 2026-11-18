@@ -6,8 +6,8 @@ import Testing
 @testable import NopeUI
 
 struct LocalizationTests {
-    /// The languages the app ships in: English only.
-    static let launchLocales = ["en"]
+    /// The languages the app ships in: English, Spanish and Latin American Spanish.
+    static let launchLocales = ["en", "es", "es-419"]
 
     @Test func bundleShipsEveryLaunchLocale() {
         let available = Set(Bundle.module.localizations.map { $0.lowercased() })
@@ -26,6 +26,23 @@ struct LocalizationTests {
         let honesty = bundle.localizedString(forKey: "Processed: No RAW on This Lens", value: "MISSING", table: "Honesty")
         #expect(honesty != "MISSING")
         #expect(honesty != "Processed: No RAW on This Lens")
+    }
+
+    /// iOS reads a string from one language's table only, so Latin American Spanish holds every
+    /// string: the Spanish wording, except where the two differ (scripts/es-419-overrides.txt).
+    @Test func latinAmericanSpanishIsCompleteAndDiffersOnlyWhereListed() throws {
+        let spanishPath = try #require(Bundle.module.path(forResource: "es", ofType: "lproj"))
+        let latinAmericanPath = try #require(Bundle.module.path(forResource: "es-419", ofType: "lproj"))
+        let spanish = try #require(Bundle(path: spanishPath))
+        let latinAmerican = try #require(Bundle(path: latinAmericanPath))
+        // The same in both.
+        #expect(spanish.localizedString(forKey: "Take Photo", value: "MISSING", table: nil) == "Tomar foto")
+        #expect(latinAmerican.localizedString(forKey: "Take Photo", value: "MISSING", table: nil) == "Tomar foto")
+        // Regional wording: the Settings app's name, and the word for a lens.
+        #expect(spanish.localizedString(forKey: "Open Settings", value: "MISSING", table: nil) == "Abrir Ajustes")
+        #expect(latinAmerican.localizedString(forKey: "Open Settings", value: "MISSING", table: nil) == "Abrir Configuración")
+        #expect(spanish.localizedString(forKey: "Lenses Without RAW", value: "MISSING", table: "Honesty") == "Objetivos sin RAW")
+        #expect(latinAmerican.localizedString(forKey: "Lenses Without RAW", value: "MISSING", table: "Honesty") == "Lentes sin RAW")
     }
 }
 

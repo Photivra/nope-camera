@@ -36,7 +36,7 @@ The rules for contributors and coding agents are in AGENTS.md. Read it before ch
 ## Store and privacy policy (drafts, need human review)
 
 - [docs/store/README.md](docs/store/README.md): App Store listing drafts, field limits, and the features each claim depends on
-- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in English (`en-US`), one file per field, and its review status
+- [store/metadata/README.md](store/metadata/README.md): App Store listing text (name, subtitle, promotional text, description, keywords) in English (`en-US`) and Spanish (`es-ES`, `es-MX`), one file per field, and its review status
 - [docs/store/app-privacy-label.md](docs/store/app-privacy-label.md): App Store privacy label answers ("Data Not Collected")
 - [docs/store/accessibility-label.md](docs/store/accessibility-label.md): Accessibility Nutrition Label answers and the evidence each needs
 - [docs/store/privacy-policy-draft.md](docs/store/privacy-policy-draft.md): privacy policy draft, for the maintainer to publish

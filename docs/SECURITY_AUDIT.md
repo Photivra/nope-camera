@@ -164,7 +164,7 @@ MASVS-PLATFORM-1, MASVS-PRIVACY-1, MASVS-PRIVACY-3.
     `NSPhotoLibraryAddUsageDescription`, and `NSLocationWhenInUseUsageDescription` (the location switch ships in 0.2.0). No `NSPhotoLibraryUsageDescription` (full library access), no
     microphone, contacts, tracking (`NSUserTrackingUsageDescription`), Bluetooth or local
     network strings.
-  - Each string is accurate, says "nope.", and is present in every language that ships (English only in 1.0.0).
+  - Each string is accurate, says "nope.", and is present in every language that ships (English, Spanish and Latin American Spanish).
   - No `UIBackgroundModes`, `CFBundleURLTypes` (URL schemes), `CFBundleDocumentTypes`,
     `UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`, `NSAppTransportSecurity`
     exceptions, or `NSBonjourServices`.

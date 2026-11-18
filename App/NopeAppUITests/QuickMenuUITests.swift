@@ -2,7 +2,7 @@ import XCTest
 
 /// UI tests for Q, the quick menu (docs/design/BUILD-SPEC.md, 3.6): the panel of tiles, its
 /// menus and foot, and the list at accessibility text sizes, with accessibility audits at the
-/// default and largest text sizes, right to left, in night mode and with double-length text.
+/// default and largest text sizes, right to left, in night mode, with double-length text and in Spanish.
 extension NopeAppUITests {
     /// The tiles' identifiers in display order (``QuickControls/builders``).
     static let quickTileOrder = [
@@ -267,6 +267,29 @@ extension NopeAppUITests {
             // The pseudo-language is on: the tile's name is the English name twice.
             XCTAssertEqual(quickTile(app, "grid").label, "Grid Grid", name)
             attachQuickScreenshot("Q, \(name), extra large text")
+            try audit(app)
+        }
+    }
+
+    @MainActor
+    func testQuickMenuInSpanish() throws {
+        // Spanish and Latin American Spanish (a device set to Mexico uses es-419) at the largest
+        // size below the accessibility sizes, where the tiles are at their widest: names and
+        // values wrap between words and nothing is cut. A name that is the same in both shows
+        // that es-419 holds every string, not only its regional wording.
+        for language in ["es", "es-MX"] {
+            let app = launch(
+                "aids",
+                extraArguments: [
+                    "-AppleLanguages", "(\(language))", "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryXXXL",
+                ])
+            openQuickMenu(app)
+            let shown = shownQuickTiles(app)
+            XCTAssertEqual(shown, Self.quickTileOrder.filter(shown.contains), language)
+            XCTAssertEqual(quickTile(app, "grid").label, "Cuadrícula", language)
+            // The Settings button carries the regional name of Settings.
+            XCTAssertEqual(app.buttons["quick.settings"].label, language == "es" ? "Ajustes" : "Configuración", language)
+            attachQuickScreenshot("Q, \(language), extra large text")
             try audit(app)
         }
     }

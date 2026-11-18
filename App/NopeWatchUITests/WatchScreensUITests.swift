@@ -2,8 +2,9 @@ import XCTest
 
 /// UI tests for the states of the watch screen in the 1.0.0 design (docs/design/watch.html,
 /// BUILD-SPEC.md 3.13): every status and result, the unsigned result when signing is off by
-/// choice, the largest text size, right to left and double-length text. Each state is audited. Run them on
-/// the 40 mm and the 46 mm Simulators; the phone is simulated (`-NopeSimulatedPhone`).
+/// choice, the largest text size, right to left, double-length text and Spanish. Each state is
+/// audited. Run them on the 40 mm and the 46 mm Simulators; the phone is simulated
+/// (`-NopeSimulatedPhone`).
 extension NopeWatchUITests {
     /// The launch arguments for right-to-left layout.
     static let rightToLeft = ["-AppleTextDirection", "YES", "-NSForceRightToLeftWritingDirection", "YES"]
@@ -274,5 +275,31 @@ extension NopeWatchUITests {
         XCTAssertTrue(mirrored.buttons["WatchShutter"].waitForExistence(timeout: 10))
         attachScreenshot(of: mirrored, named: "watch-long-text-rtl")
         try audit(mirrored)
+    }
+
+    @MainActor
+    func testSpanish() throws {
+        // Spanish, and Latin American Spanish as a device set to Mexico picks it (es-419): the
+        // Settings app has a different name there, and every other string is the same.
+        for (language, settingsName) in [("es", "Ajustes"), ("es-MX", "Configuración")] {
+            let arguments = ["-AppleLanguages", "(\(language))"]
+            let app = launch("permissionDenied", extraArguments: arguments)
+            XCTAssertTrue(status(in: app).waitForExistence(timeout: 10))
+            XCTAssertEqual(
+                status(in: app).label,
+                "El acceso a la cámara está desactivado. Actívalo en la app \(settingsName) de tu teléfono.", language)
+            attachScreenshot(of: app, named: "watch-\(language)-warning")
+            try audit(app)
+            app.terminate()
+
+            let ready = launch("ready", extraArguments: arguments)
+            let shutter = ready.buttons["WatchShutter"]
+            XCTAssertTrue(shutter.waitForExistence(timeout: 10))
+            XCTAssertEqual(shutter.label, "Tomar foto", language)
+            XCTAssertGreaterThanOrEqual(shutter.frame.height, Self.buttonMinHeight)
+            attachScreenshot(of: ready, named: "watch-\(language)")
+            try audit(ready)
+            ready.terminate()
+        }
     }
 }

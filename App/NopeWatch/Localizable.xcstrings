@@ -2,70 +2,378 @@
   "sourceLanguage" : "en",
   "strings" : {
     "Camera access is off. Turn it on in your phone's Settings app." : {
-      "comment" : "Watch warning: camera access for nope. is declined on the phone. Settings is the system app."
+      "comment" : "Watch warning: camera access for nope. is declined on the phone. Settings is the system app.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la cámara está desactivado. Actívalo en la app Ajustes de tu teléfono."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la cámara está desactivado. Actívalo en la app Configuración de tu teléfono."
+          }
+        }
+      }
     },
     "Camera not available. Open nope. on your phone." : {
-      "comment" : "Watch warning: the camera isn't running on the phone, for example because nope. isn't open there. Keep \"nope.\" unchanged."
+      "comment" : "Watch warning: the camera isn't running on the phone, for example because nope. isn't open there. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cámara no disponible. Abre nope. en tu teléfono."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cámara no disponible. Abre nope. en tu teléfono."
+          }
+        }
+      }
     },
     "Camera ready" : {
-      "comment" : "Watch status: the phone's camera can take a photo."
+      "comment" : "Watch status: the phone's camera can take a photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cámara lista"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cámara lista"
+          }
+        }
+      }
     },
     "Can't reach your phone. Keep it nearby with nope. open." : {
-      "comment" : "Watch warning: the paired phone can't be reached. Keep \"nope.\" unchanged."
+      "comment" : "Watch warning: the paired phone can't be reached. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se puede conectar con tu teléfono. Mantenlo cerca y con nope. abierta."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se puede conectar con tu teléfono. Mantenlo cerca y con nope. abierta."
+          }
+        }
+      }
     },
     "Cancel Timer" : {
-      "comment" : "Watch button that stops the phone's self-timer countdown, so no photo is taken."
+      "comment" : "Watch button that stops the phone's self-timer countdown, so no photo is taken.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cancelar temporizador"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cancelar temporizador"
+          }
+        }
+      }
     },
     "Connecting to your phone…" : {
-      "comment" : "Watch status while the watch app first reaches nope. on the phone."
+      "comment" : "Watch status while the watch app first reaches nope. on the phone.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Conectando con tu teléfono…"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Conectando con tu teléfono…"
+          }
+        }
+      }
     },
     "Delay" : {
-      "comment" : "Watch picker: how long the phone waits before taking the photo."
+      "comment" : "Watch picker: how long the phone waits before taking the photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retardo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Retardo"
+          }
+        }
+      }
     },
     "No photo taken." : {
-      "comment" : "Watch result: nothing was taken because the phone's camera wasn't available; the status line says why."
+      "comment" : "Watch result: nothing was taken because the phone's camera wasn't available; the status line says why.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se tomó ninguna foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se tomó ninguna foto."
+          }
+        }
+      }
     },
     "Not saved. Your phone shows why." : {
-      "comment" : "Watch warning: the photo wasn't saved; the reason is on the phone's screen."
+      "comment" : "Watch warning: the photo wasn't saved; the reason is on the phone's screen.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guardó. Tu teléfono muestra el motivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guardó. Tu teléfono muestra el motivo."
+          }
+        }
+      }
     },
     "Off" : {
-      "comment" : "Watch delay picker: no delay before the photo."
+      "comment" : "Watch delay picker: no delay before the photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado"
+          }
+        }
+      }
     },
     "Open nope. on your phone to allow camera access." : {
-      "comment" : "Watch warning: nope. on the phone hasn't asked for camera access yet. Keep \"nope.\" unchanged."
+      "comment" : "Watch warning: nope. on the phone hasn't asked for camera access yet. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. en tu teléfono para permitir el acceso a la cámara."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abre nope. en tu teléfono para permitir el acceso a la cámara."
+          }
+        }
+      }
     },
     "Photo in %@" : {
-      "comment" : "Watch status while the phone's self-timer counts down. The placeholder is a duration such as \"3 seconds\"."
+      "comment" : "Watch status while the phone's self-timer counts down. The placeholder is a duration such as \"3 seconds\".",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto en %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Foto en %@"
+          }
+        }
+      }
     },
     "Photos saved and signed" : {
-      "comment" : "Watch result: a bracket of photos was saved on the phone and every one is signed."
+      "comment" : "Watch result: a bracket of photos was saved on the phone and every one is signed.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas y firmadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas y firmadas"
+          }
+        }
+      }
     },
     "Photos saved, not all signed" : {
-      "comment" : "Watch warning: a bracket of photos was saved on the phone, but some aren't signed."
+      "comment" : "Watch warning: a bracket of photos was saved on the phone, but some aren't signed.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas, no todas firmadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos guardadas, no todas firmadas"
+          }
+        }
+      }
     },
     "Saved and signed" : {
-      "comment" : "Watch result: the photo was saved to Photos on the phone and signed with Content Credentials."
+      "comment" : "Watch result: the photo was saved to Photos on the phone and signed with Content Credentials.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada y firmada"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada y firmada"
+          }
+        }
+      }
     },
     "Saved, not signed" : {
-      "comment" : "Watch warning: the photo was saved on the phone but isn't signed with Content Credentials."
+      "comment" : "Watch warning: the photo was saved on the phone but isn't signed with Content Credentials.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada, sin firmar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada, sin firmar"
+          }
+        }
+      }
     },
     "Take Photo" : {
-      "comment" : "Watch button that takes a photo with the phone's camera."
+      "comment" : "Watch button that takes a photo with the phone's camera.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomar foto"
+          }
+        }
+      }
     },
     "Taking photo…" : {
-      "comment" : "Watch status: the phone is taking or saving a photo."
+      "comment" : "Watch status: the phone is taking or saving a photo.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomando la foto…"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tomando la foto…"
+          }
+        }
+      }
     },
     "The camera was busy. No photo taken." : {
-      "comment" : "Watch result: the phone was already taking a photo, counting down or in a burst, so nothing was taken."
+      "comment" : "Watch result: the phone was already taking a photo, counting down or in a burst, so nothing was taken.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara estaba ocupada. No se tomó ninguna foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara estaba ocupada. No se tomó ninguna foto."
+          }
+        }
+      }
     },
     "Timer cancelled. No photo taken." : {
-      "comment" : "Watch result: the self-timer was cancelled, so no photo was taken."
+      "comment" : "Watch result: the self-timer was cancelled, so no photo was taken.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temporizador cancelado. No se tomó ninguna foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temporizador cancelado. No se tomó ninguna foto."
+          }
+        }
+      }
     },
     "Update nope. on your phone and watch." : {
-      "comment" : "Watch warning: the phone and watch apps are different versions. Keep \"nope.\" unchanged."
+      "comment" : "Watch warning: the phone and watch apps are different versions. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actualiza nope. en tu teléfono y en tu reloj."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Actualiza nope. en tu teléfono y en tu reloj."
+          }
+        }
+      }
     },
     "Your phone has no camera nope. can use." : {
-      "comment" : "Watch warning: the phone has no usable camera. Keep \"nope.\" unchanged."
+      "comment" : "Watch warning: the phone has no usable camera. Keep \"nope.\" unchanged.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu teléfono no tiene una cámara que nope. pueda usar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu teléfono no tiene una cámara que nope. pueda usar."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

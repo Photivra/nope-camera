@@ -3,51 +3,269 @@
   "strings" : {
     "Open the camera in ${applicationName}" : {
       "comment" : "A Siri phrase that opens nope.'s camera. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Abre la cámara en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Abre la cámara en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Start interval shooting in ${applicationName}" : {
       "comment" : "A Siri phrase that starts a series of photos at a fixed interval in nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Inicia el disparo a intervalos en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Inicia el disparo a intervalos en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Stop interval shooting in ${applicationName}" : {
       "comment" : "A Siri phrase that stops nope.'s running interval series. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Detén el disparo a intervalos en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Detén el disparo a intervalos en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Switch to ${lens} in ${applicationName}" : {
       "comment" : "A Siri phrase that switches nope.'s camera to a lens. ${lens} is a lens such as \"Wide\" or \"Front\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Cambia a ${lens} en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Cambia a ${lens} en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Take a bracket with ${applicationName}" : {
       "comment" : "A Siri phrase that takes an exposure bracket (several separate photos at different exposures) with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toma un horquillado con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toma un horquillado con ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Take a photo in ${delay} with ${applicationName}" : {
       "comment" : "A Siri phrase that takes a photo after a delay. ${delay} is \"3 Seconds\" or \"10 Seconds\"; ${applicationName} is the app's name, nope. Keep both placeholders unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toma una foto en ${delay} con ${applicationName}",
+              "Haz una foto en ${delay} con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toma una foto en ${delay} con ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Take a photo with ${applicationName}" : {
       "comment" : "A Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toma una foto con ${applicationName}",
+              "Haz una foto con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Toma una foto con ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Take a picture with ${applicationName}" : {
       "comment" : "Another Siri phrase that takes a photo with nope. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Saca una foto con ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Saca una foto con ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Turn off night mode in ${applicationName}" : {
       "comment" : "A Siri phrase that turns nope.'s night mode off. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Desactiva el modo nocturno en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Desactiva el modo nocturno en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Turn off the light in ${applicationName}" : {
       "comment" : "A Siri phrase that turns off nope.'s steady light (the torch). ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Apaga la luz en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Apaga la luz en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Turn on night mode in ${applicationName}" : {
       "comment" : "A Siri phrase that turns nope.'s night mode on. ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Activa el modo nocturno en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Activa el modo nocturno en ${applicationName}"
+            ]
+          }
+        }
+      }
     },
     "Turn on the light in ${applicationName}" : {
       "comment" : "A Siri phrase that turns on nope.'s steady light (the torch). ${applicationName} is the app's name, nope. Keep ${applicationName} unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Enciende la luz en ${applicationName}"
+            ]
+          }
+        },
+        "es-419" : {
+          "stringSet" : {
+            "state" : "needs_review",
+            "values" : [
+              "Enciende la luz en ${applicationName}"
+            ]
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

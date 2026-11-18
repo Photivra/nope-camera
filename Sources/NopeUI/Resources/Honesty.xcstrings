@@ -3,103 +3,453 @@
   "strings" : {
     "%lld photos saved and signed." : {
       "comment" : "Shown after an exposure bracket: each frame was added to the photo library as its own photo, each with a Content Credentials signature. The number is the count of photos, at least 3. Honesty wording: says only that they were saved and signed.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld fotos guardadas y firmadas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld fotos guardadas y firmadas."
+          }
+        }
+      }
     },
     "A photo can't be opened or shown correctly without these. None of them identify you or link your photos." : {
       "comment" : "Explains why the locked details are always saved. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin estos datos, una foto no se puede abrir ni mostrar correctamente. Ninguno te identifica ni vincula tus fotos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin estos datos, una foto no se puede abrir ni mostrar correctamente. Ninguno te identifica ni vincula tus fotos."
+          }
+        }
+      }
     },
     "A second photo, started %@ after nope.'s, with the processing iOS applies when an app asks for the highest quality. It may combine several frames, and it may differ from what other camera apps save." : {
       "comment" : "Compare view: what the phone-processed side is. The value is a time such as 850 ms. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una segunda foto, iniciada %@ después de la de nope., con el procesamiento que aplica iOS cuando una app pide la máxima calidad. Puede combinar varios fotogramas y puede ser distinta de lo que guardan otras apps de cámara."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una segunda foto, iniciada %@ después de la de nope., con el procesamiento que aplica iOS cuando una app pide la máxima calidad. Puede combinar varios fotogramas y puede ser distinta de lo que guardan otras apps de cámara."
+          }
+        }
+      }
     },
     "All Optional Removed" : {
       "comment" : "Settings row value: the master switch is on and no optional details are saved. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Todos los opcionales quitados"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Todos los opcionales quitados"
+          }
+        }
+      }
     },
     "Always kept" : {
       "comment" : "In the photo details, next to a metadata item every file keeps because the photo can't be opened without it.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siempre se conserva"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siempre se conserva"
+          }
+        }
+      }
     },
     "Always Saved" : {
       "comment" : "Section header above the details every photo keeps. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siempre se guarda"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Siempre se guarda"
+          }
+        }
+      }
     },
     "Analysis in Photos" : {
       "comment" : "Honesty heading: the Photos app analyzes photos. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Análisis en Fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Análisis en Fotos"
+          }
+        }
+      }
     },
     "App Name and Version" : {
       "comment" : "Metadata item: records that nope. made the file. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nombre y versión de la app"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nombre y versión de la app"
+          }
+        }
+      }
     },
     "Apple encrypts and re-signs App Store apps, so there's no standard way to confirm a download was built from our public source." : {
       "comment" : "Claim 15 in docs/research/privacy-claims.md. App Store is Apple's name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple cifra y vuelve a firmar las apps del App Store, así que no hay una forma estándar de confirmar que una descarga se compiló a partir de nuestro código fuente público."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Apple cifra y vuelve a firmar las apps del App Store, así que no hay una forma estándar de confirmar que una descarga se compiló a partir de nuestro código fuente público."
+          }
+        }
+      }
     },
     "Apple Watch Sends Only Commands" : {
       "comment" : "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El Apple Watch solo envía órdenes"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El Apple Watch solo envía órdenes"
+          }
+        }
+      }
     },
     "Autofocus and auto exposure follow faces the camera finds." : {
       "comment" : "Explains the Focus on Faces switch. Must not say that it turns face detection off: it decides only whether autofocus and auto exposure follow faces. No default note. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El enfoque y la exposición automáticos siguen las caras que detecta la cámara."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El enfoque y la exposición automáticos siguen las caras que detecta la cámara."
+          }
+        }
+      }
     },
     "Black and White Levels" : {
       "comment" : "Locked metadata item. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Niveles de negro y blanco"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Niveles de negro y blanco"
+          }
+        }
+      }
     },
     "Camera Make and Model" : {
       "comment" : "Metadata item: which device took the photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Marca y modelo de la cámara"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Marca y modelo de la cámara"
+          }
+        }
+      }
     },
     "Check It Yourself" : {
       "comment" : "Honesty heading: how to verify that the app makes no connections. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compruébalo por tu cuenta"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compruébalo por tu cuenta"
+          }
+        }
+      }
     },
     "Choose Details" : {
       "comment" : "Settings row and screen title: choose which optional details, such as the date or camera model, are saved in each photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elegir datos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Elegir datos"
+          }
+        }
+      }
     },
     "Claim generator: %@ %@" : {
       "comment" : "In the photo details: the software the Content Credentials manifest names as its claim generator. The values are a name and a version, such as Photivra Nope Camera 0.2.0.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Generador de la declaración: %@ %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Generador de la declaración: %@ %@"
+          }
+        }
+      }
     },
     "Color Data and White Balance" : {
       "comment" : "Locked metadata item: color matrices and the as-shot white balance. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos de color y balance de blancos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos de color y balance de blancos"
+          }
+        }
+      }
     },
     "Color Filter Pattern" : {
       "comment" : "Locked metadata item: the sensor's red, green and blue pixel pattern. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Patrón del filtro de color"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Patrón del filtro de color"
+          }
+        }
+      }
     },
     "Color Profile (HEIF and JPEG)" : {
       "comment" : "Locked metadata item. HEIF and JPEG are file format names. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Perfil de color (HEIF y JPEG)"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Perfil de color (HEIF y JPEG)"
+          }
+        }
+      }
     },
     "Content Credentials" : {
       "comment" : "Section header for the photo signature. Content Credentials is the name of the C2PA signature standard's label. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Content Credentials"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Content Credentials"
+          }
+        }
+      }
     },
     "Counted on the RAW sensor data when the photo was taken, over every photosite of the active area. Clipped highlights are within 0.5% of the white level or above it; clipped shadows are within 0.5% of the black level or below it, where 0.5% is of the range between the two levels." : {
       "comment" : "Footer in the photo details: how the RAW clipping is defined and measured. A photosite is one sensor element. The white and black levels are the RAW file's own values. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Contado en los datos RAW del sensor al tomar la foto, en todos los fotositos del área activa. Las altas luces recortadas están a menos del 0,5 % del nivel de blanco o por encima; las sombras recortadas, a menos del 0,5 % del nivel de negro o por debajo. El 0,5 % es del rango entre ambos niveles."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Contado en los datos RAW del sensor al tomar la foto, en todos los fotositos del área activa. Las altas luces recortadas están a menos del 0,5 % del nivel de blanco o por encima; las sombras recortadas, a menos del 0,5 % del nivel de negro o por debajo. El 0,5 % es del rango entre ambos niveles."
+          }
+        }
+      }
     },
     "Custom" : {
       "comment" : "Settings row value: the person chose the optional details one by one. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Personalizado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Personalizado"
+          }
+        }
+      }
     },
     "Custom, Location On" : {
       "comment" : "Value of the Details in Each Photo row in Settings: the person chose the optional details one by one, and Location is on, so photos include where they were taken. A whole value; use the translations of Custom and Location On. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Personalizado, ubicación activada"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Personalizado, ubicación activada"
+          }
+        }
+      }
     },
     "Date and Time Taken" : {
       "comment" : "Metadata item. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fecha y hora de la toma"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fecha y hora de la toma"
+          }
+        }
+      }
     },
     "Details in Each Photo" : {
       "comment" : "Settings row and page title: which optional details (location, date, camera model and others) each photo includes. Replaces Choose Details and the Remove All Optional Details row. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos en cada foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos en cada foto"
+          }
+        }
+      }
     },
     "Details in each photo: Location" : {
       "comment" : "Section header above the Location switch on Details in Each Photo (its own key: Location is also the switch's name).",
@@ -109,16 +459,56 @@
             "state" : "translated",
             "value" : "Location"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación"
+          }
         }
       }
     },
     "Details Kept" : {
       "comment" : "Heading in the photo details: the metadata items the saved files hold.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos conservados"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos conservados"
+          }
+        }
+      }
     },
     "Details Left Out" : {
       "comment" : "Heading in the photo details: the optional metadata items the saved files don't hold, each with the reason.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos omitidos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Datos omitidos"
+          }
+        }
+      }
     },
     "Details section: Location" : {
       "comment" : "Section header on the Details in Each Photo page, above the Location switch and its access notice. The same word as the Location switch; use its translation. Honesty wording: a fluent human must review every translation before release.",
@@ -129,451 +519,2017 @@
             "state" : "translated",
             "value" : "Location"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación"
+          }
         }
       }
     },
     "Developed by nope. from the RAW, Flat look" : {
       "comment" : "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Flat look (no contrast curve). Keep nope. unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Revelado por nope. a partir del RAW, aspecto Plano"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Revelado por nope. a partir del RAW, aspecto Plano"
+          }
+        }
+      }
     },
     "Developed by nope. from the RAW, Standard look" : {
       "comment" : "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Standard look (one overall tone curve). Keep nope. unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Revelado por nope. a partir del RAW, aspecto Estándar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Revelado por nope. a partir del RAW, aspecto Estándar"
+          }
+        }
+      }
     },
     "Different" : {
       "comment" : "Heading in the compare view's details, also spoken for each item: metadata both files hold, with different values.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diferente"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diferente"
+          }
+        }
+      }
     },
     "Distortion correction stayed on for this lens." : {
       "comment" : "What's in This Photo, processing section: the lens kept the camera's geometric distortion correction on for this photo. Shown only where a device test showed it. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En este objetivo, la corrección de distorsión siguió activada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En este lente, la corrección de distorsión siguió activada."
+          }
+        }
+      }
     },
     "Distortion correction stays on for this lens, even though nope. asks for it to be off." : {
       "comment" : "Processing note of a lens that can't save RAW, shown only where a device test showed that this lens keeps the camera's geometric distortion correction on. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En este objetivo, la corrección de distorsión sigue activada aunque nope. pide desactivarla."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En este lente, la corrección de distorsión sigue activada aunque nope. pide desactivarla."
+          }
+        }
+      }
     },
     "Distortion correction: this lens doesn't let apps turn it off or report whether it's used, so its photos may be corrected for lens distortion." : {
       "comment" : "Processing note and photo details: the lens offers no switch for the camera's geometric distortion correction, which reshapes the picture. Keep \"may\": it isn't known whether the correction is applied. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Corrección de distorsión: este objetivo no permite que las apps la desactiven ni indica si se usa, así que sus fotos pueden tener corregida la distorsión del objetivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Corrección de distorsión: este lente no permite que las apps la desactiven ni indica si se usa, así que sus fotos pueden tener corregida la distorsión del lente."
+          }
+        }
+      }
     },
     "Distortion correction: this lens lets apps turn it off, and nope. does." : {
       "comment" : "Processing note and photo details: the lens lets the app turn off the camera's geometric distortion correction, which reshapes the picture. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Corrección de distorsión: este objetivo permite que las apps la desactiven, y nope. lo hace."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Corrección de distorsión: este lente permite que las apps la desactiven, y nope. lo hace."
+          }
+        }
+      }
     },
     "DNG Version" : {
       "comment" : "Locked metadata item. DNG is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Versión de DNG"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Versión de DNG"
+          }
+        }
+      }
     },
     "Each frame is a separate single-frame photo. Nothing is merged." : {
       "comment" : "Explains exposure bracketing. Must not claim more than the English: the photos are never combined.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada fotograma es una foto independiente de un solo fotograma. No se combina nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada fotograma es una foto independiente de un solo fotograma. No se combina nada."
+          }
+        }
+      }
     },
     "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it." : {
       "comment" : "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada foto es un único fotograma del sensor, guardado como RAW con el menor procesamiento que permite este teléfono. Las copias HEIF y JPEG se revelan a partir de él."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada foto es un único fotograma del sensor, guardado como RAW con el menor procesamiento que permite este teléfono. Las copias HEIF y JPEG se revelan a partir de él."
+          }
+        }
+      }
     },
     "Each photo is separate. Nothing is combined. Keep nope. open while the series runs." : {
       "comment" : "Explains interval shooting. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada foto es independiente. No se combina nada. Mantén nope. abierta mientras dure la serie."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada foto es independiente. No se combina nada. Mantén nope. abierta mientras dure la serie."
+          }
+        }
+      }
     },
     "Enhanced Visual Search" : {
       "comment" : "Honesty heading. Apple's setting name: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Búsqueda visual mejorada"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Búsqueda visual mejorada"
+          }
+        }
+      }
     },
     "Every camera sensor leaves a faint, unique noise pattern. With enough of your photos, forensic tools can match them to the same camera. No app can fully remove it." : {
       "comment" : "Claim 9 in docs/research/privacy-claims.md (peer-reviewed). Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada sensor de cámara deja un patrón de ruido tenue y único. Con suficientes fotos tuyas, las herramientas forenses pueden asociarlas a la misma cámara. Ninguna app puede eliminarlo por completo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cada sensor de cámara deja un patrón de ruido tenue y único. Con suficientes fotos tuyas, las herramientas forenses pueden asociarlas a la misma cámara. Ninguna app puede eliminarlo por completo."
+          }
+        }
+      }
     },
     "Exact Model for RAW Editors" : {
       "comment" : "Metadata item: the exact device model, used by RAW editing apps to pick a color profile. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modelo exacto para editores RAW"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modelo exacto para editores RAW"
+          }
+        }
+      }
     },
     "Exposure Settings" : {
       "comment" : "Metadata item: shutter speed, ISO, aperture and focal length. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustes de exposición"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ajustes de exposición"
+          }
+        }
+      }
     },
     "Face Detection is off unless you turn it on in nope.'s settings. With it on, iOS may detect faces in the viewfinder to decide where to focus and how to expose. nope. doesn't read or save which faces it found." : {
       "comment" : "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Face Detection is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La Detección de caras está desactivada a menos que la actives en los ajustes de nope. Con ella activada, es posible que iOS detecte caras en el visor para decidir dónde enfocar y cómo exponer. nope. no lee ni guarda qué caras encontró."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La Detección de caras está desactivada a menos que la actives en los ajustes de nope. Con ella activada, es posible que iOS detecte caras en el visor para decidir dónde enfocar y cómo exponer. nope. no lee ni guarda qué caras encontró."
+          }
+        }
+      }
     },
     "Faces and Autofocus" : {
       "comment" : "Honesty heading: iOS may detect faces to choose where to focus.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Caras y enfoque automático"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Caras y enfoque automático"
+          }
+        }
+      }
     },
     "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone." : {
       "comment" : "Explains the Standard File Tags switch. No default note. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valores fijos que pide el estándar del archivo, como números de versión y el espacio de color. Nada en ellos te identifica a ti ni a tu teléfono."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valores fijos que pide el estándar del archivo, como números de versión y el espacio de color. Nada en ellos te identifica a ti ni a tu teléfono."
+          }
+        }
+      }
     },
     "Fixed values the file standard asks for, such as version numbers and the color space. They say nothing about you, your phone or the photo. On by default." : {
       "comment" : "Explains the Standard File Tags switch. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valores fijos que pide el estándar del archivo, como números de versión y el espacio de color. No dicen nada de ti, de tu teléfono ni de la foto. Activado de forma predeterminada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Valores fijos que pide el estándar del archivo, como números de versión y el espacio de color. No dicen nada de ti, de tu teléfono ni de la foto. Activado de forma predeterminada."
+          }
+        }
+      }
     },
     "HEIF with some device processing" : {
       "comment" : "Spoken format name for the no-RAW fallback. HEIF is a file format name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "HEIF con cierto procesamiento del dispositivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "HEIF con cierto procesamiento del dispositivo"
+          }
+        }
+      }
     },
     "Hold the time since the device restarted and IDs for each photo, which can link your photos. Off: nothing visible changes." : {
       "comment" : "What maker notes contain, and what turning them off costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Contienen el tiempo desde que se reinició el dispositivo e identificadores de cada foto, que pueden vincular tus fotos. Desactivado: no cambia nada visible."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Contienen el tiempo desde que se reinició el dispositivo e identificadores de cada foto, que pueden vincular tus fotos. Desactivado: no cambia nada visible."
+          }
+        }
+      }
     },
     "Honesty" : {
       "comment" : "Settings row and screen title: what nope. does and doesn't do, and what it can't control. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Honestidad"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Honestidad"
+          }
+        }
+      }
     },
     "iCloud Photos" : {
       "comment" : "Honesty heading. Apple's feature name: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos en iCloud"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos en iCloud"
+          }
+        }
+      }
     },
     "If you opt in, Apple may share aggregated, non-identifying crash and usage statistics with developers. They never include your photos. It's in Settings › Privacy & Security › Analytics & Improvements." : {
       "comment" : "Claim 12 and note 12 in docs/research/privacy-claims.md. Use the setting names iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Si aceptas participar, Apple puede compartir con los desarrolladores estadísticas agregadas de fallos y de uso que no te identifican. Nunca incluyen tus fotos. Está en Ajustes › Privacidad y seguridad › Análisis y mejoras."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Si aceptas participar, Apple puede compartir con los desarrolladores estadísticas agregadas de fallos y de uso que no te identifican. Nunca incluyen tus fotos. Está en Configuración › Privacidad y seguridad › Análisis y mejoras."
+          }
+        }
+      }
     },
     "Image Size and Layout" : {
       "comment" : "Locked metadata item: image size, bit depth, compression and data layout. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tamaño y estructura de la imagen"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tamaño y estructura de la imagen"
+          }
+        }
+      }
     },
     "In Each Photo" : {
       "comment" : "Section header above the switches for optional details saved in each photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En cada foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En cada foto"
+          }
+        }
+      }
     },
     "In Night Mode, shows the live picture in red too. Only the screen changes; photos keep their colors." : {
       "comment" : "Explains the Red Viewfinder switch, which is always shown and takes effect in night mode. Night Mode is the name of nope.'s switch; use its translation. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En el modo nocturno, muestra también en rojo la imagen del visor. Solo cambia la pantalla; las fotos conservan sus colores."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En el modo nocturno, muestra también en rojo la imagen del visor. Solo cambia la pantalla; las fotos conservan sus colores."
+          }
+        }
+      }
     },
     "iOS Connections" : {
       "comment" : "Honesty heading: iOS itself goes online. iOS is a product name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Conexiones de iOS"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Conexiones de iOS"
+          }
+        }
+      }
     },
     "iOS itself, for example iCloud Photos, makes its own connections." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. iOS and iCloud Photos are Apple's names. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iOS en sí, por ejemplo Fotos en iCloud, establece sus propias conexiones."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "iOS en sí, por ejemplo Fotos en iCloud, establece sus propias conexiones."
+          }
+        }
+      }
     },
     "iOS may detect faces in the viewfinder to decide where to focus. Focus on Faces in nope.'s settings decides only whether nope.'s autofocus and auto exposure follow them. nope. doesn't read or save which faces it found." : {
       "comment" : "Honesty statement under Faces and Autofocus. Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Focus on Faces is the name of nope.'s own switch; use its translation. Must not say that the switch turns face detection off. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Es posible que iOS detecte caras en el visor para decidir dónde enfocar. «Enfocar caras», en los ajustes de nope., solo decide si el enfoque y la exposición automáticos de nope. las siguen. nope. no lee ni guarda qué caras encontró."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Es posible que iOS detecte caras en el visor para decidir dónde enfocar. «Enfocar caras», en los ajustes de nope., solo decide si el enfoque y la exposición automáticos de nope. las siguen. nope. no lee ni guarda qué caras encontró."
+          }
+        }
+      }
     },
     "iOS Version" : {
       "comment" : "Metadata item: the operating system version. iOS is a product name; keep it unchanged. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Versión de iOS"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Versión de iOS"
+          }
+        }
+      }
     },
     "JPEG with some device processing" : {
       "comment" : "Spoken format name for the no-RAW fallback. JPEG is a file format name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "JPEG con cierto procesamiento del dispositivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "JPEG con cierto procesamiento del dispositivo"
+          }
+        }
+      }
     },
     "Latitude, longitude and altitude, while the camera is open. Off: nothing is lost." : {
       "comment" : "What the Location item writes into each photo, and what turning it off costs. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Latitud, longitud y altitud, mientras la cámara está abierta. Desactivado: no se pierde nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Latitud, longitud y altitud, mientras la cámara está abierta. Desactivado: no se pierde nada."
+          }
+        }
+      }
     },
     "Lens Correction Instructions" : {
       "comment" : "Metadata item: instructions editors can use to correct lens distortion. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Instrucciones de corrección del objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Instrucciones de corrección del lente"
+          }
+        }
+      }
     },
     "Lens corrections: not stored" : {
       "comment" : "In the photo details: the RAW file holds no lens correction instructions.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Correcciones del objetivo: no guardadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Correcciones del lente: no guardadas"
+          }
+        }
+      }
     },
     "Lens corrections: stored, not applied" : {
       "comment" : "In the photo details: the RAW file holds lens correction instructions that editors can use, but nope. didn't apply them to the pixels.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Correcciones del objetivo: guardadas, no aplicadas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Correcciones del lente: guardadas, no aplicadas"
+          }
+        }
+      }
     },
     "Lens Make and Model" : {
       "comment" : "Metadata item: which lens took the photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Marca y modelo del objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Marca y modelo del lente"
+          }
+        }
+      }
     },
     "Lenses Without RAW" : {
       "comment" : "Honesty heading: on a lens that can't save RAW, the phone processes the photo. RAW is a file format name. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Objetivos sin RAW"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lentes sin RAW"
+          }
+        }
+      }
     },
     "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo also shows that it was taken with nope. and which version. Off by default." : {
       "comment" : "Explains the signing switch (off by default). Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permite a cualquiera comprobar que la foto no ha cambiado desde que nope. la guardó. Una foto firmada también muestra que se tomó con nope. y con qué versión. Desactivado de forma predeterminada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permite a cualquiera comprobar que la foto no ha cambiado desde que nope. la guardó. Una foto firmada también muestra que se tomó con nope. y con qué versión. Desactivado de forma predeterminada."
+          }
+        }
+      }
     },
     "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo shows that it was taken with nope., and which version." : {
       "comment" : "Explains the Sign Each Photo switch. No default note. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permite a cualquiera comprobar que la foto no ha cambiado desde que nope. la guardó. Una foto firmada muestra que se tomó con nope., y con qué versión."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Permite a cualquiera comprobar que la foto no ha cambiado desde que nope. la guardó. Una foto firmada muestra que se tomó con nope., y con qué versión."
+          }
+        }
+      }
     },
     "Live aids are measured on the preview, a few times a second, only while they show. Nothing is saved." : {
       "comment" : "Note under the focus peaking, histogram and live readout switches. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las ayudas en tiempo real se miden en la vista previa, unas pocas veces por segundo y solo mientras se muestran. No se guarda nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las ayudas en tiempo real se miden en la vista previa, unas pocas veces por segundo y solo mientras se muestran. No se guarda nada."
+          }
+        }
+      }
     },
     "Location" : {
       "comment" : "Metadata item: where the photo was taken. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación"
+          }
+        }
+      }
     },
     "Location access is off for nope., so photos can't include a location. To add one, allow location access in Settings." : {
       "comment" : "Shown under the Location switch when the person declined location access. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la ubicación está desactivado para nope., así que las fotos no pueden incluir una ubicación. Para añadirla, permite el acceso a la ubicación en Ajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la ubicación está desactivado para nope., así que las fotos no pueden incluir una ubicación. Para agregarla, permite el acceso a la ubicación en Configuración."
+          }
+        }
+      }
     },
     "Location access isn't allowed on this device, so photos can't include a location." : {
       "comment" : "Shown under the Location switch when a restriction, such as Screen Time, doesn't allow location access. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la ubicación no está permitido en este dispositivo, así que las fotos no pueden incluir una ubicación."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El acceso a la ubicación no está permitido en este dispositivo, así que las fotos no pueden incluir una ubicación."
+          }
+        }
+      }
     },
     "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere." : {
       "comment" : "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación está desactivada salvo que la actives en Elegir datos, en los ajustes de nope. Entonces nope. usa tu ubicación solo mientras la cámara está abierta, y cada foto recibe su latitud, longitud y altitud. No se escriben el rumbo, la velocidad ni la hora GPS, y la ubicación nunca se envía a ningún sitio."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación está desactivada salvo que la actives en Elegir datos, en los ajustes de nope. Entonces nope. usa tu ubicación solo mientras la cámara está abierta, y cada foto recibe su latitud, longitud y altitud. No se escriben el rumbo, la velocidad ni la hora GPS, y la ubicación nunca se envía a ningún sitio."
+          }
+        }
+      }
     },
     "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere." : {
       "comment" : "Issue #43; docs/PRIVACY.md, \"Location\". Honesty statement under Location Only If You Turn It On. Details in Each Photo is the name of nope.'s own settings page; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación está desactivada salvo que la actives en Datos en cada foto, en los ajustes de nope. Entonces nope. usa tu ubicación solo mientras la cámara está abierta, y cada foto recibe su latitud, longitud y altitud. No se escriben el rumbo, la velocidad ni la hora GPS, y la ubicación nunca se envía a ningún sitio."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación está desactivada salvo que la actives en Datos en cada foto, en los ajustes de nope. Entonces nope. usa tu ubicación solo mientras la cámara está abierta, y cada foto recibe su latitud, longitud y altitud. No se escriben el rumbo, la velocidad ni la hora GPS, y la ubicación nunca se envía a ningún sitio."
+          }
+        }
+      }
     },
     "Location is on, but location access is off, so photos are saved without a location." : {
       "comment" : "Explanation of the Location On chip when the person turned Location on but location access is off in the system settings. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación está activada, pero el acceso a la ubicación está desactivado, así que las fotos se guardan sin ubicación."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación está activada, pero el acceso a la ubicación está desactivado, así que las fotos se guardan sin ubicación."
+          }
+        }
+      }
     },
     "Location On" : {
       "comment" : "Warning chip on the camera: new photos include where they were taken.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación activada"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación activada"
+          }
+        }
+      }
     },
     "Location Only If You Turn It On" : {
       "comment" : "Honesty heading: photos include a location only when the person turns Location on.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación solo si la activas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación solo si la activas"
+          }
+        }
+      }
     },
     "Location stays off, because location access isn't allowed for nope. You can allow it in Settings." : {
       "comment" : "Shown after applying a settings preset that includes Location when location access is off. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación sigue desactivada porque el acceso a la ubicación no está permitido para nope. Puedes permitirlo en Ajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ubicación sigue desactivada porque el acceso a la ubicación no está permitido para nope. Puedes permitirlo en Configuración."
+          }
+        }
+      }
     },
     "Locked" : {
       "comment" : "VoiceOver: this detail is always saved and can't be turned off. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bloqueado"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bloqueado"
+          }
+        }
+      }
     },
     "Maker Notes" : {
       "comment" : "Metadata item: the camera maker's private notes in the file. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Notas del fabricante"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Notas del fabricante"
+          }
+        }
+      }
     },
     "Manifest SHA-256: %@" : {
       "comment" : "In the photo details: the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "SHA-256 del manifiesto: %@"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "SHA-256 del manifiesto: %@"
+          }
+        }
+      }
     },
     "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Choose Details in Settings." : {
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Choose Details is the name of nope.'s own settings screen; use its translation. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos nuevas incluyen dónde se tomaron: latitud, longitud y altitud. Puedes desactivar Ubicación en Ajustes, en Elegir datos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos nuevas incluyen dónde se tomaron: latitud, longitud y altitud. Puedes desactivar Ubicación en Configuración, en Elegir datos."
+          }
+        }
+      }
     },
     "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings." : {
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos nuevas incluyen dónde se tomaron: latitud, longitud y altitud. Puedes desactivar Ubicación en Ajustes, en Datos en cada foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos nuevas incluyen dónde se tomaron: latitud, longitud y altitud. Puedes desactivar Ubicación en Configuración, en Datos en cada foto."
+          }
+        }
+      }
     },
     "No contrast curve: closest to the sensor, so it looks flat and low in contrast." : {
       "comment" : "Explains the Flat look. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin curva de contraste: lo más cercano al sensor, por eso se ve plano y con poco contraste."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin curva de contraste: lo más cercano al sensor, por eso se ve plano y con poco contraste."
+          }
+        }
+      }
     },
     "No Data Collected" : {
       "comment" : "Honesty heading: the app collects no data. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se recopilan datos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se recopilan datos"
+          }
+        }
+      }
     },
     "No Network" : {
       "comment" : "Honesty heading: the app never goes online. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin red"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin red"
+          }
+        }
+      }
     },
     "No RAW" : {
       "comment" : "Under a lens button: this lens can't save RAW. RAW is a file format name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin RAW"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin RAW"
+          }
+        }
+      }
     },
     "nope. asks the camera to put speed before quality, and turns off what apps can: Apple ProRAW, zero shutter lag, responsive capture, deferred processing, constant color, content-aware distortion correction and digital zoom." : {
       "comment" : "Processing note of a lens without RAW: the camera features the app turns off. Apple ProRAW is Apple's name. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. pide a la cámara que priorice la velocidad sobre la calidad y desactiva lo que las apps pueden desactivar: Apple ProRAW, retardo cero del obturador, captura con respuesta rápida, procesamiento diferido, color constante, corrección de distorsión según el contenido y zoom digital."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. pide a la cámara que priorice la velocidad sobre la calidad y desactiva lo que las apps pueden desactivar: Apple ProRAW, retardo cero del obturador, captura con respuesta rápida, procesamiento diferido, color constante, corrección de distorsión según el contenido y zoom digital."
+          }
+        }
+      }
     },
     "nope. contains no analytics, crash-reporting or advertising code, and collects no data." : {
       "comment" : "Claims 3 and 5 in docs/research/privacy-claims.md (Data Not Collected; privacy manifest). Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no contiene código de analítica, de informes de fallos ni de publicidad, y no recopila datos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no contiene código de analítica, de informes de fallos ni de publicidad, y no recopila datos."
+          }
+        }
+      }
     },
     "nope. contains no networking code and makes no network connections." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no contiene código de red y no establece ninguna conexión de red."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no contiene código de red y no establece ninguna conexión de red."
+          }
+        }
+      }
     },
     "nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings." : {
       "comment" : "Accessibility page, Night Mode entry: how to dim the screen. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no cambia el brillo de la pantalla. Atenúalo en el centro de control o con «Reducir punto blanco» en los ajustes de Accesibilidad."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no cambia el brillo de la pantalla. Atenúalo en el centro de control o con «Reducir el punto blanco» en la configuración de Accesibilidad."
+          }
+        }
+      }
     },
     "nope. never connects to the internet and keeps nothing about you." : {
       "comment" : "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. nunca se conecta a internet y no guarda nada sobre ti."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. nunca se conecta a internet y no guarda nada sobre ti."
+          }
+        }
+      }
     },
     "nope. never writes this." : {
       "comment" : "Compare view, for a metadata item only the phone-processed version holds and that no nope. setting can turn on: nope.'s allowlist never writes it. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. nunca escribe esto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. nunca escribe esto."
+          }
+        }
+      }
     },
     "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection." : {
       "comment" : "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. en el Apple Watch solo envía tus órdenes, como el obturador y el retardo, a nope. en tu iPhone, y solo recibe un estado breve, como «Guardada y firmada». Ninguna foto ni ningún dato de las fotos llega al reloj. watchOS e iOS transmiten estos mensajes por su propia conexión entre tus dispositivos enlazados; nope. no abre ninguna conexión de red."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. en el Apple Watch solo envía tus órdenes, como el obturador y el retardo, a nope. en tu iPhone, y solo recibe un estado breve, como «Guardada y firmada». Ninguna foto ni ningún dato de las fotos llega al reloj. watchOS e iOS transmiten estos mensajes por su propia conexión entre tus dispositivos enlazados; nope. no abre ninguna conexión de red."
+          }
+        }
+      }
     },
     "nope. saves the camera's file without changing its pixels. On a lens with RAW, nope. develops its own HEIF and JPEG copies from the RAW, with one overall tone curve (Standard) or none (Flat), and no noise reduction, sharpening or local tone mapping." : {
       "comment" : "Processing note of a lens without RAW: what the app itself does. RAW, HEIF and JPEG are file format names; Standard and Flat are the names of the two looks in Settings. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. guarda el archivo de la cámara sin cambiar sus píxeles. En un objetivo con RAW, nope. revela sus propias copias HEIF y JPEG a partir del RAW, con una sola curva de tonos para toda la imagen (Estándar) o ninguna (Plano), y sin reducción de ruido, aumento de nitidez ni mapeo de tonos local."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. guarda el archivo de la cámara sin cambiar sus píxeles. En un lente con RAW, nope. revela sus propias copias HEIF y JPEG a partir del RAW, con una sola curva de tonos para toda la imagen (Estándar) o ninguna (Plano), y sin reducción de ruido, aumento de nitidez ni mapeo de tonos local."
+          }
+        }
+      }
     },
     "nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software." : {
       "comment" : "Explains the night sky (astro) helper. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the frames are never combined. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. toma fotogramas RAW individuales uno tras otro y guarda cada uno como su propia foto. No los apila, combina ni procesa: apílalos en otro software."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. toma fotogramas RAW individuales uno tras otro y guarda cada uno como su propia foto. No los apila, combina ni procesa: apílalos en otro software."
+          }
+        }
+      }
     },
     "nope.'s Content Credentials signature." : {
       "comment" : "Compare view: this item of nope.'s file is its Content Credentials signature. Keep \"nope.\" unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La firma de Content Credentials de nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La firma de Content Credentials de nope."
+          }
+        }
+      }
     },
     "Not in the files: exposure settings are off in Settings." : {
       "comment" : "Shown in the photo details when the files hold no exposure settings, because the person turned that metadata item off.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No está en los archivos: los ajustes de exposición están desactivados en Ajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No está en los archivos: los ajustes de exposición están desactivados en Configuración."
+          }
+        }
+      }
     },
     "Not measured: nope. can't read how this camera lays out its RAW samples." : {
       "comment" : "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample format isn't one nope. reads. Keep nope. unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: nope. no puede leer cómo organiza esta cámara sus muestras RAW."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: nope. no puede leer cómo organiza esta cámara sus muestras RAW."
+          }
+        }
+      }
     },
     "Not measured: the camera gave no RAW samples to count." : {
       "comment" : "In the photo details, why the RAW clipping isn't shown: the camera returned no RAW sensor samples with the photo.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: la cámara no dio muestras RAW que contar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: la cámara no dio muestras RAW que contar."
+          }
+        }
+      }
     },
     "Not measured: the camera's RAW file doesn't give black and white levels that nope. can apply." : {
       "comment" : "In the photo details, why the RAW clipping isn't shown: the RAW file's black and white levels are missing or in a form nope. doesn't apply. Keep nope. unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: el archivo RAW de la cámara no da niveles de negro y blanco que nope. pueda aplicar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: el archivo RAW de la cámara no da niveles de negro y blanco que nope. pueda aplicar."
+          }
+        }
+      }
     },
     "Not measured: the RAW samples and the RAW file differ in size." : {
       "comment" : "In the photo details, why the RAW clipping isn't shown: the camera's RAW samples and its RAW file don't have the same size, so they can't be compared.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: las muestras RAW y el archivo RAW tienen tamaños distintos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: las muestras RAW y el archivo RAW tienen tamaños distintos."
+          }
+        }
+      }
     },
     "Not measured: the RAW samples don't fit the RAW file's white level." : {
       "comment" : "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample values are larger than the RAW file's white level allows, so they can't be compared.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: las muestras RAW no encajan con el nivel de blanco del archivo RAW."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No medido: las muestras RAW no encajan con el nivel de blanco del archivo RAW."
+          }
+        }
+      }
     },
     "Not on this lens" : {
       "comment" : "Caption under RAW (DNG) in the format list of a lens that can't save RAW: this lens doesn't offer RAW. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No en este objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No en este lente"
+          }
+        }
+      }
     },
     "Not saved: it is discarded when you close this view." : {
       "comment" : "Compare view: the phone-processed photo is never saved and is discarded on Done. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guarda: se descarta al cerrar esta vista."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guarda: se descarta al cerrar esta vista."
+          }
+        }
+      }
     },
     "Not saved: nope. couldn't confirm that the photo holds only the details you chose." : {
       "comment" : "Shown when a finished photo file contained a metadata detail that is not on the privacy list, or couldn't be checked, so the app saved nothing. Honesty and privacy wording. Keep the name nope. unchanged, lowercase with its period.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guardó: nope. no pudo confirmar que la foto contiene solo los datos que elegiste."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "No se guardó: nope. no pudo confirmar que la foto contiene solo los datos que elegiste."
+          }
+        }
+      }
     },
     "Not Signed" : {
       "comment" : "Warning chip on the camera: photos are saved without a Content Credentials signature. Honesty wording: never imply photos are signed. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin firmar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin firmar"
+          }
+        }
+      }
     },
     "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Flat look: no contrast curve, and no noise reduction, sharpening or local tone mapping." : {
       "comment" : "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Flat: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Flat is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no hace nada más al archivo de este objetivo. Las copias HEIF y JPEG que nope. revela a partir de un RAW reciben el aspecto Plano: sin curva de contraste, y sin reducción de ruido, aumento de nitidez ni mapeo de tonos local."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no hace nada más al archivo de este lente. Las copias HEIF y JPEG que nope. revela a partir de un RAW reciben el aspecto Plano: sin curva de contraste, y sin reducción de ruido, aumento de nitidez ni mapeo de tonos local."
+          }
+        }
+      }
     },
     "Nothing more to this lens's file. HEIF and JPEG copies that nope. develops from a RAW get the Standard look: one overall tone curve, and no noise reduction, sharpening or local tone mapping." : {
       "comment" : "Processing note of a lens that can't save RAW, while the HEIF and JPEG look is Standard: nope. adds no processing to this lens's file, and what it does to copies developed from a RAW. HEIF, JPEG and RAW are file format names; Standard is the name of the look in Settings, use its translation. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no hace nada más al archivo de este objetivo. Las copias HEIF y JPEG que nope. revela a partir de un RAW reciben el aspecto Estándar: una sola curva de tonos para toda la imagen, y sin reducción de ruido, aumento de nitidez ni mapeo de tonos local."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "nope. no hace nada más al archivo de este lente. Las copias HEIF y JPEG que nope. revela a partir de un RAW reciben el aspecto Estándar: una sola curva de tonos para toda la imagen, y sin reducción de ruido, aumento de nitidez ni mapeo de tonos local."
+          }
+        }
+      }
     },
     "Off in Settings" : {
       "comment" : "In the photo details, why a metadata item isn't in the files: the person's switch for it is off.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado en Ajustes"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado en Configuración"
+          }
+        }
+      }
     },
     "Off: apps can't show what made the file." : {
       "comment" : "What turning off the app name costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: las apps no pueden mostrar qué creó el archivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: las apps no pueden mostrar qué creó el archivo."
+          }
+        }
+      }
     },
     "Off: apps can't show which device took it." : {
       "comment" : "What turning off the camera model costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: las apps no pueden mostrar qué dispositivo la tomó."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: las apps no pueden mostrar qué dispositivo la tomó."
+          }
+        }
+      }
     },
     "Off: apps can't show which lens took it." : {
       "comment" : "What turning off the lens model costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: las apps no pueden mostrar qué objetivo la tomó."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: las apps no pueden mostrar qué lente la tomó."
+          }
+        }
+      }
     },
     "Off: editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way." : {
       "comment" : "What turning off lens correction instructions costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: los editores no pueden corregir automáticamente la distorsión y el viñeteado de este objetivo. Los píxeles nunca se corrigen, en ningún caso."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: los editores no pueden corregir automáticamente la distorsión y el viñeteado de este lente. Los píxeles nunca se corrigen, en ningún caso."
+          }
+        }
+      }
     },
     "Off: nothing is lost. Location is only added if you turn it on." : {
       "comment" : "What turning off location costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: no se pierde nada. La ubicación solo se añade si la activas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: no se pierde nada. La ubicación solo se agrega si la activas."
+          }
+        }
+      }
     },
     "Off: nothing is lost. Only written if you enter them." : {
       "comment" : "What turning off the name and copyright costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: no se pierde nada. Solo se escriben si los indicas."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: no se pierde nada. Solo se escriben si los indicas."
+          }
+        }
+      }
     },
     "Off: nothing visible changes." : {
       "comment" : "What turning off a metadata item costs: nothing the person can see. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: no cambia nada visible."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: no cambia nada visible."
+          }
+        }
+      }
     },
     "Off: Photos sorts it by the date it was saved instead." : {
       "comment" : "What turning off the date costs. Photos is the system photo library app. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: Fotos la ordena por la fecha en que se guardó."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: Fotos la ordena por la fecha en que se guardó."
+          }
+        }
+      }
     },
     "Off: some RAW editors can't choose their color profile for this camera and use the file's own color data instead. The DNG standard requires this item, so nope. writes a generic value instead." : {
       "comment" : "What turning off the exact model costs. RAW and DNG are file format names. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: algunos editores RAW no pueden elegir su perfil de color para esta cámara y usan los datos de color del propio archivo. El estándar DNG exige este dato, así que nope. escribe un valor genérico en su lugar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: algunos editores RAW no pueden elegir su perfil de color para esta cámara y usan los datos de color del propio archivo. El estándar DNG exige este dato, así que nope. escribe un valor genérico en su lugar."
+          }
+        }
+      }
     },
     "Off: the photo's local time can't be converted to other time zones." : {
       "comment" : "What turning off the time zone costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: la hora local de la foto no se puede convertir a otras zonas horarias."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Desactivado: la hora local de la foto no se puede convertir a otras zonas horarias."
+          }
+        }
+      }
     },
     "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so." : {
-      "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."
+      "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English.",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En un objetivo que no puede guardar RAW, el teléfono procesa la foto antes de que nope. la reciba, y nope. no puede desactivar ese procesamiento. La cámara marca estos objetivos como «Procesada», salvo que desactives Mostrar marca «Procesada» en los ajustes de nope., y los detalles de la foto siempre lo indican."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En un lente que no puede guardar RAW, el teléfono procesa la foto antes de que nope. la reciba, y nope. no puede desactivar ese procesamiento. La cámara marca estos lentes como «Procesada», salvo que desactives Mostrar marca «Procesada» en los ajustes de nope., y los detalles de la foto siempre lo indican."
+          }
+        }
+      }
     },
     "On a lens that can't save RAW, the phone processes the photo before nope. receives it. The camera marks these lenses Processed, unless you turn off Show Processed Marker." : {
       "comment" : "Honesty statement under Lenses Without RAW. Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker's word and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En un objetivo que no puede guardar RAW, el teléfono procesa la foto antes de que nope. la reciba. La cámara marca estos objetivos como «Procesada», salvo que desactives Mostrar marca «Procesada»."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En un lente que no puede guardar RAW, el teléfono procesa la foto antes de que nope. la reciba. La cámara marca estos lentes como «Procesada», salvo que desactives Mostrar marca «Procesada»."
+          }
+        }
+      }
     },
     "On a lens that can't save RAW, the phone's camera processes the photo. nope. marks the camera \"Processed\" before you take it, unless you turn off Processed Marker in Settings, and the photo's details always say so. Tap the marker to see what processing that lens's photos get." : {
       "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker's first word and Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En un objetivo que no puede guardar RAW, la cámara del teléfono procesa la foto. nope. muestra «Procesada» en la cámara antes de que la tomes, salvo que desactives Marca «Procesada» en Ajustes, y los detalles de la foto siempre lo indican. Toca la marca para ver qué procesamiento reciben las fotos de ese objetivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "En un lente que no puede guardar RAW, la cámara del teléfono procesa la foto. nope. muestra «Procesada» en la cámara antes de que la tomes, salvo que desactives Marca «Procesada» en Configuración, y los detalles de la foto siempre lo indican. Toca la marca para ver qué procesamiento reciben las fotos de ese lente."
+          }
+        }
+      }
     },
     "On, but there was nothing to write" : {
       "comment" : "In the photo details, why a metadata item isn't in the files although its switch is on: the camera gave no value for it, such as no location or no lens corrections.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activado, pero no había nada que escribir"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activado, pero no había nada que escribir"
+          }
+        }
+      }
     },
     "On: each photo keeps only what it needs to open. Off: choose each item below." : {
       "comment" : "Explains the master switch. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activado: cada foto conserva solo lo que necesita para abrirse. Desactivado: elige cada elemento abajo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activado: cada foto conserva solo lo que necesita para abrirse. Desactivado: elige cada elemento abajo."
+          }
+        }
+      }
     },
     "One overall tone curve, so the photo looks normal." : {
       "comment" : "Explains the Standard look: a single global tone curve, nothing local. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una sola curva de tonos para toda la imagen, así la foto se ve normal."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Una sola curva de tonos para toda la imagen, así la foto se ve normal."
+          }
+        }
+      }
     },
     "Only for photos taken since nope. opened: nope. can't read your photo library, and these details aren't stored." : {
       "comment" : "Footer in the photo details. nope. has add-only access to the photo library, so it can show details only for photos it saved in this session, from memory. Keep nope. unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo para las fotos tomadas desde que se abrió nope.: nope. no puede leer tu fototeca y estos datos no se guardan."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo para las fotos tomadas desde que se abrió nope.: nope. no puede leer tu fototeca y estos datos no se guardan."
+          }
+        }
+      }
     },
     "Only in nope.'s File" : {
       "comment" : "Heading in the compare view's details, also spoken for each item: metadata only nope.'s saved file holds, such as its signature. Keep \"nope.\" unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo en el archivo de nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo en el archivo de nope."
+          }
+        }
+      }
     },
     "Only in Phone Version" : {
       "comment" : "Heading in the compare view's details, also spoken for each item: metadata only the phone-processed version holds.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo en la versión del teléfono"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo en la versión del teléfono"
+          }
+        }
+      }
     },
     "Orientation" : {
       "comment" : "Locked metadata item: which way up the photo is. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Orientación"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Orientación"
+          }
+        }
+      }
     },
     "Other Details" : {
       "comment" : "Section header on the Details in Each Photo page, above the eleven optional details other than Location. Replaces the In Each Photo header. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Otros datos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Otros datos"
+          }
+        }
+      }
     },
     "Photo Format" : {
       "comment" : "VoiceOver and Voice Control name of the chip at the top of the camera that says what the next photo will be. Tapping it explains the format and lists the formats. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Formato de foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Formato de foto"
+          }
+        }
+      }
     },
     "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device." : {
       "comment" : "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos no se firman a menos que actives «Firmar cada foto» en los ajustes de nope. Una foto firmada permite a cualquiera comprobar que no ha cambiado desde que nope. la guardó, y muestra que se tomó con nope. y con qué versión. No te identifica a ti ni a tu dispositivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos no se firman a menos que actives «Firmar cada foto» en los ajustes de nope. Una foto firmada permite a cualquiera comprobar que no ha cambiado desde que nope. la guardó, y muestra que se tomó con nope. y con qué versión. No te identifica a ti ni a tu dispositivo."
+          }
+        }
+      }
     },
     "Photos may privately compare landmark regions with Apple's servers (Enhanced Visual Search). You can turn it off in Settings › Apps › Photos." : {
       "comment" : "Claim 10 in docs/research/privacy-claims.md. Keep \"may\": it is not verified whether it is on by default. Use the names iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos puede comparar de forma privada regiones con lugares de interés con los servidores de Apple (Búsqueda visual mejorada). Puedes desactivarlo en Ajustes › Apps › Fotos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos puede comparar de forma privada regiones con lugares de interés con los servidores de Apple (Búsqueda visual mejorada). Puedes desactivarlo en Configuración › Apps › Fotos."
+          }
+        }
+      }
     },
     "Photos uses on-device analysis to recognize people and pets and to classify scenes. Names you give people sync through iCloud." : {
       "comment" : "Claim 13 in docs/research/privacy-claims.md, Apple's own wording. Photos and iCloud are Apple's names. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos usa el análisis en el dispositivo para reconocer personas y mascotas y clasificar escenas. Los nombres que pones a las personas se sincronizan a través de iCloud."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos usa el análisis en el dispositivo para reconocer personas y mascotas y clasificar escenas. Los nombres que pones a las personas se sincronizan a través de iCloud."
+          }
+        }
+      }
     },
     "Photos with as little processing as this phone allows." : {
       "comment" : "First-run statement 1 of 3. Must not claim more than the English: as little processing as the phone allows, never zero. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos con el menor procesamiento que permite este teléfono."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fotos con el menor procesamiento que permite este teléfono."
+          }
+        }
+      }
     },
     "Presets are kept on this device only." : {
       "comment" : "Privacy note under the settings presets. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los preajustes se guardan solo en este dispositivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los preajustes se guardan solo en este dispositivo."
+          }
+        }
+      }
     },
     "Processed" : {
       "comment" : "Format status on the camera, with an amber triangle, before a photo on a lens that can't save RAW: the phone processes that lens's photos. The same word starts \"Processed: no RAW on this lens\"; use the same translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada"
+          }
+        }
+      }
     },
     "Processed by the phone's camera: this lens can't save RAW" : {
       "comment" : "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada por la cámara del teléfono: este objetivo no puede guardar RAW"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada por la cámara del teléfono: este lente no puede guardar RAW"
+          }
+        }
+      }
     },
     "Processed marker: spoken value" : {
       "comment" : "VoiceOver value of the Processed marker on the camera, read before the format, for example \"Processed: no RAW on this lens, HEIF\". RAW is a file format name. Not the title-case chip text \"Processed: No RAW on This Lens\", which has its own key. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
@@ -584,264 +2540,1172 @@
             "state" : "translated",
             "value" : "Processed: no RAW on this lens"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada: sin RAW en este objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada: sin RAW en este lente"
+          }
         }
       }
     },
     "Processed Photos Are Labeled" : {
       "comment" : "Honesty heading: photos from a lens that can't save RAW are labeled as processed. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos procesadas se etiquetan"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las fotos procesadas se etiquetan"
+          }
+        }
+      }
     },
     "Processed: No RAW on This Lens" : {
       "comment" : "Marker on the camera before the photo is taken: the selected lens can't save RAW, so its photos are processed by the phone. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada: sin RAW en este objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Procesada: sin RAW en este lente"
+          }
+        }
+      }
     },
     "RAW · Single frame" : {
       "comment" : "Badge: the next photo is one unprocessed RAW frame from the sensor. RAW is a file format name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "RAW · Un solo fotograma"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "RAW · Un solo fotograma"
+          }
+        }
+      }
     },
     "Read Back from the Files" : {
       "comment" : "Heading in the photo details: every metadata tag, block and property nope. read back from each saved file before saving it. Keep nope. unchanged if it appears.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Releído de los archivos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Releído de los archivos"
+          }
+        }
+      }
     },
     "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness." : {
       "comment" : "Explains the Night Mode switch. Must not claim more than the English: nope. doesn't dim the screen. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rojo sobre negro, para que tus ojos sigan acostumbrados a la oscuridad. nope. no cambia el brillo de la pantalla."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Rojo sobre negro, para que tus ojos sigan acostumbrados a la oscuridad. nope. no cambia el brillo de la pantalla."
+          }
+        }
+      }
     },
     "Remove All Optional Details" : {
       "comment" : "Master switch: when on, photos keep only the details they need to open. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quitar todos los datos opcionales"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quitar todos los datos opcionales"
+          }
+        }
+      }
     },
     "Required by the DNG standard. Editors refuse the file without it." : {
       "comment" : "Why the DNG version is always saved. DNG is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo exige el estándar DNG. Sin esto, los editores rechazan el archivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo exige el estándar DNG. Sin esto, los editores rechazan el archivo."
+          }
+        }
+      }
     },
     "Same in Both" : {
       "comment" : "Heading in the compare view's details, also spoken for each item: metadata both files hold with the same value.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Igual en ambos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Igual en ambos"
+          }
+        }
+      }
     },
     "Saved and signed." : {
       "comment" : "Shown after a photo was added to the photo library with a Content Credentials signature in every file. Honesty wording: says only that it was saved and signed.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada y firmada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada y firmada."
+          }
+        }
+      }
     },
     "Saved. Not signed: signing is off in Settings." : {
       "comment" : "Shown after a photo was saved without a Content Credentials signature because the person turned signing off in the app's settings. Honesty wording: never imply the photo is signed.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: la firma está desactivada en Ajustes."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: la firma está desactivada en Configuración."
+          }
+        }
+      }
     },
     "Saved. Not signed: the signature couldn't be created." : {
       "comment" : "Shown after a photo was saved without a Content Credentials signature because creating the signature failed. Honesty wording: never imply the photo is signed.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: no se pudo crear la firma."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: no se pudo crear la firma."
+          }
+        }
+      }
     },
     "Saved. Not signed: the signed file didn't pass the check." : {
       "comment" : "Shown after a photo was saved without a Content Credentials signature because the signed file failed the app's final check (for example, the system couldn't open it), so the unsigned file, which passed, was saved instead. Honesty wording: never imply the photo is signed.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: el archivo firmado no superó la comprobación."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: el archivo firmado no superó la comprobación."
+          }
+        }
+      }
     },
     "Saved. Not signed: this version of the app can't sign photos." : {
       "comment" : "Shown after a photo was saved without a Content Credentials signature because this build of the app has no signer, for example a preview or a different interface built on NopeCore. Honesty wording: never imply the photo is signed.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: esta versión de la app no puede firmar fotos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guardada. Sin firmar: esta versión de la app no puede firmar fotos."
+          }
+        }
+      }
     },
     "Saves front camera photos mirrored, as the viewfinder shows them." : {
       "comment" : "Explains the Mirror Front Camera switch. No default note. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guarda las fotos de la cámara frontal reflejadas, tal como las muestra el visor."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Guarda las fotos de la cámara frontal reflejadas, tal como las muestra el visor."
+          }
+        }
+      }
     },
     "Share with App Developers" : {
       "comment" : "Honesty heading. Apple's setting name: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compartir con desarrolladores de apps"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compartir con desarrolladores de apps"
+          }
+        }
+      }
     },
     "Sharing from Photos" : {
       "comment" : "Honesty heading: what is sent when a photo is shared from the Photos app. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compartir desde Fotos"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Compartir desde Fotos"
+          }
+        }
+      }
     },
     "Shown here as iOS displays RAW files." : {
       "comment" : "Compare view, when only the RAW was saved: the RAW is displayed with the system's own RAW decoding, not developed by nope. RAW is a file format name; iOS is a product name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se muestra aquí tal como iOS muestra los archivos RAW."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se muestra aquí tal como iOS muestra los archivos RAW."
+          }
+        }
+      }
     },
     "Shown with the manual controls. It measures the processed live preview, not the RAW." : {
       "comment" : "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se muestra con los controles manuales. Mide la vista previa procesada en tiempo real, no el RAW."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Se muestra con los controles manuales. Mide la vista previa procesada en tiempo real, no el RAW."
+          }
+        }
+      }
     },
     "Shows \"Processed\" on the camera before you take a photo with a lens that can't save RAW. Tap it to see what processing that lens's photos get. On by default." : {
       "comment" : "Explains the Processed Marker switch. \"Processed\" is the start of the marker's text, \"Processed: No RAW on This Lens\"; use the same word as its translation. RAW is a file format name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Muestra «Procesada» en la cámara antes de tomar una foto con un objetivo que no puede guardar RAW. Toca la marca para ver qué procesamiento reciben las fotos de ese objetivo. Activado de forma predeterminada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Muestra «Procesada» en la cámara antes de tomar una foto con un lente que no puede guardar RAW. Toca la marca para ver qué procesamiento reciben las fotos de ese lente. Activado de forma predeterminada."
+          }
+        }
+      }
     },
     "Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent." : {
       "comment" : "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and nothing is sent. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS. No default note. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Si sales de nope., muestra el progreso de una serie en la pantalla de bloqueo y en la Dynamic Island. Solo recuentos; no se envía nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Si sales de nope., muestra el progreso de una serie en la pantalla bloqueada y en la Dynamic Island. Solo recuentos; no se envía nada."
+          }
+        }
+      }
     },
     "Shows Processed on the camera when a lens can't save RAW." : {
       "comment" : "Explains the Show Processed Marker switch. \"Processed\" is the marker's word; use the same translation. RAW is a file format name. No default note. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Muestra «Procesada» en la cámara cuando un objetivo no puede guardar RAW."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Muestra «Procesada» en la cámara cuando un lente no puede guardar RAW."
+          }
+        }
+      }
     },
     "Shutter speed, ISO, aperture and focal length. Off: you can't see later how the photo was taken." : {
       "comment" : "What the exposure settings are, and what turning them off costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Velocidad de obturación, ISO, apertura y distancia focal. Desactivado: no podrás ver después cómo se tomó la foto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Velocidad de obturación, ISO, apertura y longitud focal. Desactivado: no podrás ver después cómo se tomó la foto."
+          }
+        }
+      }
     },
     "Sign Each Photo" : {
       "comment" : "Switch that adds a Content Credentials signature to each photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firmar cada foto"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firmar cada foto"
+          }
+        }
+      }
     },
     "Signature" : {
       "comment" : "Heading in the photo details: whether the photo carries a Content Credentials signature.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firma"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firma"
+          }
+        }
+      }
     },
     "Signed Only If You Turn It On" : {
       "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firma solo si la activas"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firma solo si la activas"
+          }
+        }
+      }
     },
     "Signing is off unless you turn it on. A signed photo shows that it was taken with nope., and which version." : {
       "comment" : "Honesty statement under Signing Is Your Choice. Issue #80; docs/PRIVACY.md, \"Content Credentials\". Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La firma está desactivada a menos que la actives. Una foto firmada muestra que se tomó con nope., y con qué versión."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La firma está desactivada a menos que la actives. Una foto firmada muestra que se tomó con nope., y con qué versión."
+          }
+        }
+      }
     },
     "Signing Is Your Choice" : {
       "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firmar es tu decisión"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Firmar es tu decisión"
+          }
+        }
+      }
     },
     "Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed." : {
       "comment" : "First-run statement 2 of 3: Content Credentials signing is off by default and can be turned on in Settings. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La firma, desactivada hasta que la actives en Ajustes, permite a cualquiera comprobar si una foto ha cambiado."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La firma, desactivada hasta que la actives en Configuración, permite a cualquiera comprobar si una foto ha cambiado."
+          }
+        }
+      }
     },
     "single-frame RAW" : {
       "comment" : "Spoken format name in the viewfinder description. RAW is a file format name.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "RAW de un solo fotograma"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "RAW de un solo fotograma"
+          }
+        }
+      }
     },
     "Standard File Tags" : {
       "comment" : "Switch: files carry the fixed tags the photo file standard (Exif) asks for, such as version numbers and the color space.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etiquetas estándar del archivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Etiquetas estándar del archivo"
+          }
+        }
+      }
     },
     "Sub-Second Time" : {
       "comment" : "Metadata item: fractions of a second in the time taken. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fracciones de segundo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fracciones de segundo"
+          }
+        }
+      }
     },
     "Tells editors which pixels are red, green and blue. Without it, the RAW has no color." : {
       "comment" : "Why the color filter pattern is always saved. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Indica a los editores qué píxeles son rojos, verdes y azules. Sin esto, el RAW no tiene color."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Indica a los editores qué píxeles son rojos, verdes y azules. Sin esto, el RAW no tiene color."
+          }
+        }
+      }
     },
     "The Comparison Photo Is Never Saved" : {
       "comment" : "Honesty heading: the phone-processed photo of the comparison shot is never saved.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La foto de comparación nunca se guarda"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La foto de comparación nunca se guarda"
+          }
+        }
+      }
     },
     "The files don't record the exposure." : {
       "comment" : "Shown in the photo details when the saved files hold no exposure values although the exposure settings item is on, because the camera didn't supply them.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los archivos no registran la exposición."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los archivos no registran la exposición."
+          }
+        }
+      }
     },
     "The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it." : {
       "comment" : "Keep \"nope.\" unchanged. RAW, HEIF and JPEG are file format names. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El aspecto de HEIF y JPEG en Ajustes solo cambia las copias que nope. revela a partir del RAW. El RAW en sí nunca se modifica."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El aspecto de HEIF y JPEG en Configuración solo cambia las copias que nope. revela a partir del RAW. El RAW en sí nunca se modifica."
+          }
+        }
+      }
     },
     "The phone's camera makes this photo: it turns the sensor data into a finished image, choosing its colors and tone and any noise reduction and sharpening, and compresses it as %@. Apps can't turn these steps off." : {
       "comment" : "Processing note of a lens without RAW. The placeholder is a file format name, HEIF or JPEG. Must not claim more than the English: it says what the phone may apply, not that it applies each step. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara del teléfono crea esta foto: convierte los datos del sensor en una imagen terminada, decide sus colores y su tono y cualquier reducción de ruido y aumento de nitidez, y la comprime como %@. Las apps no pueden desactivar estos pasos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara del teléfono crea esta foto: convierte los datos del sensor en una imagen terminada, decide sus colores y su tono y cualquier reducción de ruido y aumento de nitidez, y la comprime como %@. Las apps no pueden desactivar estos pasos."
+          }
+        }
+      }
     },
     "The phone's camera processes this file before nope. receives it. nope. can't turn that processing off." : {
       "comment" : "Processing note of a lens that can't save RAW. Must not name any processing step: it says only that the phone processes the file and that nope. can't turn it off. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara del teléfono procesa este archivo antes de que nope. lo reciba. nope. no puede desactivar ese procesamiento."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "La cámara del teléfono procesa este archivo antes de que nope. lo reciba. nope. no puede desactivar ese procesamiento."
+          }
+        }
+      }
     },
     "The RAW Is Never Changed" : {
       "comment" : "Honesty heading: the HEIF and JPEG look setting doesn't alter the RAW. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El RAW nunca se modifica"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El RAW nunca se modifica"
+          }
+        }
+      }
     },
     "The RAW sensor data as the camera delivered it. nope. didn't develop it." : {
       "comment" : "In the photo details, the processing of the RAW (DNG) file: nope. didn't develop or change it. Must not claim more than the English: it doesn't say the phone did nothing. Keep nope. unchanged.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los datos RAW del sensor tal como los entregó la cámara. nope. no los reveló."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Los datos RAW del sensor tal como los entregó la cámara. nope. no los reveló."
+          }
+        }
+      }
     },
     "The Sensor's Noise Pattern" : {
       "comment" : "Honesty heading: the camera sensor's unique noise fingerprint. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El patrón de ruido del sensor"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "El patrón de ruido del sensor"
+          }
+        }
+      }
     },
     "This Build and the Source" : {
       "comment" : "Honesty heading: whether the installed app matches the public source code. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta compilación y el código fuente"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Esta compilación y el código fuente"
+          }
+        }
+      }
     },
     "This changes only the HEIF and JPEG copies. The RAW is never changed." : {
       "comment" : "Footer under the look picker. RAW, HEIF and JPEG are file format names. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo cambia las copias HEIF y JPEG. El RAW nunca se modifica."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Solo cambia las copias HEIF y JPEG. El RAW nunca se modifica."
+          }
+        }
+      }
     },
     "This device's cameras don't provide unprocessed RAW." : {
       "comment" : "Explains why the RAW format can't be chosen on this device. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las cámaras de este dispositivo no ofrecen RAW sin procesar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Las cámaras de este dispositivo no ofrecen RAW sin procesar."
+          }
+        }
+      }
     },
     "This lens can't save unprocessed RAW. Its photos have some device processing." : {
       "comment" : "Explains the no-RAW fallback. Must not claim more than the English: the photo IS processed by the device.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este objetivo no puede guardar RAW sin procesar. Sus fotos tienen cierto procesamiento del dispositivo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Este lente no puede guardar RAW sin procesar. Sus fotos tienen cierto procesamiento del dispositivo."
+          }
+        }
+      }
     },
     "Time Zone" : {
       "comment" : "Metadata item. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zona horaria"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zona horaria"
+          }
+        }
+      }
     },
     "Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. App Privacy Report and the Settings path are Apple's names: use the names iOS shows in this language. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activa el Informe de privacidad de las apps (Ajustes › Privacidad y seguridad). Muestra todos los dominios con los que una app contactó en los últimos 7 días, a partir del momento en que lo activas. nope. no debería mostrar ninguno."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Activa el Reporte de privacidad de apps (Configuración › Privacidad y seguridad). Muestra todos los dominios con los que una app contactó en los últimos 7 días, a partir del momento en que lo activas. nope. no debería mostrar ninguno."
+          }
+        }
+      }
     },
     "What each file holds, read on this device. Values are shown on this screen only: nothing is stored or copied." : {
       "comment" : "Introduction of the compare view's Details tab. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que contiene cada archivo, leído en este dispositivo. Los valores solo se muestran en esta pantalla: no se almacena ni se copia nada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que contiene cada archivo, leído en este dispositivo. Los valores solo se muestran en esta pantalla: no se almacena ni se copia nada."
+          }
+        }
+      }
     },
     "What iOS May Still Do" : {
       "comment" : "Honesty section header: things iOS does that the app can't change. iOS is a product name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que iOS aún puede hacer"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que iOS aún puede hacer"
+          }
+        }
+      }
     },
     "What No App Can Remove" : {
       "comment" : "Honesty section header: limits no camera app can get around. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que ninguna app puede eliminar"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que ninguna app puede eliminar"
+          }
+        }
+      }
     },
     "What nope. Does" : {
       "comment" : "Heading in the processing note of a lens that can't save RAW: what nope. itself does to the file. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que hace nope."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que hace nope."
+          }
+        }
+      }
     },
     "What nope. Never Does" : {
       "comment" : "Honesty section header. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que nope. nunca hace"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que nope. nunca hace"
+          }
+        }
+      }
     },
     "What the Phone Does on This Lens" : {
       "comment" : "Heading in the processing note of a lens that can't save RAW: what the phone's camera does to the file. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que hace el teléfono con este objetivo"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lo que hace el teléfono con este lente"
+          }
+        }
+      }
     },
     "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default." : {
       "comment" : "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Si sales de nope. durante una serie o mientras se guardan fotos, muestra el progreso en la pantalla de bloqueo y en la Dynamic Island. Solo recuentos, actualizados en este iPhone y nunca enviados a ningún sitio. Desactivado de forma predeterminada."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Si sales de nope. durante una serie o mientras se guardan fotos, muestra el progreso en la pantalla bloqueada y en la Dynamic Island. Solo recuentos, actualizados en este iPhone y nunca enviados a ningún sitio. Desactivado de forma predeterminada."
+          }
+        }
+      }
     },
     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent." : {
       "comment" : "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cuando compartes desde Fotos, la ubicación se incluye a menos que la desactives en Opciones. Otros datos, como la fecha y el modelo del dispositivo, pueden enviarse igualmente."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Cuando compartes desde Fotos, la ubicación se incluye a menos que la desactives en Opciones. Otros datos, como la fecha y el modelo del dispositivo, pueden enviarse igualmente."
+          }
+        }
+      }
     },
     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos." : {
       "comment" : "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Con Comparar activado, nope. toma una segunda foto con el procesamiento del teléfono, solo para mostrarla junto a la tuya. Esa foto nunca se guarda, se firma ni se comparte, y se descarta al cerrar la comparación. Solo tu foto de nope. va a Fotos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Con Comparar activado, nope. toma una segunda foto con el procesamiento del teléfono, solo para mostrarla junto a la tuya. Esa foto nunca se guarda, se firma ni se comparte, y se descarta al cerrar la comparación. Solo tu foto de nope. va a Fotos."
+          }
+        }
+      }
     },
     "With standard protection, Apple holds the keys to iCloud Photos. With Advanced Data Protection, only your devices do. Some photo metadata and Shared Albums stay under standard protection." : {
       "comment" : "Claim 11 in docs/research/privacy-claims.md. Advanced Data Protection and Shared Albums are Apple's names: use the names iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Con la protección estándar, Apple tiene las claves de Fotos en iCloud. Con la Protección de datos avanzada, solo las tienen tus dispositivos. Algunos metadatos de las fotos y los álbumes compartidos siguen con la protección estándar."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Con la protección estándar, Apple tiene las claves de Fotos en iCloud. Con la Protección avanzada de datos, solo las tienen tus dispositivos. Algunos metadatos de las fotos y los álbumes compartidos siguen con la protección estándar."
+          }
+        }
+      }
     },
     "Without it, colors look washed out or oversaturated." : {
       "comment" : "Why the color profile is always saved. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin esto, los colores se ven apagados o sobresaturados."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin esto, los colores se ven apagados o sobresaturados."
+          }
+        }
+      }
     },
     "Without it, the file can't be read at all." : {
       "comment" : "Why the image size and layout are always saved. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin esto, el archivo no se puede leer en absoluto."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin esto, el archivo no se puede leer en absoluto."
+          }
+        }
+      }
     },
     "Without it, the photo shows sideways or upside down." : {
       "comment" : "Why the orientation is always saved. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin esto, la foto se muestra de lado o al revés."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin esto, la foto se muestra de lado o al revés."
+          }
+        }
+      }
     },
     "Without them, colors are wrong." : {
       "comment" : "Why the color data and white balance are always saved. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin ellos, los colores son incorrectos."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin ellos, los colores son incorrectos."
+          }
+        }
+      }
     },
     "Without them, shadows and highlights come out wrong." : {
       "comment" : "Why the black and white levels are always saved. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin ellos, las sombras y las altas luces salen mal."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sin ellos, las sombras y las altas luces salen mal."
+          }
+        }
+      }
     },
     "You can sign each photo, so changes can be detected. Signing is off until you turn it on." : {
       "comment" : "First-run statement 2 of 3: signing is the person's choice and off by default. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Puedes firmar cada foto para que se puedan detectar los cambios. La firma está desactivada hasta que la actives."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Puedes firmar cada foto para que se puedan detectar los cambios. La firma está desactivada hasta que la actives."
+          }
+        }
+      }
     },
     "Your Name and Copyright" : {
       "comment" : "Metadata item. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu nombre y derechos de autor"
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu nombre y derechos de autor"
+          }
+        }
+      }
     },
     "Your nope. photo was saved. The second photo, with the phone's processing, couldn't be taken, so there is nothing to compare. You can try again." : {
       "comment" : "Compare view, when the second photo of the comparison shot failed. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu foto de nope. se guardó. No se pudo tomar la segunda foto, con el procesamiento del teléfono, así que no hay nada que comparar. Puedes intentarlo de nuevo."
+          }
+        },
+        "es-419" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tu foto de nope. se guardó. No se pudo tomar la segunda foto, con el procesamiento del teléfono, así que no hay nada que comparar. Puedes intentarlo de nuevo."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

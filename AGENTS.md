@@ -237,9 +237,10 @@ files, data, specifications, documentation and tools.
 
 ## Localization
 
-Version 1.0.0 ships in English (`en`, the development language) only (issue #86). Other
-languages come back in later releases; their earlier draft translations are in the git history.
-The app stays ready for them:
+The app ships in English (`en`, the development language) and Spanish (issue #86): Spanish
+(`es`), written for Spain and as the base for every Spanish-speaking region, and Latin American
+Spanish (`es-419`), which devices set to a Latin American region use. Other languages come back
+in later releases; their earlier draft translations are in the git history.
 - **Every user-facing string** goes in a String Catalog (`Localizable.xcstrings`), with a comment
   that gives translators context. This includes accessibility labels, alerts, permission prompts
   (`InfoPlist.xcstrings`) and the lock-screen and Control Center controls. No hard-coded
@@ -254,24 +255,42 @@ The app stays ready for them:
     right-to-left language ships yet;
   - tested with Apple's double-length and right-to-left pseudo-languages
     (`-NSDoubleLocalizedStrings YES`; `-AppleTextDirection YES
-    -NSForceRightToLeftWritingDirection YES`).
+    -NSForceRightToLeftWritingDirection YES`), and in Spanish.
 - **`scripts/check-localization.sh` lists the languages that ship** and fails on a translation
   into any other language. Adding a language means adding it there, to the project's known
   regions, to every catalog and to the store listings in the same pull request.
+- **Latin American Spanish differs from Spanish only where the wording does.**
+  - `scripts/es-419-overrides.txt` lists every string whose `es-419` wording differs from `es`,
+    with the reason (for example "Ajustes" and "Configuración", "objetivo" and "lente").
+  - iOS reads each string from one language's table and doesn't fall back from `es-419` to `es`
+    for a missing string (it shows the English), so `es-419` holds every string in the
+    catalogs: a copy of `es`, except for the listed strings. Checked on the iOS 27.2
+    Simulator, 2026-11-17.
+  - After adding or changing a Spanish translation, run `scripts/sync-es-419.sh`; it copies
+    `es` to `es-419` for every string that isn't listed. The localization check fails if an
+    unlisted string differs or a listed string doesn't.
+  - Spanish uses "tú", never "vosotros", and wording that reads naturally in every region
+    wherever one exists; a string goes on the list only when no such wording exists or iOS
+    itself names the thing differently in the two (match the names iOS shows in each).
 - **Translations may start as AI translations.** Mark every AI-translated string "needs review"
   in its catalog, never "translated", until a fluent human has checked it.
+- **Reviewers work from Xcode's export.** `xcodebuild -exportLocalizations -project
+  App/NopeCamera.xcodeproj -localizationPath <folder> -exportLanguage es -exportLanguage es-419`
+  writes one `.xcloc` per language (XLIFF, with the translator comments); a reviewer edits it in
+  Xcode or a translation tool, and `xcodebuild -importLocalizations` (or Xcode's Product menu)
+  brings it back into the catalogs. For `es-419`, only the listed strings need a separate
+  review.
 - **Honesty wording is kept apart.** The Honesty screen, privacy settings, signature and
   processing claims go in their own catalog table, `Honesty.xcstrings`; store listings go in
   `store/metadata/<locale>/`.
   - These texts must not claim more in translation than the English does.
   - Before a release, every string in `Honesty.xcstrings` and every store listing file in every
-    language that ships must be reviewed by a fluent human.
+    language must be reviewed by a fluent human.
   - Other interface strings may ship AI-translated and are reviewed when a reviewer is available.
-- **A pull request that adds or changes a user-facing string** adds it to the catalog with its
-  translator comment and, for each translated language that ships, its translation (AI or
-  human) marked "needs review". No string ships untranslated in a language that ships.
+- **A pull request that adds or changes a user-facing string** adds the translations (AI or
+  human) and marks them "needs review". No string ships untranslated.
 - **Store listings** (name, subtitle, description, keywords, screenshots) are localized for
-  every app language.
+  every app language: `en-US`, `es-ES` and `es-MX`.
 
 ## Security checks
 

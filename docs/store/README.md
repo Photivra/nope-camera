@@ -1,9 +1,8 @@
 # App Store listing drafts
 
 Status: **draft, needs human review.** Nothing here is approved for submission. The English text
-is a draft for the maintainer. Version 1.0.0 is listed in English only (issue #86); a listing in
-another language is added with that language and needs a fluent human review before release
-(AGENTS.md, "Localization").
+is a draft for the maintainer; the Spanish listings are translations that a fluent human must
+review before release (AGENTS.md, "Localization").
 
 The listing text itself lives in [`store/metadata/<locale>/`](../../store/metadata/README.md)
 (AGENTS.md, "Localization"), one file per App Store Connect field, with its review status in
@@ -12,7 +11,7 @@ the other submission answers:
 
 | File | What it holds |
 |---|---|
-| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords in English (`en-US`), the only language of version 1.0.0 |
+| [`store/metadata/`](../../store/metadata/README.md) | Name, subtitle, promotional text, description and keywords in English (`en-US`) and Spanish (`es-ES`, `es-MX`) |
 | [`app-privacy-label.md`](app-privacy-label.md) | App Store Connect App Privacy answers ("Data Not Collected") |
 | [`accessibility-label.md`](accessibility-label.md) | Accessibility Nutrition Label answers, and the evidence each one needs |
 | [`privacy-policy-draft.md`](privacy-policy-draft.md) | The privacy policy, for the maintainer to publish |
