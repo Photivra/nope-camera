@@ -4,6 +4,8 @@ Design version: 1.0.0 (2026-11-17; sections 3.14 and 3.15 added 2026-11-18). For
 
 This document says what to build, in which files, and how to tell it is done. The drawings are the mockups in this folder ([overview.html](overview.html)); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md), accessibility in [ACCESSIBILITY.md](ACCESSIBILITY.md), paths in [navigation.md](navigation.md).
 
+Proposed and not yet part of this plan: bracketing on the drive strip for 1.0.0 and focus bracketing for 1.1.0, specified in [BRACKETING.md](BRACKETING.md). Until its decisions are made, sections 3.4 and 3.5 stand as written.
+
 ## 1. Ground rules
 
 - **Scope.** 1.0.0 changes the interface of features that exist. Add no capability. If a step seems to need one, stop and flag it. One exception, by the owner's decision of 2026-11-18: the Last Photo viewer (3.14).
