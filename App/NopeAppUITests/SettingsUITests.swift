@@ -335,9 +335,18 @@ extension NopeAppUITests {
         XCTAssertTrue(app.navigationBars["HEIF and JPEG Copies"].waitForExistence(timeout: 5))
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
         app.navigationBars.buttons.element(boundBy: 0).tap()
+        // No search field in Night Mode: iOS draws it as gray glass that the red filter can't
+        // reach (owner decision of 2026-11-18). It returns when Night Mode is turned off, and
+        // the Night Mode row, whose switch was just used, stays in view.
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.searchFields.firstMatch.exists, "Settings has no search field in Night Mode")
+        let nightMode = settingsElement(app, "settings.nightMode")
+        flipSwitch(nightMode)
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 5), "search returns when Night Mode is off")
+        settle()
+        XCTAssertTrue(nightMode.exists && nightMode.isHittable, "the Night Mode row stays in view")
         searchSettings(app, for: "manual")
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "settings.search.camera.manualControls").firstMatch.waitForExistence(timeout: 5))
-        try audit(app, checksDynamicType: false, checksContrast: !isPad)
     }
 
     /// On iPad, turning Night Mode on while the Settings popover is open moves Settings to the

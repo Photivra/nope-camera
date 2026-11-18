@@ -146,7 +146,9 @@ public struct SettingsScreen: View {
         @Bindable var navigation = navigation
         NavigationStack(path: $navigation.path) {
             Group {
-                if SettingsSearch.words(of: navigation.searchText).isEmpty {
+                // No search in Night Mode (see ``SettingsSearchField``), so a search left in the
+                // field never replaces the list there.
+                if settings.isNightModeOn || SettingsSearch.words(of: navigation.searchText).isEmpty {
                     list
                 } else {
                     SettingsSearchResults(query: navigation.searchText, availability: availability) { id in
@@ -156,7 +158,14 @@ public struct SettingsScreen: View {
             }
             .navigationTitle(Text("Settings", bundle: .module, comment: "Title of the settings screen, and the camera button that opens it."))
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $navigation.searchText, placement: .navigationBarDrawer(displayMode: .always))
+            .modifier(SettingsSearchField(text: $navigation.searchText, isHidden: settings.isNightModeOn))
+            .onChange(of: settings.isNightModeOn) { _, _ in
+                // The list is built again with or without the search field. Any search ends, and
+                // on the Settings list the Night Mode row, whose switch was just used, is
+                // scrolled back into view.
+                navigation.searchText = ""
+                if navigation.path.isEmpty { navigation.scrollTarget = .nightMode }
+            }
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     // The system checkmark, as iOS shows for a sheet's confirm button.
@@ -355,6 +364,41 @@ public struct SettingsScreen: View {
             pageRow(.about, value: nil)
         } header: {
             Text(SettingsText.more)
+        }
+    }
+}
+
+/// The Settings search field, left out in Night Mode.
+///
+/// iOS draws the search field as gray glass outside the app's views, where night mode's red
+/// filter (``NightModeStyle``) can't reach it, so Settings has no search field while Night Mode
+/// is on (owner decision of 2026-11-18). Every row stays reachable from the list, and the field
+/// returns when Night Mode is turned off.
+struct SettingsSearchField: ViewModifier {
+    /// The search text.
+    @Binding var text: String
+
+    /// Whether the field is left out: Night Mode is on.
+    let isHidden: Bool
+
+    /// Creates the modifier.
+    ///
+    /// - Parameters:
+    ///   - text: The search text.
+    ///   - isHidden: Whether the field is left out, as in Night Mode.
+    init(text: Binding<String>, isHidden: Bool) {
+        _text = text
+        self.isHidden = isHidden
+    }
+
+    /// The content, with the search field in the navigation bar's drawer unless it is left out.
+    ///
+    /// - Parameter content: The Settings list or the search results.
+    func body(content: Content) -> some View {
+        if isHidden {
+            content
+        } else {
+            content.searchable(text: $text, placement: .navigationBarDrawer(displayMode: .always))
         }
     }
 }
