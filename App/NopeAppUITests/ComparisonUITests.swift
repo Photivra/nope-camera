@@ -98,18 +98,23 @@ extension NopeAppUITests {
         let show = app.buttons["Show Value"].firstMatch
         // Slow drags that hold at the end, not swipes: a swipe's fling kept the list moving, so on
         // the iPad runner Show Value was found hittable and had scrolled away when it was tapped.
-        var drags = 0
-        while !(uniqueID.exists && show.isHittable) && drags < 12 {
-            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
-            start.press(
-                forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -250)),
-                withVelocity: .slow, thenHoldForDuration: 0.3)
-            drags += 1
+        func scrollToShowValue() {
+            var drags = 0
+            while !(uniqueID.exists && show.exists && show.isHittable) && drags < 12 {
+                let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+                start.press(
+                    forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -250)),
+                    withVelocity: .slow, thenHoldForDuration: 0.3)
+                drags += 1
+            }
+            settle()
         }
-        settle()
+        scrollToShowValue()
         XCTAssertTrue(show.isHittable, "Show Value isn't on screen")
         XCTAssertFalse(element(app, containing: "0A1B2C3D4E5F6071").exists)
         try audit(app, afterScrolling: true)
+        // The audit can scroll the list while it measures; Show Value is brought back first.
+        scrollToShowValue()
         show.tap()
         XCTAssertTrue(element(app, containing: "0A1B2C3D4E5F6071").waitForExistence(timeout: 5))
 

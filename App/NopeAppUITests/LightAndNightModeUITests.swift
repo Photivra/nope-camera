@@ -193,9 +193,9 @@ extension NopeAppUITests {
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)
     }
 
-    /// The Details in Each Photo footer and header (Choose Details before 1.0.0), which the audit's Dynamic Type check is not asked
-    /// about (``NopeAppUITests/measuredDynamicTypeLabels``), and the master switch's title are
-    /// measured here instead: each is larger at every one of the nine text sizes than at the
+    /// The Details in Each Photo footer and header (Choose Details before 1.0.0), which the
+    /// audit's Dynamic Type check is not asked about (``NopeAppUITests/measuredDynamicTypeLabels``),
+    /// are measured here instead: each is larger at every one of the nine text sizes than at the
     /// size before, in night mode, where Settings is a sheet on iPad too.
     @MainActor
     func testChooseDetailsTextGrowsAtEveryTextSize() throws {
@@ -203,7 +203,10 @@ extension NopeAppUITests {
             "L", "XL", "XXL", "XXXL", "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL",
             "AccessibilityXXXL",
         ]
-        let labels = Self.measuredDynamicTypeLabels + ["Remove All Optional Details"]
+        // The master switch's title isn't measured since 1.0.0: in night mode its row is the
+        // switch (NightModeSwitch), whose title has no element of its own and whose row keeps
+        // its height until the title wraps; the audit checks the switch at the largest size.
+        let labels = Self.measuredDynamicTypeLabels
         var previous: [String: CGFloat] = [:]
         for category in categories {
             let app = launch(
@@ -215,10 +218,7 @@ extension NopeAppUITests {
             XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
             for label in labels {
                 // "Location" is also the switch's title; the header is the first match, above it.
-                // In night mode the master switch's row is the switch (1.0.0), so its title is
-                // the switch's label rather than a text of its own.
-                let staticText = app.staticTexts[label].firstMatch
-                let text = staticText.exists ? staticText : app.switches[label].firstMatch
+                let text = app.staticTexts[label].firstMatch
                 XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
                 // The text's area: a line that wraps gets narrower and taller.
                 let area = text.frame.width * text.frame.height
