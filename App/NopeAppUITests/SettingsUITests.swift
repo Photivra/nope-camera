@@ -247,6 +247,40 @@ extension NopeAppUITests {
         XCTAssertTrue(app.buttons["settings.search.settings.copies.restoreDefaults"].exists)
     }
 
+    /// The catalog keys that carry a context prefix ("Drive strip: Burst") and an English value
+    /// that differs ("Burst"). A label that starts with one of them is a missing string.
+    static let keyPrefixes = [
+        "Search keywords", "Assistant action", "Photo details", "Drive strip", "Bracket details",
+        "Photo Format sheet", "EXIF program", "Bracket type", "Burst speed", "EXIF metering", "Fast shutter",
+        "Flash pill", "Manual Controls button", "Photo size", "Bracket card", "Bracket Settings", "Focus dial",
+        "Settings presets", "Settings section", "Details in each photo", "Processed marker", "Viewer status",
+        "Ask First",
+    ]
+
+    /// Release 1.0.0 ships in English only (issue #86): with Spanish as the device's language
+    /// the app falls back to English, the development language, and no text shows a catalog key.
+    @MainActor
+    func testSpanishDeviceLanguageFallsBackToEnglish() throws {
+        let app = launch("manual", extraArguments: ["-AppleLanguages", "(es)", "-AppleLocale", "es_ES"])
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 20), "the camera isn't in English")
+        expectNoCatalogKeys(app, "camera")
+        openSettingsScreen(app)
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        expectNoCatalogKeys(app, "Settings")
+        searchSettings(app, for: "gps")
+        XCTAssertTrue(app.buttons["settings.search.settings.details.location"].waitForExistence(timeout: 5))
+        expectNoCatalogKeys(app, "search results")
+    }
+
+    /// Fails when any element's label starts with a prefixed catalog key (``keyPrefixes``).
+    @MainActor
+    func expectNoCatalogKeys(_ app: XCUIApplication, _ screen: String, file: StaticString = #filePath, line: UInt = #line) {
+        for prefix in Self.keyPrefixes {
+            let keys = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", prefix + ": "))
+            XCTAssertEqual(keys.count, 0, "\(screen): a missing string shows its key \(prefix): …", file: file, line: line)
+        }
+    }
+
     @MainActor
     func testSettingsSearchNoResults() throws {
         let app = launch("denied")
