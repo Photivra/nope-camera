@@ -215,7 +215,10 @@ extension NopeAppUITests {
             XCTAssertTrue(app.navigationBars["Details in Each Photo"].waitForExistence(timeout: 5))
             for label in labels {
                 // "Location" is also the switch's title; the header is the first match, above it.
-                let text = app.staticTexts[label].firstMatch
+                // In night mode the master switch's row is the switch (1.0.0), so its title is
+                // the switch's label rather than a text of its own.
+                let staticText = app.staticTexts[label].firstMatch
+                let text = staticText.exists ? staticText : app.switches[label].firstMatch
                 XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
                 // The text's area: a line that wraps gets narrower and taller.
                 let area = text.frame.width * text.frame.height

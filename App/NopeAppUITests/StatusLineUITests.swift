@@ -278,7 +278,7 @@ extension NopeAppUITests {
             for name in ["RAW (DNG)", "HEIF", "JPEG"] {
                 XCTAssertFalse(app.buttons[name].exists, "\(name) can be ticked on a lens without RAW")
             }
-            let file = app.staticTexts["formatSheet.lensFile"]
+            let file = app.descendants(matching: .any)["formatSheet.lensFile"]
             let swipes = scrollSheet(app, to: file)
             XCTAssertEqual(file.label, "HEIF")
             XCTAssertTrue(element(app, containing: "This Lens Saves").exists)
