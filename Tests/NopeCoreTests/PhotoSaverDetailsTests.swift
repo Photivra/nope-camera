@@ -122,3 +122,25 @@ struct CaptureTimingTests {
         #expect(photo.details?.timings.capture == .milliseconds(10))
     }
 }
+
+/// What the save passes on to What's in This Photo (`docs/design/BUILD-SPEC.md`, section 6,
+/// item 17): the copies' options, the pairing, the Standard File Tags and what the camera
+/// reported. (Standard File Tags off is covered from built files in `PhotoDetailsValuesTests`.)
+struct PhotoSaverDetailsValuesTests {
+    @Test func theSaveSettingsAndTheCaptureReachTheDetails() async throws {
+        var settings = SaveSettings.rawPlusHEIFSigned
+        var options = DevelopedFileOptions()
+        options.colorSpace = .sRGB
+        options.heifQuality = .medium
+        settings.fileOptions = options
+        let photo = PhotoSaverTests.rawPhoto()
+        let saved = try await PhotoSaverDetailsTests.saver(thumbnailer: nil).save(photo, settings: settings)
+        let details = try #require(saved.details)
+        #expect(details.capture == PhotoDetails.CaptureReport(photo))
+        #expect(details.inPhotos == PhotoDetails.PhotosPairing(pairedFormat: .heif, separateFormat: nil))
+        #expect(details.writesStandardFileTags)
+        let heif = try #require(details.files.first { $0.format == .heif })
+        #expect(heif.colorSpace == .sRGB && heif.quality == .medium)
+        #expect(details.files.first { $0.format == .raw }?.colorSpace == nil)
+    }
+}

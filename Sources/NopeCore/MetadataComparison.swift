@@ -147,6 +147,9 @@ public struct MetadataComparison: Equatable, Sendable {
         let isIdentifying: Bool
         /// Whether it is a signature.
         let isSignature: Bool
+        /// The TIFF tag number for a tag, or `nil` for a block or an XMP property. The
+        /// "What's in this photo" Every Tag page (``PhotoDetails/TagEntry``) shows it.
+        let tagNumber: UInt16?
 
         /// Creates an item.
         ///
@@ -158,9 +161,10 @@ public struct MetadataComparison: Equatable, Sendable {
         ///   - item: The privacy switch, or `nil`.
         ///   - isIdentifying: Whether the value is identifying.
         ///   - isSignature: Whether it is a signature.
+        ///   - tagNumber: The tag number for a tag, or `nil`.
         init(
             id: String, name: String, kind: Kind, value: Value, item: MetadataItem?, isIdentifying: Bool,
-            isSignature: Bool
+            isSignature: Bool, tagNumber: UInt16? = nil
         ) {
             self.id = id
             self.name = name
@@ -169,6 +173,7 @@ public struct MetadataComparison: Equatable, Sendable {
             self.item = item
             self.isIdentifying = isIdentifying
             self.isSignature = isSignature
+            self.tagNumber = tagNumber
         }
     }
 
@@ -228,7 +233,7 @@ public struct MetadataComparison: Equatable, Sendable {
         return Item(
             id: "tag:\(tag.directory.rawValue):\(tag.tag)", name: name(of: tag), kind: .tag(tag.directory), value: value,
             item: item, isIdentifying: item == .location || item == .makerNotes || identifyingTags.contains(key),
-            isSignature: key == MetadataPlan.contentCredentialsTag)
+            isSignature: key == MetadataPlan.contentCredentialsTag, tagNumber: tag.tag)
     }
 
     /// A tag's name: from the allowlist's catalog, from ``otherTagNames``, or its directory and

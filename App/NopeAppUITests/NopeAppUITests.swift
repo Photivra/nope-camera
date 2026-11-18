@@ -2223,39 +2223,21 @@ final class NopeAppUITests: XCTestCase {
         let app = launch("allow", extraArguments: Self.signingOn)
         continuePastFirstRun(app)
         openPhotoDetails(app)
-        XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
-        XCTAssertTrue(element(app, containing: "RAW (DNG)").exists)
+        XCTAssertTrue(element(app, containing: "RAW (DNG)").waitForExistence(timeout: 5))
         // The RAW clipping the simulated camera reports (SimulatedCaptureBackend.placeholderClipping).
-        XCTAssertTrue(element(app, containing: "0.4% of photosites").exists)
-        XCTAssertTrue(element(app, containing: "0.1% of photosites").exists)
+        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "0.4% of photosites")))
+        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "0.1% of photosites")))
+        XCTAssertTrue(scrollUntilExists(app, app.staticTexts["Files"]))
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Saved and signed.")))
         // As for the format sheet (testFormatChipExplainsTheFormat): the list's system section
         // headers are reported as "partially unsupported" at the default size; the same list is
-        // audited in full at the largest size in testLastPhotoDetailsAtTheLargestTextSize.
-        try audit(app, checksDynamicType: false)
+        // audited in full at the largest size in testDetailsLargestText (PhotoDetailsUITests).
+        try audit(app, afterScrolling: true, checksDynamicType: false)
         // First launch: every optional detail is left out, each with its reason.
         XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Off in Settings")))
         try audit(app, afterScrolling: true, checksDynamicType: false)
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Last Photo"].waitForExistence(timeout: 5))
-    }
-
-    @MainActor
-    func testLastPhotoDetailsAtTheLargestTextSize() throws {
-        let app = launch("signingFails", extraArguments: Self.signingOn + Self.largestTextSize)
-        openPhotoDetails(app)
-        try audit(app)
-        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "Not signed")))
-        try audit(app, afterScrolling: true)
-    }
-
-    @MainActor
-    func testLastPhotoDetailsRightToLeft() throws {
-        let app = launch("noRAW", extraArguments: Self.rightToLeft)
-        openPhotoDetails(app)
-        try audit(app, checksDynamicType: false, checksContrast: !isPad)
-        XCTAssertTrue(scrollUntilExists(app, element(app, containing: "this lens can't save RAW")))
-        try audit(app, afterScrolling: true, checksDynamicType: false, checksContrast: !isPad)
     }
 
     /// A bracket's details show one frame at a time, chosen with the Photo picker.

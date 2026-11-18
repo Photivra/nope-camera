@@ -145,7 +145,7 @@ extension NopeAppUITests {
         continuePastFirstRun(app)
 
         openPhotoDetails(app)
-        XCTAssertTrue(app.staticTexts["Files"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Exposure"].waitForExistence(timeout: 5))
         assertAppearance(app, isLight: false, "What's in This Photo")
         app.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["Photo Format"].waitForExistence(timeout: 5))

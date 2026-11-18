@@ -673,6 +673,17 @@ shows the thumbnail in the last-photo slot: a tap opens Photos through
 `EnvironmentValues.openPhotosApp` (or the details when that is `nil`), and its long-press menu
 and accessibility actions offer Open in Photos and Photo Details.
 
+What's in This Photo (`docs/design/BUILD-SPEC.md`, 3.15) needs no new reading: `PhotoDetails`
+also names the EXIF codes it shows (`ExposureModeValue`, `ExposureProgramValue`,
+`MeteringValue`, `RAWCompression`, with the number kept for a code it doesn't name), the lens and
+camera names (`LensAndCamera`), a DNG's structure (`RAWStructure`), each written item's value
+(`ItemReceipt.value`: text, a `Date`, or a `PhotoLocation`), every entry of each file grouped by
+where it lives (`File.entries`, `TagEntry`, built as `MetadataComparison` builds its items),
+the developed copies' color space and quality, how Photos pairs a RAW and a copy
+(`PhotosPairing`), whether the Standard File Tags were written, and what the camera reported
+(`CaptureReport`: shutter, ISO and lens, shown only where the files don't hold them).
+`NopeUI` decodes nothing; it formats these values and hides identifying ones until asked.
+
 **RAW clipping (issue #53).** The saved DNG's RAW data is lossless-JPEG compressed, and the app
 has no decoder for it (and adds none: byte-level parsing would need fuzzing). Instead the capture
 adapter counts the photo's own uncompressed Bayer buffer (`AVCapturePhoto.pixelBuffer`) at

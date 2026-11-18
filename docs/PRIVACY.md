@@ -58,7 +58,14 @@ for any user-facing claim comes from
   signature (the manifest's claim generator and description, and the SHA-256 hash of the
   manifest store the C2PA library returned), and how long each step took. Both are kept in
   memory for this session only: never written to disk, logged or copied, and gone when the app
-  quits. The app can't reopen older photos (add-only access). Tapping the thumbnail opens the
+  quits. The details also keep, with the photo, the shutter speed and ISO the camera reported
+  and the lens it was taken with (`PhotoDetails.CaptureReport`, from `CapturedPhoto`), so What's
+  in This Photo can show them marked "Not in the files" when Exposure Settings or Lens and
+  Camera names are off; like the rest of the details they stay in memory until the app quits
+  and are never written to a file, logged or copied. Identifying values (the location, maker
+  notes, unique IDs) read "Hidden" until the person taps Show Value, what was shown is forgotten
+  when the sheet closes, and the sheet's contents are covered while the app isn't active, so the
+  app switcher's snapshot holds none of them. The app can't reopen older photos (add-only access). Tapping the thumbnail opens the
   Photos app with its `photos-redirect://` URL, only when the person taps; it reads nothing from
   Photos and makes no network request.
 - **Settings:** the person's choices (formats, the RAW pairing, metadata switches, signing, the

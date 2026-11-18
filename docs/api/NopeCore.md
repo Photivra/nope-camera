@@ -13327,12 +13327,12 @@ let id: String
 
 The identifier both files share.
 
-## `MetadataComparison/Item/init(id:name:kind:value:item:isIdentifying:isSignature:)`
+## `MetadataComparison/Item/init(id:name:kind:value:item:isIdentifying:isSignature:tagNumber:)`
 
 internal, declared in `Sources/NopeCore/MetadataComparison.swift`
 
 ```swift
-init(id: String, name: String, kind: Kind, value: Value, item: MetadataItem?, isIdentifying: Bool, isSignature: Bool)
+init(id: String, name: String, kind: Kind, value: Value, item: MetadataItem?, isIdentifying: Bool, isSignature: Bool, tagNumber: UInt16? = nil)
 ```
 
 Creates an item.
@@ -13345,6 +13345,7 @@ Creates an item.
   - item: The privacy switch, or `nil`.
   - isIdentifying: Whether the value is identifying.
   - isSignature: Whether it is a signature.
+  - tagNumber: The tag number for a tag, or `nil`.
 
 ## `MetadataComparison/Item/isIdentifying`
 
@@ -13395,6 +13396,17 @@ let name: String
 ```
 
 The item's name.
+
+## `MetadataComparison/Item/tagNumber`
+
+internal, declared in `Sources/NopeCore/MetadataComparison.swift`
+
+```swift
+let tagNumber: UInt16?
+```
+
+The TIFF tag number for a tag, or `nil` for a block or an XMP property. The
+"What's in this photo" Every Tag page (``PhotoDetails/TagEntry``) shows it.
 
 ## `MetadataComparison/Item/value`
 
@@ -17158,6 +17170,75 @@ Privacy: built in memory from the just-saved photo and shown on screen only; not
 logged, stored or copied. The app can't reopen older photos (add-only access), so details
 exist only for photos taken in this session.
 
+## `PhotoDetails/CaptureReport`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct CaptureReport
+```
+
+What the camera reported for the photo, kept in memory with the details for the session
+(`docs/PRIVACY.md`, "Last photo and its details"). Shown only where the files don't
+hold the same value, marked "Not in the files".
+
+## `PhotoDetails/CaptureReport/exposureDuration`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let exposureDuration: Double?
+```
+
+The exposure duration the camera reported, in seconds, or `nil`.
+
+## `PhotoDetails/CaptureReport/init(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(_ photo: CapturedPhoto)
+```
+
+The report of a captured photo.
+
+- Parameter photo: The photo.
+
+## `PhotoDetails/CaptureReport/init(exposureDuration:iso:lensID:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(exposureDuration: Double?, iso: Double?, lensID: Lens.ID)
+```
+
+Creates a report.
+
+- Parameters:
+  - exposureDuration: The exposure duration in seconds, or `nil`.
+  - iso: The ISO, or `nil`.
+  - lensID: The lens.
+
+## `PhotoDetails/CaptureReport/iso`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let iso: Double?
+```
+
+The ISO the camera reported, or `nil`.
+
+## `PhotoDetails/CaptureReport/lensID`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let lensID: Lens.ID
+```
+
+The lens the photo was taken with.
+
 ## `PhotoDetails/CheckedFile`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17212,6 +17293,27 @@ struct Exposure
 
 The exposure as the file records it, in its EXIF tags.
 
+## `PhotoDetails/Exposure/brightness`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let brightness: Double?
+```
+
+`BrightnessValue`: the scene's brightness, in EV (APEX).
+
+## `PhotoDetails/Exposure/equivalentFocalLength`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let equivalentFocalLength: Double?
+```
+
+`FocalLengthIn35mmFilm`: the focal length a 35 mm camera would need for the same
+field of view, in millimeters.
+
 ## `PhotoDetails/Exposure/exposureBias`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17221,6 +17323,16 @@ let exposureBias: Double?
 ```
 
 `ExposureBiasValue`, in EV.
+
+## `PhotoDetails/Exposure/exposureMode`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let exposureMode: ExposureModeValue?
+```
+
+`ExposureMode`: automatic, manual or auto bracket.
 
 ## `PhotoDetails/Exposure/exposureTime`
 
@@ -17262,12 +17374,22 @@ let focalLength: Double?
 
 `FocalLength`, in millimeters (the lens's real focal length, not the 35 mm equivalent).
 
-## `PhotoDetails/Exposure/init(exposureTime:iso:fNumber:focalLength:exposureBias:whiteBalance:flashFired:)`
+## `PhotoDetails/Exposure/hasMoreDetails`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?, whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil)
+var hasMoreDetails: Bool { get }
+```
+
+Whether any of the details behind More Exposure Details is recorded.
+
+## `PhotoDetails/Exposure/init(exposureTime:iso:fNumber:focalLength:exposureBias:whiteBalance:flashFired:equivalentFocalLength:exposureMode:program:metering:brightness:largestAperture:subjectArea:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(exposureTime: Double?, iso: Double?, fNumber: Double?, focalLength: Double?, exposureBias: Double?, whiteBalance: WhiteBalanceSetting?, flashFired: Bool? = nil, equivalentFocalLength: Double? = nil, exposureMode: ExposureModeValue? = nil, program: ExposureProgramValue? = nil, metering: MeteringValue? = nil, brightness: Double? = nil, largestAperture: Double? = nil, subjectArea: [Double] = [])
 ```
 
 Creates the exposure details.
@@ -17280,6 +17402,13 @@ Creates the exposure details.
   - exposureBias: The exposure bias in EV.
   - whiteBalance: The white balance setting.
   - flashFired: Whether the flash fired. Defaults to `nil` (not recorded).
+  - equivalentFocalLength: The 35 mm equivalent focal length in millimeters, or `nil`.
+  - exposureMode: The exposure mode, or `nil`.
+  - program: The exposure program, or `nil`.
+  - metering: The metering mode, or `nil`.
+  - brightness: The brightness in EV, or `nil`.
+  - largestAperture: The lens's largest aperture as an f-number, or `nil`.
+  - subjectArea: The subject area, or none.
 
 ## `PhotoDetails/Exposure/iso`
 
@@ -17291,6 +17420,48 @@ let iso: Double?
 
 `PhotographicSensitivity` (ISO).
 
+## `PhotoDetails/Exposure/largestAperture`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let largestAperture: Double?
+```
+
+The lens's largest aperture as an f-number, from `MaxApertureValue` (an APEX value
+`A`, so the f-number is 2^(A/2); EXIF 3.0, 4.6.5).
+
+## `PhotoDetails/Exposure/metering`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let metering: MeteringValue?
+```
+
+`MeteringMode`: how the camera measured the scene.
+
+## `PhotoDetails/Exposure/program`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let program: ExposureProgramValue?
+```
+
+`ExposureProgram`: the program the camera used.
+
+## `PhotoDetails/Exposure/subjectArea`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let subjectArea: [Double]
+```
+
+`SubjectArea`: the subject's place in the picture, as two to four numbers (a point,
+a circle or a rectangle, in pixels); empty when the file doesn't say.
+
 ## `PhotoDetails/Exposure/whiteBalance`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17300,6 +17471,200 @@ let whiteBalance: WhiteBalanceSetting?
 ```
 
 `WhiteBalance`: automatic or manual.
+
+## `PhotoDetails/ExposureModeValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum ExposureModeValue
+```
+
+The EXIF `ExposureMode` value (EXIF 3.0, tag `0xA402`).
+
+## `PhotoDetails/ExposureModeValue/auto`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case auto
+```
+
+0: auto exposure.
+
+## `PhotoDetails/ExposureModeValue/autoBracket`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case autoBracket
+```
+
+2: auto bracket.
+
+## `PhotoDetails/ExposureModeValue/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/ExposureModeValue/manual`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case manual
+```
+
+1: manual exposure.
+
+## `PhotoDetails/ExposureModeValue/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code EXIF 3.0 doesn't name, shown as its number.
+
+## `PhotoDetails/ExposureProgramValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum ExposureProgramValue
+```
+
+The EXIF `ExposureProgram` value (EXIF 3.0, tag `0x8822`).
+
+## `PhotoDetails/ExposureProgramValue/action`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case action
+```
+
+6: action program (biased toward a fast shutter).
+
+## `PhotoDetails/ExposureProgramValue/aperturePriority`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case aperturePriority
+```
+
+3: aperture priority.
+
+## `PhotoDetails/ExposureProgramValue/creative`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case creative
+```
+
+5: creative program (biased toward depth of field).
+
+## `PhotoDetails/ExposureProgramValue/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/ExposureProgramValue/landscape`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case landscape
+```
+
+8: landscape mode.
+
+## `PhotoDetails/ExposureProgramValue/manual`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case manual
+```
+
+1: manual.
+
+## `PhotoDetails/ExposureProgramValue/named`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static let named: [ExposureProgramValue]
+```
+
+The named values, by code.
+
+## `PhotoDetails/ExposureProgramValue/normal`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case normal
+```
+
+2: normal program.
+
+## `PhotoDetails/ExposureProgramValue/notDefined`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case notDefined
+```
+
+0: not defined.
+
+## `PhotoDetails/ExposureProgramValue/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code EXIF 3.0 doesn't name, shown as its number.
+
+## `PhotoDetails/ExposureProgramValue/portrait`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case portrait
+```
+
+7: portrait mode.
+
+## `PhotoDetails/ExposureProgramValue/shutterPriority`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case shutterPriority
+```
+
+4: shutter priority.
 
 ## `PhotoDetails/File`
 
@@ -17353,6 +17718,17 @@ let colorFilterPattern: String?
 A DNG's color filter pattern, such as `RGGB`, from `CFARepeatPatternDim` and
 `CFAPattern` (TIFF/EP; DNG 1.7, "CFAPattern"); `nil` otherwise.
 
+## `PhotoDetails/File/colorSpace`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let colorSpace: OutputColorSpace?
+```
+
+The color space a HEIF or JPEG copy was developed in (``DevelopedFileOptions``);
+`nil` for the DNG and for a processed fallback, whose color the camera chose.
+
 ## `PhotoDetails/File/contentCredentials`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17375,6 +17751,32 @@ Every tag, block and property the read-back found, by its specification name (su
 `ExposureTime` or `jpeg:APP1:Exif`), in file order. A tag without a catalog name is
 shown by its directory and number, such as `primary 0xC7FF`.
 
+## `PhotoDetails/File/entries`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let entries: [TagEntry]
+```
+
+Every tag, block and XMP property the read-back found, once each, with its value, the
+setting that controls it and its place in the file, for the Every Tag page. Built as
+``MetadataComparison`` builds its items, so a repeated tag is listed once and a
+repeated block once with its count.
+
+## `PhotoDetails/File/entries(in:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+func entries(in place: TagEntry.Place) -> [TagEntry]
+```
+
+The entries in one place, in file order.
+
+- Parameter place: The place.
+- Returns: The entries.
+
 ## `PhotoDetails/File/format`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17385,12 +17787,12 @@ let format: PhotoFormat
 
 The file's format.
 
-## `PhotoDetails/File/init(format:byteCount:pixelWidth:pixelHeight:bitDepth:colorFilterPattern:blackLevels:whiteLevels:storesLensCorrections:processing:contentCredentials:contents:)`
+## `PhotoDetails/File/init(format:byteCount:pixelWidth:pixelHeight:bitDepth:colorFilterPattern:blackLevels:whiteLevels:storesLensCorrections:processing:contentCredentials:contents:entries:rawStructure:colorSpace:quality:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(format: PhotoFormat, byteCount: Int, pixelWidth: Int?, pixelHeight: Int?, bitDepth: Int?, colorFilterPattern: String?, blackLevels: [Double], whiteLevels: [Double], storesLensCorrections: Bool, processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String])
+init(format: PhotoFormat, byteCount: Int, pixelWidth: Int?, pixelHeight: Int?, bitDepth: Int?, colorFilterPattern: String?, blackLevels: [Double], whiteLevels: [Double], storesLensCorrections: Bool, processing: Processing, contentCredentials: ContentCredentialsSummary?, contents: [String], entries: [TagEntry] = [], rawStructure: RAWStructure? = nil, colorSpace: OutputColorSpace? = nil, quality: CompressionQuality? = nil)
 ```
 
 Creates a file's details.
@@ -17408,6 +17810,22 @@ Creates a file's details.
   - processing: The processing.
   - contentCredentials: The manifest summary.
   - contents: The names of everything found.
+  - entries: Everything found, with values. Defaults to none.
+  - rawStructure: A DNG's structure, or `nil`.
+  - colorSpace: A developed copy's color space, or `nil`.
+  - quality: A developed copy's compression quality, or `nil`.
+
+## `PhotoDetails/File/megapixels`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var megapixels: Double? { get }
+```
+
+The image's size in megapixels, as cameras state it: whole megapixels from 10 up
+(4032 × 3024 is 12 MP), one decimal below (1920 × 1440 is 2.8 MP); `nil` without a
+pixel size.
 
 ## `PhotoDetails/File/pixelHeight`
 
@@ -17430,6 +17848,16 @@ let pixelWidth: Int?
 The image width in pixels: for a DNG, the RAW data's `ImageWidth`; for HEIF and
 JPEG, the width ImageIO reports (or the EXIF `PixelXDimension`).
 
+## `PhotoDetails/File/places`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var places: [TagEntry.Place] { get }
+```
+
+The places that hold entries, in ``TagEntry/Place`` order.
+
 ## `PhotoDetails/File/processing`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17439,6 +17867,28 @@ let processing: Processing
 ```
 
 What processing the file's pixels went through.
+
+## `PhotoDetails/File/quality`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let quality: CompressionQuality?
+```
+
+The compression quality a HEIF or JPEG copy was encoded with
+(``DevelopedFileOptions``); `nil` for the DNG and for a processed fallback.
+
+## `PhotoDetails/File/rawStructure`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let rawStructure: RAWStructure?
+```
+
+A DNG's structure: active area, default crop, compression, DNG version, baseline
+exposure and as-shot neutral; `nil` for HEIF and JPEG.
 
 ## `PhotoDetails/File/storesLensCorrections`
 
@@ -17514,12 +17964,12 @@ case written
 
 The item's switch is on and the files hold it.
 
-## `PhotoDetails/ItemReceipt/init(item:state:)`
+## `PhotoDetails/ItemReceipt/init(item:state:value:)`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(item: MetadataItem, state: State)
+init(item: MetadataItem, state: State, value: ItemValue? = nil)
 ```
 
 Creates a receipt line.
@@ -17527,6 +17977,18 @@ Creates a receipt line.
 - Parameters:
   - item: The item.
   - state: What happened to it.
+  - value: Its value as written, or `nil`. Defaults to `nil`.
+
+## `PhotoDetails/ItemReceipt/isIdentifying`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var isIdentifying: Bool { get }
+```
+
+Whether the value identifies the person or the device, so an interface hides it
+until asked: the location and the maker notes, as in ``MetadataComparison``.
 
 ## `PhotoDetails/ItemReceipt/item`
 
@@ -17547,6 +18009,320 @@ let state: State
 ```
 
 What happened to it.
+
+## `PhotoDetails/ItemReceipt/value`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let value: ItemValue?
+```
+
+The item's value as the files hold it, for a written item whose value can be read:
+the date, the location, a name or a version. `nil` for an item that wasn't written,
+and for one with no readable value (maker notes, lens corrections) or whose values
+are shown elsewhere (exposure settings).
+
+## `PhotoDetails/ItemValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum ItemValue
+```
+
+A written item's value as the files hold it.
+
+## `PhotoDetails/ItemValue/date(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case date(Date)
+```
+
+A date and time, read from `DateTimeOriginal` (or `DateTime`) with the file's time
+offset, or the device's time zone when the file has none, for the interface to format.
+
+## `PhotoDetails/ItemValue/location(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case location(PhotoLocation)
+```
+
+A place, from the GPS tags.
+
+## `PhotoDetails/ItemValue/text(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case text(String)
+```
+
+Text as written, such as a camera name or a version.
+
+## `PhotoDetails/LensAndCamera`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct LensAndCamera
+```
+
+The lens and camera names the files hold (EXIF `LensModel` and `LensMake`, TIFF `Make`
+and `Model`), each `nil` when no file holds it with text.
+
+## `PhotoDetails/LensAndCamera/camera`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var camera: String? { get }
+```
+
+The camera as make and model, such as "Apple iPhone 16 Pro Max"; the model alone
+when it already starts with the make; `nil` with neither.
+
+## `PhotoDetails/LensAndCamera/init(lensModel:lensMake:make:model:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(lensModel: String?, lensMake: String?, make: String?, model: String?)
+```
+
+Creates the names.
+
+- Parameters:
+  - lensModel: The lens model, or `nil`.
+  - lensMake: The lens make, or `nil`.
+  - make: The camera make, or `nil`.
+  - model: The camera model, or `nil`.
+
+## `PhotoDetails/LensAndCamera/lensMake`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let lensMake: String?
+```
+
+`LensMake`, such as "Apple".
+
+## `PhotoDetails/LensAndCamera/lensModel`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let lensModel: String?
+```
+
+`LensModel`, such as "iPhone 16 Pro Max back camera 6.86mm f/1.78".
+
+## `PhotoDetails/LensAndCamera/make`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let make: String?
+```
+
+`Make`, such as "Apple".
+
+## `PhotoDetails/LensAndCamera/model`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let model: String?
+```
+
+`Model`, such as "iPhone 16 Pro Max".
+
+## `PhotoDetails/MeteringValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum MeteringValue
+```
+
+The EXIF `MeteringMode` value (EXIF 3.0, tag `0x9207`).
+
+## `PhotoDetails/MeteringValue/average`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case average
+```
+
+1: average.
+
+## `PhotoDetails/MeteringValue/centerWeighted`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case centerWeighted
+```
+
+2: center-weighted average, the app's Center metering.
+
+## `PhotoDetails/MeteringValue/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/MeteringValue/multiSpot`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case multiSpot
+```
+
+4: multi-spot.
+
+## `PhotoDetails/MeteringValue/named`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static let named: [MeteringValue]
+```
+
+The named values of codes 0 to 6.
+
+## `PhotoDetails/MeteringValue/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code EXIF 3.0 doesn't name, shown as its number.
+
+## `PhotoDetails/MeteringValue/otherMode`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case otherMode
+```
+
+255: other.
+
+## `PhotoDetails/MeteringValue/partial`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case partial
+```
+
+6: partial.
+
+## `PhotoDetails/MeteringValue/pattern`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case pattern
+```
+
+5: pattern.
+
+## `PhotoDetails/MeteringValue/spot`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case spot
+```
+
+3: spot, the app's Spot metering.
+
+## `PhotoDetails/MeteringValue/unknown`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case unknown
+```
+
+0: unknown.
+
+## `PhotoDetails/PhotosPairing`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct PhotosPairing
+```
+
+How a RAW and a copy were added to Photos: as one photo, the RAW with its paired copy,
+and any other copy as a photo of its own (``PhotoLibraryAsset/assets(for:pairing:)``).
+
+## `PhotoDetails/PhotosPairing/init(files:pairing:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init?(files: [PhotoFile], pairing: RAWPairing)
+```
+
+The pairing of the saved files, as the library was asked to add them, or `nil`
+without a RAW and a copy.
+
+- Parameters:
+  - files: The saved files.
+  - pairing: The person's pairing choice.
+
+## `PhotoDetails/PhotosPairing/init(pairedFormat:separateFormat:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(pairedFormat: PhotoFormat, separateFormat: PhotoFormat?)
+```
+
+Creates a pairing.
+
+- Parameters:
+  - pairedFormat: The copy paired with the RAW.
+  - separateFormat: The copy saved on its own, or `nil`.
+
+## `PhotoDetails/PhotosPairing/pairedFormat`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let pairedFormat: PhotoFormat
+```
+
+The copy paired with the RAW.
+
+## `PhotoDetails/PhotosPairing/separateFormat`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let separateFormat: PhotoFormat?
+```
+
+The copy saved as a photo of its own, or `nil`.
 
 ## `PhotoDetails/Processing`
 
@@ -17588,6 +18364,199 @@ case none
 
 None by the app: the sensor data as the camera delivered it (the DNG).
 
+## `PhotoDetails/RAWCompression`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum RAWCompression
+```
+
+A DNG's `Compression` value (TIFF 6.0 and DNG 1.7, "Compression").
+
+## `PhotoDetails/RAWCompression/init(code:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(code: Int)
+```
+
+The value of a code.
+
+- Parameter code: The tag's value.
+
+## `PhotoDetails/RAWCompression/isLossless`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var isLossless: Bool { get }
+```
+
+Whether the RAW data keeps every value of the sensor's samples.
+
+## `PhotoDetails/RAWCompression/jpegXL`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case jpegXL
+```
+
+52546: JPEG XL (DNG 1.7).
+
+## `PhotoDetails/RAWCompression/losslessJPEG`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case losslessJPEG
+```
+
+7: lossless JPEG, as the DNG specification uses code 7 for RAW data.
+
+## `PhotoDetails/RAWCompression/lossyJPEG`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case lossyJPEG
+```
+
+34892: lossy JPEG (DNG 1.4).
+
+## `PhotoDetails/RAWCompression/other(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case other(Int)
+```
+
+A code this list doesn't name, shown as its number.
+
+## `PhotoDetails/RAWCompression/uncompressed`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case uncompressed
+```
+
+1: uncompressed.
+
+## `PhotoDetails/RAWStructure`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct RAWStructure
+```
+
+A DNG's structure, from its IFD0 tags (DNG 1.7, chapter 4). Each list is empty when the
+file doesn't have the tag.
+
+## `PhotoDetails/RAWStructure/activeArea`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let activeArea: [Double]
+```
+
+`ActiveArea`: top, left, bottom and right of the area of the sensor with image data.
+
+## `PhotoDetails/RAWStructure/asShotNeutral`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let asShotNeutral: [Double]
+```
+
+`AsShotNeutral`: the white balance at capture, as one value per color plane.
+
+## `PhotoDetails/RAWStructure/baselineExposure`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let baselineExposure: Double?
+```
+
+`BaselineExposure`, in EV, or `nil`.
+
+## `PhotoDetails/RAWStructure/compression`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let compression: RAWCompression?
+```
+
+`Compression`, or `nil` when the file doesn't say.
+
+## `PhotoDetails/RAWStructure/defaultCropOrigin`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let defaultCropOrigin: [Double]
+```
+
+`DefaultCropOrigin`: the crop's origin, horizontal then vertical.
+
+## `PhotoDetails/RAWStructure/defaultCropSize`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let defaultCropSize: [Double]
+```
+
+`DefaultCropSize`: the crop's width and height.
+
+## `PhotoDetails/RAWStructure/dngVersion`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let dngVersion: [Int]
+```
+
+`DNGVersion`: four numbers, such as 1, 4, 0, 0.
+
+## `PhotoDetails/RAWStructure/dngVersionText`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var dngVersionText: String? { get }
+```
+
+The DNG version as written, such as "1.4" or "1.7.1": its four numbers without the
+trailing zeros, keeping at least two; `nil` without a version.
+
+## `PhotoDetails/RAWStructure/init(activeArea:defaultCropOrigin:defaultCropSize:compression:dngVersion:baselineExposure:asShotNeutral:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(activeArea: [Double], defaultCropOrigin: [Double], defaultCropSize: [Double], compression: RAWCompression?, dngVersion: [Int], baselineExposure: Double?, asShotNeutral: [Double])
+```
+
+Creates a DNG structure.
+
+- Parameters:
+  - activeArea: The active area.
+  - defaultCropOrigin: The default crop's origin.
+  - defaultCropSize: The default crop's size.
+  - compression: The compression, or `nil`.
+  - dngVersion: The DNG version's four numbers.
+  - baselineExposure: The baseline exposure in EV, or `nil`.
+  - asShotNeutral: The as-shot neutral.
+
 ## `PhotoDetails/Tag`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17597,6 +18566,46 @@ enum Tag
 ```
 
 Tag numbers the details read (TIFF 6.0, EXIF 3.0, DNG 1.7).
+
+## `PhotoDetails/Tag/activeArea`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let activeArea: UInt16
+```
+
+`ActiveArea`.
+
+## `PhotoDetails/Tag/artist`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let artist: UInt16
+```
+
+`Artist`.
+
+## `PhotoDetails/Tag/asShotNeutral`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let asShotNeutral: UInt16
+```
+
+`AsShotNeutral`.
+
+## `PhotoDetails/Tag/baselineExposure`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let baselineExposure: UInt16
+```
+
+`BaselineExposure`.
 
 ## `PhotoDetails/Tag/bitsPerSample`
 
@@ -17618,6 +18627,16 @@ static let blackLevel: UInt16
 
 `BlackLevel`.
 
+## `PhotoDetails/Tag/brightness`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let brightness: UInt16
+```
+
+`BrightnessValue`.
+
 ## `PhotoDetails/Tag/cfaPattern`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17638,6 +18657,16 @@ static let cfaRepeatPatternDim: UInt16
 
 `CFARepeatPatternDim`.
 
+## `PhotoDetails/Tag/compression`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let compression: UInt16
+```
+
+`Compression`.
+
 ## `PhotoDetails/Tag/contentCredentials`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17648,6 +18677,76 @@ static let contentCredentials: UInt16
 
 The Content Credentials manifest in a DNG (C2PA 2.1, A.3.3).
 
+## `PhotoDetails/Tag/copyright`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let copyright: UInt16
+```
+
+`Copyright`.
+
+## `PhotoDetails/Tag/dateTime`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let dateTime: UInt16
+```
+
+`DateTime`.
+
+## `PhotoDetails/Tag/dateTimeOriginal`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let dateTimeOriginal: UInt16
+```
+
+`DateTimeOriginal`.
+
+## `PhotoDetails/Tag/defaultCropOrigin`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let defaultCropOrigin: UInt16
+```
+
+`DefaultCropOrigin`.
+
+## `PhotoDetails/Tag/defaultCropSize`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let defaultCropSize: UInt16
+```
+
+`DefaultCropSize`.
+
+## `PhotoDetails/Tag/dngVersion`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let dngVersion: UInt16
+```
+
+`DNGVersion`, the first DNG tag: IFD0 tags from here up are DNG's (DNG 1.7, chapter 4).
+
+## `PhotoDetails/Tag/equivalentFocalLength`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let equivalentFocalLength: UInt16
+```
+
+`FocalLengthIn35mmFilm`.
+
 ## `PhotoDetails/Tag/exposureBias`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17657,6 +18756,26 @@ static let exposureBias: UInt16
 ```
 
 `ExposureBiasValue`.
+
+## `PhotoDetails/Tag/exposureMode`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let exposureMode: UInt16
+```
+
+`ExposureMode`.
+
+## `PhotoDetails/Tag/exposureProgram`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let exposureProgram: UInt16
+```
+
+`ExposureProgram`.
 
 ## `PhotoDetails/Tag/exposureTime`
 
@@ -17698,6 +18817,67 @@ static let focalLength: UInt16
 
 `FocalLength`.
 
+## `PhotoDetails/Tag/gpsAltitude`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsAltitude: UInt16
+```
+
+`GPSAltitude`.
+
+## `PhotoDetails/Tag/gpsAltitudeRef`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsAltitudeRef: UInt16
+```
+
+`GPSAltitudeRef`.
+
+## `PhotoDetails/Tag/gpsLatitude`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLatitude: UInt16
+```
+
+`GPSLatitude`.
+
+## `PhotoDetails/Tag/gpsLatitudeRef`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLatitudeRef: UInt16
+```
+
+GPS `GPSLatitudeRef`, `GPSLatitude`, `GPSLongitudeRef`, `GPSLongitude`,
+`GPSAltitudeRef` and `GPSAltitude` (EXIF 3.0, 4.6.6).
+
+## `PhotoDetails/Tag/gpsLongitude`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLongitude: UInt16
+```
+
+`GPSLongitude`.
+
+## `PhotoDetails/Tag/gpsLongitudeRef`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let gpsLongitudeRef: UInt16
+```
+
+`GPSLongitudeRef`.
+
 ## `PhotoDetails/Tag/imageLength`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17728,6 +18908,36 @@ static let iso: UInt16
 
 `PhotographicSensitivity`.
 
+## `PhotoDetails/Tag/lensMake`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let lensMake: UInt16
+```
+
+`LensMake`.
+
+## `PhotoDetails/Tag/lensModel`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let lensModel: UInt16
+```
+
+`LensModel`.
+
+## `PhotoDetails/Tag/make`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let make: UInt16
+```
+
+`Make`.
+
 ## `PhotoDetails/Tag/makerNote`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17737,6 +18947,46 @@ static let makerNote: UInt16
 ```
 
 `MakerNote`.
+
+## `PhotoDetails/Tag/maxAperture`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let maxAperture: UInt16
+```
+
+`MaxApertureValue`.
+
+## `PhotoDetails/Tag/meteringMode`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let meteringMode: UInt16
+```
+
+`MeteringMode`.
+
+## `PhotoDetails/Tag/model`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let model: UInt16
+```
+
+`Model`.
+
+## `PhotoDetails/Tag/offsetTimes`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let offsetTimes: [UInt16]
+```
+
+`OffsetTimeOriginal`, then `OffsetTime`.
 
 ## `PhotoDetails/Tag/opcodeLists`
 
@@ -17768,6 +19018,46 @@ static let pixelYDimension: UInt16
 
 `PixelYDimension`.
 
+## `PhotoDetails/Tag/software`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let software: UInt16
+```
+
+`Software`.
+
+## `PhotoDetails/Tag/subSecondTimes`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let subSecondTimes: [UInt16]
+```
+
+`SubSecTimeOriginal`, then `SubSecTime`.
+
+## `PhotoDetails/Tag/subjectArea`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let subjectArea: UInt16
+```
+
+`SubjectArea`.
+
+## `PhotoDetails/Tag/uniqueCameraModel`
+
+internal, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+static let uniqueCameraModel: UInt16
+```
+
+`UniqueCameraModel`.
+
 ## `PhotoDetails/Tag/whiteBalance`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17787,6 +19077,248 @@ static let whiteLevel: UInt16
 ```
 
 `WhiteLevel`.
+
+## `PhotoDetails/TagEntry`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+struct TagEntry
+```
+
+One tag, block or XMP property of a file, as the Every Tag page lists it.
+
+## `PhotoDetails/TagEntry/Control`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum Control
+```
+
+What decides whether the file holds an entry.
+
+## `PhotoDetails/TagEntry/Control/alwaysSaved`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case alwaysSaved
+```
+
+Nothing: every file of this format holds it.
+
+## `PhotoDetails/TagEntry/Control/setting(_:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case setting(MetadataItem)
+```
+
+The switch for this optional item.
+
+## `PhotoDetails/TagEntry/Control/signature`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case signature
+```
+
+The app's Content Credentials signature.
+
+## `PhotoDetails/TagEntry/Place`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+enum Place
+```
+
+Where an entry lives in the file.
+
+## `PhotoDetails/TagEntry/Place/contentCredentials`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case contentCredentials
+```
+
+The Content Credentials manifest: the DNG tag or the HEIF or JPEG block.
+
+## `PhotoDetails/TagEntry/Place/dng`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case dng
+```
+
+IFD0 from `DNGVersion` up, without the Content Credentials tag.
+
+## `PhotoDetails/TagEntry/Place/exif`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case exif
+```
+
+The EXIF directory and its interoperability directory.
+
+## `PhotoDetails/TagEntry/Place/fileStructure`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case fileStructure
+```
+
+The container's blocks: JPEG segments, HEIF boxes, items and properties.
+
+## `PhotoDetails/TagEntry/Place/gps`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case gps
+```
+
+The GPS directory.
+
+## `PhotoDetails/TagEntry/Place/tiff`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case tiff
+```
+
+IFD0 below `DNGVersion` (`0xC612`), and the image directories after it: the TIFF
+tags.
+
+## `PhotoDetails/TagEntry/Place/xmp`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+case xmp
+```
+
+The XMP properties.
+
+## `PhotoDetails/TagEntry/control`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let control: Control
+```
+
+What decides whether the file holds it.
+
+## `PhotoDetails/TagEntry/hidesValue`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var hidesValue: Bool { get }
+```
+
+Whether the value is hidden until the person asks: an identifying value the reader
+could read.
+
+## `PhotoDetails/TagEntry/id`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let id: String
+```
+
+A stable identifier: the entry's place and number or name.
+
+## `PhotoDetails/TagEntry/init(id:name:place:value:tagNumber:control:isIdentifying:)`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+init(id: String, name: String, place: Place, value: MetadataComparison.Value, tagNumber: UInt16?, control: Control, isIdentifying: Bool)
+```
+
+Creates an entry.
+
+- Parameters:
+  - id: The identifier.
+  - name: The name.
+  - place: Where it lives.
+  - value: Its value.
+  - tagNumber: The tag number, or `nil`.
+  - control: What decides whether the file holds it.
+  - isIdentifying: Whether to hide the value until asked.
+
+## `PhotoDetails/TagEntry/isIdentifying`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let isIdentifying: Bool
+```
+
+Whether the value identifies the person or the device, as in ``MetadataComparison``.
+
+## `PhotoDetails/TagEntry/name`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let name: String
+```
+
+The specification's name, such as `ExposureTime`.
+
+## `PhotoDetails/TagEntry/place`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let place: Place
+```
+
+Where it lives.
+
+## `PhotoDetails/TagEntry/tagNumber`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let tagNumber: UInt16?
+```
+
+The TIFF tag number, or `nil` for a block or an XMP property.
+
+## `PhotoDetails/TagEntry/tagNumberText`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+var tagNumberText: String? { get }
+```
+
+The tag number as four hexadecimal digits, such as `0x829A`; `nil` for a block or an
+XMP property.
+
+## `PhotoDetails/TagEntry/value`
+
+public, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+let value: MetadataComparison.Value
+```
+
+Its value.
 
 ## `PhotoDetails/WhiteBalanceSetting`
 
@@ -17818,12 +19350,12 @@ case manual
 
 1: manual white balance.
 
-## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:distortionCorrection:)`
+## `PhotoDetails/build(files:plan:look:signature:timings:rawClipping:distortionCorrection:options:pairing:capture:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil) -> PhotoDetails
+static func build(files: [CheckedFile], plan: MetadataPlan, look: DevelopedLook, signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil, options: DevelopedFileOptions = DevelopedFileOptions(), pairing: RAWPairing = .heif, capture: CaptureReport? = nil) -> PhotoDetails
 ```
 
 Builds the details of one saved photo.
@@ -17837,7 +19369,21 @@ Builds the details of one saved photo.
   - rawClipping: The clipping counted at capture time, or `nil`.
   - distortionCorrection: The lens's distortion correction for a processed fallback, or
     `nil`.
+  - options: The options the HEIF and JPEG copies were developed with.
+  - pairing: Which copy the person pairs with the RAW in Photos.
+  - capture: What the camera reported, or `nil`.
 - Returns: The details.
+
+## `PhotoDetails/capture`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let capture: CaptureReport?
+```
+
+What the camera reported for this photo (shutter, ISO and lens), kept in memory with the
+details for the session, or `nil` for details made outside ``PhotoSaver``.
 
 ## `PhotoDetails/colorFilterLetters`
 
@@ -17878,6 +19424,21 @@ container block and XMP property.
 - Parameter inventory: The read-back.
 - Returns: The names, in file order.
 
+## `PhotoDetails/date(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func date(in inventories: [MetadataInventory]) -> Date?
+```
+
+The photo's date and time: `DateTimeOriginal`, or `DateTime`, as "YYYY:MM:DD HH:MM:SS"
+(EXIF 3.0, 4.6.5), in the time zone of `OffsetTimeOriginal` or `OffsetTime` ("+01:00"),
+or the device's time zone when the file has no offset; `nil` for a blank or malformed date.
+
+- Parameter inventories: The read-backs.
+- Returns: The date.
+
 ## `PhotoDetails/distortionCorrection`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -17889,6 +19450,19 @@ let distortionCorrection: DistortionCorrection?
 For a lens's processed fallback, whether the app could turn off the camera's geometric
 distortion correction on that lens, as the camera reported it (issue #80); `nil` for a
 photo with RAW, whose files never have the correction (``DistortionCorrection``).
+
+## `PhotoDetails/entries(of:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func entries(of inventory: MetadataInventory) -> [TagEntry]
+```
+
+Every entry of a read-back, from ``MetadataComparison/items(in:)``.
+
+- Parameter inventory: The read-back.
+- Returns: The entries, in file order.
 
 ## `PhotoDetails/exposure`
 
@@ -17914,12 +19488,24 @@ The exposure a file's EXIF records, or `nil` when it records none of it.
 - Parameter inventory: The file's read-back.
 - Returns: The exposure.
 
-## `PhotoDetails/fileDetails(_:look:)`
+## `PhotoDetails/exposureNotInFiles`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var exposureNotInFiles: CaptureReport? { get }
+```
+
+The shutter and ISO the camera reported, shown marked "Not in the files" when the files
+hold no exposure (Exposure Settings off); `nil` when the files hold the exposure or the
+camera reported neither (`docs/design/BUILD-SPEC.md`, 3.15, P2).
+
+## `PhotoDetails/fileDetails(_:look:options:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-static func fileDetails(_ checked: CheckedFile, look: DevelopedLook) -> File
+static func fileDetails(_ checked: CheckedFile, look: DevelopedLook, options: DevelopedFileOptions = DevelopedFileOptions()) -> File
 ```
 
 One file's details.
@@ -17927,6 +19513,7 @@ One file's details.
 - Parameters:
   - checked: The file and its read-back.
   - look: The developed look.
+  - options: The options developed copies were made with.
 - Returns: The details.
 
 ## `PhotoDetails/files`
@@ -17954,12 +19541,32 @@ Whether a tag carries an item.
   - tag: A tag with a value.
 - Returns: `true` if the tag is one of the item's.
 
-## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:distortionCorrection:)`
+## `PhotoDetails/holdsLocation`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
 
 ```swift
-init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil)
+var holdsLocation: Bool { get }
+```
+
+Whether the files hold a location (GPS tags).
+
+## `PhotoDetails/inPhotos`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let inPhotos: PhotosPairing?
+```
+
+How a RAW and a copy were added to Photos as one asset, or `nil` when there was no pair.
+
+## `PhotoDetails/init(files:exposure:items:lockedItems:signature:timings:rawClipping:distortionCorrection:lensAndCamera:capture:inPhotos:writesStandardFileTags:)`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+init(files: [File], exposure: Exposure?, items: [ItemReceipt], lockedItems: [LockedMetadataItem], signature: SignatureStatus, timings: SaveTimings, rawClipping: RAWClippingResult? = nil, distortionCorrection: DistortionCorrection? = nil, lensAndCamera: LensAndCamera? = nil, capture: CaptureReport? = nil, inPhotos: PhotosPairing? = nil, writesStandardFileTags: Bool = true)
 ```
 
 Creates details.
@@ -17974,6 +19581,10 @@ Creates details.
   - rawClipping: The RAW clipping, or `nil`.
   - distortionCorrection: The lens's distortion correction for a processed fallback, or
     `nil`.
+  - lensAndCamera: The lens and camera names in the files, or `nil`.
+  - capture: What the camera reported, or `nil`.
+  - inPhotos: How a RAW and a copy were paired in Photos, or `nil`.
+  - writesStandardFileTags: Whether the Standard File Tags were written. Defaults to `true`.
 
 ## `PhotoDetails/integer(_:in:directory:)`
 
@@ -18011,6 +19622,65 @@ var leftOutItems: [ItemReceipt] { get }
 
 The optional items that were removed or had nothing to write.
 
+## `PhotoDetails/lensAndCamera`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let lensAndCamera: LensAndCamera?
+```
+
+The lens and camera names the files hold, or `nil` when they hold none.
+
+## `PhotoDetails/lensAndCamera(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func lensAndCamera(in inventories: [MetadataInventory]) -> LensAndCamera?
+```
+
+The lens and camera names, or `nil` when the files hold none.
+
+- Parameter inventories: The read-backs.
+- Returns: The names.
+
+## `PhotoDetails/lensNotInFiles`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var lensNotInFiles: Lens.ID? { get }
+```
+
+The lens the photo was taken with, shown marked "Not in the files" when the files hold
+no lens name; `nil` when they hold one or the lens isn't known.
+
+## `PhotoDetails/location`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var location: ItemReceipt? { get }
+```
+
+What happened to the location: written, removed or nothing to write.
+
+## `PhotoDetails/location(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func location(in inventories: [MetadataInventory]) -> PhotoLocation?
+```
+
+The location the GPS tags hold: latitude and longitude as degrees, minutes and seconds
+with their references, and the altitude below sea level when `GPSAltitudeRef` is 1
+(EXIF 3.0, 4.6.6); `nil` without a latitude and longitude.
+
+- Parameter inventories: The read-backs.
+- Returns: The location.
+
 ## `PhotoDetails/lockedItems`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18034,6 +19704,20 @@ The locked items the saved formats keep.
 - Parameter formats: The saved formats.
 - Returns: The items, in `LockedMetadataItem.allCases` order.
 
+## `PhotoDetails/mirroredItem(_:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func mirroredItem(_ item: MetadataComparison.Item) -> MetadataItem?
+```
+
+The switch of an XMP property that mirrors a TIFF tag (`CreatorTool`, `creator`,
+`rights`), judged by its value as the tag would be.
+
+- Parameter item: An item.
+- Returns: The switch, or `nil` for anything else.
+
 ## `PhotoDetails/name(of:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18048,6 +19732,30 @@ Credentials tag, or its directory and hexadecimal number.
 - Parameter tag: The tag.
 - Returns: The name.
 
+## `PhotoDetails/optionalDetailCount`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var optionalDetailCount: Int { get }
+```
+
+How many optional details the files hold, not counting the location, which has its own
+line in the summary.
+
+## `PhotoDetails/place(of:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func place(of item: MetadataComparison.Item) -> TagEntry.Place
+```
+
+An item's place in the file.
+
+- Parameter item: The item.
+- Returns: The place.
+
 ## `PhotoDetails/rawClipping`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18058,6 +19766,29 @@ let rawClipping: RAWClippingResult?
 
 The clipping counted from the RAW sensor data at capture time, or why it wasn't measured;
 `nil` for a photo without RAW (a lens's processed fallback).
+
+## `PhotoDetails/rawFile`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var rawFile: File? { get }
+```
+
+Whether the photo has a RAW file, so the RAW Sensor Data group applies.
+
+## `PhotoDetails/rawStructure(in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func rawStructure(in inventory: MetadataInventory) -> RAWStructure
+```
+
+A DNG's structure.
+
+- Parameter inventory: The DNG's read-back.
+- Returns: The structure.
 
 ## `PhotoDetails/signature`
 
@@ -18088,6 +19819,35 @@ An ASCII tag with empty text doesn't count as written: a DNG always carries `Dat
   - inventories: Each file's read-back.
 - Returns: The state.
 
+## `PhotoDetails/text(_:_:in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func text(_ tag: UInt16, _ directory: TIFFDirectory, in inventories: [MetadataInventory]) -> String?
+```
+
+The first non-empty text of a tag in any of the files.
+
+- Parameters:
+  - tag: The tag number.
+  - directory: The directory.
+  - inventories: The read-backs.
+- Returns: The text, or `nil`.
+
+## `PhotoDetails/timeZone(offset:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func timeZone(offset: String) -> TimeZone?
+```
+
+A time zone from an EXIF offset such as "+01:00" or "-05:30", or `nil` if malformed.
+
+- Parameter offset: The offset text.
+- Returns: The time zone.
+
 ## `PhotoDetails/timings`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18114,6 +19874,21 @@ The first value of a tag, or `nil`.
   - directory: The directory. Defaults to IFD0.
 - Returns: The value.
 
+## `PhotoDetails/value(of:in:)`
+
+internal, declared in `Sources/NopeCore/PhotoDetailsValues.swift`
+
+```swift
+static func value(of item: MetadataItem, in inventories: [MetadataInventory]) -> ItemValue?
+```
+
+A written item's value, or `nil` when it has none to show.
+
+- Parameters:
+  - item: The item.
+  - inventories: The read-backs.
+- Returns: The value.
+
 ## `PhotoDetails/values(_:in:directory:)`
 
 internal, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18130,6 +19905,16 @@ The values of a tag in a directory, or none if the file doesn't have it.
   - directory: The directory. Defaults to IFD0.
 - Returns: The values.
 
+## `PhotoDetails/writesStandardFileTags`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+let writesStandardFileTags: Bool
+```
+
+Whether the files were written with the Standard File Tags (``MetadataSettings/writesStandardFileTags``).
+
 ## `PhotoDetails/writtenItems`
 
 public, declared in `Sources/NopeCore/PhotoDetails.swift`
@@ -18139,6 +19924,16 @@ var writtenItems: [MetadataItem] { get }
 ```
 
 The optional items that were written.
+
+## `PhotoDetails/writtenReceipts`
+
+public, declared in `Sources/NopeCore/PhotoDetails.swift`
+
+```swift
+var writtenReceipts: [ItemReceipt] { get }
+```
+
+The written optional items with their values.
 
 ## `PhotoDeveloping`
 
