@@ -41,6 +41,32 @@ public protocol ManualCaptureBackend: CaptureBackend {
     ///   ``CaptureError/captureFailed`` if the system reports an error or too few photos.
     func captureBracket(_ request: CaptureRequest, frames: [BracketFrame]) async throws(CaptureError)
         -> [CapturedPhoto]
+
+    /// Locks focus at a lens position and waits until the camera reports it applied: the step
+    /// before each frame of a focus bracket (docs/design/BRACKETING.md, section 8).
+    ///
+    /// The AVFoundation backend calls `setFocusModeLocked(lensPosition:completionHandler:)` and
+    /// returns when its handler runs, with the `lensPosition` the device reports then. Exposure,
+    /// white balance and the other controls are left as they are.
+    ///
+    /// - Parameter lensPosition: The position, from 0 (the closest the lens focuses) to 1 (the
+    ///   farthest). It is not a distance.
+    /// - Returns: The position the lens reports once the move is applied.
+    /// - Throws: ``CaptureError/notRunning`` if the camera isn't running, or
+    ///   ``CaptureError/configurationFailed`` if the lens's focus can't be locked at a position.
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+}
+
+extension ManualCaptureBackend {
+    /// A backend whose focus can't be locked at a position: every request fails with
+    /// ``CaptureError/configurationFailed``, so no focus bracket frame is taken.
+    ///
+    /// - Parameter lensPosition: The position asked for.
+    /// - Returns: Never returns.
+    /// - Throws: ``CaptureError/configurationFailed``, always.
+    public func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        throw .configurationFailed
+    }
 }
 
 /// A request an interface sends to change manual controls, wrapped in

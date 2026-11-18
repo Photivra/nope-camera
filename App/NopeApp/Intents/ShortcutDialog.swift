@@ -114,6 +114,14 @@ enum ShortcutDialog {
             LocalizedStringResource(
                 "This lens can't take that bracket.",
                 comment: "Siri's answer when the lens in use can't take the exposure bracket asked for: it has no manual exposure, or takes fewer photos in one bracket.")
+        case .focusBracketUnavailable:
+            LocalizedStringResource(
+                "This lens's focus can't be set, so it can't take a focus bracket.",
+                comment: "Siri's answer when the lens in use can't take a focus bracket: the app can't set its focus.")
+        case .focusBracketStopped(let saved, let total):
+            LocalizedStringResource(
+                "The focus bracket stopped: \(saved) of \(total) photos saved.",
+                comment: "Siri's answer when a focus bracket ended before its last frame. The first number is the photos saved, the second the frames asked for.")
         case .presetApplied(let result):
             presetMessage(for: result)
         case .presetUnavailable:

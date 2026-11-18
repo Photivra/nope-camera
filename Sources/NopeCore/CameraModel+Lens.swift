@@ -42,9 +42,10 @@ extension CameraModel {
         lensChangeBlocker == nil
     }
 
-    /// Whether a countdown, a burst, an interval series or an astro run is in progress.
+    /// Whether a countdown, a burst, an interval series, an astro run or a focus bracket is in
+    /// progress.
     var isRunningSeries: Bool {
-        drive.isBusy || manual.intervalProgress != nil || astro.isRunning
+        drive.isBusy || manual.intervalProgress != nil || astro.isRunning || bracketing.isRunning
     }
 
     /// Whether a photo or an exposure bracket is being taken or saved. A bracket counts from its

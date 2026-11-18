@@ -233,6 +233,22 @@ Turns the camera's readings on or off.
 
 - Parameter enabled: Whether to send readings.
 
+## `AVFoundationCaptureBackend/setFocus(lensPosition:)`
+
+public, declared in `Sources/NopeCapture/AVFoundationCaptureBackend.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Locks focus at a lens position and returns the position the camera reports once it is
+applied: the step before each frame of a focus bracket.
+
+- Parameter lensPosition: The position, from 0 to 1.
+- Returns: The reported position.
+- Throws: `CaptureError.notRunning` if the camera isn't running, or
+  `CaptureError.configurationFailed` if its focus can't be locked at a position.
+
 ## `AVFoundationCaptureBackend/setFrameAnalysis(_:)`
 
 public, declared in `Sources/NopeCapture/LiveViewHardware.swift`
@@ -865,6 +881,23 @@ var previewSource: any CameraPreviewSource { get }
 ```
 
 The handle the app turns into the live viewfinder.
+
+## `CaptureHardware/setFocus(lensPosition:)`
+
+internal, declared in `Sources/NopeCapture/CaptureHardware.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Locks focus at a lens position and returns the position the camera reports once the move
+is applied (`setFocusModeLocked(lensPosition:completionHandler:)`, whose handler runs
+when the position has been applied).
+
+- Parameter lensPosition: The position, from 0 to 1.
+- Returns: The camera's `lensPosition` when the handler has run.
+- Throws: `CaptureError.notRunning` if no camera is attached, or
+  `CaptureError.configurationFailed` if its focus can't be locked at a position.
 
 ## `CaptureHardware/setReadingsEnabled(_:)`
 
@@ -4133,6 +4166,19 @@ let previewSource: any CameraPreviewSource
 ```
 
 The session, for the app's preview layer.
+
+## `SystemCaptureHardware/setFocus(lensPosition:)`
+
+internal, declared in `Sources/NopeCapture/SystemCaptureHardware.swift`
+
+```swift
+func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+```
+
+Locks focus at a lens position on `queue` and waits for the system's handler, which runs
+when the position has been applied (AVCaptureDevice.h,
+`setFocusModeLocked(lensPosition:completionHandler:)`); then reads `lensPosition` back on
+`queue`. Guarded by `isLockingFocusWithCustomLensPositionSupported`.
 
 ## `SystemCaptureHardware/setFrameAnalysis(_:)`
 

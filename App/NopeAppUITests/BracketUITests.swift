@@ -9,7 +9,7 @@ extension NopeAppUITests {
     /// The drive strip's word of that name: the lowest button with the label (a sheet or the
     /// quick menu may hold another).
     @MainActor
-    private func bracketWord(_ app: XCUIApplication, _ name: String = "Bracket") -> XCUIElement {
+    func bracketWord(_ app: XCUIApplication, _ name: String = "Bracket") -> XCUIElement {
         let matches = app.buttons.matching(NSPredicate(format: "label == %@", name))
         let lowest = matches.allElementsBoundByIndex.enumerated().max { $0.element.frame.minY < $1.element.frame.minY }
         return matches.element(boundBy: lowest?.offset ?? 0)
@@ -17,13 +17,13 @@ extension NopeAppUITests {
 
     /// The bracket's idle card: the button Bracket Settings.
     @MainActor
-    private func bracketCard(_ app: XCUIApplication) -> XCUIElement {
+    func bracketCard(_ app: XCUIApplication) -> XCUIElement {
         app.buttons["Bracket Settings"]
     }
 
     /// Chooses Bracket on the strip and waits for its card.
     @MainActor
-    private func chooseBracket(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+    func chooseBracket(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let word = bracketWord(app)
         XCTAssertTrue(word.waitForExistence(timeout: 20), "no Bracket word", file: file, line: line)
         word.tap()
@@ -32,7 +32,7 @@ extension NopeAppUITests {
 
     /// Waits until an element's VoiceOver value contains the text.
     @MainActor
-    private func waitForValue(_ element: XCUIElement, containing text: String, timeout: TimeInterval = 5) -> Bool {
+    func waitForValue(_ element: XCUIElement, containing text: String, timeout: TimeInterval = 5) -> Bool {
         let predicate = NSPredicate(format: "value CONTAINS %@", text)
         return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: element)], timeout: timeout)
             == .completed
@@ -40,20 +40,20 @@ extension NopeAppUITests {
 
     /// Waits until the last-photo thumbnail's value contains the text.
     @MainActor
-    private func bracketLastPhoto(_ app: XCUIApplication, says text: String, timeout: TimeInterval = 20) -> Bool {
+    func bracketLastPhoto(_ app: XCUIApplication, says text: String, timeout: TimeInterval = 20) -> Bool {
         waitForValue(app.descendants(matching: .any)["Last Photo"], containing: text, timeout: timeout)
     }
 
     /// Opens Bracket Settings from the card.
     @MainActor
-    private func openBracketSettings(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
+    func openBracketSettings(_ app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         bracketCard(app).tap()
         XCTAssertTrue(app.navigationBars["Bracket Settings"].waitForExistence(timeout: 5), file: file, line: line)
     }
 
     /// Chooses a value of one of Bracket Settings' pushed-list pickers.
     @MainActor
-    private func chooseInBracketSettings(_ app: XCUIApplication, _ picker: String, _ value: String, file: StaticString = #filePath, line: UInt = #line) {
+    func chooseInBracketSettings(_ app: XCUIApplication, _ picker: String, _ value: String, file: StaticString = #filePath, line: UInt = #line) {
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", picker)).firstMatch
         scrollUntilHittable(app, row)
         XCTAssertTrue(row.waitForExistence(timeout: 5), picker, file: file, line: line)
@@ -66,7 +66,7 @@ extension NopeAppUITests {
 
     /// Presses Bracket Settings' Done row, scrolling down to it.
     @MainActor
-    private func closeBracketSettings(_ app: XCUIApplication) {
+    func closeBracketSettings(_ app: XCUIApplication) {
         let done = app.buttons["Done"]
         scrollUntilHittable(app, done)
         done.tap()
@@ -85,7 +85,7 @@ extension NopeAppUITests {
     /// (`isTextCutByAPopover`). There only that element-less finding is skipped; every finding on
     /// an element still fails.
     @MainActor
-    private func auditBracketSettings(_ app: XCUIApplication, afterScrolling: Bool = false, file: StaticString = #filePath, line: UInt = #line) throws {
+    func auditBracketSettings(_ app: XCUIApplication, afterScrolling: Bool = false, file: StaticString = #filePath, line: UInt = #line) throws {
         guard isPad else {
             try audit(app, afterScrolling: afterScrolling, checksDynamicType: false, file: file, line: line)
             return
@@ -386,7 +386,7 @@ extension NopeAppUITests {
     ///   - viewfinder: The viewfinder's frame, which keeps its natural color.
     /// - Returns: The count, or -1 when the screenshot can't be read.
     @MainActor
-    private func bracketNonRedPixels(_ app: XCUIApplication, outside viewfinder: CGRect) -> Int {
+    func bracketNonRedPixels(_ app: XCUIApplication, outside viewfinder: CGRect) -> Int {
         settle()
         let window = app.windows.firstMatch.frame
         let corner = isPad ? CGRect(x: window.maxX - 64, y: window.maxY - 64, width: 64, height: 64) : .null

@@ -135,6 +135,18 @@ public actor AVFoundationCaptureBackend: ManualCaptureBackend, LightCaptureBacke
         try await hardware.apply(controls)
     }
 
+    /// Locks focus at a lens position and returns the position the camera reports once it is
+    /// applied: the step before each frame of a focus bracket.
+    ///
+    /// - Parameter lensPosition: The position, from 0 to 1.
+    /// - Returns: The reported position.
+    /// - Throws: `CaptureError.notRunning` if the camera isn't running, or
+    ///   `CaptureError.configurationFailed` if its focus can't be locked at a position.
+    public func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        guard activeConfiguration != nil else { throw .notRunning }
+        return try await hardware.setFocus(lensPosition: lensPosition)
+    }
+
     /// Turns the camera's readings on or off.
     ///
     /// - Parameter enabled: Whether to send readings.

@@ -13,7 +13,7 @@ extension CameraModel {
     /// Whether a press of the shutter takes the bracket: a bracket is on and the astro helper,
     /// which takes over the shutter, is off. An interface shows the Bracket word selected.
     public var isBracketOn: Bool {
-        manual.bracket != nil && !astro.isOn
+        (manual.bracket != nil || bracketing.isFocusOn) && !astro.isOn
     }
 
     /// The drive mode an interface chooses with the bracket: Single, or the self-timer with the
@@ -36,6 +36,8 @@ extension CameraModel {
     /// Interval turn the bracket off; with a bracket on, Single and the self-timer's delay become
     /// the bracket's start delay.
     func driveModeDidChange() async {
+        // A focus bracket runs in Single only; any other mode turns it off.
+        if bracketing.isFocusOn, drive.mode != .single { bracketing.setFocusOn(false) }
         guard manual.bracket != nil else { return }
         switch drive.mode {
         case .burst, .interval:
@@ -54,7 +56,12 @@ extension CameraModel {
     ///
     /// - Parameter intent: The intent just handled.
     func bracketDidChange(after intent: ManualControlIntent) {
-        guard case .setBracket(.some) = intent, manual.bracket != nil else { return }
+        guard case .setBracket(let bracket) = intent else { return }
+        // Turning an exposure bracket off (another drive word, Astro, a preset) or on turns the
+        // focus bracket off: one bracket is on at a time.
+        if bracket == nil || manual.bracket != nil { bracketing.setFocusOn(false) }
+        guard bracket != nil, manual.bracket != nil else { return }
+        bracketing.setType(.exposure)
         switch drive.mode {
         case .burst, .interval:
             drive.setMode(.single)
@@ -71,6 +78,8 @@ extension CameraModel {
     ///
     /// - Parameter hadBracket: Whether a bracket was on before the lens changed.
     func lensDidChange(hadBracket: Bool) {
+        // A focus bracket needs a lens whose focus can be set; its drive mode is already Single.
+        if bracketing.isFocusOn, !canFocusBracket { bracketing.setFocusOn(false) }
         guard hadBracket, manual.bracket == nil else { return }
         drive.setMode(.single)
     }

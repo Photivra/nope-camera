@@ -106,6 +106,7 @@ struct SeriesActivityIcon: View {
         case .astro: "moon.stars"
         case .burst: "square.stack.3d.down.right"
         case .timer: "clock"
+        case .focusBracket: "square.3.layers.3d"
         }
     }
 }
@@ -127,6 +128,8 @@ enum SeriesActivityText {
             Text("Burst", comment: "Title on nope.'s Live Activity: a rapid run of single photos.")
         case .timer:
             Text("Self-Timer", comment: "Title on nope.'s Live Activity: the countdown before a photo.")
+        case .focusBracket:
+            Text("Focus Bracket", comment: "Title on nope.'s Live Activity: a series of single photos, each at the next focus position.")
         }
     }
 

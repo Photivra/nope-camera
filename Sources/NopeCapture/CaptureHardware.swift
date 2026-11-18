@@ -66,6 +66,16 @@ protocol CaptureHardware: Sendable {
     ///   `CaptureError.configurationFailed` if the camera can't be locked for configuration.
     func apply(_ controls: DeviceControls) async throws(CaptureError)
 
+    /// Locks focus at a lens position and returns the position the camera reports once the move
+    /// is applied (`setFocusModeLocked(lensPosition:completionHandler:)`, whose handler runs
+    /// when the position has been applied).
+    ///
+    /// - Parameter lensPosition: The position, from 0 to 1.
+    /// - Returns: The camera's `lensPosition` when the handler has run.
+    /// - Throws: `CaptureError.notRunning` if no camera is attached, or
+    ///   `CaptureError.configurationFailed` if its focus can't be locked at a position.
+    func setFocus(lensPosition: Double) async throws(CaptureError) -> Double
+
     /// Starts or stops observing the attached camera's exposure, focus and white balance.
     ///
     /// - Parameter enabled: Whether to send readings.

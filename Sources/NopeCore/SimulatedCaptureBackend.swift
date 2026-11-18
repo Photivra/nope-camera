@@ -61,6 +61,11 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     /// The event stream. It carries ``eventsAfterStart`` and anything sent with ``emit(_:)``.
     public let events: AsyncStream<CaptureEvent>
 
+    /// How far short of a focus position the simulated lens stops, on the 0 to 1 scale
+    /// (``setFocus(lensPosition:)``): 0 reaches every position, so tests can also cover a lens
+    /// whose reported focus differs from the plan.
+    public let focusShortfall: Double
+
     /// A ``SimulatedPreviewSource``: there is no video.
     public let previewSource: (any CameraPreviewSource)?
 
@@ -110,6 +115,8 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
     ///   - comparisonError: The error taking the comparison shot's second photo throws, or
     ///     `nil` to succeed.
     ///   - captureSeconds: How long taking a photo takes, in seconds. Defaults to 0.
+    ///   - focusShortfall: How far short of each focus position the simulated lens stops, from 0;
+    ///     0 by default.
     public init(
         permission: CameraPermission,
         permissionAfterRequest: CameraPermission? = nil,
@@ -121,8 +128,10 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
         readingCount: Int = 1,
         torchAvailable: Bool = true,
         comparisonError: CaptureError? = nil,
-        captureSeconds: Double = 0
+        captureSeconds: Double = 0,
+        focusShortfall: Double = 0
     ) {
+        self.focusShortfall = focusShortfall
         self.comparisonError = comparisonError
         self.captureSeconds = captureSeconds
         self.reading = reading
@@ -254,6 +263,17 @@ public struct SimulatedCaptureBackend: ManualCaptureBackend, LightCaptureBackend
                 rawClipping: request.format.isBayerRAW ? Self.placeholderClipping : nil
             )
         }
+    }
+
+    /// Reports the position asked for, less ``focusShortfall``, within 0 to 1. There is no lens
+    /// to move.
+    ///
+    /// - Parameter lensPosition: The position asked for.
+    /// - Returns: The simulated lens's position.
+    /// - Throws: ``captureError``.
+    public func setFocus(lensPosition: Double) async throws(CaptureError) -> Double {
+        if let captureError { throw captureError }
+        return (lensPosition - focusShortfall).limited(to: 0...1)
     }
 
     /// Reports the torch on at `level`, off for `nil`, or ``TorchStatus/unavailable`` when

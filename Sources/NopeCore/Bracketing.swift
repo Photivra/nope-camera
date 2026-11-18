@@ -102,12 +102,14 @@ public enum BracketOrder: String, CaseIterable, Codable, Hashable, Sendable {
     }
 }
 
-/// The kind of a bracket. Release 1.0.0 takes exposure brackets only; the type is named on the
-/// card and in a photo's details so that nothing changes when another kind arrives
-/// (docs/design/BRACKETING.md, decision 5).
-public enum BracketType: String, Equatable, Hashable, Sendable {
+/// The kind of a bracket (docs/design/BRACKETING.md, sections 4 and 5). The type is named on
+/// the card and in a photo's details.
+public enum BracketType: String, CaseIterable, Codable, Equatable, Hashable, Sendable {
     /// Frames at different exposures.
     case exposure
+
+    /// Frames at different focus positions, for stacking in other software.
+    case focus
 }
 
 /// One frame of a bracket, with the exact exposure the camera is asked for.
@@ -290,7 +292,7 @@ public struct BracketProgress: Equatable, Sendable {
 }
 
 /// A saved photo's place in its bracket (``SavedPhoto/bracket``), for the Last Photo viewer and
-/// "What's in This Photo" (docs/design/BRACKETING.md, section 4, "The result").
+/// "What's in This Photo" (docs/design/BRACKETING.md, sections 4 and 5, "The result").
 ///
 /// Privacy: these are the session's values, held in memory with the saved photo until the app
 /// closes. They are never written to a file, so the metadata allowlist doesn't change.
@@ -298,32 +300,58 @@ public struct BracketPlace: Equatable, Sendable {
     /// The kind of bracket.
     public let type: BracketType
 
-    /// This frame: its number, the offsets asked for and reached, and its planned exposure.
-    public let frame: BracketFramePlan
+    /// The frame's place in the order taken, from 1.
+    public let number: Int
 
     /// The frames in the bracket.
     public let count: Int
 
-    /// Every frame's offset asked for, in EV, in the order taken.
+    /// For an exposure bracket, this frame: the offsets asked for and reached, and its planned
+    /// exposure. `nil` for a focus bracket.
+    public let frame: BracketFramePlan?
+
+    /// For an exposure bracket, every frame's offset asked for, in EV, in the order taken. Empty
+    /// for a focus bracket.
     public let offsets: [Double]
 
-    /// The order of the frames.
-    public let order: BracketOrder
+    /// For an exposure bracket, the order of the frames. `nil` for a focus bracket.
+    public let order: BracketOrder?
 
-    /// Creates a place.
+    /// For a focus bracket, this frame's planned and reported focus. `nil` for an exposure
+    /// bracket.
+    public let focus: FocusFramePlace?
+
+    /// Creates an exposure bracket's place.
     ///
     /// - Parameters:
-    ///   - type: The kind of bracket.
+    ///   - type: The kind of bracket, ``BracketType/exposure``.
     ///   - frame: This frame's plan.
     ///   - count: The frames in the bracket.
     ///   - offsets: Every frame's offset asked for, in the order taken.
     ///   - order: The order of the frames.
     public init(type: BracketType, frame: BracketFramePlan, count: Int, offsets: [Double], order: BracketOrder) {
         self.type = type
+        number = frame.number
         self.frame = frame
         self.count = count
         self.offsets = offsets
         self.order = order
+        focus = nil
+    }
+
+    /// Creates a focus bracket's place.
+    ///
+    /// - Parameters:
+    ///   - focus: This frame's planned and reported focus.
+    ///   - count: The frames in the bracket.
+    public init(focus: FocusFramePlace, count: Int) {
+        type = .focus
+        number = focus.number
+        self.count = count
+        frame = nil
+        offsets = []
+        order = nil
+        self.focus = focus
     }
 }
 

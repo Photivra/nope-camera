@@ -215,7 +215,7 @@ struct CameraReadyView: View {
     /// Whether a countdown, burst, interval series or astro run is going: the shutter stops it,
     /// and the readout row and dials give the picture to the running mode's card.
     private var isSeriesRunning: Bool {
-        model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil
+        model.drive.isBusy || model.astro.isRunning || model.manual.intervalProgress != nil || model.bracketing.isRunning
     }
 
     /// What the shutter's disc shows: a stop square while a series runs (not a burst the

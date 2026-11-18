@@ -13,8 +13,36 @@
       "comment" : "A frame in Bracket Settings that the lens can't give: the exposure offset it will have, such as \"+2 EV\", then the one asked for, such as \"+4\".",
       "extractionState" : "manual"
     },
+    "%lld frames were not at their planned focus" : {
+      "comment" : "Focus bracket card after the series: how many frames the lens reported at a focus position other than the one planned. The frames are saved.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld frame was not at its planned focus"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld frames were not at their planned focus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld frames, %@" : {
       "comment" : "Bracket card on the camera while the start delay counts down, second line: the number of frames, then their exposure offsets, such as \"−1, 0, +1 EV\".",
+      "extractionState" : "manual"
+    },
+    "%lld frames, focus %@ to %@" : {
+      "comment" : "Focus bracket card while the start delay counts down, second line: the number of frames and the focus positions, on the lens's own scale from 0 to 1.",
       "extractionState" : "manual"
     },
     "%lld of %lld" : {
@@ -61,6 +89,18 @@
         }
       }
     },
+    "Bracket details: Focus" : {
+      "comment" : "Row in the photo details of a focus bracket's frame: the focus position the lens reported, from 0 to 1.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus"
+          }
+        }
+      }
+    },
     "Bracket details: Type" : {
       "comment" : "Row in the photo details of a bracket's frame: the kind of bracket.",
       "extractionState" : "manual",
@@ -81,12 +121,52 @@
       "comment" : "Title of the sheet with the exposure bracket's frames, step, order and start delay, and the name of the card on the camera that opens it.",
       "extractionState" : "manual"
     },
+    "Bracket Settings: Type" : {
+      "comment" : "Control in Bracket Settings: the kind of bracket, exposure or focus.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type"
+          }
+        }
+      }
+    },
     "Bracket stopped: %lld of %lld photos saved." : {
       "comment" : "Banner on the camera when a frame of an exposure bracket couldn't be saved; the reason follows in another sentence. The first number is the photos saved, the second the frames in the bracket.",
       "extractionState" : "manual"
     },
+    "Bracket type: Exposure" : {
+      "comment" : "Choice of the Type control in Bracket Settings, and of the Take Bracket action: frames at different exposures.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exposure"
+          }
+        }
+      }
+    },
+    "Bracket type: Focus" : {
+      "comment" : "Choice of the Type control in Bracket Settings, and of the Take Bracket action: frames at different focus positions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focus"
+          }
+        }
+      }
+    },
     "Bracket, exposure, %lld frames" : {
       "comment" : "VoiceOver value of the shutter when one press takes an exposure bracket. The number is the count of frames.",
+      "extractionState" : "manual"
+    },
+    "Bracket, focus, %lld frames" : {
+      "comment" : "VoiceOver value of the shutter when one press takes a focus bracket. The number is the count of frames.",
       "extractionState" : "manual"
     },
     "Brightest First" : {
@@ -141,6 +221,14 @@
       "comment" : "Button in the Last Photo viewer that closes the viewer and returns to the camera. Drawn as an X where Last Photo is.",
       "extractionState" : "manual"
     },
+    "Closest" : {
+      "comment" : "Label under the leading end of the focus bracket's track: the closest the lens focuses (position 0).",
+      "extractionState" : "manual"
+    },
+    "Continues when the camera is back" : {
+      "comment" : "Focus bracket card while the series is paused: it goes on when the app is open and the camera runs again.",
+      "extractionState" : "manual"
+    },
     "Darkest First" : {
       "comment" : "Choice of the bracket's Order: the darkest frame first, then brighter ones.",
       "extractionState" : "manual"
@@ -161,6 +249,10 @@
         }
       }
     },
+    "Exposure and white balance are locked at the first frame, so every frame matches." : {
+      "comment" : "Footer in Bracket Settings for a focus bracket.",
+      "extractionState" : "manual"
+    },
     "Exposure bracket · frame %lld of %lld · %@" : {
       "comment" : "Chip on a photo in the Last Photo viewer: the photo is one frame of an exposure bracket. The numbers are the frame and the count of frames; the last value is the frame's exposure offset, such as \"0 EV\".",
       "extractionState" : "manual"
@@ -173,8 +265,92 @@
       "comment" : "Bracket card on the camera: what one press of the shutter takes. The number is the count of frames (3, 5 or 7); the second value is the step between them, such as \"1 EV\".",
       "extractionState" : "manual"
     },
+    "Farthest First" : {
+      "comment" : "Choice of the focus bracket's Order: the farthest focus first.",
+      "extractionState" : "manual"
+    },
+    "Farthest Focus" : {
+      "comment" : "Row in Bracket Settings, button on the focus bracket card and title of the dial: the farthest focus position of a focus bracket.",
+      "extractionState" : "manual"
+    },
+    "Farthest: %@" : {
+      "comment" : "Button on the focus bracket card: sets the farthest focus position on the picture. The value is a position from 0 to 1.",
+      "extractionState" : "manual"
+    },
     "Fast burst" : {
       "comment" : "Burst card on the camera, before a burst: the speed in use. Photos are taken as fast as the camera is ready.",
+      "extractionState" : "manual"
+    },
+    "Focus %@" : {
+      "comment" : "Focus bracket card while it runs: the focus position the lens reports, on its own scale from 0 to 1, not a distance.",
+      "extractionState" : "manual"
+    },
+    "Focus %@ to %@, farthest first" : {
+      "comment" : "Focus bracket card, second line: the focus positions on the lens's own scale from 0 to 1, not distances, and the order.",
+      "extractionState" : "manual"
+    },
+    "Focus %@ to %@, nearest first" : {
+      "comment" : "Focus bracket card, second line: the focus positions on the lens's own scale from 0 to 1, not distances, and the order.",
+      "extractionState" : "manual"
+    },
+    "Focus bracket stopped: %lld of %lld photos saved" : {
+      "comment" : "Focus bracket card when the series ended before its last frame. The first number is the photos saved, the second the frames in the bracket.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bracket stopped: %lld of %lld photos saved"
+          }
+        }
+      }
+    },
+    "Focus bracket · frame %lld of %lld · focus %@" : {
+      "comment" : "Chip on a photo in the Last Photo viewer: the photo is one frame of a focus bracket. The numbers are the frame and the count of frames; the last value is the focus position the lens reported, from 0 to 1.",
+      "extractionState" : "manual"
+    },
+    "Focus bracket, frame %lld of %lld, focus %@." : {
+      "comment" : "VoiceOver, part of a photo's label in the Last Photo viewer: the photo is one frame of a focus bracket. The numbers are the frame and the count of frames; the last value is the focus position the lens reported, from 0 to 1.",
+      "extractionState" : "manual"
+    },
+    "Focus bracket: %lld frames" : {
+      "comment" : "Focus bracket card on the camera: what one press of the shutter takes. The number is the count of frames.",
+      "extractionState" : "manual"
+    },
+    "Focus bracketing needs a lens whose focus can be set. This lens’s focus can’t." : {
+      "comment" : "Under the Type control in Bracket Settings, on a lens whose focus can't be set by the app.",
+      "extractionState" : "manual"
+    },
+    "Focus dial: Cancel" : {
+      "comment" : "Button on the focus dial: leaves the focus bracket's range as it was.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Focus is back to %@" : {
+      "comment" : "Focus bracket card after the series: focus is back at the position set by hand before, from 0 to 1.",
+      "extractionState" : "manual"
+    },
+    "Focus is back to Auto" : {
+      "comment" : "Focus bracket card after the series: focus is automatic again.",
+      "extractionState" : "manual"
+    },
+    "Focus Range" : {
+      "comment" : "Section header in Bracket Settings: the nearest and farthest focus of a focus bracket.",
+      "extractionState" : "manual"
+    },
+    "Focus stays at %@" : {
+      "comment" : "Focus bracket card after the series: focus stays at the last frame's position, from 0 to 1.",
+      "extractionState" : "manual"
+    },
+    "Focus Step" : {
+      "comment" : "Row in Bracket Settings: the difference between neighboring frames of a focus bracket, on the lens's own scale from 0 to 1.",
       "extractionState" : "manual"
     },
     "Frame %lld, %@, %@, ISO %@" : {
@@ -199,6 +375,18 @@
     },
     "Metered First" : {
       "comment" : "Choice of the bracket's Order: the frame at the metered exposure first, then darker and brighter ones, outward.",
+      "extractionState" : "manual"
+    },
+    "Nearest First" : {
+      "comment" : "Choice of the focus bracket's Order: the nearest focus first.",
+      "extractionState" : "manual"
+    },
+    "Nearest Focus" : {
+      "comment" : "Row in Bracket Settings, button on the focus bracket card and title of the dial: the nearest focus position of a focus bracket.",
+      "extractionState" : "manual"
+    },
+    "Nearest: %@" : {
+      "comment" : "Button on the focus bracket card: sets the nearest focus position on the picture. The value is a position from 0 to 1.",
       "extractionState" : "manual"
     },
     "New Photo" : {
@@ -539,6 +727,10 @@
       "comment" : "Row in the photo details of a bracket's frame: the exposure the app asked the camera for.",
       "extractionState" : "manual"
     },
+    "Planned Focus" : {
+      "comment" : "Row in the photo details of a focus bracket's frame: the focus position the app asked the lens for, from 0 to 1.",
+      "extractionState" : "manual"
+    },
     "Portrait mode" : {
       "comment" : "In the photo details: the EXIF exposure program Portrait mode.",
       "extractionState" : "manual"
@@ -549,6 +741,14 @@
     },
     "Release to stop" : {
       "comment" : "Burst card on the camera while the shutter is held: letting go of it ends the burst.",
+      "extractionState" : "manual"
+    },
+    "Reported by the lens" : {
+      "comment" : "Note under the Focus row in the photo details of a focus bracket's frame.",
+      "extractionState" : "manual"
+    },
+    "Return Focus When Done" : {
+      "comment" : "Switch in Bracket Settings: after a focus bracket, focus goes back to automatic or to the position set by hand before.",
       "extractionState" : "manual"
     },
     "Saving: %lld of %lld photos saved" : {
@@ -574,6 +774,18 @@
           }
         }
       }
+    },
+    "Set Farthest Focus" : {
+      "comment" : "Button on the focus dial: keeps the position as the focus bracket's farthest focus.",
+      "extractionState" : "manual"
+    },
+    "Set Nearest Focus" : {
+      "comment" : "Button on the focus dial: keeps the position as the focus bracket's nearest focus.",
+      "extractionState" : "manual"
+    },
+    "Set on the picture" : {
+      "comment" : "Under Nearest Focus and Farthest Focus in Bracket Settings: the row closes the sheet and the end is set on the camera's picture.",
+      "extractionState" : "manual"
     },
     "Search keywords: Pinch" : {
       "comment" : "Settings search keywords for the Pinch setting, separated by commas. Not shown on screen. Zoom is listed so people who look for it find the setting and read that nope. has no zoom; keep a word for zoom.",
@@ -635,6 +847,14 @@
         }
       }
     },
+    "Stop Bracket" : {
+      "comment" : "Button on the focus bracket card while it runs: stops after the current frame; every photo taken is kept.",
+      "extractionState" : "manual"
+    },
+    "Storage is full." : {
+      "comment" : "Focus bracket card: the series stopped because the next photo wouldn't fit in the device's free storage.",
+      "extractionState" : "manual"
+    },
     "Subject Area" : {
       "comment" : "Row in the photo details: where the subject is in the picture, as two to four numbers in pixels, as written in the file.",
       "extractionState" : "manual"
@@ -651,8 +871,24 @@
       "comment" : "Bracket card on the camera, and announced to VoiceOver, while the camera takes the frames of an exposure bracket. The number is the count of frames, 3, 5 or 7.",
       "extractionState" : "manual"
     },
+    "Taking a focus bracket. Press to stop." : {
+      "comment" : "VoiceOver value of the shutter while a focus bracket runs: pressing the shutter stops it after the current frame.",
+      "extractionState" : "manual"
+    },
+    "Tap the farthest thing you want sharp, or move the slider." : {
+      "comment" : "Hint on the focus dial when setting the farthest focus of a focus bracket.",
+      "extractionState" : "manual"
+    },
+    "Tap the nearest thing you want sharp, or move the slider." : {
+      "comment" : "Hint on the focus dial when setting the nearest focus of a focus bracket.",
+      "extractionState" : "manual"
+    },
     "The Bracket" : {
       "comment" : "Row in the photo details of a bracket's frame: every frame's exposure offset, and their order.",
+      "extractionState" : "manual"
+    },
+    "The camera stopped." : {
+      "comment" : "Focus bracket card: the series stopped because the camera stopped.",
       "extractionState" : "manual"
     },
     "The Frames" : {
@@ -685,6 +921,14 @@
     },
     "Up to %lld photos a second" : {
       "comment" : "Detail of the Slow burst speed in the Burst menu. The number is the most photos a second, 2; \"up to\": it can be fewer.",
+      "extractionState" : "manual"
+    },
+    "Use a tripod. Nothing in the picture should move between frames." : {
+      "comment" : "Advice in Bracket Settings for a focus bracket.",
+      "extractionState" : "manual"
+    },
+    "Use the Whole Range" : {
+      "comment" : "Button in Bracket Settings: sets the focus bracket's range back to 0 to 1.",
       "extractionState" : "manual"
     },
     "Values shown." : {

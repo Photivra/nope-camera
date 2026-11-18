@@ -23,6 +23,8 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case burst
         /// The self-timer and its photo (issue #39).
         case timer
+        /// A focus bracket's frames (issue #90). Its start delay shows as the self-timer's.
+        case focusBracket
     }
 
     /// How far the run has got.
@@ -174,12 +176,13 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         case .running:
             switch kind {
             case .interval: return .photosTaken(taken: taken, total: total)
-            case .astro: return .frame(number: min(taken + 1, total), total: total)
+            case .astro, .focusBracket: return .frame(number: min(taken + 1, total), total: total)
             case .burst: return .burstPhotosTaken(taken)
             case .timer: return .takingPhoto
             }
         case .paused:
-            return kind == .astro ? .framesPaused(taken: taken, total: total) : .paused(taken: taken, total: total)
+            return kind == .astro || kind == .focusBracket
+                ? .framesPaused(taken: taken, total: total) : .paused(taken: taken, total: total)
         case .saving:
             return kind == .timer ? .savingPhoto : .saving(saved: saved, taken: taken)
         case .savingPaused:
@@ -213,7 +216,7 @@ public struct LiveActivityContent: Codable, Hashable, Sendable {
         switch kind {
         case .interval: .seriesStopped(taken: taken, total: total)
         case .timer: saved > 0 ? .photosSaved(saved) : .noPhotoTaken
-        case .astro, .burst: .stoppedPhotosSaved(saved)
+        case .astro, .burst, .focusBracket: .stoppedPhotosSaved(saved)
         }
     }
 

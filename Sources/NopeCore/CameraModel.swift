@@ -108,6 +108,10 @@ public final class CameraModel {
     /// The astro helper (issue #60). Its intents arrive as ``CameraIntent/astro(_:)``.
     public let astro = AstroModel()
 
+    /// The bracket type and the focus bracket (``BracketModel``; docs/design/BRACKETING.md,
+    /// section 8). The exposure bracket itself is ``ManualControlsModel/bracket``.
+    public let bracketing = BracketModel()
+
     /// The comparison shot (issue #55). Its intents arrive as ``CameraIntent/comparison(_:)``.
     public let comparison: ComparisonModel
 
@@ -264,6 +268,8 @@ public final class CameraModel {
         case .requestPermission:
             await resolve(await backend.requestPermission())
         case .selectLens(let id):
+            // A range end set on one lens means nothing on another.
+            if bracketing.rangeEditing != nil { await handle(BracketIntent.finishSettingRange(keeps: false)) }
             await selectLens(id)
         case .capture:
             await pressShutter()
@@ -282,6 +288,8 @@ public final class CameraModel {
             if !astroRefuses(intent) { await light.handle(intent) }
         case .astro(let intent):
             await handle(intent)
+        case .bracket(let intent):
+            await handle(intent)
         case .comparison(let intent):
             comparison.handle(intent)
         case .setPhotoSizes(let sizes):
@@ -299,6 +307,7 @@ public final class CameraModel {
         case .setViewerOpen(let isOpen):
             isViewerOpen = isOpen
         }
+        await endStaleRangeEditing()
     }
 
     /// Keeps the person's photo sizes, and reconfigures the camera when the selected lens's size
@@ -371,6 +380,9 @@ public final class CameraModel {
     /// Side effects: may refocus or re-expose the camera.
     private func handleAuto(_ intent: AutoControlIntent) async {
         switch intent {
+        case .focusAndExpose(let point) where bracketing.rangeEditing != nil:
+            // While an end of a focus bracket's range is set, a tap focuses there once.
+            await handle(BracketIntent.focusRange(at: point))
         case .focusAndExpose(let point):
             await focus(at: point, locks: false)
         case .lockFocusAndExposure(let point):

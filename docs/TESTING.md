@@ -1814,6 +1814,40 @@ need each back lens of each supported iPhone, and gate release 1.0.0 (D4 is opti
 - **D4** (optional) whether the per-frame delegate calls arrive while later frames are still being
   exposed. Decides whether "Taking 3 frames" could count frames; not needed to ship.
 
+Focus bracketing (issue #90; docs/design/BRACKETING.md, sections 8 and 9) is unit-tested against a
+scripted backend (`CameraModelFocusBracketTests.swift`, `FocusBracketSettingsTests.swift`) and its
+screens with UI tests (`FocusBracketUITests.swift`). The build uses provisional values that these
+checks replace: a reported position counts as at its plan within 0.02 (`FocusFramePlace.tolerance`)
+and each photo waits 0.1 seconds after the handler (`CameraModel.focusSettleSeconds`). Closest
+Focus of This Lens is not shown until D5 confirms it for a lens. At the largest text size the
+accessibility audit reports the texts of Bracket Settings' Type row ("Type", and its value
+"Exposure" or "Focus") as "Dynamic Type font sizes are partially unsupported" or "Text clipped" in
+some runs and not others, on the iPhone and the iPad Simulator, in every form of the row tried,
+while each is one whole line at the largest size's line height; the audit skips those findings
+(`measuredTypeRowLabels`) and `testFocusBracketAtTheLargestTextSize` measures the row instead.
+The device checks gate release 1.0.0:
+
+- **D5** `isLockingFocusWithCustomLensPositionSupported` and `minimumFocusDistance` for each lens,
+  and the real closest focus measured with a ruler. Decides which lenses offer Focus and whether
+  Closest Focus of This Lens is shown for a lens.
+- **D6** for positions 0 to 1 in steps of 0.05: the position reported after the handler, twice in
+  each direction. Decides the tolerance and whether a direction rule is needed.
+- **D7** the time from the request to the handler, and whether a photo taken at once after it is
+  sharp where expected (a slanted ruler); the same with a wait of 50, 100 and 200 ms. Decides the
+  wait, and go or no-go for the feature on a lens.
+- **D8** the time for each frame of a 12-frame series at 12 MP and at 48 MP, with a RAW and with a
+  RAW and a HEIF. Nothing is shown; decides whether the limit of 50 frames stands.
+- **D9** a 20-frame series over the whole range on a slanted ruler: whether the sharp zones of
+  neighboring frames overlap, by lens and step. Decides the default frame count.
+- **D10** the shift of the picture's scale between the two ends of the range. Decides the tripod
+  advice wording.
+- **D11** exposure and white balance read from each file of a series in changing light: constant
+  (acceptance criterion 4).
+- **D12** battery and heat over a 50-frame series; the pause and continue on a call. Decides the
+  stop rules.
+- **D13** the frames of one series stacked in two stacking programs: they load and align. No
+  program is named in the app.
+
 Record the device, lens, iOS version and the result of each check here.
 
 ### The lens while the camera is busy on a device (issue #96)

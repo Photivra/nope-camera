@@ -1,8 +1,8 @@
 # Bracketing: the menu, exposure bracketing and focus bracketing
 
-Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18. The menu and exposure bracketing are for release 1.0.0; focus bracketing is designed here and built in release 1.1.0. This document becomes part of the plan when the decisions in section 10 are made; until then [BUILD-SPEC.md](BUILD-SPEC.md) sections 3.4 and 3.5 stand. The drawings are in [bracketing.html](bracketing.html); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md).
+Design version: 1.0.0, direction B · Reach. Proposed 2026-11-18. The menu and exposure bracketing are for release 1.0.0; focus bracketing, first planned for release 1.1.0, is built in release 1.0.0 as well (owner decision, 2026-11-18, issue #90), as designed here. This document becomes part of the plan when the decisions in section 10 are made; until then [BUILD-SPEC.md](BUILD-SPEC.md) sections 3.4 and 3.5 stand. The drawings are in [bracketing.html](bracketing.html); each figure named below is `screens/<name>.html` with a PNG beside it. Tokens are in [tokens.md](tokens.md).
 
-Contents: 1. Summary · 2. What the iPhone supports · 3. Where bracketing lives · 4. Exposure bracketing · 5. Focus bracketing · 6. Interaction and accessibility · 7. Build specification, 1.0.0: menu redesign with exposure bracketing · 8. Build specification, 1.1.0: focus bracketing · 9. Device checks · 10. Decisions for the owner · 11. When this is accepted
+Contents: 1. Summary · 2. What the iPhone supports · 3. Where bracketing lives · 4. Exposure bracketing · 5. Focus bracketing · 6. Interaction and accessibility · 7. Build specification, 1.0.0: menu redesign with exposure bracketing · 8. Build specification, 1.0.0: focus bracketing · 9. Device checks · 10. Decisions for the owner · 11. When this is accepted
 
 ## 1. Summary
 
@@ -97,7 +97,7 @@ The card names the type from 1.0.0 on, so it does not change when a second type 
 - What's in This Photo keeps its Photo row for the frames of a bracket and gains a Bracket group after the summary: Type, This Frame, Planned Exposure, The Bracket (figure `bracket-details`).
 - These values are the session's, held in memory with each saved photo until the app closes. They are not written to any file, so the metadata allowlist does not change. In Photos each frame is a separate photo; the footer says so.
 
-## 5. Focus bracketing (1.1.0)
+## 5. Focus bracketing (1.0.0)
 
 A series of single photos, each at the next focus position, for stacking in other software. The app takes the frames and nothing else.
 
@@ -264,9 +264,9 @@ Kept: "Frames", "Step", "Start Delay" (its translator comment is widened to cove
 
 Honesty review: the two Honesty strings above and the limited-frame sentences are drafts until reviewed.
 
-## 8. Build specification, 1.1.0: focus bracketing
+## 8. Build specification, 1.0.0: focus bracketing
 
-Figures: `bracket-settings-type` and every `bracket-focus-*` figure. Nothing here is built, promised or shown in 1.0.0. Section 9 comes first: the build starts only when the device checks support it.
+Figures: `bracket-settings-type` and every `bracket-focus-*` figure. First planned for 1.1.0; the owner moved it to 1.0.0 (2026-11-18, issue #90). The device checks D5 to D13 (section 9) have not been run yet, so the build uses provisional values, each named in the code and labeled an assumption: a reported position counts as at its plan within 0.02 (`FocusFramePlace.tolerance`, check D6), and each photo waits 0.1 seconds after the system reports the move applied (`CameraModel.focusSettleSeconds`, check D7). Closest Focus of This Lens is not shown on any lens until check D5 confirms it for that lens. The checks gate the release, and these values are changed to what they measure. At the accessibility text sizes the Type control is a row with its value under its title that opens the two choices, in place of the two-row picker of section 6: the system pickers and plain rows there failed the Dynamic Type audit.
 
 ### Core
 
@@ -320,7 +320,7 @@ Unit: `FocusBracketSettingsTests` (positions, step, order, swapped ends, the fra
 
 UI, each with an accessibility audit: `testBracketTypeFocus`, `testFocusRangeSetOnThePicture`, `testFocusBracketRunsAndStops`, `testFocusBracketPausesAndContinues`, `testFocusBracketEndCards`, `testFocusNotOfferedWithoutManualFocus`, `testFocusBracketViewerAndDetails`, `testFocusBracketAtTheLargestTextSize`, `testFocusBracketRightToLeft`, `testFocusBracketNightMode`, `testFocusBracketOnIPad`; `ShortcutUITests`: Type Focus; `LiveActivityUITests`: the series.
 
-### Strings (English), 1.1.0
+### Strings (English), 1.0.0: focus bracketing
 
 | String | Where |
 | --- | --- |
@@ -354,7 +354,7 @@ All are drafts for the Honesty review. The store listing and README describe foc
 
 ## 9. Device checks
 
-To be run on a device for each back lens of each supported phone, and recorded in `docs/TESTING.md` under a new heading "Bracketing on a device". The 1.0.0 items gate 1.0.0; the rest gate the start of the 1.1.0 build.
+To be run on a device for each back lens of each supported phone, and recorded in `docs/TESTING.md` under a new heading "Bracketing on a device". The checks marked 1.0.0 gate 1.0.0; the checks marked 1.1.0 were planned to gate the focus bracketing build, which moved to 1.0.0, so they now gate the 1.0.0 release.
 
 | # | Check | Gates | Decides |
 | --- | --- | --- | --- |

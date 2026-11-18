@@ -107,7 +107,8 @@ enum PhotoViewerFacts {
 
     /// The frames of the bracket a photo belongs to, in the order taken, or the photo alone
     /// when it isn't a bracket's frame: the session's records next to it with the same bracket,
-    /// the same press of the shutter (`SessionPhoto.takenAt`) and consecutive frame numbers.
+    /// the same press of the shutter (`SessionPhoto.takenAt`; for a focus bracket, the same
+    /// planned positions) and consecutive frame numbers.
     /// A frame that wasn't saved leaves the frames before it as the bracket.
     ///
     /// - Parameters:
@@ -121,17 +122,22 @@ enum PhotoViewerFacts {
         /// Whether a record is frame `number` of the same bracket.
         func isFrame(_ record: SessionPhoto, _ number: Int) -> Bool {
             guard let other = record.photo.bracket else { return false }
-            return other.frame.number == number && other.count == place.count && other.offsets == place.offsets
-                && other.order == place.order && record.takenAt == photo.takenAt
+            guard other.number == number, other.count == place.count, other.type == place.type else { return false }
+            // A focus bracket's frames are separate presses of the shutter, each with its own
+            // time: they share their planned positions instead.
+            guard let focus = place.focus else {
+                return other.offsets == place.offsets && other.order == place.order && record.takenAt == photo.takenAt
+            }
+            return other.focus?.positions == focus.positions && other.focus?.order == focus.order
         }
         var first = index
-        while first > photos.startIndex, place.frame.number - (index - first) > 1,
-            isFrame(photos[first - 1], place.frame.number - (index - first) - 1)
+        while first > photos.startIndex, place.number - (index - first) > 1,
+            isFrame(photos[first - 1], place.number - (index - first) - 1)
         {
             first -= 1
         }
         var last = index
-        while last + 1 < photos.endIndex, isFrame(photos[last + 1], place.frame.number + (last - index) + 1) {
+        while last + 1 < photos.endIndex, isFrame(photos[last + 1], place.number + (last - index) + 1) {
             last += 1
         }
         return Array(photos[first...last])

@@ -517,6 +517,7 @@ struct CameraSetupTests {
         "nearFocusLimit": { $0.nearFocusLimit = true },
         "drive": { $0.drive = CameraSetup.driveName(.timer(.threeSeconds)) },
         "bracket": { $0.bracket = CameraSetup.BracketValue(BracketSettings(frameCount: 3, step: 1)) },
+        "focusBracket": { $0.focusBracket = FocusBracketSettings(nearest: 0.2, farthest: 0.7, frameCount: 12) },
         "intervalSeconds": { $0.intervalSeconds = 30 },
         "intervalCount": { $0.intervalCount = 50 },
         "intervalStopAfter": { $0.intervalStopAfter = IntervalSettings.StopAfter.time.rawValue },

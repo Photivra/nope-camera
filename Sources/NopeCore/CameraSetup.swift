@@ -86,6 +86,9 @@ public struct CameraSetup: Codable, Equatable, Sendable {
     /// The exposure bracket, or `nil` when bracketing is off.
     public var bracket: BracketValue?
 
+    /// The focus bracket, or `nil` when it is off. Absent in presets of earlier versions.
+    public var focusBracket: FocusBracketSettings?
+
     /// The time between interval photos, in seconds.
     public var intervalSeconds: Double
 
@@ -192,6 +195,7 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         nearFocusLimit = false
         drive = Self.driveName(.single)
         bracket = nil
+        focusBracket = nil
         intervalSeconds = IntervalSettings.standard.interval
         intervalCount = IntervalSettings.standard.count
         intervalStopAfter = IntervalSettings.standard.stopAfter.rawValue
@@ -221,6 +225,7 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         nearFocusLimit = (try? container.decodeIfPresent(Bool.self, forKey: .nearFocusLimit)) ?? factory.nearFocusLimit
         drive = (try? container.decodeIfPresent(String.self, forKey: .drive)) ?? factory.drive
         bracket = try? container.decodeIfPresent(BracketValue.self, forKey: .bracket)
+        focusBracket = try? container.decodeIfPresent(FocusBracketSettings.self, forKey: .focusBracket)
         intervalSeconds = (try? container.decodeIfPresent(Double.self, forKey: .intervalSeconds)) ?? factory.intervalSeconds
         intervalCount = (try? container.decodeIfPresent(Int.self, forKey: .intervalCount)) ?? factory.intervalCount
         intervalStopAfter =
@@ -255,6 +260,8 @@ public struct CameraSetup: Codable, Equatable, Sendable {
         case drive
         /// ``CameraSetup/bracket``.
         case bracket
+        /// ``CameraSetup/focusBracket``.
+        case focusBracket
         /// ``CameraSetup/intervalSeconds``.
         case intervalSeconds
         /// ``CameraSetup/intervalCount``.
@@ -341,6 +348,7 @@ extension CameraModel {
         setup.nearFocusLimit = manual.nearFocusLimit
         setup.drive = CameraSetup.driveName(drive.mode)
         setup.bracket = manual.bracket.map(CameraSetup.BracketValue.init)
+        setup.focusBracket = isFocusBracketOn ? bracketing.focus : nil
         setup.intervalSeconds = manual.interval.interval
         setup.intervalCount = manual.interval.count
         setup.intervalStopAfter = manual.interval.stopAfter.rawValue
@@ -420,5 +428,10 @@ extension CameraModel {
         await send(.auto(.setExposureCompensation(values.exposureCompensation)))
         await send(.auto(.setNearFocusLimit(setup.nearFocusLimit)))
         await send(.manual(.setBracket(setup.bracket?.settings)))
+        if let focusBracket = setup.focusBracket {
+            await send(.bracket(.setFocus(focusBracket)))
+            await send(.bracket(.setType(.focus)))
+            await send(.bracket(.setOn(true)))
+        }
     }
 }

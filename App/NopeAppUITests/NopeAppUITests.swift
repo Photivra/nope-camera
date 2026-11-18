@@ -738,13 +738,24 @@ final class NopeAppUITests: XCTestCase {
         "On: each photo keeps only what it needs to open. Off: choose each item below.", "Location",
     ]
 
-    /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``. In
+    /// The texts of Bracket Settings' Type row at the largest text size: its title and its value.
+    /// The audit reports them as "Dynamic Type font sizes are partially unsupported" or "Text
+    /// clipped" in some runs and not others, on iPhone and iPad, in every form tried (a picker
+    /// row, an inline picker, plain rows, a row with the value under the title), while each is
+    /// one whole line 63.3 to 63.5 points high, the largest size's line. The row is measured
+    /// instead (`testFocusBracketAtTheLargestTextSize`: taller than 110 points).
+    static let measuredTypeRowLabels = ["Type", "Exposure", "Focus"]
+
+    /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``, or a
+    /// Dynamic Type or Text clipped finding on a text of ``measuredTypeRowLabels``. In
     /// build 44209365138 the iPad runner's audit reported both in three audits in a row in the
     /// night-mode Settings sheet at the largest text size, where they measure 167 and 83.5 points
     /// high and grow at every step from the default size (docs/TESTING.md).
     private static func isMeasuredDynamicTypeFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        guard issue.auditType == .dynamicType, let label = issue.element?.label else { return false }
-        return measuredDynamicTypeLabels.contains(label)
+        guard issue.auditType == .dynamicType || issue.auditType == .textClipped, let label = issue.element?.label
+        else { return false }
+        if issue.auditType == .dynamicType, measuredDynamicTypeLabels.contains(label) { return true }
+        return issue.element?.elementType == .staticText && measuredTypeRowLabels.contains(label)
     }
 
     /// Whether an issue is "Text clipped" on an element in the bottom fifth of the list or popover
