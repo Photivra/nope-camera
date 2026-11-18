@@ -2959,6 +2959,202 @@
           }
         }
       }
+    },
+    "Assistant action: Apply Preset" : {
+      "comment" : "The name of nope.'s Apply Preset action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply Preset"
+          }
+        }
+      }
+    },
+    "Assistant action: Open Assistant Access" : {
+      "comment" : "The name of nope.'s Open Assistant Access action.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open Assistant Access"
+          }
+        }
+      }
+    },
+    "Assistant action: Open the Camera" : {
+      "comment" : "The name of nope.'s Open the Camera action.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the Camera"
+          }
+        }
+      }
+    },
+    "Assistant action: Set Fast Shutter" : {
+      "comment" : "The name of nope.'s Set Fast Shutter action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Fast Shutter"
+          }
+        }
+      }
+    },
+    "Assistant action: Set Focus Range" : {
+      "comment" : "The name of nope.'s Set Focus Range action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Focus Range"
+          }
+        }
+      }
+    },
+    "Assistant action: Set Focus on Faces" : {
+      "comment" : "The name of nope.'s Set Focus on Faces action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Focus on Faces"
+          }
+        }
+      }
+    },
+    "Assistant action: Set Night Mode" : {
+      "comment" : "The name of nope.'s Set Night Mode action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Night Mode"
+          }
+        }
+      }
+    },
+    "Assistant action: Set Photo Size" : {
+      "comment" : "The name of nope.'s Set Photo Size action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set Photo Size"
+          }
+        }
+      }
+    },
+    "Assistant action: Start Interval Shooting" : {
+      "comment" : "The name of nope.'s Start Interval Shooting action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Interval Shooting"
+          }
+        }
+      }
+    },
+    "Assistant action: Stop Interval Shooting" : {
+      "comment" : "The name of nope.'s Stop Interval Shooting action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stop Interval Shooting"
+          }
+        }
+      }
+    },
+    "Assistant action: Switch Lens" : {
+      "comment" : "The name of nope.'s Switch Lens action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch Lens"
+          }
+        }
+      }
+    },
+    "Assistant action: Take Bracket" : {
+      "comment" : "The name of nope.'s Take Bracket action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Bracket"
+          }
+        }
+      }
+    },
+    "Assistant action: Take Photo" : {
+      "comment" : "The name of nope.'s Take Photo action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take Photo"
+          }
+        }
+      }
+    },
+    "Assistant action: Turn Off the Light" : {
+      "comment" : "The name of nope.'s Turn Off the Light action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn Off the Light"
+          }
+        }
+      }
+    },
+    "Assistant action: Turn On the Light" : {
+      "comment" : "The name of nope.'s Turn On the Light action, in the This Session list on the Assistant Access page.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn On the Light"
+          }
+        }
+      }
+    },
+    "Search keywords: Assistant Access" : {
+      "comment" : "Settings search keywords for Assistant Access, separated by commas. Not shown on screen. Siri and Shortcuts are Apple's names.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "siri, shortcuts, assistant, voice, automation, AI, intelligence, ask, confirm"
+          }
+        }
+      }
+    },
+    "Siri and Shortcuts" : {
+      "comment" : "Accessibility screen section header: taking photos with Siri and the Shortcuts app. Siri and Shortcuts are Apple's names.",
+      "extractionState" : "manual"
     }
   },
   "version" : "1.0"

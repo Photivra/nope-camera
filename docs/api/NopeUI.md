@@ -303,6 +303,572 @@ internal, declared in `Sources/NopeUI/ControlDial.swift`
 
 The f-numbers, widest first.
 
+## `AssistantAccessSettingsView`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor struct AssistantAccessSettingsView
+```
+
+Settings › Privacy › Assistant Access (issue #82; `docs/design/assistant-access.md`,
+section 3; figures `assistant-page-off`, `assistant-page-on`): while access is off, a line
+that Ask First is not used now; the Assistant Access switch with its explanation; the three
+Ask First choices, always shown and enabled; what assistants get; and the requests of this
+session.
+
+The page changes the settings only through `NopeSettings.setAssistantAccess(_:)` and
+`NopeSettings.setAssistantAsk(_:)`; the rules are in `AssistantAccess` in `NopeCore`. No row appears or
+disappears when the switch changes, except the line at the top, which is shown only while
+access is off, as Fast Shutter's is while Manual Controls are on.
+
+## `AssistantAccessSettingsView/body`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The page.
+
+## `AssistantAccessSettingsView/init(settings:session:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor init(settings: NopeSettings, session: AssistantSession?)
+```
+
+Creates the page.
+
+- Parameters:
+  - settings: The person's settings.
+  - session: What assistants did since the app opened, or `nil`.
+
+## `AssistantAccessSettingsView/session`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let session: AssistantSession?
+```
+
+The session's requests, or `nil` where there are none to show.
+
+## `AssistantAccessSettingsView/settings`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let settings: NopeSettings
+```
+
+The person's settings.
+
+## `AssistantAccessSettingsView/summary(of:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor static func summary(of settings: NopeSettings) -> Text
+```
+
+The row's value: Off, or the Ask First choice while access is on.
+
+- Parameter settings: The settings.
+- Returns: The value.
+
+## `AssistantAccessSwitch`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor struct AssistantAccessSwitch
+```
+
+The Assistant Access switch with its explanation, as an ``ExplainedToggle``, except at the
+accessibility text sizes: there the title is a line of its own above the switch, across the
+row's full width. Beside the switch, "Assistant Access" wrapped into a narrow column that the
+accessibility audit reported as "Dynamic Type font sizes are partially unsupported" (iPhone
+18 Pro Simulator, iOS 27.2). VoiceOver still reads one element: the switch, named
+"Assistant Access", with its value, then the explanation.
+
+## `AssistantAccessSwitch/body`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The switch and its explanation.
+
+## `AssistantAccessSwitch/init(isOn:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor init(isOn: Binding<Bool>)
+```
+
+Creates the switch.
+
+- Parameter isOn: Whether Assistant Access is on.
+
+## `AssistantAccessSwitch/isOn`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let isOn: Binding<Bool>
+```
+
+Whether Assistant Access is on.
+
+## `AssistantAccessText`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+enum AssistantAccessText
+```
+
+The text of Assistant Access (`docs/design/assistant-access.md`, section 15). Drafts for the
+Honesty review; all are in `Honesty.xcstrings`.
+
+## `AssistantAccessText/askFooter`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let askFooter: LocalizedStringResource
+```
+
+The Ask First footer (text 9).
+
+## `AssistantAccessText/bundle`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let bundle: LocalizedStringResource.BundleDescription
+```
+
+The module's bundle, for the resources.
+
+## `AssistantAccessText/hintCaption`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let hintCaption: LocalizedStringResource
+```
+
+The camera hint's caption (text 20).
+
+## `AssistantAccessText/line(for:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func line(for record: AssistantRequestRecord) -> String
+```
+
+One line of the This Session list: the action's name and what happened.
+
+- Parameter record: The request.
+- Returns: For example "Take Photo. Asked, allowed."
+
+## `AssistantAccessText/name(of:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func name(of action: AssistantAction) -> LocalizedStringResource
+```
+
+An action's name, as the Shortcuts app shows it.
+
+- Parameter action: The action.
+- Returns: The name.
+
+## `AssistantAccessText/name(of:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func name(of level: AssistantAskLevel) -> LocalizedStringResource
+```
+
+An Ask First choice's name (text 5).
+
+- Parameter level: The choice.
+- Returns: The name.
+
+## `AssistantAccessText/name(of:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func name(of result: AssistantRequestResult) -> LocalizedStringResource
+```
+
+What happened to a request (text 14).
+
+- Parameter result: The result.
+- Returns: The words.
+
+## `AssistantAccessText/noRequests`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let noRequests: LocalizedStringResource
+```
+
+The This Session list while it is empty (text 13).
+
+## `AssistantAccessText/offLine`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let offLine: LocalizedStringResource
+```
+
+The line at the top while access is off (text 3).
+
+## `AssistantAccessText/refusals(_:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func refusals(_ count: Int) -> String
+```
+
+The refusal card (text 21).
+
+- Parameter count: The requests refused since the app opened, at least 1.
+- Returns: The sentence.
+
+## `AssistantAccessText/rowNote`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let rowNote: LocalizedStringResource
+```
+
+The row's note (text 1).
+
+## `AssistantAccessText/sentence(of:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func sentence(of level: AssistantAskLevel) -> LocalizedStringResource
+```
+
+An Ask First choice's sentence (texts 6 to 8).
+
+- Parameter level: The choice.
+- Returns: The sentence.
+
+## `AssistantAccessText/sessionFooter`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let sessionFooter: LocalizedStringResource
+```
+
+The This Session footer (text 13).
+
+## `AssistantAccessText/sessionHeader`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let sessionHeader: LocalizedStringResource
+```
+
+The This Session header (text 13).
+
+## `AssistantAccessText/spokenHint(_:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func spokenHint(_ sentence: String) -> String
+```
+
+What VoiceOver says for the hint.
+
+- Parameter sentence: The sentence the assistant got.
+- Returns: "Siri or Shortcuts." and the sentence.
+
+## `AssistantAccessText/switchExplanation`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let switchExplanation: LocalizedStringResource
+```
+
+The switch's explanation (text 4).
+
+## `AssistantAccessText/tip`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static var tip: String { get }
+```
+
+The tip (text 22).
+
+## `AssistantAccessText/unlockToChange`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let unlockToChange: LocalizedStringResource
+```
+
+The note of the read-only row in the Lock Screen camera (text 24).
+
+## `AssistantAccessText/value(of:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static func value(of level: AssistantAskLevel) -> LocalizedStringResource
+```
+
+The row's value for an Ask First choice while access is on (text 2).
+
+- Parameter level: The choice.
+- Returns: The value.
+
+## `AssistantAccessText/valueOff`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let valueOff: LocalizedStringResource
+```
+
+The row's value while access is off (text 2).
+
+## `AssistantAccessText/whatAssistantsGet1`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let whatAssistantsGet1: LocalizedStringResource
+```
+
+What Assistants Get, 1 (text 10).
+
+## `AssistantAccessText/whatAssistantsGet2`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let whatAssistantsGet2: LocalizedStringResource
+```
+
+What Assistants Get, 2 (text 11).
+
+## `AssistantAccessText/whatAssistantsGet3`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let whatAssistantsGet3: LocalizedStringResource
+```
+
+What Assistants Get, 3 (text 12).
+
+## `AssistantAccessText/whatAssistantsGetHeader`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+static let whatAssistantsGetHeader: LocalizedStringResource
+```
+
+The What Assistants Get header.
+
+## `AssistantCard`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor struct AssistantCard
+```
+
+A card on the camera with a sentence, a Settings button and a Close button, which stays
+until one is pressed.
+
+## `AssistantCard/body`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The card.
+
+## `AssistantCard/close`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let close: () -> Void
+```
+
+Closes the card.
+
+## `AssistantCard/identifier`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let identifier: String
+```
+
+The card's accessibility identifier.
+
+## `AssistantCard/init(text:identifier:openSettings:close:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor init(text: String, identifier: String, openSettings: (() -> Void)?, close: @escaping () -> Void)
+```
+
+Creates the card.
+
+- Parameters:
+  - text: The sentence.
+  - identifier: The card's accessibility identifier.
+  - openSettings: Opens Settings at Assistant Access, or `nil`.
+  - close: Closes the card.
+
+## `AssistantCard/openSettings`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let openSettings: (() -> Void)?
+```
+
+Opens Settings at Assistant Access, or `nil` where Settings can't be opened.
+
+## `AssistantCard/text`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let text: String
+```
+
+The sentence.
+
+## `AssistantHints`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor struct AssistantHints
+```
+
+The Assistant Access hint and cards on the camera (`docs/design/assistant-access.md`,
+section 10; figures `assistant-camera-notice`, `assistant-camera-refused`, `assistant-tip`):
+after an action an assistant ran, "Siri or Shortcuts" and the sentence the assistant got;
+after a refusal, how many were refused, with Settings and Close; once after five confirmed
+requests, the tip. Nothing where the app has no session (the Lock Screen camera).
+
+## `AssistantHints/body`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hint and cards that apply.
+
+## `AssistantHints/hintSeconds(voiceOverIsOn:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor static func hintSeconds(voiceOverIsOn: Bool) -> Double
+```
+
+How long the hint stays, in seconds: as long as the other passing camera messages, and
+longer with VoiceOver, so it is announced before it goes. A product choice, not a
+platform value.
+
+- Parameter voiceOverIsOn: Whether VoiceOver is on.
+- Returns: The time in seconds.
+
+## `AssistantHints/init()`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor init()
+```
+
+Creates the hints; they read the session from the environment.
+
+## `AssistantNoticeHint`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor struct AssistantNoticeHint
+```
+
+"Siri or Shortcuts" over the sentence an assistant got, announced after any capture result.
+
+## `AssistantNoticeHint/body`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor var body: some View { get }
+```
+
+The hint.
+
+## `AssistantNoticeHint/init(sentence:)`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor init(sentence: String)
+```
+
+Creates the hint.
+
+- Parameter sentence: The sentence the assistant got.
+
+## `AssistantNoticeHint/sentence`
+
+internal, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+@MainActor let sentence: String
+```
+
+The sentence.
+
 ## `AstroFeedback`
 
 internal, declared in `Sources/NopeUI/AstroControls.swift`
@@ -5002,6 +5568,19 @@ internal, declared in `Sources/NopeUI/DriveStrip.swift`
 ```
 
 The space on each side of the label, in points, in the strip.
+
+## `EnvironmentValues/assistantSession`
+
+public, declared in `Sources/NopeUI/AssistantAccessSettingsView.swift`
+
+```swift
+var assistantSession: AssistantSession? { get set }
+```
+
+What assistants did since the app opened (issue #82), for the camera's Assistant Access
+hint, refusal card and tip and for the This Session list. `nil` where no assistant can
+reach the app: the Lock Screen camera, whose Settings then show Assistant Access read
+only, and previews. The app sets it.
 
 ## `EnvironmentValues/cameraGravitySource`
 
@@ -18491,6 +19070,36 @@ case accessibility
 
 The Accessibility row and page.
 
+## `SettingsID/assistantAccess`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case assistantAccess
+```
+
+The Assistant Access row and page (issue #82).
+
+## `SettingsID/assistantAccessSwitch`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case assistantAccessSwitch
+```
+
+The Assistant Access switch, on its page.
+
+## `SettingsID/assistantAsk`
+
+public, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case assistantAsk
+```
+
+Ask First, on the Assistant Access page.
+
 ## `SettingsID/camera`
 
 public, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -19227,6 +19836,16 @@ case accessibility
 
 Accessibility.
 
+## `SettingsPage/assistantAccess`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+case assistantAccess
+```
+
+Assistant Access.
+
 ## `SettingsPage/copies`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
@@ -19331,7 +19950,8 @@ navigation stack, opened from the camera (`docs/design/BUILD-SPEC.md`, 3.10;
 
 - Presets, always shown where the app has presets, with Factory Defaults inside;
 - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
-- Privacy: Details in Each Photo, Sign Each Photo;
+- Privacy: Details in Each Photo, Sign Each Photo, Assistant Access (issue #82), last in the
+  group;
 - Camera: Fast Shutter, Focus on Faces;
 - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Live Activity;
@@ -19516,12 +20136,12 @@ var hasPresets: Bool
 
 Whether presets exist (not in the Lock Screen camera).
 
-## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:)`
+## `SettingsSearch/Availability/init(hasPresets:offersPhotoSize:hasFrontCamera:offersLocation:offersProcessedMarker:offersLiveActivity:offersAstro:offersAssistantAccessPage:)`
 
 internal, declared in `Sources/NopeUI/SettingsSearch.swift`
 
 ```swift
-init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false)
+init(hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true, offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false, offersAstro: Bool = false, offersAssistantAccessPage: Bool = true)
 ```
 
 Creates the availability.
@@ -19534,6 +20154,7 @@ Creates the availability.
   - offersProcessedMarker: Whether a lens has no Bayer RAW.
   - offersLiveActivity: Whether the Live Activity switch is offered.
   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
+  - offersAssistantAccessPage: Whether the Assistant Access page can be opened.
 
 ## `SettingsSearch/Availability/offers(_:)`
 
@@ -19547,6 +20168,17 @@ Whether the item exists here.
 
 - Parameter id: The item.
 - Returns: `false` for an item this device or screen doesn't show.
+
+## `SettingsSearch/Availability/offersAssistantAccessPage`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+var offersAssistantAccessPage: Bool
+```
+
+Whether the Assistant Access page can be opened: everywhere but the Lock Screen
+camera, where the row is read only.
 
 ## `SettingsSearch/Availability/offersAstro`
 
@@ -19901,6 +20533,26 @@ static let alwaysSaved: LocalizedStringResource
 ```
 
 "Always Saved".
+
+## `SettingsText/askFirst`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let askFirst: LocalizedStringResource
+```
+
+"Ask First", on the Assistant Access page.
+
+## `SettingsText/assistantAccess`
+
+internal, declared in `Sources/NopeUI/SettingsSearch.swift`
+
+```swift
+static let assistantAccess: LocalizedStringResource
+```
+
+"Assistant Access" (issue #82).
 
 ## `SettingsText/bundle`
 

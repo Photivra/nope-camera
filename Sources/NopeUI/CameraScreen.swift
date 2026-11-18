@@ -79,6 +79,10 @@ public struct CameraScreen<Viewfinder: View>: View {
     /// Whether the app is in the foreground, to turn the light off when it leaves.
     @Environment(\.scenePhase) private var scenePhase
 
+    /// What assistants did since the app opened; its Open Assistant Access request opens
+    /// Settings at that page (issue #82).
+    @Environment(\.assistantSession) private var assistantSession
+
     /// The screen's content for the current state.
     public var body: some View {
         // Outside the ready camera, the Settings button sits above the content, not over it, so
@@ -178,6 +182,13 @@ public struct CameraScreen<Viewfinder: View>: View {
                 settingsNavigation.open(id)
                 showsSettings = true
             })
+        // Open Assistant Access, from Shortcuts or the off answer, opens Settings at the page.
+        .onChange(of: assistantSession?.opensSettingsPage, initial: true) { _, opens in
+            guard opens == true, let assistantSession else { return }
+            assistantSession.settingsPageOpened()
+            settingsNavigation.open(.assistantAccess)
+            showsSettings = true
+        }
         // The light turns off when nope. leaves the foreground (AGENTS.md, "Battery"). The model
         // hears of leaving and coming back: the self-timer is cancelled, and astro frames pause
         // and continue (issue #64).

@@ -19,7 +19,12 @@ final class ShortcutUITests: XCTestCase {
     func launch(_ scenario: String, request: String) -> XCUIApplication {
         let app = XCUIApplication()
         // Signing on (off by default, issue #80), so Siri's answers about signed photos show.
-        app.launchArguments = ["-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request, "-NopeSimulatedSigning"]
+        // Assistant Access on with no question (off by default, issue #82), so each request runs
+        // as before; AssistantAccessUITests covers the check itself.
+        app.launchArguments = [
+            "-NopeSimulatedCamera", scenario, "-NopeSimulatedShortcut", request, "-NopeSimulatedSigning",
+            "-NopeSettings.assistantAccess", "YES", "-NopeSettings.assistantAsk", "never",
+        ]
         app.launchAfterThePreviousRunExits()
         return app
     }

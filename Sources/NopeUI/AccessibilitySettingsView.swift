@@ -29,6 +29,16 @@ struct AccessibilitySettingsView: View {
             }
             Section {
                 row(
+                    systemImage: "mic",
+                    Text(
+                        "“Take a photo with nope.” works after you turn on Assistant Access in Settings › Privacy. nope. then asks before each action; Only Before a Photo or Never asks less. VoiceOver, Voice Control, Switch Control, the volume buttons and Camera Control always work.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Accessibility screen: Siri and Shortcuts need Assistant Access (issue #82; docs/design/assistant-access.md, text 26). \"Take a photo with nope.\" is the Siri phrase; use its translation. Assistant Access, Settings, Privacy, Only Before a Photo and Never are names in nope.'s Settings. VoiceOver, Voice Control, Switch Control and Camera Control are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English."))
+            } header: {
+                Text("Siri and Shortcuts", bundle: .module, comment: "Accessibility screen section header: taking photos with Siri and the Shortcuts app. Siri and Shortcuts are Apple's names.")
+            }
+            Section {
+                row(
                     systemImage: "timer",
                     Text(
                         "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown.", bundle: .module,
@@ -57,6 +67,12 @@ struct AccessibilitySettingsView: View {
                         "nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings.",
                         bundle: .module,
                         comment: "Accessibility screen, Night Mode: how to dim the screen. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS."))
+                row(
+                    systemImage: "mic",
+                    Text(
+                        "Siri, the Shortcuts app and the question asked before an action are drawn by iOS, so they aren’t red. Only Before a Photo or Never in Assistant Access asks less often, or use the shutter.",
+                        tableName: "Honesty", bundle: .module,
+                        comment: "Accessibility screen, Night Mode: what nope. can't turn red (issue #82). Siri, Shortcuts and iOS are Apple's names; Only Before a Photo, Never and Assistant Access are names in nope.'s Settings. Draft for the Honesty review. Must not claim more than the English."))
             } header: {
                 Text(SettingsText.nightMode)
             }

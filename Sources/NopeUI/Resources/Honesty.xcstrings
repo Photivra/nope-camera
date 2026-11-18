@@ -953,6 +953,202 @@
     "Your nope. photo was saved. The second photo, with the phone's processing, couldn't be taken, so there is nothing to compare. You can try again." : {
       "comment" : "Compare view, when the second photo of the comparison shot failed. Keep \"nope.\" unchanged. Must not claim more than the English.",
       "extractionState" : "manual"
+    },
+    "Actions run without asking." : {
+      "comment" : "Explains the Never choice of Ask First on nope.'s Assistant Access page. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "After an action, the assistant gets one sentence about what happened, such as “Photo saved.” It never gets a photo, a location or a photo’s details from nope." : {
+      "comment" : "On nope.'s Assistant Access page. \"Photo saved.\" quotes Siri's answer; use its translation. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English: \"from nope.\" is part of the claim.",
+      "extractionState" : "manual"
+    },
+    "An automation that runs with no one there can’t answer, so it stops at the question." : {
+      "comment" : "Under the Ask First choices on nope.'s Assistant Access page: a Shortcuts automation that runs unattended stops at nope.'s question. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Ask Before a Photo" : {
+      "comment" : "Value of the Assistant Access row in nope.'s Settings: access is on and nope. asks only before an action that takes photos.",
+      "extractionState" : "manual"
+    },
+    "Ask Every Action" : {
+      "comment" : "Value of the Assistant Access row in nope.'s Settings: access is on and nope. asks before every action.",
+      "extractionState" : "manual"
+    },
+    "Ask First" : {
+      "comment" : "Section header and setting on nope.'s Assistant Access page: when nope. asks before an assistant's action runs. A name in nope.'s Settings.",
+      "extractionState" : "manual"
+    },
+    "Ask First: Never" : {
+      "comment" : "A choice of Ask First on nope.'s Assistant Access page: nope. never asks first. A name in nope.'s Settings.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never"
+          }
+        }
+      }
+    },
+    "Asked, allowed." : {
+      "comment" : "In the This Session list on nope.'s Assistant Access page: nope. asked and the person allowed the action.",
+      "extractionState" : "manual"
+    },
+    "Asked, cancelled." : {
+      "comment" : "In the This Session list on nope.'s Assistant Access page: nope. asked and the person cancelled.",
+      "extractionState" : "manual"
+    },
+    "Assistant Access" : {
+      "comment" : "Settings row, page title and switch: whether Siri, Shortcuts and other assistants can use nope.'s actions. A name in nope.'s Settings.",
+      "extractionState" : "manual"
+    },
+    "Assistant Access is off, so Ask First is not used now." : {
+      "comment" : "First row of the Assistant Access page in nope.'s Settings while the switch is off. Assistant Access and Ask First are names on the page. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Assistant Access is off. nope. refused %lld requests since it opened." : {
+      "comment" : "Card on nope.'s camera after Siri, Shortcuts or another assistant asked for an action while Assistant Access was off. The number is how many requests were refused. Keep \"nope.\" unchanged. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Assistant Access is off. nope. refused %lld request since it opened."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Assistant Access is off. nope. refused %lld requests since it opened."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Assistant Access: Off" : {
+      "comment" : "Value of the Assistant Access row in nope.'s Settings: assistants can't use nope.'s actions.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
+    "Assistant card: Close" : {
+      "comment" : "Button that closes nope.'s Assistant Access card or tip on the camera.",
+      "extractionState" : "manual"
+    },
+    "Changes run without asking. nope. asks before an action that takes photos." : {
+      "comment" : "Explains the Only Before a Photo choice of Ask First on nope.'s Assistant Access page. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Every Action" : {
+      "comment" : "A choice of Ask First on nope.'s Assistant Access page: nope. asks before every action. A name in nope.'s Settings.",
+      "extractionState" : "manual"
+    },
+    "For Siri, Shortcuts and other assistants." : {
+      "comment" : "Note under the Assistant Access row in nope.'s Settings. Siri and Shortcuts are Apple's names. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Kept in memory only. Cleared when nope. closes." : {
+      "comment" : "Under the This Session list on nope.'s Assistant Access page. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses every one of them." : {
+      "comment" : "Explains the Assistant Access switch in nope.'s Settings. Siri and Shortcuts are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Never Ask" : {
+      "comment" : "Value of the Assistant Access row in nope.'s Settings: access is on and nope. never asks first.",
+      "extractionState" : "manual"
+    },
+    "No requests since nope. opened." : {
+      "comment" : "On nope.'s Assistant Access page when no assistant asked for anything since nope. opened. Keep \"nope.\" unchanged.",
+      "extractionState" : "manual"
+    },
+    "Only Before a Photo" : {
+      "comment" : "A choice of Ask First on nope.'s Assistant Access page: nope. asks only before an action that takes photos. A name in nope.'s Settings.",
+      "extractionState" : "manual"
+    },
+    "Ran without asking." : {
+      "comment" : "In the This Session list on nope.'s Assistant Access page: the action ran without a question.",
+      "extractionState" : "manual"
+    },
+    "Refused." : {
+      "comment" : "In the This Session list on nope.'s Assistant Access page: nope. refused the action.",
+      "extractionState" : "manual"
+    },
+    "Siri or Shortcuts" : {
+      "comment" : "Caption of the hint on nope.'s camera after Siri, Shortcuts or another assistant ran an action. nope. can't tell which one asked. Siri and Shortcuts are Apple's names.",
+      "extractionState" : "manual"
+    },
+    "Siri or Shortcuts. %@" : {
+      "comment" : "What VoiceOver says for the hint on nope.'s camera after an assistant ran an action. The placeholder is the sentence the assistant got, such as \"Now using the telephoto camera.\".",
+      "extractionState" : "manual"
+    },
+    "Siri, Shortcuts and Assistants" : {
+      "comment" : "Honesty heading: what Siri, Shortcuts and other assistants can do with nope. and learn from it (issue #82). Siri and Shortcuts are Apple's names.",
+      "extractionState" : "manual"
+    },
+    "Siri, Shortcuts and other assistants can use nope. only if you turn on Assistant Access, and nope. asks before each action unless you choose otherwise. An assistant gets one sentence about what happened. It never gets a photo, a location or a photo’s details from nope. This covers nope.’s own actions; photos you save to Photos, and what you let an assistant see on your screen, are up to iOS." : {
+      "comment" : "Issue #82; docs/design/assistant-access.md, text 25. Assistant Access is the name of nope.'s setting. Siri, Shortcuts, Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Siri, the Shortcuts app and the question asked before an action are drawn by iOS, so they aren’t red. Only Before a Photo or Never in Assistant Access asks less often, or use the shutter." : {
+      "comment" : "Accessibility screen, Night Mode: what nope. can't turn red (issue #82). Siri, Shortcuts and iOS are Apple's names; Only Before a Photo, Never and Assistant Access are names in nope.'s Settings. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "This Session" : {
+      "comment" : "Section header on nope.'s Assistant Access page: the assistant requests since nope. opened.",
+      "extractionState" : "manual"
+    },
+    "This covers nope.’s own actions. The shutter, the volume buttons, Camera Control, the Apple Watch app and the Control Center controls are not affected. Photos saved to Photos, and what Siri or other apps can see or do outside nope., are up to iOS." : {
+      "comment" : "On nope.'s Assistant Access page. Camera Control, Apple Watch, Control Center, Photos, Siri and iOS are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Unlock to change." : {
+      "comment" : "Note under the Assistant Access row in the Settings of nope.'s Lock Screen camera, where the setting can't be changed. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "What Assistants Get" : {
+      "comment" : "Section header on nope.'s Assistant Access page: what Siri, Shortcuts and other assistants can learn from nope.",
+      "extractionState" : "manual"
+    },
+    "While access is on, assistants can see the names of your presets. No action changes a Privacy setting, and a preset applied this way leaves your privacy settings as they are." : {
+      "comment" : "On nope.'s Assistant Access page. Privacy is the name of the group in nope.'s Settings. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "You’ve confirmed 5 assistant requests. You can change how nope. asks." : {
+      "comment" : "Tip on nope.'s camera, shown once after the person confirmed five Siri or Shortcuts requests. Keep \"nope.\" unchanged. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "nope. names each action and asks before it runs." : {
+      "comment" : "Explains the Every Action choice of Ask First on nope.'s Assistant Access page. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "“Take a photo with nope.” works after you turn on Assistant Access in Settings › Privacy. nope. then asks before each action; Only Before a Photo or Never asks less. VoiceOver, Voice Control, Switch Control, the volume buttons and Camera Control always work." : {
+      "comment" : "Accessibility screen: Siri and Shortcuts need Assistant Access (issue #82; docs/design/assistant-access.md, text 26). \"Take a photo with nope.\" is the Siri phrase; use its translation. Assistant Access, Settings, Privacy, Only Before a Photo and Never are names in nope.'s Settings. VoiceOver, Voice Control, Switch Control and Camera Control are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "Assistant session line" : {
+      "comment" : "One line of the This Session list on nope.'s Assistant Access page: an action's name, then what happened, such as \"Take Photo. Asked, allowed.\".",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@. %2$@"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

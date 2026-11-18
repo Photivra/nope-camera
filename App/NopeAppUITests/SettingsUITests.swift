@@ -15,7 +15,7 @@ extension NopeAppUITests {
     /// out, and the Simulator offers no Live Activity.
     static let settingsRootRows = [
         "settings.presets", "settings.formats", "settings.copies", "settings.mirrorFrontCamera",
-        "settings.details", "settings.signEachPhoto", "settings.fastShutter", "settings.focusOnFaces",
+        "settings.details", "settings.signEachPhoto", "settings.assistantAccess", "settings.fastShutter", "settings.focusOnFaces",
         "settings.startInCleanView", "settings.overlays", "settings.nightMode", "settings.redViewfinder",
         "settings.accessibility", "settings.honesty", "settings.about",
     ]
