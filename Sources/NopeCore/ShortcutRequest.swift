@@ -274,10 +274,10 @@ public enum ShortcutOutcome: Equatable, Sendable {
     /// saved. It isn't signed."
     case saved(isSigned: Bool)
 
-    /// An exposure bracket was saved, each frame its own photo, because bracketing is on in
-    /// the manual controls. Say "Photos saved and signed." or "Photos saved. Not all of them are
-    /// signed."
-    case savedSeveral(allSigned: Bool)
+    /// Several photos were saved, each its own photo: a burst, or an exposure bracket (asked
+    /// for, or on in the manual controls). `count` is how many were saved. Say "Photos saved
+    /// and signed." or "Photos saved. Not all of them are signed."
+    case savedSeveral(count: Int, allSigned: Bool)
 
     /// The photo was taken but not saved, or couldn't be taken. Say that it wasn't saved, and
     /// that the app shows why.

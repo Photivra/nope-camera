@@ -104,6 +104,18 @@ public final class NopeSettings {
     /// stay on the device.
     public private(set) var photoSizes: [Lens.ID: PhotoDimensions]
 
+    /// Whether Siri, Shortcuts and other assistants may use the app's actions (Assistant Access,
+    /// issue #82). Off by default, for fresh installs and updates. It changes only on its
+    /// Settings page (``setAssistantAccess(_:)``) and with Factory Defaults applied in the app:
+    /// never through an assistant, a control or a preset (`docs/design/assistant-access.md`,
+    /// 3.5). The check is ``assistantAccess(deviceIsLocked:)``.
+    public private(set) var assistantAccess: Bool
+
+    /// When the app asks before an assistant action runs. ``AssistantAskLevel/everyAction`` by
+    /// default; kept while ``assistantAccess`` is off and used when it is turned on. Changed
+    /// only as ``assistantAccess`` is.
+    public private(set) var assistantAsk: AssistantAskLevel
+
     /// Where the settings are stored. ``SharedSettingsSync`` watches it and
     /// ``makeSnapshot()`` copies it.
     let defaults: UserDefaults
@@ -143,6 +155,9 @@ public final class NopeSettings {
         photoSizes = defaults.data(forKey: Key.photoSizes).flatMap {
             try? JSONDecoder().decode([Lens.ID: PhotoDimensions].self, from: $0)
         } ?? [:]
+        // A missing value is the default, off; an unknown choice falls back to Every Action.
+        assistantAccess = defaults.bool(forKey: Key.assistantAccess)
+        assistantAsk = defaults.string(forKey: Key.assistantAsk).flatMap(AssistantAskLevel.init(rawValue:)) ?? .everyAction
         migrateManualControlsOption()
     }
 
@@ -468,6 +483,8 @@ public final class NopeSettings {
             update(\.followsFaces, from: stored),
             update(\.showsProcessedMarker, from: stored),
             update(\.photoSizes, from: stored),
+            update(\.assistantAccess, from: stored),
+            update(\.assistantAsk, from: stored),
         ]
         return changes.contains(true)
     }
@@ -525,6 +542,52 @@ public final class NopeSettings {
         defaults.set(try? JSONEncoder().encode(photoSizes), forKey: Key.photoSizes)
     }
 
+    /// Turns Assistant Access on or off, and saves the change. Only the Assistant Access page
+    /// calls it.
+    ///
+    /// - Parameter isOn: Whether assistants may use the app's actions.
+    public func setAssistantAccess(_ isOn: Bool) {
+        assistantAccess = isOn
+        defaults.set(isOn, forKey: Key.assistantAccess)
+    }
+
+    /// Sets when the app asks before an assistant action runs, and saves the change. Only the
+    /// Assistant Access page calls it.
+    ///
+    /// - Parameter level: The choice.
+    public func setAssistantAsk(_ level: AssistantAskLevel) {
+        assistantAsk = level
+        defaults.set(level.rawValue, forKey: Key.assistantAsk)
+    }
+
+    /// Puts back the Privacy group's photo settings (Details in Each Photo, Location and Sign
+    /// Each Photo, all held in ``metadata``) and Assistant Access, after a preset replaced the
+    /// other settings. Privacy rule (`docs/design/assistant-access.md`, 7.4): a preset applied
+    /// through an assistant never changes a Privacy setting, and no preset changes Assistant
+    /// Access.
+    ///
+    /// - Parameters:
+    ///   - metadata: The metadata settings to keep, or `nil` to keep the preset's.
+    ///   - assistant: The Assistant Access values to keep, or `nil` to keep the preset's.
+    func restore(metadata: MetadataSettings?, assistant: (isOn: Bool, ask: AssistantAskLevel)?) {
+        if let metadata {
+            save.metadata = metadata
+            store()
+        }
+        if let assistant {
+            setAssistantAccess(assistant.isOn)
+            setAssistantAsk(assistant.ask)
+        }
+    }
+
+    /// The Assistant Access check with the stored choices.
+    ///
+    /// - Parameter deviceIsLocked: Whether the device is locked now.
+    /// - Returns: The check.
+    public func assistantAccess(deviceIsLocked: Bool) -> AssistantAccess {
+        AssistantAccess(isOn: assistantAccess, ask: assistantAsk, deviceIsLocked: deviceIsLocked)
+    }
+
     /// Moves the "Manual controls" option from the key used before `NopeSettings` existed,
     /// once: a stored value is kept unless this model already has one, and the old key is
     /// removed.
@@ -575,5 +638,13 @@ public final class NopeSettings {
         static let showsProcessedMarker = "NopeSettings.showsProcessedMarker"
         /// The photo size chosen for each lens, as JSON-encoded `[Lens.ID: PhotoDimensions]`.
         static let photoSizes = "NopeSettings.photoSizes"
+        /// Whether Assistant Access is on, a Boolean. Inside ``SharedSettingsStore/keyPrefix``,
+        /// so the Lock Screen camera's snapshot shows it; presets leave it out
+        /// (``assistantKeys``).
+        static let assistantAccess = "NopeSettings.assistantAccess"
+        /// When to ask first, an ``AssistantAskLevel`` raw value.
+        static let assistantAsk = "NopeSettings.assistantAsk"
+        /// The Assistant Access keys, which no preset stores or applies.
+        static let assistantKeys: Set<String> = [assistantAccess, assistantAsk]
     }
 }

@@ -203,7 +203,7 @@ struct WatchTests {
 
     @Test func outcomesBecomeResults() {
         #expect(WatchResult(ShortcutOutcome.saved(isSigned: true)) == .saved(isSigned: true))
-        #expect(WatchResult(ShortcutOutcome.savedSeveral(allSigned: false)) == .savedSeveral(allSigned: false))
+        #expect(WatchResult(ShortcutOutcome.savedSeveral(count: 2, allSigned: false)) == .savedSeveral(allSigned: false))
         #expect(WatchResult(ShortcutOutcome.notSaved(.saveFailed)) == .notSaved)
         let otherRequests: [ShortcutOutcome] = [
             .lensUnavailable, .lensSelected(.wide), .lightOn, .lightOff, .noLight, .lightUnavailable,

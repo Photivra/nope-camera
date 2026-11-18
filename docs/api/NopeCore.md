@@ -177,6 +177,920 @@ static let none: AssistSettings
 
 No aids: the camera's defaults.
 
+## `AssistantAccess`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+struct AssistantAccess
+```
+
+The Assistant Access check (issue #82): the one rule every assistant entry point asks before
+it runs, from the person's two settings and whether the device is locked
+(`docs/design/assistant-access.md`, sections 3.3 and 4).
+
+The app's intents read it inside `perform()` (``AssistantSession/perform(_:access:confirm:run:)``),
+and the preset query reads ``offersPresetNames`` before it lists any saved preset. Nothing
+outside this type decides who may run what.
+
+```swift
+let access = settings.assistantAccess(deviceIsLocked: false)
+switch access.decision(for: .takePhoto) {
+case .refuse, .requiresUnlock: break // answer, change nothing
+case .ask: break // confirm, then run
+case .run: break
+}
+```
+
+## `AssistantAccess/ask`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var ask: AssistantAskLevel
+```
+
+When to ask first (``NopeSettings/assistantAsk``). Kept while access is off.
+
+## `AssistantAccess/decision(for:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+func decision(for action: AssistantAction) -> AssistantDecision
+```
+
+What to do with a request for an action.
+
+- Parameter action: The entry point.
+- Returns: The decision for its kind.
+
+## `AssistantAccess/decision(for:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+func decision(for kind: AssistantActionKind) -> AssistantDecision
+```
+
+What to do with a request of a kind.
+
+`.opensScreen` and `.pressedByPerson` always run. A gated kind is refused while access is
+off, needs an unlock while the device is locked, and otherwise asks or runs as
+``ask`` says.
+
+- Parameter kind: The entry point's kind.
+- Returns: The decision.
+
+## `AssistantAccess/deviceIsLocked`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var deviceIsLocked: Bool
+```
+
+Whether the device is locked now. Every gated action requires an unlocked device.
+
+## `AssistantAccess/init(isOn:ask:deviceIsLocked:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+init(isOn: Bool, ask: AssistantAskLevel, deviceIsLocked: Bool = false)
+```
+
+Creates the check.
+
+- Parameters:
+  - isOn: Whether Assistant Access is on.
+  - ask: When to ask first.
+  - deviceIsLocked: Whether the device is locked now.
+
+## `AssistantAccess/isOn`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var isOn: Bool
+```
+
+Whether Assistant Access is on (``NopeSettings/assistantAccess``).
+
+## `AssistantAccess/offeredPresets(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+func offeredPresets(_ saved: [SettingsPreset]) -> [SettingsPreset]
+```
+
+The saved presets an assistant may see.
+
+- Parameter saved: The person's saved presets.
+- Returns: All of them while access is on; none while it is off.
+
+## `AssistantAccess/offersPresetNames`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var offersPresetNames: Bool { get }
+```
+
+Whether the names of saved presets may be offered to assistants: only while access is
+on (`docs/design/assistant-access.md`, section 8). Factory Defaults, a fixed name, is
+always offered.
+
+## `AssistantAction`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantAction
+```
+
+One of the app's entry points for Siri, Shortcuts, other assistants and the system's
+controls (`docs/design/assistant-access.md`, section 7). The raw value names it in the
+session record and in `security/assistant-entry-points.txt`.
+
+## `AssistantAction/applyPreset`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case applyPreset
+```
+
+Apply Preset.
+
+## `AssistantAction/isGated`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var isGated: Bool { get }
+```
+
+Whether the action goes through the check: it takes photos or changes something.
+
+## `AssistantAction/kind`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var kind: AssistantActionKind { get }
+```
+
+The action's kind.
+
+## `AssistantAction/liveActivityStop`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case liveActivityStop
+```
+
+The Live Activity's Stop button.
+
+## `AssistantAction/nightModeControl`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case nightModeControl
+```
+
+The Control Center and Lock Screen Night Mode control.
+
+## `AssistantAction/openAssistantAccess`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case openAssistantAccess
+```
+
+Open Assistant Access: opens Settings at the page.
+
+## `AssistantAction/openCamera`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case openCamera
+```
+
+Open the Camera, also the "Open nope." control.
+
+## `AssistantAction/setFastShutter`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setFastShutter
+```
+
+Set Fast Shutter.
+
+## `AssistantAction/setFocusOnFaces`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setFocusOnFaces
+```
+
+Set Focus on Faces.
+
+## `AssistantAction/setFocusRange`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setFocusRange
+```
+
+Set Focus Range.
+
+## `AssistantAction/setNightMode`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setNightMode
+```
+
+Set Night Mode.
+
+## `AssistantAction/setPhotoSize`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case setPhotoSize
+```
+
+Set Photo Size.
+
+## `AssistantAction/startInterval`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case startInterval
+```
+
+Start Interval Shooting.
+
+## `AssistantAction/stopInterval`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case stopInterval
+```
+
+Stop Interval Shooting.
+
+## `AssistantAction/switchLens`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case switchLens
+```
+
+Switch Lens.
+
+## `AssistantAction/takeBracket`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case takeBracket
+```
+
+Take Bracket.
+
+## `AssistantAction/takePhoto`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case takePhoto
+```
+
+Take Photo.
+
+## `AssistantAction/turnOffLight`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case turnOffLight
+```
+
+Turn Off the Light.
+
+## `AssistantAction/turnOnLight`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case turnOnLight
+```
+
+Turn On the Light.
+
+## `AssistantActionKind`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantActionKind
+```
+
+What an entry point is, for the Assistant Access check (`docs/design/assistant-access.md`,
+section 4). Every entry point of the app declares one, so the entry-point check
+(`scripts/check-security.sh`) sees each with a kind.
+
+## `AssistantActionKind/changes`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case changes
+```
+
+Changes something: every other gated action.
+
+## `AssistantActionKind/opensScreen`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case opensScreen
+```
+
+Only opens a screen of the app (Open the Camera, Open Assistant Access). Never refused:
+the system can open any app for an assistant without the app's help.
+
+## `AssistantActionKind/pressedByPerson`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case pressedByPerson
+```
+
+A control a person presses (the Control Center Night Mode control, the Live Activity's
+Stop button). Never refused, as the shutter and the volume buttons aren't.
+
+## `AssistantActionKind/takesPhotos`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case takesPhotos
+```
+
+Takes photos: Take Photo, Take Bracket, Start Interval Shooting.
+
+## `AssistantAskLevel`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantAskLevel
+```
+
+How often the app asks before an assistant action runs, while Assistant Access is on (issue
+#82, `docs/design/assistant-access.md`, 3.3). ``everyAction`` by default.
+
+## `AssistantAskLevel/beforePhoto`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case beforePhoto
+```
+
+Only actions that take photos are confirmed; changes run without asking ("Only Before a
+Photo").
+
+## `AssistantAskLevel/everyAction`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case everyAction
+```
+
+Every action is named and confirmed before it runs ("Every Action").
+
+## `AssistantAskLevel/never`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case never
+```
+
+Nothing is confirmed ("Never").
+
+## `AssistantDecision`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantDecision
+```
+
+What the Assistant Access check decided for one request.
+
+## `AssistantDecision/ask`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case ask
+```
+
+Asked first: the action is named and confirmed before it runs.
+
+## `AssistantDecision/refuse`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case refuse
+```
+
+Refused because Assistant Access is off. Nothing changes and no photo is taken; the
+answer says that access is off and where to turn it on.
+
+## `AssistantDecision/requiresUnlock`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case requiresUnlock
+```
+
+Refused because the device is locked. Nothing changes and no photo is taken; the answer
+says to unlock. A fallback: the system asks for an unlock first
+(`authenticationPolicy`; `docs/TESTING.md`, Assistant Access device check 5).
+
+## `AssistantDecision/run`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case run
+```
+
+Run without asking.
+
+## `AssistantGateOutcome`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantGateOutcome<Result>
+```
+
+How a request through ``AssistantSession/perform(_:access:confirm:run:)`` ended.
+
+## `AssistantGateOutcome/cancelled`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case cancelled
+```
+
+Asked, and the person cancelled, dismissed the question or let it time out. Nothing ran.
+
+## `AssistantGateOutcome/ran(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case ran(Result)
+```
+
+The action ran, with its result.
+
+## `AssistantGateOutcome/refused`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case refused
+```
+
+Refused: access is off (``AssistantDecision/refuse``). Nothing ran.
+
+## `AssistantGateOutcome/requiresUnlock`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case requiresUnlock
+```
+
+Refused: the device is locked (``AssistantDecision/requiresUnlock``). Nothing ran.
+
+## `AssistantNotice`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+struct AssistantNotice
+```
+
+The sentence an assistant got for an action that ran, which the camera shows as a hint
+("Siri or Shortcuts", then the sentence).
+
+## `AssistantNotice/id`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let id: Int
+```
+
+A number, unique for the process's lifetime, so a new notice replaces an older one.
+
+## `AssistantNotice/init(id:sentence:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+init(id: Int, sentence: String)
+```
+
+Creates a notice.
+
+- Parameters:
+  - id: A unique number.
+  - sentence: The sentence.
+
+## `AssistantNotice/sentence`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let sentence: String
+```
+
+The sentence, already localized by the app.
+
+## `AssistantRequestRecord`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+struct AssistantRequestRecord
+```
+
+One line of the This Session list: an action's name and what happened. No values, times or
+preset names (`docs/design/assistant-access.md`, section 10).
+
+## `AssistantRequestRecord/action`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let action: AssistantAction
+```
+
+The action.
+
+## `AssistantRequestRecord/id`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let id: Int
+```
+
+A number, unique for the process's lifetime.
+
+## `AssistantRequestRecord/init(id:action:result:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+init(id: Int, action: AssistantAction, result: AssistantRequestResult)
+```
+
+Creates a record.
+
+- Parameters:
+  - id: A unique number.
+  - action: The action.
+  - result: What happened.
+
+## `AssistantRequestRecord/result`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+let result: AssistantRequestResult
+```
+
+What happened.
+
+## `AssistantRequestResult`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+enum AssistantRequestResult
+```
+
+What happened to one assistant request, for the This Session list.
+
+## `AssistantRequestResult/askedAllowed`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case askedAllowed
+```
+
+Asked, and allowed.
+
+## `AssistantRequestResult/askedCancelled`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case askedCancelled
+```
+
+Asked, and cancelled.
+
+## `AssistantRequestResult/ranWithoutAsking`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case ranWithoutAsking
+```
+
+Ran without asking.
+
+## `AssistantRequestResult/refused`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+case refused
+```
+
+Refused: access was off, or the device was locked.
+
+## `AssistantSession`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor final class AssistantSession
+```
+
+What assistants did since the app opened, and the one rule-runner every gated entry point
+uses (issue #82; `docs/design/assistant-access.md`, sections 4, 10 and 11).
+
+The app owns one session for its lifetime. Each gated App Intent calls
+``perform(_:access:confirm:run:)`` inside `perform()`: it reads the check, refuses, asks or
+goes on, records the request, and runs the existing code. The camera and the Settings page
+read the record: the hint after an action that ran (``notice``), the card after a refusal
+(``showsRefusalCard``), the tip after five confirmations (``showsTip``) and the This Session
+list (``records``).
+
+Privacy rule (`docs/design/assistant-access.md`, section 10): the record is kept in memory
+only and cleared when the process ends. It holds an action's name and what happened, never
+a value, a time or a preset name. The one stored value is the tip's counter, a number that
+stops at ``tipThreshold``; it is stored outside ``SharedSettingsStore/keyPrefix``, so presets
+and the Lock Screen camera's snapshot don't carry it.
+
+## `AssistantSession/announce(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func announce(_ sentence: String)
+```
+
+Shows a sentence an assistant got, as the camera's hint.
+
+- Parameter sentence: The sentence, localized.
+
+## `AssistantSession/clearNotice(_:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func clearNotice(_ id: Int)
+```
+
+Clears the camera's hint, if it is still this one.
+
+- Parameter id: The notice shown.
+
+## `AssistantSession/dismissRefusalCard()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func dismissRefusalCard()
+```
+
+Closes the refusal card until the next refusal.
+
+## `AssistantSession/dismissTip()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func dismissTip()
+```
+
+Closes the tip for good.
+
+## `AssistantSession/init(defaults:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor init(defaults: UserDefaults)
+```
+
+Creates an empty session.
+
+- Parameter defaults: The store for the tip's counter, normally the settings' store.
+
+## `AssistantSession/init(settings:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor convenience init(settings: NopeSettings)
+```
+
+Creates an empty session that stores the tip's counter with the settings.
+
+- Parameter settings: The person's settings, whose store keeps the counter.
+
+## `AssistantSession/maximumRecords`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+nonisolated static let maximumRecords: Int
+```
+
+The most lines the This Session list keeps.
+
+## `AssistantSession/notice`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var notice: AssistantNotice? { get set }
+```
+
+The sentence of the last action that ran, for the camera's hint, or `nil`.
+
+## `AssistantSession/opensSettingsPage`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var opensSettingsPage: Bool { get set }
+```
+
+Whether Open Assistant Access asked for Settings to open at the page, until the camera
+screen opens it (``settingsPageOpened()``).
+
+## `AssistantSession/perform(_:access:confirm:run:)`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func perform<Result>(_ action: AssistantAction, access: () -> AssistantAccess, confirm: () async -> Bool, run: () async -> Result) async -> AssistantGateOutcome<Result>
+```
+
+Runs one assistant request through the check: refuses, asks or goes on, records it, and
+runs the action.
+
+The check is read when the request starts, and again after a confirmation: access turned
+off while the question showed refuses the request. A kind that isn't gated runs without
+a record.
+
+- Parameters:
+  - action: The entry point.
+  - access: Reads the check now (``NopeSettings/assistantAccess(deviceIsLocked:)``).
+  - confirm: Asks the person; `true` when they confirmed. Called only for
+    ``AssistantDecision/ask``.
+  - run: The existing action.
+- Returns: How it ended.
+
+## `AssistantSession/records`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var records: [AssistantRequestRecord] { get set }
+```
+
+The requests since the app opened, newest first, at most ``maximumRecords``.
+
+## `AssistantSession/refusedCount`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var refusedCount: Int { get set }
+```
+
+How many requests were refused because access was off since the app opened.
+
+## `AssistantSession/requestSettingsPage()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func requestSettingsPage()
+```
+
+Asks the camera screen to open Settings at the Assistant Access page.
+
+## `AssistantSession/settingsPageOpened()`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor func settingsPageOpened()
+```
+
+Records that the camera screen opened the page.
+
+## `AssistantSession/showsRefusalCard`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var showsRefusalCard: Bool { get }
+```
+
+Whether the refusal card shows: a request was refused since the card was last closed.
+
+## `AssistantSession/showsTip`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var showsTip: Bool { get }
+```
+
+Whether the tip shows: five requests were confirmed, and the tip wasn't closed yet.
+
+## `AssistantSession/tipCounter`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+@MainActor var tipCounter: Int { get set }
+```
+
+The tip's counter: confirmed requests, up to ``tipThreshold``; one more once the tip was
+closed.
+
+## `AssistantSession/tipCounterKey`
+
+internal, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+nonisolated static let tipCounterKey: String
+```
+
+The store key of the tip's counter.
+
+## `AssistantSession/tipThreshold`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+nonisolated static let tipThreshold: Int
+```
+
+The number of confirmed requests after which the tip shows once.
+
 ## `AstroEstimate`
 
 public, declared in `Sources/NopeCore/AstroHelper.swift`
@@ -2439,7 +3353,8 @@ internal, declared in `Sources/NopeCore/CameraModel+PresetShortcut.swift`
 ```
 
 Applies a preset for a request, through the same path as the Presets list
-(``SettingsPresets/apply(_:camera:location:)``): every setting, then the camera's lens,
+(``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``), except that the
+Privacy settings and Assistant Access stay as they are: every other setting, then the camera's lens,
 exposure and drive values, with Location only through its permission prompt. A preset
 never turns the light on (``CameraSetup`` doesn't hold it). The apply can be undone in the
 Presets list, as one made there.
@@ -17654,6 +18569,38 @@ enum Key
 
 The `UserDefaults` keys.
 
+## `NopeSettings/Key/assistantAccess`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let assistantAccess: String
+```
+
+Whether Assistant Access is on, a Boolean. Inside ``SharedSettingsStore/keyPrefix``,
+so the Lock Screen camera's snapshot shows it; presets leave it out
+(``assistantKeys``).
+
+## `NopeSettings/Key/assistantAsk`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let assistantAsk: String
+```
+
+When to ask first, an ``AssistantAskLevel`` raw value.
+
+## `NopeSettings/Key/assistantKeys`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let assistantKeys: Set<String>
+```
+
+The Assistant Access keys, which no preset stores or applies.
+
 ## `NopeSettings/Key/fastShutter`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -17824,6 +18771,45 @@ the astro helper no longer turns it off when it ends (``isNightModeFromAstro``).
 
 - Parameter snapshot: The snapshot, from ``makeSnapshot()``.
 - Returns: `true` when the snapshot could be read.
+
+## `NopeSettings/assistantAccess`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var assistantAccess: Bool { get set }
+```
+
+Whether Siri, Shortcuts and other assistants may use the app's actions (Assistant Access,
+issue #82). Off by default, for fresh installs and updates. It changes only on its
+Settings page (``setAssistantAccess(_:)``) and with Factory Defaults applied in the app:
+never through an assistant, a control or a preset (`docs/design/assistant-access.md`,
+3.5). The check is ``assistantAccess(deviceIsLocked:)``.
+
+## `NopeSettings/assistantAccess(deviceIsLocked:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func assistantAccess(deviceIsLocked: Bool) -> AssistantAccess
+```
+
+The Assistant Access check with the stored choices.
+
+- Parameter deviceIsLocked: Whether the device is locked now.
+- Returns: The check.
+
+## `NopeSettings/assistantAsk`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var assistantAsk: AssistantAskLevel { get set }
+```
+
+When the app asks before an assistant action runs. ``AssistantAskLevel/everyAction`` by
+default; kept while ``assistantAccess`` is off and used when it is turned on. Changed
+only as ``assistantAccess`` is.
 
 ## `NopeSettings/canTurnOff(_:deviceSupportsBayerRAW:)`
 
@@ -17998,6 +18984,20 @@ Off by default: leaving Astro returns night mode to what it was before (owner de
 1.0.0). A night mode the person turned on, or changed while the helper was on, is never
 turned off by the helper either way.
 
+## `NopeSettings/makePresetSnapshot()`
+
+internal, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
+
+```swift
+@MainActor func makePresetSnapshot() throws -> NopeSettingsSnapshot
+```
+
+Copies every stored setting a preset holds: all of ``makeSnapshot()`` except Assistant
+Access, which no preset stores (`docs/design/assistant-access.md`, 3.5).
+
+- Returns: The snapshot.
+- Throws: As ``makeSnapshot()``.
+
 ## `NopeSettings/makeSnapshot()`
 
 public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
@@ -18136,6 +19136,24 @@ setting added to this type needs a line here.
 
 - Returns: `true` when any setting changed.
 
+## `NopeSettings/restore(metadata:assistant:)`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func restore(metadata: MetadataSettings?, assistant: (isOn: Bool, ask: AssistantAskLevel)?)
+```
+
+Puts back the Privacy group's photo settings (Details in Each Photo, Location and Sign
+Each Photo, all held in ``metadata``) and Assistant Access, after a preset replaced the
+other settings. Privacy rule (`docs/design/assistant-access.md`, 7.4): a preset applied
+through an assistant never changes a Privacy setting, and no preset changes Assistant
+Access.
+
+- Parameters:
+  - metadata: The metadata settings to keep, or `nil` to keep the preset's.
+  - assistant: The Assistant Access values to keep, or `nil` to keep the preset's.
+
 ## `NopeSettings/save`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -18173,6 +19191,32 @@ device can save; HEIF then stands in, the processed fallback a lens gives by def
 - Parameter deviceSupportsBayerRAW: Whether any camera on the device gives Bayer RAW.
 - Returns: ``orderedFormats`` without RAW on a device that has none, or HEIF when nothing
   else is left.
+
+## `NopeSettings/setAssistantAccess(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setAssistantAccess(_ isOn: Bool)
+```
+
+Turns Assistant Access on or off, and saves the change. Only the Assistant Access page
+calls it.
+
+- Parameter isOn: Whether assistants may use the app's actions.
+
+## `NopeSettings/setAssistantAsk(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setAssistantAsk(_ level: AssistantAskLevel)
+```
+
+Sets when the app asks before an assistant action runs, and saves the change. Only the
+Assistant Access page calls it.
+
+- Parameter level: The choice.
 
 ## `NopeSettings/setDevelopedLook(_:)`
 
@@ -23486,12 +24530,12 @@ let choice: PresetChoice
 
 The preset that was applied.
 
-## `PresetApplyResult/init(choice:name:isApplied:notices:)`
+## `PresetApplyResult/init(choice:name:isApplied:notices:keptPrivacySettings:)`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
 
 ```swift
-init(choice: PresetChoice, name: String?, isApplied: Bool, notices: [PresetNotice])
+init(choice: PresetChoice, name: String?, isApplied: Bool, notices: [PresetNotice], keptPrivacySettings: Bool = false)
 ```
 
 Creates a result.
@@ -23501,6 +24545,7 @@ Creates a result.
   - name: Its name, or `nil` for Factory Defaults.
   - isApplied: Whether the settings changed.
   - notices: What the person should be told.
+  - keptPrivacySettings: Whether the Privacy settings were left as they were.
 
 ## `PresetApplyResult/isApplied`
 
@@ -23512,6 +24557,18 @@ let isApplied: Bool
 
 Whether the settings changed. `false` only with ``PresetNotice/cameraBusy`` or
 ``PresetNotice/unreadable``.
+
+## `PresetApplyResult/keptPrivacySettings`
+
+public, declared in `Sources/NopeCore/SettingsPresets.swift`
+
+```swift
+let keptPrivacySettings: Bool
+```
+
+Whether the Privacy settings were left as they were, because an assistant applied the
+preset (``SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)``). The answer
+says so.
 
 ## `PresetApplyResult/name`
 
@@ -25419,7 +26476,7 @@ The person's saved settings presets, and the built-in Factory Defaults (issue #7
 
 Every interface uses the same object: it lists ``saved``, saves the current settings with
 ``saveCurrent(named:camera:)``, renames and deletes with ``rename(_:to:)`` and
-``delete(_:)``, and applies with ``apply(_:camera:location:)``. The rules live here:
+``delete(_:)``, and applies with ``apply(_:camera:location:keepsPrivacySettings:)``. The rules live here:
 
 - A preset changes settings only when the person applies it; nothing is ever applied on its
   own (owner principle: the app never changes manual settings by itself).
@@ -25568,15 +26625,22 @@ let presets: [LossyPreset]
 
 The presets, `nil` for each one that couldn't be read.
 
-## `SettingsPresets/apply(_:camera:location:)`
+## `SettingsPresets/apply(_:camera:location:keepsPrivacySettings:)`
 
 public, declared in `Sources/NopeCore/SettingsPresets.swift`
 
 ```swift
-@discardableResult @MainActor func apply(_ choice: PresetChoice, camera: CameraModel?, location: LocationTagging?) async -> PresetApplyResult
+@discardableResult @MainActor func apply(_ choice: PresetChoice, camera: CameraModel?, location: LocationTagging?, keepsPrivacySettings: Bool = false) async -> PresetApplyResult
 ```
 
 Applies a preset: every setting, then the camera's state.
+
+Assistant Access is never stored in a preset and never changed by one; Factory Defaults
+applied in the app (`keepsPrivacySettings` false) returns it to its defaults, off and
+Every Action. Applied through an assistant (`keepsPrivacySettings` true), the Privacy
+settings (``NopeSettings/metadata``: Details in Each Photo, Location, Sign Each Photo) and
+Assistant Access stay as they are, and everything else applies
+(`docs/design/assistant-access.md`, 7.4).
 
 Side effects: changes and saves every setting; may show the system location prompt when
 the preset includes Location; may switch the lens, which restarts the camera.
@@ -25587,6 +26651,8 @@ the preset includes Location; may switch the lens, which restarts the camera.
     skipped, with ``PresetNotice/cameraNotReady``).
   - location: Location tagging, or `nil` when the app has no location service, in which
     case Location stays off.
+  - keepsPrivacySettings: Whether the Privacy settings stay as they are: `true` when an
+    assistant applies the preset.
 - Returns: What happened, also kept in ``lastResult``.
 
 ## `SettingsPresets/beforeLastApply`
@@ -25811,7 +26877,7 @@ public, declared in `Sources/NopeCore/SettingsPresets.swift`
 
 Returns every setting, and the camera, to what they were before the last apply.
 
-Side effects: as ``apply(_:camera:location:)``.
+Side effects: as ``apply(_:camera:location:keepsPrivacySettings:)``.
 
 - Parameters:
   - camera: The camera to set up again, or `nil`.
@@ -26379,6 +27445,18 @@ case photoSizeSet
 
 The lens's photo size is now the one asked for, from the next photo. Say so.
 
+## `ShortcutOutcome/photosSaved`
+
+public, declared in `Sources/NopeCore/AssistantAccess.swift`
+
+```swift
+var photosSaved: Int { get }
+```
+
+The "Photos Saved" number a photo action returns beside its sentence, so a shortcut can
+branch on it (`docs/design/assistant-access.md`, section 8, decision 9): the photos this
+request saved, or 0. Never a file, a format, a lens or a setting.
+
 ## `ShortcutOutcome/presetApplied(_:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
@@ -26412,17 +27490,17 @@ case saved(isSigned: Bool)
 One photo was saved. Say "Photo saved and signed." or, when `isSigned` is false, "Photo
 saved. It isn't signed."
 
-## `ShortcutOutcome/savedSeveral(allSigned:)`
+## `ShortcutOutcome/savedSeveral(count:allSigned:)`
 
 public, declared in `Sources/NopeCore/ShortcutRequest.swift`
 
 ```swift
-case savedSeveral(allSigned: Bool)
+case savedSeveral(count: Int, allSigned: Bool)
 ```
 
-An exposure bracket was saved, each frame its own photo, because bracketing is on in
-the manual controls. Say "Photos saved and signed." or "Photos saved. Not all of them are
-signed."
+Several photos were saved, each its own photo: a burst, or an exposure bracket (asked
+for, or on in the manual controls). `count` is how many were saved. Say "Photos saved
+and signed." or "Photos saved. Not all of them are signed."
 
 ## `ShortcutRequest`
 

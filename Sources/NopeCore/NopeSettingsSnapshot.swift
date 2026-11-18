@@ -52,6 +52,19 @@ extension NopeSettings {
             values: try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0))
     }
 
+    /// Copies every stored setting a preset holds: all of ``makeSnapshot()`` except Assistant
+    /// Access, which no preset stores (`docs/design/assistant-access.md`, 3.5).
+    ///
+    /// - Returns: The snapshot.
+    /// - Throws: As ``makeSnapshot()``.
+    func makePresetSnapshot() throws -> NopeSettingsSnapshot {
+        let values = defaults.dictionaryRepresentation().filter {
+            SharedSettingsStore.isSettingsKey($0.key) && !Key.assistantKeys.contains($0.key)
+        }
+        return NopeSettingsSnapshot(
+            values: try PropertyListSerialization.data(fromPropertyList: values, format: .binary, options: 0))
+    }
+
     /// Replaces the stored settings with a snapshot's, and reloads them.
     ///
     /// A setting missing from the snapshot goes back to its default. Every value is read back

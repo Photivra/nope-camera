@@ -57,10 +57,10 @@ struct ShortcutTests {
         #expect(model.outcome(of: .saved(Self.photo(.signed))) == .saved(isSigned: true))
         #expect(model.outcome(of: .saved(Self.photo(.unsigned(.turnedOff)))) == .saved(isSigned: false))
         #expect(
-            model.outcome(of: .savedBracket([Self.photo(.signed), Self.photo(.signed)])) == .savedSeveral(allSigned: true))
+            model.outcome(of: .savedBracket([Self.photo(.signed), Self.photo(.signed)])) == .savedSeveral(count: 2, allSigned: true))
         #expect(
             model.outcome(of: .savedBurst([Self.photo(.signed), Self.photo(.unsigned(.failed))]))
-                == .savedSeveral(allSigned: false))
+                == .savedSeveral(count: 2, allSigned: false))
         #expect(model.outcome(of: .failed(.saveFailed)) == .notSaved(.saveFailed))
         #expect(model.outcome(of: .idle) == .notSaved(.notRunning))
         #expect(model.outcome(of: .capturing) == .notSaved(.notRunning))
@@ -387,7 +387,7 @@ struct ShortcutTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)
         let outcome = await run(.takePhoto(PhotoShortcut(count: 3)), on: model)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.captureRequests.count == 3)
         #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .countReached, saved: 3))
         #expect(model.drive.mode == .single)
@@ -397,7 +397,7 @@ struct ShortcutTests {
         let backend = ScriptedBackend(capabilities: CameraModelTests.oneLens)
         let model = await makeModel(backend)
         let outcome = await run(.takePhoto(PhotoShortcut(count: DriveModel.maximumBurstFrames)), on: model)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: DriveModel.maximumBurstFrames, allSigned: false))
         #expect(model.drive.lastBurst.outcome == BurstOutcome(end: .limitReached, saved: DriveModel.maximumBurstFrames))
     }
 
@@ -412,7 +412,7 @@ struct ShortcutTests {
         await waitUntil { model.drive.countdown.isRunning }
         #expect(await backend.captureRequests.isEmpty)
         await tick(ticker)
-        #expect(await request.value == .savedSeveral(allSigned: false))
+        #expect(await request.value == .savedSeveral(count: 2, allSigned: false))
         #expect(await backend.captureRequests.count == 2)
     }
 
@@ -562,7 +562,7 @@ struct ShortcutTests {
     @Test func takesABracketOnceInFullAutoWithoutChangingSettings() async {
         let (model, backend) = await makeBracketModel()
         let outcome = await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model)
-        #expect(outcome == .savedSeveral(allSigned: false))
+        #expect(outcome == .savedSeveral(count: 3, allSigned: false))
         let frames = await backend.brackets
         #expect(frames.count == 1)
         #expect(frames.first?.count == 3)
@@ -578,7 +578,7 @@ struct ShortcutTests {
         let (model, backend) = await makeBracketModel(enabled: true)
         let chosen = BracketSettings(frameCount: 5, step: 2.0 / 3.0)
         await model.send(.manual(.setBracket(chosen)))
-        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model) == .savedSeveral(allSigned: false))
+        #expect(await run(.takeBracket(BracketShortcut(frameCount: 3, step: 1)), on: model) == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.brackets.last?.count == 3)
         #expect(model.manual.bracket == chosen)
     }
@@ -624,7 +624,7 @@ struct ShortcutTests {
         await waitUntil { model.drive.countdown.isRunning }
         #expect(model.selectedLens?.kind == .ultraWide)
         await tick(ticker)
-        #expect(await request.value == .savedSeveral(allSigned: false))
+        #expect(await request.value == .savedSeveral(count: 3, allSigned: false))
         #expect(await backend.brackets.count == 1)
     }
 
