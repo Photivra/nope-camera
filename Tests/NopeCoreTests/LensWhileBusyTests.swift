@@ -94,7 +94,7 @@ actor GatedLensBackend: ManualCaptureBackend, ComparisonCaptureBackend {
 }
 
 /// A photo library whose adds can be held, so a test can act while a photo is saved.
-actor GatedLibrary: PhotoLibrary {
+actor HeldLibrary: PhotoLibrary {
     private var holds = true
     private var held: CheckedContinuation<Void, Never>?
     var isHeld: Bool { held != nil }
@@ -143,14 +143,14 @@ struct LensWhileBusyTests {
     struct Camera {
         let model: CameraModel
         let backend: GatedLensBackend
-        let library: GatedLibrary?
+        let library: HeldLibrary?
         let ticker: Ticker
     }
 
     static let lenses = [ManualFixtures.wide, ManualFixtures.basicLens]
 
     func makeCamera(
-        _ backend: GatedLensBackend = GatedLensBackend(lenses: lenses), library: GatedLibrary? = nil,
+        _ backend: GatedLensBackend = GatedLensBackend(lenses: lenses), library: HeldLibrary? = nil,
         ticks: Bool = false
     ) async -> Camera {
         let ticker = Ticker()
@@ -190,7 +190,7 @@ struct LensWhileBusyTests {
             await shot.value
             return camera
         case .saving:
-            let library = GatedLibrary()
+            let library = HeldLibrary()
             let camera = await makeCamera(library: library)
             let shot = Task { await camera.model.send(.capture) }
             await waitForActor { await library.isHeld }
