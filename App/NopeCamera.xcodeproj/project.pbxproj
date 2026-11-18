@@ -22,6 +22,9 @@
 		A10000000000000000000109 /* NopeCaptureExtension.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000505 /* NopeCaptureExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B70000000000000000000101 /* NopeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = B70000000000000000000501 /* NopeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B70000000000000000000102 /* NopeCore in Frameworks */ = {isa = PBXBuildFile; productRef = B70000000000000000000201 /* NopeCore */; };
+		C80000000000000000000101 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80000000000000000000501 /* DesignTokens.swift */; };
+		C80000000000000000000102 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80000000000000000000501 /* DesignTokens.swift */; };
+		C80000000000000000000103 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = C80000000000000000000501 /* DesignTokens.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -109,6 +112,7 @@
 		A10000000000000000000506 /* NopeControls.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NopeControls.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B70000000000000000000501 /* NopeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NopeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B70000000000000000000502 /* NopeWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NopeWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C80000000000000000000501 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DesignTokens.swift; path = ../Sources/NopeUI/DesignTokens.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -210,6 +214,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000504 /* Base.xcconfig */,
+				C80000000000000000000501 /* DesignTokens.swift */,
 				A10000000000000000000503 /* NopeApp.entitlements */,
 				A10000000000000000000508 /* NopeApp-Info.plist */,
 				A10000000000000000000507 /* NopeControls.entitlements */,
@@ -514,6 +519,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C80000000000000000000101 /* DesignTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -535,6 +541,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C80000000000000000000102 /* DesignTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -542,6 +549,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C80000000000000000000103 /* DesignTokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

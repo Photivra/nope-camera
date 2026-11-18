@@ -61,10 +61,23 @@ enum SeriesActivityActions {
 }
 
 /// The Live Activity's colors: the system's, or red on black in night mode (issue #61), the same
-/// red as the app's night mode.
+/// red as the app's night mode. The values are the design tokens (`DesignTokens.swift`, which
+/// the app, the widget extension and the watch app compile with their own sources).
 enum SeriesActivityStyle {
-    /// Night mode's red.
-    static let nightRed = Color(.sRGB, red: 1, green: 0, blue: 0)
+    /// Night mode's red (``NopeColor/night``).
+    static var nightRed: Color { NopeColor.night }
+
+    /// The outline of the activity and of Stop in night mode (``NopeColor/nightOutline``), as on
+    /// the app's controls that are off.
+    static var nightOutline: Color { NopeColor.nightOutline }
+
+    /// The color of the signing line: secondary, or the red in night mode.
+    ///
+    /// - Parameter content: What the activity shows.
+    /// - Returns: The color.
+    static func secondary(_ content: LiveActivityContent) -> Color {
+        content.isNightMode ? nightRed : .secondary
+    }
 
     /// The color of the text and symbols.
     ///
@@ -187,19 +200,73 @@ enum SeriesActivityText {
     }
 }
 
-/// The Stop button, shown while an interval series runs or is paused.
+/// The Stop button, shown while an interval series runs or is paused: a capsule, filled with the
+/// tile gray, or black with the red outline in night mode (docs/design/system.html).
 struct SeriesStopButton: View {
+    /// Whether the activity is in night mode.
+    var isNightMode = false
+
     /// The button, which runs ``StopSeriesIntent`` in the app.
     var body: some View {
         Button(intent: StopSeriesIntent()) {
             Label {
                 Text("Stop", comment: "Button on nope.'s Live Activity that stops interval shooting or the night sky helper's frames. Every photo already taken is saved.")
             } icon: {
-                Image(systemName: "stop.fill")
+                Image(systemName: "stop")
             }
         }
+        .buttonStyle(SeriesStopButtonStyle(isNightMode: isNightMode))
+        // Its own width: beside the status lines, which take the row's priority, the capsule was
+        // squeezed to its symbol and the word was cut.
+        .fixedSize()
         .accessibilityHint(
             Text("Every photo already taken is saved.", comment: "VoiceOver hint of the Stop button on nope.'s Live Activity."))
+    }
+}
+
+/// The capsule of the Live Activity's Stop button, with the tokens of the app's capsule buttons:
+/// at least 44 points high, 16 points of padding, the status font.
+///
+/// At accessibility text sizes the capsule shows the stop symbol only, at least 44 points wide,
+/// and the Large Content Viewer shows "Stop": with the word, the capsule took so much of the
+/// row's width that the status lines wrapped into a row 842 points tall instead of 722
+/// (`SystemSurfacesUITests`; BUILD-SPEC.md 3.13, "no taller than today"). VoiceOver still reads
+/// "Stop".
+struct SeriesStopButtonStyle: ButtonStyle {
+    /// Whether the activity is in night mode.
+    let isNightMode: Bool
+
+    /// The text size, to drop the word at accessibility sizes.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    /// The label in its capsule, dimmed while pressed.
+    ///
+    /// - Parameter configuration: The button's label and pressed state.
+    /// - Returns: The styled button.
+    func makeBody(configuration: Configuration) -> some View {
+        let isSymbolOnly = dynamicTypeSize.isAccessibilitySize
+        return Group {
+            if isSymbolOnly {
+                configuration.label.labelStyle(.iconOnly)
+            } else {
+                configuration.label
+            }
+        }
+            .font(NopeFont.status)
+            .padding(.horizontal, isSymbolOnly ? NopeSpace.xs : NopeSpace.m)
+            .frame(minWidth: NopeSize.minTarget, minHeight: NopeSize.capsuleLarge)
+            .background {
+                Capsule().fill(
+                    isNightMode ? Color.black : NopeMaterial.tileGray.opacity(NopeMaterial.tileFillOpacity))
+            }
+            .overlay {
+                if isNightMode {
+                    Capsule().strokeBorder(SeriesActivityStyle.nightOutline, lineWidth: NopeSize.outline)
+                }
+            }
+            .contentShape(Capsule())
+            .opacity(configuration.isPressed ? NopeMotion.pressedOpacity : 1)
+            .accessibilityShowsLargeContentViewer { configuration.label.labelStyle(.titleAndIcon) }
     }
 }
 
@@ -210,7 +277,7 @@ struct SeriesActivityDetails: View {
 
     /// The lines.
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: NopeSpace.xxs) {
             // Lines wrap instead of being cut off at large text sizes or beside Stop.
             SeriesActivityText.status(content)
                 .font(.subheadline)
@@ -218,6 +285,7 @@ struct SeriesActivityDetails: View {
             if let line = content.signingLine {
                 SeriesActivityText.signing(line)
                     .font(.footnote)
+                    .foregroundStyle(SeriesActivityStyle.secondary(content))
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let progress = content.progress {
@@ -237,10 +305,10 @@ struct SeriesActivityLockScreenView: View {
 
     /// The layout: symbol, title and lines, and Stop when it applies.
     var body: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .center, spacing: NopeSpace.s) {
             SeriesActivityIcon(kind: content.kind)
                 .font(.title2)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: NopeSpace.xxs) {
                 SeriesActivityText.title(content.kind)
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
@@ -249,11 +317,19 @@ struct SeriesActivityLockScreenView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(1)
             if content.canStop {
-                SeriesStopButton()
+                SeriesStopButton(isNightMode: content.isNightMode)
             }
         }
-        .padding()
+        .padding(NopeSpace.m)
         .foregroundStyle(SeriesActivityStyle.foreground(content))
+        .overlay {
+            // Night mode: the red outline of the design, on the activity's own corner shape.
+            if content.isNightMode {
+                ContainerRelativeShape()
+                    .strokeBorder(SeriesActivityStyle.nightOutline, lineWidth: NopeSize.outline)
+                    .accessibilityHidden(true)
+            }
+        }
     }
 }
 
@@ -268,7 +344,7 @@ struct SeriesActivityCompactCount: View {
             if let end = content.countdownEnd {
                 SeriesActivityText.countdown(to: end)
                     .monospacedDigit()
-                    .frame(maxWidth: 44)
+                    .frame(maxWidth: NopeSize.minTarget)
             } else if let count = content.compactCount {
                 Text(count, format: .number)
                     .monospacedDigit()
