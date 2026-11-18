@@ -41,10 +41,6 @@
       "comment" : "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name.",
       "extractionState" : "manual"
     },
-    "Autofocus and auto exposure follow faces the camera finds." : {
-      "comment" : "Explains the Focus on Faces switch. Must not say that it turns face detection off: it decides only whether autofocus and auto exposure follow faces. No default note. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "Black and White Levels" : {
       "comment" : "Locked metadata item. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -55,10 +51,6 @@
     },
     "Check It Yourself" : {
       "comment" : "Honesty heading: how to verify that the app makes no connections. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Choose Details" : {
-      "comment" : "Settings row and screen title: choose which optional details, such as the date or camera model, are saved in each photo. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "Claim generator: %@ %@" : {
@@ -75,10 +67,6 @@
     },
     "Color Profile (HEIF and JPEG)" : {
       "comment" : "Locked metadata item. HEIF and JPEG are file format names. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Content Credentials" : {
-      "comment" : "Section header for the photo signature. Content Credentials is the name of the C2PA signature standard's label. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "Counted on the RAW sensor data when the photo was taken, over every photosite of the active area. Clipped highlights are within 0.5% of the white level or above it; clipped shadows are within 0.5% of the black level or below it, where 0.5% is of the range between the two levels." : {
@@ -120,18 +108,6 @@
       "comment" : "Heading in the photo details: the optional metadata items the saved files don't hold, each with the reason.",
       "extractionState" : "manual"
     },
-    "Details section: Location" : {
-      "comment" : "Section header on the Details in Each Photo page, above the Location switch and its access notice. The same word as the Location switch; use its translation. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Location"
-          }
-        }
-      }
-    },
     "Developed by nope. from the RAW, Flat look" : {
       "comment" : "In the photo details, the processing of a HEIF or JPEG file: nope. developed it from the RAW with the Flat look (no contrast curve). Keep nope. unchanged.",
       "extractionState" : "manual"
@@ -142,14 +118,6 @@
     },
     "Different" : {
       "comment" : "Heading in the compare view's details, also spoken for each item: metadata both files hold, with different values.",
-      "extractionState" : "manual"
-    },
-    "Distortion correction stayed on for this lens." : {
-      "comment" : "What's in This Photo, processing section: the lens kept the camera's geometric distortion correction on for this photo. Shown only where a device test showed it. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Distortion correction stays on for this lens, even though nope. asks for it to be off." : {
-      "comment" : "Processing note of a lens that can't save RAW, shown only where a device test showed that this lens keeps the camera's geometric distortion correction on. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "Distortion correction: this lens doesn't let apps turn it off or report whether it's used, so its photos may be corrected for lens distortion." : {
@@ -192,20 +160,12 @@
       "comment" : "Metadata item: shutter speed, ISO, aperture and focal length. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Face Detection is off unless you turn it on in nope.'s settings. With it on, iOS may detect faces in the viewfinder to decide where to focus and how to expose. nope. doesn't read or save which faces it found." : {
-      "comment" : "Claim 18 in docs/research/privacy-claims.md (AVCaptureDevice face-driven autofocus and auto exposure); issue #80. Face Detection is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "Faces and Autofocus" : {
       "comment" : "Honesty heading: iOS may detect faces to choose where to focus.",
       "extractionState" : "manual"
     },
     "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone." : {
       "comment" : "Explains the Standard File Tags switch. No default note. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Fixed values the file standard asks for, such as version numbers and the color space. They say nothing about you, your phone or the photo. On by default." : {
-      "comment" : "Explains the Standard File Tags switch. Must not claim more than the English.",
       "extractionState" : "manual"
     },
     "HEIF with some device processing" : {
@@ -230,10 +190,6 @@
     },
     "Image Size and Layout" : {
       "comment" : "Locked metadata item: image size, bit depth, compression and data layout. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "In Each Photo" : {
-      "comment" : "Section header above the switches for optional details saved in each photo. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "In Night Mode, shows the live picture in red too. Only the screen changes; photos keep their colors." : {
@@ -284,10 +240,6 @@
       "comment" : "Honesty heading: on a lens that can't save RAW, the phone processes the photo. RAW is a file format name. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo also shows that it was taken with nope. and which version. Off by default." : {
-      "comment" : "Explains the signing switch (off by default). Keep \"nope.\" unchanged. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo shows that it was taken with nope., and which version." : {
       "comment" : "Explains the Sign Each Photo switch. No default note. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -306,10 +258,6 @@
     },
     "Location access isn't allowed on this device, so photos can't include a location." : {
       "comment" : "Shown under the Location switch when a restriction, such as Screen Time, doesn't allow location access. Must not claim more than the English.",
-      "extractionState" : "manual"
-    },
-    "Location is off unless you turn it on under Choose Details in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere." : {
-      "comment" : "Issue #43; docs/PRIVACY.md, \"Location\". Choose Details is the name of nope.'s own settings screen; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
       "extractionState" : "manual"
     },
     "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere." : {
@@ -344,10 +292,6 @@
       "comment" : "In the photo details: the SHA-256 hash of the file's Content Credentials manifest, as 64 hexadecimal digits. SHA-256 is a standard name; keep it unchanged.",
       "extractionState" : "manual"
     },
-    "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Choose Details in Settings." : {
-      "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Choose Details is the name of nope.'s own settings screen; use its translation. Must not claim more than the English.",
-      "extractionState" : "manual"
-    },
     "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings." : {
       "comment" : "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -368,20 +312,12 @@
       "comment" : "Under a lens button: this lens can't save RAW. RAW is a file format name.",
       "extractionState" : "manual"
     },
-    "nope. asks the camera to put speed before quality, and turns off what apps can: Apple ProRAW, zero shutter lag, responsive capture, deferred processing, constant color, content-aware distortion correction and digital zoom." : {
-      "comment" : "Processing note of a lens without RAW: the camera features the app turns off. Apple ProRAW is Apple's name. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "nope. contains no analytics, crash-reporting or advertising code, and collects no data." : {
       "comment" : "Claims 3 and 5 in docs/research/privacy-claims.md (Data Not Collected; privacy manifest). Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "nope. contains no networking code and makes no network connections." : {
       "comment" : "Claim 1 in docs/research/privacy-claims.md. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings." : {
-      "comment" : "Accessibility page, Night Mode entry: how to dim the screen. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "nope. never connects to the internet and keeps nothing about you." : {
@@ -394,10 +330,6 @@
     },
     "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection." : {
       "comment" : "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
-    },
-    "nope. saves the camera's file without changing its pixels. On a lens with RAW, nope. develops its own HEIF and JPEG copies from the RAW, with one overall tone curve (Standard) or none (Flat), and no noise reduction, sharpening or local tone mapping." : {
-      "comment" : "Processing note of a lens without RAW: what the app itself does. RAW, HEIF and JPEG are file format names; Standard and Flat are the names of the two looks in Settings. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software." : {
@@ -430,10 +362,6 @@
     },
     "Not measured: the RAW samples don't fit the RAW file's white level." : {
       "comment" : "In the photo details, why the RAW clipping isn't shown: the camera's RAW sample values are larger than the RAW file's white level allows, so they can't be compared.",
-      "extractionState" : "manual"
-    },
-    "Not on this lens" : {
-      "comment" : "Caption under RAW (DNG) in the format list of a lens that can't save RAW: this lens doesn't offer RAW. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "Not saved: it is discarded when you close this view." : {
@@ -476,10 +404,6 @@
       "comment" : "What turning off lens correction instructions costs. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Off: nothing is lost. Location is only added if you turn it on." : {
-      "comment" : "What turning off location costs. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "Off: nothing is lost. Only written if you enter them." : {
       "comment" : "What turning off the name and copyright costs. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -502,14 +426,6 @@
     },
     "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so." : {
       "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."
-    },
-    "On a lens that can't save RAW, the phone processes the photo before nope. receives it. The camera marks these lenses Processed, unless you turn off Show Processed Marker." : {
-      "comment" : "Honesty statement under Lenses Without RAW. Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker's word and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "On a lens that can't save RAW, the phone's camera processes the photo. nope. marks the camera \"Processed\" before you take it, unless you turn off Processed Marker in Settings, and the photo's details always say so. Tap the marker to see what processing that lens's photos get." : {
-      "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker's first word and Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
     },
     "On, but there was nothing to write" : {
       "comment" : "In the photo details, why a metadata item isn't in the files although its switch is on: the camera gave no value for it, such as no location or no lens corrections.",
@@ -546,6 +462,17 @@
     "Photo Format" : {
       "comment" : "VoiceOver and Voice Control name of the chip at the top of the camera that says what the next photo will be. Tapping it explains the format and lists the formats. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
+    },
+    "Photo Format sheet: choices are for the other lenses" : {
+      "comment" : "Footer on the Photo Format sheet of a lens that can't save RAW: that lens always saves its one processed file, and the format choices apply to the lenses that save RAW. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This lens saves one processed file. The formats you choose in Settings are for the other lenses."
+          }
+        }
+      }
     },
     "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device." : {
       "comment" : "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
@@ -586,18 +513,6 @@
           }
         }
       }
-    },
-    "Processed Photos Are Labeled" : {
-      "comment" : "Honesty heading: photos from a lens that can't save RAW are labeled as processed. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Processed: No RAW on This Lens" : {
-      "comment" : "Marker on the camera before the photo is taken: the selected lens can't save RAW, so its photos are processed by the phone. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "RAW · Single frame" : {
-      "comment" : "Badge: the next photo is one unprocessed RAW frame from the sensor. RAW is a file format name.",
-      "extractionState" : "manual"
     },
     "Read Back from the Files" : {
       "comment" : "Heading in the photo details: every metadata tag, block and property nope. read back from each saved file before saving it. Keep nope. unchanged if it appears.",
@@ -659,10 +574,6 @@
       "comment" : "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "Shows \"Processed\" on the camera before you take a photo with a lens that can't save RAW. Tap it to see what processing that lens's photos get. On by default." : {
-      "comment" : "Explains the Processed Marker switch. \"Processed\" is the start of the marker's text, \"Processed: No RAW on This Lens\"; use the same word as its translation. RAW is a file format name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent." : {
       "comment" : "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and nothing is sent. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS. No default note. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -683,20 +594,8 @@
       "comment" : "Heading in the photo details: whether the photo carries a Content Credentials signature.",
       "extractionState" : "manual"
     },
-    "Signed Only If You Turn It On" : {
-      "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Signing is off unless you turn it on. A signed photo shows that it was taken with nope., and which version." : {
-      "comment" : "Honesty statement under Signing Is Your Choice. Issue #80; docs/PRIVACY.md, \"Content Credentials\". Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
     "Signing Is Your Choice" : {
       "comment" : "Honesty heading: photos are signed with Content Credentials only when the person turns signing on. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "Signing, off until you turn it on in Settings, lets anyone check whether a photo has changed." : {
-      "comment" : "First-run statement 2 of 3: Content Credentials signing is off by default and can be turned on in Settings. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "single-frame RAW" : {
@@ -725,10 +624,6 @@
     },
     "The HEIF and JPEG look in Settings changes only the copies nope. develops from the RAW. The RAW itself is never changed by it." : {
       "comment" : "Keep \"nope.\" unchanged. RAW, HEIF and JPEG are file format names. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "The phone's camera makes this photo: it turns the sensor data into a finished image, choosing its colors and tone and any noise reduction and sharpening, and compresses it as %@. Apps can't turn these steps off." : {
-      "comment" : "Processing note of a lens without RAW. The placeholder is a file format name, HEIF or JPEG. Must not claim more than the English: it says what the phone may apply, not that it applies each step. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "The phone's camera processes this file before nope. receives it. nope. can't turn that processing off." : {
@@ -793,10 +688,6 @@
     },
     "What the Phone Does on This Lens" : {
       "comment" : "Heading in the processing note of a lens that can't save RAW: what the phone's camera does to the file. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
-    },
-    "When you leave nope. during a series or while photos are saving, shows how far it got on the Lock Screen and in the Dynamic Island. Counts only, updated on this iPhone and never sent anywhere. Off by default." : {
-      "comment" : "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and status, is updated on the device and nothing is sent. Keep \"nope.\" unchanged. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS.",
       "extractionState" : "manual"
     },
     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent." : {

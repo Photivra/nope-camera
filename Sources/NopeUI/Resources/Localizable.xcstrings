@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Photo Format sheet: Formats for Other Lenses" : {
+      "comment" : "Button on the Photo Format sheet of a lens that can't save RAW: closes the sheet and opens Settings at Formats, where the formats of the other lenses are chosen.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Formats for Other Lenses"
+          }
+        }
+      }
+    },
+    "Photo Format sheet: This Lens Saves" : {
+      "comment" : "Section header on the Photo Format sheet of a lens that can't save RAW, above the one file format that lens saves (for example HEIF). The list can't be changed there.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Lens Saves"
+          }
+        }
+      }
+    },
     "“%@” applied." : {
       "comment" : "Shown after a saved settings preset was applied. The placeholder is the preset's name, in the language's quotation marks.",
       "extractionState" : "manual"
@@ -61,10 +83,6 @@
       "comment" : "A photo size choice: megapixels (MP), then the width and height in pixels, such as 12 MP (4032 × 3024).",
       "extractionState" : "manual"
     },
-    "%lld of %lld" : {
-      "comment" : "Which of the golden spiral's eight placements is in use, such as 3 of 8.",
-      "extractionState" : "manual"
-    },
     "%lld of %lld photos taken" : {
       "comment" : "Interval shooting progress: how many photos of the series are taken so far. Both numbers are counts of photos; the second is at least 2.",
       "extractionState" : "manual"
@@ -75,10 +93,6 @@
     },
     "%lld Saved" : {
       "comment" : "Value of the Presets tile in the Quick Menu and of the Presets row in Settings: how many presets the person has saved, at least 1. Keep it short: it sits in a small tile under the name Presets, so a counter word alone is enough where that reads naturally.",
-      "extractionState" : "manual"
-    },
-    "%lld set manually" : {
-      "comment" : "How many manual controls the person has set. The number is a count of controls.",
       "extractionState" : "manual"
     },
     "4 × 4" : {
@@ -131,10 +145,6 @@
     },
     "All Photo Settings" : {
       "comment" : "Button on the Photo Format sheet: closes the sheet and opens Settings at the Photos group (formats, HEIF and JPEG copies, photo size).",
-      "extractionState" : "manual"
-    },
-    "Allow Camera Access" : {
-      "comment" : "Button that shows the system camera permission prompt.",
       "extractionState" : "manual"
     },
     "Another preset has this name." : {
@@ -203,14 +213,6 @@
     },
     "Autofocus and auto exposure follow faces the camera finds." : {
       "comment" : "Explains the Focus on Faces switch. It decides only whether nope.'s autofocus and auto exposure follow faces; don't describe it as turning face detection off."
-    },
-    "Autofocus and auto exposure follow faces the camera finds. Off by default." : {
-      "comment" : "Explains the Face Detection switch, which is off by default.",
-      "extractionState" : "manual"
-    },
-    "Back to Single Photo" : {
-      "comment" : "Action of the self-timer or burst pill on the camera: the shutter takes one photo per press again.",
-      "extractionState" : "manual"
     },
     "Battery at %@. Charge the device soon to keep taking photos." : {
       "comment" : "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 15%, formatted by the system.",
@@ -288,20 +290,8 @@
       "comment" : "Title when camera access was declined.",
       "extractionState" : "manual"
     },
-    "Camera Access Needed" : {
-      "comment" : "Title before the app asks for camera access.",
-      "extractionState" : "manual"
-    },
     "Cancel Timer" : {
       "comment" : "Button that stops the self-timer without taking a photo.",
-      "extractionState" : "manual"
-    },
-    "Capture" : {
-      "comment" : "Settings section header for how photos are taken and saved.",
-      "extractionState" : "manual"
-    },
-    "Captured (not saved yet: development build)" : {
-      "comment" : "Shown after a photo is taken. In this development version photos are kept in memory and not saved to Photos.",
       "extractionState" : "manual"
     },
     "Center" : {
@@ -371,18 +361,6 @@
     "Continuous" : {
       "comment" : "Live readout value: continuous autofocus.",
       "extractionState" : "manual"
-    },
-    "Copies section: Files" : {
-      "comment" : "Section header on the HEIF and JPEG Copies page: compression, bit depth, color space and size of the copies (not the Files heading of the photo details).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Files"
-          }
-        }
-      }
     },
     "Copy Size" : {
       "comment" : "Picker: the width and height of the HEIF and JPEG copies, compared with the RAW.",
@@ -467,49 +445,9 @@
       "comment" : "Button that closes a sheet, such as Settings or Pro Tools.",
       "extractionState" : "manual"
     },
-    "Double tap for options" : {
-      "comment" : "VoiceOver hint of the selected drive-strip word when it has options (the self-timer delay, interval or Astro settings).",
-      "extractionState" : "manual"
-    },
     "Drive" : {
       "comment" : "Quick control on the camera: a menu that chooses what the shutter does: one photo, a self-timer, or a burst.",
       "extractionState" : "manual"
-    },
-    "Drive mode: Interval" : {
-      "comment" : "Drive-strip word on the camera: interval shooting, a series of photos at a fixed interval. Not the picker for the time between photos, which has its own key. One of the five drive-strip words (Single, Timer, Burst, Interval, Astro), shown side by side on one line above the shutter: keep it as short as the others. Measured to fit in every launch language at the default text size (docs/design/screens/drive-strip-languages.html).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Interval"
-          }
-        }
-      }
-    },
-    "Drive mode: Single" : {
-      "comment" : "Drive-strip word on the camera: each press of the shutter takes one photo. One of the five drive-strip words (Single, Timer, Burst, Interval, Astro), shown side by side on one line above the shutter: keep it as short as the others. Measured to fit in every launch language at the default text size (docs/design/screens/drive-strip-languages.html).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Single"
-          }
-        }
-      }
-    },
-    "Drive mode: Timer" : {
-      "comment" : "Drive-strip word on the camera: the self-timer (3 or 10 seconds), then one photo. One of the five drive-strip words (Single, Timer, Burst, Interval, Astro), shown side by side on one line above the shutter: keep it as short as the others. Measured to fit in every launch language at the default text size (docs/design/screens/drive-strip-languages.html).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Timer"
-          }
-        }
-      }
     },
     "Drive strip: Interval" : {
       "comment" : "Drive mode word in the strip above the shutter: a series of photos at a fixed interval. A short word; the strip holds five.",
@@ -543,10 +481,6 @@
           }
         }
       }
-    },
-    "Drive, in Quick Controls, sets a self-timer of 3 or 10 seconds, or a burst. VoiceOver says each second of the countdown." : {
-      "comment" : "Accessibility screen: the self-timer and burst. A burst is a rapid run of separate photos. Drive is the name of the camera's quick control for the self-timer and burst; Quick Controls is the row of camera toggles. VoiceOver is Apple's screen reader; keep the name unchanged.",
-      "extractionState" : "manual"
     },
     "Each Frame" : {
       "comment" : "Section title in the night sky helper's settings: the exposure every frame is taken with.",
@@ -604,10 +538,6 @@
       "comment" : "Row in the night sky helper's settings: the shutter time of all frames added together.",
       "extractionState" : "manual"
     },
-    "Face Detection" : {
-      "comment" : "Switch: faces the camera detects steer autofocus and auto exposure.",
-      "extractionState" : "manual"
-    },
     "Factory Defaults" : {
       "comment" : "Built-in settings preset that returns every setting to what a fresh install has.",
       "extractionState" : "manual"
@@ -647,34 +577,6 @@
     "Feedback" : {
       "comment" : "Accessibility screen section header: haptics and spoken feedback.",
       "extractionState" : "manual"
-    },
-    "File Options" : {
-      "comment" : "Settings row and screen title: advanced options for how the HEIF and JPEG copies are encoded (compression, bit depth, color space).",
-      "extractionState" : "manual"
-    },
-    "File options: Custom" : {
-      "comment" : "Settings row value: at least one file option was changed from its default.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Custom"
-          }
-        }
-      }
-    },
-    "File options: Default" : {
-      "comment" : "Settings row value: every file option is at its default.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Default"
-          }
-        }
-      }
     },
     "Files" : {
       "comment" : "Heading in the photo details: the files saved for this photo.",
@@ -813,14 +715,6 @@
     },
     "GNU General Public License, version 3 only (GPL-3.0-only)" : {
       "comment" : "Row that opens the full license text. GNU General Public License is the license's name; keep GPL-3.0-only unchanged.",
-      "extractionState" : "manual"
-    },
-    "Golden Ratio" : {
-      "comment" : "Grid style: lines at the golden ratio (phi).",
-      "extractionState" : "manual"
-    },
-    "Golden Spiral" : {
-      "comment" : "Grid style: a golden (Fibonacci) spiral.",
       "extractionState" : "manual"
     },
     "Green" : {
@@ -1177,10 +1071,6 @@
       "comment" : "Button in the compare view: shows only nope.'s photo. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },
-    "nope. uses the camera only to take the photos you ask for." : {
-      "comment" : "Explains why the app asks for camera access. Keep \"nope.\" unchanged: it is the app's name.",
-      "extractionState" : "manual"
-    },
     "nope.: %@" : {
       "comment" : "Compare view: the value nope.'s saved file holds for a metadata item. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
@@ -1401,10 +1291,6 @@
       "comment" : "Button that opens metering, locks, bracketing and interval shooting.",
       "extractionState" : "manual"
     },
-    "Processed Marker" : {
-      "comment" : "Switch and its Voice Control name: shows a marker on the camera before taking a photo with a lens that can't save RAW.",
-      "extractionState" : "manual"
-    },
     "Processed RAW" : {
       "comment" : "Live readout: the camera's processed, demosaiced RAW format (not the single-frame Bayer RAW).",
       "extractionState" : "manual"
@@ -1429,10 +1315,6 @@
       "comment" : "Copy size choice: a quarter of the width and height of the RAW.",
       "extractionState" : "manual"
     },
-    "Quick Controls" : {
-      "comment" : "VoiceOver and Voice Control name of the button at the end of the lens row that opens a row of camera toggles, and of that row.",
-      "extractionState" : "manual"
-    },
     "Quick Menu" : {
       "comment" : "VoiceOver and Voice Control name of the Q button beside the shutter, which opens a panel of camera tiles; also the title of that panel when it is a list at the largest text sizes. Replaces Quick Controls.",
       "extractionState" : "manual"
@@ -1453,20 +1335,12 @@
       "comment" : "In the photo details: the red photosites of the RAW sensor's color filter.",
       "extractionState" : "manual"
     },
-    "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness: dim it in Control Center, or with Reduce White Point in the Accessibility settings." : {
-      "comment" : "Explains the Night Mode switch. Keep \"nope.\" unchanged. Control Center and Reduce White Point are names of iOS features: use their names in the language's iOS.",
-      "extractionState" : "manual"
-    },
     "Red Viewfinder" : {
       "comment" : "Switch: in night mode, the live camera picture on screen is shown in red too.",
       "extractionState" : "manual"
     },
     "Rename" : {
       "comment" : "Menu item and VoiceOver action on a saved preset: opens the page to rename it.",
-      "extractionState" : "manual"
-    },
-    "Rename or Delete" : {
-      "comment" : "Link to the list of saved presets, where each can be renamed or deleted.",
       "extractionState" : "manual"
     },
     "Rename Preset" : {
@@ -1509,10 +1383,6 @@
       "comment" : "Compare view: nope.'s photo, on one side, was saved to the photo library. Photos is the system photo library app.",
       "extractionState" : "manual"
     },
-    "Saves front camera photos as the viewfinder shows them. Off: photos show you as others see you, and text reads correctly. The viewfinder is mirrored either way." : {
-      "comment" : "Explains the Mirror Front Camera switch.",
-      "extractionState" : "manual"
-    },
     "Saving…" : {
       "comment" : "Shown while a photo that was just taken is being checked and added to the photo library.",
       "extractionState" : "manual"
@@ -1527,30 +1397,6 @@
     "Screen dimmed to save battery. Tap to brighten it." : {
       "comment" : "Shown over the dimmed screen, and announced to VoiceOver, when interval shooting starts and the app dims the screen to save battery.",
       "extractionState" : "manual"
-    },
-    "Search keywords: About and Licenses" : {
-      "comment" : "Settings search keywords for the About and Licenses setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "version, license, open source"
-          }
-        }
-      }
-    },
-    "Search keywords: Accessibility" : {
-      "comment" : "Settings search keywords for the Accessibility setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VoiceOver, larger text"
-          }
-        }
-      }
     },
     "Search keywords: Astro" : {
       "comment" : "Settings search keywords for the camera's Astro mode, separated by commas. Not shown on screen.",
@@ -1641,18 +1487,6 @@
         }
       }
     },
-    "Search keywords: Fast Shutter" : {
-      "comment" : "Settings search keywords for the Fast Shutter setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "motion blur, speed"
-          }
-        }
-      }
-    },
     "Search keywords: Focus on Faces" : {
       "comment" : "Settings search keywords for the Focus on Faces setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
       "extractionState" : "manual",
@@ -1685,18 +1519,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "quality, compression, resize, look"
-          }
-        }
-      }
-    },
-    "Search keywords: Honesty" : {
-      "comment" : "Settings search keywords for the Honesty setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "privacy, network, tracking"
           }
         }
       }
@@ -1828,18 +1650,6 @@
         }
       }
     },
-    "Search keywords: Red Viewfinder" : {
-      "comment" : "Settings search keywords for the Red Viewfinder setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "red, dark, night"
-          }
-        }
-      }
-    },
     "Search keywords: Remove All Optional Details" : {
       "comment" : "Settings search keywords for Remove All Optional Details, separated by commas. Not shown on screen.",
       "localizations" : {
@@ -1910,18 +1720,6 @@
         }
       }
     },
-    "Search keywords: Viewfinder Overlays" : {
-      "comment" : "Settings search keywords for the Viewfinder Overlays setting: other words people may type to find it, separated by commas. Never shown on screen. List the words people use in your language; they need not translate the English one for one.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "grid, level, histogram, peaking"
-          }
-        }
-      }
-    },
     "Self-Timer" : {
       "comment" : "VoiceOver and Voice Control name of the pill on the camera that shows the self-timer is on.",
       "extractionState" : "manual"
@@ -1962,42 +1760,6 @@
       "comment" : "VoiceOver announcement after Undo returned every setting to what it was before the preset.",
       "extractionState" : "manual"
     },
-    "Settings search: page path" : {
-      "comment" : "Settings search: where a setting is, as whole page names joined by an arrow, for example Privacy › Details in Each Photo. Both placeholders are names of Settings groups or pages. Keep the separator unless another is usual in your language.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ › %2$@"
-          }
-        }
-      }
-    },
-    "Settings search: spoken page path" : {
-      "comment" : "VoiceOver form of a Settings page path: whole group and page names, for example \"Privacy, Details in Each Photo\". Both placeholders are names of Settings groups or pages.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      }
-    },
-    "Settings search: spoken result" : {
-      "comment" : "VoiceOver label of a Settings search result: the setting, then where it is, for example \"Location, in Privacy, Details in Each Photo\". The first placeholder is the setting's name, the second the spoken page path.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, in %2$@"
-          }
-        }
-      }
-    },
     "Settings section: Photos" : {
       "comment" : "Settings section header for the formats and look each photo is saved with (a heading, not a count).",
       "extractionState" : "manual",
@@ -2006,18 +1768,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Photos"
-          }
-        }
-      }
-    },
-    "Settings section: Screen" : {
-      "comment" : "Settings section header for what the camera screen shows: clean view, viewfinder overlays, the Processed marker, night mode, the red viewfinder and the Live Activity (a heading, not a verb).",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Screen"
           }
         }
       }
@@ -2042,14 +1792,6 @@
       "comment" : "Button in the compare view: shows a hidden identifying value, such as a unique photo ID, on screen.",
       "extractionState" : "manual"
     },
-    "Shows manual controls on the camera screen. Off by default." : {
-      "comment" : "Explains the Manual Controls switch.",
-      "extractionState" : "manual"
-    },
-    "Shows the live picture in red too. Only the screen changes; photos keep their colors." : {
-      "comment" : "Explains the Red Viewfinder switch, shown while night mode is on.",
-      "extractionState" : "manual"
-    },
     "Shutdown" : {
       "comment" : "Live readout value: the camera system is stopping the camera because of pressure.",
       "extractionState" : "manual"
@@ -2068,10 +1810,6 @@
     },
     "Single" : {
       "comment" : "Live readout value: autofocus once, then hold.",
-      "extractionState" : "manual"
-    },
-    "Single Photo" : {
-      "comment" : "Drive menu option on the camera: each press of the shutter takes one photo.",
       "extractionState" : "manual"
     },
     "Smaller copies are quicker to share and take less space. The RAW keeps every pixel." : {
@@ -2210,10 +1948,6 @@
       "comment" : "VoiceOver value of the shutter while the night sky helper takes its frames: pressing the shutter stops them.",
       "extractionState" : "manual"
     },
-    "Taking photo…" : {
-      "comment" : "Shown while a photo is being taken.",
-      "extractionState" : "manual"
-    },
     "Taking Photos" : {
       "comment" : "Accessibility screen section header: the ways to take a photo besides the on-screen shutter.",
       "extractionState" : "manual"
@@ -2278,10 +2012,6 @@
       "comment" : "Explains the Light Unavailable warning. Light is the name of a camera control; Q is the letter on the Quick Menu button beside the shutter: keep \"Q\" unchanged. Replaces the sentence that named Quick Controls.",
       "extractionState" : "manual"
     },
-    "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Quick Controls to try again, or choose a lower brightness." : {
-      "comment" : "Explains the Light Unavailable warning. Light and Quick Controls are the names of camera controls.",
-      "extractionState" : "manual"
-    },
     "The next photo won't fit. Free up storage on this device to keep taking photos." : {
       "comment" : "Explanation of the Storage Full warning on the camera: saving another photo would fail until the person frees storage.",
       "extractionState" : "manual"
@@ -2342,10 +2072,6 @@
       "comment" : "Accessibility page, Self-Timer and Burst: where the self-timer and burst are on the camera. Timer and Burst are words on the drive strip above the shutter; use their translations. VoiceOver is Apple's screen reader; keep the name unchanged. Replaces the sentence that named Quick Controls.",
       "extractionState" : "manual"
     },
-    "Timer: %@" : {
-      "comment" : "Drive menu option on the camera: a self-timer. The value is a short number of seconds, such as 3s or 10s, formatted by the system.",
-      "extractionState" : "manual"
-    },
     "Timing" : {
       "comment" : "Heading in the photo details: how long each step of taking and saving the photo took, in milliseconds.",
       "extractionState" : "manual"
@@ -2368,10 +2094,6 @@
     },
     "Tungsten" : {
       "comment" : "White balance preset for incandescent (tungsten) light.",
-      "extractionState" : "manual"
-    },
-    "Turn Off Astro" : {
-      "comment" : "Action of the Astro pill on the camera: turns the night sky helper off.",
       "extractionState" : "manual"
     },
     "Turn off Astro to start interval shooting." : {
@@ -2400,14 +2122,6 @@
     },
     "Turn Off Magnifier" : {
       "comment" : "Action of the magnifier pill on the camera: shows the whole viewfinder again.",
-      "extractionState" : "manual"
-    },
-    "Turn Off Manual Controls" : {
-      "comment" : "Action of the M pill on the camera: hides the manual controls, as the Manual Controls switch in Settings does.",
-      "extractionState" : "manual"
-    },
-    "Turn Spiral" : {
-      "comment" : "Button that moves the golden spiral grid to its next placement (turned or flipped).",
       "extractionState" : "manual"
     },
     "Ultra Wide" : {
@@ -2449,18 +2163,6 @@
     "Viewfinder Overlays" : {
       "comment" : "Settings row and screen title: the grid, level, focus peaking, histogram and live readout drawn over the viewfinder.",
       "extractionState" : "manual"
-    },
-    "Viewfinder overlays: two on" : {
-      "comment" : "Value of the Viewfinder Overlays row in Settings when two overlays are on: their two names, for example Grid, Level. Both placeholders are overlay names.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, %2$@"
-          }
-        }
-      }
     },
     "VoiceOver says when each photo is saved and signed, or what went wrong." : {
       "comment" : "Accessibility screen: spoken feedback. VoiceOver is Apple's screen reader; keep the name unchanged.",
