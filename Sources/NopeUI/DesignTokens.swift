@@ -651,8 +651,9 @@ enum NopeHaptic {
     /// One second of a countdown passed.
     static var countdownSecond: SensoryFeedback { .impact(weight: .light) }
 
-    /// The level reached flat.
-    static var levelFlat: SensoryFeedback { .alignment }
+    /// The level became level: the horizon level or the top-down level
+    /// (docs/design/level-haptic.md).
+    static var levelReached: SensoryFeedback { .alignment }
 
     /// All Auto returned every manual control to auto.
     static var allAuto: SensoryFeedback { .success }

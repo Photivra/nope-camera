@@ -278,6 +278,8 @@ public struct CameraScreen<Viewfinder: View>: View {
             CameraReadyView(
                 model: model, settings: settings, lenses: capabilities.lenses, openSettings: { showsSettings = true },
                 presets: presets)
+            // Settings over the camera holds the level's tap back.
+            .environment(\.cameraIsCovered, showsSettings)
         }
     }
 }

@@ -40,7 +40,7 @@ struct AccessibilitySettingsView: View {
                 row(
                     systemImage: "hand.tap",
                     Text(
-                        "On iPhone, a tap you can feel confirms each press of the shutter and each saved photo.", bundle: .module,
+                        "On iPhone, a tap you can feel confirms each press of the shutter and each saved photo, and marks the moment the level is level.", bundle: .module,
                         comment: "Accessibility screen: haptic feedback. iPhone is a product name; keep it unchanged."))
                 row(
                     systemImage: "speaker.wave.2",

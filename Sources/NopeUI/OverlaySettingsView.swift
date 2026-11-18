@@ -37,7 +37,7 @@ struct OverlaySettingsView: View {
                 Toggle(isOn: Binding(get: { options.showsLevel }, set: { settings.setShowsLevel($0) })) {
                     SettingLabel(
                         title: Self.levelTitle,
-                        explanation: Text("A horizon bar, or a top-down level when you point straight down. Uses the motion sensors only while it shows.", bundle: .module, comment: "Explains the Level switch."))
+                        explanation: Text("A horizon bar, or a top-down level when you point straight down. On iPhone, you feel a tap when it's level. Uses the motion sensors only while it shows.", bundle: .module, comment: "Explains the Level switch."))
                 }
                 .settingsRow(.overlaysLevel)
             } header: {

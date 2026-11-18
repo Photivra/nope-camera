@@ -623,8 +623,14 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 - **Level** (`LevelModel`, `LevelTracker`): a horizon bar, or a top-down level when the device
   points straight down, from gravity readings of a `GravitySource`. The app target supplies Core
   Motion device motion (`MotionGravitySource`, no permission needed) through
-  `EnvironmentValues.cameraGravitySource`; updates run only while the level is shown. A haptic
-  marks the moment it becomes level; VoiceOver reads the tilt as the level's value.
+  `EnvironmentValues.cameraGravitySource`; updates run only while the level is shown. A tap
+  (`NopeHaptic.levelReached`, `.alignment`) and a low-priority VoiceOver announcement ("Level")
+  mark the moment it becomes level; VoiceOver also reads the tilt as the level's value. When
+  they play is decided in `NopeCore` by `LevelTapRule` (once per entry, at least one second
+  apart, none for the first reading) and `CameraModel.holdsBackLevelTap` (no tap while a photo
+  is taken, during a burst, countdown, interval series or Astro, or with the camera not
+  running); `LevelOverlay` adds a sheet over the camera and an inactive app, and only plays it
+  (`docs/design/level-haptic.md`).
 - **Live analysis** (`LiveViewModel`, `CameraModel.live`, `LiveViewBackend`): focus peaking and
   the histogram with clipping indicators. `SystemLiveView` adds an `AVCaptureVideoDataOutput`
   only while one of them is shown (`LiveAnalysisNeeds`: peaking whenever on; the histogram only
