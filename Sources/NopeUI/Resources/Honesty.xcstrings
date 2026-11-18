@@ -292,6 +292,14 @@
       "comment" : "Spoken format name for the no-RAW fallback. JPEG is a file format name.",
       "extractionState" : "manual"
     },
+    "Keep Screen On" : {
+      "comment" : "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review (issue #97). Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims to 10% after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it." : {
+      "comment" : "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
     "Kept by nope. until it closes, to group the frames here. Not written to the files; in Photos each frame is a separate photo." : {
       "comment" : "Footer of the Bracket group in the photo details. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the values are in memory only.",
       "extractionState" : "manual"
@@ -678,8 +686,8 @@
       "comment" : "Summary line in the photo details: a RAW file, one frame of the sensor's data, and one copy (the placeholder is its format, such as HEIF) that nope. developed from it. RAW is a file format name. Keep nope. unchanged. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
-    "Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness." : {
-      "comment" : "Explains the Night Mode switch. Must not claim more than the English: nope. doesn't dim the screen. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
+    "Red on black, to keep your eyes used to the dark. Night Mode doesn't change the screen's brightness." : {
+      "comment" : "Explains the Night Mode switch. Night Mode is the name of nope.'s switch; use its translation. Must not claim more than the English: Keep Screen On and interval shooting may dim the screen, Night Mode doesn't. Draft wording for the Honesty review (issue #97). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "Remove All Optional Details" : {
@@ -908,6 +916,10 @@
     },
     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent." : {
       "comment" : "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
+      "extractionState" : "manual"
+    },
+    "While the camera is showing, the screen stays on for 30 minutes after your last touch or photo, and dims after 2 minutes. Uses more battery. Not used while Battery Low shows." : {
+      "comment" : "Explains the Keep Screen On switch. Battery Low is the camera's warning; use its translation. Must not claim more than the English: the screen dims sooner in Low Power Mode, and after 30 minutes the phone's Auto-Lock applies again. Draft wording for the Honesty review (issue #97). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos." : {

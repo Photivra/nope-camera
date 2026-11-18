@@ -40,7 +40,8 @@ struct EveryTagSection: View {
 }
 
 /// One file's tags, blocks and properties, grouped by where they live in the file, each group
-/// closed at first, with search by name. Identifying values read "Hidden" until Show Hidden
+/// closed at first, with search by name (the system field, or ``NightSearchField`` in Night
+/// Mode). Identifying values read "Hidden" until Show Hidden
 /// Values in their group.
 struct EveryTagPage: View {
     /// The file.
@@ -108,7 +109,9 @@ struct EveryTagPage: View {
                 }
             }
         }
-        .searchable(text: $query)
+        // The system field, or the red one in Night Mode (issue #98), named as the system field
+        // is: "Search".
+        .nightSearchable(text: $query, accessibilityName: NightSearchable.prompt)
         .navigationTitle(Text(verbatim: FormatsSettingsView.name(of: file.format)))
         .navigationBarTitleDisplayMode(.inline)
     }

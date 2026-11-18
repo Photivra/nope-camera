@@ -34,10 +34,19 @@ extension CameraWarnings {
     static func battery(_ context: CameraControlContext, lastSignature: SignatureStatus?) -> CameraWarning? {
         guard let warning = context.model.deviceStatus.batteryWarning else { return nil }
         let percent = (Double(warning.percent) / 100).formatted(.percent)
-        let explanation =
-            warning.isLowPowerMode
-            ? Text("Battery at \(percent). Low Power Mode is on.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 3%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.")
-            : Text("Battery at \(percent). Charge the device soon to keep taking photos.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 3%, formatted by the system.")
+        // Keep Screen On isn't used while Battery Low shows (issue #97), and the warning says so.
+        let isKeepScreenOnHeldBack = context.offersKeepScreenOn && context.settings.keepsScreenOn
+        let explanation: Text =
+            switch (warning.isLowPowerMode, isKeepScreenOnHeldBack) {
+            case (true, false):
+                Text("Battery at \(percent). Low Power Mode is on.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera while Low Power Mode is on. The value is the battery charge as a percentage, such as 3%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting.")
+            case (false, false):
+                Text("Battery at \(percent). Charge the device soon to keep taking photos.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera. The value is the battery charge as a percentage, such as 3%, formatted by the system.")
+            case (true, true):
+                Text("Battery at \(percent). Low Power Mode is on. Keep Screen On is not used now.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera while Low Power Mode is on and the Keep Screen On switch is on: the screen may lock by itself again until the battery is charged. The value is the battery charge as a percentage, such as 3%, formatted by the system. Low Power Mode is Apple's name for the iPhone and iPad setting; Keep Screen On is the name of nope.'s switch. Draft wording for the Honesty review.")
+            case (false, true):
+                Text("Battery at \(percent). Charge the device soon to keep taking photos. Keep Screen On is not used now.", bundle: .module, comment: "Explanation of the Battery Low warning on the camera while the Keep Screen On switch is on: the screen may lock by itself again until the battery is charged. The value is the battery charge as a percentage, such as 3%, formatted by the system. Keep Screen On is the name of nope.'s switch. Draft wording for the Honesty review.")
+            }
         return CameraWarning(
             id: "battery",
             title: Text("Battery Low", bundle: .module, comment: "Warning chip on the camera: the battery is low and the device isn't charging."),

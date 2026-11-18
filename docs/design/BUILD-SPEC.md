@@ -256,6 +256,7 @@ Root, in order. A row is shown or not by the device only; no row appears or disa
 | | Night Mode | Switch | |
 | | Keep Night Mode After Astro | Switch | Where the device offers Astro (added 2026-11-18) |
 | | Red Viewfinder | Switch | Always shown, whether Night Mode is on or off |
+| | Keep Screen On | Switch | Off by default; not in the Lock Screen camera (added 2026-11-18, issue 97, [keep-screen-on.md](keep-screen-on.md)) |
 | | Live Activity | Switch | Where the device offers it |
 | More | Accessibility; Honesty; About and Licenses | Pages | |
 
@@ -273,13 +274,14 @@ Change:
   1. one per setting on any page: its localized title, its keywords, its page path, and its destination;
   2. keywords, as localized strings beside each title (section 4), matched like the title;
   3. pointers to the camera for controls that are not in Settings: Manual Controls, Self-Timer, Burst, Interval Shooting, Astro, Flash, Light, Exposure, Close-Up, Far Focus, Magnify, Grid, Level, Compare. A pointer shows the control's name and where it is, in words, under a header "On the Camera", with a camera symbol and no chevron; it is not a button and does not navigate (figure `settings-search-camera`).
-  In Night Mode Settings has no search field (owner decision, 2026-11-18): iOS draws the field as gray glass outside the app's views, where the red filter can't reach it; every row stays reachable from the list, and the field returns when Night Mode is off.
+  In Night Mode the system field, which iOS draws as gray glass the red filter can't reach, is replaced by the app's own red field, `NightSearchField`, under the title (issue 88, [night-search-field.md](night-search-field.md), accepted 2026-11-18): a 44-point black capsule with the outline red, a 2-point full-red outline and the cursor with focus, the placeholder "Search" in the full red, Clear Text, and Cancel beside it (under it at accessibility sizes); autocorrection and suggestions are off; VoiceOver name "Search Settings". Switching Night Mode keeps the search and its results and closes the keyboard. The keyboard is the system's dark one, and the Accessibility page says so. The Every Tag page of the photo details uses the same field in Night Mode (issue 98).
   Results replace the list while searching; choosing a setting pushes its page. No match shows `ContentUnavailableView.search` (figure `settings-search-empty`). Page paths are whole localized names, joined by a localized format, never built from fragments.
 - Identifiers: one stable identifier for each page and each row (an enum in `SettingsSearch.swift`, for example `.photos`, `.copies`, `.details`, `.detailsLocation`). Search uses them as destinations; `FormatDetailsSheet`'s All Photo Settings opens `.photos` and its Look row opens `.copies`; the Location warning's explanation opens `.details`. They are also the accessibility identifiers of the rows, and leave room for links into Settings later (issue 82). Not a URL scheme in 1.0.0.
 - Presentation: sheet in compact width, popover (480 × 720 at most, single column) in regular width in both orientations, sheet in night mode, as today. In the stacked and scrolling layouts it is presented from Q's Settings button; in the column layout from the Settings button in the column. No split view. The style chosen when Settings opens is kept until it closes (`AdaptivePresentation`, unchanged): through rotation, resizing, a fold, and Night Mode turned on inside it (figures `ipad-settings-night-on`, `duo-fold-settings-unfold`, `duo-fold-settings-fold`).
 - Lock Screen camera: Settings is offered as today, with every row; changes last until the extension closes (figure `lock-settings`). No change in 1.0.0.
 - Viewfinder Overlays: Grid Style lists Thirds, 4 × 4, Square; remove Turn Spiral (issue 76).
-- Accessibility page: the Self-Timer and Burst text names the drive strip; the Night Mode entry is added.
+- Accessibility page: the Self-Timer and Burst text names the drive strip; the Night Mode entry is added, with a second Night Mode entry for the system keyboard and menus (issue 88).
+- Keep Screen On (issue 97, [keep-screen-on.md](keep-screen-on.md)): `NopeSettings.keepsScreenOn`, in presets; the rule is `KeepScreenOnRule` in `NopeCore`, applied by `SeriesScreenKeeper`, still the only place that changes the idle timer and the brightness. Used only while the app is active, the camera screen is in front with no sheet over it, the camera runs and Battery Low isn't shown. Dims to 10% with the series' Brighten Screen cover after 2 minutes without a touch or photo (30 seconds in Low Power Mode), never when the screen is already at 10% or darker; Auto-Lock applies again 30 minutes after the last touch or photo. A running series wins, and since issue 99 a series doesn't dim a screen already at 10% or darker either.
 - Honesty: the entries of section 5.
 - Night mode: `NightModeSwitchStyle` draws on as filled with a dark knob and off as an outline.
 
@@ -577,8 +579,14 @@ Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. A
 | On the camera, beside the lenses; On the camera, above the shutter; In Q | Search pointers | One whole sentence per place. Names of the controls are the existing strings |
 | Search keywords, one string per setting: for example "metadata, EXIF, GPS" (Details in Each Photo, Location); "Content Credentials, C2PA, signature" (Sign Each Photo); "reset, restore, defaults" (Presets, Restore Defaults); "resolution, megapixels" (Photo Size); "quality, compression, resize" (HEIF and JPEG Copies); "selfie" (Mirror Front Camera); "red, dark" (Night Mode, Red Viewfinder) | Settings search | Translators list the words people use in that language; not shown on screen |
 | Saves front camera photos mirrored, as the viewfinder shows them. | Mirror Front Camera (Honesty) | Draft; replaces the three-sentence explanation |
-| Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness. | Night Mode (Honesty) | Draft; the dimming advice moves to the Accessibility page |
-| nope. doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings. | Accessibility page, Night Mode | Draft |
+| Red on black, to keep your eyes used to the dark. Night Mode doesn't change the screen's brightness. | Night Mode (Honesty) | Draft; the dimming advice moves to the Accessibility page. "Night Mode" replaced "nope." (issue 97, decision 8) |
+| Night Mode doesn't change the screen's brightness. Dim it in Control Center, or with Reduce White Point in the Accessibility settings. | Accessibility page, Night Mode | Draft; "Night Mode" replaced "nope." (issue 97) |
+| The keyboard and menus are drawn by iOS and are not red. | Accessibility page, Night Mode | Draft (issue 88) |
+| Search; Search Settings; Clear text; Cancel | The Night Mode search field: placeholder, VoiceOver name, Clear Text, Cancel | Issue 88; Every Tag's field is named "Search" (issue 98) |
+| Keep Screen On; While the camera is showing, the screen stays on for 30 minutes after your last touch or photo, and dims after 2 minutes. Uses more battery. Not used while Battery Low shows. | Keep Screen On (Honesty) | Draft (issue 97) |
+| awake, auto-lock, sleep, lock, dim, tripod, battery | Keep Screen On search keywords | Not shown on screen |
+| … Keep Screen On is not used now. | The last sentence of both Battery Low explanations while Keep Screen On is on | Draft (issue 97) |
+| Keep Screen On stops the screen from locking by itself while the camera is showing, … The side button always locks it. | Honesty, Keep Screen On | Draft (issue 97, wording 7) |
 | In Night Mode, shows the live picture in red too. Only the screen changes; photos keep their colors. | Red Viewfinder (Honesty) | Draft |
 | When Astro turns Night Mode on, it stays on after you leave Astro instead of turning off again. | Keep Night Mode After Astro | Draft (2026-11-18) |
 | Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent. | Live Activity (Honesty) | Draft; replaces the longer explanation |

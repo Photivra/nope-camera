@@ -198,6 +198,7 @@ Settings                                             search field at the top
 │  ├─ Night Mode                   switch
 │  ├─ Keep Night Mode After Astro  switch                           (where the device offers Astro; added 2026-11-18)
 │  ├─ Red Viewfinder               switch                           always shown
+│  ├─ Keep Screen On               switch                           not in the Lock Screen camera (issue 97)
 │  └─ Live Activity                switch                           (where the device offers it)
 │
 └─ MORE
@@ -276,7 +277,7 @@ One task gets longer than in direction B: turning Remove All Optional Details ba
 
 **Camera.** Only behavior: Fast Shutter and Face Detection (item 6). Short on purpose: issue 82 and later work add camera behavior here, not display options. The Manual Controls switch is gone (issue 77).
 
-**Screen.** Everything about what the screen shows, in the order of use: Start in Clean View, Viewfinder Overlays, Show Processed Marker, then Night Mode, Red Viewfinder, Live Activity.
+**Screen.** Everything about what the screen shows, in the order of use: Start in Clean View, Viewfinder Overlays, Show Processed Marker, then Night Mode, Red Viewfinder, Keep Screen On (added 2026-11-18, issue 97; not in the Lock Screen camera), Live Activity.
 - Viewfinder Overlays shows which overlays are on: "Off", the names when one or two are on ("Grid, Level"), or a count ("3 On") (item 13).
 - **Red Viewfinder is always shown** (items 15, 28). Its explanation starts with the condition: "In Night Mode, shows the live picture in red too. Only the screen changes; photos keep their colors."
 - The page sections keep their names. Pro Tools renames its "Live Aids" heading only if the owner wants one name for both; not proposed.
@@ -310,8 +311,9 @@ Rule: on the Settings list an explanation is one sentence, two where issue 80 or
 | Face Detection | Autofocus and auto exposure follow faces the camera finds. |
 | Start in Clean View | Unchanged. |
 | Show Processed Marker | Shows Processed on the camera when a lens can't save RAW. |
-| Night Mode | Red on black, to keep your eyes used to the dark. nope. doesn't change the screen's brightness. (The advice on dimming moves to Honesty or Accessibility.) |
+| Night Mode | Red on black, to keep your eyes used to the dark. Night Mode doesn't change the screen's brightness. (The advice on dimming moves to Honesty or Accessibility.) |
 | Red Viewfinder | In Night Mode, shows the live picture in red too. Only the screen changes; photos keep their colors. |
+| Keep Screen On | While the camera is showing, the screen stays on for 30 minutes after your last touch or photo, and dims after 2 minutes. Uses more battery. Not used while Battery Low shows. (Issue 97: three sentences, decision 12.) |
 | Live Activity | Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent. |
 | Standard File Tags | Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone. |
 

@@ -656,11 +656,14 @@ struct DriveTests {
         let screen = FakeScreen(brightness: 0.05)
         let keeper = SeriesScreenKeeper(screen: screen)
         keeper.update(isSeriesRunning: true, isInForeground: true)
-        // A screen darker than the dimmed level stays as it is.
+        // A screen darker than the dimmed level stays as it is, with no cover (issue #99).
         #expect(screen.brightness == 0.05)
+        #expect(!keeper.isDimmed)
+        #expect(screen.isIdleTimerDisabled)
+        // The person's own change is kept: the keeper didn't dim, so it puts nothing back.
         screen.brightness = 0.02
         keeper.update(isSeriesRunning: true, isInForeground: false)
-        #expect(screen.brightness == 0.05)
+        #expect(screen.brightness == 0.02)
         #expect(!screen.isIdleTimerDisabled)
         #expect(!keeper.isDimmed)
     }

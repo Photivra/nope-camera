@@ -2256,6 +2256,19 @@ case drive(DriveIntent)
 Change the drive mode, start or cancel the self-timer, stop a burst, or report a hardware
 shutter button: see ``DriveIntent``.
 
+## `CameraIntent/isActivity`
+
+public, declared in `Sources/NopeCore/CameraIntent.swift`
+
+```swift
+var isActivity: Bool { get }
+```
+
+Whether the intent is something the person did, by any means (a touch, VoiceOver, Voice
+Control, a keyboard, Siri, a shortcut, the Apple Watch), which Keep Screen On counts as
+activity (``CameraModel/activityCount``). The camera's own lifecycle (starting, the
+permission, the foreground, the photo sizes, releasing previews) isn't.
+
 ## `CameraIntent/light(_:)`
 
 public, declared in `Sources/NopeCore/CameraIntent.swift`
@@ -2404,6 +2417,18 @@ facts and decides the next state; the interface holds no rules of its own (AGENT
 direction of flow").
 
 The model is isolated to the main actor, so an interface can read its properties directly.
+
+## `CameraModel/activityCount`
+
+public, declared in `Sources/NopeCore/CameraModel.swift`
+
+```swift
+@MainActor var activityCount: Int { get set }
+```
+
+Counts the person's actions (``CameraIntent/isActivity``) and the photos saved, however
+they were taken. An interface watches it to tell ``SeriesScreenKeeper/noteActivity()``,
+so Keep Screen On counts from the latest one (issue #97). Only its changes matter.
 
 ## `CameraModel/applyCameraSetup(_:manualControlsOn:)`
 
@@ -10593,6 +10618,297 @@ static let xmpIdentifier: [UInt8]
 
 The identifier that starts an XMP APP1 segment.
 
+## `KeepScreenOnConditions`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct KeepScreenOnConditions
+```
+
+What Keep Screen On needs to know about the camera screen and the device
+(`docs/design/keep-screen-on.md`, section 3).
+
+An interface fills it in and passes it to ``SeriesScreenKeeper/update(isSeriesRunning:isInForeground:keepScreenOn:)``
+whenever a value changes. Every value is a fact the interface or the model already has; none
+needs a new sensor.
+
+## `KeepScreenOnConditions/init(isSwitchOn:isActive:isCameraInFront:isCameraRunning:isBatteryLow:isLowPowerMode:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(isSwitchOn: Bool, isActive: Bool, isCameraInFront: Bool, isCameraRunning: Bool, isBatteryLow: Bool, isLowPowerMode: Bool)
+```
+
+Creates the conditions.
+
+- Parameters:
+  - isSwitchOn: Whether the switch is on.
+  - isActive: Whether the app is active in the foreground.
+  - isCameraInFront: Whether the camera screen is in front.
+  - isCameraRunning: Whether the camera is running.
+  - isBatteryLow: Whether the Battery Low warning shows.
+  - isLowPowerMode: Whether Low Power Mode is on.
+
+## `KeepScreenOnConditions/isActive`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isActive: Bool
+```
+
+Whether the app is active in the foreground.
+
+## `KeepScreenOnConditions/isBatteryLow`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isBatteryLow: Bool
+```
+
+Whether the Battery Low warning shows (``DeviceStatus/batteryWarning``).
+
+## `KeepScreenOnConditions/isCameraInFront`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isCameraInFront: Bool
+```
+
+Whether the camera screen is in front: no sheet, popover or full-screen cover over it.
+
+## `KeepScreenOnConditions/isCameraRunning`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isCameraRunning: Bool
+```
+
+Whether the camera is running (``SessionStatus/running``): not starting, paused,
+interrupted, without permission or in first run.
+
+## `KeepScreenOnConditions/isLowPowerMode`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isLowPowerMode: Bool
+```
+
+Whether Low Power Mode is on, which dims the screen sooner.
+
+## `KeepScreenOnConditions/isSwitchOn`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isSwitchOn: Bool
+```
+
+Whether the Keep Screen On switch is on (``NopeSettings/keepsScreenOn``).
+
+## `KeepScreenOnConditions/isUsed`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var isUsed: Bool { get }
+```
+
+Whether Keep Screen On is used now: the switch is on, the app is active, the camera
+screen is in front, the camera runs and the Battery Low warning doesn't show.
+
+## `KeepScreenOnConditions/off`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let off: KeepScreenOnConditions
+```
+
+The switch off: Keep Screen On is never used.
+
+## `KeepScreenOnDecision`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct KeepScreenOnDecision
+```
+
+What Keep Screen On asks of the screen at one moment.
+
+## `KeepScreenOnDecision/dims`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let dims: Bool
+```
+
+Whether the screen is dimmed.
+
+## `KeepScreenOnDecision/init(isUsed:keepsAwake:dims:nextChange:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(isUsed: Bool, keepsAwake: Bool, dims: Bool, nextChange: Duration?)
+```
+
+Creates a decision.
+
+- Parameters:
+  - isUsed: Whether the setting is used.
+  - keepsAwake: Whether the idle timer is off.
+  - dims: Whether the screen is dimmed.
+  - nextChange: How long until the decision changes, or `nil`.
+
+## `KeepScreenOnDecision/isUsed`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let isUsed: Bool
+```
+
+Whether the setting is used at all (``KeepScreenOnConditions/isUsed``). When `false`, the
+idle timer is on and the brightness is the person's.
+
+## `KeepScreenOnDecision/keepsAwake`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let keepsAwake: Bool
+```
+
+Whether the idle timer is off, so the screen doesn't lock by itself.
+
+## `KeepScreenOnDecision/nextChange`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+let nextChange: Duration?
+```
+
+How long until the decision changes without any new activity (the screen dims, or the
+limit is reached), or `nil` when nothing changes until something else does.
+
+## `KeepScreenOnDecision/unused`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let unused: KeepScreenOnDecision
+```
+
+The setting isn't used: nothing is changed.
+
+## `KeepScreenOnRule`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+struct KeepScreenOnRule
+```
+
+The rule of Keep Screen On (issue #97, `docs/design/keep-screen-on.md`): while it is used,
+the screen stays on until ``limit`` after the last touch or photo, and dims after
+``dimDelay`` without one (``lowPowerDimDelay`` in Low Power Mode).
+
+A pure value: it reads no clock and changes nothing. ``SeriesScreenKeeper`` gives it the
+conditions, the time of the last activity and the time now, applies its answer to the screen
+and schedules one wake-up for the next change, so nothing polls (AGENTS.md, "Battery").
+
+The times are proposals from the design, not measurements; the UI tests shorten them.
+
+```swift
+let decision = KeepScreenOnRule.standard.decide(conditions, lastActivity: touched, now: .now)
+screen.isIdleTimerDisabled = decision.keepsAwake
+```
+
+## `KeepScreenOnRule/decide(_:lastActivity:now:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+func decide(_ conditions: KeepScreenOnConditions, lastActivity: ContinuousClock.Instant, now: ContinuousClock.Instant) -> KeepScreenOnDecision
+```
+
+What the screen should do now.
+
+- Parameters:
+  - conditions: The camera screen and the device now.
+  - lastActivity: When the person last touched the camera screen, changed a control or
+    took a photo, or when the setting last started being used.
+  - now: The time now, on the same clock.
+- Returns: Whether the idle timer is off, whether the screen is dimmed, and when that
+  next changes. After ``limit`` the idle timer is on again and the screen stays dimmed
+  until it is touched or locks.
+
+## `KeepScreenOnRule/dimDelay`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var dimDelay: Duration
+```
+
+How long without activity before the screen dims: 2 minutes.
+
+## `KeepScreenOnRule/init(dimDelay:lowPowerDimDelay:limit:)`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+init(dimDelay: Duration, lowPowerDimDelay: Duration, limit: Duration)
+```
+
+Creates a rule with its times.
+
+- Parameters:
+  - dimDelay: How long without activity before the screen dims.
+  - lowPowerDimDelay: The same in Low Power Mode.
+  - limit: How long without activity before the phone's Auto-Lock applies again.
+
+## `KeepScreenOnRule/limit`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var limit: Duration
+```
+
+How long without activity before the phone's Auto-Lock applies again: 30 minutes.
+
+## `KeepScreenOnRule/lowPowerDimDelay`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+var lowPowerDimDelay: Duration
+```
+
+How long without activity before the screen dims in Low Power Mode: 30 seconds, iOS's
+own shortest Auto-Lock time.
+
+## `KeepScreenOnRule/standard`
+
+public, declared in `Sources/NopeCore/KeepScreenOnRule.swift`
+
+```swift
+static let standard: KeepScreenOnRule
+```
+
+The times of the design: 2 minutes, 30 seconds and 30 minutes.
+
 ## `Lens`
 
 public, declared in `Sources/NopeCore/Lens.swift`
@@ -17715,6 +18031,16 @@ static let keepsNightModeAfterAstro: String
 
 Whether night mode stays on after the astro helper ends, a Boolean.
 
+## `NopeSettings/Key/keepsScreenOn`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let keepsScreenOn: String
+```
+
+Whether the screen stays on while the camera is showing, a Boolean.
+
 ## `NopeSettings/Key/legacyManualControls`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -17998,6 +18324,19 @@ Off by default: leaving Astro returns night mode to what it was before (owner de
 1.0.0). A night mode the person turned on, or changed while the helper was on, is never
 turned off by the helper either way.
 
+## `NopeSettings/keepsScreenOn`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var keepsScreenOn: Bool { get set }
+```
+
+Whether the screen stays on while the camera is showing (Keep Screen On, issue #97). Off
+by default. ``SeriesScreenKeeper`` applies it with ``KeepScreenOnRule``: the screen dims
+after a while without a touch or a photo, and the phone's Auto-Lock applies again after
+``KeepScreenOnRule/limit``. The Lock Screen camera doesn't use it.
+
 ## `NopeSettings/makeSnapshot()`
 
 public, declared in `Sources/NopeCore/NopeSettingsSnapshot.swift`
@@ -18273,6 +18612,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 Sets whether night mode stays on after the astro helper ends, and saves the change.
 
 - Parameter isOn: Whether night mode stays on when the helper that turned it on ends.
+
+## `NopeSettings/setKeepsScreenOn(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setKeepsScreenOn(_ isOn: Bool)
+```
+
+Turns Keep Screen On on or off, and saves the change.
+
+- Parameter isOn: Whether the screen stays on while the camera is showing.
 
 ## `NopeSettings/setMetadataItem(_:isIncluded:)`
 
@@ -24658,17 +25009,27 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 @MainActor final class SeriesScreenKeeper
 ```
 
-Keeps the screen awake and dimmed while an interval series runs, and puts both back when it
-ends (issue #48).
+Keeps the screen awake, and dims it, while an interval series runs (issue #48) or while Keep
+Screen On is used (issue #97), and puts both back when that ends.
 
-During a series the screen mustn't lock, or the camera stops and the series with it; dimming
-saves battery over a long series (AGENTS.md, "Battery"). This is the only place the app turns
-the idle timer off, and it is turned on again whenever the series ends or is stopped, the
-camera screen goes away, or the app leaves the foreground.
+This is the only place the app turns the idle timer off or changes the brightness. It has two
+reasons to keep the screen awake, and a running series wins:
 
-An interface calls ``update(isSeriesRunning:isInForeground:)`` whenever either value changes,
-shows a "Brighten Screen" control over the whole screen while ``isDimmed``, and announces the
-change to VoiceOver. ``brighten()`` restores the brightness while the series continues.
+- **A series** (an interval series or an Astro run in the foreground). The screen mustn't lock,
+  or the camera stops and the series with it. The screen dims at once and has no time limit;
+  dimming saves battery over a long series (AGENTS.md, "Battery").
+- **Keep Screen On** (``KeepScreenOnRule``), while the camera screen is showing and running.
+  The screen dims after a while without activity, and the idle timer is turned on again at
+  the rule's limit. When a series ends, this reason starts counting from zero.
+
+Neither reason dims a screen that is already at ``dimmedBrightness`` or darker (issue #99):
+nothing would change, so no Brighten Screen cover is shown either.
+
+An interface calls ``update(isSeriesRunning:isInForeground:keepScreenOn:)`` whenever a value
+changes, ``noteActivity()`` for each touch, control change and photo, shows a "Brighten
+Screen" control over the whole screen while ``isDimmed``, and announces the change to
+VoiceOver. ``brighten()`` restores the brightness. For Keep Screen On the keeper schedules one
+wake-up for the next change of the rule; nothing polls.
 
 ## `SeriesScreenKeeper/brighten()`
 
@@ -24678,7 +25039,8 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 @MainActor func brighten()
 ```
 
-Restores the brightness while the series continues; the screen still doesn't lock.
+Restores the brightness; the screen still doesn't lock. During a series the screen stays
+bright until the series ends; for Keep Screen On it counts as activity.
 
 ## `SeriesScreenKeeper/dimmedBrightness`
 
@@ -24688,21 +25050,29 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 @MainActor static let dimmedBrightness: Double
 ```
 
-The brightness during a series, from 0 to 1. A screen already darker isn't changed. An
-assumption to be checked on a device: dark enough to save power, bright enough to see the
-progress.
+The brightness while dimmed, from 0 to 1. A screen already this dark or darker isn't
+changed. An assumption to be checked on a device: dark enough to save power, bright
+enough to see the progress.
 
-## `SeriesScreenKeeper/init(screen:)`
+## `SeriesScreenKeeper/init(screen:rule:now:sleep:)`
 
 public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 
 ```swift
-@MainActor init(screen: any ScreenControlling)
+@MainActor init(screen: any ScreenControlling, rule: KeepScreenOnRule = .standard, now: @escaping @MainActor () -> ContinuousClock.Instant = { ContinuousClock.now }, sleep: @escaping @Sendable (ContinuousClock.Instant) async throws -> Void = {
+            try await Task.sleep(until: $0, clock: .continuous)
+        })
 ```
 
-Creates the keeper. It changes nothing until a series runs.
+Creates the keeper. It changes nothing until a series runs or Keep Screen On is used.
 
-- Parameter screen: The screen.
+- Parameters:
+  - screen: The screen.
+  - rule: Keep Screen On's times; ``KeepScreenOnRule/standard`` by default. The UI tests
+    pass shorter ones.
+  - now: Reads the time, the continuous clock by default. Tests pass their own.
+  - sleep: Waits until a time on the continuous clock and throws when cancelled,
+    `Task.sleep(until:clock:)` by default. Tests pass their own.
 
 ## `SeriesScreenKeeper/isDimmed`
 
@@ -24724,20 +25094,33 @@ public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 
 Whether the idle timer is off now.
 
-## `SeriesScreenKeeper/update(isSeriesRunning:isInForeground:)`
+## `SeriesScreenKeeper/noteActivity()`
 
 public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
 
 ```swift
-@MainActor func update(isSeriesRunning: Bool, isInForeground: Bool)
+@MainActor func noteActivity()
 ```
 
-Keeps the screen awake and dims it when a series runs in the foreground, and puts both
-back otherwise.
+Records a touch on the camera screen, a changed control or a photo: Keep Screen On
+counts again from now. A dimmed screen stays dimmed; ``brighten()`` brightens it.
+
+## `SeriesScreenKeeper/update(isSeriesRunning:isInForeground:keepScreenOn:)`
+
+public, declared in `Sources/NopeCore/SeriesScreenKeeper.swift`
+
+```swift
+@MainActor func update(isSeriesRunning: Bool, isInForeground: Bool, keepScreenOn: KeepScreenOnConditions = .off)
+```
+
+Keeps the screen awake, and dims it, while a series runs in the foreground or Keep
+Screen On is used, and puts both back otherwise.
 
 - Parameters:
-  - isSeriesRunning: Whether an interval series runs on the camera screen.
+  - isSeriesRunning: Whether an interval series or an Astro run is going on the camera
+    screen.
   - isInForeground: Whether the app is in the foreground.
+  - keepScreenOn: Keep Screen On's conditions; ``KeepScreenOnConditions/off`` by default.
 
 ## `SessionPhoto`
 

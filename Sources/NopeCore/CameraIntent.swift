@@ -89,3 +89,17 @@ public enum CameraIntent: Equatable, Sendable {
     /// - Parameter isOpen: Whether the viewer is open now.
     case setViewerOpen(Bool)
 }
+
+extension CameraIntent {
+    /// Whether the intent is something the person did, by any means (a touch, VoiceOver, Voice
+    /// Control, a keyboard, Siri, a shortcut, the Apple Watch), which Keep Screen On counts as
+    /// activity (``CameraModel/activityCount``). The camera's own lifecycle (starting, the
+    /// permission, the foreground, the photo sizes, releasing previews) isn't.
+    public var isActivity: Bool {
+        switch self {
+        case .start, .requestPermission, .setPhotoSizes, .setInForeground, .releasePhotoPreviews: false
+        case .selectLens, .capture, .manual, .setCleanView, .drive, .auto, .light, .astro, .comparison, .setViewerOpen:
+            true
+        }
+    }
+}

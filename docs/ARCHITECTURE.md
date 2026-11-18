@@ -223,7 +223,18 @@ when the camera opens and when the option changes.
 - While a series runs in the
   foreground, `SeriesScreenKeeper` turns the idle timer off and dims the screen; it puts both
   back when the series ends or stops, the camera screen goes away, or the app goes to the
-  background (issue #48). The app supplies the UIKit screen (`SystemScreen`).
+  background (issue #48). The app supplies the UIKit screen (`SystemScreen`). A screen already
+  at 10% or darker isn't dimmed and gets no Brighten Screen cover (issue #99).
+- Keep Screen On (`NopeSettings.keepsScreenOn`, issue #97) is the keeper's second reason. The
+  rule is the pure `KeepScreenOnRule`: given `KeepScreenOnConditions` (the switch, the app
+  active, the camera screen in front, the camera running, Battery Low, Low Power Mode), the
+  last activity and the time now, it answers whether to keep the screen awake, whether to dim,
+  and when that next changes. The keeper applies the answer, schedules one wake-up for the next
+  change (its clock can be replaced in tests), and a running series wins. Activity reaches it
+  from `CameraModel.activityCount` (the person's intents, `CameraIntent.isActivity`, and each
+  saved photo), and from the app: touches on the window and VoiceOver focus changes
+  (`ReportsScreenActivity`). The Lock Screen camera has no keeper, so it neither uses the
+  setting nor shows its row.
 
 ### Drive modes: single, self-timer, burst
 
