@@ -1,11 +1,12 @@
 import NopeCore
 import SwiftUI
 
-/// A persistent warning about what the photo is, such as "Not Signed" (issue #68, "Feedback
+/// A persistent warning about what the photo is, such as "Storage Low" (issue #68, "Feedback
 /// tiers"): an amber chip with a symbol and words that stays until the cause goes away, even in
 /// clean view. Tapping it shows the explanation.
 ///
-/// The no-RAW fallback is not in this list: the format chip itself turns into its warning.
+/// The no-RAW fallback is not in this list: the format status shows the "Processed" marker
+/// (``FormatChip``).
 struct CameraWarning: Identifiable {
     /// A stable identifier, such as "signing".
     let id: String
@@ -63,9 +64,9 @@ enum CameraWarnings {
             id: "light",
             title: Text("Light Unavailable", bundle: .module, comment: "Warning chip on the camera: the light (torch) the person turned on is off because the system didn't allow it."),
             explanation: Text(
-                "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Quick Controls to try again, or choose a lower brightness.",
+                "The light is off: the system didn't allow it, for example because the device is too warm. Turn Light off and on again in Q to try again, or choose a lower brightness.",
                 bundle: .module,
-                comment: "Explains the Light Unavailable warning. Light and Quick Controls are the names of camera controls."))
+                comment: "Explains the Light Unavailable warning. Light is the name of a camera control; Q is the letter on the Quick Menu button beside the shutter: keep \"Q\" unchanged. Replaces the sentence that named Quick Controls."))
     }
 
     /// "Not Signed" after the last photo couldn't be signed while signing is on. A missing
@@ -102,9 +103,9 @@ extension CameraWarnings {
         let explanation: Text
         if context.model.location?.access.isAllowed == true {
             explanation = Text(
-                "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Choose Details in Settings.",
+                "New photos include where they were taken: latitude, longitude and altitude. You can turn Location off under Details in Each Photo in Settings.",
                 tableName: "Honesty", bundle: .module,
-                comment: "Explanation of the Location On chip on the camera: new photos include their location. Must not claim more than the English.")
+                comment: "Explanation of the Location On chip on the camera: new photos include their location. Details in Each Photo is the name of nope.'s own settings page; use its translation. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.")
         } else {
             explanation = Text(
                 "Location is on, but location access is off, so photos are saved without a location.", tableName: "Honesty",
@@ -118,8 +119,10 @@ extension CameraWarnings {
     }
 }
 
-/// An amber warning chip. Tapping it shows the explanation in a popover; VoiceOver reads the
-/// explanation as its value without opening it.
+/// An amber warning chip (docs/design/tokens.md, "Warning chip"): a triangle and words in the
+/// pill font on the dark backing, inside an amber outline, ``NopeSize/pill`` high in a 44-point
+/// target. Tapping it shows the explanation in a popover; VoiceOver reads the explanation as its
+/// value without opening it.
 struct WarningChip: View {
     /// The warning.
     let warning: CameraWarning
@@ -142,32 +145,49 @@ struct WarningChip: View {
         Button {
             showsExplanation = true
         } label: {
-            Label {
-                warning.title
-            } icon: {
+            HStack(spacing: NopeSpace.xxs) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(CameraStyle.warning)
+                warning.title
             }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .darkBacking(Capsule())
-            .overlay(Capsule().strokeBorder(CameraStyle.warning, lineWidth: 1))
-            .frame(minHeight: CameraStyle.minimumTarget)
-            .contentShape(.rect)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(WarningChipStyle())
         .accessibilityValue(warning.explanation)
         .accessibilityShowsLargeContentViewer()
         .popover(isPresented: $showsExplanation) {
             warning.explanation
                 .font(.body)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding()
-                .frame(idealWidth: 320)
+                .padding(NopeSpace.m)
+                .frame(idealWidth: NopeSize.panelMaxWidth)
                 .presentationCompactAdaptation(.popover)
                 .nightModeStyle(isNightMode)
         }
+    }
+}
+
+/// The look of a warning chip: the pill font in white on ``NopeMaterial/backing``, with an amber
+/// outline (``NopeSize/warningOutline``), ``NopeSize/pill`` high in a 44-point target, and the
+/// shared press effect. Night mode draws the outline and the triangle in its red.
+struct WarningChipStyle: ButtonStyle {
+    /// Creates the style. It holds no state.
+    init() {}
+
+    /// The styled chip.
+    ///
+    /// - Parameter configuration: The label and press state.
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(NopeFont.pill)
+            .foregroundStyle(NopeColor.label)
+            .padding(.leading, NopeSpace.xs)
+            .padding(.trailing, NopeSpace.s)
+            .frame(minHeight: NopeSize.pill)
+            .nopeBackground(.backing, in: Capsule())
+            .overlay(Capsule().strokeBorder(CameraStyle.warning, lineWidth: NopeSize.warningOutline))
+            .nopeHitTarget()
+            .contentShape(.hoverEffect, .capsule)
+            .hoverEffect(.highlight)
+            .modifier(NopePressEffect(isPressed: configuration.isPressed))
     }
 }

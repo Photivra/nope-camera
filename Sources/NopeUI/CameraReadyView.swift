@@ -489,12 +489,17 @@ struct CameraReadyView: View {
         }
     }
 
-    /// The format status; in clean view only its warning, the "Processed" marker, stays. The
-    /// marker is hidden when the person turns it off in Settings (issue #80); VoiceOver still
-    /// names the format in the viewfinder's description.
+    /// The format status; in clean view only its warning, the "Processed" marker, stays. When the
+    /// person turns the marker off in Settings (issue #80) it names the processed file instead,
+    /// and VoiceOver still says it is processed (``FormatChip``).
     @ViewBuilder private var formatChip: some View {
-        if let format = model.captureFormat, format.isBayerRAW ? showsControls : settings.showsProcessedMarker {
-            FormatChip(format: format, savedFormats: settings.selectedFormats(deviceSupportsBayerRAW: format.isBayerRAW)) {
+        if let format = model.captureFormat,
+            FormatChip.isShown(for: format, showsControls: showsControls, showsProcessedMarker: settings.showsProcessedMarker)
+        {
+            FormatChip(
+                format: format, savedFormats: settings.selectedFormats(deviceSupportsBayerRAW: format.isBayerRAW),
+                showsProcessedMarker: settings.showsProcessedMarker
+            ) {
                 showsFormats = true
             }
         }
@@ -710,6 +715,8 @@ struct CameraReadyView: View {
                 }
                 .uprightUnit(sidewaysWidth: rotation.isSideways ? sidewaysBannerWidth : nil)
                 .padding(NopeSpace.xs)
+                // The status is on the picture here, so it gets the dark backing.
+                .environment(\.isStatusOnPicture, true)
             }
             .overlay(alignment: .topTrailing) {
                 if isColumn {
@@ -718,6 +725,7 @@ struct CameraReadyView: View {
                         // narrower than the picture's room and cut a pill short.
                         .fixedSize()
                         .padding(NopeSpace.xs)
+                        .environment(\.isStatusOnPicture, true)
                 }
             }
             .overlay(alignment: overlayBottomAlignment) {

@@ -105,9 +105,12 @@ enum FailureAction: Equatable {
     }
 }
 
-/// The banner for a failed capture or save (issue #68, "Feedback tiers"): it stays until it is
-/// dismissed or the next photo is saved, takes VoiceOver focus when it appears, and offers one
-/// action, Try Again or Open Settings. Its text wraps onto as many lines as it needs.
+/// The banner for a failed capture or save (issue #68, "Feedback tiers"; docs/design/BUILD-SPEC.md,
+/// 3.7): it stays until it is dismissed or the next photo is saved, takes VoiceOver focus when it
+/// appears, and offers one action, Try Again or Open Settings. It sits on the picture's upper
+/// edge on solid black inside an amber outline, the sentence leading and the buttons trailing;
+/// at accessibility text sizes the buttons go below the sentence, which wraps onto as many lines
+/// as it needs.
 struct FailureBanner: View {
     /// What went wrong.
     let error: CaptureError
@@ -123,6 +126,9 @@ struct FailureBanner: View {
 
     /// Opens Settings, or `nil` when the app can't.
     @Environment(\.openAppSettings) private var openAppSettings
+
+    /// The current text size: at accessibility sizes the buttons go below the sentence.
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     /// Whether VoiceOver focus is on the banner.
     @AccessibilityFocusState private var isFocused: Bool
@@ -143,44 +149,67 @@ struct FailureBanner: View {
 
     /// The banner.
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(CameraStyle.warning)
-                    .accessibilityHidden(true)
-                Text(verbatim: CaptureMessages.message(for: error))
-                    .font(.callout)
-                    .foregroundStyle(.white)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityFocused($isFocused)
-            }
-            HStack(spacing: CameraStyle.targetSpacing) {
-                actionButton
-                Spacer(minLength: 0)
-                Button(action: dismiss) {
-                    Image(systemName: "xmark")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: CameraStyle.minimumTarget, height: CameraStyle.minimumTarget)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved."))
-                .accessibilityShowsLargeContentViewer {
-                    Label {
-                        Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
-                    } icon: {
-                        Image(systemName: "xmark")
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: NopeSpace.xs) {
+                    sentence
+                    HStack(spacing: NopeSpace.xs) {
+                        actionButton
+                        Spacer(minLength: 0)
+                        dismissButton
                     }
+                }
+            } else {
+                HStack(alignment: .center, spacing: NopeSpace.s) {
+                    sentence
+                    VStack(alignment: .trailing, spacing: NopeSpace.xs) {
+                        actionButton
+                        dismissButton
+                    }
+                    .fixedSize()
                 }
             }
         }
-        .padding(12)
-        .darkBacking()
+        .padding(.vertical, NopeSpace.s)
+        .padding(.leading, NopeSpace.m)
+        .padding(.trailing, NopeSpace.s)
+        .nopeBackground(.solid, in: RoundedRectangle(cornerRadius: NopeRadius.large))
+        .overlay(RoundedRectangle(cornerRadius: NopeRadius.large).strokeBorder(CameraStyle.warning, lineWidth: NopeSize.warningOutline))
         .accessibilityElement(children: .contain)
         .onAppear { isFocused = true }
         .onChange(of: error) { isFocused = true }
+    }
+
+    /// The triangle and what went wrong.
+    private var sentence: some View {
+        HStack(alignment: .firstTextBaseline, spacing: NopeSpace.s) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(CameraStyle.warning)
+                .accessibilityHidden(true)
+            Text(verbatim: CaptureMessages.message(for: error))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(NopeColor.label)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityFocused($isFocused)
+        }
+    }
+
+    /// Hides the banner.
+    private var dismissButton: some View {
+        Button(action: dismiss) {
+            Image(systemName: "xmark")
+                .font(.body.weight(.semibold))
+        }
+        .buttonStyle(NopeIconButtonStyle(size: NopeSize.capsule))
+        .accessibilityLabel(Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved."))
+        .accessibilityShowsLargeContentViewer {
+            Label {
+                Text("Dismiss", bundle: .module, comment: "Button that closes the message about a photo that wasn't taken or saved.")
+            } icon: {
+                Image(systemName: "xmark")
+            }
+        }
     }
 
     /// Try Again or Open Settings, or nothing.
@@ -190,7 +219,7 @@ struct FailureBanner: View {
             Button(action: tryAgain) {
                 Text("Try Again", bundle: .module, comment: "Button on the message about a photo that wasn't taken or saved: takes the photo again.")
             }
-            .buttonStyle(SelectableCapsuleStyle(isSelected: true))
+            .buttonStyle(NopeCapsuleStyle(isCompact: true))
             .disabled(!canCapture)
         case .openSettings:
             if let openAppSettings {
@@ -199,7 +228,7 @@ struct FailureBanner: View {
                 } label: {
                     Text("Open Settings", bundle: .module, comment: "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.")
                 }
-                .buttonStyle(SelectableCapsuleStyle(isSelected: true))
+                .buttonStyle(NopeCapsuleStyle(isCompact: true))
             }
         case nil:
             EmptyView()
@@ -209,7 +238,10 @@ struct FailureBanner: View {
 
 /// The last-photo slot beside the shutter (issue #68, "Feedback tiers"): empty and invisible
 /// until the first photo of the session, never an empty square. Then it shows the last photo with
-/// a teal seal when every file was signed, or an amber mark when one wasn't.
+/// a teal seal when every file was signed, or an amber mark when signing was on and a file
+/// couldn't be signed. With signing off by choice it has no badge (docs/design/BUILD-SPEC.md, 3.3
+/// and 3.7): that isn't a warning, and its value still says "Saved. Not signed: signing is off in
+/// Settings."
 ///
 /// With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
 /// without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
@@ -231,8 +263,32 @@ struct ThumbnailSlot: View {
     /// Shows the photo's details (issue #53), or `nil` for none.
     let showDetails: (() -> Void)?
 
-    /// The slot's side, in points: larger than the 44-point minimum, smaller than the shutter.
-    static var side: CGFloat { 52 }
+    /// The slot's side, in points: larger than the 44-point minimum, smaller than the shutter
+    /// (``NopeSize/thumbnail``).
+    static var side: CGFloat { NopeSize.thumbnail }
+
+    /// The mark on the thumbnail's corner.
+    enum Badge: Equatable {
+        /// A teal seal: every file is signed.
+        case signed
+        /// An amber triangle: signing was on and a file couldn't be signed.
+        case notSigned
+    }
+
+    /// The mark for the photos saved by one press of the shutter, or `nil` for none: a teal seal
+    /// when every file is signed, an amber triangle when one couldn't be signed while signing
+    /// was on, and nothing when signing was off by choice.
+    ///
+    /// - Parameter photos: The saved photos.
+    /// - Returns: The badge, or `nil`.
+    static func badge(for photos: [SavedPhoto]) -> Badge? {
+        guard !photos.isEmpty else { return nil }
+        if photos.allSatisfy({ $0.signature == .signed }) { return .signed }
+        let failed = photos.contains { photo in
+            if case .unsigned(let reason) = photo.signature { reason != .turnedOff } else { false }
+        }
+        return failed ? .notSigned : nil
+    }
 
     /// Creates the slot.
     ///
@@ -251,11 +307,6 @@ struct ThumbnailSlot: View {
         self.isBusy = isBusy
         self.openPhoto = openPhoto
         self.showDetails = showDetails
-    }
-
-    /// Whether every saved file is signed.
-    private var isSigned: Bool {
-        photos?.allSatisfy { $0.signature == .signed } ?? false
     }
 
     /// The slot.
@@ -328,21 +379,24 @@ struct ThumbnailSlot: View {
                 } else {
                     Image(systemName: "photo")
                         .font(.title2)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(NopeColor.label)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(white: 0.25))
+                        .background(NopeColor.controlFill)
                 }
             }
             .frame(width: Self.side, height: Self.side)
-            .clipShape(.rect(cornerRadius: 8))
-            // A dark hairline, so the thumbnail's edge shows over any scene (issue #68, "Contrast").
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.black.opacity(0.6), lineWidth: 1))
-            Image(systemName: isSigned ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
-                .font(.footnote)
-                .foregroundStyle(isSigned ? CameraStyle.fact : CameraStyle.warning)
-                .padding(2)
-                .background(.black, in: .circle)
-                .offset(x: 6, y: 6)
+            .clipShape(.rect(cornerRadius: NopeRadius.small))
+            // A light ring, so the thumbnail's edge shows against the black row and any scene
+            // (issue #68, "Contrast").
+            .overlay(RoundedRectangle(cornerRadius: NopeRadius.small).strokeBorder(NopeColor.stripIdle, lineWidth: NopeSize.warningOutline))
+            if let badge = photos.flatMap(Self.badge(for:)) {
+                Image(systemName: badge == .signed ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(badge == .signed ? CameraStyle.fact : CameraStyle.warning)
+                    .padding(NopeSpace.xxs / 2)
+                    .background(.black, in: .circle)
+                    .padding(NopeSpace.xxs / 2)
+            }
         }
         .accessibilityIgnoresInvertColors()
     }

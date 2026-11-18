@@ -271,21 +271,3 @@ struct CopiesSettingsView: View {
         }
     }
 }
-
-/// The Look row of the Photo Format sheet (`FormatsSettingsView`), kept under its old name so
-/// that file needs no change: it shows the look and opens HEIF and JPEG Copies, where the look
-/// now lives (`docs/design/BUILD-SPEC.md`, 3.2).
-@MainActor
-enum LookSettingsView {
-    /// A navigation row titled Look, showing the current look, that opens HEIF and JPEG Copies.
-    ///
-    /// - Parameter settings: The settings.
-    static func link(settings: NopeSettings) -> some View {
-        NavigationLink {
-            CopiesSettingsView(settings: settings)
-        } label: {
-            SettingsValueLabel(title: Text(SettingsText.look), value: CopiesSettingsView.title(of: settings.developedLook))
-        }
-        .settingsRow(.copies)
-    }
-}

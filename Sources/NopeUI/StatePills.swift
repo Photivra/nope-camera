@@ -3,7 +3,7 @@ import SwiftUI
 
 /// What the camera screen's registries read: the camera model and the person's settings.
 ///
-/// The quick-controls tray (``QuickControls``), the state pills (``StatePills``) and the warning
+/// The quick menu (``QuickControls``), the state pills (``StatePills``) and the warning
 /// chips (``CameraWarnings``) build their items from it, so a new feature adds its item in one
 /// place without touching the layout.
 @MainActor
@@ -48,8 +48,8 @@ struct CameraControlContext {
     }
 }
 
-/// One small pill at the top of the camera for a setting that isn't at its default, such as
-/// "M" for manual controls or a lock (issue #68, "Non-default state"). Defaults are invisible.
+/// One small pill on the status line for a setting that isn't at its default, such as the light's
+/// brightness or a lock (issue #68, "Non-default state"). Defaults are invisible.
 ///
 /// A pill has a symbol and short text, so it never relies on color, and one or more actions
 /// to change or reset it: one action makes the pill a button, more make it a menu.
@@ -83,16 +83,16 @@ struct StatePill: Identifiable {
         }
     }
 
-    /// A stable identifier, such as "manual".
+    /// A stable identifier, such as "light".
     let id: String
 
     /// The SF Symbol.
     let systemImage: String
 
-    /// The short visible text, such as "M" or "AE/AF".
+    /// The short visible text, such as "25%" or "AE/AF".
     let text: Text
 
-    /// The full name for VoiceOver and Voice Control, such as "Manual Controls".
+    /// The full name for VoiceOver and Voice Control, such as "Light".
     let label: Text
 
     /// What the pill can do. The first is the pill's own action when there is only one.
@@ -123,6 +123,10 @@ struct StatePill: Identifiable {
 /// The registry of state pills: each feature with a non-default state adds one function here
 /// that returns its pill, or `nil` at the default.
 ///
+/// No pill repeats what a control on the camera already shows (docs/design/BUILD-SPEC.md, 3.3):
+/// manual controls have the Manual Controls button, and the drive modes and Astro have the drive
+/// strip, which also turn them off.
+///
 /// The order of ``builders`` is the order on screen; ``StatePillRow`` shows the first
 /// ``StatePillRow/maximumVisible`` and folds the rest into "+n".
 @MainActor
@@ -131,15 +135,12 @@ enum StatePills {
     static let builders: [@MainActor (CameraControlContext) -> StatePill?] = [
         light,
         flash,
-        manual,
         locks,
         exposure,
         fastShutter,
         closeUp,
         farFocus,
         magnifier,
-        drive,
-        astro,
         compare,
     ]
 
@@ -215,25 +216,6 @@ enum StatePills {
                     id: "off", title: Text("Turn Off Flash", bundle: .module, comment: "Action of the flash pill on the camera: the flash no longer fires.")
                 ) {
                     settings.setFlashMode(.off)
-                }
-            ])
-    }
-
-    /// "M" while manual controls are on; its action turns them off.
-    ///
-    /// - Parameter context: The model and settings.
-    static func manual(_ context: CameraControlContext) -> StatePill? {
-        guard context.model.manual.isEnabled else { return nil }
-        let settings = context.settings
-        return StatePill(
-            id: "manual", systemImage: "slider.horizontal.3", text: Text(verbatim: ControlText.mark(.manual)),
-            label: Text("Manual Controls", bundle: .module, comment: "Switch that shows manual exposure controls on the camera screen."),
-            actions: [
-                StatePill.Action(
-                    id: "off",
-                    title: Text("Turn Off Manual Controls", bundle: .module, comment: "Action of the M pill on the camera: hides the manual controls, as the Manual Controls switch in Settings does.")
-                ) {
-                    settings.setShowsManualControls(false)
                 }
             ])
     }
@@ -361,14 +343,19 @@ enum StatePills {
     }
 }
 
-/// The state pills at the top of the camera: at most three, then "+n" for the rest, each with a
-/// symbol and short text. Each pill is a button, or a menu when it has more than one action.
+/// The state pills on the status line, trailing (docs/design/BUILD-SPEC.md, 3.3): at most three
+/// (fewer when they don't fit on one line), then "+n" for the rest, each with a symbol and short text. Each pill is a button, or a menu
+/// when it has more than one action. Over the picture (the column layout, an iPhone held
+/// sideways) each pill has the dark backing, so it keeps its contrast over any scene.
 struct StatePillRow: View {
     /// The most pills shown before the rest fold into "+n".
     static var maximumVisible: Int { 3 }
 
     /// The pills, in display order.
     let pills: [StatePill]
+
+    /// Whether the pills are drawn over the picture.
+    @Environment(\.isStatusOnPicture) private var isOnPicture
 
     /// Creates the row.
     ///
@@ -377,16 +364,33 @@ struct StatePillRow: View {
         self.pills = pills
     }
 
-    /// The row.
+    /// The row: as many pills as fit, at most three, each on one line; the rest fold into
+    /// "+n". With longer words or larger text, fewer pills show before "+n", so no pill's text
+    /// wraps or is cut.
     var body: some View {
-        HStack(spacing: CameraStyle.targetSpacing) {
-            ForEach(pills.prefix(Self.maximumVisible)) { pill in
-                StatePillButton(pill: pill)
-            }
-            if pills.count > Self.maximumVisible {
-                overflow(Array(pills.dropFirst(Self.maximumVisible)))
+        ViewThatFits(in: .horizontal) {
+            ForEach(Array(stride(from: min(pills.count, Self.maximumVisible), through: 0, by: -1)), id: \.self) { visible in
+                row(visible: visible)
             }
         }
+        .buttonStyle(NopePillStyle(isOnPicture: isOnPicture))
+        // A menu draws its label with the button style above.
+        .menuStyle(.button)
+    }
+
+    /// The first pills, then "+n" for the rest.
+    ///
+    /// - Parameter visible: How many pills to show before "+n".
+    private func row(visible: Int) -> some View {
+        HStack(spacing: NopeSpace.xs) {
+            ForEach(pills.prefix(visible)) { pill in
+                StatePillButton(pill: pill)
+            }
+            if pills.count > visible {
+                overflow(Array(pills.dropFirst(visible)))
+            }
+        }
+        .fixedSize()
     }
 
     /// "+n": a menu with a section for each pill that doesn't fit.
@@ -404,15 +408,19 @@ struct StatePillRow: View {
                 }
             }
         } label: {
+            // White, as the style draws every pill's label: a menu's label otherwise takes the
+            // tint, which the contrast audit reported on the dark fill.
             Text(verbatim: "+" + hidden.count.formatted())
-                .pillShape()
+                .foregroundStyle(NopeColor.label)
         }
         .accessibilityLabel(
             Text("\(hidden.count) More Settings Changed", bundle: .module, comment: "VoiceOver name of the +n pill on the camera: how many more settings are not at their defaults. The number is a count of settings."))
+        .accessibilityShowsLargeContentViewer()
     }
 }
 
-/// One state pill: a button for one action, a menu for more.
+/// One state pill: a button for one action, a menu for more. The row gives it its style
+/// (``NopePillStyle``).
 struct StatePillButton: View {
     /// The pill.
     let pill: StatePill
@@ -429,7 +437,6 @@ struct StatePillButton: View {
         Group {
             if pill.actions.count == 1, let action = pill.actions.first {
                 Button(role: action.role) { action.perform() } label: { label }
-                    .buttonStyle(.plain)
                     .accessibilityHint(action.title)
             } else {
                 Menu {
@@ -447,27 +454,36 @@ struct StatePillButton: View {
         .accessibilityShowsLargeContentViewer()
     }
 
-    /// The symbol and short text in a capsule.
+    /// The symbol and short text.
     private var label: some View {
         Label {
             pill.text
         } icon: {
             Image(systemName: pill.systemImage)
         }
-        .pillShape()
     }
 }
 
+extension EnvironmentValues {
+    /// Whether the status (the format status and the pills) is drawn over the picture: in the
+    /// column layout, and while an iPhone is held sideways. There it gets the dark backing
+    /// (``NopeMaterial/backing``); in the stacked layout's status line it sits on black. The
+    /// camera layout sets it.
+    @Entry var isStatusOnPicture = false
+}
+
 extension View {
-    /// The look of a state pill: small bold text on a dark capsule, inside a touch target at
-    /// least 44 points on each side.
+    /// The look of a state pill outside a button: the pill font in white on a dark capsule
+    /// (``NopeSize/pill`` high), inside a touch target at least 44 points on each side.
+    ///
+    /// Deprecated: buttons use ``NopePillStyle``, which replaces it (docs/design/tokens.md,
+    /// "Button types"); it remains for the views that still use it.
     func pillShape() -> some View {
-        font(.footnote.weight(.bold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(white: 0.2), in: .capsule)
-            .frame(minWidth: CameraStyle.minimumTarget, minHeight: CameraStyle.minimumTarget)
-            .contentShape(.rect)
+        font(NopeFont.pill)
+            .foregroundStyle(NopeColor.label)
+            .padding(.horizontal, NopeSpace.s)
+            .frame(minHeight: NopeSize.pill)
+            .background(NopeColor.controlFill, in: .capsule)
+            .nopeHitTarget()
     }
 }
