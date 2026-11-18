@@ -5,6 +5,10 @@
       "comment" : "Shown after an exposure bracket: each frame was added to the photo library as its own photo, each with a Content Credentials signature. The number is the count of photos, at least 3. Honesty wording: says only that they were saved and signed.",
       "extractionState" : "manual"
     },
+    "A bracket never fires the flash." : {
+      "comment" : "In Bracket Settings: the flash doesn't fire for any frame of an exposure bracket. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
     "A photo can't be opened or shown correctly without these. None of them identify you or link your photos." : {
       "comment" : "Explains why the locked details are always saved. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
@@ -286,6 +290,10 @@
     },
     "JPEG with some device processing" : {
       "comment" : "Spoken format name for the no-RAW fallback. JPEG is a file format name.",
+      "extractionState" : "manual"
+    },
+    "Kept by nope. until it closes, to group the frames here. Not written to the files; in Photos each frame is a separate photo." : {
+      "comment" : "Footer of the Bracket group in the photo details. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the values are in memory only.",
       "extractionState" : "manual"
     },
     "Latitude, longitude and altitude, while the camera is open. Off: nothing is lost." : {

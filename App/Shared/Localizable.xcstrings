@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Brightest First" : {
+      "comment" : "A choice of the Order setting of nope.'s Take Bracket action: the brightest photo first.",
+      "extractionState" : "manual"
+    },
+    "Darkest First" : {
+      "comment" : "A choice of the Order setting of nope.'s Take Bracket action: the darkest photo first.",
+      "extractionState" : "manual"
+    },
+    "Metered First" : {
+      "comment" : "A choice of the Order setting of nope.'s Take Bracket action: the photo at the metered exposure first, then darker and brighter ones.",
+      "extractionState" : "manual"
+    },
+    "Order" : {
+      "comment" : "A setting of nope.'s Take Bracket action: the order in which the photos are taken.",
+      "extractionState" : "manual"
+    },
     "“%@” applied, but some settings couldn't be applied as saved. Presets in nope. shows which, and can undo it." : {
       "comment" : "Siri's answer after nope. applied a saved settings preset but, for example, location access is off or the lens doesn't exist on this device. The placeholder is the preset's name, in the language's quotation marks. Keep \"nope.\" unchanged."
     },

@@ -1,16 +1,196 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ a second" : {
+      "comment" : "Burst card on the camera: the rate measured from the photos of this burst, in photos a second, such as 2.6. The value is a number with one decimal place, formatted by the system. It is a measurement, not a promise.",
+      "extractionState" : "manual"
+    },
+    "%@ · after %@" : {
+      "comment" : "Bracket card on the camera, second line, with a start delay: the frames' exposure offsets, such as \"−1, 0, +1 EV\", then the delay, such as \"3 seconds\", formatted by the system.",
+      "extractionState" : "manual"
+    },
+    "%@, not %@" : {
+      "comment" : "A frame in Bracket Settings that the lens can't give: the exposure offset it will have, such as \"+2 EV\", then the one asked for, such as \"+4\".",
+      "extractionState" : "manual"
+    },
+    "%lld frames, %@" : {
+      "comment" : "Bracket card on the camera while the start delay counts down, second line: the number of frames, then their exposure offsets, such as \"−1, 0, +1 EV\".",
+      "extractionState" : "manual"
+    },
     "%lld of %lld" : {
       "comment" : "Caption in the Last Photo viewer: the position of the photo shown among the photos taken since nope. opened, such as 3 of 5. Shown only when there is more than one photo.",
+      "extractionState" : "manual"
+    },
+    "%lld photos saved" : {
+      "comment" : "Card on the camera after an exposure bracket or a burst: how many separate photos were saved to the photo library.",
+      "extractionState" : "manual"
+    },
+    "As fast as the camera is ready" : {
+      "comment" : "Detail of the Fast burst speed in the Burst menu. It makes no claim about a rate.",
+      "extractionState" : "manual"
+    },
+    "Bracket card: Cancel" : {
+      "comment" : "Button on the bracket card while the start delay counts down: stops the countdown; no photo is taken.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        }
+      }
+    },
+    "Bracket details: Exposure" : {
+      "comment" : "Value of the Type row in the photo details: an exposure bracket, frames at different exposures.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exposure"
+          }
+        }
+      }
+    },
+    "Bracket details: Type" : {
+      "comment" : "Row in the photo details of a bracket's frame: the kind of bracket.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Type"
+          }
+        }
+      }
+    },
+    "Bracket in %@" : {
+      "comment" : "Bracket card on the camera while the start delay counts down: the bracket is taken after this many seconds. The value is a short number of seconds, such as 3s, formatted by the system.",
+      "extractionState" : "manual"
+    },
+    "Bracket Settings" : {
+      "comment" : "Title of the sheet with the exposure bracket's frames, step, order and start delay, and the name of the card on the camera that opens it.",
+      "extractionState" : "manual"
+    },
+    "Bracket stopped: %lld of %lld photos saved." : {
+      "comment" : "Banner on the camera when a frame of an exposure bracket couldn't be saved; the reason follows in another sentence. The first number is the photos saved, the second the frames in the bracket.",
+      "extractionState" : "manual"
+    },
+    "Bracket, exposure, %lld frames" : {
+      "comment" : "VoiceOver value of the shutter when one press takes an exposure bracket. The number is the count of frames.",
+      "extractionState" : "manual"
+    },
+    "Brightest First" : {
+      "comment" : "Choice of the bracket's Order: the brightest frame first, then darker ones.",
+      "extractionState" : "manual"
+    },
+    "Burst Speed" : {
+      "comment" : "Title of the menu of the selected Burst word on the camera: how fast a burst takes its photos.",
+      "extractionState" : "manual"
+    },
+    "Burst speed: Fast" : {
+      "comment" : "Burst speed in the menu of the selected Burst word: photos are taken as fast as the camera is ready.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fast"
+          }
+        }
+      }
+    },
+    "Burst speed: Slow" : {
+      "comment" : "Burst speed in the menu of the selected Burst word: up to 2 photos a second.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slow"
+          }
+        }
+      }
+    },
+    "Burst, fast." : {
+      "comment" : "VoiceOver value of the shutter in burst mode at the Fast speed: photos are taken as fast as the camera is ready while the shutter is held.",
+      "extractionState" : "manual"
+    },
+    "Burst, slow." : {
+      "comment" : "VoiceOver value of the shutter in burst mode at the Slow speed: up to 2 photos a second while the shutter is held.",
       "extractionState" : "manual"
     },
     "Close" : {
       "comment" : "Button in the Last Photo viewer that closes the viewer and returns to the camera. Drawn as an X where Last Photo is.",
       "extractionState" : "manual"
     },
+    "Darkest First" : {
+      "comment" : "Choice of the bracket's Order: the darkest frame first, then brighter ones.",
+      "extractionState" : "manual"
+    },
+    "Double tap for one photo. Double tap and hold for a burst." : {
+      "comment" : "VoiceOver hint of the shutter in burst mode: a double tap takes one photo; a double tap and hold takes photos until the finger lifts.",
+      "extractionState" : "manual"
+    },
+    "Drive strip: Bracket" : {
+      "comment" : "Drive mode word in the strip above the shutter: one press takes an exposure bracket, several separate photos at different exposures. A short word; the strip holds six.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bracket"
+          }
+        }
+      }
+    },
+    "Exposure bracket · frame %lld of %lld · %@" : {
+      "comment" : "Chip on a photo in the Last Photo viewer: the photo is one frame of an exposure bracket. The numbers are the frame and the count of frames; the last value is the frame's exposure offset, such as \"0 EV\".",
+      "extractionState" : "manual"
+    },
+    "Exposure bracket, frame %lld of %lld, %@." : {
+      "comment" : "VoiceOver, part of a photo's label in the Last Photo viewer: the photo is one frame of an exposure bracket. The numbers are the frame and the count of frames; the last value is its exposure offset, such as \"0 EV\".",
+      "extractionState" : "manual"
+    },
+    "Exposure bracket: %lld frames, %@ apart" : {
+      "comment" : "Bracket card on the camera: what one press of the shutter takes. The number is the count of frames (3, 5 or 7); the second value is the step between them, such as \"1 EV\".",
+      "extractionState" : "manual"
+    },
+    "Fast burst" : {
+      "comment" : "Burst card on the camera, before a burst: the speed in use. Photos are taken as fast as the camera is ready.",
+      "extractionState" : "manual"
+    },
+    "Frame %lld, %@, %@, ISO %@" : {
+      "comment" : "VoiceOver label of a frame in Bracket Settings: the frame's number, its exposure offset such as \"-1 EV\", its shutter speed such as \"1/250\", and its ISO.",
+      "extractionState" : "manual"
+    },
+    "From the exposure the camera reads now; it is read again when you press the shutter. ISO changes from frame to frame. The shutter speed changes only where ISO can't go further." : {
+      "comment" : "Footer under The Frames in Bracket Settings when the shutter speed is set by hand: the frames are planned from the camera's current reading, and ISO changes first.",
+      "extractionState" : "manual"
+    },
+    "From the exposure the camera reads now; it is read again when you press the shutter. The shutter speed changes from frame to frame. ISO changes only where the shutter can't go further." : {
+      "comment" : "Footer under The Frames in Bracket Settings: the frames are planned from the camera's current reading, and the shutter speed changes first.",
+      "extractionState" : "manual"
+    },
+    "Hold the shutter. A tap takes one photo." : {
+      "comment" : "Burst card on the camera, before a burst: what the shutter does in burst mode.",
+      "extractionState" : "manual"
+    },
+    "Metered First" : {
+      "comment" : "Choice of the bracket's Order: the frame at the metered exposure first, then darker and brighter ones, outward.",
+      "extractionState" : "manual"
+    },
     "New Photo" : {
       "comment" : "Button in the Last Photo viewer that goes to a photo taken while the viewer was open, for example from Apple Watch or Siri.",
+      "extractionState" : "manual"
+    },
+    "Opens Bracket Settings." : {
+      "comment" : "VoiceOver hint on the selected Bracket word of the drive strip above the shutter: activating it again opens Bracket Settings.",
+      "extractionState" : "manual"
+    },
+    "Order" : {
+      "comment" : "Picker in Bracket Settings, and a setting of the Take Bracket action: the order in which the frames are taken.",
       "extractionState" : "manual"
     },
     "Photo Format sheet: Formats for Other Lenses" : {
@@ -307,6 +487,10 @@
         }
       }
     },
+    "Planned Exposure" : {
+      "comment" : "Row in the photo details of a bracket's frame: the exposure the app asked the camera for.",
+      "extractionState" : "manual"
+    },
     "Portrait mode" : {
       "comment" : "In the photo details: the EXIF exposure program Portrait mode.",
       "extractionState" : "manual"
@@ -315,9 +499,29 @@
       "comment" : "Heading in the photo details: facts about the RAW file's sensor data. RAW is a file format name.",
       "extractionState" : "manual"
     },
+    "Release to stop" : {
+      "comment" : "Burst card on the camera while the shutter is held: letting go of it ends the burst.",
+      "extractionState" : "manual"
+    },
+    "Saving: %lld of %lld photos saved" : {
+      "comment" : "Bracket card on the camera while the frames of an exposure bracket are saved to the photo library: how many are saved so far, of how many.",
+      "extractionState" : "manual"
+    },
     "Scene Brightness" : {
       "comment" : "Row in the photo details: the brightness of the scene the camera measured, in EV, as written in the file.",
       "extractionState" : "manual"
+    },
+    "Search keywords: Burst" : {
+      "comment" : "Settings search keywords for the camera's burst, separated by commas. Not shown on screen: holding the shutter takes photos continuously, at a speed chosen from the Burst word.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "continuous, speed"
+          }
+        }
+      }
     },
     "Show Hidden Values" : {
       "comment" : "Button at the top of a group on the Every Tag page of the photo details: shows the group's identifying values, such as the location, until the sheet closes.",
@@ -331,6 +535,26 @@
       "comment" : "VoiceOver label of a Show Value button in the photo details. The placeholder is the row's title, such as Location.",
       "extractionState" : "manual"
     },
+    "Slow burst: up to %lld a second" : {
+      "comment" : "Burst card on the camera, before a burst: the speed in use. The number is the most photos a second, 2; it can be fewer.",
+      "extractionState" : "manual"
+    },
+    "Start Burst" : {
+      "comment" : "Button on the burst card, VoiceOver action on the shutter and Voice Control name: starts a burst that runs without holding the shutter.",
+      "extractionState" : "manual"
+    },
+    "Start Delay: Off" : {
+      "comment" : "Choice of Start Delay in Bracket Settings: the bracket is taken at once.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Off"
+          }
+        }
+      }
+    },
     "Subject Area" : {
       "comment" : "Row in the photo details: where the subject is in the picture, as two to four numbers in pixels, as written in the file.",
       "extractionState" : "manual"
@@ -339,12 +563,48 @@
       "comment" : "VoiceOver More Content label on the Every Tag page: the tag's number, such as 0x829A.",
       "extractionState" : "manual"
     },
+    "Taking %lld frames" : {
+      "comment" : "Bracket card on the camera, and announced to VoiceOver, while the camera takes the frames of an exposure bracket. The number is the count of frames, 3, 5 or 7.",
+      "extractionState" : "manual"
+    },
+    "The Bracket" : {
+      "comment" : "Row in the photo details of a bracket's frame: every frame's exposure offset, and their order.",
+      "extractionState" : "manual"
+    },
+    "The Frames" : {
+      "comment" : "Section header in Bracket Settings: the frames one press takes, each with its exposure.",
+      "extractionState" : "manual"
+    },
+    "This Frame" : {
+      "comment" : "Row in the photo details of a bracket's frame: which frame of the bracket this photo is.",
+      "extractionState" : "manual"
+    },
+    "This lens can't go brighter than frame %lld." : {
+      "comment" : "Under a frame in Bracket Settings that the lens can't make as bright as asked. The number is the first frame with the brightest exposure the lens can give.",
+      "extractionState" : "manual"
+    },
+    "This lens can't go darker than frame %lld." : {
+      "comment" : "Under a frame in Bracket Settings that the lens can't make as dark as asked. The number is the first frame with the darkest exposure the lens can give.",
+      "extractionState" : "manual"
+    },
+    "Timer, above the shutter, sets a self-timer of 3 or 10 seconds. Burst is beside it: hold the shutter for a burst, or use Start Burst so nothing has to be held. VoiceOver says each second of the countdown." : {
+      "comment" : "Accessibility screen: the self-timer and burst. Timer and Burst are the words of the drive strip above the shutter; use their translations. A burst is a rapid run of separate photos. VoiceOver is Apple's screen reader; keep the name unchanged.",
+      "extractionState" : "manual"
+    },
     "Uncompressed" : {
       "comment" : "In the photo details: the RAW data isn't compressed (TIFF compression 1).",
       "extractionState" : "manual"
     },
+    "Up to %lld photos a second" : {
+      "comment" : "Detail of the Slow burst speed in the Burst menu. The number is the most photos a second, 2; \"up to\": it can be fewer.",
+      "extractionState" : "manual"
+    },
     "Values shown." : {
       "comment" : "VoiceOver announcement after Show Hidden Values on the Every Tag page: the hidden values of the group are now shown.",
+      "extractionState" : "manual"
+    },
+    "Waits before the first frame, so touching the phone doesn't shake it." : {
+      "comment" : "Footer under Start Delay in Bracket Settings.",
       "extractionState" : "manual"
     },
     "White Level" : {
