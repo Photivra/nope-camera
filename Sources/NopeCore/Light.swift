@@ -203,7 +203,8 @@ public final class LightModel {
         if torch != .unavailable { torch = wantsTorch ? .pending : .off }
     }
 
-    /// Turns the torch back on after a start, if the person wants it and the lens has one.
+    /// Records that the camera runs, after a start or after an interruption ended, and turns the
+    /// torch on if the person asked for it meanwhile and the lens has one.
     ///
     /// Side effect: may switch the torch on.
     func sessionDidStart() async {

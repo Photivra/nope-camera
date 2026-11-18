@@ -235,7 +235,12 @@ public final class CameraModel {
             sessionStatus = .interrupted(reason)
             await light.cameraDidPause()
         case .interruptionEnded:
-            if case .interrupted = sessionStatus { sessionStatus = .running }
+            guard case .interrupted = sessionStatus else { return }
+            sessionStatus = .running
+            // The camera runs again without a new start, so the light must learn it here: left
+            // out, a light asked for after any interruption (a call, or a return from the
+            // background) stayed "pending" and never reached the hardware (issue #75).
+            await light.sessionDidStart()
         case .heat(let level):
             await applyHeat(level)
         case .failed:

@@ -241,6 +241,35 @@ struct LightModelTests {
         #expect(await backend.torchRequests == [0.25, nil])
     }
 
+    /// Issue #75: after an interruption ends the camera runs again without a new start, and a
+    /// light asked for then must reach the hardware instead of staying pending.
+    @Test func lightAskedForAfterAnInterruptionEndsComesOn() async {
+        let (model, backend) = await Self.running()
+        backend.emit(.interrupted(.inUseElsewhere))
+        backend.emit(.interruptionEnded)
+        backend.finish()
+        await model.observeEvents()
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .on(level: 0.25))
+        #expect(await backend.torchRequests == [0.25])
+    }
+
+    /// A light asked for during the interruption waits, and comes on when the interruption ends.
+    @Test func lightAskedForDuringAnInterruptionComesOnWhenItEnds() async {
+        let (model, backend) = await Self.running()
+        let observing = Task { await model.observeEvents() }
+        backend.emit(.interrupted(.inUseElsewhere))
+        while model.sessionStatus != .interrupted(.inUseElsewhere) { await Task.yield() }
+        await model.send(.light(.setTorch(true)))
+        #expect(model.light.torch == .pending)
+        #expect(await backend.torchRequests.isEmpty)
+        backend.emit(.interruptionEnded)
+        backend.finish()
+        await observing.value
+        #expect(model.light.torch == .on(level: 0.25))
+        #expect(await backend.torchRequests == [0.25])
+    }
+
     @Test func pauseWithTheTorchOffAsksNothing() async {
         let (model, backend) = await Self.running()
         await model.light.cameraDidPause()
