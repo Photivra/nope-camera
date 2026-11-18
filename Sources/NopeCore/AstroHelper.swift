@@ -42,12 +42,17 @@ public enum AstroIntent: Equatable, Sendable {
 ///   fit in storage, when the battery is at or below ``stopBatteryLevel`` and not charging, when
 ///   the camera stops for good (it failed), or at the first frame that can't be taken or saved
 ///   in the foreground. Every frame taken before that is saved.
-/// - **Turning it off** turns manual controls off again if the helper turned them on.
+/// - **Turning it off** turns manual controls off again if the helper turned them on, and night
+///   mode off again if the helper turned it on and the person hasn't changed it since (unless
+///   ``NopeSettings/keepsNightModeAfterAstro`` is on).
 ///
 /// ``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
-/// ``AstroIntent`` values. Turning night mode on is the interface's part, through
-/// ``NopeSettings/setNightMode(_:)``, because night mode is a setting of the screens, not of
-/// the camera. The helper is off at every launch (AGENTS.md, "Cognitive": no surprise modes).
+/// ``AstroIntent`` values. An interface's Astro control turns it on and off with
+/// ``CameraModel/setAstro(_:settings:)``, which also turns night mode on, because night mode is a
+/// setting of the screens, kept in ``NopeSettings``, not of the camera. The helper is off at every
+/// launch (AGENTS.md, "Cognitive": no surprise modes), so the camera screen calls
+/// ``CameraModel/restoreNightModeAfterAstro(settings:)`` once to restore night mode after a
+/// relaunch.
 @MainActor
 @Observable
 public final class AstroModel {
@@ -91,6 +96,12 @@ public final class AstroModel {
     /// Whether turning the helper on turned manual controls on, so turning it off turns them
     /// off again.
     var turnedOnManualControls = false
+
+    /// The person's settings when the helper was turned on with
+    /// ``CameraModel/setAstro(_:settings:)``, so turning it off returns night mode to what it was
+    /// before (``NopeSettings/isNightModeFromAstro``). `nil` while the helper is off or was turned
+    /// on without them.
+    var nightModeSettings: NopeSettings?
 
     /// Creates the helper, off.
     init() {}

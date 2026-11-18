@@ -405,12 +405,17 @@ photo that goes through the metadata allowlist, read-back and signing like any o
   fit in storage, when the battery is at or below ``stopBatteryLevel`` and not charging, when
   the camera stops for good (it failed), or at the first frame that can't be taken or saved
   in the foreground. Every frame taken before that is saved.
-- **Turning it off** turns manual controls off again if the helper turned them on.
+- **Turning it off** turns manual controls off again if the helper turned them on, and night
+  mode off again if the helper turned it on and the person hasn't changed it since (unless
+  ``NopeSettings/keepsNightModeAfterAstro`` is on).
 
 ``CameraModel`` owns one as ``CameraModel/astro``; an interface reads it and sends
-``AstroIntent`` values. Turning night mode on is the interface's part, through
-``NopeSettings/setNightMode(_:)``, because night mode is a setting of the screens, not of
-the camera. The helper is off at every launch (AGENTS.md, "Cognitive": no surprise modes).
+``AstroIntent`` values. An interface's Astro control turns it on and off with
+``CameraModel/setAstro(_:settings:)``, which also turns night mode on, because night mode is a
+setting of the screens, kept in ``NopeSettings``, not of the camera. The helper is off at every
+launch (AGENTS.md, "Cognitive": no surprise modes), so the camera screen calls
+``CameraModel/restoreNightModeAfterAstro(settings:)`` once to restore night mode after a
+relaunch.
 
 ## `AstroModel/beginRun()`
 
@@ -540,6 +545,19 @@ public, declared in `Sources/NopeCore/AstroHelper.swift`
 ```
 
 How the last run ended, or `nil` before the first one. Cleared when the next starts.
+
+## `AstroModel/nightModeSettings`
+
+internal, declared in `Sources/NopeCore/AstroHelper.swift`
+
+```swift
+@MainActor var nightModeSettings: NopeSettings? { get set }
+```
+
+The person's settings when the helper was turned on with
+``CameraModel/setAstro(_:settings:)``, so turning it off returns night mode to what it was
+before (``NopeSettings/isNightModeFromAstro``). `nil` while the helper is off or was turned
+on without them.
 
 ## `AstroModel/progress`
 
@@ -1976,6 +1994,19 @@ internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
 The backend that takes the phone's version when the next photo is a comparison shot,
 otherwise `nil`.
 
+## `CameraModel/deviceOffersAstro`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor var deviceOffersAstro: Bool { get }
+```
+
+Whether the device offers the helper at all: a lens suits it, and storage and battery can
+be read (not in the Lock Screen capture extension). `false` before the camera is ready.
+An interface shows settings about the helper only then (AGENTS.md, "Progressive
+enhancement"), such as Keep Night Mode After Astro (``NopeSettings/keepsNightModeAfterAstro``).
+
 ## `CameraModel/deviceStatus`
 
 public, declared in `Sources/NopeCore/CameraModel.swift`
@@ -2036,7 +2067,8 @@ Handles one astro intent.
 - Parameter intent: The intent.
 
 Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
-ISO, and turns the light off; turning it off may turn manual controls off.
+ISO, and turns the light off; turning it off may turn manual controls off, and night mode
+if ``setAstro(_:settings:)`` turned it on.
 
 ## `CameraModel/handle(_:)`
 
@@ -2390,6 +2422,23 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 The handle the app turns into the live viewfinder, or `nil` when there is no video.
 
+## `CameraModel/restoreNightModeAfterAstro(settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func restoreNightModeAfterAstro(settings: NopeSettings)
+```
+
+Turns night mode off again if the astro helper turned it on and ended without doing so:
+the app quit while the helper was on, and the helper is off at every launch. Call it once
+the camera screen shows. It does nothing while the helper is on, or when night mode is the
+person's.
+
+Side effects: may turn night mode off and store it.
+
+- Parameter settings: The person's settings, where night mode is stored.
+
 ## `CameraModel/saveComparing(_:started:request:settings:backend:)`
 
 internal, declared in `Sources/NopeCore/CameraModel+Comparison.swift`
@@ -2523,6 +2572,37 @@ public, declared in `Sources/NopeCore/CameraModel.swift`
 
 Whether the camera is running, and if not, why. Meaningful while ``state`` is
 ``CameraState/ready(_:)``.
+
+## `CameraModel/setAstro(_:settings:)`
+
+public, declared in `Sources/NopeCore/CameraModel+Astro.swift`
+
+```swift
+@MainActor func setAstro(_ isOn: Bool, settings: NopeSettings) async
+```
+
+Turns the helper on or off from an interface's Astro control, with night mode: turning it
+on turns night mode on too (issue #60), and turning it off, in any way, returns night mode
+to what it was before.
+
+The night mode rule mirrors the one for manual controls:
+- Night mode that was off is turned on, and turned off again when the helper ends: Astro
+  off, another drive mode, a lens without the helper, manual controls off, a preset, or a
+  relaunch (``restoreNightModeAfterAstro(settings:)``).
+- Night mode that was already on stays on.
+- A change the person makes to night mode while the helper is on
+  (``NopeSettings/setNightMode(_:)``) is theirs, and is kept.
+- With ``NopeSettings/keepsNightModeAfterAstro`` on, night mode stays on.
+
+The helper alone (``CameraIntent/astro(_:)``, as a preset sends it) never changes night
+mode: night mode is a setting of the screens, and a preset brings its own.
+
+Side effects: as ``AstroIntent/setOn(_:)``; may turn night mode on and store it. Turning on
+is ignored, and night mode left alone, where the helper can't turn on.
+
+- Parameters:
+  - isOn: Whether the helper is on.
+  - settings: The person's settings, where night mode is stored.
 
 ## `CameraModel/setInForeground(_:)`
 
@@ -15503,6 +15583,17 @@ static let followsFaces: String
 
 Whether detected faces steer autofocus and auto exposure, a Boolean.
 
+## `NopeSettings/Key/isNightModeFromAstro`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let isNightModeFromAstro: String
+```
+
+Whether the astro helper turned night mode on, a Boolean. Not a setting, so outside
+``SharedSettingsStore/keyPrefix``: presets and snapshots don't carry it.
+
 ## `NopeSettings/Key/isNightModeOn`
 
 internal, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15512,6 +15603,16 @@ static let isNightModeOn: String
 ```
 
 Whether night mode is on, a Boolean.
+
+## `NopeSettings/Key/keepsNightModeAfterAstro`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+static let keepsNightModeAfterAstro: String
+```
+
+Whether night mode stays on after the astro helper ends, a Boolean.
 
 ## `NopeSettings/Key/legacyManualControls`
 
@@ -15616,6 +15717,9 @@ Replaces the stored settings with a snapshot's, and reloads them.
 A setting missing from the snapshot goes back to its default. Every value is read back
 through the same rules as a stored one, so a value this version doesn't know falls back to
 the default (AGENTS.md, "Fail closed"). A snapshot that can't be read changes nothing.
+
+Night mode then is the snapshot's, a choice the person made by applying it (a preset), so
+the astro helper no longer turns it off when it ends (``isNightModeFromAstro``).
 
 - Parameter snapshot: The snapshot, from ``makeSnapshot()``.
 - Returns: `true` when the snapshot could be read.
@@ -15746,6 +15850,23 @@ Whether a format can be chosen on a device.
     (``DeviceCapabilities/supportsBayerRAW``).
 - Returns: `false` only for RAW on a device without Bayer RAW.
 
+## `NopeSettings/isNightModeFromAstro`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var isNightModeFromAstro: Bool { get set }
+```
+
+Whether night mode is on because the astro helper turned it on, and the person hasn't
+changed it since. Leaving the helper turns night mode off again while this is `true`
+(unless ``keepsNightModeAfterAstro``).
+
+It is stored, so a relaunch (the helper is always off at launch) still restores night
+mode, and so a change from another process (a Control Center control) clears it. It is
+kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
+setting, so presets and the Lock Screen camera's snapshot don't carry it.
+
 ## `NopeSettings/isNightModeOn`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -15759,7 +15880,21 @@ dark (issue #61). Off by default, remembered between launches, never switched on
 automatically. The app never changes the screen's brightness; people use the device's own
 brightness control.
 
-Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
+Other features read it to work in the dark. The astro helper turns it on, and turns it off
+again when the helper ends if it turned it on (``CameraModel/setAstro(_:settings:)``).
+
+## `NopeSettings/keepsNightModeAfterAstro`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor var keepsNightModeAfterAstro: Bool { get set }
+```
+
+Whether night mode stays on after the astro helper ends, when the helper turned it on.
+Off by default: leaving Astro returns night mode to what it was before (owner decision for
+1.0.0). A night mode the person turned on, or changed while the helper was on, is never
+turned off by the helper either way.
 
 ## `NopeSettings/makeSnapshot()`
 
@@ -15795,6 +15930,19 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 
 Whether front camera photos are saved mirrored, as the viewfinder shows them. Off by
 default.
+
+## `NopeSettings/nightModeAstroDidEnd()`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func nightModeAstroDidEnd()
+```
+
+Returns night mode to what it was before the astro helper turned it on: off, when the
+helper turned it on, the person hasn't changed it since, and
+``keepsNightModeAfterAstro`` is off. Otherwise night mode stays as it is. Either way, the
+helper no longer owns it.
 
 ## `NopeSettings/offersRAWPairingChoice(deviceSupportsBayerRAW:)`
 
@@ -16012,6 +16160,18 @@ Chooses the grid style, and saves the change.
 
 - Parameter style: The style.
 
+## `NopeSettings/setKeepsNightModeAfterAstro(_:)`
+
+public, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setKeepsNightModeAfterAstro(_ isOn: Bool)
+```
+
+Sets whether night mode stays on after the astro helper ends, and saves the change.
+
+- Parameter isOn: Whether night mode stays on when the helper that turned it on ends.
+
 ## `NopeSettings/setMetadataItem(_:isIncluded:)`
 
 public, declared in `Sources/NopeCore/NopeSettings.swift`
@@ -16046,9 +16206,26 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 @MainActor func setNightMode(_ isOn: Bool)
 ```
 
-Turns night mode on or off, and saves the change.
+Turns night mode on or off as the person's choice, and saves the change. Use it for every
+control the person uses: the Night Mode switch, the Control Center and Lock Screen control,
+and Siri and Shortcuts.
+
+The choice is the person's from then on: if the astro helper had turned night mode on,
+leaving the helper no longer turns it off (``isNightModeFromAstro`` becomes `false`).
 
 - Parameter isOn: Whether the app's screens are red on black.
+
+## `NopeSettings/setNightModeFromAstro(_:)`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func setNightModeFromAstro(_ isOn: Bool)
+```
+
+Records whether the astro helper turned night mode on, and saves it.
+
+- Parameter isOn: The new ``isNightModeFromAstro``.
 
 ## `NopeSettings/setOverlays(_:)`
 
@@ -16350,6 +16527,18 @@ public, declared in `Sources/NopeCore/NopeSettings.swift`
 The torch's brightness, remembered between launches (the torch itself always starts off).
 ``LightModel/defaultTorchLevel`` by default. The app passes it to ``CameraModel/light``
 with ``LightIntent/setTorchLevel(_:)``.
+
+## `NopeSettings/turnOnNightModeForAstro()`
+
+internal, declared in `Sources/NopeCore/NopeSettings.swift`
+
+```swift
+@MainActor func turnOnNightModeForAstro()
+```
+
+Turns night mode on for the astro helper, if it is off, and records that the helper did,
+so ``nightModeAstroDidEnd()`` can turn it off again. A night mode already on is left as
+it is: it is the person's.
 
 ## `NopeSettingsSnapshot`
 

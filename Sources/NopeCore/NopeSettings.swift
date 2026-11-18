@@ -58,8 +58,25 @@ public final class NopeSettings {
     /// automatically. The app never changes the screen's brightness; people use the device's own
     /// brightness control.
     ///
-    /// Other features read it to work in the dark, and may turn it on with ``setNightMode(_:)``.
+    /// Other features read it to work in the dark. The astro helper turns it on, and turns it off
+    /// again when the helper ends if it turned it on (``CameraModel/setAstro(_:settings:)``).
     public private(set) var isNightModeOn: Bool
+
+    /// Whether night mode stays on after the astro helper ends, when the helper turned it on.
+    /// Off by default: leaving Astro returns night mode to what it was before (owner decision for
+    /// 1.0.0). A night mode the person turned on, or changed while the helper was on, is never
+    /// turned off by the helper either way.
+    public private(set) var keepsNightModeAfterAstro: Bool
+
+    /// Whether night mode is on because the astro helper turned it on, and the person hasn't
+    /// changed it since. Leaving the helper turns night mode off again while this is `true`
+    /// (unless ``keepsNightModeAfterAstro``).
+    ///
+    /// It is stored, so a relaunch (the helper is always off at launch) still restores night
+    /// mode, and so a change from another process (a Control Center control) clears it. It is
+    /// kept under a key outside ``SharedSettingsStore/keyPrefix``: it is the app's state, not a
+    /// setting, so presets and the Lock Screen camera's snapshot don't carry it.
+    public private(set) var isNightModeFromAstro: Bool
 
     /// Whether night mode also tints the live viewfinder red. Off by default: the viewfinder
     /// keeps its natural colors. Only the preview on screen is tinted; photos never change.
@@ -113,6 +130,9 @@ public final class NopeSettings {
             ? LightModel.defaultTorchLevel : LightModel.clampedTorchLevel(defaults.double(forKey: Key.torchLevel))
         isNightModeOn = defaults.bool(forKey: Key.isNightModeOn)
         tintsViewfinderInNightMode = defaults.bool(forKey: Key.tintsViewfinderInNightMode)
+        // A missing value is the default, off: leaving Astro restores night mode.
+        keepsNightModeAfterAstro = defaults.bool(forKey: Key.keepsNightModeAfterAstro)
+        isNightModeFromAstro = defaults.bool(forKey: Key.isNightModeFromAstro)
         showsLiveActivity = defaults.bool(forKey: Key.showsLiveActivity)
         // A missing value is the default, off.
         followsFaces = defaults.bool(forKey: Key.followsFaces)
@@ -349,12 +369,60 @@ public final class NopeSettings {
         defaults.set(torchLevel, forKey: Key.torchLevel)
     }
 
-    /// Turns night mode on or off, and saves the change.
+    /// Turns night mode on or off as the person's choice, and saves the change. Use it for every
+    /// control the person uses: the Night Mode switch, the Control Center and Lock Screen control,
+    /// and Siri and Shortcuts.
+    ///
+    /// The choice is the person's from then on: if the astro helper had turned night mode on,
+    /// leaving the helper no longer turns it off (``isNightModeFromAstro`` becomes `false`).
     ///
     /// - Parameter isOn: Whether the app's screens are red on black.
     public func setNightMode(_ isOn: Bool) {
+        storeNightMode(isOn)
+        setNightModeFromAstro(false)
+    }
+
+    /// Sets whether night mode stays on after the astro helper ends, and saves the change.
+    ///
+    /// - Parameter isOn: Whether night mode stays on when the helper that turned it on ends.
+    public func setKeepsNightModeAfterAstro(_ isOn: Bool) {
+        keepsNightModeAfterAstro = isOn
+        defaults.set(isOn, forKey: Key.keepsNightModeAfterAstro)
+    }
+
+    /// Turns night mode on for the astro helper, if it is off, and records that the helper did,
+    /// so ``nightModeAstroDidEnd()`` can turn it off again. A night mode already on is left as
+    /// it is: it is the person's.
+    func turnOnNightModeForAstro() {
+        guard !isNightModeOn else { return }
+        storeNightMode(true)
+        setNightModeFromAstro(true)
+    }
+
+    /// Returns night mode to what it was before the astro helper turned it on: off, when the
+    /// helper turned it on, the person hasn't changed it since, and
+    /// ``keepsNightModeAfterAstro`` is off. Otherwise night mode stays as it is. Either way, the
+    /// helper no longer owns it.
+    func nightModeAstroDidEnd() {
+        guard isNightModeFromAstro else { return }
+        setNightModeFromAstro(false)
+        if !keepsNightModeAfterAstro { storeNightMode(false) }
+    }
+
+    /// Records night mode and saves it.
+    ///
+    /// - Parameter isOn: Whether night mode is on.
+    private func storeNightMode(_ isOn: Bool) {
         isNightModeOn = isOn
         defaults.set(isOn, forKey: Key.isNightModeOn)
+    }
+
+    /// Records whether the astro helper turned night mode on, and saves it.
+    ///
+    /// - Parameter isOn: The new ``isNightModeFromAstro``.
+    func setNightModeFromAstro(_ isOn: Bool) {
+        isNightModeFromAstro = isOn
+        defaults.set(isOn, forKey: Key.isNightModeFromAstro)
     }
 
     /// Sets whether night mode tints the live viewfinder red, and saves the change.
@@ -393,6 +461,8 @@ public final class NopeSettings {
             update(\.torchLevel, from: stored),
             update(\.isNightModeOn, from: stored),
             update(\.tintsViewfinderInNightMode, from: stored),
+            update(\.keepsNightModeAfterAstro, from: stored),
+            update(\.isNightModeFromAstro, from: stored),
             update(\.showsLiveActivity, from: stored),
             update(\.followsFaces, from: stored),
             update(\.showsProcessedMarker, from: stored),
@@ -491,6 +561,11 @@ public final class NopeSettings {
         static let isNightModeOn = "NopeSettings.isNightModeOn"
         /// Whether night mode tints the viewfinder, a Boolean.
         static let tintsViewfinderInNightMode = "NopeSettings.tintsViewfinderInNightMode"
+        /// Whether night mode stays on after the astro helper ends, a Boolean.
+        static let keepsNightModeAfterAstro = "NopeSettings.keepsNightModeAfterAstro"
+        /// Whether the astro helper turned night mode on, a Boolean. Not a setting, so outside
+        /// ``SharedSettingsStore/keyPrefix``: presets and snapshots don't carry it.
+        static let isNightModeFromAstro = "NopeAstro.isNightModeFromAstro"
         /// Whether the Live Activity is on, a Boolean.
         static let showsLiveActivity = "NopeSettings.showsLiveActivity"
         /// Whether detected faces steer autofocus and auto exposure, a Boolean.

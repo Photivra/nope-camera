@@ -16,8 +16,8 @@ extension EnvironmentValues {
 /// - Photos: Formats, HEIF and JPEG Copies, Photo Size, Mirror Front Camera;
 /// - Privacy: Details in Each Photo, Sign Each Photo;
 /// - Camera: Fast Shutter, Focus on Faces;
-/// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Red
-///   Viewfinder, Live Activity;
+/// - Screen: Start in Clean View, Viewfinder Overlays, Show Processed Marker, Night Mode, Keep
+///   Night Mode After Astro (where the device offers Astro), Red Viewfinder, Live Activity;
 /// - More: Accessibility, Honesty, About and Licenses.
 ///
 /// A row is shown or not by the device only; no row appears or disappears when a setting
@@ -138,7 +138,8 @@ public struct SettingsScreen: View {
             hasFrontCamera: deviceHasFrontCamera,
             offersLocation: location != nil,
             offersProcessedMarker: !deviceSupportsBayerRAW || lenses.contains { !$0.supportsBayerRAW },
-            offersLiveActivity: offersLiveActivity)
+            offersLiveActivity: offersLiveActivity,
+            offersAstro: camera?.deviceOffersAstro ?? false)
     }
 
     /// The list or the search results, in the navigation stack.
@@ -304,8 +305,8 @@ public struct SettingsScreen: View {
     }
 
     /// What the camera screen shows: clean view, overlays, the Processed marker, night mode,
-    /// Red Viewfinder and the Live Activity. Red Viewfinder is always shown, so it can be set
-    /// before going out in the dark.
+    /// whether night mode stays on after Astro, Red Viewfinder and the Live Activity. Red
+    /// Viewfinder is always shown, so it can be set before going out in the dark.
     private var screenSection: some View {
         Section {
             ExplainedToggle(
@@ -333,6 +334,17 @@ public struct SettingsScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Explains the Night Mode switch. Keep \"nope.\" unchanged. Must not claim more than the English."))
             .settingsRow(.nightMode)
+            if availability.offersAstro {
+                ExplainedToggle(
+                    isOn: Binding(
+                        get: { settings.keepsNightModeAfterAstro }, set: { settings.setKeepsNightModeAfterAstro($0) }),
+                    title: Text(SettingsText.keepNightModeAfterAstro),
+                    explanation: Text(
+                        "When Astro turns Night Mode on, it stays on after you leave Astro instead of turning off again.",
+                        bundle: .module,
+                        comment: "Explains the Keep Night Mode After Astro switch. Astro is the night sky drive mode; Night Mode is the name of nope.'s switch. Use their translations."))
+                .settingsRow(.keepNightModeAfterAstro)
+            }
             ExplainedToggle(
                 isOn: Binding(get: { settings.tintsViewfinderInNightMode }, set: { settings.setTintsViewfinderInNightMode($0) }),
                 title: Text(SettingsText.redViewfinder),

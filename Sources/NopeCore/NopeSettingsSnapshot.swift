@@ -58,6 +58,9 @@ extension NopeSettings {
     /// through the same rules as a stored one, so a value this version doesn't know falls back to
     /// the default (AGENTS.md, "Fail closed"). A snapshot that can't be read changes nothing.
     ///
+    /// Night mode then is the snapshot's, a choice the person made by applying it (a preset), so
+    /// the astro helper no longer turns it off when it ends (``isNightModeFromAstro``).
+    ///
     /// - Parameter snapshot: The snapshot, from ``makeSnapshot()``.
     /// - Returns: `true` when the snapshot could be read.
     @discardableResult
@@ -73,6 +76,7 @@ extension NopeSettings {
         for (key, value) in values where SharedSettingsStore.isSettingsKey(key) {
             defaults.set(value, forKey: key)
         }
+        setNightModeFromAstro(false)
         reload()
         return true
     }

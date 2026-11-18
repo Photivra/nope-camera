@@ -152,10 +152,20 @@ struct SettingsSearchTests {
                 ])
     }
 
+    @Test func keepNightModeAfterAstroIsFoundByAKeywordWhereAstroIsOffered() {
+        let astro = SettingsSearch.Availability(offersAstro: true)
+        #expect(SettingsSearch.settings(matching: "stars", availability: astro).contains(.keepNightModeAfterAstro))
+        #expect(SettingsSearch.settings(matching: "Astro", availability: astro).contains(.keepNightModeAfterAstro))
+        #expect(!SettingsSearch.settings(matching: "stars", availability: .init()).contains(.keepNightModeAfterAstro))
+        #expect(SettingsID.keepNightModeAfterAstro.group == .screen)
+        #expect(SettingsID.keepNightModeAfterAstro.navigationPath.isEmpty)
+        #expect(SettingsID.keepNightModeAfterAstro.scrollTarget == .keepNightModeAfterAstro)
+    }
+
     @Test func everyRowIsFoundByItsOwnTitle() {
         let all = SettingsSearch.Availability(
             hasPresets: true, offersPhotoSize: true, hasFrontCamera: true, offersLocation: true,
-            offersProcessedMarker: true, offersLiveActivity: true)
+            offersProcessedMarker: true, offersLiveActivity: true, offersAstro: true)
         for id in SettingsSearch.searchable {
             let title = String(localized: SettingsText.title(of: id))
             #expect(SettingsSearch.settings(matching: title, availability: all).contains(id), "\(id): \(title)")
@@ -165,10 +175,11 @@ struct SettingsSearchTests {
     @Test func itemsTheDeviceDoesNotShowAreNotFound() {
         let none = SettingsSearch.Availability(
             hasPresets: false, offersPhotoSize: false, hasFrontCamera: false, offersLocation: false,
-            offersProcessedMarker: false, offersLiveActivity: false)
+            offersProcessedMarker: false, offersLiveActivity: false, offersAstro: false)
         for (query, id) in [
             ("Presets", SettingsID.presets), ("Photo Size", .photoSize), ("Mirror", .mirrorFrontCamera),
             ("gps", .detailsLocation), ("Processed", .showProcessedMarker), ("Live Activity", .liveActivity),
+            ("Keep Night Mode", .keepNightModeAfterAstro),
         ] {
             #expect(!SettingsSearch.settings(matching: query, availability: none).contains(id), "\(id)")
         }
@@ -182,6 +193,7 @@ struct SettingsSearchTests {
         #expect(SettingsSearch.spokenPlace(of: .detailsLocation) == "Privacy, Details in Each Photo")
         #expect(SettingsSearch.spokenPlace(of: .factoryDefaults) == "Presets")
         #expect(SettingsSearch.spokenPlace(of: .nightMode) == "Screen")
+        #expect(SettingsSearch.place(of: .keepNightModeAfterAstro) == "Screen")
         #expect(SettingsText.spokenResult("Location", "Privacy, Details in Each Photo") == "Location, in Privacy, Details in Each Photo")
     }
 

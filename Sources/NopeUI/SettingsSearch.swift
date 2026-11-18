@@ -130,6 +130,8 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
     case showProcessedMarker = "settings.showProcessedMarker"
     /// The Night Mode switch.
     case nightMode = "settings.nightMode"
+    /// The Keep Night Mode After Astro switch.
+    case keepNightModeAfterAstro = "settings.keepNightModeAfterAstro"
     /// The Red Viewfinder switch.
     case redViewfinder = "settings.redViewfinder"
     /// The Live Activity switch.
@@ -176,7 +178,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         switch self {
         case .photos, .privacy, .camera, .screen, .more, .presets, .formats, .copies, .photoSize, .mirrorFrontCamera,
             .details, .signEachPhoto, .fastShutter, .focusOnFaces, .startInCleanView, .overlays, .showProcessedMarker,
-            .nightMode, .redViewfinder, .liveActivity, .accessibility, .honesty, .about:
+            .nightMode, .keepNightModeAfterAstro, .redViewfinder, .liveActivity, .accessibility, .honesty, .about:
             nil
         case .factoryDefaults, .saveCurrentSettings: .presets
         case .pairedWithRAW: .formats
@@ -213,7 +215,7 @@ public enum SettingsID: String, CaseIterable, Hashable, Sendable {
         case .camera, .fastShutter, .focusOnFaces: .camera
         case .screen, .startInCleanView, .overlays, .overlaysGrid, .overlaysGridStyle, .overlaysLevel,
             .overlaysFocusPeaking, .overlaysHistogram, .overlaysLiveReadout, .overlaysKeepReadout,
-            .showProcessedMarker, .nightMode, .redViewfinder, .liveActivity:
+            .showProcessedMarker, .nightMode, .keepNightModeAfterAstro, .redViewfinder, .liveActivity:
             .screen
         case .more, .accessibility, .honesty, .about, .license, .noticesAndTrademarks: .more
         case .presets, .factoryDefaults, .saveCurrentSettings: nil
@@ -488,6 +490,8 @@ enum SettingsText {
     static let showProcessedMarker = LocalizedStringResource("Show Processed Marker", bundle: bundle, comment: "Switch and its Voice Control name: shows the Processed marker on the camera before taking a photo with a lens that can't save RAW.")
     /// "Night Mode".
     static let nightMode = LocalizedStringResource("Night Mode", bundle: bundle, comment: "Switch and its Voice Control name: shows nope.'s screens in red on black for working in the dark. Keep \"nope.\" unchanged.")
+    /// "Keep Night Mode After Astro".
+    static let keepNightModeAfterAstro = LocalizedStringResource("Keep Night Mode After Astro", bundle: bundle, comment: "Switch and its Voice Control name: night mode stays on after leaving Astro, the night sky drive mode, instead of going back off. Night Mode and Astro are names of nope.'s features; use their translations.")
     /// "Red Viewfinder".
     static let redViewfinder = LocalizedStringResource("Red Viewfinder", bundle: bundle, comment: "Switch: in night mode, the live camera picture on screen is shown in red too.")
     /// "Live Activity".
@@ -559,6 +563,7 @@ enum SettingsText {
         case .overlaysKeepReadout: keepReadout
         case .showProcessedMarker: showProcessedMarker
         case .nightMode: nightMode
+        case .keepNightModeAfterAstro: keepNightModeAfterAstro
         case .redViewfinder: redViewfinder
         case .liveActivity: liveActivity
         case .accessibility: accessibility
@@ -604,6 +609,8 @@ enum SettingsText {
             LocalizedStringResource("Search keywords: Focus on Faces", defaultValue: "face detection, people, portrait", bundle: bundle, comment: "Settings search keywords for Focus on Faces, separated by commas. Not shown on screen.")
         case .nightMode, .redViewfinder:
             LocalizedStringResource("Search keywords: Night Mode", defaultValue: "red, dark", bundle: bundle, comment: "Settings search keywords for Night Mode and Red Viewfinder, separated by commas. Not shown on screen.")
+        case .keepNightModeAfterAstro:
+            LocalizedStringResource("Search keywords: Keep Night Mode After Astro", defaultValue: "red, dark, night sky, stars", bundle: bundle, comment: "Settings search keywords for Keep Night Mode After Astro, separated by commas. Not shown on screen.")
         case .startInCleanView:
             LocalizedStringResource("Search keywords: Start in Clean View", defaultValue: "hide controls, minimal", bundle: bundle, comment: "Settings search keywords for Start in Clean View, separated by commas. Not shown on screen.")
         case .liveActivity:
@@ -803,6 +810,9 @@ enum SettingsSearch {
         var offersProcessedMarker = false
         /// Whether the Live Activity switch is offered.
         var offersLiveActivity = false
+        /// Whether the device offers Astro (`CameraModel/deviceOffersAstro`), so the Keep Night
+        /// Mode After Astro switch applies.
+        var offersAstro = false
 
         /// Creates the availability.
         ///
@@ -813,9 +823,11 @@ enum SettingsSearch {
         ///   - offersLocation: Whether the app can tag a location.
         ///   - offersProcessedMarker: Whether a lens has no Bayer RAW.
         ///   - offersLiveActivity: Whether the Live Activity switch is offered.
+        ///   - offersAstro: Whether the device offers Astro, so Keep Night Mode After Astro applies.
         init(
             hasPresets: Bool = true, offersPhotoSize: Bool = false, hasFrontCamera: Bool = true,
-            offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false
+            offersLocation: Bool = true, offersProcessedMarker: Bool = false, offersLiveActivity: Bool = false,
+            offersAstro: Bool = false
         ) {
             self.hasPresets = hasPresets
             self.offersPhotoSize = offersPhotoSize
@@ -823,6 +835,7 @@ enum SettingsSearch {
             self.offersLocation = offersLocation
             self.offersProcessedMarker = offersProcessedMarker
             self.offersLiveActivity = offersLiveActivity
+            self.offersAstro = offersAstro
         }
 
         /// Whether the item exists here.
@@ -837,6 +850,7 @@ enum SettingsSearch {
             case .detailsLocation: offersLocation
             case .showProcessedMarker: offersProcessedMarker
             case .liveActivity: offersLiveActivity
+            case .keepNightModeAfterAstro: offersAstro
             default: true
             }
         }

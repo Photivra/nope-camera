@@ -849,6 +849,10 @@
       "comment" : "Picker: how much the JPEG copy is compressed. JPEG is a file format name.",
       "extractionState" : "manual"
     },
+    "Keep Night Mode After Astro" : {
+      "comment" : "Switch and its Voice Control name: night mode stays on after leaving Astro, the night sky drive mode, instead of going back off. Night Mode and Astro are names of nope.'s features; use their translations.",
+      "extractionState" : "manual"
+    },
     "Keep Readout in Clean View" : {
       "comment" : "Switch, and choice in the quick-controls tray: the live camera readout stays on screen when clean view hides the other controls.",
       "extractionState" : "manual"
@@ -1542,6 +1546,18 @@
         }
       }
     },
+    "Search keywords: Keep Night Mode After Astro" : {
+      "comment" : "Settings search keywords for Keep Night Mode After Astro, separated by commas. Not shown on screen.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "red, dark, night sky, stars"
+          }
+        }
+      }
+    },
     "Search keywords: Level" : {
       "comment" : "Settings search keywords for the Level, separated by commas. Not shown on screen.",
       "localizations" : {
@@ -2182,6 +2198,10 @@
     },
     "What's in This Photo" : {
       "comment" : "Title of the sheet that lists the facts read back from the photo nope. just saved: files, exposure, signature, details kept and removed.",
+      "extractionState" : "manual"
+    },
+    "When Astro turns Night Mode on, it stays on after you leave Astro instead of turning off again." : {
+      "comment" : "Explains the Keep Night Mode After Astro switch. Astro is the night sky drive mode; Night Mode is the name of nope.'s switch. Use their translations.",
       "extractionState" : "manual"
     },
     "White Balance" : {

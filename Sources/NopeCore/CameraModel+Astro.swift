@@ -21,19 +21,26 @@ extension CameraModel {
         deviceStatus.canRead && (selectedLens.map(AstroModel.isAvailable(on:)) ?? false)
     }
 
+    /// Whether the device offers the helper at all: a lens suits it, and storage and battery can
+    /// be read (not in the Lock Screen capture extension). `false` before the camera is ready.
+    /// An interface shows settings about the helper only then (AGENTS.md, "Progressive
+    /// enhancement"), such as Keep Night Mode After Astro (``NopeSettings/keepsNightModeAfterAstro``).
+    public var deviceOffersAstro: Bool {
+        deviceStatus.canRead && (capabilities?.lenses.contains(where: AstroModel.isAvailable(on:)) ?? false)
+    }
+
     /// Handles one astro intent.
     ///
     /// - Parameter intent: The intent.
     ///
     /// Side effects: turning the helper on may turn manual controls on, sets focus, shutter and
-    /// ISO, and turns the light off; turning it off may turn manual controls off.
+    /// ISO, and turns the light off; turning it off may turn manual controls off, and night mode
+    /// if ``setAstro(_:settings:)`` turned it on.
     func handle(_ intent: AstroIntent) async {
         let isIdle = !drive.isBusy && !astro.isRunning
         switch intent {
         case .setOn(true):
-            guard !astro.isOn, isIdle, canCapture, deviceStatus.canRead, manual.intervalProgress == nil,
-                let lens = selectedLens, let exposure = AstroModel.startingExposure(for: lens)
-            else { return }
+            guard let exposure = astroExposureIfItCanTurnOn() else { return }
             await turnOnAstro(exposure)
         case .setOn(false):
             await turnOffAstro()
@@ -44,6 +51,65 @@ extension CameraModel {
         case .stop:
             stopAstroRun()
         }
+    }
+
+    /// Turns the helper on or off from an interface's Astro control, with night mode: turning it
+    /// on turns night mode on too (issue #60), and turning it off, in any way, returns night mode
+    /// to what it was before.
+    ///
+    /// The night mode rule mirrors the one for manual controls:
+    /// - Night mode that was off is turned on, and turned off again when the helper ends: Astro
+    ///   off, another drive mode, a lens without the helper, manual controls off, a preset, or a
+    ///   relaunch (``restoreNightModeAfterAstro(settings:)``).
+    /// - Night mode that was already on stays on.
+    /// - A change the person makes to night mode while the helper is on
+    ///   (``NopeSettings/setNightMode(_:)``) is theirs, and is kept.
+    /// - With ``NopeSettings/keepsNightModeAfterAstro`` on, night mode stays on.
+    ///
+    /// The helper alone (``CameraIntent/astro(_:)``, as a preset sends it) never changes night
+    /// mode: night mode is a setting of the screens, and a preset brings its own.
+    ///
+    /// Side effects: as ``AstroIntent/setOn(_:)``; may turn night mode on and store it. Turning on
+    /// is ignored, and night mode left alone, where the helper can't turn on.
+    ///
+    /// - Parameters:
+    ///   - isOn: Whether the helper is on.
+    ///   - settings: The person's settings, where night mode is stored.
+    public func setAstro(_ isOn: Bool, settings: NopeSettings) async {
+        guard isOn else {
+            await turnOffAstro()
+            return
+        }
+        guard let exposure = astroExposureIfItCanTurnOn() else { return }
+        // Night mode first, so the screen is already red when the helper's announcement names it.
+        settings.turnOnNightModeForAstro()
+        astro.nightModeSettings = settings
+        await turnOnAstro(exposure)
+    }
+
+    /// Turns night mode off again if the astro helper turned it on and ended without doing so:
+    /// the app quit while the helper was on, and the helper is off at every launch. Call it once
+    /// the camera screen shows. It does nothing while the helper is on, or when night mode is the
+    /// person's.
+    ///
+    /// Side effects: may turn night mode off and store it.
+    ///
+    /// - Parameter settings: The person's settings, where night mode is stored.
+    public func restoreNightModeAfterAstro(settings: NopeSettings) {
+        guard !astro.isOn else { return }
+        settings.nightModeAstroDidEnd()
+    }
+
+    /// The helper's starting values for the selected lens, when it can turn on now: it is off,
+    /// nothing is being taken, the camera can take photos, storage and battery can be read, no
+    /// interval series runs, and the lens suits it.
+    ///
+    /// - Returns: The values, or `nil` when the helper can't turn on.
+    private func astroExposureIfItCanTurnOn() -> AstroExposure? {
+        guard !astro.isOn, !drive.isBusy, !astro.isRunning, canCapture, deviceStatus.canRead,
+            manual.intervalProgress == nil, let lens = selectedLens
+        else { return nil }
+        return AstroModel.startingExposure(for: lens)
     }
 
     /// Turns the helper on and sets up the camera for it.
@@ -72,12 +138,16 @@ extension CameraModel {
         await send(.manual(.setValue(.iso, exposure.iso)))
     }
 
-    /// Turns the helper off, stopping a run, and turns manual controls off again if the helper
-    /// turned them on.
+    /// Turns the helper off, stopping a run, and turns manual controls and night mode off again
+    /// if the helper turned them on (``setAstro(_:settings:)``).
     private func turnOffAstro() async {
         guard astro.isOn else { return }
         stopAstroRun()
         astro.setOn(false)
+        if let settings = astro.nightModeSettings {
+            astro.nightModeSettings = nil
+            settings.nightModeAstroDidEnd()
+        }
         if astro.turnedOnManualControls {
             astro.turnedOnManualControls = false
             await send(.manual(.setEnabled(false)))
