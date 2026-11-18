@@ -1081,9 +1081,9 @@ and one on 27, the oldest and newest supported versions (issue #78):
   one; record the frames per second (below, "Burst rate"); every saved frame passes the
   read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
   Allocations); VoiceOver announces the start and the saved count;
-- storage and battery warnings (issue #44): see "Low storage" below; at 20% battery, unplugged,
-  "Battery Low" shows and is announced, and it goes away when the device is plugged in; Low Power
-  Mode changes the explanation;
+- storage and battery warnings (issue #44): see "Low storage" below; at 3% battery or less,
+  unplugged, "Battery Low" shows (not at 4%) and is announced, and it goes away when the device
+  is plugged in; Low Power Mode changes the explanation;
 - interval shooting screen (issue #48): during a series the screen doesn't lock and is dimmed;
   a tap brightens it while the series continues; the brightness and auto-lock come back when the
   series ends, is stopped, or the app goes to the background, and after the camera screen closes.

@@ -2164,7 +2164,7 @@ final class NopeAppUITests: XCTestCase {
         let cases: [(String, String, String)] = [
             ("lowStorage", "Storage Low", "Photos that still fit on this device: about 15."),
             ("fullStorage", "Storage Full", "The next photo won't fit."),
-            ("lowBattery", "Battery Low", "Battery at 15%. Charge the device soon"),
+            ("lowBattery", "Battery Low", "Battery at 2%. Charge the device soon"),
             ("lowBatteryLowPower", "Battery Low", "Low Power Mode is on."),
         ]
         for (status, title, explanation) in cases {

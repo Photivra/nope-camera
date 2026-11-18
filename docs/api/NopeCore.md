@@ -6319,9 +6319,10 @@ public, declared in `Sources/NopeCore/DeviceStatus.swift`
 @MainActor static let lowBatteryLevel: Double
 ```
 
-At or below this charge, unplugged, the battery warning shows: 20%, where iOS itself
-first warns and offers Low Power Mode (Apple Support, "Use Low Power Mode to save
-battery life on your iPhone").
+At or below this charge, unplugged, the battery warning shows: 3%, when the device is
+about to run out. iOS itself already warns and offers Low Power Mode at 20% (Apple
+Support, "Use Low Power Mode to save battery life on your iPhone"), so the camera warns
+only when the battery is nearly empty. An astro run stops earlier, at ``AstroModel/stopBatteryLevel``.
 
 ## `DeviceStatus/lowStoragePhotoCount`
 
