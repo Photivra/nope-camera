@@ -86,7 +86,7 @@ The Apple Watch cannot change the lens; nothing changes there.
 ## 6. Not in this change
 
 - The lens controls while Astro is on but idle, and a lens change turning a bracket off: unchanged.
-- The pinch between lenses ([pinch-lens.md](pinch-lens.md), proposed separately) must use the same `canChangeLens` rule if it is built.
+- The pinch between lenses (`pinch-lens.md` on branch `design-pinch-lens`, proposed separately) must use the same `canChangeLens` rule if it is built.
 
 ## 7. Tests
 
