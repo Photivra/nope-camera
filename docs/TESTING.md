@@ -457,9 +457,9 @@ each test checks, with `performAccessibilityAudit()` in every state:
 
 | Scenario | Test |
 |---|---|
-| `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the chip into its warning; full auto shows only the default controls; the camera flip; the format chip's sheet; the quick-controls tray (closes on the shutter and on ⋯); signing off in Settings shows the "Not Signed" chip, also in clean view; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
+| `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the format status into the "Processed" marker; full auto shows only the default controls (no Settings button on the stacked camera); the camera flip; the format status's sheet, read-only on a lens without RAW; Q, the quick menu (closes on the shutter and on Q; Settings opens from its foot); signing off is stated after each photo without a warning chip; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
 | `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; its long-press menu offers Open in Photos and Photo Details; "What's in This Photo" lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail brings the Photos app to the front; with `manual` and a bracket, the details' Photo picker shows each frame |
-| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the fallback chip and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
+| `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
 | `metadataRejected` | Every file carries a simulated future system tag: "Not saved: nope. couldn't confirm that the photo holds only the details you chose."; also at the largest accessibility text size |
@@ -471,16 +471,16 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `captureFails` | The capture failure banner: Try Again, Dismiss |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off screen with Open Settings, and the no-camera screen |
-| `allow`, `denied` | Settings from the camera's Settings button: Settings, Formats, Look, Choose Details (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the Look row (shown only with HEIF or JPEG selected) and the privacy rules (master switch and signing on by default, one item on makes it "Custom", locked items read "Locked") |
+| `allow`, `denied` | Settings, opened from Q on the stacked camera and from the Settings button elsewhere: Settings, Formats, HEIF and JPEG Copies (top and bottom), Details in Each Photo (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG Copies row ("Not Saved" with RAW only, otherwise the look) and the privacy rules (the master switch on and signing off by default, one item on makes it "Custom", locked items read "Locked"); `SettingsUITests.swift` covers the root rows, search, Show Processed Marker and the presets' More menu |
 
 UI test launches store settings in their own `UserDefaults` suite, emptied at each launch
 (`SimulatedCameraLaunch.settingsStore()`), so every test starts from the defaults and the real
 settings are never touched.
-| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the M pill; the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools and a 3-frame bracket; the lock pill after AE-L, which unlocks; the M pill turns manual controls off; interval progress and Stop; clean view from the tray; the list at the largest text size; right-to-left |
+| `manual` (with `-NopeSettings.showsManualControls YES`) | Manual controls: hidden without the option; the Manual Controls button ("On" or "Off"); the readout row; a dial with the lens's range, Auto, − and +; "All Auto" from the row's last button; exposure compensation blocked in M; the ultra wide's fixed aperture; Pro Tools (no Interval section) and a 3-frame bracket; the lock pill after AE-L, which unlocks; the Manual Controls button turns manual controls off; interval progress and Stop from the drive strip; clean view from Q; the list at the largest text size; right-to-left |
 | `allow` (clean view) | The no-RAW chip stays visible in clean view |
 | `allow` (light and flash) | The Light switch turns the light on with its pill ("25%"), which stays through a photo and in clean view, changes the brightness and turns the light off; the Flash menu and its pill; the light hides the flash pill; no Light or Flash on the ultra wide |
 | `lightUnavailable` | The system refuses the light: the "Light Unavailable" warning, cleared by turning Light off |
-| `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from the tray and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
+| `allow`, `signingFails`, `photosDenied` with `-NopeSettings.isNightModeOn YES` | Night mode from Q and at launch: the camera with a photo, a warning and the light, at the largest text size, and every Settings screen (default, largest, right-to-left); a screenshot check finds no white, green or blue pixel outside the viewfinder and the status bar; the viewfinder stays white (natural) by default and turns red with Red Viewfinder |
 
 In right-to-left layout the viewfinder, which `CameraScreen` draws behind the interface, was
 placed from the wrong edge: beside the control column (iPad) it sat a column's width to the left
@@ -871,7 +871,7 @@ view.
 - Control: add Night Mode in Control Center and on the Lock Screen. It shows the app's state;
   turning it on with the app open turns the app red at once (also while Control Center covers the
   app); with the app in the background or closed, the app is red when opened. Turning night mode
-  on or off in the app (Settings, the tray or the Set Night Mode shortcut) updates the control.
+  on or off in the app (Settings, Q or the Set Night Mode shortcut) updates the control.
 - Lock Screen camera: with night mode on, RAW plus HEIF plus JPEG, a detail on and signing off
   in the app, lock the device and open "Open nope.": the camera opens red, without a white flash,
   and its photo has those formats, that detail and no signature. Change night mode from the
@@ -895,7 +895,7 @@ UI-tested on the Simulator; on a device, confirm the parts the simulated camera 
   prompt appears once.
 - A preset with the astro helper on, applied in daylight: the helper is on with the preset's
   frame count and delay, and night mode follows the preset.
-- From the tray in night mode: the presets sheet is red on black and VoiceOver reads each preset
+- From Q in night mode: the presets sheet is red on black and VoiceOver reads each preset
   and the result after applying. Undo returns the lens and values.
 - After applying a preset, open the Lock Screen camera: it uses the applied formats and night
   mode (the copy is handed over after every change).
@@ -999,7 +999,7 @@ Steps, on an iPhone with iOS 26 or later, with the app open on the camera screen
   popovers); list what the system still draws (status bar, menus, alerts); the app never changes
   the screen's brightness; the real viewfinder keeps its colors by default and is red with Red
   Viewfinder; energy with the red viewfinder on (Instruments);
-- night mode and Red Viewfinder switch at once from the tray and from Settings › Camera, with the
+- night mode and Red Viewfinder switch at once from Q and from Settings › Screen, with the
   live picture never freezing, going black or restarting (Instruments Hangs: no hang on the
   switch; the 0.2.0 build rebuilt the preview layer each time).
 
@@ -1044,12 +1044,12 @@ Simulator (`FileOptionsEncodingTests`). On a device:
 - **Copy Size** (issue #57): with Half Size and Quarter Size, the HEIF and JPEG open in Photos at
   half (2016 × 1512 from a 12 MP RAW) and a quarter of the RAW's width and height, the RAW is
   unchanged, and exiftool's `ExifImageWidth` and `ExifImageHeight` match the copy;
-- **Face Detection** (issues #57 and #80): on a fresh install it is off; with it off, autofocus
+- **Focus on Faces** (issues #57 and #80; Face Detection before 1.0.0): on a fresh install it is off; with it off, autofocus
   and exposure stay on the center (or the tapped point) with a face in the frame, on the wide
   and the front camera; turned on, they follow a face in the frame in full auto, as before;
-  nothing in the files changes either way. Installing over a build that stored Face Detection
+  nothing in the files changes either way. Installing over a build that stored Focus on Faces
   on keeps it on;
-- **Far Focus** (issue #57): with manual controls on, Far Focus in the tray, on each rear lens:
+- **Far Focus** (issue #57): with manual controls on, Far Focus in Q, on each rear lens:
   autofocus ignores a near subject (a hand or a branch close to the lens) and keeps the far scene
   sharp; Close-Up then replaces it and back; the live readout's focus range shows the limit;
 - **Photo Size** (issue #57): on a device with a lens without Bayer RAW that reports more than
@@ -1076,17 +1076,17 @@ The defaults, Factory Defaults and preset decoding are unit-tested (`NopeSetting
 cameras (`ProcessedMarkerUITests.swift`). What the camera reports about distortion correction
 can only be checked on hardware. On each device available (record the model and iOS version):
 
-- **Fresh install:** Settings shows Formats "RAW (DNG)", Sign Each Photo off and Face Detection
+- **Fresh install:** Settings shows Formats "RAW (DNG)", Sign Each Photo off and Focus on Faces
   off; the first photo says "Saved. Not signed: signing is off in Settings." and Photos gets one
   DNG; Factory Defaults returns to the same values. Installing over an earlier build keeps the
-  formats, signing and Face Detection the person had stored.
+  formats, signing and Focus on Faces the person had stored.
 - **Which lenses have no Bayer RAW:** run the Debug tag check (`-NopeTagCheck`, "Tag check"
   below) and record, for each physical camera, whether it gives Bayer RAW.
 - **Marker and note:** on each lens without Bayer RAW (for example an iPad's cameras, or a
   front camera without RAW), "Processed: No RAW on This Lens" shows before the first photo and
   in clean view; tapping it shows the note. Record its distortion line for each such lens: "lets
   apps turn it off" is `isGeometricDistortionCorrectionSupported` true, "doesn't let apps turn
-  it off" false. Settings › Camera › Processed Marker appears only on such a device; turning it
+  it off" false. Settings › Screen › Show Processed Marker appears only on such a device; turning it
   off hides the marker and nothing else.
 - **Distortion correction actually applied:** for each lens without Bayer RAW, take the same
   scene with straight lines near the frame's edges (a door frame or a grid) with the app and
@@ -1166,7 +1166,7 @@ calls and the assumptions. Do them on every lens of the test iPhone (16 Pro Max)
 - press and hold (and the Lock button) lock focus and exposure: they stay when the phone points
   elsewhere; the AE/AF pill and the button unlock; VoiceOver's Focus on Center and Lock Focus
   and Exposure actions do the same, and the lock change is announced;
-- exposure compensation in full auto: the tray's Exposure dial brightens and darkens the
+- exposure compensation in full auto: Q's Exposure dial brightens and darkens the
   viewfinder over the lens's range, the pill resets it, and the DNG's `ExposureBiasValue` follows
   (with exposure settings kept);
 - fast shutter: on each lens in bright light the DNG's `ExposureTime` is no slower than

@@ -30,7 +30,7 @@ signed with Content Credentials when signing is on.
 | `NopeCapture` | AVFoundation and PhotoKit adapters: `AVFoundationCaptureBackend` (writes each file with allowlisted metadata), `PhotoKitLibrary` (add-only saving) and the camera permission adapter | `NopeCore`, AVFoundation, Photos |
 | `NopeDevelop` | RAW development and encoding: `RAWDeveloper` (Core Image, system encoders, `EncodingSettings`) and `ImageIOReadBack` | `NopeCore`, Core Image, ImageIO |
 | `NopeSigning` | C2PA signing. Now: `ContentCredentialsSigner` (implements `PhotoSigning`), a new Secure Enclave key and self-issued certificate for every file, fully offline | `NopeCore`, CryptoKit, Security, C2PA, X509 and SwiftASN1 (swift-certificates, for the certificate) |
-| `NopeUI` | SwiftUI views. Now: `CameraScreen` (the clean layout of issue #68: format chip, state pills, warning chips, viewfinder, lens row with the quick-controls tray, manual readout and dial, shutter, camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (Photos, Privacy, Camera, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
+| `NopeUI` | SwiftUI views. Now: `CameraScreen` (the 1.0.0 layout of issue #74, direction B: format status and state pills, warning chips, viewfinder, lens row with the Manual Controls button, drive strip and mode cards, manual readouts and dial, shutter row with Q (the quick menu), camera flip, last-photo slot, failure banner, first-run screen) and `SettingsScreen` (search, Presets, Photos, Privacy, Camera, Screen, More: Accessibility, Honesty, About and licenses) | `NopeCore`, SwiftUI |
 | App (`NopeApp`) | Wires `AVFoundationCaptureBackend` and a `PhotoSaver` (`RAWDeveloper`, `ImageIOReadBack`, `PhotoKitLibrary`, `ContentCredentialsSigner`) into `NopeCore`, supplies the preview view and the hardware shutter, hosts `NopeUI`, and holds the App Intents and the Apple Watch link (`PhoneWatchSession`) | Everything |
 | Watch app (`NopeWatch`) | The Apple Watch remote shutter: hosts `WatchRemote` from `NopeCore` with a WatchConnectivity link and its own SwiftUI screen; it takes no photos | `NopeCore`, SwiftUI, WatchConnectivity |
 | Extensions (`NopeCaptureExtension`, `NopeControls`) | The Lock Screen camera, wired like the app; the "Open nope." and Night Mode controls and the Live Activity's layouts | Everything; `NopeControls` uses only `NopeCore` (`NopeSettings`, and `LiveActivityContent` for the Live Activity), ActivityKit, AppIntents, WidgetKit and SwiftUI |
@@ -84,8 +84,9 @@ signed with Content Credentials when signing is on.
 ### Manual controls
 
 Manual controls are off by default. The "Manual controls" option is
-`NopeSettings.showsManualControls`; the app target sends `.manual(.setEnabled(_:))` when it
-changes. "Start in clean view" (`NopeSettings.startsInCleanView`) sends `.setCleanView(_:)`
+`NopeSettings.showsManualControls`; the camera's Manual Controls button turns it on and off with
+`CameraModel.setManualControls(_:settings:)`, which stores the option and sends
+`.manual(.setEnabled(_:))` at once (Settings no longer has a switch for it, issue #77). "Start in clean view" (`NopeSettings.startsInCleanView`) sends `.setCleanView(_:)`
 when the camera opens and when the option changes.
 
 ```
@@ -144,7 +145,7 @@ when the camera opens and when the option changes.
   With manual controls on nothing is limited; the hint shows when the shutter is slower than the
   handheld rule.
 - **Close-Up** sets `autoFocusRangeRestriction = .near`; **Far Focus** (manual controls on, issue
-  #57) sets `.far`, and the two replace each other. **Face Detection** (Settings, off by default, issue
+  #57) sets `.far`, and the two replace each other. **Focus on Faces** (Settings, off by default, issue
   #80) leaves face-driven autofocus and auto exposure to the system, or turns both off
   (`DeviceControls.followsFaces`). The **photo size** of a lens without Bayer RAW
   (`CameraIntent.setPhotoSizes`, `Lens.photoSizeChoices`) is configured when the session starts.
@@ -218,8 +219,8 @@ the storage. Turning it off turns manual controls off again only if it turned th
 can't be turned on while it is on, and a lens it can't use turns it off. It is offered only
 where `DeviceStatus.canRead` (`CameraModel.canUseAstro`): the Lock Screen capture extension has
 no storage and battery reader, so it has no Astro. `NopeUI` turns night
-mode on with it (`NopeSettings.setNightMode(_:)`), shows an Astro tray item, pill and panel and
-an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
+mode on with it (`NopeSettings.setNightMode(_:)`), shows it as the Astro word of the drive strip
+with its mode card and an Astro Settings sheet, and keeps the screen awake and dimmed while frames run
 (`SeriesScreenKeeper`).
 
 ### Storage and battery
@@ -294,9 +295,10 @@ Take Photo also has a count (1 to 50): more than one takes a burst of exactly th
 with the burst's own loop (`takeBurst(frames:)`, the same `takeFrames` loop as the shutter's
 burst and astro runs), ending with `BurstEnd.countReached`. The other requests follow the same
 path: `SwitchLensIntent` (`.selectLens(_:)`), `TurnOnLightIntent` and `TurnOffLightIntent`
-(`.setLight(isOn:)`, the tray's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
+(`.setLight(isOn:)`, Q's `LightIntent.setTorch(_:)`), and `StartIntervalIntent` and
 `StopIntervalIntent` (`.startInterval(_:)` with an optional interval and count, and
-`.stopInterval`, the `ManualControlIntent` values the Interval drive mode and Pro Tools send).
+`.stopInterval`, the `ManualControlIntent` values the Interval drive mode sends; Pro Tools no longer starts a
+series in 1.0.0).
 `TakeBracketIntent` is a separate action from Take Photo, because a bracket and a burst are
 different captures with different limits: it asks for 3, 5 or 7 frames and a step of 1/3, 2/3,
 1 or 2 stops (`BracketShortcut` moves any value to the nearest of `BracketSettings.frameCounts`
@@ -310,7 +312,7 @@ change.
 Settings actions (Shortcuts only, no Siri phrases): `SetFocusRangeIntent` (No Limit, Close-Up or
 Far Focus in one action, because the camera has one autofocus range restriction, so the two
 limits exclude each other), `SetPhotoSizeIntent` (Standard or Largest for a lens, or the lens
-in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends the tray's
+in use) and `ApplyPresetIntent` (see "Settings presets") open the app and go through the inbox: `.setFocusRange(_:)` sends Q's
 `AutoControlIntent` values on a lens that supports them, and `.setPhotoSize(_:)` stores the
 choice with `NopeSettings.setPhotoSize(_:for:)`, which the model can do because the app passes
 its settings to `serveShortcuts(from:settings:presets:)`; the app then applies the new size as it does
@@ -474,9 +476,10 @@ Nothing applies a preset on its own: the app never changes the person's settings
   Applying writes the settings store, so `SharedSettingsSync` posts the change signal and the app
   hands the new settings to the Lock Screen camera as after any other change.
 - **Interface.** `PresetsScreen` (a native `List`) opens from the first row of Settings and from
-  Presets in the quick-controls tray (`PresetsSheet`, a sheet so night mode stays red): Factory
-  Defaults and the saved presets, each applied with one tap; the result, its notices and Undo;
-  Save Current Settings (`PresetNameScreen`) and Rename or Delete (`EditPresetsScreen`).
+  the Presets tile in Q (`PresetsSheet`, a sheet so night mode stays red): Factory Defaults and
+  the saved presets, each applied with one tap; the result, its notices and Undo; Save Current
+  Settings (`PresetNameScreen`); and for each saved preset a More menu with Rename (the Rename
+  Preset page) and Delete, which asks first; the same two are swipe and VoiceOver actions.
 - **Shortcuts.** `ApplyPresetIntent` (a Shortcuts action with no Siri phrase; every App Shortcut
   slot is used) picks a `PresetEntity` (Factory Defaults, then the saved presets, from
   `PresetQuery` over the app's `SettingsPresets`, registered with `AppDependencyManager`). It
@@ -540,13 +543,13 @@ angle as the Exif orientation and doesn't rotate pixels (`AVCaptureSession.h`,
 
 Guides and live aids drawn over the picture (issues #40, #47, #51 and #52), each off by default
 and each its own switch in `NopeSettings.overlays` (`OverlayOptions`; Settings, "Viewfinder
-Overlays"; Grid and Level are also in the quick-controls tray, and the live aids in Pro Tools).
+Overlays"; Grid, Level, Focus Peaking and the readout are also tiles in Q, and the live aids in
+Pro Tools).
 Nothing they show is written to a photo, stored or logged, and nothing takes touches.
 
-- **Grid** (`GridStyle`): rule of thirds, 4 × 4, a centered square, golden ratio lines or a
-  golden spiral in one of eight placements (`SpiralPlacement`, "Turn Spiral" in Settings). The
-  lines come from `GridGeometry` and `GoldenSpiral` in unit coordinates; `NopeUI` draws them as
-  thin white lines on a dark outline. The spiral turns with an iPhone held sideways.
+- **Grid** (`GridStyle`): rule of thirds, 4 × 4 or a centered square (the golden ratio and
+  golden spiral grids were removed in 1.0.0, issue #76). The lines come from `GridGeometry` in
+  unit coordinates; `NopeUI` draws them as thin white lines on a dark outline.
 - **Level** (`LevelModel`, `LevelTracker`): a horizon bar, or a top-down level when the device
   points straight down, from gravity readings of a `GravitySource`. The app target supplies Core
   Motion device motion (`MotionGravitySource`, no permission needed) through
@@ -577,21 +580,26 @@ Nothing they show is written to a photo, stored or logged, and nothing takes tou
 
 ### Camera layout
 
-The camera screen follows the approved layout in [`design/camera.html`](design/camera.html)
-(issue #68). `CameraLayout` chooses the arrangement from the space and the text size:
+The camera screen follows the 1.0.0 design, direction B ([`design/BUILD-SPEC.md`](design/BUILD-SPEC.md),
+3.1, 3.11 and 3.12; issue #74), which replaced the 0.3.0 layout of issue #68. `CameraLayout`
+chooses the arrangement from the space and the text size:
 
-- **iPhone (stacked):** top bar (pills, format chip, Settings), the whole 4:3 picture, the lens
-  row with the quick-controls button (⋯), the manual readout when manual controls are on, and the
-  shutter row (last photo, shutter, camera flip). When the bands don't fit below the picture, as
+- **iPhone (stacked):** a status line (the format status leading, the state pills trailing; no
+  Settings button), the whole 4:3 picture with the manual readouts and the selected drive mode's
+  card on its lower edge, the lens row (the Manual Controls button, the lenses, Switch Camera),
+  the drive strip (Single, Timer, Burst, Interval and, where offered, Astro), and the shutter row
+  (last photo, shutter, Q). Q opens the quick menu (`QuickPanel`, or `QuickMenuList` at
+  accessibility sizes), whose foot holds Hide Controls and Settings. When the bands don't fit below the picture, as
   on a 4.7-inch iPhone, they overlay its bottom on a dark backing. The app target keeps the
   iPhone interface in portrait (`AppDelegate`, `application(_:supportedInterfaceOrientationsFor:)`)
   and tells `NopeUI` which way up the phone is (`EnvironmentValues.cameraUprightRotation`, from
   `UIDevice.orientation`); icons and text blocks turn upright as units (`UprightUnit`), and the
-  chip, pills and warnings move to the picture's upper edge. While Settings or another sheet is
+  format status, pills and warnings move to the picture's upper edge. While Settings or another sheet is
   open, the app lets the interface rotate (`EnvironmentValues.cameraPresentsSheet`).
 - **iPad, or any window wider than tall (column):** the interface rotates; the picture sits
-  beside a trailing column with the shutter centered, and Settings and the format details open as
-  popovers. The column's halves above and below the shutter share its height, and the upper one
+  beside a trailing column (Settings, the lenses and Manual Controls at the top, Q above the
+  shutter and the last photo below it) with the shutter centered, the drive strip on the
+  picture's lower edge, and Settings and the format details open as popovers. The column's halves above and below the shutter share its height, and the upper one
   scrolls if its buttons don't fit, so nothing passes under the shutter in a short window. In a
   reduced window the camera shows the multitasking pause.
 - **Accessibility text sizes (scrolling), in every window:** the iPhone bands in a scroll view
@@ -613,11 +621,11 @@ The camera screen follows the approved layout in [`design/camera.html`](design/c
   every orientation for such a window, never forces it back to portrait when a sheet closes, and
   asks UIKit again when the size classes change (`FollowsWindowSizeClasses`), so a phone folded
   while on its side returns the outer display to portrait. Folding or unfolding changes only the
-  layout: the dial, the tray, sheets and runs (self-timer, interval, astro) are state in the
+  layout: the dial, Q, sheets and runs (self-timer, interval, astro) are state in the
   model or in `CameraReadyView` and carry over.
 
 Three registries let later features add to the camera without touching the layout:
-`QuickControls.builders` (tray items: buttons, switches or native menus), `StatePills.builders`
+`QuickControls.builders` (Q's tiles: buttons, switches or native menus), `StatePills.builders`
 (pills for settings not at their defaults, at most three then "+n") and
 `CameraWarnings.builders` (persistent amber chips, such as "Not Signed"). Feedback has three
 tiers: a good save is quiet (the last-photo slot with a teal seal, a light haptic and a
@@ -777,7 +785,7 @@ Lock Screen capture extension sets no renderer, so it isn't offered on a locked 
   shows it as a full-screen cover (`ComparisonScreen`): the pictures with a divider (a slider,
   VoiceOver adjustable action, nope. Only / Split / Phone Only buttons, pinch and zoom buttons),
   and a pushed Details list. It hides its contents while the scene isn't active, so the app
-  switcher's snapshot doesn't show them. The Compare item is in the quick-controls tray, with a
+  switcher's snapshot doesn't show them. The Compare tile is in Q, with a
   pill and the hint "Hold the camera steady or use a tripod. Two photos are taken, a moment apart."
 
 ## Settings
@@ -792,12 +800,17 @@ controls (off), clean view (off) and the "Processed" marker of a lens without Ba
 default applies only to a fresh install and Factory Defaults. Interfaces change it only through its methods, which hold the rules (the
 last format can't be turned off; turning on one item turns the master switch off). Each change
 is written at once to the app's own `UserDefaults` on the device: never iCloud, never the
-network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, whose
-Settings button opens `SettingsScreen` (a sheet on iPhone, a popover on iPad) in every camera
-state. Settings is a short grouped list: Presets (see "Settings presets"), Photos (formats with the RAW pairing, look, file
-options), Privacy (the master switch, "Choose Details", signing), Camera (manual controls, clean
-view, front camera mirroring) and More (Accessibility, Honesty, About); explanations are in
-footers and on the detail screens.
+network. The app target creates one `NopeSettings` and passes it to `CameraScreen`, which opens
+`SettingsScreen` (a sheet on iPhone, a popover on iPad) from Q's Settings on the stacked camera,
+from the Settings button in the column and on the screens before the camera is ready, and at a
+page or row through `openSettingsAt` (`SettingsID`, `SettingsNavigation`). Settings is a short
+grouped list with a search field (`SettingsSearch.swift`): Presets (see "Settings presets"),
+Photos (Formats with the RAW pairing, HEIF and JPEG Copies with the look and the file options,
+Photo Size, Mirror Front Camera), Privacy (Details in Each Photo, with the master switch, and
+Sign Each Photo), Camera (Fast Shutter, Focus on Faces), Screen (Start in Clean View, Viewfinder
+Overlays, Show Processed Marker, Night Mode, Red Viewfinder, Live Activity) and More
+(Accessibility, Honesty, About). Manual controls are turned on and off on the camera, with the
+Manual Controls button; explanations are under each row and on the detail screens.
 
 The app passes `NopeSettings.save` to `CameraModel.saveSettings` whenever it changes, so the
 next photo uses it. For each capture, `CameraModel` adds two per-photo values to the metadata
@@ -827,7 +840,7 @@ Simulator (docs/TESTING.md). Release builds always use `AVFoundationCaptureBacke
 The camera screen and its own sheets (the format details, What's in This Photo, Compare, the
 astro and interval settings, Pro Tools) are always dark: a camera is used in every light, and a
 dark frame doesn't change how a scene looks. Settings and its pages, Presets (from Settings or
-the quick-controls tray), Honesty, About and Licenses, first run and the camera access screens
+Q), Honesty, About and Licenses, first run and the camera access screens
 follow the system's light or dark setting, as a sheet on iPhone and a popover on iPad (owner
 decision for 0.3.0). A sheet changes with the setting while it is open; the iPad popover keeps
 the setting it opened with until it closes, because a popover whose scheme changed while open

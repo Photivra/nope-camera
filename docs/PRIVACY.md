@@ -76,7 +76,7 @@ for any user-facing claim comes from
   needs no permission) only while it is shown; focus peaking and the histogram sample a few
   reduced preview frames a second in memory only while they are shown; the live camera readout
   reads values the camera reports. None of this is written to a photo, stored, logged or copied.
-- **Comparison shot (issue #55):** off unless the person turns Compare on (quick-controls tray;
+- **Comparison shot (issue #55):** off unless the person turns Compare on (a tile in Q, the quick menu;
   not remembered). Each single or self-timer photo is then followed by a second photo with the
   phone's processing at `.quality` prioritization, which keeps the system's own metadata, so the
   compare view can show what it carries. That photo is never saved, signed, written to a file,
@@ -271,12 +271,13 @@ geometric distortion correction off where the camera allows it; and zoom 1.0.
   data into that image (its colors, tone and any noise reduction and sharpening). The app saves
   the file without changing its pixels and writes only the allowlisted metadata.
 - **The "Processed" marker (issue #80):** before a photo is taken with such a lens, the camera
-  shows "Processed: No RAW on This Lens", also in clean view. Tapping it opens the lens's
-  processing note: what the phone does, what the app turns off, the lens's distortion
-  correction, and what the app does to the files it saves. Settings › Camera › Processed Marker
-  hides the marker (on by default; offered only on a device with such a lens,
-  `NopeSettings.showsProcessedMarker`). Hiding it changes nothing else: VoiceOver still names the
-  format in the viewfinder's description, "What's in This Photo" says "Processed by the phone's
+  shows "Processed" with an amber triangle in its format status, also in clean view (VoiceOver:
+  "Processed: no RAW on this lens"). Tapping it opens the lens's processing note: what the phone
+  does, the lens's distortion correction, and what the app does to the files it saves; on that
+  lens the format list is read-only, naming the one file it saves. Settings › Screen › Show
+  Processed Marker hides the marker (on by default; offered only on a device with such a lens,
+  `NopeSettings.showsProcessedMarker`). Hiding it changes nothing else: the format status names
+  the file, VoiceOver still names the format in the status and the viewfinder's description, "What's in This Photo" says "Processed by the phone's
   camera", and a signed file's manifest says the phone processed it.
 - **Distortion correction per lens (issue #80):** `Lens.distortionCorrection` is what the camera
   reports, not a measurement. `turnedOff`: the camera offers the switch
@@ -285,7 +286,8 @@ geometric distortion correction off where the camera allows it; and zoom 1.0.
   note says its photos may be corrected. The processing note and "What's in This Photo" (for a
   processed fallback) show it. Which lenses correct their processed photos anyway is a device
   check (`TESTING.md`, "Processing disclosure on a device").
-- **Face Detection (issue #80):** Settings › Camera › Face Detection, off by default. Off sets
+- **Focus on Faces (issue #80; Face Detection before 1.0.0):** Settings › Camera › Focus on
+  Faces, off by default. Off sets
   `automaticallyAdjustsFaceDrivenAutoFocusEnabled` and `isFaceDrivenAutoFocusEnabled` (and the
   auto exposure pair) to false where the camera supports continuous autofocus or auto exposure;
   on hands them back to the system. The app never reads which faces the camera found: it has no
@@ -400,7 +402,7 @@ details" turns it off like every other item.
 
 - **Asking:** turning the switch on asks for "while using the app" location access first
   (`LocationTagging.turnOn(in:)`); if access is declined or restricted, the switch stays off and
-  Choose Details says how to allow it in Settings. The app never asks for "always" access and has no
+  Details in Each Photo says how to allow it in Settings. The app never asks for "always" access and has no
   background mode.
 - **When it runs:** location updates run only while the switch is on, access is allowed and the
   camera is running (`LocationTagging.update(isOn:cameraIsRunning:)`); they stop on any
@@ -436,7 +438,7 @@ copy. Orientation is a locked item and the read-back accepts all eight values.
 
 ### Developed file options
 
-Settings › Photos › File Options (issue #57): the compression of the HEIF and JPEG copies, the
+Settings › Photos › HEIF and JPEG Copies (issue #57; File Options before 1.0.0): the compression of the HEIF and JPEG copies, the
 HEIF bit depth (10 or 8), the color space (Display P3 or sRGB) and the copy size (full, half or a
 quarter of the RAW's width and height). They change only how the developed copies are encoded,
 never the RAW; the only metadata they touch is EXIF `PixelXDimension` and `PixelYDimension` of a
@@ -446,7 +448,7 @@ app can control, and what the app offers, is in
 
 ### Standard File Tags
 
-Settings › Privacy › Choose Details › Standard File Tags, **on by default** (owner decision,
+Settings › Privacy › Details in Each Photo › Standard File Tags, **on by default** (owner decision,
 2026-11-16) and outside "Remove all optional details", like signing
 (`MetadataSettings.writesStandardFileTags`). It writes the tags the Exif standard requires that
 are fixed values and say nothing about the photo, the device or the person:
