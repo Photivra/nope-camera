@@ -415,6 +415,11 @@ other finding fails the test:
   the iOS 27.2 Simulator reported system form section headers and footers as "partially
   unsupported" there, cause unknown; every Settings screen passes the full audit, Dynamic Type
   included, at the largest accessibility text size;
+- a Dynamic Type finding on the Choose Details footer "On: each photo keeps only what it needs
+  to open. Off: choose each item below." and the header "In Each Photo": the iPad runner's
+  audit reports them although they grow at every text size, which
+  `testChooseDetailsTextGrowsAtEveryTextSize` measures (see "Dynamic Type findings on the iPad
+  runner");
 - open iPad findings, on the manual accessibility pass: the lens buttons' "No RAW" caption in the
   iPad control column is reported as "Dynamic Type font sizes are partially unsupported",
   although it is visibly enlarged at the largest size and passes on iPhone; and the Settings and
@@ -821,6 +826,21 @@ screen doesn't. An issue now fails the test when the audit reports it three time
 the first audit and again in each of two more audits of the same screen (the same type on an
 element with the same label). A finding that is real is reported every time and still fails.
 Why the runner's first audit reports them isn't known.
+
+In build 44209365138 one finding did pass that rule: in `testNightModeSettingsScreensAtTheLargestTextSize`
+on iPad, where Settings is a sheet, all three audits of Choose Details reported the master
+switch's footer ("On: each photo keeps only what it needs to open. Off: choose each item
+below.", 548 × 167 points) and the header after it ("In Each Photo", 548 × 83.5) as "Dynamic
+Type font sizes are partially unsupported"; these are the two texts of the earlier popover
+failures. Both are a system `Form` section's footer and header with no font, size limit or line
+limit of the app's own. Measured on the iPad Simulator in night mode at each of the nine text
+sizes from the default to the largest, each grows at every step (footer height 30, 50, 54.5,
+59, 68.5, 77.5, 129.5, 147.5, 167 points; header 40.5, 43, 45.5, 47.5, 53.5, 59.5, 68, 76.5,
+83.5), and at the largest size they measure what the runner's audit reported. So the finding
+is the audit's, not the layout's. The audit no longer fails on a Dynamic Type finding on these
+two texts (by label, `measuredDynamicTypeLabels`), and `testChooseDetailsTextGrowsAtEveryTextSize`
+checks what the audit was asked instead, on iPhone and iPad: both texts and the master switch's
+title are larger at every text size than at the size before.
 
 #### Audits that don't finish
 

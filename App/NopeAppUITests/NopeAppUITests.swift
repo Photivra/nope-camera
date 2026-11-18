@@ -505,6 +505,7 @@ final class NopeAppUITests: XCTestCase {
                 // element-less Dynamic Type finding on the long Choose Details list (docs/TESTING.md).
                 || (!checksContrast && issue.auditType == .dynamicType && issue.element == nil)
                 || Self.isOpenIPadFinding(issue)
+                || Self.isMeasuredDynamicTypeFinding(issue)
                 || Self.isIgnored(issue, in: app, afterScrolling: afterScrolling)
                 || (sideways && Self.isTurnedTextFinding(issue))
         }
@@ -602,6 +603,22 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func settle() {
         _ = XCTWaiter().wait(for: [XCTestExpectation(description: "Animations finish")], timeout: 3)
+    }
+
+    /// The Choose Details texts the audit reports as "Dynamic Type font sizes are partially
+    /// unsupported" on the iPad runner: the master switch's footer and the header after it.
+    /// `testChooseDetailsTextGrowsAtEveryTextSize` measures both at all nine text sizes instead.
+    static let measuredDynamicTypeLabels = [
+        "On: each photo keeps only what it needs to open. Off: choose each item below.", "In Each Photo",
+    ]
+
+    /// Whether an issue is a Dynamic Type finding on one of ``measuredDynamicTypeLabels``. In
+    /// build 44209365138 the iPad runner's audit reported both in three audits in a row in the
+    /// night-mode Settings sheet at the largest text size, where they measure 167 and 83.5 points
+    /// high and grow at every step from the default size (docs/TESTING.md).
+    private static func isMeasuredDynamicTypeFinding(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
+        guard issue.auditType == .dynamicType, let label = issue.element?.label else { return false }
+        return measuredDynamicTypeLabels.contains(label)
     }
 
     /// Whether an issue is the open iPad finding on the lens buttons' "No RAW" caption: the audit

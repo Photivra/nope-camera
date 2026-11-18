@@ -194,6 +194,41 @@ extension NopeAppUITests {
         try auditSettingsScreens(rightToLeft, checksDynamicType: false, checksContrast: !isPad)
     }
 
+    /// The Choose Details footer and header, which the audit's Dynamic Type check is not asked
+    /// about (``NopeAppUITests/measuredDynamicTypeLabels``), and the master switch's title are
+    /// measured here instead: each is larger at every one of the nine text sizes than at the
+    /// size before, in night mode, where Settings is a sheet on iPad too.
+    @MainActor
+    func testChooseDetailsTextGrowsAtEveryTextSize() throws {
+        let categories = [
+            "L", "XL", "XXL", "XXXL", "AccessibilityM", "AccessibilityL", "AccessibilityXL", "AccessibilityXXL",
+            "AccessibilityXXXL",
+        ]
+        let labels = Self.measuredDynamicTypeLabels + ["Remove All Optional Details"]
+        var previous: [String: CGFloat] = [:]
+        for category in categories {
+            let app = launch(
+                "photosDenied",
+                extraArguments: Self.nightModeOn + ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategory" + category])
+            XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 10))
+            app.buttons["Settings"].tap()
+            XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+            open(app, row: "Choose Details")
+            XCTAssertTrue(app.navigationBars["Choose Details"].waitForExistence(timeout: 5))
+            for label in labels {
+                let text = app.staticTexts[label]
+                XCTAssertTrue(text.waitForExistence(timeout: 5), "\(label) at \(category)")
+                // The text's area: a line that wraps gets narrower and taller.
+                let area = text.frame.width * text.frame.height
+                if let before = previous[label] {
+                    XCTAssertGreaterThan(area, before, "\(label) isn't larger at \(category) than at the size before")
+                }
+                previous[label] = area
+            }
+            app.terminate()
+        }
+    }
+
     // MARK: - Pixels
 
     /// A color class of a sampled pixel.
