@@ -223,6 +223,25 @@ enum CapturePolicy {
         plan.deviceID == deviceID
     }
 
+    /// The camera to take a photo with: the attached camera, when the session runs and it is the
+    /// one the plan was made for (``camera(_:matches:)``); otherwise `nil`, and the capture fails
+    /// with `CaptureError.notRunning`. The one check before every capture in
+    /// `SystemCaptureHardware` (a photo, a bracket and the comparison shot), made on the session
+    /// queue; kept here so it is tested without camera hardware.
+    ///
+    /// - Parameters:
+    ///   - attached: The session's camera now, or `nil` when none is attached.
+    ///   - id: The camera's `uniqueID`.
+    ///   - isRunning: Whether the capture session is running.
+    ///   - plan: The photo's plan.
+    /// - Returns: The camera, or `nil` when no photo may be taken with it.
+    static func cameraToCapture<Camera>(
+        _ attached: Camera?, id: (Camera) -> String, isRunning: Bool, plan: PhotoSettingsPlan
+    ) -> Camera? {
+        guard isRunning, let attached, camera(id(attached), matches: plan) else { return nil }
+        return attached
+    }
+
     /// The format of the file a plan produces: DNG for RAW, otherwise the processed format.
     ///
     /// - Parameter plan: The photo plan.

@@ -34,6 +34,15 @@ extension CameraModel {
         shutterUsesFlash ? light.flashModeForCapture : .off
     }
 
+    /// Whether holding the shutter takes a burst (docs/design/BURST.md, 3.1): in Burst mode
+    /// with the astro helper off, while no interval series runs. An interface reports the
+    /// shutter's phases (``DriveIntent/shutter(_:)``) only while this is `true`, and sends
+    /// ``CameraIntent/capture`` otherwise. While a series runs the shutter stops it, in every
+    /// drive mode.
+    public var isBurstShutter: Bool {
+        drive.mode == .burst && !astro.isOn && manual.intervalProgress == nil
+    }
+
     /// The burst speeds offered on the selected lens: Fast, and Slow unless Fast measured under
     /// ``DriveModel/slowBurstMinimumFastRate`` on it in this session.
     public var burstSpeeds: [BurstSpeed] {
@@ -142,8 +151,14 @@ extension CameraModel {
             hardwarePressClosedViewer = phase == .pressed
             return
         }
-        guard drive.mode == .burst, !(isOnScreen && astro.isOn) else {
-            if !isOnScreen, phase == .released { await pressShutter() }
+        // Outside a held burst, a hardware button acts when it comes up, as a tap on the
+        // on-screen shutter does. That includes a running interval series or astro run in Burst
+        // mode, which the press stops and takes no burst. The on-screen shutter reports no phases
+        // then (``isBurstShutter``), but a press it reported just before the series began must
+        // still stop it when it comes up.
+        guard isBurstShutter else {
+            let stopsASeries = manual.intervalProgress != nil || astro.isRunning
+            if !isOnScreen || stopsASeries, phase == .released { await pressShutter() }
             return
         }
         guard phase != .pressed else {
@@ -209,10 +224,13 @@ extension CameraModel {
         let speed: BurstSpeed = start == .counted ? .fast : burstSpeed
         let lensID = selectedLensID
         drive.prepareBurst(start: start)
-        await takeFrames(
+        let began = await takeFrames(
             limit: frames, tracker: drive, stopsOnLowBattery: false, endAtLimit: end,
             minimumInterval: speed.minimumFrameInterval)
-        if speed == .fast, let lensID, let rate = drive.lastBurst?.rate {
+        // A press that could not begin a burst (the camera restarting after a lens change, a
+        // photo still saving) leaves the previous burst in `lastBurst`; its rate belongs to the
+        // lens that burst ran on, not to the one selected now.
+        if began, speed == .fast, let lensID, let rate = drive.lastBurst?.rate {
             drive.recordFastRate(rate, on: lensID)
         }
     }
@@ -235,16 +253,19 @@ extension CameraModel {
     ///   - minimumInterval: The least time between the starts of two frames (a Slow burst), or
     ///     `nil` to take each as soon as the camera is ready. The run waits with the drive's
     ///     sleep and checks again whether to stop after the wait.
+    /// - Returns: Whether the run began: `false` when no photo could be taken, the camera has no
+    ///   lens or there is no save pipeline, and the tracker was not told of a run.
     ///
     /// Side effects: may show the add-only Photos prompt; adds each photo to Photos.
+    @discardableResult
     func takeFrames(
         limit: Int, tracker: any FrameRunTracking, stopsOnLowBattery: Bool, endAtLimit: BurstEnd = .limitReached,
         pausesWithCamera: Bool = false, minimumInterval: Duration? = nil
-    ) async {
-        guard canCapture || (pausesWithCamera && seriesShouldPause), let lens = selectedLens else { return }
+    ) async -> Bool {
+        guard canCapture || (pausesWithCamera && seriesShouldPause), let lens = selectedLens else { return false }
         guard let saver else {
             captureStatus = .failed(.savingUnavailable)
-            return
+            return false
         }
         let settings = saveSettings
         var plan = saver.plan(for: settings.metadata)
@@ -252,6 +273,7 @@ extension CameraModel {
         let request = CaptureRequest(lens: lens, metadata: plan)
         let bytesPerPhoto = PhotoSizeEstimate.bytes(for: lens, settings: settings)
         tracker.beginRun()
+        lastPressPhotos = []
         captureStatus = .capturing
         var saved: [SavedPhoto] = []
         var failure: CaptureError?
@@ -324,6 +346,7 @@ extension CameraModel {
         }
         deviceStatus.refresh()
         finishRun(saved: saved, end: end, failure: failure, tracker: tracker)
+        return true
     }
 
     /// Waits until a time on the model's clock, with the drive's sleep: before the next frame of

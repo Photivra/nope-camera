@@ -253,8 +253,21 @@ extension NopeAppUITests {
     /// item.
     private static var homeIndicatorHeight: CGFloat { 20 }
 
+    /// The window's bottom trailing corner, where iPadOS draws the window's resize handle: a
+    /// gray arc of the system's, outside the app's views, so night mode's red can't reach it
+    /// (seen in the night mode screenshot on the iPad Simulator, iOS 27.2).
+    /// `persistentSystemOverlays(.hidden)` hides it only after a delay. Empty on iPhone.
+    @MainActor
+    func windowCorner(_ app: XCUIApplication) -> CGRect {
+        guard isPad else { return .null }
+        let window = app.windows.firstMatch.frame
+        let side: CGFloat = 40
+        return CGRect(x: window.maxX - side, y: window.maxY - side, width: side, height: side)
+    }
+
     /// Counts sampled screen pixels outside a frame (and below the status bar) that aren't
-    /// black or red: any white, green or blue light. Samples every fourth point.
+    /// black or red: any white, green or blue light. Samples every fourth point. On iPad the
+    /// system's window corner control is left out too (``windowCorner(_:)``; docs/TESTING.md).
     @MainActor
     func nonRedPixels(_ app: XCUIApplication, outside excluded: CGRect) -> Int {
         // Anti-aliased edges and the system's glass highlights mix in a little green and blue;
@@ -263,10 +276,11 @@ extension NopeAppUITests {
     }
 
     /// Counts sampled screen pixels outside several frames (and below the status bar) that
-    /// aren't black or red, as the one-frame `nonRedPixels(_:outside:)` does.
+    /// aren't black or red, as the one-frame `nonRedPixels(_:outside:)` does, and, on iPad,
+    /// outside the system's window corner control (``windowCorner(_:)``).
     @MainActor
     func nonRedPixels(_ app: XCUIApplication, outsideAll excluded: [CGRect]) -> Int {
-        countPixels(app, outside: excluded) { red, green, blue in max(green, blue) > max(24, red / 4) }
+        countPixels(app, outside: excluded + [windowCorner(app)]) { red, green, blue in max(green, blue) > max(24, red / 4) }
     }
 
     /// At the largest text size the camera scrolls, and the viewfinder, drawn behind the

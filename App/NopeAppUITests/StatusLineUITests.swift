@@ -450,12 +450,8 @@ extension NopeAppUITests {
         guard !isPad else { throw XCTSkip("An iPad window rotates for real; the column layout covers it.") }
         let app = launch("noRAW", extraArguments: Self.fastShutterPill)
         XCTAssertTrue(waitForStatusValue(formatStatus(app), Self.processedValue))
-        XCUIDevice.shared.orientation = .landscapeLeft
-        Thread.sleep(forTimeInterval: 1.5)
+        try turnSideways(app)
         defer { XCUIDevice.shared.orientation = .portrait }
-        if app.staticTexts["Auto"].exists {
-            throw XCTSkip("The device didn't report the turn to the app.")
-        }
         let picture = app.otherElements["Viewfinder"].frame
         for element in [formatStatus(app), app.buttons["Fast Shutter"]] {
             XCTAssertTrue(element.exists)

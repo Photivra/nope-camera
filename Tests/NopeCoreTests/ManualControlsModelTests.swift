@@ -394,9 +394,12 @@ struct ManualControlsModelTests {
         await model.send(.capture)
         #expect(await backend.captureCount == 1)
         await send(model, .setBracket(BracketSettings(frameCount: 3, step: 1)))
-        // No reading yet: nothing to start from, so a single photo.
+        // No reading yet, and none arrives while the shutter waits: nothing is taken, and the
+        // bracket never becomes a single photo (owner decision, second review of 1.0.0).
         await model.send(.capture)
-        #expect(await backend.captureCount == 2)
+        #expect(model.captureStatus == .failed(.bracketNotReady))
+        #expect(await backend.captureCount == 1)
+        #expect(await backend.brackets.isEmpty)
         await deliver(Fixtures.reading, to: model, from: backend)
         await model.send(.capture)
         let frames = try #require(await backend.brackets.first)
@@ -427,7 +430,8 @@ struct ManualControlsModelTests {
         await deliver(Fixtures.reading, to: model, from: backend)
         await model.send(.capture)
         #expect(await backend.brackets.isEmpty)
-        #expect(await backend.captureCount == 1)
+        #expect(await backend.captureCount == 0, "a bracket never becomes a single photo")
+        #expect(model.captureStatus == .failed(.bracketNotReady))
     }
 
     @Test func aFailedBracketIsReported() async {
@@ -460,7 +464,7 @@ struct ManualControlsModelTests {
         #expect(model.captureStatus == .failed(.saveFailed))
     }
 
-    @Test func aBackendWithoutBracketsTakesASinglePhoto() async {
+    @Test func aBackendWithoutBracketsTakesNothing() async {
         let backend = ScriptedBackend(capabilities: DeviceCapabilities(lenses: [Fixtures.wide]))
         let model = CameraModel(backend: backend, saver: CameraModelTests.saver())
         await model.send(.start)
@@ -469,11 +473,8 @@ struct ManualControlsModelTests {
         await model.send(.manual(.setValue(.shutter, 0.01)))
         await model.send(.manual(.setBracket(BracketSettings(frameCount: 3, step: 1))))
         await model.send(.capture)
-        #expect(await backend.captureRequests.count == 1)
-        guard case .saved = model.captureStatus else {
-            Issue.record("expected one saved photo")
-            return
-        }
+        #expect(await backend.captureRequests.isEmpty, "a bracket never becomes a single photo")
+        #expect(model.captureStatus == .failed(.bracketNotReady))
     }
 
     // MARK: - Interval shooting

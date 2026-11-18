@@ -322,6 +322,32 @@ struct LightModelTests {
         #expect(model.light.flashMode == .auto)
     }
 
+    @Test func noPhotoFiresTheFlashWhileABracketIsOn() async {
+        let lens = Lens(
+            id: "wide", kind: .wide, bayerRAWFormat: "bgg4", isoRange: 50...6400, exposureDurationRange: 0.0001...1,
+            maxBracketedPhotoCount: 3, flashModes: [.on, .off, .auto])
+        let backend = ScriptedLightBackend(capabilities: DeviceCapabilities(lenses: [lens]))
+        let model = CameraModel(backend: backend, sleep: { _ in })
+        await model.send(.start)
+        await model.send(.light(.setFlashMode(.on)))
+        await model.manual.record(ManualFixtures.reading)
+        // A backend that can't take a bracket takes nothing instead of one photo with the flash.
+        await model.capture(onceBracket: .standard)
+        #expect(model.captureStatus == .failed(.bracketNotReady))
+        #expect(await backend.captureRequests.isEmpty)
+        // An interval series takes single photos with a bracket on, still without the flash
+        // that is hidden then (issue #92).
+        await model.send(.manual(.setBracket(.standard)))
+        #expect(model.manual.bracket == .standard)
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 1, count: 1))))
+        await model.send(.manual(.startInterval))
+        await waitUntil { model.manual.intervalProgress == nil }
+        #expect(await backend.captureRequests.map(\.flashMode) == [.off])
+        await model.send(.manual(.setBracket(nil)))
+        await model.send(.capture)
+        #expect(await backend.captureRequests.last?.flashMode == .on)
+    }
+
     @Test func choosingAFlashTurnsTheTorchOff() async {
         let (model, _) = await Self.running()
         await model.send(.light(.setTorch(true)))

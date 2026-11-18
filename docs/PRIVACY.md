@@ -95,7 +95,8 @@ for any user-facing claim comes from
   the active app, so the app switcher's snapshot shows no photo, and it closes when the app goes
   to the background. It writes nothing to disk and logs nothing.
   The Lock Screen camera (the capture extension) makes no previews, so its viewer shows each
-  photo's thumbnail with "Preview Not Kept". Tapping the thumbnail opens the viewer; the viewer's
+  photo's thumbnail with "No Preview" and says that it doesn't make previews on the Lock Screen.
+  Tapping the thumbnail opens the viewer; the viewer's
   Open in Photos opens the Photos app with its `photos-redirect://` URL, only when the person
   taps (not in the Lock Screen camera); it reads nothing from Photos and makes no network
   request.

@@ -268,6 +268,53 @@ struct BurstTests {
         #expect(await backend.captureRequests.count == 3)
     }
 
+    @Test(arguments: [true, false])
+    func theShutterStopsAnIntervalSeriesInBurstMode(onScreen: Bool) async {
+        let backend = ScriptedManualBackend(lenses: [ManualFixtures.wide])
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in try await Task.sleep(for: .seconds(60)) })
+        await model.send(.start)
+        await model.send(.drive(.setMode(.burst)))
+        #expect(model.isBurstShutter)
+        // A series started by Siri or Shortcuts leaves the drive mode at Burst.
+        await model.send(.manual(.setInterval(IntervalSettings(interval: 60, count: 3))))
+        await model.send(.manual(.startInterval))
+        await waitUntil { model.manual.intervalProgress?.taken == 1 }
+        #expect(!model.isBurstShutter, "the on-screen shutter sends Capture while a series runs")
+        let phase: (ShutterPhase) -> CameraIntent = onScreen ? { .drive(.shutter($0)) } : { .drive(.hardwareButton($0)) }
+        await model.send(phase(.pressed))
+        #expect(model.manual.intervalProgress != nil, "the press stops the series when it comes up")
+        await model.send(phase(.released))
+        #expect(model.manual.intervalProgress == nil)
+        #expect(model.drive.lastBurst == nil, "no burst was taken")
+        #expect(await backend.captureCount == 1)
+        #expect(model.isBurstShutter)
+    }
+
+    @Test func aHardwareButtonStartsAndStopsAnAstroRunInBurstMode() async {
+        let backend = HookedManualBackend(ScriptedManualBackend(lenses: [AstroTests.wide]))
+        let model = CameraModel(
+            backend: backend, saver: CameraModelTests.saver(), sleep: { _ in }, deviceStatusReader: FakeStatusReader(bytes: nil))
+        await model.send(.start)
+        await model.send(.astro(.setOn(true)))
+        await model.send(.drive(.setMode(.burst)))
+        await model.send(.astro(.setFrameCount(10)))
+        #expect(!model.isBurstShutter)
+        await backend.setOnCapture { count in
+            guard count == 3 else { return }
+            await model.send(.drive(.hardwareButton(.pressed)))
+            await model.send(.drive(.hardwareButton(.released)))
+        }
+        await model.send(.drive(.hardwareButton(.pressed)))
+        #expect(await backend.requests.isEmpty, "a hardware button acts when it comes up, as a tap does")
+        await model.send(.drive(.hardwareButton(.released)))
+        for _ in 0..<500 where model.astro.lastRun == nil {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(model.astro.lastRun == BurstResult(end: .stopped, saved: 3))
+        #expect(model.drive.lastBurst == nil, "no burst was taken")
+    }
+
     // MARK: - Start Burst
 
     @Test(arguments: [
@@ -457,6 +504,28 @@ struct BurstTests {
             if count == 4 { await model.send(.drive(.stopBurst)) }
         }
         await model.send(.drive(.startBurst))
+        #expect(model.burstSpeeds == [.fast, .slow])
+    }
+
+    @Test func aRefusedPressRecordsNoRateOnTheLensSelectedNow() async {
+        let clock = ManualClock()
+        let hooked = HookedBackend(ScriptedBackend(capabilities: CameraModelTests.twoLenses))
+        let model = await makeModel(backend: hooked, clock: clock)
+        await hooked.setOnCapture { [model] count in
+            clock.advance(by: .milliseconds(500))
+            if count == 4 { await model.send(.drive(.stopBurst)) }
+        }
+        // Two a second on the wide lens: Slow is not offered there.
+        await model.send(.drive(.startBurst))
+        #expect(model.drive.lastBurst?.rate == 2)
+        #expect(model.drive.measuredFastRates == ["wide": 2])
+        await model.send(.selectLens("tele"))
+        #expect(model.burstSpeeds == [.fast, .slow])
+        // A press that can't begin a burst, such as while a photo is still saving.
+        model.captureStatus = .saving
+        await model.send(.drive(.shutter(.pressed)))
+        await model.send(.drive(.shutter(.released)))
+        #expect(model.drive.measuredFastRates == ["wide": 2], "the old burst's rate isn't recorded for this lens")
         #expect(model.burstSpeeds == [.fast, .slow])
     }
 

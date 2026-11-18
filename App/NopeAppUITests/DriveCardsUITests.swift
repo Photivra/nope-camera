@@ -254,11 +254,10 @@ extension NopeAppUITests {
         let app = launch("noRAW")
         driveCardsWord(app, "Interval").tap()
         XCTAssertTrue(app.buttons["Interval Settings"].waitForExistence(timeout: 5))
-        XCUIDevice.shared.orientation = .landscapeLeft
-        Thread.sleep(forTimeInterval: 1.5)
+        try turnSideways(app, mode: "Interval")
         defer { XCUIDevice.shared.orientation = .portrait }
         let window = app.windows.firstMatch.frame
-        guard window.height > window.width else { throw XCTSkip("The device didn't report the turn to the app.") }
+        XCTAssertGreaterThan(window.height, window.width, "the iPhone camera layout turned")
         let card = app.buttons["Interval Settings"]
         XCTAssertTrue(card.exists)
         XCTAssertTrue(card.isHittable)

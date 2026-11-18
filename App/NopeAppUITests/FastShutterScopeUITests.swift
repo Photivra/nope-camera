@@ -34,17 +34,6 @@ extension NopeAppUITests {
         XCTAssertTrue(app.navigationBars["Fast Shutter"].waitForExistence(timeout: 5), file: file, line: line)
     }
 
-    /// The window's bottom trailing corner, where iPadOS draws the window's resize handle: a
-    /// gray arc of the system's, outside the app's views, so night mode's red can't reach it
-    /// (seen in the night mode screenshot on the iPad Simulator, iOS 27.2). Empty on iPhone.
-    @MainActor
-    func windowCorner(_ app: XCUIApplication) -> CGRect {
-        guard isPad else { return .null }
-        let window = app.windows.firstMatch.frame
-        let side: CGFloat = 40
-        return CGRect(x: window.maxX - side, y: window.maxY - side, width: side, height: side)
-    }
-
     /// The identifiers of the Settings list's rows, read while scrolling it from the top to the
     /// end, so rows the list hasn't drawn yet are counted too.
     @MainActor
@@ -176,7 +165,7 @@ extension NopeAppUITests {
         let row = settingsElement(app, "settings.fastShutter")
         XCTAssertTrue(row.label.hasSuffix(Self.fastShutterNote), row.label)
         settle()
-        let groupPixels = nonRedPixels(app, outsideAll: [windowCorner(app)])
+        let groupPixels = nonRedPixels(app, outside: .zero)
         if groupPixels != 0 {
             let shot = XCTAttachment(screenshot: app.screenshot())
             shot.name = "Camera group, night mode"
@@ -194,7 +183,7 @@ extension NopeAppUITests {
         // gray rim was the only light that wasn't red on this page (90 samples, all inside it).
         // It is on every page pushed in Settings and isn't part of this change.
         let back = app.navigationBars.buttons.element(boundBy: 0).frame.insetBy(dx: -6, dy: -6)
-        let pagePixels = nonRedPixels(app, outsideAll: [back, windowCorner(app)])
+        let pagePixels = nonRedPixels(app, outside: back)
         if pagePixels != 0 {
             let shot = XCTAttachment(screenshot: app.screenshot())
             shot.name = "Fast Shutter page, night mode"

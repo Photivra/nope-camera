@@ -24,6 +24,8 @@ enum CaptureMessages {
             String(localized: "Not saved: nope. isn't allowed to add photos. You can allow it in the Settings app.", bundle: .module, comment: "Shown when the person hasn't allowed the app to add photos to their photo library. Keep the name nope. unchanged, lowercase with its period.")
         case .saveFailed:
             String(localized: "Not saved: the photo library couldn't add the photo. Try again.", bundle: .module, comment: "Shown when the system photo library reported an error while adding the photo.")
+        case .bracketNotReady:
+            String(localized: "No photos were taken: the camera wasn't ready for the bracket. Try again.", bundle: .module, comment: "Shown when the shutter was pressed with an exposure bracket on, but the camera had not yet measured the exposure the bracket's photos are planned around (for example just after switching lenses), so nothing was taken.")
         case .savingUnavailable:
             String(localized: "Not saved: this version of the app can't save photos.", bundle: .module, comment: "Shown when this build of the app has no way to save photos, for example in a preview.")
         }
@@ -99,7 +101,8 @@ enum FailureAction: Equatable {
     init?(for error: CaptureError) {
         switch error {
         case .photosAccessDenied: self = .openSettings
-        case .configurationFailed, .captureFailed, .developmentFailed, .metadataNotAllowed, .saveFailed: self = .tryAgain
+        case .configurationFailed, .captureFailed, .bracketNotReady, .developmentFailed, .metadataNotAllowed, .saveFailed:
+            self = .tryAgain
         case .notRunning, .blankPicture, .savingUnavailable: return nil
         }
     }

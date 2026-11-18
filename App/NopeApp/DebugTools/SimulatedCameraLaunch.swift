@@ -83,6 +83,9 @@ enum SimulatedCameraLaunch {
         /// Access already allowed; the first photo is saved and every later save fails, for a
         /// failure while the Last Photo viewer is open.
         case firstSaveOnly
+        /// As `manual`, and the first photo is saved and every later save fails, for a bracket
+        /// that stops part-way as the first capture.
+        case manualFirstSaveOnly
         /// Access already allowed; signing fails, so photos are saved unsigned and the status
         /// says so.
         case signingFails
@@ -231,8 +234,10 @@ enum SimulatedCameraLaunch {
                 fullTags: SimulatedFileTags.fromLaunchArguments(appVersion: appVersion)),
             library: SimulatedPhotoLibrary(
                 allowsAdding: scenario != .photosDenied, addSeconds: [.slowSaving, .astro, .burst].contains(scenario) ? 0.5 : 0,
-                successfulAdds: scenario == .firstSaveOnly ? 1 : nil),
-            appVersion: appVersion, thumbnailer: SimulatedThumbnailer(), previewer: SimulatedPreviewer())
+                successfulAdds: [.firstSaveOnly, .manualFirstSaveOnly].contains(scenario) ? 1 : nil),
+            appVersion: appVersion, thumbnailer: SimulatedThumbnailer(),
+            // The Lock Screen camera's pipeline makes no previews (`NopeCaptureExtension`).
+            previewer: ProcessInfo.processInfo.arguments.contains("-NopeSimulatedLockScreenCamera") ? nil : SimulatedPreviewer())
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
     static let fullManual = ManualCapabilities(
@@ -345,7 +350,7 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .burst:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, captureSeconds: 0.4)
-        case .manual, .astro:
+        case .manual, .astro, .manualFirstSaveOnly:
             return SimulatedCaptureBackend(
                 permission: .authorized, capabilities: DeviceCapabilities(lenses: manualLenses))
         case .dimManual:

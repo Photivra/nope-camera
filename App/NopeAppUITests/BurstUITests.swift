@@ -249,11 +249,10 @@ extension NopeAppUITests {
         guard !isPad else { throw XCTSkip("An iPad window rotates for real; testBurstOnIPad covers it.") }
         let app = launchBurst()
         XCTAssertTrue(app.buttons["Start Burst"].waitForExistence(timeout: 5))
-        XCUIDevice.shared.orientation = .landscapeLeft
-        Thread.sleep(forTimeInterval: 1.5)
+        try turnSideways(app, mode: "Burst")
         defer { XCUIDevice.shared.orientation = .portrait }
         let window = app.windows.firstMatch.frame
-        guard window.height > window.width else { throw XCTSkip("The device didn't report the turn to the app.") }
+        XCTAssertGreaterThan(window.height, window.width, "the iPhone camera layout turned")
         let start = app.buttons["Start Burst"]
         XCTAssertTrue(start.isHittable)
         // Text drawn a quarter turn is measured unturned by the audit; those findings are

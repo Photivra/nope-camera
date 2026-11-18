@@ -170,18 +170,7 @@ public final class ShortcutInbox {
     ///   - condition: What to wait for.
     /// - Returns: Whether the condition holds at the end.
     func wait(timeoutSeconds: Double? = nil, until condition: @escaping @MainActor () -> Bool) async -> Bool {
-        let waiter = ChangeWaiter()
-        let timeout = timeoutSeconds.map { seconds in
-            Task { [sleep] in
-                try? await sleep(seconds)
-                waiter.expire()
-            }
-        }
-        defer { timeout?.cancel() }
-        while !condition() && !waiter.isExpired {
-            await waiter.waitForChange(of: condition)
-        }
-        return condition()
+        await ChangeWaiter.wait(timeoutSeconds: timeoutSeconds, sleep: sleep, until: condition)
     }
 }
 
@@ -243,6 +232,34 @@ final class ChangeWaiter {
 
     /// Creates a waiter that isn't waiting.
     init() {}
+
+    /// Waits, without polling, until the condition holds, or until the timeout passes.
+    ///
+    /// The condition is checked again each time a value it read changes (Observation,
+    /// `withObservationTracking`), so it must read only observable state.
+    ///
+    /// - Parameters:
+    ///   - timeoutSeconds: The longest wait in seconds, or `nil` to wait until it holds.
+    ///   - sleep: Waits a number of seconds, for the timeout.
+    ///   - condition: What to wait for.
+    /// - Returns: Whether the condition holds at the end.
+    static func wait(
+        timeoutSeconds: Double?, sleep: @escaping @Sendable (Double) async throws -> Void,
+        until condition: @escaping @MainActor () -> Bool
+    ) async -> Bool {
+        let waiter = ChangeWaiter()
+        let timeout = timeoutSeconds.map { seconds in
+            Task {
+                try? await sleep(seconds)
+                waiter.expire()
+            }
+        }
+        defer { timeout?.cancel() }
+        while !condition() && !waiter.isExpired {
+            await waiter.waitForChange(of: condition)
+        }
+        return condition()
+    }
 
     /// Waits until a value the condition reads changes, or ``expire()``.
     ///

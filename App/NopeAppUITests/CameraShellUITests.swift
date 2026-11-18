@@ -393,16 +393,9 @@ extension NopeAppUITests {
         let app = launch("manual")
         XCTAssertTrue(app.buttons["ManualControlsButton"].waitForExistence(timeout: 20))
         for orientation in [UIDeviceOrientation.landscapeLeft, .landscapeRight] {
-            XCUIDevice.shared.orientation = orientation
-            Thread.sleep(forTimeInterval: 1.5)
+            try turnSideways(app, to: orientation)
             let window = app.windows.firstMatch.frame
             XCTAssertGreaterThan(window.height, window.width, "the iPhone camera layout turned")
-            // The iPhone Duo Simulator's outer display doesn't pass the turn to the app; its
-            // turned layout is checked on a device (docs/TESTING.md, iPhone Duo).
-            if app.staticTexts["Auto"].exists {
-                XCUIDevice.shared.orientation = .portrait
-                throw XCTSkip("The device didn't report the turn to the app.")
-            }
             XCTAssertTrue(app.buttons["Single"].exists)
             XCTAssertTrue(app.staticTexts["Single"].exists, "the mode isn't named on the picture")
             app.buttons["Timer"].tap()

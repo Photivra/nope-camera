@@ -83,6 +83,11 @@ The values are kept for the session, as today, and a preset stores them. Nothing
 | Saving | "Saving: 2 of 3 photos saved" | A progress bar | None | Dimmed |
 | Saved | "3 photos saved" | The offsets | None; stays until the next action, then the idle card returns | Plain |
 | A frame not saved | The banner "Bracket stopped: 2 of 3 photos saved." and the reason | | Dismiss | Plain |
+| No exposure yet | The banner "No photos were taken: the camera wasn't ready for the bracket. Try again." | | Try Again | Plain |
+
+The frames are planned around the camera's exposure reading. Just after a lens change, or after Manual Controls or Astro turn on or off, there is none yet: the shutter then waits up to 1 second (`CameraModel.bracketReadingWaitSeconds`, an assumption to confirm on a device) for the first reading and takes the bracket. If none arrives, it takes nothing and shows the banner above. A bracket never becomes a single photo, and with a bracket on no photo fires the flash (owner decision, 2026-11-18, after the second review of 1.0.0).
+
+After a bracket, burst or astro run that stopped part-way, Last Photo shows the newest frame saved, with its badges and the Not Signed warning, and opens the viewer on it (`CameraModel.lastPressPhotos`; owner decision, 2026-11-18).
 
 The card names the type from 1.0.0 on, so it does not change when a second type arrives. While frames are taken and saved the other drive words are dimmed and the readout row is hidden, as during any series.
 

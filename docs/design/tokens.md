@@ -117,7 +117,7 @@ Busy dimming delay, `NopeMotion.busyDimDelay`: 0.5 s. While a single photo or br
 
 ## Haptics
 
-All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level reached `.alignment` (`NopeHaptic.levelReached`, the horizon or the top-down level becoming level; [level-haptic.md](level-haptic.md)); All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes; `burstFrame` `.impact(weight: .light, intensity: 0.6)` for each photo of a burst after the first.
+All through `sensoryFeedback`. Existing: shutter `.impact`; saved `.impact(weight: .light)`; not saved `.error`; lens change `.selection`; countdown second `.impact(weight: .light)`; level reached `.alignment` (`NopeHaptic.levelReached`, the horizon or the top-down level becoming level; [level-haptic.md](level-haptic.md); the fallback `.impact(flexibility: .rigid, intensity: 0.6)` is built behind `NopeHaptic.levelTap`, one line to switch after the device check); All Auto `.success`. Added: `.selection` when the drive mode or Manual Controls changes; `burstFrame` `.impact(weight: .light, intensity: 0.6)` for each photo of a burst after the first.
 
 ## Button types
 

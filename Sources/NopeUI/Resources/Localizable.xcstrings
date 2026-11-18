@@ -185,6 +185,10 @@
       "comment" : "Button in the Last Photo viewer that goes to a photo taken while the viewer was open, for example from Apple Watch or Siri.",
       "extractionState" : "manual"
     },
+    "No photos were taken: the camera wasn't ready for the bracket. Try again." : {
+      "comment" : "Shown when the shutter was pressed with an exposure bracket on, but the camera had not yet measured the exposure the bracket's photos are planned around (for example just after switching lenses), so nothing was taken.",
+      "extractionState" : "manual"
+    },
     "Opens Bracket Settings." : {
       "comment" : "VoiceOver hint on the selected Bracket word of the drive strip above the shutter: activating it again opens Bracket Settings.",
       "extractionState" : "manual"

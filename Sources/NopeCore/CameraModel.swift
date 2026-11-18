@@ -117,6 +117,15 @@ public final class CameraModel {
     /// photo and its details").
     public let sessionPhotos: SessionPhotos
 
+    /// The photos the latest press of the shutter saved, in the order saved: one photo, or a
+    /// bracket's, burst's or astro run's frames. It also holds the frames saved before a
+    /// bracket, burst or run stopped on an error, which ``captureStatus`` then reports only as
+    /// ``CaptureStatus/failed(_:)``. Empty from the start of each press until its first save.
+    ///
+    /// An interface shows Last Photo, its badges and a Not Signed warning from these after a
+    /// press ends, so they show the newest saved photo also after a part-way failure.
+    public internal(set) var lastPressPhotos: [SavedPhoto] = []
+
     /// Whether the Last Photo viewer is open, as the interface last said with
     /// ``CameraIntent/setViewerOpen(_:)``. While it is open, a hardware shutter press closes it
     /// and takes no photo (decision V1); the model sets it to `false` then, and when the app
@@ -489,6 +498,13 @@ public final class CameraModel {
     /// A blank photo (``CaptureError/blankPicture``) is never kept: the model restarts the
     /// camera once and takes the photo again (`recoverFromBlankPicture(_:settings:)`).
     ///
+    /// A bracket's frames are planned around the camera's exposure. When the camera has not
+    /// reported one yet (just after a lens change, or after manual controls or the astro helper
+    /// turned on or off), the shutter waits up to ``bracketReadingWaitSeconds`` for it, then
+    /// takes the bracket; if none arrives, it takes nothing and reports
+    /// ``CaptureError/bracketNotReady``. A bracket never becomes a single photo, and with a
+    /// bracket on no photo fires the flash (``shutterUsesFlash``).
+    ///
     /// - Parameter onceBracket: A bracket to take this time only, through the same bracket path
     ///   as the shutter's, without changing ``ManualControlsModel/bracket`` (a Siri or
     ///   Shortcuts request, issue #62); `nil` for the shutter's usual photo. The caller checks
@@ -496,16 +512,22 @@ public final class CameraModel {
     func capture(onceBracket: BracketSettings? = nil) async {
         guard canCapture, let lens = selectedLens else { return }
         deviceStatus.refresh()
+        lastPressPhotos = []
         captureStatus = .capturing
         let settings = saveSettings
         var plan = saver?.plan(for: settings.metadata) ?? MetadataPlan(settings: settings.metadata)
         plan.location = location?.location(isOn: settings.metadata.isOn(.location))
         plan.mirrorsHorizontally = lens.kind == .front && settings.mirrorsFrontCamera
-        let request = CaptureRequest(lens: lens, metadata: plan, flashMode: light.flashModeForCapture)
         let bracket = onceBracket ?? (manual.intervalProgress == nil ? manual.bracket : nil)
-        if let bracket, let frames = manual.bracketPlan(once: bracket),
-            let bracketBackend = backend as? any ManualCaptureBackend
-        {
+        // The flash is hidden while a bracket is on (issue #92), so no photo fires it then.
+        let usesFlash = bracket == nil && manual.bracket == nil
+        let request = CaptureRequest(lens: lens, metadata: plan, flashMode: usesFlash ? light.flashModeForCapture : .off)
+        if let bracket {
+            guard let bracketBackend = backend as? any ManualCaptureBackend, let frames = await bracketPlanWhenReady(bracket)
+            else {
+                captureStatus = .failed(.bracketNotReady)
+                return
+            }
             await captureBracket(request, bracket: bracket, frames: frames, backend: bracketBackend, settings: settings)
             return
         }
@@ -526,6 +548,26 @@ public final class CameraModel {
         } catch {
             captureStatus = .failed(error)
         }
+    }
+
+    /// How long the shutter waits for the camera's first exposure reading before a bracket, in
+    /// seconds (docs/design/BRACKETING.md, section 4). An assumption, to be confirmed on a
+    /// device: the camera reports readings several times a second once it runs, so a reading
+    /// normally arrives well within it.
+    public static let bracketReadingWaitSeconds: Double = 1
+
+    /// The bracket's frames, planned around the camera's exposure, waiting up to
+    /// ``bracketReadingWaitSeconds`` for the first reading when there is none yet.
+    ///
+    /// - Parameter bracket: The bracket.
+    /// - Returns: The frames, or `nil` when the lens can't take the bracket or no reading
+    ///   arrived in time.
+    private func bracketPlanWhenReady(_ bracket: BracketSettings) async -> [BracketFramePlan]? {
+        guard manual.canBracket(bracket) else { return nil }
+        _ = await ChangeWaiter.wait(timeoutSeconds: Self.bracketReadingWaitSeconds, sleep: drive.sleep) { [manual] in
+            manual.bracketPlan(once: bracket) != nil
+        }
+        return manual.bracketPlan(once: bracket)
     }
 
     /// Saves a captured photo through the ``PhotoSaver``, and records the result.
@@ -647,14 +689,16 @@ public final class CameraModel {
         captureStatus = .savedBracket(saved)
     }
 
-    /// Adds a saved photo and its preview to ``sessionPhotos``. A preview made after the app
-    /// left the foreground is released at once, so none outlasts the visit.
+    /// Adds a saved photo and its preview to ``sessionPhotos``, and the photo to
+    /// ``lastPressPhotos``. A preview made after the app left the foreground is released at
+    /// once, so none outlasts the visit.
     ///
     /// - Parameters:
     ///   - result: The saved photo and its preview.
     ///   - lens: The lens it was taken with.
     ///   - takenAt: When the shutter took it.
     func keepInSession(_ result: (saved: SavedPhoto, preview: PhotoPreview?), lens: Lens, takenAt: Date) {
+        lastPressPhotos.append(result.saved)
         sessionPhotos.add(result.saved, lens: lens, takenAt: takenAt, preview: isInForeground ? result.preview : nil)
     }
 }

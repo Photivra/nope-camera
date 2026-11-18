@@ -242,6 +242,24 @@ extension NopeAppUITests {
         try audit(app, checksDynamicType: false, checksContrast: !isPad)
     }
 
+    /// A bracket that stops part-way as the first capture (`manualFirstSaveOnly`: the first save
+    /// works, the rest fail): the banner says so, and Last Photo shows the frame saved and opens
+    /// the viewer on it (owner decision, 2026-11-18). Before, Last Photo stayed empty and the
+    /// viewer couldn't be opened.
+    @MainActor
+    func testBracketStoppedPartWayShowsTheSavedFrame() throws {
+        let app = launch("manualFirstSaveOnly")
+        chooseBracket(app)
+        app.buttons["Take Photo"].tap()
+        XCTAssertTrue(element(app, containing: "Bracket stopped: 1 of 3 photos saved.").waitForExistence(timeout: 15))
+        XCTAssertTrue(bracketLastPhoto(app, says: "Saved"), "Last Photo doesn't show the frame saved")
+        app.buttons["Last Photo"].tap()
+        let photo = app.descendants(matching: .any)["ViewerPhoto"]
+        XCTAssertTrue(photo.waitForExistence(timeout: 10), "the viewer didn't open")
+        XCTAssertTrue(photo.label.hasPrefix("Photo. Exposure bracket, frame 1 of 3, "), photo.label)
+        try audit(app, checksDynamicType: false, checksContrast: !isPad)
+    }
+
     /// What's in This Photo has a Bracket group for a bracket's frame, from session values.
     @MainActor
     func testBracketDetailsGroup() throws {
@@ -329,12 +347,8 @@ extension NopeAppUITests {
         guard !isPad else { throw XCTSkip("An iPad window rotates for real; testBracketOnIPad covers it.") }
         let app = launch("manual")
         chooseBracket(app)
-        XCUIDevice.shared.orientation = .landscapeLeft
-        Thread.sleep(forTimeInterval: 1.5)
-        if app.staticTexts["Auto"].exists {
-            XCUIDevice.shared.orientation = .portrait
-            throw XCTSkip("The device didn't report the turn to the app.")
-        }
+        try turnSideways(app, mode: "Bracket")
+        defer { XCUIDevice.shared.orientation = .portrait }
         XCTAssertTrue(bracketWord(app).exists)
         XCTAssertTrue(app.staticTexts["Bracket"].exists, "the mode isn't named on the picture")
         XCTAssertTrue(bracketCard(app).exists)
@@ -344,7 +358,6 @@ extension NopeAppUITests {
             guard let element = issue.element else { return issue.auditType == .textClipped || issue.auditType == .contrast }
             return issue.auditType == .contrast && element.exists && element.frame.height > element.frame.width
         }
-        XCUIDevice.shared.orientation = .portrait
     }
 
     /// On iPad the card sits on the picture's lower edge in the column layout, and Bracket

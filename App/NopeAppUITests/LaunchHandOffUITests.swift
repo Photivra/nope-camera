@@ -109,6 +109,35 @@ extension NopeAppUITests {
         try audit(rightToLeft)
     }
 
+    /// While the camera's first start is slow, the shutter and Q are there under the indicator,
+    /// whole, inside the window, drawn and usable, in the iPhone's stacked layout and the iPad's
+    /// column. On iPad the indicator's plate spanned the window and hid the shutter and the lower
+    /// half of Q (second review of 1.0.0); their frames were still right, so the lower half of
+    /// each is checked for lit pixels too (the shutter's white ring, Q's letter).
+    @MainActor
+    func testFirstStartKeepsTheControlsWhole() throws {
+        let app = launchSlowStart()
+        settle()
+        let window = app.windows.firstMatch.frame
+        let pixels = LaunchPixels.screen()
+        XCTAssertNotNil(pixels, "the screenshot couldn't be read")
+        for name in ["Take Photo", "Quick Menu"] {
+            let button = app.buttons[name]
+            XCTAssertTrue(button.waitForExistence(timeout: 5), "no \(name)")
+            let frame = button.frame
+            XCTAssertTrue(window.contains(frame), "\(name) isn't whole inside the window: \(frame) in \(window)")
+            XCTAssertGreaterThanOrEqual(frame.width, 44, name)
+            XCTAssertGreaterThanOrEqual(frame.height, 44, name)
+            XCTAssertTrue(button.isHittable, "\(name) can't be pressed")
+            let lowerHalf = CGRect(x: frame.minX, y: frame.midY, width: frame.width, height: frame.height / 2)
+            XCTAssertGreaterThan(pixels?.litCount(in: lowerHalf, outside: []) ?? 0, 0, "the lower half of \(name) isn't drawn")
+        }
+        XCTAssertTrue(startIndicator(app).exists, "the first start ended during the test")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "First start, controls"
+        add(shot)
+    }
+
     /// When the camera runs the indicator fades and the picture stays black in the light
     /// appearance; it doesn't come back after the app goes to the background and returns, or
     /// after a lens change, when the spinner is used as before.

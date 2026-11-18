@@ -352,11 +352,11 @@ Component tree, new file `Sources/NopeUI/PhotoViewer.swift`:
 | `PhotoViewerScreen` | New | Chooses the arrangement with the existing rule (`CameraLayout.arrangement`): stacked, column, or scrolling at accessibility text sizes. Holds the page shown, whether the controls are hidden, and whether a newer photo is waiting |
 | `PhotoViewerPager` | New; a paging `ScrollView` (`scrollTargetBehavior(.paging)`) | One page for each saved photo, oldest first; opens on the newest. `NopeSpace.m` between pages. Follows the layout direction |
 | `PhotoViewerPage` | New | The preview, aspect fit, with pinch, double tap and drag. Zoom from fit up to the preview's own pixels, and at least 2 × fit. Not mirrored right to left. `accessibilityIgnoresInvertColors()` |
-| `PhotoViewerFallback` | New | When the preview is released: the thumbnail no larger than `NopeSize.viewerFallback` and never above twice its pixel size, `NopeRadius.small`, the thumbnail's ring; then the title and sentence of section 4. No zoom |
+| `PhotoViewerFallback` | New | When the preview is released: the thumbnail no larger than `NopeSize.viewerFallback` and never above twice its pixel size, `NopeRadius.small`, the thumbnail's ring; then the title and sentence of section 4. The Lock Screen camera makes no previews (`SessionPhotos.makesPreviews` is false), so it says that instead: "No Preview" and "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos." (owner decision, 2026-11-18; Honesty draft). No zoom |
 | `PhotoViewerStatus` | Reuses the look of `FormatStatus` (`FormatChip.swift`) and the rules of `ThumbnailSlot.badge(for:)` | Formats from `SavedPhoto.formats`; the Processed marker from `isProcessedFallback`; Signed, Not signed (warning) or Not signed (plain) from `signature`. `NopeFont.status`; `CameraStyle.fact` and `CameraStyle.warning`, each with its symbol and words |
 | `PhotoViewerCaption` | New | Position (only with more than one photo), lens label as in `LensRow`, time taken with the system's short time style. `NopeFont.pill`, `NopeColor.labelSecondary`, monospaced digits |
 | `PhotoViewerActions` | `NopeIconButtonStyle(size: NopeSize.thumbnail)` for Close; `NopeCapsuleStyle(isCompact: true)` for the two actions | Stacked: Close leading in the shutter row's place (`NopeSpace.xl` side margin), the actions trailing; they stack when they do not fit. Column: 44 pt icon buttons with their names below (`NopeFont.tileName`), then Close, centered in the `NopeSize.column` column. Scrolling: three full-width rows. Open in Photos is left out when `openPhotosApp` is `nil` (the Lock Screen camera) |
-| Hint, New Photo, Photo Not Saved | `CameraHints` look; `NopeCapsuleStyle(isCompact: true)` on `NopeMaterial.backing`; `WarningChip` | On the photo's lower edge (hint, New Photo) and top edge (chip), only while they apply |
+| Hint, New Photo, Photo Not Saved | `CameraHints` look; `NopeCapsuleStyle(isCompact: true)` on `NopeMaterial.backing`; `WarningChip` | On the photo's lower edge (hint, New Photo) and top edge (chip), only while they apply. When more than one shows on the lower edge, they stack from the top down: a bracket frame's chip (`BracketChip`), then the zoom hint, then New Photo, nearest the edge (owner decision, 2026-11-18, as built in `PhotoViewer.swift`) |
 
 Changes to existing files:
 
@@ -387,7 +387,7 @@ AC:
 - Nothing is written to disk; the snapshot taken when the app leaves the screen shows no photo; after the app returns from the background the viewer is closed.
 - Every gesture has the other way listed in ACCESSIBILITY.md. Every target is at least 44 pt.
 - In night mode no pixel on the screen is non-red. With Reduce Motion nothing moves or scales.
-- The Lock Screen camera's viewer has no Open in Photos.
+- The Lock Screen camera's viewer has no Open in Photos, and it never says a preview was released.
 
 UI tests, in a new `PhotoViewerUITests.swift` (an extension of `NopeAppUITests`), each with `performAccessibilityAudit()` through the existing helpers:
 
@@ -601,6 +601,7 @@ Add to `Sources/NopeUI/Resources/Localizable.xcstrings` unless marked Honesty. A
 | Photo; Photo %lld of %lld | Viewer, VoiceOver label | |
 | A screen-size preview, not the full photo. | Viewer, while zoomed in (Honesty) | Draft |
 | Preview Not Kept; nope. keeps previews in memory only and has released this one. The photo is saved in Photos. | Viewer fallback (Honesty) | Draft |
+| No Preview; On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos. | Viewer fallback in the Lock Screen camera, which makes no previews (Honesty) | Draft, for the owner's review |
 | New Photo | Viewer | Button that goes to a photo taken while the viewer was open |
 | Photo Not Saved | Viewer | Warning chip; closes the viewer to show the failure |
 | Shows the photo. | Last Photo, VoiceOver hint | |
@@ -644,7 +645,7 @@ These are drafts. None ships until reviewed in every language (`AGENTS.md`, Loca
 
 - the first-run signing statement; the Sign Each Photo explanation; the three processing-note sentences; the Honesty entries Signing Is Your Choice and Lenses Without RAW;
 - from the Settings decisions of 2026-11-17: the explanations of Mirror Front Camera, Focus on Faces, Show Processed Marker, Night Mode, Red Viewfinder and Live Activity; the Standard File Tags sentence; the Night Mode entry on the Accessibility page; the Honesty entries Faces and Autofocus and Location Only If You Turn It On; the names Details in Each Photo, HEIF and JPEG Copies and Focus on Faces;
-- from the Last Photo viewer (3.14): Signed and Not signed on its status line, the preview hint, and the Preview Not Kept title and sentence. The hint must stay true for the preview size the data specification chooses, and is shown only when the preview has fewer pixels than the saved photo;
+- from the Last Photo viewer (3.14): Signed and Not signed on its status line, the preview hint, the Preview Not Kept title and sentence, and the Lock Screen camera's No Preview title and sentence. The hint must stay true for the preview size the data specification chooses, and is shown only when the preview has fewer pixels than the saved photo;
 - from What's in This Photo (3.15): every string marked Honesty in section 4 under that screen. Four need particular care. "RAW: one frame of sensor data" must not be read as "no processing"; it says only what the file is. "Not in the files" and the two footers must stay true if the capture's values stop being kept. "One photo: the RAW with its HEIF" states what the app asked Photos to do, which the device check in `docs/PRIVACY.md` confirms. The sentence about a checker reporting the file as valid and the signer as untrusted follows `docs/PRIVACY.md` (Content Credentials) and c2patool 0.28.6; it must be checked against the checker people are most likely to use before it ships, and it names no product;
 - from bracketing ([BRACKETING.md](BRACKETING.md), section 7): "A bracket never fires the flash.", the Bracket group footer and the limited-frame sentences;
 - from Fast Shutter (3.16): the note, the two paragraphs of the page, the line shown while Manual Controls are on, and the Shortcuts description. "Used only" must stay true: if Fast Shutter ever applies with Manual Controls on, these change in the same release;

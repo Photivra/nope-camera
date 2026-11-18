@@ -18,7 +18,7 @@ These are the devices that run iOS, iPadOS and watchOS 26, as Apple lists them. 
 
 Version 1.0.0 is in English only. The interface is built for translation (every string is in a String Catalog, and layouts are tested with long text and right to left), and other languages are planned for later releases.
 
-**Translators wanted.** Contributions to internationalization and translation are welcome: new languages, and native-speaker reviews of drafts (Spanish is drafted for 1.1.0). See [Translations](CONTRIBUTING.md#translations) in CONTRIBUTING.md and the [help wanted issue](https://github.com/Photivra/nope-camera/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22+translations).
+**Translators wanted.** Version 1.0.0 ships in English only; translations come in a later version. Contributions to internationalization and translation are welcome for it: new languages and native-speaker reviews. See [Translations](CONTRIBUTING.md#translations) in CONTRIBUTING.md and the [help wanted issue](https://github.com/Photivra/nope-camera/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22+translations).
 
 ## License
 

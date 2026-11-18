@@ -407,14 +407,19 @@ extension NopeAppUITests {
         try audit(app)
     }
 
-    /// The Lock Screen camera has no way to open Photos, so its viewer has no Open in Photos.
+    /// The Lock Screen camera has no way to open Photos, so its viewer has no Open in Photos. It
+    /// makes no previews, and its viewer says so rather than that a preview was released.
     @MainActor
     func testLockScreenViewerHasNoOpenInPhotos() throws {
         let app = launch("noRAW", extraArguments: Self.signingOn + Self.lockScreenCamera)
         takeViewerPhoto(app)
-        openViewer(app)
+        let photo = openViewer(app)
         XCTAssertTrue(app.buttons["Photo Details"].exists)
         XCTAssertFalse(app.buttons["Open in Photos"].exists)
+        XCTAssertTrue(
+            wait(photo, "value CONTAINS %@", "No Preview. On the Lock Screen, nope. doesn't make previews."),
+            photo.value as? String ?? "")
+        XCTAssertFalse((photo.value as? String ?? "").contains("released"))
         try audit(app)
     }
 }

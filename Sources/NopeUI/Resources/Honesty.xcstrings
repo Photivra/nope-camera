@@ -412,6 +412,10 @@
       "comment" : "Summary line in the photo details: the saved files hold none of the optional details (date, camera, lens and so on). Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
+    "No Preview" : {
+      "comment" : "Title in the Last Photo viewer of the camera opened from the Lock Screen: it makes no previews, so only the photo's small thumbnail is shown. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
     "No RAW" : {
       "comment" : "Under a lens button: this lens can't save RAW. RAW is a file format name.",
       "extractionState" : "manual"
@@ -542,6 +546,10 @@
     },
     "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so." : {
       "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."
+    },
+    "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos." : {
+      "comment" : "Sentence under No Preview in the Last Photo viewer of the camera opened from the Lock Screen, which makes no previews. Lock Screen is the system's name for it; Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
     },
     "On, but there was nothing to write" : {
       "comment" : "In the photo details, why a metadata item isn't in the files although its switch is on: the camera gave no value for it, such as no location or no lens corrections.",

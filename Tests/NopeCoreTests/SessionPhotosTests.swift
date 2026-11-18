@@ -166,6 +166,14 @@ struct SessionPhotosTests {
         #expect(list.photos.allSatisfy { $0.preview == nil })
     }
 
+    @Test func aListWithoutADecoderMakesNoPreviews() {
+        // The Lock Screen camera's pipeline has no previewer (`NopeCaptureExtension`).
+        #expect(!SessionPhotos(decoder: nil).makesPreviews)
+        #expect(SessionPhotos(decoder: RecordingPreviewer()).makesPreviews)
+        #expect(!CameraModel(backend: ScriptedBackend(capabilities: CameraModelTests.oneLens), saver: Self.saver(previewer: nil)).sessionPhotos.makesPreviews)
+        #expect(CameraModel(backend: ScriptedBackend(capabilities: CameraModelTests.oneLens), saver: Self.saver()).sessionPhotos.makesPreviews)
+    }
+
     @Test func aPictureIsDecodedOnRequestAndNotKept() async {
         let decoder = RecordingPreviewer()
         let list = Self.list(decoder: decoder)

@@ -248,12 +248,8 @@ extension NopeAppUITests {
         let app = launch("manual", extraArguments: Self.manualControlsOn)
         let iso = readout(app, "ISO")
         XCTAssertTrue(iso.waitForExistence(timeout: 20))
-        XCUIDevice.shared.orientation = .landscapeLeft
-        Thread.sleep(forTimeInterval: 1.5)
+        try turnSideways(app)
         defer { XCUIDevice.shared.orientation = .portrait }
-        if app.staticTexts["Auto"].exists {
-            throw XCTSkip("The device didn't report the turn to the app.")
-        }
         // Turned a quarter, the row runs down the screen, one readout above the next.
         let compensation = readout(app, "Exposure Compensation").frame
         XCTAssertEqual(compensation.midX, iso.frame.midX, accuracy: 2, "the row didn't turn as one block")
