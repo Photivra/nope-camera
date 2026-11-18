@@ -97,6 +97,9 @@ struct CameraReadyView: View {
     /// Whether the last photo's details are shown (issue #53).
     @State private var showsPhotoDetails = false
 
+    /// Whether VoiceOver focus is on Last Photo, to return it there when the viewer closes.
+    @AccessibilityFocusState private var isLastPhotoFocused: Bool
+
     /// Opens Photos, or `nil` when the app can't.
     @Environment(\.openPhotosApp) private var openPhotosApp
 
@@ -198,14 +201,15 @@ struct CameraReadyView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
-        // While Pro Tools covers the screen, the camera controls under it are hidden from
-        // assistive technologies, so VoiceOver reads only the form.
-        .accessibilityHidden(showsProTools)
+        // While Pro Tools or the Last Photo viewer covers the screen, the camera controls under
+        // it are hidden from assistive technologies, so VoiceOver reads only what covers them.
+        .accessibilityHidden(showsProTools || model.isViewerOpen)
         .fullScreenCover(isPresented: $showsProTools) {
             ProToolsSheet(model: model, settings: settings)
                 .nightModeStyle(isNightMode)
         }
         .comparisonCover(model, isNightMode: isNightMode)
+        .photoViewerCover(model, isNightMode: isNightMode) { isLastPhotoFocused = true }
         .adaptivePresentation(isPresented: $showsFormats, prefersSheet: isNightMode) {
             if let format = model.captureFormat {
                 FormatDetailsSheet(
@@ -272,7 +276,7 @@ struct CameraReadyView: View {
                     .presentationSizing(.page)
             }
         }
-        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented) { _, isPresenting in presentsSheet(isPresenting) }
+        .onChange(of: showsProTools || showsFormats || showsPhotoDetails || showsAstroSettings || showsIntervalSettings || showsPresets || model.comparison.isPresented || model.isViewerOpen) { _, isPresenting in presentsSheet(isPresenting) }
         .task { await recordCaptureResults() }
         .onChange(of: model.selectedLensID, initial: true) { _, id in
             openControl = nil
@@ -638,9 +642,11 @@ struct CameraReadyView: View {
                 photos: sessionPhotos,
                 image: sessionPhotos?.last?.thumbnail.flatMap(Image.photo),
                 isBusy: model.captureStatus == .capturing || model.captureStatus == .saving,
+                openViewer: { Task { await model.send(.setViewerOpen(true)) } },
                 openPhoto: openPhotosApp.map { open in { open() } },
                 showDetails: { showsPhotoDetails = true }
             )
+            .accessibilityFocused($isLastPhotoFocused)
             .uprightUnit()
             .transition(reduceMotion ? .opacity : .move(edge: .leading).combined(with: .opacity))
             .animation(reduceMotion ? nil : NopeMotion.panel, value: sessionPhotos)

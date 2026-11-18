@@ -93,8 +93,12 @@ enum NopeSize {
     /// 52 points: the Q button.
     static let quick: CGFloat = 52
 
-    /// 52 points: Last Photo.
+    /// 52 points: Last Photo, and Close in the Last Photo viewer, in its place.
     static let thumbnail: CGFloat = 52
+
+    /// 160 points: the largest side of the thumbnail in the Last Photo viewer when the preview is
+    /// released (docs/design/BUILD-SPEC.md, 3.14).
+    static let viewerFallback: CGFloat = 160
 
     /// 44 points: round symbol buttons (``NopeIconButtonStyle``).
     static let iconButton: CGFloat = 44
@@ -173,7 +177,7 @@ enum NopeSize {
     static var all: [(name: String, value: CGFloat)] {
         [
             ("minTarget", minTarget), ("targetGap", targetGap), ("shutter", shutter), ("quick", quick),
-            ("thumbnail", thumbnail), ("iconButton", iconButton), ("capsule", capsule), ("lensItem", lensItem),
+            ("thumbnail", thumbnail), ("viewerFallback", viewerFallback), ("iconButton", iconButton), ("capsule", capsule), ("lensItem", lensItem),
             ("driveWord", driveWord), ("pill", pill), ("tileMin", tileMin), ("readout", readout),
             ("statusRow", statusRow), ("lensRow", lensRow), ("driveRow", driveRow),
             ("shutterRowMin", shutterRowMin), ("column", column), ("scrollingPicture", scrollingPicture),

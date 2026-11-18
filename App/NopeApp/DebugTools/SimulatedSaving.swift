@@ -4,6 +4,7 @@
 
 import Foundation
 import NopeCore
+import Synchronization
 
 /// Returns the RAW's placeholder bytes as the developed file: the simulated backend's photo isn't
 /// an image.
@@ -25,6 +26,9 @@ struct SimulatedReadBack: MetadataReading {
     /// Whether every file carries ``futureSystemTag``.
     let addsUnexpectedTag: Bool
 
+    /// The size and depth reported for a HEIF or JPEG: 4032 × 3024 pixels, 8 bits.
+    static let processedImage = ImageProperties(pixelWidth: 4032, pixelHeight: 3024, depth: 8)
+
     /// Returns the tags a clean DNG needs (`MetadataPlan`'s required tags, with the generic
     /// camera model), the placeholder RAW data, and the future tag if asked for.
     func readBack(_ file: PhotoFile) throws(CaptureError) -> MetadataReadBack {
@@ -41,7 +45,10 @@ struct SimulatedReadBack: MetadataReading {
             file: MetadataFileReader.Result(
                 inventory: MetadataInventory(tags: tags),
                 rawImageData: file.format == .raw ? SimulatedCaptureBackend.placeholderPhotoData : nil),
-            imageIOKeys: [])
+            imageIOKeys: [],
+            // A HEIF or JPEG reports a 12-megapixel size, as ImageIO does, so the Last Photo
+            // viewer knows its preview is smaller than the photo.
+            image: file.format == .raw ? nil : Self.processedImage)
     }
 }
 
@@ -130,10 +137,33 @@ struct SimulatedPhotoLibrary: PhotoLibrary {
     /// How long each add takes, in seconds, so a burst runs long enough to watch.
     var addSeconds = 0.0
 
-    /// Does nothing, or throws `CaptureError.photosAccessDenied`.
+    /// How many adds succeed before every later one fails with `CaptureError.saveFailed`, or
+    /// `nil` for no limit: a photo that fails while the Last Photo viewer is open.
+    var successfulAdds: Int?
+
+    /// The adds so far.
+    private let adds = AddCount()
+
+    /// Does nothing, or throws `CaptureError.photosAccessDenied`, or `saveFailed` past
+    /// ``successfulAdds``.
     func add(_ assets: [PhotoLibraryAsset]) async throws(CaptureError) {
         guard allowsAdding else { throw .photosAccessDenied }
+        if let successfulAdds, adds.next() > successfulAdds { throw .saveFailed }
         if addSeconds > 0 { try? await Task.sleep(for: .seconds(addSeconds)) }
+    }
+}
+
+/// Counts the simulated library's adds.
+final class AddCount: Sendable {
+    /// The count.
+    private let count = Mutex(0)
+
+    /// Adds one and returns the new count.
+    func next() -> Int {
+        count.withLock { value in
+            value += 1
+            return value
+        }
     }
 }
 #endif

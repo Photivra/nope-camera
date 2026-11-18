@@ -510,7 +510,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | Scenario | Test |
 |---|---|
 | `allow` | First-run screen (three statements, Continue); camera ready with the format chip ("single-frame RAW, RAW + HEIF") and the wide lens selected; no thumbnail before the first photo; the shutter gives the last-photo slot "Saved and signed." (a simulated signer stands in for the real one, which `NopeSigningTests` cover); the telephoto (no RAW) turns the format status into the "Processed" marker; full auto shows only the default controls (no Settings button on the stacked camera); the camera flip; the format status's sheet, read-only on a lens without RAW; Q, the quick menu (closes on the shutter and on Q; Settings opens from its foot); signing off is stated after each photo without a warning chip; landscape on iPhone (layout fixed, Settings rotates) and iPad (column); the first run at the largest text size and right-to-left |
-| `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; its long-press menu offers Open in Photos and Photo Details; "What's in This Photo" lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail brings the Photos app to the front; with `manual` and a bracket, the details' Photo picker shows each frame |
+| `allow`, `signingFails`, `noRAW` | The last photo (issues #36, #53): after a save the thumbnail is a button named "Last Photo" with a simulated picture; a tap opens the Last Photo viewer, whose Photo Details opens "What's in This Photo", which lists the files, signature (signed, or "Not signed" with the reason), processing (the fallback's "processed by the phone's camera"), the details left out with "Off in Settings", and the timings, at the default and largest text sizes and right-to-left; tapping the thumbnail opens the viewer and not another app, and its Open in Photos brings the Photos app to the front; with `manual` and a bracket, each frame is its own page of the viewer |
 | `noRAW` | A device without RAW (wide and front, no Bayer RAW): the "Processed" marker ("Processed: no RAW on this lens, HEIF" for VoiceOver) and the HEIF fallback in the viewfinder description, portrait and landscape, default and largest text sizes; Space takes a photo |
 | `multitasking` | iPad Split View, Slide Over or Stage Manager: "The camera works only when nope. fills the screen.", shutter disabled |
 | `-NopeSimulatedViewfinder white` or `yellow` | The camera with a photo, the manual readout and an open dial over a pure white and a pure yellow picture |
@@ -521,6 +521,7 @@ each test checks, with `performAccessibilityAudit()` in every state:
 | `interrupted` | The "in use by another app or a call" message, shutter disabled; also at the largest accessibility text size |
 | `hot` | The "cool down" message, shutter disabled |
 | `captureFails` | The capture failure banner: Try Again, Dismiss |
+| `noRAW`, `signingFails`, `allow`, `firstSaveOnly` | The Last Photo viewer (`PhotoViewerUITests.swift`; docs/design/BUILD-SPEC.md, 3.14): a tap on Last Photo opens it on the newest photo with the status and caption facts in the photo's VoiceOver value; Close, Escape and a swipe down close it; swipes and the arrow keys page, oldest first; the three status variants; double tap and pinch zoom with the preview hint (the simulated read-back reports HEIF and JPEG at 4032 × 3024, larger than the 30 × 40 simulated preview); tap hides and shows the controls; Photo Details and Open in Photos; a photo from a running interval series gives New Photo; with `firstSaveOnly` (the first photo is saved, every later save fails) the Photo Not Saved chip, which closes the viewer to the banner; after the background the viewer is closed and shows "Preview Not Kept"; Space closes it and takes no photo; the largest text size, right to left, night mode (no pixel other than red or black), iPhone sideways, iPad in both orientations, and `-NopeSimulatedLockScreenCamera` (no Open in Photos, as in the Lock Screen camera) |
 | `blankPicture` | Every photo is blank: after the shutter, one automatic restart and retry, then "The camera isn't sending a picture.", the blank-picture capture message, shutter disabled |
 | `denied`, `noCamera` | The access-off screen with Open Settings, and the no-camera screen |
 | `allow`, `denied` | Settings, opened from Q on the stacked camera and from the Settings button elsewhere: Settings, Formats, HEIF and JPEG Copies (top and bottom), Details in Each Photo (top and bottom), Accessibility, Honesty (top and bottom), About and the license text, each audited at the default size, at the largest accessibility text size and in right-to-left layout; the format rule (the last format can't be turned off), the HEIF and JPEG Copies row ("Not Saved" with RAW only, otherwise the look) and the privacy rules (the master switch on and signing off by default, one item on makes it "Custom", locked items read "Locked"); `SettingsUITests.swift` covers the root rows, search, Show Processed Marker and the presets' More menu |
@@ -1036,10 +1037,10 @@ and one on 27, the oldest and newest supported versions (issue #78):
 - last photo and its details (`ImageIOThumbnailer`, `PhotoDetails`, `openPhotosApp`): after a
   RAW + HEIF, a RAW-only, a RAW + JPEG and a no-RAW photo, the thumbnail shows the photo upright
   in portrait and landscape (time how long a RAW-only thumbnail takes: it decodes the DNG);
-  tapping it opens Photos, where the new photo is the newest item (the `photos-redirect://` URL
-  opens Photos, not a chosen asset; Apple documents no way to open one asset, and the URL itself
-  isn't documented by Apple); the long-press menu and the VoiceOver actions offer Open in Photos
-  and Photo Details; for each photo, the details match `exiftool -a -G1 -s` of the files exported
+  tapping it opens the Last Photo viewer; the viewer's Open in Photos opens Photos, where the new
+  photo is the newest item (the `photos-redirect://` URL opens Photos, not a chosen asset; Apple
+  documents no way to open one asset, and the URL itself isn't documented by Apple); the
+  VoiceOver actions on the thumbnail offer Open in Photos and Photo Details; for each photo, the details match `exiftool -a -G1 -s` of the files exported
   from Photos as originals: pixel size (`ImageWidth`/`ImageHeight` for the DNG, the image size
   for HEIF and JPEG), `BitsPerSample`, `CFAPattern`, `BlackLevel`, `WhiteLevel`, opcode lists,
   `ExposureTime`, `ISO`, `FNumber`, `FocalLength`, `ExposureCompensation`, `WhiteBalance`, the
@@ -1082,6 +1083,22 @@ and one on 27, the oldest and newest supported versions (issue #78):
   read-back and is its own photo in Photos; memory stays flat over 50 frames (Instruments,
   Allocations) once 20 frames hold Last Photo previews (`SessionPhotos`); VoiceOver announces
   the start and the saved count;
+- Last Photo viewer (`PhotoViewer.swift`; BUILD-SPEC.md, 3.14): with real photos, the opening
+  and closing motion (a fade with a short zoom; the system zoom transition isn't used, because
+  its swipe down also closed a zoomed photo), the swipe down to close (and that it doesn't close
+  a zoomed photo), double tap and pinch up to the preview's pixels with the hint, and a pinch
+  back to fit (a synthesized pinch in left the photo zoomed in the iOS 27.2 Simulator, so the UI
+  test returns to fit with a double tap), paging through 20 or more photos (the 21st shows the
+  fallback at its 156-pixel thumbnail, at most 160 points), and a portrait and a landscape
+  photo; Escape (a synthesized Escape didn't reach the viewer's command in the iOS 27.2
+  Simulator, so no UI test covers it) and the VoiceOver scrub close it; the volume buttons and
+  the Camera Control close the viewer and take no photo, and the next press takes one (decision
+  V1); a photo from Apple Watch while the viewer is open gives New Photo; the app switcher's
+  snapshot shows no photo; Reduce Motion fades the viewer and crossfades pages; night mode draws
+  the photo red; VoiceOver (the photo's value, the adjustable paging, the actions, Escape, focus
+  back on Last Photo), Voice Control ("Close", "Photo Details", "Open in Photos", "New Photo"),
+  Switch Control and Full Keyboard Access; the Lock Screen camera's viewer has no Open in
+  Photos; the iPhone Duo fold pair (`duo-fold-viewer`): the viewer stays open on the same photo;
 - Last Photo previews (`SessionPhotos`, `ImageIOPreviewer`): on the oldest and newest supported
   iPhone and an iPad, for RAW, RAW + HEIF and HEIF, record the time the preview adds to each
   save (Instruments, Time Profiler), the size of a 3072-pixel preview at JPEG quality 0.9 and

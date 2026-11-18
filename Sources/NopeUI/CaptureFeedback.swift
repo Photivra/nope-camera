@@ -244,9 +244,10 @@ struct FailureBanner: View {
 /// Settings."
 ///
 /// With ``image``, it shows the photo itself (issue #36), made in memory from the saved file;
-/// without one, a photo symbol. With ``openPhoto`` or ``showDetails`` it is a button: a tap opens
-/// Photos (or the details, when the app can't open Photos), and a long press, VoiceOver and Voice
-/// Control offer both, Open in Photos and Photo Details.
+/// without one, a photo symbol. With ``openViewer`` it is a button: a tap opens the Last Photo
+/// viewer (docs/design/BUILD-SPEC.md, 3.14). VoiceOver and Voice Control also offer Open in Photos
+/// and Photo Details as actions, so both are one action away without opening the viewer; there
+/// is no touch-and-hold menu (decision V3).
 struct ThumbnailSlot: View {
     /// The photos saved by the last press of the shutter, or `nil` before the first.
     let photos: [SavedPhoto]?
@@ -256,6 +257,9 @@ struct ThumbnailSlot: View {
 
     /// Whether a photo is being taken or saved now.
     let isBusy: Bool
+
+    /// Opens the Last Photo viewer, or `nil` for none.
+    let openViewer: (() -> Void)?
 
     /// Opens Photos, or `nil` when the app can't.
     let openPhoto: (() -> Void)?
@@ -296,15 +300,17 @@ struct ThumbnailSlot: View {
     ///   - photos: The photos saved by the last press of the shutter, or `nil` before the first.
     ///   - image: The photo's thumbnail, or `nil` to show a photo symbol.
     ///   - isBusy: Whether a photo is being taken or saved now.
+    ///   - openViewer: Opens the Last Photo viewer, or `nil` for none.
     ///   - openPhoto: Opens Photos, or `nil` when the app can't.
     ///   - showDetails: Shows the photo's details, or `nil` for none.
     init(
-        photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openPhoto: (() -> Void)? = nil,
-        showDetails: (() -> Void)? = nil
+        photos: [SavedPhoto]?, image: Image? = nil, isBusy: Bool, openViewer: (() -> Void)? = nil,
+        openPhoto: (() -> Void)? = nil, showDetails: (() -> Void)? = nil
     ) {
         self.photos = photos
         self.image = image
         self.isBusy = isBusy
+        self.openViewer = openViewer
         self.openPhoto = openPhoto
         self.showDetails = showDetails
     }
@@ -319,20 +325,17 @@ struct ThumbnailSlot: View {
             .frame(width: Self.side, height: Self.side)
             .accessibilityLabel(Text("Saving…", bundle: .module, comment: "Shown while a photo that was just taken is being checked and added to the photo library."))
         } else if let photos {
-            if let action = openPhoto ?? showDetails {
-                Button(action: action) { thumbnail }
+            if let openViewer {
+                Button(action: openViewer) { thumbnail }
                     .buttonStyle(.plain)
-                    .contextMenu { menuItems }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Self.label)
                     .accessibilityValue(Text(verbatim: CaptureMessages.message(forSaved: photos)))
+                    .accessibilityHint(PhotoViewerText.lastPhotoHint)
                     .accessibilityAddTraits([.isButton, .isImage])
                     .accessibilityActions { menuItems }
-                    // No Large Content Viewer here: at the accessibility text sizes it took the
-                    // press and hold that opens this menu, and lifting the finger then counted
-                    // as a tap, which opened Photos, so Photo Details couldn't be reached by
-                    // touch. The thumbnail is the photo itself, not a label or symbol the viewer
-                    // would enlarge; its menu items are also accessibility actions.
+                    // No Large Content Viewer: the thumbnail is the photo itself, not a label or
+                    // symbol the Large Content Viewer would enlarge.
             } else {
                 thumbnail
                     .accessibilityElement(children: .ignore)
@@ -348,7 +351,7 @@ struct ThumbnailSlot: View {
         Text("Last Photo", bundle: .module, comment: "VoiceOver name of the small picture beside the shutter: the last photo taken in this session.")
     }
 
-    /// Open in Photos and Photo Details, for the long-press menu and the accessibility actions.
+    /// Open in Photos and Photo Details, the accessibility actions.
     @ViewBuilder private var menuItems: some View {
         if let openPhoto {
             Button(action: openPhoto) {

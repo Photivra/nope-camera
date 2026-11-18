@@ -120,6 +120,17 @@ struct NopeApp: App {
         .commands { CameraCommands(model: model) }
     }
 
+    /// Whether the app offers no way to open Photos, as the Lock Screen camera doesn't: Debug
+    /// builds only, with `-NopeSimulatedLockScreenCamera`, for the Last Photo viewer's UI test
+    /// (XCTest can't launch the capture extension).
+    private static var simulatesLockScreenCamera: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-NopeSimulatedLockScreenCamera")
+        #else
+        false
+        #endif
+    }
+
     /// The camera screen with the live viewfinder and the hardware shutter.
     ///
     /// The volume buttons and the Camera Control are the shutter through `onCameraCaptureEvent`
@@ -152,10 +163,12 @@ struct NopeApp: App {
         // documented by Apple either (an owner decision; docs/TESTING.md, "On-device checks").
         .environment(
             \.openPhotosApp,
-            CameraAction {
-                guard let url = URL(string: "photos-redirect://") else { return }
-                UIApplication.shared.open(url)
-            })
+            Self.simulatesLockScreenCamera
+                ? nil
+                : CameraAction {
+                    guard let url = URL(string: "photos-redirect://") else { return }
+                    UIApplication.shared.open(url)
+                })
         .onCameraCaptureEvent(isEnabled: model.handlesHardwareButtons) { event in
             let phase: HardwareButtonPhase =
                 switch event.phase {

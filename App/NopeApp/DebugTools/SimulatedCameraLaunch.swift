@@ -75,6 +75,9 @@ enum SimulatedCameraLaunch {
         case metadataRejected
         /// Access already allowed; adding to the photo library is not allowed.
         case photosDenied
+        /// Access already allowed; the first photo is saved and every later save fails, for a
+        /// failure while the Last Photo viewer is open.
+        case firstSaveOnly
         /// Access already allowed; signing fails, so photos are saved unsigned and the status
         /// says so.
         case signingFails
@@ -202,7 +205,9 @@ enum SimulatedCameraLaunch {
             developer: SimulatedDeveloper(),
             signer: SimulatedSigner(fails: scenario == .signingFails, breaksFiles: scenario == .signedFileRejected),
             reader: SimulatedReadBack(addsUnexpectedTag: scenario == .metadataRejected),
-            library: SimulatedPhotoLibrary(allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving || scenario == .astro ? 0.5 : 0),
+            library: SimulatedPhotoLibrary(
+                allowsAdding: scenario != .photosDenied, addSeconds: scenario == .slowSaving || scenario == .astro ? 0.5 : 0,
+                successfulAdds: scenario == .firstSaveOnly ? 1 : nil),
             appVersion: appVersion, thumbnailer: SimulatedThumbnailer(), previewer: SimulatedPreviewer())
     }
     /// Every manual control, as on a recent rear wide camera with iOS 27.
@@ -307,7 +312,7 @@ enum SimulatedCameraLaunch {
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, torchAvailable: false)
         case .comparisonFails:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities, comparisonError: .captureFailed)
-        case .metadataRejected, .photosDenied, .signingFails, .signedFileRejected, .slowSaving:
+        case .metadataRejected, .photosDenied, .firstSaveOnly, .signingFails, .signedFileRejected, .slowSaving:
             return SimulatedCaptureBackend(permission: .authorized, capabilities: capabilities)
         case .manual, .astro:
             return SimulatedCaptureBackend(
