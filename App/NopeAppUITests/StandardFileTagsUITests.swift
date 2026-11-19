@@ -18,7 +18,7 @@ extension NopeAppUITests {
         }
         XCTAssertTrue(tags.exists)
         XCTAssertEqual(tags.value as? String, "1")
-        XCTAssertTrue(tags.label.contains("Nothing in them identifies you or your phone"), tags.label)
+        XCTAssertTrue(tags.label.contains(deviceText("Nothing in them identifies you or your phone", iPad: "Nothing in them identifies you or your iPad")), tags.label)
         // The master switch is on, and the standard tags stay on with it.
         tags.switches.firstMatch.tap()
         XCTAssertEqual(tags.value as? String, "0")

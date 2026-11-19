@@ -12,8 +12,13 @@ for any user-facing claim comes from
 - **Network:** none. The app contains no networking code; `scripts/check-security.sh` fails a
   pull request that adds any.
 - **Data collected:** none. `PrivacyInfo.xcprivacy` declares no tracking, no tracking domains and
-  no collected data types. Its only required-reason API is `UserDefaults` (`CA92.1` and
-  `1C8F.1`), for the settings below.
+  no collected data types. It declares three required-reason API categories: `UserDefaults`
+  (`CA92.1` and `1C8F.1`), for the settings below; system boot time (`35F9.1`), because
+  `ProcessInfo.systemUptime` throttles the exposure readings; and disk space (`E174.1` and
+  `85F4.1`), for the low storage warning and the number of photos that fit (issue #44). The Lock
+  Screen camera's manifest declares the same three (`UserDefaults` with `CA92.1` only), the
+  controls extension's `UserDefaults` with `1C8F.1`, and the watch app's `UserDefaults` with
+  `CA92.1` (`docs/SECURITY_AUDIT.md`, check 6).
 - **Permissions:** the usage strings for the camera (`NSCameraUsageDescription`) and add-only
   Photos access (`NSPhotoLibraryAddUsageDescription`) are present and localized. The app asks
   for camera access when the person presses "Allow Camera Access", and for add-only Photos access
@@ -153,11 +158,20 @@ for any user-facing claim comes from
   manifest declares no tracking, no tracking domains and no collected data; it declares
   `UserDefaults` (`CA92.1`) because the shared `NopeCore` code linked into it contains the
   iPhone app's settings code, which the watch app never runs.
-- **Entitlements:** none.
+- **Links:** two, on the About screen: the privacy policy (`https://photivra.com/nope/privacy/`)
+  and the source code. Each hands its `https` address to the system when tapped and opens in the
+  browser; the app has no web view and fetches nothing.
+- **Entitlements:** the app and the controls extension each have one, the App Group
+  (`com.apple.security.application-groups`, `group.<bundle identifier>`;
+  `App/NopeApp.entitlements`, `App/NopeControls.entitlements`), which lets them share the
+  settings and presets on the device (see "Settings shared with the extensions"). The Lock Screen
+  camera and the watch app have none. `security/allowed-entitlements.txt` also allows
+  `com.apple.developer.locked-camera-capture`, which no target requests today.
 - **Files and logs:** Release builds write no files except the paired copy above, which
-  Photos moves into the library (photos otherwise go from memory to Photos). They log only why
-  adding to Photos failed: the error's domain and code and the resource types, marked private;
-  never photo data or metadata. Debug builds include the
+  Photos moves into the library (photos otherwise go from memory to Photos). They log only fixed
+  error messages (for example that the camera couldn't be configured or a pair was saved as two
+  photos) and, for a failed save to Photos or a settings hand-off, the error's domain and code
+  and the resource types, marked private; never photo data or metadata. Debug builds include the
   tag check (below), which writes test captures to the app's container only when launched with
   `-NopeTagCheck`; it isn't compiled into Release builds. The `-NopeCameraProbe` diagnostic
   also saves one live video frame as a JPEG, to check exposure (see [`TESTING.md`](TESTING.md),
@@ -206,9 +220,12 @@ drive and astro values, saved when the person taps Save Current Settings.
   device identifier. The lens identifier is the app's own name for the lens on this device and is
   never written to a photo.
 - **Where:** in the same on-device store as the settings (the App Group's `UserDefaults`, key
-  `NopePresets.saved`). Presets are not part of the copy handed to the Lock Screen camera, are
-  never synced through iCloud and never leave the device; device backups include them as they
-  include the settings.
+  `NopePresets.saved`). Presets are not part of the copy handed to the Lock Screen camera, and
+  the app never syncs or sends them; device backups (iCloud Backup or a computer) include them as
+  they include the settings. The app's wording: "nope. doesn't sync or send presets. Your device
+  backups include them, like other app settings."
+- **Typing a name.** The preset's name is typed with the system keyboard. A third-party keyboard
+  or dictation the person uses handles that text under its own rules; the app can't change that.
 - **Permissions are never bypassed.** Applying a preset that has Location on asks for location
   access through the normal prompt; if access isn't allowed, Location stays off and the person
   is told. A preset can't grant camera or Photos access either: those prompts are unchanged.
@@ -305,11 +322,16 @@ no creator, no location, no device model, no operating system, no device ID, no 
 Descriptions (written into the file in English; owner-approved wording pending):
 
 - DNG: "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little processing as the
-  phone allows."
-- HEIF or JPEG developed from the RAW: "Developed by Photivra Nope Camera on the phone from a single frame of
+  device allows."
+- HEIF or JPEG developed from the RAW: "Developed by Photivra Nope Camera on the device from a single frame of
   RAW sensor data."
-- HEIF or JPEG from a lens without Bayer RAW: "Captured by Photivra Nope Camera and processed by the phone's
+- HEIF or JPEG from a lens without Bayer RAW: "Captured by Photivra Nope Camera and processed by the device's
   camera, because this lens can't save RAW."
+
+They say "device", not "phone", because an iPad writes the same text, and a description written
+into a signed file can't be corrected later. The signature names the app and its version as the
+maker, but each file certifies its own key, so anyone could make a file whose manifest says the
+same: the signature shows whether the file changed after signing, not that the app made it.
 
 **What signing adds to each file.** Exactly one item, checked by the tests on synthetic files
 and with c2patool 0.28.6; the metadata read-back allowlist permits it for signed files only
@@ -566,7 +588,10 @@ allows only where no system API exists, with fuzzing; that is an open owner deci
 | Orientation | Without it the photo shows sideways or upside down |
 | Color profile (HEIF and JPEG) | Without it colors look washed out or oversaturated |
 
-None of the locked items identify you or link your photos.
+The locked items describe the camera's sensor and color, not the person. Whether any of them
+(the color matrices, the as-shot white balance, the black and white levels) differs between two
+devices of the same model hasn't been checked, so the app doesn't say they can't identify a
+device or link photos (`docs/TESTING.md`, "What was tested on real hardware").
 
 ## How each file's metadata is built and checked
 

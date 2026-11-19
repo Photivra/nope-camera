@@ -362,7 +362,7 @@ enum AssistantAccessText {
     static let offLine = LocalizedStringResource("Assistant Access is off, so Ask First is not used now.", table: "Honesty", bundle: bundle, comment: "First row of the Assistant Access page in nope.'s Settings while the switch is off. Assistant Access and Ask First are names on the page. Draft for the Honesty review. Must not claim more than the English.")
 
     /// The switch's explanation (text 4).
-    static let switchExplanation = LocalizedStringResource("Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses every one of them.", table: "Honesty", bundle: bundle, comment: "Explains the Assistant Access switch in nope.'s Settings. Siri and Shortcuts are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.")
+    static let switchExplanation = LocalizedStringResource("Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses its actions.", table: "Honesty", bundle: bundle, comment: "Explains the Assistant Access switch in nope.'s Settings. Siri and Shortcuts are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.")
 
     /// An Ask First choice's name (text 5).
     ///

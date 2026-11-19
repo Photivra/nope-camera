@@ -217,7 +217,9 @@ files, data, specifications, documentation and tools.
 - **Standalone name:** when the name is used alone, it is always written "nope.", lowercase with
   a period, even at the start of a sentence. That covers the home screen label
   (`CFBundleDisplayName`), permission prompts and interface text, and quotes of them elsewhere.
-- **Documentation uses the full name,** not "nope." (see "Writing in this repository").
+- **Documentation and About sections use the full name,** "Photivra Nope Camera", not "nope."
+  (see "Writing in this repository"). That includes the store listing and the app's About screen;
+  the rest of the interface keeps "nope.".
 - **Wordmark lockup:** "nope." set large, with "Photivra Nope Camera" beneath it.
 - **The tagline is the exception:** in "Processing? Nope. Tracking? Nope. Network? Nope.",
   "Nope" is an answer, not the name, so it keeps its capital.

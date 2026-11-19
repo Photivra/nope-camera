@@ -58,7 +58,7 @@ struct ContentCredentialsSection: View {
                 }
             }
             if details.signature == .signed {
-                Text("To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker reports the file as valid and the signer as untrusted.", tableName: "Honesty", bundle: .module, comment: "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review.")
+                Text("To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker should report the file as unchanged and the signer as unknown or untrusted. Checkers word this differently.", tableName: "Honesty", bundle: .module, comment: "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review.")
                     .font(.footnote)
                     .foregroundStyle(CameraStyle.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

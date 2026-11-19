@@ -134,7 +134,7 @@ Opening moves focus to the photo. Closing returns it to Last Photo and posts a s
 | 6 | Open in Photos | Open in Photos | none | Button. Not present from the Lock Screen camera |
 
 - The status line and the caption are not separate elements: their content is the photo's value, so one swipe reads everything about the photo. The save sentence is the existing one (`CaptureMessages.message(forSaved:)`), so the viewer, the thumbnail and Siri say the same thing.
-- nope. does not describe what a photo shows. The element has the image trait, so the system's own image descriptions work where a person has them on.
+- The app does not describe what a photo shows. The element has the image trait, so the system's own image descriptions work where a person has them on.
 - A change of page announces the new label and value. A photo that arrives while the viewer is open is announced with its save sentence, as on the camera; the photo's label then reads the new count.
 - With the controls hidden the photo is still the first element, and its action reads Show Controls. Close, Photo Details and Open in Photos are not reachable until the controls are shown; Escape still closes.
 - Last Photo on the camera: label Last Photo, value the save sentence, hint "Shows the photo." Actions Open in Photos and Photo Details stay, so both are one action away without opening the viewer. The touch and hold menu is removed.

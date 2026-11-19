@@ -149,8 +149,9 @@ struct ContentCredentialsManifest: Encodable, Equatable {
     /// The description of what happened to a file, in the manifest's own words.
     ///
     /// The manifest is part of the file, not the interface, so this English text isn't localized.
-    /// It claims no more than the app does: "as little processing as the phone allows", never "no
-    /// processing".
+    /// It claims no more than the app does: "as little processing as the device allows", never "no
+    /// processing". It says "device", not "phone", because an iPad writes the same text, and a
+    /// signed file can't be corrected later.
     ///
     /// - Parameter file: What the file is.
     /// - Returns: One or two plain sentences.
@@ -158,11 +159,11 @@ struct ContentCredentialsManifest: Encodable, Equatable {
         switch file {
         case .singleFrameRAW:
             "Captured by Photivra Nope Camera as a single frame of RAW sensor data, with as little "
-                + "processing as the phone allows."
+                + "processing as the device allows."
         case .developedHEIF, .developedJPEG:
-            "Developed by Photivra Nope Camera on the phone from a single frame of RAW sensor data."
+            "Developed by Photivra Nope Camera on the device from a single frame of RAW sensor data."
         case .deviceProcessedHEIF, .deviceProcessedJPEG:
-            "Captured by Photivra Nope Camera and processed by the phone's camera, because this lens "
+            "Captured by Photivra Nope Camera and processed by the device's camera, because this lens "
                 + "can't save RAW."
         }
     }

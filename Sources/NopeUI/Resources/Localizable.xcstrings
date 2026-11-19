@@ -936,8 +936,34 @@
       "extractionState" : "manual"
     },
     "Waits before the first frame, so touching the phone doesn't shake it." : {
-      "comment" : "Footer under Start Delay in Bracket Settings.",
-      "extractionState" : "manual"
+      "comment" : "Footer under Start Delay in Bracket Settings. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Waits before the first frame, so touching the iPad doesn't shake it."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Waits before the first frame, so touching the phone doesn't shake it."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Waits before the first frame, so touching the device doesn't shake it."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "White Level" : {
       "comment" : "Row in the photo details: the RAW file's white level values, as numbers.",
@@ -2000,8 +2026,8 @@
       "comment" : "Value of the Presets tile in the Quick Menu and of the Presets row in Settings: the person has saved no presets (Factory Defaults is still there). Keep it short: it sits in a small tile under the name Presets, so \"None\" alone is enough where that reads naturally.",
       "extractionState" : "manual"
     },
-    "nope. is free software: you can redistribute it and modify it under the terms of this license." : {
-      "comment" : "Plain summary of the GPL. Keep \"nope.\" unchanged.",
+    "Photivra Nope Camera is free software: you can redistribute it and modify it under the terms of this license." : {
+      "comment" : "Plain summary of the GPL on the About screen. About sections use the app's full name: keep \"Photivra Nope Camera\" unchanged (AGENTS.md, \"Name and wordmark\").",
       "extractionState" : "manual"
     },
     "nope. Only" : {
@@ -2096,8 +2122,8 @@
       "comment" : "Button that opens nope.'s page in the system Settings app, where camera or photo library access can be allowed. Keep \"nope.\" unchanged.",
       "extractionState" : "manual"
     },
-    "Opens in your browser. nope. itself makes no network connections." : {
-      "comment" : "Footer under the source code link. Keep \"nope.\" unchanged.",
+    "Opens in your browser. Photivra Nope Camera itself makes no network connections." : {
+      "comment" : "Footer under the source code link on the About screen. About sections use the app's full name: keep \"Photivra Nope Camera\" unchanged (AGENTS.md, \"Name and wordmark\").",
       "extractionState" : "manual"
     },
     "Opens its settings." : {
@@ -2117,16 +2143,94 @@
       "extractionState" : "manual"
     },
     "Phone Only" : {
-      "comment" : "Button in the compare view: shows only the phone-processed version.",
-      "extractionState" : "manual"
+      "comment" : "Button in the compare view: shows only the phone-processed version. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "iPad Only"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Phone Only"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Device Only"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Phone Processing" : {
-      "comment" : "Compare view: the label of the side that shows the photo with the phone's full processing, which isn't saved.",
-      "extractionState" : "manual"
+      "comment" : "Compare view: the label of the side that shows the photo with the phone's full processing, which isn't saved. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "iPad Processing"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Phone Processing"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Device Processing"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Phone: %@" : {
-      "comment" : "Compare view: the value the phone-processed version holds for a metadata item.",
-      "extractionState" : "manual"
+      "comment" : "Compare view: the value the phone-processed version holds for a metadata item. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "iPad: %@"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Phone: %@"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Device: %@"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Photivra, Nope Camera, the app icon and the wordmark are trademarks and aren't covered by the GPL." : {
       "comment" : "Trademark statement. Keep Photivra, Nope Camera and GPL unchanged.",
@@ -2798,8 +2902,34 @@
       "extractionState" : "manual"
     },
     "Split: %@ nope., %@ phone processing" : {
-      "comment" : "VoiceOver value of the compare view's divider: how much of the width shows nope.'s photo and how much the phone-processed version, such as 60% and 40%. Keep \"nope.\" unchanged.",
-      "extractionState" : "manual"
+      "comment" : "VoiceOver value of the compare view's divider: how much of the width shows nope.'s photo and how much the phone-processed version, such as 60% and 40%. Keep \"nope.\" unchanged. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Split: %@ nope., %@ iPad processing"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Split: %@ nope., %@ phone processing"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Split: %@ nope., %@ device processing"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Spoken control value" : {
       "comment" : "VoiceOver value of a manual control: Auto or Manual, then the value, for example Manual, 200.",
@@ -2994,8 +3124,34 @@
       "extractionState" : "manual"
     },
     "These lenses have no RAW, so each photo is the phone's processed file. A larger size has more pixels and bigger files. The smallest size is the default." : {
-      "comment" : "Explains the Photo Size screen. RAW is a file format name.",
-      "extractionState" : "manual"
+      "comment" : "Explains the Photo Size screen. RAW is a file format name. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "These lenses have no RAW, so each photo is the iPad's processed file. A larger size has more pixels and bigger files. The smallest size is the default."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "These lenses have no RAW, so each photo is the phone's processed file. A larger size has more pixels and bigger files. The smallest size is the default."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "These lenses have no RAW, so each photo is the device's processed file. A larger size has more pixels and bigger files. The smallest size is the default."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Third-Party Notices" : {
       "comment" : "Section header for notices required by other licenses.",

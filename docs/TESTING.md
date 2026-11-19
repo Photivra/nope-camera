@@ -163,6 +163,22 @@ Display P3: with the Flat look every mid-tone value doubles (no tone curve); wit
 look it doesn't. Run on 2026-11-12 in the iOS 27.2 Simulator with a DNG from the device tag
 check: passed (on macOS 27 the median ratio was 2.01 for Flat and 2.51 for Standard).
 
+The wording "no noise reduction, sharpening or local tone mapping" for the HEIF and JPEG copies
+rests on the RAW decoder settings the renderer sets (`NeutralDevelopment`). Two tests cover them:
+
+- `NeutralDevelopmentTests` (always runs) checks, with a fake decoder, that noise reduction
+  (luminance and color), sharpening, detail, moiré reduction, local contrast and local tone
+  mapping are set to 0 and lens correction is turned off wherever the decoder offers them, that
+  settings it doesn't offer are left alone, and the tone curve of each look.
+- `DevelopedLookTests.theDecoderKeepsTheNeutralSettings` (opt-in, with the DNG above) reads the
+  same values back from Core Image's own `CIRAWFilter` after the renderer has set them. Run it on
+  the iOS 26 and iOS 27 Simulators, since the decoder can differ between versions. Not yet run
+  (no DNG on this branch's runs).
+
+What a setting of 0 means is Apple's (`CIRAWFilter.h`); demosaicing itself smooths, and "no noise
+reduction" means none is added. A device check compares one HEIF of a flat gray card with a
+plain development of the same DNG (still to be done).
+
 ## File compatibility (issue #58)
 
 Every file the app can save must open (AGENTS.md, "Every setting the device allows"). This has two
@@ -1189,6 +1205,27 @@ the results here):
     window's center; VoiceOver still reads "Starting the camera…"; the pinned row is drawn and
     nothing else is until the camera runs. In a taller window the words and the plate show.
 
+## What was tested on real hardware
+
+The real hardware for the 1.0.0 checks is an iPhone 16 Pro Max (iOS 27.2.1) and an iPad Air
+(5th generation). Everything else, including other iPhone and iPad models, iOS and iPadOS 26
+and the Apple Watch app, was tested only in Apple's Simulator, which has no real camera. The only
+recorded device result so far is the debug tag check on the iPhone 16 Pro Max (2026-11-11 and
+2026-11-12, "Tag check" below); the release save path is still to be checked on a device.
+
+Known limits that no available device can close before release:
+
+- Whether any value of the locked details (the color matrices, the as-shot white balance, the
+  black and white levels) differs between two devices of the same model. Only one unit of each
+  model has been available, so the app doesn't say these values can't identify a device.
+- What a real iPhone camera writes on iOS 26, and whether photos save there.
+- Pairing, reach, timing and transport of a real Apple Watch, and the Live Activity on the watch.
+- Lenses on other iPhone models: which have RAW, fixed-focus ultra wide lenses, RAW buffer layouts.
+
+The app and the store listing make no "tested" or "verified" claims; this section, the README's
+requirements and the App Review notes (`docs/store/README.md`) say what was tested. Update this
+section with each release.
+
 ## On-device checks
 
 Some behavior can only be checked on hardware. Before a release, on at least one iPhone and one
@@ -2162,6 +2199,15 @@ The tag check lists every metadata tag in real files captured on an iPhone or iP
 privacy list in [`PRIVACY.md`](PRIVACY.md) is based on what the device actually writes (issue
 #1, step 2). It has two parts: a debug-only capture mode in the app, and a tag dumper that runs
 on a Mac.
+
+### Each new iOS and iPadOS version
+
+The read-back fails closed for a tag a new iOS version adds, but nothing fails closed for a new
+processing switch. On each iOS and iPadOS beta and major release, as well as the tag check below,
+read the new SDK's `AVCapturePhotoSettings.h`, `AVCapturePhotoOutput.h`, `AVCaptureDevice.h` and
+`CIRAWFilter.h` for any new processing, fusion, distortion correction or RAW decoder setting, and
+check that `ProcessingSwitches.leastProcessing` and `NeutralDevelopment` set each one to its
+least-processing value.
 
 ### What the capture mode does
 

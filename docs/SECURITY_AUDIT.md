@@ -195,7 +195,7 @@ app and for each third-party SDK it bundles
 [Describing use of required reason API](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api)).
 
 **Does the app need one?** Yes. `App/NopeApp/PrivacyInfo.xcprivacy` exists and declares no
-tracking, no tracking domains, no collected data and no required-reason APIs.
+tracking, no tracking domains and no collected data, and the required-reason APIs below.
 
 **State as of 2026-11-12:** the manifest declares `NSPrivacyAccessedAPICategoryUserDefaults`
 with `CA92.1` and `1C8F.1`, for the settings (`NopeSettings`, stored in the App Group's
@@ -253,9 +253,11 @@ AGENTS.md rule 4.
   - `scripts/check-security.sh` (bans `URLSession`, `NWConnection`, `import Network`,
     `CFNetwork`, `WebKit` and analytics SDK names in app code).
   - `grep -rnE 'import (Network|WebKit|SafariServices)|URLSession|NWConnection|URLRequest|openURL|UIApplication\.shared\.open|Link\(' Sources App`:
-    the only allowed hits are links that open in the browser (the privacy policy, the C2PA
-    checker, the source code), which hand the URL to the system and don't fetch anything in
-    the app.
+    the only allowed hits are the two links on the About screen that open in the browser, the
+    privacy policy (`https://photivra.com/nope/privacy/`) and the source code
+    (`AboutScreen.privacyPolicyURL` and `sourceURL`), which hand the URL to the system and don't
+    fetch anything in the app; and the Photos app's `photos-redirect://` address, which opens
+    Photos and reads nothing.
   - The binary checks in check 3 (`nm -u`, `otool -L`) on the app and every framework, and on
     the embedded Apple Watch app (`Watch/NopeWatch.app/NopeWatch`). It links WatchConnectivity,
     which carries the watch's commands over the system's paired-device connection; the app

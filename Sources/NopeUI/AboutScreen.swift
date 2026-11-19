@@ -6,15 +6,22 @@ import SwiftUI
 /// The license and notice texts are bundled copies of the repository's `LICENSE` and `NOTICE`
 /// (`Resources/GPL-3.0.txt` and `Resources/NOTICE.txt`); a unit test keeps them identical. They
 /// are legal texts, shown exactly as written and not translated (AGENTS.md, "Keep every
-/// notice"). The source address is a link: tapping it hands the `https` address to the system,
-/// which opens it in the browser. The app itself makes no network request (AGENTS.md,
-/// "Prevention first").
+/// notice"). The privacy policy and the source address are links: tapping one hands its `https`
+/// address to the system, which opens it in the browser. The app itself makes no network
+/// request and has no web view (AGENTS.md, "Prevention first"). App Review Guideline 5.1.1(i)
+/// asks for the privacy policy to be reachable within the app.
 struct AboutScreen: View {
     /// The address of the source code.
     static let sourceAddress = "https://github.com/Photivra/nope-camera"
 
     /// The source code address as a URL, opened by the system browser when tapped.
     static let sourceURL = URL(string: sourceAddress)!
+
+    /// The address of the privacy policy (`docs/store/privacy-policy-draft.md`).
+    static let privacyPolicyAddress = "https://photivra.com/nope/privacy/"
+
+    /// The privacy policy address as a URL, opened by the system browser when tapped.
+    static let privacyPolicyURL = URL(string: privacyPolicyAddress)!
 
     /// The notice Adobe's DNG specification patent license requires, quoted exactly
     /// (AGENTS.md, "Third-party licenses").
@@ -45,8 +52,8 @@ struct AboutScreen: View {
                 }
                 .settingsRow(.license)
                 Text(
-                    "nope. is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
-                    comment: "Plain summary of the GPL. Keep \"nope.\" unchanged.")
+                    "Photivra Nope Camera is free software: you can redistribute it and modify it under the terms of this license.", bundle: .module,
+                    comment: "Plain summary of the GPL on the About screen. Keep \"Photivra Nope Camera\" unchanged.")
                     .foregroundStyle(CameraStyle.secondaryText)
             } header: {
                 Text("License", bundle: .module, comment: "Title of the screen showing the full license text.")
@@ -67,6 +74,15 @@ struct AboutScreen: View {
                     comment: "Trademark statement. Keep Photivra, Nope Camera and GPL unchanged.")
             }
             Section {
+                Link(destination: Self.privacyPolicyURL) {
+                    Text("Privacy Policy", tableName: "Honesty", bundle: .module, comment: "Row on the About screen that opens the privacy policy in the browser. Draft for the Honesty review.")
+                }
+                .accessibilityHint(Text("Opens in your browser.", tableName: "Honesty", bundle: .module, comment: "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review."))
+                .accessibilityValue(Text(verbatim: Self.privacyPolicyAddress))
+            } footer: {
+                Text("Opens in your browser.", tableName: "Honesty", bundle: .module, comment: "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review.")
+            }
+            Section {
                 Link(destination: Self.sourceURL) {
                     Text(verbatim: Self.sourceAddress)
                 }
@@ -76,8 +92,8 @@ struct AboutScreen: View {
                 Text("Source Code", bundle: .module, comment: "Section header for where to find the app's source code.")
             } footer: {
                 Text(
-                    "Opens in your browser. nope. itself makes no network connections.", bundle: .module,
-                    comment: "Footer under the source code link. Keep \"nope.\" unchanged.")
+                    "Opens in your browser. Photivra Nope Camera itself makes no network connections.", bundle: .module,
+                    comment: "Footer under the source code link on the About screen. Keep \"Photivra Nope Camera\" unchanged.")
             }
         }
         .navigationTitle(Text(SettingsText.about))

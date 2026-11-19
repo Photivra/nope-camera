@@ -44,7 +44,7 @@ struct FirstRunView: View {
                                 comment: "First-run statement 2 of 3: signing is the person's choice and off by default. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release."))
                         statement(
                             Text(
-                                "nope. never connects to the internet and keeps nothing about you.", tableName: "Honesty", bundle: .module,
+                                "nope. never connects to the internet and collects nothing about you.", tableName: "Honesty", bundle: .module,
                                 comment: "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English."))
                     }
                     Text(

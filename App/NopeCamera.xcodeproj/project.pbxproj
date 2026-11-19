@@ -613,7 +613,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. nope. never sends your location anywhere.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;
@@ -637,7 +637,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = nope.;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSCameraUsageDescription = "nope. uses the camera to take the photos you ask for.";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. Your location is never sent anywhere.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "nope. adds where each photo was taken, only while Location is on in nope.'s settings. nope. never sends your location anywhere.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "nope. adds the photos you take to your photo library. It can't see your existing photos.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleLightContent;

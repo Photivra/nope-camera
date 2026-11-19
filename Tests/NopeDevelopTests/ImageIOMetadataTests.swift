@@ -260,6 +260,25 @@ extension ImageIOTests {
             #expect(abs(flat - 2) < 0.05, "flat: \(flat)")
             #expect(abs(standard - 2) > 0.1, "standard: \(standard)")
         }
+
+        /// Core Image's own filter keeps every neutral value the renderer sets, for each step
+        /// it offers on this DNG: no noise reduction, sharpening, detail, moiré reduction, local
+        /// contrast, local tone mapping or lens correction.
+        @Test(.enabled(if: dngPath != nil), arguments: [DevelopedLook.standard, .flat])
+        func theDecoderKeepsTheNeutralSettings(look: DevelopedLook) throws {
+            let dng = try Data(contentsOf: URL(fileURLWithPath: try #require(Self.dngPath)))
+            let filter = try #require(CIRAWFilter(imageData: dng, identifierHint: "com.adobe.raw-image"))
+            CoreImageRAWRenderer.configure(filter, look: look)
+            if filter.isLuminanceNoiseReductionSupported { #expect(filter.luminanceNoiseReductionAmount == 0) }
+            if filter.isColorNoiseReductionSupported { #expect(filter.colorNoiseReductionAmount == 0) }
+            if filter.isSharpnessSupported { #expect(filter.sharpnessAmount == 0) }
+            if filter.isContrastSupported { #expect(filter.contrastAmount == 0) }
+            if filter.isDetailSupported { #expect(filter.detailAmount == 0) }
+            if filter.isMoireReductionSupported { #expect(filter.moireReductionAmount == 0) }
+            if filter.isLocalToneMapSupported { #expect(filter.localToneMapAmount == 0) }
+            if filter.isLensCorrectionSupported { #expect(!filter.isLensCorrectionEnabled) }
+            #expect(filter.boostAmount == (look == .flat ? 0 : 1))
+        }
     }
 }
 

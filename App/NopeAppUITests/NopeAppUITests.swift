@@ -69,6 +69,16 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
+    /// The English text the app shows on this device, for a string with an iPad variant: the
+    /// catalog's iPhone text names the phone, and its iPad text names the iPad.
+    ///
+    /// - Parameters:
+    ///   - phone: The iPhone text.
+    ///   - iPad: The iPad text.
+    /// - Returns: The text for the device the tests run on.
+    @MainActor
+    func deviceText(_ phone: String, iPad: String) -> String { isPad ? iPad : phone }
+
     /// Turns the simulated device and waits for the app to follow: on iPad until the window has
     /// the new shape, on iPhone (whose camera layout stays in portrait) for the icons to turn.
     ///
@@ -1044,6 +1054,24 @@ final class NopeAppUITests: XCTestCase {
         XCTAssertTrue(element(app, containing: "Opens in your browser").exists)
     }
 
+    /// The privacy policy row is a link to its https address (App Review Guideline 5.1.1(i));
+    /// the test doesn't tap it, so no browser opens and nothing goes online.
+    @MainActor
+    func testPrivacyPolicyIsAnHTTPSLink() throws {
+        let app = launch("denied")
+        openSettings(app)
+        open(app, row: "About and Licenses")
+        let link = app.links["Privacy Policy"]
+        var swipes = 0
+        while !link.isHittable && swipes < 6 {
+            app.swipeUp()
+            swipes += 1
+        }
+        XCTAssertTrue(link.exists)
+        XCTAssertEqual(link.value as? String, "https://photivra.com/nope/privacy/")
+        XCTAssertEqual(link.label, "Privacy Policy")
+    }
+
     @MainActor
     func testFormatsAndPrivacySwitchesFollowTheRules() throws {
         let app = launch("denied")
@@ -1420,10 +1448,10 @@ final class NopeAppUITests: XCTestCase {
     @MainActor
     func testFirstRunStatementsThenTheCameraPrompt() throws {
         let app = launch("allow")
-        XCTAssertTrue(app.staticTexts["Photos with as little processing as this phone allows."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[deviceText("Photos with as little processing as this phone allows.", iPad: "Photos with as little processing as this iPad allows.")].waitForExistence(timeout: 10))
         XCTAssertTrue(
             app.staticTexts["You can sign each photo, so changes can be detected. Signing is off until you turn it on."].exists)
-        XCTAssertTrue(app.staticTexts["nope. never connects to the internet and keeps nothing about you."].exists)
+        XCTAssertTrue(app.staticTexts["nope. never connects to the internet and collects nothing about you."].exists)
         XCTAssertTrue(element(app, containing: "Photos access is asked the first time you save").exists)
         try audit(app)
         continuePastFirstRun(app)

@@ -92,7 +92,7 @@ struct HonestyScreen: View {
                 text: Text(
                     "nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app.",
                     tableName: "Honesty", bundle: .module,
-                    comment: "Claim 20 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
+                    comment: "Claim 29 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
             HonestyStatement(
                 title: Text("Check It Yourself", tableName: "Honesty", bundle: .module, comment: "Honesty heading: how to verify that the app makes no connections."),
                 text: Text(
@@ -111,13 +111,13 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Location Only If You Turn It On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos include a location only when the person turns Location on."),
                 text: Text(
-                    "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere.",
+                    "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude and longitude, and its altitude when iOS reports one. A photo taken before iOS has a position, or from the Lock Screen, gets none. No direction, speed or GPS time is written, and nope. never sends your location anywhere.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #43; docs/PRIVACY.md, \"Location\". Details in Each Photo is the name of nope.'s own settings page; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
             HonestyStatement(
                 title: Text("Signing Is Your Choice", tableName: "Honesty", bundle: .module, comment: "Honesty heading: photos are signed with Content Credentials only when the person turns signing on."),
                 text: Text(
-                    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device.",
+                    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since it was signed. The signature names nope. and its version as the maker. It is not proof: anyone could make a file that says the same. It doesn't identify you or your device.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
             HonestyStatement(
@@ -129,7 +129,7 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Apple Watch Sends Only Commands", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the Apple Watch app exchanges only commands and short status with the phone. Apple Watch is Apple's product name."),
                 text: Text(
-                    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection.",
+                    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages between your paired devices in their own way; nope. opens no network connection.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English."))
             HonestyStatement(
@@ -170,6 +170,18 @@ struct HonestyScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 13 in docs/research/privacy-claims.md, Apple's own wording. Photos and iCloud are Apple's names."))
             HonestyStatement(
+                title: Text("How a RAW Looks in Photos", tableName: "Honesty", bundle: .module, comment: "Honesty heading: Photos and other apps show a RAW with their own development. Draft for the Honesty review."),
+                text: Text(
+                    "Photos and other apps develop a RAW their own way when they show it. The file doesn't change.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 20 in docs/research/privacy-claims.md. Photos is the system photo library app; RAW is a file format name. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
+                title: Text("What Photos Records", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what the Photos app records about each photo outside the file. Draft for the Honesty review."),
+                text: Text(
+                    "Photos keeps its own record of when each photo was added and which app added it. That record isn't in the file, and nope. can't change it.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 21 in docs/research/privacy-claims.md; to confirm on a device (Photos' info panel for a photo saved with every detail off). Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
                 title: Text("Share with App Developers", tableName: "Honesty", bundle: .module, comment: "Honesty heading. Apple's setting name: use the name iOS shows in this language."),
                 text: Text(
                     "If you opt in, Apple may share aggregated, non-identifying crash and usage statistics with developers. They never include your photos. It's in Settings › Privacy & Security › Analytics & Improvements.",
@@ -182,11 +194,53 @@ struct HonestyScreen: View {
                     tableName: "Honesty", bundle: .module,
                     comment: "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language."))
             HonestyStatement(
+                title: Text("Signatures and Sharing", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what editing and sharing do to a Content Credentials signature. Draft for the Honesty review."),
+                text: Text(
+                    "A signature covers the file exactly as nope. saved it. An edit, or sharing in a way that converts the file, removes or breaks it. To keep it, share the original file.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 22 in docs/research/privacy-claims.md; docs/PRIVACY.md, \"Content Credentials\". Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
+                title: Text("Finding Your Location", tableName: "Honesty", bundle: .module, comment: "Honesty heading: how iOS finds the location when Location is on. Draft for the Honesty review."),
+                text: Text(
+                    "With Location on, iOS works out where you are from GPS, nearby Wi-Fi networks and cell towers, and it may exchange data with Apple to do that. nope. receives only the location iOS reports.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 23 in docs/research/privacy-claims.md (Apple's Location Services and Privacy page). Location is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
+                title: Text("Siri Requests", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what Siri may send to Apple. Siri is Apple's name. Draft for the Honesty review."),
+                text: Text(
+                    "When you ask Siri to use nope., Siri may send your request to Apple.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 24 in docs/research/privacy-claims.md (Apple's Siri and privacy page). Siri is Apple's name. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
+                title: Text("Live Activities on Other Devices", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may show the Live Activity on other devices. Draft for the Honesty review."),
+                text: Text(
+                    "iOS may also show nope.'s Live Activity on a paired Apple Watch, in CarPlay or on a Mac. It shows the same counts.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 25 in docs/research/privacy-claims.md. Live Activity, Apple Watch, CarPlay and Mac are Apple's names: use the names iOS shows in this language. Keep \"nope.\" unchanged. Keep \"may\". Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
+                title: Text("Apple Watch Messages", tableName: "Honesty", bundle: .module, comment: "Honesty heading: how watchOS and iOS carry messages between Apple Watch and iPhone. Apple Watch is Apple's product name. Draft for the Honesty review."),
+                text: Text(
+                    "watchOS and iOS decide how messages travel between your Apple Watch and iPhone. When the two aren't near each other, the system may carry them over Wi-Fi or a cellular network.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 26 in docs/research/privacy-claims.md. Apple doesn't document the transport, so keep \"may\" and don't name one. watchOS, iOS, Apple Watch and iPhone are Apple's names. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
+                title: Text("App Use Records", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS keeps its own record of app use. Draft for the Honesty review."),
+                text: Text(
+                    "iOS keeps its own record of when you use any app, for Screen Time and suggestions.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 27 in docs/research/privacy-claims.md. Screen Time is Apple's name: use the name iOS shows in this language. Must not claim more than the English. Draft for the Honesty review."))
+            HonestyStatement(
                 title: Text("Lenses Without RAW", tableName: "Honesty", bundle: .module, comment: "Honesty heading: on lenses that can't save RAW, the phone processes the photo. RAW is a file format name."),
                 text: Text(
                     "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."))
+            HonestyStatement(
+                title: Text("Before an App Gets the RAW", tableName: "Honesty", bundle: .module, comment: "Honesty heading: the camera's own electronics handle the sensor data before any app receives the RAW. RAW is a file format name. Draft for the Honesty review."),
+                text: Text(
+                    "Even a RAW has passed through the camera's own electronics before any app gets it.",
+                    tableName: "Honesty", bundle: .module,
+                    comment: "Claim 28 in docs/research/privacy-claims.md. Never read as \"no processing\": it says the RAW comes from the camera hardware, not from the sensor untouched. RAW is a file format name. Must not claim more than the English. Draft for the Honesty review."))
             HonestyStatement(
                 title: Text("Faces and Autofocus", tableName: "Honesty", bundle: .module, comment: "Honesty heading: iOS may detect faces to choose where to focus."),
                 text: Text(
@@ -196,7 +250,7 @@ struct HonestyScreen: View {
             HonestyStatement(
                 title: Text("Keep Screen On", tableName: "Honesty", bundle: .module, comment: "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review."),
                 text: Text(
-                    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims to 10% after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it.",
+                    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it.",
                     tableName: "Honesty", bundle: .module,
                     comment: "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review."))
         } header: {

@@ -9,8 +9,8 @@
       "comment" : "In Bracket Settings: the flash doesn't fire for any frame of an exposure bracket. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "A photo can't be opened or shown correctly without these. None of them identify you or link your photos." : {
-      "comment" : "Explains why the locked details are always saved. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+    "A photo can't be opened or shown correctly without these. They describe the camera's sensor and color, not you." : {
+      "comment" : "Explains why the locked details are always saved. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release. Don't say these details can't identify a device or link photos: whether any value differs between two devices of the same model hasn't been checked. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "%lld optional details in the files" : {
@@ -201,8 +201,34 @@
       "extractionState" : "manual"
     },
     "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it." : {
-      "comment" : "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "comment" : "Explains the format chip on the camera. RAW, HEIF and JPEG are file format names. Must not claim more than the English: as little processing as the phone allows, not zero. Honesty wording: a fluent human must review every translation before release. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Each photo is one frame from the sensor, saved as RAW with as little processing as this iPad allows. HEIF and JPEG copies are developed from it."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Each photo is one frame from the sensor, saved as RAW with as little processing as this phone allows. HEIF and JPEG copies are developed from it."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Each photo is one frame from the sensor, saved as RAW with as little processing as this device allows. HEIF and JPEG copies are developed from it."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Each photo is separate. Nothing is combined. Keep nope. open while the series runs." : {
       "comment" : "Explains interval shooting. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English.",
@@ -213,8 +239,34 @@
       "extractionState" : "manual"
     },
     "Even steps on this lens’s own focus scale, from 0 (its closest focus) to 1 (far). iPhone doesn’t report focus as a distance, so nope. shows none." : {
-      "comment" : "Footer under Focus Step in Bracket Settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is shown or known.",
-      "extractionState" : "manual"
+      "comment" : "Footer under Focus Step in Bracket Settings. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is shown or known. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Even steps on this lens’s own focus scale, from 0 (its closest focus) to 1 (far). iPad doesn’t report focus as a distance, so nope. shows none."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Even steps on this lens’s own focus scale, from 0 (its closest focus) to 1 (far). iPhone doesn’t report focus as a distance, so nope. shows none."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Even steps on this lens’s own focus scale, from 0 (its closest focus) to 1 (far). This device doesn’t report focus as a distance, so nope. shows none."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Every camera sensor leaves a faint, unique noise pattern. With enough of your photos, forensic tools can match them to the same camera. No app can fully remove it." : {
       "comment" : "Claim 9 in docs/research/privacy-claims.md (peer-reviewed). Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
@@ -241,8 +293,34 @@
       "extractionState" : "manual"
     },
     "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone." : {
-      "comment" : "Explains the Standard File Tags switch. No default note. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "comment" : "Explains the Standard File Tags switch. No default note. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your iPad."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your phone."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Fixed values the file standard asks for, such as version numbers and the color space. Nothing in them identifies you or your device."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Focus is a position on this lens’s own scale from 0 to 1, not a distance. Kept by nope. until it closes; not written to the files." : {
       "comment" : "Footer of the Bracket group in the photo details of a focus bracket's frame. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: no distance is known, and the values are in memory only.",
@@ -308,9 +386,35 @@
       "comment" : "Honesty heading: what the Keep Screen On switch does to the screen, the battery and locking. Keep Screen On is the name of nope.'s own switch; use its translation. Draft wording for the Honesty review (issue #97). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims to 10% after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it." : {
-      "comment" : "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+    "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it." : {
+      "comment" : "Issue #97; docs/design/keep-screen-on.md, wording 7. Keep Screen On is the name of nope.'s own switch; Low Power Mode and Auto-Lock are Apple's names: use the names iOS shows in this language. Must not claim more than the English. Draft wording for the Honesty review. Honesty wording: a fluent human must review every translation before release. \"dims\" without a level: a screen that is already darker isn't changed (SeriesScreenKeeper). Draft for the Honesty review. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. iPhone has a side button and iPad a top button.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the iPad's Auto-Lock applies again. While the screen is on, the iPad is unlocked. The top button always locks it."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the phone's Auto-Lock applies again. While the screen is on, the phone is unlocked. The side button always locks it."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Keep Screen On stops the screen from locking by itself while the camera is showing, so the camera keeps running and uses more battery. The screen dims after 2 minutes without a touch (30 seconds in Low Power Mode). After 30 minutes without a touch or a photo, the device's Auto-Lock applies again. While the screen is on, the device is unlocked. Its lock button always locks it."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Kept by nope. until it closes, to group the frames here. Not written to the files; in Photos each frame is a separate photo." : {
       "comment" : "Footer of the Bracket group in the photo details. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English: the values are in memory only.",
@@ -340,8 +444,8 @@
       "comment" : "Honesty heading: on a lens that can't save RAW, the phone processes the photo. RAW is a file format name. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
       "extractionState" : "manual"
     },
-    "Lets anyone check that the photo hasn't changed since nope. saved it. A signed photo shows that it was taken with nope., and which version." : {
-      "comment" : "Explains the Sign Each Photo switch. No default note. Must not claim more than the English: the signature shows changes, it doesn't prove who took the photo; it names the app and its version. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
+    "Lets anyone check that the photo hasn't changed since it was signed. The signature names nope. and its version as the maker. It is not proof: anyone could make a file that says the same." : {
+      "comment" : "Explains the Sign Each Photo switch. No default note. Must not claim more than the English: the signature shows whether the file changed after signing; it names nope. and its version, but each file certifies its own key, so it doesn't prove that nope. made the file or who took the photo. Keep \"nope.\" unchanged. Honesty wording: a fluent human must review every translation before release. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Live aids are measured on the preview, a few times a second, only while they show. Nothing is saved." : {
@@ -364,8 +468,8 @@
       "comment" : "Summary line in the photo details: the saved files hold the location where the photo was taken (GPS). Shown with a warning symbol. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
-    "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude, longitude and altitude. No direction, speed or GPS time is written, and the location is never sent anywhere." : {
-      "comment" : "Issue #43; docs/PRIVACY.md, \"Location\". Honesty statement under Location Only If You Turn It On. Details in Each Photo is the name of nope.'s own settings page; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
+    "Location is off unless you turn it on under Details in Each Photo in nope.'s settings. Then nope. uses your location only while the camera is open, and each photo gets its latitude and longitude, and its altitude when iOS reports one. A photo taken before iOS has a position, or from the Lock Screen, gets none. No direction, speed or GPS time is written, and nope. never sends your location anywhere." : {
+      "comment" : "Issue #43; docs/PRIVACY.md, \"Location\". Honesty statement under Location Only If You Turn It On. Details in Each Photo is the name of nope.'s own settings page; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release. \"nope. never sends\": iOS itself may contact Apple to find the position (see Finding Your Location). Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Location is on, but location access is off, so photos are saved without a location." : {
@@ -456,16 +560,16 @@
       "comment" : "Sentence under Preview Not Kept in the Last Photo viewer. Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
-    "nope. never connects to the internet and keeps nothing about you." : {
-      "comment" : "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+    "nope. never connects to the internet and collects nothing about you." : {
+      "comment" : "First-run statement 3 of 3. Keep \"nope.\" unchanged: it is the app's name. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release. \"Collects\" matches the Honesty heading No Data Collected: nope. keeps settings and presets on the device, but sends nothing. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "nope. never writes this." : {
       "comment" : "Compare view, for a metadata item only the phone-processed version holds and that no nope. setting can turn on: nope.'s allowlist never writes it. Keep \"nope.\" unchanged. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages over their own connection between your paired devices; nope. opens no network connection." : {
-      "comment" : "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English.",
+    "nope. on Apple Watch sends only your commands, such as the shutter and the delay, to nope. on your iPhone, and gets back only short status, such as \"Saved and signed\". No photos or photo details go to the watch. watchOS and iOS carry these messages between your paired devices in their own way; nope. opens no network connection." : {
+      "comment" : "Claim 19 in docs/research/privacy-claims.md; issue #63. Apple Watch, iPhone, watchOS and iOS are Apple's names. \"Saved and signed\" is the watch app's own result text; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Don't name a transport: Apple doesn't document how the system carries these messages. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "nope. takes single RAW frames one after another and saves each one as its own photo. It doesn't stack, merge or process them: stack them in other software." : {
@@ -528,20 +632,20 @@
       "comment" : "In the photo details, why a metadata item isn't in the files: the person's switch for it is off.",
       "extractionState" : "manual"
     },
-    "Off: apps can't show what made the file." : {
-      "comment" : "What turning off the app name costs. Honesty wording: a fluent human must review every translation before release.",
+    "Off: the file doesn't name the app that made it." : {
+      "comment" : "What turning off the app name costs. Honesty wording: a fluent human must review every translation before release. Says what the file holds; Photos keeps its own record of which app added a photo. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
-    "Off: apps can't show which device took it." : {
-      "comment" : "What turning off the camera model costs. Honesty wording: a fluent human must review every translation before release.",
+    "Off: the file doesn't name the device." : {
+      "comment" : "What turning off the camera model costs. Honesty wording: a fluent human must review every translation before release. Says what the file holds, not what software can infer from it. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
-    "Off: apps can't show which lens took it." : {
-      "comment" : "What turning off the lens model costs. Honesty wording: a fluent human must review every translation before release.",
+    "Off: the file doesn't name the lens." : {
+      "comment" : "What turning off the lens model costs. Honesty wording: a fluent human must review every translation before release. Says what the file holds, not what software can infer from it. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
-    "Off: editors can't automatically correct this lens's distortion and vignetting. The pixels are never corrected either way." : {
-      "comment" : "What turning off lens correction instructions costs. Honesty wording: a fluent human must review every translation before release.",
+    "Off: editors can't automatically correct this lens's distortion and vignetting. The RAW's pixels are never corrected either way." : {
+      "comment" : "What turning off lens correction instructions costs. Honesty wording: a fluent human must review every translation before release. Scoped to the RAW: on a lens without RAW the device may correct its processed file. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Off: nothing is lost. Only written if you enter them." : {
@@ -565,7 +669,33 @@
       "extractionState" : "manual"
     },
     "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so." : {
-      "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English."
+      "comment" : "Issue #80; docs/PRIVACY.md, \"Processing\". \"Processed\" is the marker on the camera and Show Processed Marker the name of nope.'s own switch; use their translations. RAW is a file format name. Keep \"nope.\" unchanged. Must not claim more than the English. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "On a lens that can't save RAW, the iPad processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "On a lens that can't save RAW, the phone processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "On a lens that can't save RAW, the device processes the photo before nope. receives it, and nope. can't turn that processing off. The camera marks these lenses Processed, unless you turn off Show Processed Marker in nope.'s settings, and the photo's details always say so."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "On the Lock Screen, nope. doesn't make previews. The photo is saved in Photos." : {
       "comment" : "Sentence under No Preview in the Last Photo viewer of the camera opened from the Lock Screen, which makes no previews. Lock Screen is the system's name for it; Photos is the system photo library app. Keep \"nope.\" unchanged, lowercase with its period. Honesty wording: must not claim more than the English. Draft for the Honesty review.",
@@ -604,8 +734,34 @@
       "extractionState" : "manual"
     },
     "Only in Phone Version" : {
-      "comment" : "Heading in the compare view's details, also spoken for each item: metadata only the phone-processed version holds.",
-      "extractionState" : "manual"
+      "comment" : "Heading in the compare view's details, also spoken for each item: metadata only the phone-processed version holds. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Only in iPad Version"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Only in Phone Version"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Only in Device Version"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Orientation" : {
       "comment" : "Locked metadata item: which way up the photo is. Honesty wording: a fluent human must review every translation before release.",
@@ -642,8 +798,8 @@
         }
       }
     },
-    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since nope. saved it, and shows that it was taken with nope. and which version. It doesn't identify you or your device." : {
-      "comment" : "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
+    "Photos aren't signed unless you turn on Sign Each Photo in nope.'s settings. A signed photo lets anyone check that it hasn't changed since it was signed. The signature names nope. and its version as the maker. It is not proof: anyone could make a file that says the same. It doesn't identify you or your device." : {
+      "comment" : "Issue #80; docs/PRIVACY.md, \"Content Credentials\". Sign Each Photo is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release. The signature certifies its own key, so it doesn't prove that nope. made the file. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Photos may privately compare landmark regions with Apple's servers (Enhanced Visual Search). You can turn it off in Settings › Apps › Photos." : {
@@ -655,11 +811,37 @@
       "extractionState" : "manual"
     },
     "Photos with as little processing as this phone allows." : {
-      "comment" : "First-run statement 1 of 3. Must not claim more than the English: as little processing as the phone allows, never zero. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "comment" : "First-run statement 1 of 3. Must not claim more than the English: as little processing as the phone allows, never zero. Honesty wording: a fluent human must review every translation before release. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Photos with as little processing as this iPad allows."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Photos with as little processing as this phone allows."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Photos with as little processing as this device allows."
+                }
+              }
+            }
+          }
+        }
+      }
     },
-    "Presets are kept on this device only." : {
-      "comment" : "Privacy note under the settings presets. Must not claim more than the English.",
+    "nope. doesn't sync or send presets. Your device backups include them, like other app settings." : {
+      "comment" : "Privacy note under the settings presets: presets are never synced or sent, but device backups (iCloud Backup or a computer) include them with the other settings (docs/PRIVACY.md, \"Settings presets\"). Keep \"nope.\" unchanged. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Preview Not Kept" : {
@@ -671,8 +853,34 @@
       "extractionState" : "manual"
     },
     "Processed by the phone's camera: this lens can't save RAW" : {
-      "comment" : "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it.",
-      "extractionState" : "manual"
+      "comment" : "In the photo details, the processing of the fallback file of a lens without RAW: the phone's camera processed it. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Processed by the iPad's camera: this lens can't save RAW"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Processed by the phone's camera: this lens can't save RAW"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Processed by the device's camera: this lens can't save RAW"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Processed marker: spoken value" : {
       "comment" : "VoiceOver value of the Processed marker on the camera, read before the format, for example \"Processed: no RAW on this lens, HEIF\". RAW is a file format name. Not the title-case chip text \"Processed: No RAW on This Lens\", which has its own key. Must not claim more than the English. Honesty wording: a fluent human must review every translation before release.",
@@ -758,8 +966,8 @@
       "comment" : "Explains the Histogram switch. RAW is a file format name. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nothing is sent." : {
-      "comment" : "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and nothing is sent. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS. No default note. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
+    "Shows a series' progress on the Lock Screen and in the Dynamic Island when you leave nope. Counts only; nope. sends nothing." : {
+      "comment" : "Explains the Live Activity switch. Privacy wording: the Live Activity shows only counts and nothing is sent. Lock Screen and Dynamic Island are names of iOS features: use their names in the language's iOS. No default note. Must not claim more than the English. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release. \"nope. sends nothing\": iOS itself may show the Live Activity on other devices (see Live Activities on Other Devices). Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Shows Processed on the camera when a lens can't save RAW." : {
@@ -835,8 +1043,34 @@
       "extractionState" : "manual"
     },
     "The phone's camera processes this file before nope. receives it. nope. can't turn that processing off." : {
-      "comment" : "Processing note of a lens that can't save RAW. Must not name any processing step: it says only that the phone processes the file and that nope. can't turn it off. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "comment" : "Processing note of a lens that can't save RAW. Must not name any processing step: it says only that the phone processes the file and that nope. can't turn it off. Keep \"nope.\" unchanged. Draft wording for the Honesty review (docs/design/BUILD-SPEC.md, section 5). Honesty wording: a fluent human must review every translation before release. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The iPad's camera processes this file before nope. receives it. nope. can't turn that processing off."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The phone's camera processes this file before nope. receives it. nope. can't turn that processing off."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The device's camera processes this file before nope. receives it. nope. can't turn that processing off."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "The RAW Is Never Changed" : {
       "comment" : "Honesty heading: the HEIF and JPEG look setting doesn't alter the RAW. RAW is a file format name. Honesty wording: a fluent human must review every translation before release.",
@@ -878,8 +1112,8 @@
       "comment" : "Footer of Details in This Photo in the photo details. Details in Each Photo is the name of the Settings page. Draft wording for the Honesty review.",
       "extractionState" : "manual"
     },
-    "To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker reports the file as valid and the signer as untrusted." : {
-      "comment" : "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review.",
+    "To check a file, open it in a Content Credentials checker. Each photo is signed with its own one-time key, so a checker should report the file as unchanged and the signer as unknown or untrusted. Checkers word this differently." : {
+      "comment" : "In the photo details, under a signed photo's manifests: how to check a file. Names no product. Must be checked against the checker people are most likely to use before it ships. Draft wording for the Honesty review. \"should\": the wording of the checker people use isn't checked yet; c2patool reports the file as valid and the signer as untrusted. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Turn on App Privacy Report (Settings › Privacy & Security). It lists every domain an app contacts during the last 7 days, starting from when you turn it on. nope. should list none." : {
@@ -931,8 +1165,34 @@
       "extractionState" : "manual"
     },
     "What the Phone Does on This Lens" : {
-      "comment" : "Heading in the processing note of a lens that can't save RAW: what the phone's camera does to the file. Honesty wording: a fluent human must review every translation before release.",
-      "extractionState" : "manual"
+      "comment" : "Heading in the processing note of a lens that can't save RAW: what the phone's camera does to the file. Honesty wording: a fluent human must review every translation before release. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "What the iPad Does on This Lens"
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "What the Phone Does on This Lens"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "What the Device Does on This Lens"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "When you share from Photos, location is included unless you turn it off under Options. Other details, such as the date and device model, may still be sent." : {
       "comment" : "Claim 14 in docs/research/privacy-claims.md. Options is Apple's button name in the share sheet: use the name iOS shows in this language. Honesty wording: a fluent human must review every translation before release.",
@@ -943,8 +1203,34 @@
       "extractionState" : "manual"
     },
     "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos." : {
-      "comment" : "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "comment" : "Issue #55; docs/PRIVACY.md, \"Comparison shot\". Compare is the name of nope.'s own camera switch; use its translation. Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "With Compare on, nope. takes a second photo with the iPad's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "With Compare on, nope. takes a second photo with the phone's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "With Compare on, nope. takes a second photo with the device's processing, only to show it next to yours. That photo is never saved, signed or shared, and it is discarded when you close the comparison. Only your nope. photo goes to Photos."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "With Manual Controls on, this choice is not used. A shutter you set is used as set. A shutter on Auto is chosen by the camera." : {
       "comment" : "Second paragraph of the Fast Shutter page in Settings. Manual Controls is the name of nope.'s button; use its translation. \"Auto\" is the word on a manual readout; use its translation. Must not claim more than the English. Draft wording for the Honesty review (docs/design/SETTING-SCOPE.md). Honesty wording: a fluent human must review every translation before release.",
@@ -983,8 +1269,34 @@
       "extractionState" : "manual"
     },
     "Your nope. photo was saved. The second photo, with the phone's processing, couldn't be taken, so there is nothing to compare. You can try again." : {
-      "comment" : "Compare view, when the second photo of the comparison shot failed. Keep \"nope.\" unchanged. Must not claim more than the English.",
-      "extractionState" : "manual"
+      "comment" : "Compare view, when the second photo of the comparison shot failed. Keep \"nope.\" unchanged. Must not claim more than the English. On iPad the English names the iPad, and on other devices it says \"device\"; translate each variant. Draft for the Honesty review.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "device" : {
+              "ipad" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your nope. photo was saved. The second photo, with the iPad's processing, couldn't be taken, so there is nothing to compare. You can try again."
+                }
+              },
+              "iphone" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your nope. photo was saved. The second photo, with the phone's processing, couldn't be taken, so there is nothing to compare. You can try again."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Your nope. photo was saved. The second photo, with the device's processing, couldn't be taken, so there is nothing to compare. You can try again."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Actions run without asking." : {
       "comment" : "Explains the Never choice of Ask First on nope.'s Assistant Access page. Draft for the Honesty review. Must not claim more than the English.",
@@ -1094,7 +1406,7 @@
       "comment" : "Under the This Session list on nope.'s Assistant Access page. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
       "extractionState" : "manual"
     },
-    "Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses every one of them." : {
+    "Lets Siri, Shortcuts and other assistants on this device use nope.'s actions, such as taking a photo or switching lenses. While this is off, nope. refuses its actions." : {
       "comment" : "Explains the Assistant Access switch in nope.'s Settings. Siri and Shortcuts are Apple's names. Keep \"nope.\" unchanged. Draft for the Honesty review. Must not claim more than the English.",
       "extractionState" : "manual"
     },
@@ -1187,7 +1499,7 @@
       "extractionState" : "manual"
     },
     "nope. asks only for permission to add photos. With that permission, iOS doesn't let nope. see or change what is in your library. The small pictures nope. shows of the photos you just took are kept in memory only, until nope. closes. So each time nope. opens, the Last Photo spot starts with a button that opens the Photos app." : {
-      "comment" : "Claim 20 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
+      "comment" : "Claim 29 in docs/research/privacy-claims.md (PHAccessLevel.addOnly); docs/PRIVACY.md, \"Last photo and its details\"; docs/design/device-feedback-1.0.md, section 1. Last Photo is the name of the spot beside the shutter; Photos and iOS are Apple's names. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
       "extractionState" : "manual"
     },
     "Lenses Never Switch on Their Own" : {
@@ -1212,6 +1524,86 @@
     },
     "With VoiceOver or Switch Control on, the focus square and Lock stay until the scene changes. VoiceOver also has the action Lock Focus and Exposure on the viewfinder." : {
       "comment" : "Accessibility screen: with VoiceOver or Switch Control on, the focus square and Lock don't fade (docs/design/device-feedback-1.0.md, section 5). VoiceOver and Switch Control are Apple's names; Lock and Lock Focus and Exposure are nope.'s names; use their translations. Draft for the Honesty review. Must not claim more than the English.",
+      "extractionState" : "manual"
+    },
+    "How a RAW Looks in Photos" : {
+      "comment" : "Honesty heading: Photos and other apps show a RAW with their own development. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Photos and other apps develop a RAW their own way when they show it. The file doesn't change." : {
+      "comment" : "Claim 20 in docs/research/privacy-claims.md. Photos is the system photo library app; RAW is a file format name. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "What Photos Records" : {
+      "comment" : "Honesty heading: what the Photos app records about each photo outside the file. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Photos keeps its own record of when each photo was added and which app added it. That record isn't in the file, and nope. can't change it." : {
+      "comment" : "Claim 21 in docs/research/privacy-claims.md; to confirm on a device (Photos' info panel for a photo saved with every detail off). Photos is the system photo library app. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Signatures and Sharing" : {
+      "comment" : "Honesty heading: what editing and sharing do to a Content Credentials signature. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "A signature covers the file exactly as nope. saved it. An edit, or sharing in a way that converts the file, removes or breaks it. To keep it, share the original file." : {
+      "comment" : "Claim 22 in docs/research/privacy-claims.md; docs/PRIVACY.md, \"Content Credentials\". Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Finding Your Location" : {
+      "comment" : "Honesty heading: how iOS finds the location when Location is on. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "With Location on, iOS works out where you are from GPS, nearby Wi-Fi networks and cell towers, and it may exchange data with Apple to do that. nope. receives only the location iOS reports." : {
+      "comment" : "Claim 23 in docs/research/privacy-claims.md (Apple's Location Services and Privacy page). Location is the name of nope.'s own switch; use its translation. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Siri Requests" : {
+      "comment" : "Honesty heading: what Siri may send to Apple. Siri is Apple's name. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "When you ask Siri to use nope., Siri may send your request to Apple." : {
+      "comment" : "Claim 24 in docs/research/privacy-claims.md (Apple's Siri and privacy page). Siri is Apple's name. Keep \"nope.\" unchanged. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Live Activities on Other Devices" : {
+      "comment" : "Honesty heading: iOS may show the Live Activity on other devices. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "iOS may also show nope.'s Live Activity on a paired Apple Watch, in CarPlay or on a Mac. It shows the same counts." : {
+      "comment" : "Claim 25 in docs/research/privacy-claims.md. Live Activity, Apple Watch, CarPlay and Mac are Apple's names: use the names iOS shows in this language. Keep \"nope.\" unchanged. Keep \"may\". Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Apple Watch Messages" : {
+      "comment" : "Honesty heading: how watchOS and iOS carry messages between Apple Watch and iPhone. Apple Watch is Apple's product name. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "watchOS and iOS decide how messages travel between your Apple Watch and iPhone. When the two aren't near each other, the system may carry them over Wi-Fi or a cellular network." : {
+      "comment" : "Claim 26 in docs/research/privacy-claims.md. Apple doesn't document the transport, so keep \"may\" and don't name one. watchOS, iOS, Apple Watch and iPhone are Apple's names. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "App Use Records" : {
+      "comment" : "Honesty heading: iOS keeps its own record of app use. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "iOS keeps its own record of when you use any app, for Screen Time and suggestions." : {
+      "comment" : "Claim 27 in docs/research/privacy-claims.md. Screen Time is Apple's name: use the name iOS shows in this language. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Before an App Gets the RAW" : {
+      "comment" : "Honesty heading: the camera's own electronics handle the sensor data before any app receives the RAW. RAW is a file format name. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Even a RAW has passed through the camera's own electronics before any app gets it." : {
+      "comment" : "Claim 28 in docs/research/privacy-claims.md. Never read as \"no processing\": it says the RAW comes from the camera hardware, not from the sensor untouched. RAW is a file format name. Must not claim more than the English. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Privacy Policy" : {
+      "comment" : "Row on the About screen that opens the privacy policy in the browser. Draft for the Honesty review.",
+      "extractionState" : "manual"
+    },
+    "Opens in your browser." : {
+      "comment" : "Footer under the Privacy Policy row on the About screen, and the row's VoiceOver hint: the policy opens in the browser, not in the app. Draft for the Honesty review.",
       "extractionState" : "manual"
     }
   },
